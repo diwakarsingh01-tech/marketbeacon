@@ -217,6 +217,20 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[
+            { title: 'Identified Patterns', desc: 'Models currently meeting mathematical entry criteria based on historical backtests.' },
+            { title: 'Historical Data', desc: 'Past performance log of algorithmic observations that have reached projected phases.' },
+            { title: 'Active Observations', desc: 'Instruments currently being tracked post-identification for further mathematical movement.' },
+            { title: 'Universe Watchlist', desc: 'The base group of instruments being analyzed by the selected mathematical model.' }
+          ].map((item) => (
+            <div key={item.title} className="glass-card p-4 rounded-2xl border-white/40">
+              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">{item.title}</h3>
+              <p className="text-[9px] font-medium text-slate-500 leading-relaxed uppercase tracking-tighter opacity-80">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+
         <section className="min-h-[500px]">
           {error ? (
             <div className="glass-card rounded-[2.5rem] h-[400px] flex flex-col items-center justify-center space-y-4 p-10 text-center">

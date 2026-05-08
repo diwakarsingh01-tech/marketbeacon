@@ -99,7 +99,7 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, livePrices, athData, ca
           <th className="px-8 py-6 text-right cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('price')}>
             <div className="flex items-center justify-end">CMP <SortIcon column="price" /></div>
           </th>
-          <th className="px-8 py-6 text-right text-blue-600">Target</th>
+          <th className="px-8 py-6 text-right text-blue-600">Projected Phase</th>
           <th className="px-8 py-6 text-right cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('dfh')}>
             <div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div>
           </th>
@@ -148,11 +148,17 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, livePrices, athData, ca
                 const cap = capData?.[trade.symbol] || trade.marketCap;
                 const dfh = (livePrice && ath) ? ((livePrice / ath) - 1) * 100 : null;
                 const capTag = cap ? getMarketCapTag(cap) : null;
-                const calculatedRoi = trade.roi !== undefined ? trade.roi : (
-                  (livePrice && (trade.actualEntryPrice || trade.entryPrice)) 
-                    ? ((livePrice - (trade.actualEntryPrice || trade.entryPrice)) / (trade.actualEntryPrice || trade.entryPrice)) * 100 
-                    : null
-                );
+                
+                // --- SEBI COMPLIANT ROI CALCULATION ---
+                const basePrice = trade.actualEntryPrice || trade.entryPrice;
+                let calculatedRoi = null;
+                if (livePrice && basePrice && basePrice > 0) {
+                  calculatedRoi = ((livePrice - basePrice) / basePrice) * 100;
+                }
+                // Use historical ROI if trade is closed
+                if (trade.status === 'CLOSED' && trade.roi !== undefined) {
+                  calculatedRoi = trade.roi;
+                }
 
                 if (isWatchlist) {
                   return (
