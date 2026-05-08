@@ -1,9 +1,18 @@
 export const STRATEGIES = [
-  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT_PRUDENCE'] },
-  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['BLUECHIP', 'HIGH_BETA'] },
-  { id: 'ENVELOPE_KNOX', name: 'Envelope Knoxville', baskets: ['BLUECHIP', 'HIGH_BETA'] },
-  { id: 'MA_CROSSOVER', name: 'SMA Crossover', baskets: ['BLUECHIP'] },
-  { id: 'BREAKOUT', name: 'Institutional Breakout', baskets: ['BLUECHIP', 'HIGH_BETA'] },
+  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['BLUECHIP'] },
+  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['BLUECHIP'] },
+  { id: 'ENVELOPE_KNOX', name: 'Envelope + Knox', baskets: ['BLUECHIP'] },
+  { id: 'SMA', name: 'SMA', baskets: ['BLUECHIP'] },
+  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['BLUECHIP'] },
+  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['BLUECHIP'] },
+  { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle + ABCD', baskets: ['BLUECHIP'] },
+  { id: 'RHS_ABCD', name: 'Reverse Head and Shoulder + ABCD', baskets: ['BLUECHIP', 'HIGH_BETA'] },
+  { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['BLUECHIP', 'HIGH_BETA'] },
+  { id: 'CUP_HANDLE_CORRECTION', name: 'Cup with Handle + 10% correction', baskets: ['BLUECHIP', 'HIGH_BETA'] },
+  { id: 'RHS_CORRECTION', name: 'Reverse Head and Shoulder + 10% correction', baskets: ['BLUECHIP', 'HIGH_BETA'] },
+  { id: 'SR_STRATEGY', name: 'Support and Resistance Strategy (S&R)', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT_PRUDENCE'] },
+  { id: '20_RALLY', name: '20% ki rally', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT_PRUDENCE'] },
+  { id: '67_FUNDA', name: '67 ka Funda', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT_PRUDENCE'] },
 ];
 
 export const BASKETS: Record<string, string[]> = {
