@@ -32,20 +32,20 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, livePrices, athData, ca
           <thead>
             {isWatchlist ? (
               <tr className="bg-[#f5f5f7]/50 text-[10px] font-black text-gray-400 uppercase tracking-[0.1em]">
-                <th className="px-8 py-5">Stock Name</th>
+                <th className="px-8 py-5">Instrument</th>
                 <th className="px-8 py-5">Market Cap</th>
                 <th className="px-8 py-5 text-right">DFH%</th>
-                <th className="px-8 py-5 text-right">Trade Status</th>
+                <th className="px-8 py-5 text-right">Model Status</th>
               </tr>
             ) : (
               <tr className="bg-[#f5f5f7]/50 text-[10px] font-black text-gray-400 uppercase tracking-[0.1em]">
-                <th className="px-8 py-5">Entry Date</th>
+                <th className="px-8 py-5">Observation Date</th>
                 <th className="px-8 py-5">Symbol</th>
-                <th className="px-8 py-5">Market Cap</th>
-                <th className="px-8 py-5 text-right">Entry Price</th>
-                <th className="px-8 py-5 text-right">Current Price</th>
+                <th className="px-8 py-5">Universe</th>
+                <th className="px-8 py-5 text-right">Observation Price</th>
+                <th className="px-8 py-5 text-right">Current Market Price</th>
                 <th className="px-8 py-5 text-right">DFH%</th>
-                <th className="px-8 py-5 text-right">Achieved %</th>
+                <th className="px-8 py-5 text-right">Mathematical ROI %</th>
               </tr>
             )}
           </thead>
@@ -81,7 +81,7 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, livePrices, athData, ca
                         trade.status === 'CLOSED' ? 'text-blue-600 bg-blue-50' :
                         'text-gray-400 bg-gray-50'
                       }`}>
-                        {trade.status === 'ENTRY' ? 'Open' : trade.status === 'HOLD' ? 'Avoid/Hold' : trade.status === 'CLOSED' ? 'Closed' : 'No Trade'}
+                        {trade.status === 'ENTRY' ? 'Identified' : trade.status === 'HOLD' ? 'Holding Pattern' : trade.status === 'CLOSED' ? 'Exited' : 'Neutral'}
                       </span>
                     </td>
                   </tr>
@@ -94,7 +94,7 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, livePrices, athData, ca
                   <td className="px-8 py-5">
                     <div className="flex flex-col">
                       <span className="text-sm font-black text-gray-900">{trade.symbol}</span>
-                      <span className="text-[8px] font-bold text-blue-500 uppercase tracking-tighter">Level {trade.currentLevel || 'A'}</span>
+                      <span className="text-[8px] font-bold text-blue-500 uppercase tracking-tighter">Phase {trade.currentLevel || 'A'}</span>
                     </div>
                   </td>
                   <td className="px-8 py-5">
