@@ -2,6 +2,7 @@ import express from 'express';
 import YahooFinance from 'yahoo-finance2';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { initScreenerCron, getDynamicBasket, runScreener } from './screener.js';
 
 const yahooFinance = new YahooFinance();
 dotenv.config();
@@ -9,6 +10,9 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Initialize Daily Screener (4:00 PM IST)
+initScreenerCron();
 
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
@@ -79,11 +83,23 @@ const BASKETS: Record<string, string[]> = {
     'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 
     'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'
   ],
-  'PROFIT_PRUDENCE': [
+  'PROFIT_PRUDENCE': getDynamicBasket().length > 0 ? getDynamicBasket() : [
     'CDSL', 'BSE', 'MCX', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 
     'KAYNES', 'MTARTECH', 'MAHLOG', 'PRINCEPIPE'
   ]
 };
+
+// Manual Screener Trigger (for testing or ad-hoc updates)
+app.post('/api/admin/run-screener', async (req, res) => {
+  try {
+    const results = await runScreener();
+    // Update local BASKETS reference
+    BASKETS['PROFIT_PRUDENCE'] = results;
+    res.json({ message: 'Screener finished', count: results.length, stocks: results });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 const checkKnoxvilleDivergence = (quotes: any[], currentIndex: number) => {
   if (currentIndex < 20) return { bullish: false, bearish: false };
@@ -105,7 +121,11 @@ app.get('/api/backtest/envelope', async (req, res) => {
   try {
     const basketId = (req.query.basket as string) || 'BLUECHIP';
     const strategyType = (req.query.type as string) || 'LONG';
-    const symbols = BASKETS[basketId] || BASKETS['BLUECHIP'];
+    
+    // Always get fresh dynamic basket if Profit Prudence is requested
+    const symbols = basketId === 'PROFIT_PRUDENCE' 
+      ? (getDynamicBasket().length > 0 ? getDynamicBasket() : BASKETS['PROFIT_PRUDENCE'])
+      : (BASKETS[basketId] || BASKETS['BLUECHIP']);
     
     const openTrades: any[] = [];
     const closedTrades: any[] = [];
