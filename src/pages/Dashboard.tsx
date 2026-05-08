@@ -194,7 +194,7 @@ const DashboardPage: React.FC = () => {
                 key={basketKey}
                 onClick={() => setActiveBasket(basketKey)}
                 className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  activeBasket === basketKey ? 'bg-white text-blue-600 shadow-lg shadow-blue-500/10 ring-1 ring-white/50' : 'text-slate-400 hover:text-slate-900'
+                  activeBasket === basketKey ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-slate-900'
                 }`}
               >
                 {basketKey.replace('_', ' ')} Universe
@@ -203,32 +203,30 @@ const DashboardPage: React.FC = () => {
           </div>
 
           <div className="flex bg-white/30 p-1.5 rounded-2xl border border-white/50 backdrop-blur-sm">
-            {(['open', 'closed', 'hold', 'watchlist'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  activeTab === tab ? 'bg-white text-slate-900 shadow-lg ring-1 ring-white/50' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                {tab === 'open' ? 'Identified Patterns' : tab === 'closed' ? 'Historical Data' : tab === 'hold' ? 'Active Observations' : 'Universe Watchlist'}
-              </button>
+            {[
+              { id: 'open', label: 'Identified Patterns', desc: 'Models meeting mathematical entry criteria.' },
+              { id: 'closed', label: 'Historical Data', desc: 'Past algorithmic observations log.' },
+              { id: 'hold', label: 'Active Observations', desc: 'Instruments currently being tracked.' },
+              { id: 'watchlist', label: 'Universe Watchlist', desc: 'Base group of instruments under analysis.' }
+            ].map((tab) => (
+              <div key={tab.id} className="relative group/tooltip">
+                <button
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    activeTab === tab.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+                {/* Apple-style Glass Tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-48 p-3 glass-card rounded-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-300 pointer-events-none z-50">
+                  <p className="text-[9px] font-black text-slate-800 uppercase tracking-widest mb-1">{tab.label}</p>
+                  <p className="text-[8px] font-medium text-slate-500 leading-relaxed uppercase tracking-tighter">{tab.desc}</p>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-white/70" />
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[
-            { title: 'Identified Patterns', desc: 'Models currently meeting mathematical entry criteria based on historical backtests.' },
-            { title: 'Historical Data', desc: 'Past performance log of algorithmic observations that have reached projected phases.' },
-            { title: 'Active Observations', desc: 'Instruments currently being tracked post-identification for further mathematical movement.' },
-            { title: 'Universe Watchlist', desc: 'The base group of instruments being analyzed by the selected mathematical model.' }
-          ].map((item) => (
-            <div key={item.title} className="glass-card p-4 rounded-2xl border-white/40">
-              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">{item.title}</h3>
-              <p className="text-[9px] font-medium text-slate-500 leading-relaxed uppercase tracking-tighter opacity-80">{item.desc}</p>
-            </div>
-          ))}
         </div>
 
         <section className="min-h-[500px]">
