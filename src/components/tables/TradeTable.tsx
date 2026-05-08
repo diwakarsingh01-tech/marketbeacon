@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronUp, ChevronDown, Search, Filter } from 'lucide-react';
+import { ChevronUp, ChevronDown, Search, Filter, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface TradeTableProps {
   trades: any[];
@@ -76,23 +77,38 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, livePrices, athData, ca
 
   const TableHeader = () => (
     <thead>
-      <tr className="bg-slate-900/10 text-[10px] font-black text-slate-700 uppercase tracking-[0.15em] border-b border-white/40">
-        <th className="px-8 py-6">Observation</th>
-        <th className="px-8 py-6 cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('symbol')}>
-          <div className="flex items-center">Symbol <SortIcon column="symbol" /></div>
-        </th>
-        <th className="px-8 py-6">Market Cap</th>
-        <th className="px-8 py-6 text-right">Base Price</th>
-        <th className="px-8 py-6 text-right cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('price')}>
-          <div className="flex items-center justify-end">CMP <SortIcon column="price" /></div>
-        </th>
-        <th className="px-8 py-6 text-right cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('dfh')}>
-          <div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div>
-        </th>
-        <th className="px-8 py-6 text-right cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('roi')}>
-          <div className="flex items-center justify-end">Math ROI % <SortIcon column="roi" /></div>
-        </th>
-      </tr>
+      {isWatchlist ? (
+        <tr className="bg-slate-900/10 text-[10px] font-black text-slate-700 uppercase tracking-[0.15em] border-b border-white/40">
+          <th className="px-8 py-6 cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('symbol')}>
+            <div className="flex items-center">Instrument <SortIcon column="symbol" /></div>
+          </th>
+          <th className="px-8 py-6">Market Cap</th>
+          <th className="px-8 py-6 text-right cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('dfh')}>
+            <div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div>
+          </th>
+          <th className="px-8 py-6 text-right">Model Status</th>
+        </tr>
+      ) : (
+        <tr className="bg-slate-900/10 text-[10px] font-black text-slate-700 uppercase tracking-[0.15em] border-b border-white/40">
+          <th className="px-8 py-6">Observation</th>
+          <th className="px-8 py-6 cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('symbol')}>
+            <div className="flex items-center">Symbol <SortIcon column="symbol" /></div>
+          </th>
+          <th className="px-8 py-6">Market Cap</th>
+          <th className="px-8 py-6 text-right">Base Price</th>
+          <th className="px-8 py-6 text-right cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('price')}>
+            <div className="flex items-center justify-end">CMP <SortIcon column="price" /></div>
+          </th>
+          <th className="px-8 py-6 text-right text-blue-600">Target</th>
+          <th className="px-8 py-6 text-right cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('dfh')}>
+            <div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div>
+          </th>
+          <th className="px-8 py-6 text-right cursor-pointer hover:bg-slate-900/5 transition-colors" onClick={() => handleSort('roi')}>
+            <div className="flex items-center justify-end">Math ROI % <SortIcon column="roi" /></div>
+          </th>
+          <th className="px-8 py-6 text-right">Fundamentals</th>
+        </tr>
+      )}
     </thead>
   );
 
@@ -121,7 +137,7 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, livePrices, athData, ca
           <tbody className="divide-y divide-white/20">
             {filteredAndSortedTrades.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-8 py-20 text-center">
+                <td colSpan={isWatchlist ? 4 : 9} className="px-8 py-20 text-center">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No matching mathematical observations</p>
                 </td>
               </tr>
@@ -132,12 +148,40 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, livePrices, athData, ca
                 const cap = capData?.[trade.symbol] || trade.marketCap;
                 const dfh = (livePrice && ath) ? ((livePrice / ath) - 1) * 100 : null;
                 const capTag = cap ? getMarketCapTag(cap) : null;
-                // Robust ROI calculation if missing from backend
                 const calculatedRoi = trade.roi !== undefined ? trade.roi : (
                   (livePrice && (trade.actualEntryPrice || trade.entryPrice)) 
                     ? ((livePrice - (trade.actualEntryPrice || trade.entryPrice)) / (trade.actualEntryPrice || trade.entryPrice)) * 100 
                     : null
                 );
+
+                if (isWatchlist) {
+                  return (
+                    <tr key={trade.id} className="hover:bg-white/50 transition-colors group">
+                      <td className="px-8 py-6">
+                        <span className="text-sm font-black text-slate-900">{trade.symbol}</span>
+                      </td>
+                      <td className="px-8 py-6">
+                        {capTag && (
+                          <span className={`px-2 py-1 rounded-lg text-[8px] font-black tracking-widest border shadow-sm ${capTag.class}`}>
+                            {capTag.label}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                        <span className="text-xs font-bold text-red-500/80">{dfh ? `${dfh.toFixed(2)}%` : '-'}</span>
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                        <span className={`px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm ${
+                          trade.status === 'ENTRY' ? 'text-green-600 bg-green-400/10 border border-green-500/20' : 
+                          trade.status === 'HOLD' ? 'text-orange-600 bg-orange-400/10 border border-orange-500/20' : 
+                          'text-slate-400 bg-slate-400/10 border border-slate-500/20'
+                        }`}>
+                          {trade.status === 'ENTRY' ? 'Identified' : trade.status === 'HOLD' ? 'Observation' : 'Neutral'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                }
 
                 return (
                   <tr key={trade.id} className="hover:bg-white/50 transition-colors group">
@@ -145,17 +189,7 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, livePrices, athData, ca
                     <td className="px-8 py-6">
                       <div className="flex flex-col">
                         <span className="text-sm font-black text-slate-900">{trade.symbol}</span>
-                        <span className="text-[9px] font-bold text-blue-500/70 uppercase tracking-tighter mt-1 italic">
-                          {isWatchlist ? (
-                            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest shadow-sm ${
-                              trade.status === 'ENTRY' ? 'text-green-600 bg-green-400/10' : 
-                              trade.status === 'HOLD' ? 'text-orange-600 bg-orange-400/10' : 
-                              'text-slate-400 bg-slate-400/10'
-                            }`}>
-                              {trade.status === 'ENTRY' ? 'Identified' : trade.status === 'HOLD' ? 'Observation' : 'Neutral'}
-                            </span>
-                          ) : `Phase ${trade.currentLevel || 'A'}`}
-                        </span>
+                        <span className="text-[9px] font-bold text-blue-500/70 uppercase tracking-tighter mt-1 italic">Phase {trade.currentLevel || 'A'}</span>
                       </div>
                     </td>
                     <td className="px-8 py-6">
@@ -171,6 +205,9 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, livePrices, athData, ca
                     <td className="px-8 py-6 text-sm font-black text-blue-600 text-right">
                       {livePrice ? `₹${livePrice.toLocaleString(undefined, { maximumFractionDigits: 1 })}` : '-'}
                     </td>
+                    <td className="px-8 py-6 text-sm font-bold text-blue-600 text-right">
+                      {trade.target ? `₹${trade.target.toLocaleString(undefined, { maximumFractionDigits: 1 })}` : '-'}
+                    </td>
                     <td className="px-8 py-6 text-right">
                       <span className="text-xs font-bold text-red-500/80">{dfh !== null ? `${dfh.toFixed(2)}%` : '-'}</span>
                     </td>
@@ -182,6 +219,15 @@ const TradeTable: React.FC<TradeTableProps> = ({ trades, livePrices, athData, ca
                           </span>
                         </div>
                       ) : '-'}
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <Link 
+                        to={`/stock/${trade.symbol}`}
+                        className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-600 text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all border border-blue-500/20 shadow-sm group/btn"
+                      >
+                        <span>Analyze</span>
+                        <ExternalLink className="h-3 w-3 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+                      </Link>
                     </td>
                   </tr>
                 );
