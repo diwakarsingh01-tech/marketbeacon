@@ -148,9 +148,9 @@ const DashboardPage: React.FC = () => {
       <main className="max-w-[1440px] mx-auto py-8 px-10 space-y-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-gray-100 pb-8 gap-6">
           <div className="space-y-1">
-            <div className="flex items-center space-x-2 text-[10px] font-bold text-blue-600 uppercase tracking-widest">
-              <Target className="h-3 w-3" />
-              <span>Analytical Research Lab</span>
+            <div className="flex items-center space-x-2 px-3 py-1 bg-blue-50 w-fit rounded-lg border border-blue-100 mb-2">
+              <Target className="h-3 w-3 text-blue-600" />
+              <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.1em]">Analytical Research Lab</span>
             </div>
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">{currentStrategy.name}</h1>
             <p className="text-xs font-medium text-gray-400">Backtesting algorithm on {activeBasket.replace('_', ' ')} basket</p>
@@ -158,9 +158,9 @@ const DashboardPage: React.FC = () => {
 
           <div className="flex items-end space-x-3">
             <div className="flex flex-col space-y-2 items-end">
-              <div className="flex items-center space-x-2">
-                <span className={`h-2 w-2 rounded-full ${marketStatus === 'LIVE' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+              <div className="flex items-center space-x-2 px-3 py-1 bg-[#f5f5f7]/50 rounded-lg border border-gray-100">
+                <span className={`h-1.5 w-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
                   Data Status: {marketStatus}
                 </span>
               </div>
@@ -168,7 +168,7 @@ const DashboardPage: React.FC = () => {
                 <select 
                   value={strategyId}
                   onChange={(e) => navigate(`?strategy=${e.target.value}`)}
-                  className="appearance-none bg-white border border-gray-200 rounded-xl pl-4 pr-10 py-3 text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer hover:border-gray-300 transition-all"
+                  className="appearance-none bg-white border border-gray-200 rounded-xl pl-4 pr-10 py-3 text-xs font-black uppercase tracking-[0.05em] focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer hover:border-gray-300 transition-all"
                 >
                   {STRATEGIES.map(s => <option key={s.id} value={s.id}>{s.name} (Model)</option>)}
                 </select>
@@ -188,13 +188,13 @@ const DashboardPage: React.FC = () => {
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex bg-[#f5f5f7]/50 p-1 rounded-xl border border-gray-100 shadow-sm">
             {currentStrategy.baskets.map((basketKey) => (
               <button
                 key={basketKey}
                 onClick={() => setActiveBasket(basketKey)}
                 className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                  activeBasket === basketKey ? 'bg-black text-white' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
+                  activeBasket === basketKey ? 'bg-white text-black shadow-sm ring-1 ring-gray-100' : 'text-gray-400 hover:text-gray-900'
                 }`}
               >
                 {basketKey.replace('_', ' ')} Universe
@@ -202,13 +202,13 @@ const DashboardPage: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex bg-gray-100/50 p-1 rounded-xl border border-gray-200/50">
+          <div className="flex bg-[#f5f5f7]/50 p-1 rounded-xl border border-gray-100">
             {(['open', 'closed', 'hold', 'watchlist'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                  activeTab === tab ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  activeTab === tab ? 'bg-white text-black shadow-sm ring-1 ring-gray-100' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 {tab === 'open' ? 'Identified Patterns' : tab === 'closed' ? 'Historical Data' : tab === 'hold' ? 'Active Observations' : 'Universe Watchlist'}
