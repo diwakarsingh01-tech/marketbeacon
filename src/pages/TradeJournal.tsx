@@ -29,7 +29,9 @@ import {
 import Papa from 'papaparse';
 import { BASKETS, STRATEGIES } from '../data/stocks';
 
-const TradeJournal: React.FC = () => {
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+const TradeJournalPage: React.FC = () => {
   const [trades, setTrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSegment, setActiveSegment] = useState<'OPEN' | 'CLOSED'>('OPEN');
@@ -93,7 +95,7 @@ const TradeJournal: React.FC = () => {
 
   const fetchLivePrices = async (symbols: string[]) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/stocks?symbols=${symbols.join(`,')}`);
+      const res = await fetch(`${API_URL}/api/stocks?symbols=${symbols.join(',')}`);
       if (res.ok) {
         const data = await res.json();
         const prices: any = {};
@@ -593,4 +595,4 @@ const TradeJournal: React.FC = () => {
   );
 };
 
-export default TradeJournal;
+export default TradeJournalPage;

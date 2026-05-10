@@ -62,7 +62,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const isAdding = !userWatchlist.find(s => s.symbol === symbol);
     
     try {
-      const response = await fetch(`${API_URL}/api/watchlist${isAdding ? `' : `/${symbol}`}`, {
+      const response = await fetch(`${API_URL}/api/watchlist${isAdding ? '' : `/${symbol}`}`, {
         method: isAdding ? 'POST' : 'DELETE',
         headers: { 
           'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     for (let i = 0; i < symbols.length; i += chunkSize) {
       const chunk = symbols.slice(i, i + chunkSize);
       try {
-        const response = await fetch(`${API_URL}/api/stock-prices?symbols=${chunk.join(`,')}`);
+        const response = await fetch(`${API_URL}/api/stock-prices?symbols=${chunk.join(',')}`);
         if (response.ok) {
           const prices = await response.json();
           prices.forEach((p: any) => { 
