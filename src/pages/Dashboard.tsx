@@ -46,7 +46,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/watchlist`, {
+      const response = await fetch(`${API_URL}/api/watchlist`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -138,7 +138,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     setIsRefreshing(true);
     setError(null);
     try {
-      const indicesRes = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/market-indices`);
+      const indicesRes = await fetch(`${API_URL}/api/market-indices`);
       if (indicesRes.ok) {
         const indicesData = await indicesRes.json();
         setMarketStatus(indicesData.status);

@@ -27,7 +27,7 @@ const ProfilePage: React.FC = () => {
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/user/profile`, {
+      const res = await fetch(`${API_URL}/api/user/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

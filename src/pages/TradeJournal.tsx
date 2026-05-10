@@ -80,7 +80,7 @@ const TradeJournalPage: React.FC = () => {
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/trades`, {
+      const res = await fetch(`${API_URL}/api/trades`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -166,7 +166,7 @@ const TradeJournalPage: React.FC = () => {
     if (!window.confirm(`Delete ${selectedIds.length} selected records?`)) return;
     const token = localStorage.getItem('mb_token');
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/trades/batch-delete`, {
+      const res = await fetch(`${API_URL}/api/trades/batch-delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ ids: selectedIds })
@@ -236,7 +236,7 @@ const TradeJournalPage: React.FC = () => {
             return;
           }
 
-          const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/trades/batch`, {
+          const res = await fetch(`${API_URL}/api/trades/batch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ trades: tradesToImport })
@@ -272,7 +272,7 @@ const TradeJournalPage: React.FC = () => {
     };
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/trades`, {
+      const res = await fetch(`${API_URL}/api/trades`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload)
@@ -300,7 +300,7 @@ const TradeJournalPage: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/trades/${showCloseModal.id}/close`, {
+      const res = await fetch(`${API_URL}/api/trades/${showCloseModal.id}/close`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ 
@@ -321,7 +321,7 @@ const TradeJournalPage: React.FC = () => {
     if (!window.confirm('Re-open this trade?')) return;
     const token = localStorage.getItem('mb_token');
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/trades/${id}/reopen`, {
+      const res = await fetch(`${API_URL}/api/trades/${id}/reopen`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -333,7 +333,7 @@ const TradeJournalPage: React.FC = () => {
     if (!window.confirm('Delete record?')) return;
     const token = localStorage.getItem('mb_token');
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/trades/` + id, {
+      const res = await fetch(`${API_URL}/api/trades/` + id, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
