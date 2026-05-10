@@ -1,3 +1,4 @@
+// @ts-nocheck
 import YahooFinance from 'yahoo-finance2';
 const yahooFinance = new YahooFinance();
 

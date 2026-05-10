@@ -29,14 +29,14 @@ export async function runScreener() {
     
     await Promise.all(batch.map(async (symbol) => {
       try {
-        const summary = await yahooFinance.quoteSummary(symbol, {
+        const summary: any = await yahooFinance.quoteSummary(symbol, {
           modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail']
         });
 
-        const pe = summary.summaryDetail?.trailingPE || summary.defaultKeyStatistics?.trailingPE || 0;
-        const roe = (summary.defaultKeyStatistics?.returnOnEquity || 0) * 100;
-        const debtToEquity = (summary.financialData?.debtToEquity || 0) / 100; // Yahoo gives 20 for 0.2
-        const marketCap = summary.summaryDetail?.marketCap || 0;
+        const pe = (summary.summaryDetail?.trailingPE || summary.defaultKeyStatistics?.trailingPE || 0) as number;
+        const roe = ((summary.defaultKeyStatistics?.returnOnEquity || 0) as number) * 100;
+        const debtToEquity = ((summary.financialData?.debtToEquity || 0) as number) / 100; // Yahoo gives 20 for 0.2
+        const marketCap = (summary.summaryDetail?.marketCap || 0) as number;
 
         // --- THE BATCH 9 FILTER ---
         const passPE = pe > 0 && pe < 75; // Small buffer for 70

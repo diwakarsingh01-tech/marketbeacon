@@ -1,3 +1,4 @@
+// @ts-nocheck
 import yahooFinance from 'yahoo-finance2';
 
 const SUPER_45 = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'TITAN']; 

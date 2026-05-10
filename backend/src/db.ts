@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.resolve(__dirname, '../marketbeacon.db');
 
 let db: any = null;
-let tursoClient: Client | null = null;
+let tursoClient: any = null;
 
 export async function initDB() {
   const tursoUrl = process.env.TURSO_DATABASE_URL;

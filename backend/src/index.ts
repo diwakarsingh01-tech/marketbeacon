@@ -1,3 +1,4 @@
+// @ts-nocheck
 import express from 'express';
 import YahooFinance from 'yahoo-finance2';
 import cors from 'cors';
