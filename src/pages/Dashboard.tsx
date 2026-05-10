@@ -5,6 +5,8 @@ import { BASKETS, STRATEGIES } from '../data/stocks';
 import { ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 interface DashboardPageProps {
   defaultTab?: 'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected';
 }
@@ -44,7 +46,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     try {
-      const response = await fetch('import.meta.env.VITE_API_URL || "http://localhost:3001"/api/watchlist', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/watchlist`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -60,7 +62,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const isAdding = !userWatchlist.find(s => s.symbol === symbol);
     
     try {
-      const response = await fetch(`import.meta.env.VITE_API_URL || "http://localhost:3001"/api/watchlist${isAdding ? '' : `/${symbol}`}`, {
+      const response = await fetch(`${API_URL}/api/watchlist${isAdding ? `' : `/${symbol}`}`, {
         method: isAdding ? 'POST' : 'DELETE',
         headers: { 
           'Content-Type': 'application/json',
@@ -80,7 +82,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     try {
-      const response = await fetch(`import.meta.env.VITE_API_URL || "http://localhost:3001"/api/watchlist/${symbol}`, {
+      const response = await fetch(`${API_URL}/api/watchlist/${symbol}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -111,7 +113,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     for (let i = 0; i < symbols.length; i += chunkSize) {
       const chunk = symbols.slice(i, i + chunkSize);
       try {
-        const response = await fetch(`import.meta.env.VITE_API_URL || "http://localhost:3001"/api/stock-prices?symbols=${chunk.join(',')}`);
+        const response = await fetch(`${API_URL}/api/stock-prices?symbols=${chunk.join(`,')}`);
         if (response.ok) {
           const prices = await response.json();
           prices.forEach((p: any) => { 
@@ -136,13 +138,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     setIsRefreshing(true);
     setError(null);
     try {
-      const indicesRes = await fetch('import.meta.env.VITE_API_URL || "http://localhost:3001"/api/market-indices');
+      const indicesRes = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/market-indices`);
       if (indicesRes.ok) {
         const indicesData = await indicesRes.json();
         setMarketStatus(indicesData.status);
       }
 
-      const response = await fetch(`import.meta.env.VITE_API_URL || "http://localhost:3001"/api/backtest/envelope?basket=${activeBasket}&strategy=${strategyId}`);
+      const response = await fetch(`${API_URL}/api/backtest/envelope?basket=${activeBasket}&strategy=${strategyId}`);
       if (response.ok) {
         const result = await response.json();
         setData(result);

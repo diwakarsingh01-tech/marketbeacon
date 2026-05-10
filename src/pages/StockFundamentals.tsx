@@ -24,7 +24,7 @@ const StockFundamentalsPage: React.FC = () => {
   useEffect(() => {
     const fetchFundamentals = async () => {
       try {
-        const response = await fetch(`import.meta.env.VITE_API_URL || "http://localhost:3001"/api/stock-fundamentals?symbol=${symbol}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/stock-fundamentals?symbol=${symbol}`);
         if (!response.ok) throw new Error('Failed to fetch data');
         const result = await response.json();
         setData(result);
