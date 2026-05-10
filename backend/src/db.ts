@@ -7,8 +7,8 @@ let db: any = null;
 let tursoClient: Client | null = null;
 
 export async function initDB() {
-  const tursoUrl = process.env.TURSO_DATABASE_URL;
-  const tursoToken = process.env.TURSO_AUTH_TOKEN;
+  const tursoUrl = process.env.TURSO_DATABASE_URL?.trim();
+  const tursoToken = process.env.TURSO_AUTH_TOKEN?.trim();
 
   if (!tursoUrl || !tursoToken) {
     throw new Error('❌ Missing Turso Cloud credentials. Deployment requires TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.');
