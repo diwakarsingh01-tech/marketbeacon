@@ -1,15 +1,52 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import DashboardPage from './pages/Dashboard.tsx';
+import { AuthProvider } from './context/AuthContext';
+import AuthGuard from './components/auth/AuthGuard';
+import AppLayout from './components/layout/AppLayout';
+import HomePage from './pages/Home';
+import LoginPage from './pages/Login';
+import RegisterPage from './pages/Register';
+import DashboardPage from './pages/Dashboard';
+import StockFundamentalsPage from './pages/StockFundamentals';
+import BacktestPage from './pages/Backtest';
+import TradeJournalPage from './pages/TradeJournal';
+import ProfilePage from './pages/Profile';
+import MarketplacePage from './pages/Marketplace';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public Marketing Routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
+          {/* Authenticated SaaS Platform */}
+          <Route 
+            element={
+              <AuthGuard>
+                <AppLayout />
+              </AuthGuard>
+            }
+          >
+            {/* Split Views */}
+            <Route path="/screener" element={<DashboardPage key="screener" defaultTab="open" />} />
+            <Route path="/market" element={<DashboardPage key="market" defaultTab="watchlist" />} />
+            <Route path="/portfolio" element={<DashboardPage key="portfolio" defaultTab="portfolio" />} />
+            <Route path="/backtest" element={<BacktestPage />} />
+            <Route path="/journal" element={<TradeJournalPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/marketplace" element={<MarketplacePage />} />
+            <Route path="/stock/:symbol" element={<StockFundamentalsPage />} />
+          </Route>
+
+          {/* Legacy & Redirects */}
+          <Route path="/dashboard" element={<Navigate to="/screener" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

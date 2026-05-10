@@ -1,87 +1,114 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { Activity, Zap, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Activity, Zap, RefreshCw, LogOut, User, Store } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const TopNav: React.FC = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [marketStatus, setMarketStatus] = useState('LIVE');
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [indices, setIndices] = useState<any[]>([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchIndices = useCallback(async () => {
-    setIsRefreshing(true);
     try {
-      const response = await fetch('http://127.0.0.1:3001/api/market-indices');
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch('http://127.0.0.1:3001/api/market-indices');
+      if (res.ok) {
+        const data = await res.json();
         setIndices(data.results || []);
       }
     } catch (e) {
-      console.error('Pulse Error:', e);
-    } finally {
-      setTimeout(() => setIsRefreshing(false), 500); // Visual feedback
+      console.error('Failed to fetch indices');
     }
   }, []);
 
   useEffect(() => {
     fetchIndices();
-    const interval = setInterval(fetchIndices, 60000); // 1 minute auto-refresh
+    const interval = setInterval(fetchIndices, 60000);
     return () => clearInterval(interval);
   }, [fetchIndices]);
 
   return (
-    <nav className="glass-nav">
-      <div className="max-w-[1440px] mx-auto px-10 h-20 flex items-center justify-between">
-        {/* Brand */}
-        <div className="flex items-center space-x-4">
-          <Link to="/" className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/20 hover:scale-105 transition-transform">
-            <Activity className="h-5 w-5 text-white" />
-          </Link>
+    <nav className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 sticky top-0 z-[100] shadow-sm">
+      {/* Market Pulse Ticker */}
+      <div className="flex items-center space-x-8 overflow-hidden">
+        <div className="flex items-center space-x-3 shrink-0">
+          <div className="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">
+            <Activity className="h-4 w-4 text-emerald-600 animate-pulse" />
+          </div>
           <div className="flex flex-col">
-            <span className="text-sm font-black text-gray-900 uppercase tracking-tight">MarketBeacon <span className="text-blue-600 italic">LIVE</span></span>
-            <div className="flex items-center space-x-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Signal Active</span>
-            </div>
+            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none italic">Market Pulse</span>
+            <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest mt-1">Live Trading Window</span>
           </div>
         </div>
 
-        {/* Market Pulse - Bold & Prominent with ATH Logic */}
-        <div className="flex items-center bg-white/40 px-6 py-2.5 rounded-[1.25rem] border border-white/60 space-x-10">
-          <div className="flex items-center space-x-2 border-r border-gray-200/50 pr-6">
-            <Zap className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Pulse</span>
-          </div>
-          <div className="flex items-center space-x-10">
-            {indices.map((index) => {
-              const downFromHigh = index.ath ? ((index.price - index.ath) / index.ath) * 100 : 0;
-              return (
-                <div key={index.name} className="flex items-center space-x-4 border-r border-gray-200/30 last:border-0 pr-10 last:pr-0">
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">{index.name}</span>
-                    <span className="text-sm font-black text-gray-900">₹{index.price?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                  </div>
-                  <div className="flex flex-col items-end space-y-0.5">
-                    <div className={`px-2 py-0.5 rounded-lg text-[9px] font-black ${index.change >= 0 ? 'bg-green-100/50 text-green-600' : 'bg-red-100/50 text-red-600'}`}>
-                      {index.change >= 0 ? '▲' : '▼'} {Math.abs(index.change)?.toFixed(2)}%
-                    </div>
-                  </div>
+        <div className="h-8 w-px bg-slate-100" />
+
+        {/* Dynamic Indices */}
+        <div className="flex items-center space-x-8">
+           {Array.isArray(indices) && indices.map((idx) => (
+             <div key={idx.symbol} className="flex flex-col">
+                <div className="flex items-center space-x-2">
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{idx.name}</span>
+                   <span className={`text-[10px] font-black ${idx.change >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                      {idx.price.toLocaleString()}
+                   </span>
                 </div>
-              );
-            })}
-          </div>
+                <div className="flex items-center space-x-1 mt-1">
+                   <span className={`text-[8px] font-bold ${idx.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {idx.change >= 0 ? '▲' : '▼'} {Math.abs(idx.changePercent).toFixed(2)}%
+                   </span>
+                </div>
+             </div>
+           ))}
         </div>
+      </div>
 
-        {/* User & Security & Global Refresh */}
-        <div className="flex items-center space-x-6">
-          <button 
-            onClick={fetchIndices}
-            className={`p-2.5 rounded-xl border border-white/60 bg-white/40 hover:bg-white/60 transition-all ${isRefreshing ? 'animate-spin text-blue-600' : 'text-gray-400'}`}
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
-          
-          <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-slate-800 to-black flex items-center justify-center border-2 border-white shadow-xl">
-            <span className="text-xs font-black text-white">DS</span>
-          </div>
+      {/* User Actions */}
+      <div className="flex items-center space-x-6">
+        <Link to="/marketplace" className="flex items-center space-x-2 bg-blue-600/10 px-4 py-2 rounded-2xl border border-blue-600/20 group hover:bg-blue-600 transition-all">
+           <Store className="h-3 w-3 text-blue-600 group-hover:text-white transition-colors" />
+           <span className="text-[9px] font-black text-blue-600 group-hover:text-white uppercase tracking-widest transition-colors">Marketplace</span>
+        </Link>
+
+        <div className="h-8 w-px bg-slate-100" />
+
+        <div className="relative">
+          {user ? (
+            <>
+              <button 
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center space-x-3 p-1 pr-3 bg-slate-900 rounded-2xl border border-slate-800 hover:bg-slate-800 transition-all shadow-xl group"
+              >
+                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                   {user?.name?.[0].toUpperCase()}
+                </div>
+                <div className="flex flex-col items-start">
+                   <span className="text-[10px] font-black text-white uppercase tracking-widest leading-none">{user?.name}</span>
+                   <span className="text-[7px] font-bold text-blue-400 uppercase tracking-widest mt-1">Institutional</span>
+                </div>
+              </button>
+
+              {/* User Dropdown */}
+              {showUserMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 z-[100] animate-in slide-in-from-top-2 duration-200">
+                   <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center space-x-3 px-4 py-3 hover:bg-slate-50 rounded-xl transition-all group">
+                      <User className="h-4 w-4 text-slate-400 group-hover:text-blue-600" />
+                      <span className="text-xs font-black text-slate-600 uppercase tracking-widest">My Profile</span>
+                   </Link>
+                   <button onClick={logout} className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-red-50 rounded-xl transition-all group text-left">
+                      <LogOut className="h-4 w-4 text-slate-400 group-hover:text-red-600" />
+                      <span className="text-xs font-black text-slate-600 uppercase tracking-widest group-hover:text-red-600">Logout</span>
+                   </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center space-x-3">
+               <Link to="/login" className="text-[10px] font-black uppercase text-slate-500 hover:text-slate-900 transition-colors">Login</Link>
+               <Link to="/register" className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20">Join</Link>
+            </div>
+          )}
         </div>
       </div>
     </nav>

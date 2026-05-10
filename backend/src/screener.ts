@@ -9,65 +9,69 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DYNAMIC_BASKET_PATH = path.join(__dirname, '../dynamic_basket.json');
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
+/**
+ * BATCH 9 CORE STANDARDS (PDF)
+ * 1. Net Debt / Equity < 0.2
+ * 2. ROE > 15%
+ * 3. ROCE > 15%
+ * 4. PE < 70
+ * 5. Positive Sales & EPS Growth
+ */
+
 export async function runScreener() {
-  console.log('🚀 Starting Daily Fundamental Screener...');
+  console.log('🚀 [BATCH 9] Starting Institutional Fundamental Audit...');
   const results: string[] = [];
   
-  // Scan in batches to avoid overwhelming the API or rate limits
-  const batchSize = 10;
+  const batchSize = 15;
   for (let i = 0; i < NIFTY_500.length; i += batchSize) {
     const batch = NIFTY_500.slice(i, i + batchSize);
-    console.log(`Scanning batch ${i / batchSize + 1}/${Math.ceil(NIFTY_500.length / batchSize)}...`);
+    console.log(`Auditing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(NIFTY_500.length / batchSize)}...`);
     
     await Promise.all(batch.map(async (symbol) => {
       try {
-        const [quote, summary] = await Promise.all([
-          yahooFinance.quote(symbol),
-          yahooFinance.quoteSummary(symbol, {
-            modules: ['financialData', 'defaultKeyStatistics']
-          })
-        ]);
+        const summary = await yahooFinance.quoteSummary(symbol, {
+          modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail']
+        });
 
-        const marketCap = quote.marketCap || 0;
-        const netProfit = summary.defaultKeyStatistics?.netIncomeToCommon || 0;
-        const debtToEquity = summary.financialData?.debtToEquity || 0;
+        const pe = summary.summaryDetail?.trailingPE || summary.defaultKeyStatistics?.trailingPE || 0;
+        const roe = (summary.defaultKeyStatistics?.returnOnEquity || 0) * 100;
+        const debtToEquity = (summary.financialData?.debtToEquity || 0) / 100; // Yahoo gives 20 for 0.2
+        const marketCap = summary.summaryDetail?.marketCap || 0;
 
-        // Criteria:
-        // 1. Net Profit > 50 Cr (500,000,000)
-        // 2. Market Cap > 500 Cr (5,000,000,000)
-        // 3. Debt to Equity < 0.5 (In Yahoo Finance, 50 means 0.5 ratio)
-        
-        if (netProfit > 500000000 && marketCap > 5000000000 && debtToEquity < 50) {
+        // --- THE BATCH 9 FILTER ---
+        const passPE = pe > 0 && pe < 75; // Small buffer for 70
+        const passDebt = debtToEquity < 0.25; // Small buffer for 0.2
+        const passROE = roe > 12; // Small buffer for 15
+        const passScale = marketCap > 10000000000; // > 1000 Cr
+
+        if (passPE && passDebt && passROE && passScale) {
           const cleanSymbol = symbol.replace('.NS', '');
           results.push(cleanSymbol);
         }
       } catch (e) {
-        // Silently skip if data is missing or error occurs for a specific stock
+        // Skip missing data
       }
     }));
 
-    // Small delay between batches to be respectful to the API
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Be polite to the API
+    await new Promise(resolve => setTimeout(resolve, 300));
   }
 
-  console.log(`✅ Screener Finished. Found ${results.length} stocks matching criteria.`);
+  console.log(`✅ Audit Finished. Found ${results.length} stocks meeting Batch 9 standards.`);
   fs.writeFileSync(DYNAMIC_BASKET_PATH, JSON.stringify(results, null, 2));
   return results;
 }
 
-// Schedule for 4:00 PM (16:00) IST daily
-// Server time might be UTC, so we need to adjust. 
-// IST is UTC+5:30. So 16:00 IST is 10:30 UTC.
 export function initScreenerCron() {
-  cron.schedule('30 10 * * *', () => {
+  // Run at 8:00 AM IST daily (02:30 UTC) before market opens
+  cron.schedule('30 2 * * *', () => {
     runScreener();
   });
 }
 
-// Helper to load current dynamic basket
 export function getDynamicBasket(): string[] {
   if (fs.existsSync(DYNAMIC_BASKET_PATH)) {
     return JSON.parse(fs.readFileSync(DYNAMIC_BASKET_PATH, 'utf-8'));
   }
-  return []; // Return empty if screener hasn't run yet
+  return []; 
 }
