@@ -48,7 +48,7 @@ const BacktestPage: React.FC = () => {
   const runSimulation = useCallback(async (isManual = false) => {
     setIsRefreshing(true); 
     try {
-      const res = await fetch(`http://127.0.0.1:3001/api/backtest/simulate?strategy=${strategyId}&basket=${activeBasket}&capital=${capital}&from=${fromDate}&to=${toDate}`);
+      const res = await fetch(`import.meta.env.VITE_API_URL || "http://localhost:3001"/api/backtest/simulate?strategy=${strategyId}&basket=${activeBasket}&capital=${capital}&from=${fromDate}&to=${toDate}`);
       if (res.ok) {
         const result = await res.json();
         setData(result);

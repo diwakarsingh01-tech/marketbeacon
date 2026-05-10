@@ -21,7 +21,7 @@ const MarketplacePage: React.FC = () => {
   useEffect(() => {
     const fetchMarketplace = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:3001/api/marketplace');
+        const res = await fetch('import.meta.env.VITE_API_URL || "http://localhost:3001"/api/marketplace');
         if (res.ok) {
           const data = await res.json();
           setItems(data);
