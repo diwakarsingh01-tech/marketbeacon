@@ -16,6 +16,8 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 const StockFundamentalsPage: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
   const [data, setData] = useState<any>(null);
@@ -96,18 +98,18 @@ const StockFundamentalsPage: React.FC = () => {
       
       {/* TickerTape Style Header Bar - FIXED OVERLAP */}
       <div className="bg-white border-b border-slate-200 pt-6 shadow-sm sticky top-0 z-[100]">
-        <div className="max-w-[1440px] mx-auto px-10">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-10">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 text-left">
             <div className="space-y-1">
-              <div className="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+              <div className="flex items-center space-x-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 overflow-x-auto no-scrollbar whitespace-nowrap">
                  <Link to="/dashboard" className="hover:text-blue-600 uppercase">Terminal</Link>
                  <ChevronRight className="h-2 w-2" />
                  <span>Equities</span>
                  <ChevronRight className="h-2 w-2" />
                  <span className="text-slate-900">{symbol}</span>
               </div>
-              <div className="flex items-center space-x-4">
-                 <h1 className="text-5xl font-black text-slate-900 tracking-tighter">{symbol}</h1>
+              <div className="flex items-center space-x-4 flex-wrap gap-y-2">
+                 <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">{symbol}</h1>
                  <div className="flex items-center space-x-2">
                     <span className="px-2 py-0.5 bg-slate-100 rounded-md text-[10px] font-black text-slate-500 uppercase tracking-widest">{data?.industry}</span>
                     <div className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${
@@ -122,9 +124,9 @@ const StockFundamentalsPage: React.FC = () => {
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mt-1">{data?.sector}</p>
             </div>
 
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col items-start md:items-end">
               <div className="flex items-baseline space-x-2">
-                 <span className="text-4xl font-black text-slate-900 tracking-tighter">₹{data?.price?.toLocaleString()}</span>
+                 <span className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">₹{data?.price?.toLocaleString()}</span>
               </div>
               <div className={`flex items-center space-x-1 font-black text-xs ${data?.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                  <span>{data?.change >= 0 ? '▲' : '▼'} {Math.abs(data?.change)?.toFixed(2)}%</span>
@@ -133,7 +135,7 @@ const StockFundamentalsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-12 py-4 border-t border-slate-100 overflow-x-auto no-scrollbar">
+          <div className="flex items-center space-x-8 md:space-x-12 py-4 border-t border-slate-100 overflow-x-auto no-scrollbar pr-4">
              {[
                { label: 'Market Cap', value: formatCr(data?.marketCap) },
                { label: 'P/E Ratio', value: data?.peRatio?.toFixed(1) },

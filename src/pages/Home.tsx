@@ -17,36 +17,40 @@ const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-10 py-5 flex items-center justify-between">
+      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 md:px-10 py-5 flex items-center justify-between">
         <div className="flex items-center space-x-2">
            <div className="bg-blue-600 p-2 rounded-xl text-white">
               <Activity className="h-6 w-6" />
            </div>
            <span className="text-xl font-black tracking-tighter uppercase italic">MarketBeacon</span>
         </div>
-        <div className="flex items-center space-x-8">
+        <div className="hidden md:flex items-center space-x-8">
            <a href="#features" className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 transition-colors">Features</a>
            <a href="#pricing" className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 transition-colors">Pricing</a>
            <Link to="/login" className="text-xs font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition-colors">Login</Link>
            <Link to="/register" className="px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-all">Start Free Trial</Link>
         </div>
+        <div className="flex md:hidden items-center space-x-4">
+           <Link to="/login" className="text-[10px] font-black uppercase tracking-widest text-slate-900">Login</Link>
+           <Link to="/register" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">Join</Link>
+        </div>
       </nav>
 
       {/* Hero Section */}
-      <header className="pt-40 pb-20 px-10 max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+      <header className="pt-32 md:pt-40 pb-20 px-6 md:px-10 max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
          <div className="space-y-8 animate-in fade-in slide-in-from-left duration-1000">
             <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-50 rounded-full border border-blue-100">
                <ShieldCheck className="h-4 w-4 text-blue-600" />
                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Institutional Grade Analytical Model</span>
             </div>
-            <h1 className="text-8xl font-black tracking-tighter leading-[0.9] text-slate-900">
+            <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[0.9] text-slate-900">
                Master the <span className="text-blue-600">Market Pulse</span> with AI.
             </h1>
-            <p className="text-xl font-medium text-slate-500 max-w-lg leading-relaxed">
+            <p className="text-lg md:text-xl font-medium text-slate-500 max-w-lg leading-relaxed text-center lg:text-left mx-auto lg:mx-0">
                Advanced algorithmic screening, professional fundamentals, and Batch-9 engineering filters. Built for high-conviction retail investors.
             </p>
-            <div className="flex items-center space-x-6">
-               <Link to="/register" className="px-10 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest flex items-center space-x-3 hover:bg-black transition-all group">
+            <div className="flex flex-col sm:flex-row items-center gap-6 sm:space-x-6">
+               <Link to="/register" className="w-full sm:w-auto px-10 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest flex items-center justify-center space-x-3 hover:bg-black transition-all group text-center text-center">
                   <span>Get Started Now</span>
                   <ArrowRight className="h-5 w-5 group-hover:translate-x-2 transition-transform" />
                </Link>

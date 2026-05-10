@@ -218,24 +218,24 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 py-8 px-10 space-y-8 overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-10 space-y-6 md:space-y-8 overflow-hidden">
       
       {/* 1. Page Identity & Controls - Minimalist approach */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-100 pb-8 gap-6 shrink-0">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-100 pb-6 md:pb-8 gap-6 shrink-0">
         <div className="space-y-1">
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase">{pageInfo.title}</h1>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{activeBasket.replace('_', ' ')} • {pageInfo.desc}</p>
+          <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tighter italic uppercase">{pageInfo.title}</h1>
+          <p className="text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-widest">{activeBasket.replace('_', ' ')} • {pageInfo.desc}</p>
         </div>
 
-        <div className="flex items-end space-x-3">
-          <div className="flex flex-col space-y-2 items-end">
+        <div className="flex items-center lg:items-end space-x-3">
+          <div className="flex-1 lg:flex-none flex flex-col space-y-2 items-start lg:items-end">
             {/* Strategy Select - Only visible on Screener/Market tabs */}
             {activeTab !== 'portfolio' && (
-              <div className="relative group">
+              <div className="relative group w-full lg:w-auto">
                 <select 
                   value={strategyId}
                   onChange={(e) => navigate(`?strategy=${e.target.value}`)}
-                  className="appearance-none bg-white border border-slate-100 rounded-2xl pl-5 pr-12 py-3.5 text-[10px] font-black uppercase tracking-[0.1em] focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer min-w-[280px]"
+                  className="appearance-none bg-white border border-slate-100 rounded-2xl pl-5 pr-12 py-3.5 text-[10px] font-black uppercase tracking-[0.1em] focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer w-full lg:min-w-[280px]"
                 >
                   {STRATEGIES.map(s => (
                     <option key={s.id} value={s.id}>{s.name} {s.isLive ? '🟢' : '⏳'}</option>
@@ -248,7 +248,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           
           <button 
             onClick={() => fetchData(true)}
-            className={`p-4 rounded-2xl border border-slate-100 bg-white shadow-sm hover:bg-slate-50 transition-all ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
+            className={`p-4 rounded-2xl border border-slate-100 bg-white shadow-sm hover:bg-slate-50 transition-all shrink-0 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -257,7 +257,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
       {/* 2. Portfolio Summary Cards (Conditional) */}
       {activeTab === 'portfolio' && portfolioSummary.totalInvested > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 shrink-0 animate-in fade-in slide-in-from-top duration-500">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 shrink-0 animate-in fade-in slide-in-from-top duration-500">
            <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden border border-slate-800">
               <Wallet className="absolute right-[-10px] bottom-[-10px] h-24 w-24 opacity-10" />
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Invested</p>
@@ -283,20 +283,21 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                  <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest leading-none">Security Grade</p>
                  <TrendingUp className="h-4 w-4" />
               </div>
-              <h3 className="text-2xl font-black mt-2 leading-none uppercase italic">Institutional</h3>
+              <h3 className="text-2xl font-black mt-2 leading-none uppercase italic hidden md:block">Institutional</h3>
+              <h3 className="text-xl font-black mt-2 leading-none uppercase italic md:hidden">Insti.</h3>
            </div>
         </div>
       )}
 
       {/* 3. Sub-Filters (Baskets) */}
       {activeTab !== 'portfolio' && (
-        <div className="flex items-center space-x-3 shrink-0">
-          <div className="flex bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 shrink-0 overflow-hidden">
+          <div className="flex bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar">
             {currentStrategy.baskets.map((basketKey) => (
               <button
                 key={basketKey}
                 onClick={() => setActiveBasket(basketKey)}
-                className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                className={`px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                   activeBasket === basketKey ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-900'
                 }`}
               >
@@ -305,10 +306,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
             ))}
           </div>
           
-          <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100">
-             <button onClick={() => setActiveTab('open')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'open' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>Qualified</button>
-             <button onClick={() => setActiveTab('hold')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'hold' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>Observation</button>
-             <button onClick={() => setActiveTab('rejected')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'rejected' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Rejected</button>
+          <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 overflow-x-auto no-scrollbar">
+             <button onClick={() => setActiveTab('open')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'open' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>Qualified</button>
+             <button onClick={() => setActiveTab('hold')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'hold' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>Observation</button>
+             <button onClick={() => setActiveTab('rejected')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'rejected' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Rejected</button>
           </div>
 
         </div>

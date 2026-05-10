@@ -24,6 +24,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { STRATEGIES, BASKETS } from '../data/stocks';
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 const BacktestPage: React.FC = () => {
   const navigate = useNavigate();
   const [strategyId, setStrategyId] = useState(STRATEGIES[0].id);
@@ -83,42 +85,42 @@ const BacktestPage: React.FC = () => {
   const isAlphaPositive = parseFloat(alphaValue) >= 0;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 py-6 px-10 space-y-6 overflow-hidden font-sans bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col min-h-0 py-6 px-4 md:px-10 space-y-6 overflow-hidden font-sans bg-[#f8fafc]">
       
       {/* 1. Header & Dynamic Controls */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-200/60 pb-6 gap-6 shrink-0">
-        <div className="space-y-1">
-          <div className="flex items-center space-x-2 px-3 py-1 bg-amber-500/10 w-fit rounded-lg border border-amber-500/20 mb-3">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-200/60 pb-6 gap-6 shrink-0">
+        <div className="space-y-1 text-center lg:text-left">
+          <div className="flex items-center space-x-2 px-3 py-1 bg-amber-500/10 w-fit rounded-lg border border-amber-500/20 mb-3 mx-auto lg:mx-0">
              <BarChart3 className="h-3 w-3 text-amber-600" />
              <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest leading-none">Performance Lab</span>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Strategy Audit</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Strategy Audit</h1>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{data.summary.period}</p>
         </div>
 
-        <div className="flex items-end space-x-3">
-          <div className="flex flex-col space-y-2 items-end">
+        <div className="flex flex-col sm:flex-row items-end gap-3">
+          <div className="flex flex-col space-y-2 items-end w-full sm:w-auto">
              {/* Unified Filter Bar */}
-             <div className="flex bg-white/60 backdrop-blur-md p-1.5 rounded-2xl border border-slate-100 shadow-sm space-x-4 px-4 items-center">
+             <div className="flex flex-wrap bg-white/60 backdrop-blur-md p-2 rounded-2xl border border-slate-100 shadow-sm gap-4 px-4 items-center w-full justify-between sm:justify-start">
                 <div className="flex flex-col">
                    <span className="text-[7px] font-black text-slate-400 uppercase ml-1">Cap</span>
                    <input type="number" value={capital} onChange={(e) => setCapital(parseInt(e.target.value))} className="bg-transparent border-none p-0 text-xs font-black w-20 focus:ring-0 text-slate-900" />
                 </div>
-                <div className="h-6 w-px bg-slate-200/50" />
+                <div className="h-6 w-px bg-slate-200/50 hidden sm:block" />
                 <div className="flex flex-col">
                    <span className="text-[7px] font-black text-slate-400 uppercase">From</span>
                    <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="bg-transparent border-none p-0 text-[10px] font-black focus:ring-0 text-slate-700" />
                 </div>
-                <div className="h-6 w-px bg-slate-200/50" />
+                <div className="h-6 w-px bg-slate-200/50 hidden sm:block" />
                 <div className="flex flex-col">
                    <span className="text-[7px] font-black text-slate-400 uppercase">To</span>
                    <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="bg-transparent border-none p-0 text-[10px] font-black focus:ring-0 text-slate-700" />
                 </div>
              </div>
 
-             <div className="flex items-center space-x-2 w-full">
+             <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
                 {/* Dynamic Universe Filter */}
-                <div className="relative group flex-1 min-w-[160px]">
+                <div className="relative group w-full sm:min-w-[160px]">
                    <select 
                      value={activeBasket}
                      onChange={(e) => setActiveBasket(e.target.value)}
@@ -132,7 +134,7 @@ const BacktestPage: React.FC = () => {
                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
                 </div>
 
-                <div className="relative group flex-2 min-w-[200px]">
+                <div className="relative group w-full sm:min-w-[200px]">
                    <select 
                      value={strategyId}
                      onChange={(e) => setStrategyId(e.target.value)}
@@ -148,7 +150,7 @@ const BacktestPage: React.FC = () => {
           
           <button 
             onClick={() => runSimulation(true)}
-            className={`p-4 rounded-2xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
+            className={`p-4 rounded-2xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all shrink-0 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -156,7 +158,7 @@ const BacktestPage: React.FC = () => {
       </div>
 
       {/* 2. High-Impact Performance HUD */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
          
          {/* STRATEGY PERFORMANCE */}
          <div className="bg-slate-900 rounded-[2rem] p-5 text-white relative overflow-hidden shadow-xl border border-slate-800">
@@ -223,7 +225,7 @@ const BacktestPage: React.FC = () => {
          </div>
          
          <div className="flex-1 overflow-auto custom-scrollbar px-2">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[800px]">
                <thead>
                   <tr className="bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 sticky top-[65px] z-10">
                      <th className="px-8 py-4">Instrument</th>
@@ -330,10 +332,10 @@ const BacktestPage: React.FC = () => {
       </div>
 
       {/* 4. Footer */}
-      <div className="py-2 flex items-center justify-between opacity-50 shrink-0 border-t border-slate-200/60 pt-4">
+      <div className="py-4 flex flex-col md:flex-row items-center justify-between opacity-50 shrink-0 border-t border-slate-200/60 gap-4">
          <div className="flex items-center space-x-2">
             <Info className="h-3 w-3" />
-            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest italic leading-none">Simulation engine calibrated for Batch 9 compliance. Performance vs Nifty 50 reflects precise time-weighted recalibration.</p>
+            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest italic leading-relaxed text-center md:text-left">Simulation engine calibrated for Batch 9 compliance. Performance vs Nifty 50 reflects precise time-weighted recalibration.</p>
          </div>
          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">MarketBeacon Lab</p>
       </div>

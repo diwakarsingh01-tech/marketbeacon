@@ -13,7 +13,12 @@ import {
   Activity
 } from 'lucide-react';
 
-const SideNav: React.FC = () => {
+interface SideNavProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
   const navItems = [
     { icon: Zap, label: 'Screener', path: '/screener', desc: 'Signal Discovery' },
     { icon: Globe, label: 'Market Watch', path: '/market', desc: 'Universe Scan' },
@@ -24,7 +29,12 @@ const SideNav: React.FC = () => {
   ];
 
   return (
-    <aside className="w-72 bg-slate-900 h-screen flex flex-col shrink-0 border-r border-slate-800 shadow-2xl relative z-[110]">
+    <aside className={`
+      fixed inset-y-0 left-0 z-[110] w-72 bg-slate-900 flex flex-col shrink-0 border-r border-slate-800 shadow-2xl 
+      transform transition-transform duration-300 ease-in-out h-screen
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      md:relative md:translate-x-0
+    `}>
       {/* Brand Header */}
       <div className="p-8 pb-12">
         <div className="flex items-center space-x-3 group cursor-default">
@@ -39,11 +49,12 @@ const SideNav: React.FC = () => {
       </div>
 
       {/* Main Nav Links */}
-      <nav className="flex-1 px-4 space-y-2">
+      <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
+            onClick={onClose}
             className={({ isActive }) => `
               flex items-center space-x-4 px-6 py-4 rounded-2xl transition-all group relative
               ${isActive 
@@ -68,7 +79,7 @@ const SideNav: React.FC = () => {
       </nav>
 
       {/* Footer Section */}
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 mt-auto">
          <div className="bg-white/5 rounded-2xl p-5 border border-white/5 space-y-3">
             <div className="flex items-center space-x-2 text-emerald-400">
                <ShieldCheck className="h-3 w-3" />
@@ -80,6 +91,7 @@ const SideNav: React.FC = () => {
          <div className="flex items-center justify-between px-2">
             <NavLink 
               to="/profile" 
+              onClick={onClose}
               className={({ isActive }) => `p-2 rounded-xl transition-all ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-600 hover:text-white'}`}
             >
                <Settings className="h-4 w-4" />

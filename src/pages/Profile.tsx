@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 const ProfilePage: React.FC = () => {
   const { user, logout } = useAuth();
   const [profileData, setProfileData] = useState<any>(null);
@@ -52,42 +54,42 @@ const ProfilePage: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 py-8 px-10 space-y-8 overflow-y-auto font-sans bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-10 space-y-6 md:space-y-8 overflow-y-auto font-sans bg-[#f8fafc]">
       
       {/* 1. Profile Hero Section */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-8 border-b border-slate-200 pb-10">
-        <div className="flex items-center space-x-8">
+        <div className="flex flex-col sm:flex-row items-center gap-6 sm:space-x-8 text-center sm:text-left">
            <div className="relative group">
-              <div className="w-24 h-24 bg-blue-600 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-blue-500/20 group-hover:scale-105 transition-transform duration-500">
-                 <User className="h-10 w-10" />
+              <div className="w-20 h-20 md:w-24 md:h-24 bg-blue-600 rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-blue-500/20 group-hover:scale-105 transition-transform duration-500">
+                 <User className="h-8 w-8 md:h-10 md:w-10" />
               </div>
-              <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-xl border-4 border-white">
-                 <ShieldCheck className="h-4 w-4" />
+              <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 bg-emerald-500 text-white p-1 rounded-lg md:rounded-xl border-2 md:border-4 border-white">
+                 <ShieldCheck className="h-3 w-3 md:h-4 md:w-4" />
               </div>
            </div>
            
            <div className="space-y-1">
-              <div className="flex items-center space-x-3">
-                 <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">{profileData.name}</h1>
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:space-x-3">
+                 <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter uppercase italic">{profileData.name}</h1>
                  <span className="px-3 py-1 bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-amber-500/20">PRO Member</span>
               </div>
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center space-x-2">
+              <p className="text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center space-x-2">
                  <Clock className="h-3 w-3" />
-                 <span>Member Since: {new Date(profileData.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</span>
+                 <span>Member Since: {new Date(profileData.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span>
               </p>
            </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3 md:space-x-4 w-full md:w-auto justify-center">
            <button 
              onClick={() => window.location.reload()}
-             className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-blue-600 hover:border-blue-100 transition-all shadow-sm"
+             className="p-3 md:p-4 bg-white border border-slate-200 rounded-xl md:rounded-2xl text-slate-400 hover:text-blue-600 hover:border-blue-100 transition-all shadow-sm"
            >
               <RefreshCw className="h-5 w-5" />
            </button>
            <button 
              onClick={logout}
-             className="px-8 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center space-x-3 shadow-xl hover:bg-slate-800 transition-all"
+             className="flex-1 md:flex-none px-6 md:px-8 py-3 md:py-4 bg-slate-900 text-white rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest flex items-center justify-center space-x-3 shadow-xl hover:bg-slate-800 transition-all"
            >
               <LogOut className="h-4 w-4" />
               <span>Terminate Session</span>
@@ -96,38 +98,38 @@ const ProfilePage: React.FC = () => {
       </div>
 
       {/* 2. Trading DNA (Lifetime Stats) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-         <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm relative overflow-hidden group">
-            <Activity className="absolute right-6 top-6 h-6 w-6 text-blue-100 group-hover:text-blue-500 transition-colors" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+         <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200 shadow-sm relative overflow-hidden group">
+            <Activity className="absolute right-6 top-6 h-5 w-5 md:h-6 md:w-6 text-blue-100 group-hover:text-blue-500 transition-colors" />
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Lifetime Trades</p>
-            <h3 className="text-3xl font-black text-slate-900">{profileData.stats.totalTrades}</h3>
+            <h3 className="text-2xl md:text-3xl font-black text-slate-900">{profileData.stats.totalTrades}</h3>
             <div className="mt-4 h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
                <div className="h-full bg-blue-600 rounded-full" style={{ width: '70%' }} />
             </div>
          </div>
          
-         <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-xl relative overflow-hidden">
+         <div className="bg-slate-900 rounded-[2rem] p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
             <Wallet className="absolute right-[-10px] bottom-[-10px] h-20 w-20 opacity-10" />
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Realized P&L</p>
-            <h3 className={`text-3xl font-black ${profileData.stats.totalRealizedPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <h3 className={`text-2xl md:text-3xl font-black ${profileData.stats.totalRealizedPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                ₹{Math.abs(profileData.stats.totalRealizedPnL).toLocaleString()}
             </h3>
             <span className="text-[9px] font-bold text-slate-500 uppercase mt-2 block tracking-widest">Net Career Gain</span>
          </div>
 
-         <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm">
+         <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200 shadow-sm">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Exposure</p>
-            <h3 className="text-3xl font-black text-slate-900">{profileData.stats.openTrades}</h3>
+            <h3 className="text-2xl md:text-3xl font-black text-slate-900">{profileData.stats.openTrades}</h3>
             <p className="text-[9px] font-bold text-blue-500 uppercase mt-2 tracking-widest flex items-center">
                <Briefcase className="h-2.5 w-2.5 mr-1" />
                <span>Open Positions</span>
             </p>
          </div>
 
-         <div className="bg-blue-600 rounded-[2rem] p-8 text-white shadow-lg shadow-blue-500/30 relative">
-            <Trophy className="absolute right-6 top-6 h-6 w-6 opacity-20" />
+         <div className="bg-blue-600 rounded-[2rem] p-6 md:p-8 text-white shadow-lg shadow-blue-500/30 relative">
+            <Trophy className="absolute right-6 top-6 h-5 w-5 md:h-6 md:w-6 opacity-20" />
             <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest mb-1">Success Matrix</p>
-            <h3 className="text-3xl font-black">100%</h3>
+            <h3 className="text-2xl md:text-3xl font-black">100%</h3>
             <p className="text-[9px] font-bold uppercase mt-2 italic opacity-80">Mathematical Realization</p>
          </div>
       </div>

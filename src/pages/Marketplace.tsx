@@ -14,6 +14,8 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 const MarketplacePage: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,30 +44,30 @@ const MarketplacePage: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 py-8 px-10 space-y-8 overflow-y-auto font-sans bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-10 space-y-6 md:space-y-8 overflow-y-auto font-sans bg-[#f8fafc]">
       
       {/* 1. Marketplace Hero */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-8 border-b border-slate-200 pb-10">
-        <div className="space-y-2">
-           <div className="flex items-center space-x-2 px-3 py-1 bg-blue-600/10 w-fit rounded-lg border border-blue-600/20 mb-3">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-8 border-b border-slate-200 pb-10">
+        <div className="space-y-2 text-center lg:text-left">
+           <div className="flex items-center space-x-2 px-3 py-1 bg-blue-600/10 w-fit rounded-lg border border-blue-600/20 mb-3 mx-auto lg:mx-0">
               <Store className="h-3 w-3 text-blue-600" />
               <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">Alpha Store</span>
            </div>
-           <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Marketplace</h1>
-           <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Premium Institutional Strategies & Curated Baskets</p>
+           <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Marketplace</h1>
+           <p className="text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-widest">Premium Institutional Strategies & Curated Baskets</p>
         </div>
 
-        <div className="flex items-center space-x-4 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-           <div className="flex flex-col items-center px-6 border-r border-slate-100">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Active Node</span>
-              <span className="text-xs font-black text-emerald-500 uppercase tracking-tighter flex items-center">
-                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2 animate-pulse" />
+        <div className="flex items-center space-x-4 bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-sm w-full lg:w-auto justify-center">
+           <div className="flex flex-col items-center px-4 md:px-6 border-r border-slate-100">
+              <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Active Node</span>
+              <span className="text-[10px] md:text-xs font-black text-emerald-500 uppercase tracking-tighter flex items-center">
+                 <div className="w-1 h-1 md:w-1.5 md:h-1.5 bg-emerald-500 rounded-full mr-2 animate-pulse" />
                  Global
               </span>
            </div>
-           <div className="flex flex-col items-center px-6">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Subscription</span>
-              <span className="text-xs font-black text-blue-600 uppercase tracking-tighter italic">Enterprise Pro</span>
+           <div className="flex flex-col items-center px-4 md:px-6">
+              <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Subscription</span>
+              <span className="text-[10px] md:text-xs font-black text-blue-600 uppercase tracking-tighter italic">Enterprise Pro</span>
            </div>
         </div>
       </div>
