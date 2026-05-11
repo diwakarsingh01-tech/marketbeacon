@@ -258,26 +258,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           </div>
           <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter">Live Trading Window</h2>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
-          {marketPulse.map((idx: any) => {
-            const isPos = (idx.change || 0) >= 0;
-            const changeVal = idx.change !== undefined && !isNaN(idx.change) ? idx.change : 0;
-            
-            return (
-              <div key={idx.name} className="flex flex-col space-y-1 bg-slate-900/50 backdrop-blur-md border border-slate-800 p-4 rounded-3xl min-w-[180px] hover:border-slate-600 transition-all group">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-400">{idx.name}</span>
-                <div className="flex items-baseline space-x-3">
-                  <span className="text-lg font-black text-white tracking-tight">₹{idx.price?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                  <div className={`flex items-center space-x-1 ${isPos ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    <span className="text-[10px] font-black">{isPos ? '▲' : '▼'}</span>
-                    <span className="text-[11px] font-black italic">{Math.abs(changeVal).toFixed(2)}%</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
 
       {/* 1. Page Identity & Controls - Minimalist approach */}
