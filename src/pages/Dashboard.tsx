@@ -155,6 +155,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     return () => clearInterval(interval);
   }, [isRefreshing, data, loadingMessages]);
 
+  const [marketPulse, setMarketPulse] = useState<any[]>([]);
+
   const fetchData = useCallback(async (forceRefresh = false) => {
     setIsRefreshing(true);
     setError(null);
@@ -163,6 +165,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       if (indicesRes.ok) {
         const indicesData = await indicesRes.json();
         setMarketStatus(indicesData.status);
+        setMarketPulse(indicesData.results || []);
       }
 
       const response = await fetch(`${API_URL}/api/backtest/envelope?basket=${activeBasket}&strategy=${strategyId}`);
@@ -241,6 +244,42 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   return (
     <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-10 space-y-6 md:space-y-8 overflow-hidden">
       
+      {/* 0. Professional Market Pulse Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-slate-950 p-6 md:p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden shrink-0 border border-slate-800">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px] rounded-full" />
+        
+        <div className="flex flex-col space-y-2 relative z-10">
+          <div className="flex items-center space-x-3">
+             <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${marketStatus === 'LIVE' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-800 border-slate-700'}`}>
+               <div className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-slate-500'}`} />
+               <span className={`text-[10px] font-black uppercase tracking-widest ${marketStatus === 'LIVE' ? 'text-emerald-400' : 'text-slate-400'}`}>NSE {marketStatus}</span>
+             </div>
+             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Market Pulse</span>
+          </div>
+          <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter">Live Trading Window</h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
+          {marketPulse.map((idx: any) => {
+            const isPos = (idx.change || 0) >= 0;
+            const changeVal = idx.change !== undefined && !isNaN(idx.change) ? idx.change : 0;
+            
+            return (
+              <div key={idx.name} className="flex flex-col space-y-1 bg-slate-900/50 backdrop-blur-md border border-slate-800 p-4 rounded-3xl min-w-[180px] hover:border-slate-600 transition-all group">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-400">{idx.name}</span>
+                <div className="flex items-baseline space-x-3">
+                  <span className="text-lg font-black text-white tracking-tight">₹{idx.price?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  <div className={`flex items-center space-x-1 ${isPos ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <span className="text-[10px] font-black">{isPos ? '▲' : '▼'}</span>
+                    <span className="text-[11px] font-black italic">{Math.abs(changeVal).toFixed(2)}%</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 1. Page Identity & Controls - Minimalist approach */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-100 pb-6 md:pb-8 gap-6 shrink-0">
         <div className="space-y-1">
@@ -362,6 +401,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                   onToggleWatchlist={handleToggleWatchlist}
                   onUpdateHolding={handleUpdateHolding}
                   isWatchlist={activeTab === 'portfolio'}
+                  activeTab={activeTab}
                 />
              </div>
           </div>

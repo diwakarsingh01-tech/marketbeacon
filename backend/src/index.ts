@@ -22,9 +22,9 @@ app.use(express.json({ limit: '50mb' }));
 // --- Manual Snapshot Trigger ---
 app.post('/api/admin/update-snapshot', async (req, res) => {
   try {
-    const allSymbols = [...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']];
+    const allSymbols = [...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BITA'], ...BASKETS['PROFIT']];
     await updateMarketSnapshot(allSymbols);
-    res.json({ success: true, message: 'Market Snapshot Updated' });
+    res.json({ success: true, message: 'Market Snapshot Updated with Batch 9 Strategy Logic' });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -185,12 +185,21 @@ app.get('/api/market-indices', async (req, res) => {
       symbols.map(async (symbol) => {
         try {
           const quote: any = await yahooFinance.quote(symbol);
+          
+          // CRITICAL ACCURACY FIX: Manual calculation to avoid NaN%
+          const current = quote.regularMarketPrice || 0;
+          const prevClose = quote.regularMarketPreviousClose || current;
+          let change = 0;
+          
+          if (prevClose > 0) {
+            change = ((current - prevClose) / prevClose) * 100;
+          }
+
           return {
             name: symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'),
-            price: quote.regularMarketPrice,
-            ath: quote.fiftyTwoWeekHigh,
-            openPrice: quote.regularMarketOpen,
-            change: quote.regularMarketChangePercent
+            price: current,
+            ath: quote.fiftyTwoWeekHigh || current,
+            change: change
           };
         } catch (e) { return { name: symbol, price: 0, change: 0 }; }
       })
@@ -201,30 +210,25 @@ app.get('/api/market-indices', async (req, res) => {
 
 const BASKETS: Record<string, string[]> = {
   'BLUECHIP': ['WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 'WIPRO', 'INFY', 'NAM-INDIA', 'HCLTECH', 'ICICIGI', 'PIDILITIND', 'HDFCAMC', 'ASIANPAINT', 'BERGEPAINT', 'ULTRACEMCO', 'BAJFINANCE', 'NESTLEIND', 'ICICIBANK', 'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 'NIFTYBEES', 'BANKBEES'],
-  'HIGH_BETA': ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KANSAINER', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'],
-  'PROFIT_PRUDENCE': getDynamicBasket().length > 0 ? getDynamicBasket() : ['CDSL', 'BSE', 'MCX', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 'MTARTECH', 'MAHLOG', 'PRINCEPIPE']
+  'HIGH_BITA': ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KANSAINER', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'],
+  'PROFIT': getDynamicBasket().length > 0 ? getDynamicBasket() : ['CDSL', 'BSE', 'MCX', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 'MTARTECH', 'MAHLOG', 'PRINCEPIPE']
 };
 
 const ENVELOPE_PARAMS = { length: 200, percent: 14, minProfitFloor: 0.30 };
 
 // --- Institutional Fundamental Validator (BATCH 9 PDF STANDARDS) ---
 async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boolean = false) {
-  // If in snapshot mode, we ALREADY have the data we need in yahooSummary
-  // DO NOT scrape Screener.in inside the loop, it's too slow and gets blocked.
   let screener = null;
   if (!isSnapshot) {
     screener = await fetchScreenerData(symbol);
   }
   
-  const pe = screener?.peRatio || yahooSummary?.summaryDetail?.trailingPE || yahooSummary?.defaultKeyStatistics?.trailingPE || 0;
-  const debtToEquity = screener?.netDebtToEquity || (yahooSummary?.financialData?.debtToEquity / 100) || 0;
-  const roe = screener?.returnOnEquity || (yahooSummary?.defaultKeyStatistics?.returnOnEquity * 100) || 0;
-  const roce = screener?.roce || 15; 
-  const marketCap = screener?.marketCap || yahooSummary?.summaryDetail?.marketCap || 0;
+  const pe = (screener?.peRatio || yahooSummary?.summaryDetail?.trailingPE || yahooSummary?.defaultKeyStatistics?.trailingPE || 0) as number;
+  const debtToEquity = (screener?.netDebtToEquity || (yahooSummary?.financialData?.debtToEquity / 100) || 0) as number;
+  const roe = (screener?.returnOnEquity || (yahooSummary?.defaultKeyStatistics?.returnOnEquity * 100) || 0) as number;
+  const marketCap = (screener?.marketCap || yahooSummary?.summaryDetail?.marketCap || 0) as number;
 
   const reasons = [];
-  // Accuracy Logic: Only reject if we have POSITIVE evidence of bad fundamentals.
-  // If data is missing (0), we give the benefit of the doubt for "Super 45" stocks.
   if (pe > 75) reasons.push(`High PE (${pe.toFixed(1)})`);
   if (debtToEquity > 0.40) reasons.push(`High Debt (${debtToEquity.toFixed(2)})`);
   if (roe > 0 && roe < 10) reasons.push(`Low ROE (${roe.toFixed(1)}%)`);
@@ -233,7 +237,7 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
   return {
     isPass: reasons.length === 0,
     reason: reasons.join(', ') || 'BATCH 9 COMPLIANT',
-    metrics: { pe, debtToEquity, roe, roce, marketCap }
+    metrics: { pe, debtToEquity, roe, marketCap }
   };
 }
 
@@ -243,7 +247,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
     const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
     
     let symbols = BASKETS[basketId] || BASKETS['BLUECHIP'];
-    if (basketId === 'PROFIT_PRUDENCE') {
+    if (basketId === 'PROFIT') {
       const dynamic = getDynamicBasket();
       if (dynamic.length > 0) symbols = dynamic;
     }
@@ -254,15 +258,13 @@ app.get('/api/backtest/envelope', async (req, res) => {
     const rejectedStocks: any[] = [];
     const allScannedStocks: any[] = [];
 
-    // Mode: Snapshot (Fast) or Live (Fallback)
     const isSnapshotMode = Object.keys(snapshot).length > 0;
-    console.log(isSnapshotMode ? '⚡ [SPEED] Running in Snapshot Cache Mode' : '🐢 [SLOW] Snapshot missing, falling back to Live Mode');
 
     const processBatch = async (batch: string[]) => {
       await Promise.all(batch.map(async (baseSymbol) => {
         try {
           let symbol = `${baseSymbol}.NS`;
-          let history: any, summary: any;
+          let history: any, summary: any, strategyData: any;
 
           if (isSnapshotMode && snapshot[baseSymbol]) {
             const data = snapshot[baseSymbol];
@@ -270,112 +272,51 @@ app.get('/api/backtest/envelope', async (req, res) => {
             summary = {
               summaryDetail: { marketCap: data.quote.marketCap, trailingPE: data.quote.pe },
               defaultKeyStatistics: { returnOnEquity: (data.quote.roe || 15) / 100 },
-              financialData: { debtToEquity: data.quote.debtToEquity || 10 }
+              financialData: { debtToEquity: data.quote.debtToEquity || 0 }
             };
+            strategyData = data.strategy;
           } else {
-            // Live Fallback
             [history, summary] = await Promise.all([
-              yahooFinance.chart(symbol, { period1: '2023-01-01', interval: '1d' as any }).catch(() => null),
+              yahooFinance.chart(symbol, { period1: '2024-01-01', interval: '1d' as any }).catch(() => null),
               yahooFinance.quoteSummary(symbol, { 
-                modules: ["summaryDetail", "defaultKeyStatistics", "financialData", "assetProfile", "summaryProfile"] 
+                modules: ["summaryDetail", "defaultKeyStatistics", "financialData"] 
               }).catch(() => null)
             ]);
+            const quotes = history?.quotes.filter((q:any) => q.close && q.low && q.high) || [];
+            strategyData = calculateEnvelope(quotes);
           }
 
-          if (!history || !summary) return;
+          if (!history || !summary || !strategyData) return;
 
-          const quotes = history.quotes.filter((q:any) => q.close && q.low && q.high);
-          if (quotes.length < 200) return;
-
-          const last = quotes[quotes.length - 1];
-          let techTrigger = false;
-          let tradeType = 'ENTRY';
-
-          // --- TECHNICAL STRATEGY VALIDATION (RELAXED FOR ACTIONABILITY) ---
-          const sma200 = quotes.slice(-200).reduce((acc:any, q:any) => acc + q.close, 0) / 200;
-          const lowerEnvelope = sma200 * 0.86;
-          
-          if (strategyId === 'ENVELOPE_LONG') {
-            // Qualified: Touched Zone in last 20 days AND currently within 5% of Entry
-            const last20 = quotes.slice(-20);
-            const hadTrigger = last20.some((q: any) => q.low <= lowerEnvelope * 1.02);
-            const stillInZone = last.close <= (lowerEnvelope * 1.05);
-            if (hadTrigger && stillInZone) techTrigger = true;
-            else if (last.close <= (lowerEnvelope * 1.25)) { techTrigger = true; tradeType = 'HOLD'; }
-          } 
-          else if (strategyId === 'SMA') {
-            // Qualified: Near 200 SMA Support (within 3%)
-            if (last.low <= (sma200 * 1.03) && last.close >= (sma200 * 0.95)) techTrigger = true;
-            else if (last.close <= (sma200 * 1.15)) { techTrigger = true; tradeType = 'HOLD'; }
-          }
-          else if (strategyId === 'BOLLINGER') {
-            const slice20 = quotes.slice(-20);
-            const sma20 = slice20.reduce((acc:any, q:any) => acc + q.close, 0) / 20;
-            const variance = slice20.reduce((acc:any, q:any) => acc + Math.pow(q.close - sma20, 2), 0) / 20;
-            const stdDev = Math.sqrt(variance);
-            const lowerBB = sma20 - (2 * stdDev);
-            if (last.low <= lowerBB * 1.03) techTrigger = true;
-            else if (last.close <= lowerBB * 1.10) { techTrigger = true; tradeType = 'HOLD'; }
-          }
-          else if (strategyId === '52W_HIGH_LOW') {
-            const low52 = Math.min(...quotes.slice(-252).map(q => q.low));
-            if (last.low <= low52 * 1.05) techTrigger = true;
-            else if (last.close <= low52 * 1.15) { techTrigger = true; tradeType = 'HOLD'; }
-          }
-          else if (strategyId === '67_FUNDA') {
-            const ath = Math.max(...quotes.map(q => q.high));
-            const entryTarget = ath * 0.33; 
-            if (last.close <= entryTarget * 1.10) techTrigger = true;
-            else if (last.close <= entryTarget * 1.30) { techTrigger = true; tradeType = 'HOLD'; }
-          }
-          else if (strategyId === '20_RALLY') {
-            const recentBottom = Math.min(...quotes.slice(-30).map(q => q.low));
-            const rallyPct = ((last.close - recentBottom) / recentBottom) * 100;
-            if (rallyPct >= 18) techTrigger = true;
-            else if (rallyPct >= 10) { techTrigger = true; tradeType = 'HOLD'; }
-          }
-          else if (strategyId === 'SR_STRATEGY') {
-            const historicalPrices = quotes.slice(-150, -20).map(q => q.close);
-            const nearSupport = historicalPrices.some(lvl => last.close >= lvl * 0.97 && last.close <= lvl * 1.03);
-            if (nearSupport) techTrigger = true;
-          }
-          else if (strategyId === 'ENVELOPE_KNOX' || strategyId === 'RHS_ABCD' || strategyId === 'CUP_HANDLE_ABCD') {
-            const knox = checkKnoxville(quotes);
-            if (last.low <= (lowerEnvelope * 1.15) && knox.bullish) techTrigger = true;
-            else if (last.low <= lowerEnvelope * 1.25) { techTrigger = true; tradeType = 'HOLD'; }
-          }
-
-          // --- INSTITUTIONAL AUDIT ---
+          const lastQuote = history.quotes[history.quotes.length - 1];
           const audit = await validateBatch9(baseSymbol, summary, isSnapshotMode);
           const sector = await getAccurateSector(symbol, summary);
 
           const position = {
             symbol: baseSymbol,
-            entryPrice: last.close,
-            target: last.close * 1.25,
-            currentPrice: last.close,
+            entryPrice: strategyData.lowerBand, // The band level is our "Buy Point"
+            actualEntryPrice: lastQuote.adjClose || lastQuote.close,
+            target: Math.max(strategyData.upperBand, (lastQuote.adjClose || lastQuote.close) * 1.30),
+            currentPrice: lastQuote.adjClose || lastQuote.close,
             marketCap: audit.metrics.marketCap,
             sector,
-            entryTime: last.date.toISOString().split('T')[0],
+            entryTime: strategyData.triggerDate || '-', // The date it touched the band
             isPass: audit.isPass,
             rejectionReason: audit.reason,
-            sma200,
-            distFromSma: ((last.close - sma200) / sma200) * 100
+            distanceFromLower: strategyData.distanceFromLower,
+            isBuyZone: strategyData.isBuyZone
           };
 
           allScannedStocks.push(position);
 
-          // --- ALL-NEW ACTIONABLE ROUTING LOGIC ---
           if (!audit.isPass) {
-            // Failed Fundamental Audit (High Debt, Low ROE, etc.)
             rejectedStocks.push(position);
           } 
-          else if (techTrigger && tradeType === 'ENTRY') {
-            // Passed Audit + Technical 'Action' Zone hit
+          else if (strategyData.isBuyZone) {
             openTrades.push(position);
           } 
-          else {
-            // Passed Audit but no trigger today, or technical 'Observation' zone hit
+          else if (strategyData.distanceFromLower <= 10) {
+            // Within 10% of lower band = Observation zone
             holdTrades.push(position);
           }
         } catch (e) {}
@@ -383,12 +324,11 @@ app.get('/api/backtest/envelope', async (req, res) => {
     };
 
     if (isSnapshotMode) {
-      await processBatch(symbols); // Instant parallel processing
+      await processBatch(symbols);
     } else {
-      const batchSize = 5;
+      const batchSize = 10;
       for (let i = 0; i < symbols.length; i += batchSize) {
         await processBatch(symbols.slice(i, i + batchSize));
-        if (i + batchSize < symbols.length) await new Promise(res => setTimeout(res, 800));
       }
     }
 
@@ -400,7 +340,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
       allStocks: allScannedStocks,
       summary: {
         totalScanned: symbols.length,
-        qualified: openTrades.length + holdTrades.length,
+        qualified: openTrades.length,
+        observation: holdTrades.length,
         rejected: rejectedStocks.length
       }
     });
@@ -656,67 +597,87 @@ app.get('/api/backtest/simulate', async (req, res) => {
           }
 
           const quotes = history.quotes.filter((q:any) => q.close && q.low && q.high);
-          if (quotes.length < 50) return; // Need at least some data
+          if (quotes.length < 200) return; // Need at least 200 days for SMA
 
           let activeTrade: any = null;
           let symbolTrades: any[] = [];
 
-          for (let i = 20; i < quotes.length; i++) {
+          for (let i = 200; i < quotes.length; i++) {
             const q = quotes[i];
-            const sma200Slice = quotes.slice(Math.max(0, i-200), i);
-            const sma200 = sma200Slice.reduce((s:number, x:any) => s + x.close, 0) / (sma200Slice.length || 1);
+            
+            // Accuracy: Calculate SMA 200 and Envelopes using adjClose
+            const slice = quotes.slice(i - 200, i);
+            const sma200 = slice.reduce((sum: number, q: any) => sum + (q.adjClose || q.close), 0) / 200;
+            const lowerBand = sma200 * 0.86; // 14% Lower
+            const upperBand = sma200 * 1.14; // 14% Upper
 
             if (!activeTrade) {
-              let triggered = false;
-              if (strategyId === 'ENVELOPE_LONG' && q.low <= (sma200 * 0.86)) triggered = true;
-              else if (strategyId === 'SMA' && q.low <= (sma200 * 1.02) && q.close >= (sma200 * 0.98)) triggered = true;
-              else if (strategyId === '67_FUNDA' && q.low <= (sma200 * 0.67)) triggered = true;
-
-              if (triggered) {
+              // High Accuracy Entry Check: Did price touch or close below lower band?
+              if (q.low <= lowerBand || (q.adjClose || q.close) <= lowerBand) {
                 activeTrade = {
                   entryDate: q.date,
-                  tranches: [{ id: 'A', price: q.close, date: q.date }],
-                  target: q.close * 1.25,
-                  levels: { B: q.close * 0.85, C: q.close * 0.70, D: q.close * 0.55 }
+                  entryPrice: q.adjClose || q.close,
+                  entryUpperBand: upperBand, // Save "memory" of upper band at entry
+                  target: Math.max(upperBand, (q.adjClose || q.close) * 1.30)
                 };
               }
             } else {
-              const { levels, tranches, target } = activeTrade;
-              if (q.high >= target) {
-                const avgPrice = tranches.reduce((s:number, t:any) => s + t.price, 0) / tranches.length;
-                const profitPer = ((q.close - avgPrice) / avgPrice) * 100;
+              // High Accuracy Exit Check: Did price reach the Target?
+              if (q.high >= activeTrade.target) {
+                const exitPrice = activeTrade.target;
+                const roi = ((exitPrice - activeTrade.entryPrice) / activeTrade.entryPrice) * 100;
                 const daysHeld = Math.ceil((q.date.getTime() - activeTrade.entryDate.getTime()) / (1000 * 60 * 60 * 24));
                 
                 const tradeResult = {
                   symbol: baseSymbol,
                   entryDate: activeTrade.entryDate.toISOString().split('T')[0],
                   exitDate: q.date.toISOString().split('T')[0],
-                  roi: profitPer,
+                  roi: roi,
                   daysHeld,
-                  lots: tranches.map((t:any) => t.id).join('+')
+                  status: 'CLOSED',
+                  lots: 'A'
                 };
                 symbolTrades.push(tradeResult);
                 allTrades.push(tradeResult);
                 activeTrade = null;
-                continue;
-              }
-              if (!tranches.find((t:any) => t.id === 'B') && q.low <= levels.B) {
-                tranches.push({ id: 'B', price: levels.B, date: q.date });
-                activeTrade.target = (tranches.reduce((s:number, t:any) => s + t.price, 0) / tranches.length) * 1.25;
               }
             }
           }
+
+          // If a trade is still open at the end of the period, include it as MTM
+          if (activeTrade) {
+            const lastQuote = quotes[quotes.length - 1];
+            const currentPrice = lastQuote.adjClose || lastQuote.close;
+            const mtmRoi = ((currentPrice - activeTrade.entryPrice) / activeTrade.entryPrice) * 100;
+            const daysHeld = Math.ceil((new Date(toDate).getTime() - activeTrade.entryDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            const openTrade = {
+              symbol: baseSymbol,
+              entryDate: activeTrade.entryDate.toISOString().split('T')[0],
+              exitDate: 'ACTIVE',
+              roi: mtmRoi,
+              daysHeld,
+              status: 'OPEN',
+              lots: 'A'
+            };
+            symbolTrades.push(openTrade);
+            allTrades.push(openTrade);
+          }
+          
           symbolSummary[baseSymbol] = {
-            tradeCount: symbolTrades.length,
+            tradeCount: symbolTrades.filter(t => t.status === 'CLOSED').length,
+            openCount: symbolTrades.filter(t => t.status === 'OPEN').length,
             totalROI: symbolTrades.reduce((s, t) => s + t.roi, 0),
             avgDays: symbolTrades.length > 0 ? Math.ceil(symbolTrades.reduce((s, t) => s + t.daysHeld, 0) / symbolTrades.length) : 0
           };
-        } catch (e) {}
+        } catch (e) {
+          console.error(`Simulation failed for ${baseSymbol}:`, e);
+        }
       }));
     };
 
-    // Parallelize with chunking to prevent overloading API
-    const chunkSize = 20;
+    // Parallelize with chunking
+    const chunkSize = 15;
     for (let i = 0; i < symbols.length; i += chunkSize) {
       await processBatch(symbols.slice(i, i + chunkSize));
     }
@@ -728,7 +689,6 @@ app.get('/api/backtest/simulate', async (req, res) => {
     let niftyCAGR = 0;
     
     if (niftyQuotes.length > 1) {
-      // Find exact quotes nearest to the target range
       const validQuotes = niftyQuotes.filter((q:any) => {
         const d = q.date.toISOString().split('T')[0];
         return d >= fromDate && d <= toDate;
@@ -742,12 +702,26 @@ app.get('/api/backtest/simulate', async (req, res) => {
         const niftyDiffTime = Math.abs(new Date(niftyEnd.date).getTime() - new Date(niftyStart.date).getTime());
         const niftyYears = Math.max(0.1, niftyDiffTime / (1000 * 60 * 60 * 24 * 365.25));
         niftyCAGR = (Math.pow((niftyEnd.close / niftyStart.close), (1 / niftyYears)) - 1) * 100;
-        
-        console.log(`[PRECISION AUDIT] Nifty 50: Start(${niftyStart.date.toISOString().split('T')[0]}) @ ${niftyStart.close.toFixed(2)} | End(${niftyEnd.date.toISOString().split('T')[0]}) @ ${niftyEnd.close.toFixed(2)} | Return: ${niftyReturn.toFixed(2)}% | CAGR: ${niftyCAGR.toFixed(2)}%`);
       }
     }
 
-    const finalValue = initialCapital + (allTrades.reduce((s, r) => s + ( (initialCapital/symbols.length) * (r.roi/100) ), 0));
+    const totalTrades = allTrades.length;
+    
+    // Professional Portfolio Simulation: Equally weighted allocation per stock
+    const capitalPerStock = initialCapital / (symbols.length || 1);
+    let finalValue = 0;
+    
+    symbols.forEach(baseSymbol => {
+      const symbolTrades = allTrades.filter(t => t.symbol === baseSymbol).sort((a,b) => new Date(a.entryDate).getTime() - new Date(b.entryDate).getTime());
+      let symbolBalance = capitalPerStock;
+      
+      // We assume sequential compounding for trades within the same stock
+      symbolTrades.forEach(t => {
+        symbolBalance *= (1 + (t.roi / 100));
+      });
+      finalValue += symbolBalance;
+    });
+
     const totalReturnPercent = ((finalValue - initialCapital) / initialCapital) * 100;
     
     const diffTime = Math.abs(new Date(toDate).getTime() - new Date(fromDate).getTime());
@@ -762,8 +736,8 @@ app.get('/api/backtest/simulate', async (req, res) => {
         totalROI: totalReturnPercent.toFixed(1),
         cagr: cagr.toFixed(1),
         avgHoldingDays: Math.ceil(allTrades.reduce((s, r) => s + r.daysHeld, 0) / (allTrades.length || 1)),
-        winRate: 100, // Strategy characteristic
-        totalTrades: allTrades.length,
+        winRate: 100,
+        totalTrades,
         niftyReturn: niftyReturn.toFixed(1),
         niftyCAGR: niftyCAGR.toFixed(1),
         period: `${fromDate} to ${toDate} (${years.toFixed(1)} Years)`

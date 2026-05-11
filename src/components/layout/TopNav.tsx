@@ -50,10 +50,6 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           <div className="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">
             <Activity className="h-4 w-4 text-emerald-600 animate-pulse" />
           </div>
-          <div className="flex flex-col hidden sm:flex">
-            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none italic">Market Pulse</span>
-            <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest mt-1">Live Trading Window</span>
-          </div>
         </div>
 
         <div className="h-8 w-px bg-slate-100 shrink-0 hidden md:block" />
@@ -70,7 +66,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 </div>
                 <div className="flex items-center space-x-1 mt-1">
                    <span className={`text-[8px] font-bold ${idx.change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {idx.change >= 0 ? '▲' : '▼'} {Math.abs(idx.changePercent).toFixed(2)}%
+                      {idx.change >= 0 ? '▲' : '▼'} {Math.abs(idx.change || 0).toFixed(2)}%
                    </span>
                 </div>
              </div>
@@ -99,7 +95,6 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 </div>
                 <div className="flex flex-col items-start hidden sm:flex">
                    <span className="text-[10px] font-black text-white uppercase tracking-widest leading-none">{user?.name}</span>
-                   <span className="text-[7px] font-bold text-blue-400 uppercase tracking-widest mt-1">Institutional</span>
                 </div>
               </button>
 

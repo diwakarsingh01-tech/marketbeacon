@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   ChevronUp as ChevronUpIcon, 
   ChevronDown as ChevronDownIcon, 
@@ -24,6 +24,7 @@ interface TradeTableProps {
   capData?: Record<string, number>;
   sectorData?: Record<string, string>;
   isWatchlist?: boolean;
+  activeTab?: string;
   userWatchlist?: string[];
   onToggleWatchlist?: (symbol: string) => void;
   onUpdateHolding?: (symbol: string, quantity: number, buyPrice: number) => void;
@@ -44,23 +45,40 @@ const getMarketCapTag = (cap: number, symbol: string) => {
 };
 
 const TradeTable: React.FC<TradeTableProps> = ({ 
-  trades, livePrices, athData, capData, sectorData, isWatchlist, userWatchlist, onToggleWatchlist, onUpdateHolding 
+  trades, livePrices, athData, capData, sectorData, isWatchlist, activeTab, userWatchlist, onToggleWatchlist, onUpdateHolding 
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showColumnSettings, setShowColumnSettings] = useState(false);
   
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
-    observation: true,
+    observation: activeTab !== 'watchlist',
     symbol: true,
     sector: true,
     marketCap: true,
-    basePrice: true,
+    basePrice: activeTab !== 'watchlist',
     cmp: true,
-    objective: true,
-    roi: true,
-    pending: true,
+    dfh: true,
+    objective: activeTab !== 'watchlist',
+    roi: activeTab !== 'watchlist',
+    pending: activeTab !== 'watchlist',
     fundamentals: true
   });
+
+  useEffect(() => {
+    setVisibleColumns({
+      observation: activeTab !== 'watchlist',
+      symbol: true,
+      sector: true,
+      marketCap: true,
+      basePrice: activeTab !== 'watchlist',
+      cmp: true,
+      dfh: true,
+      objective: activeTab !== 'watchlist',
+      roi: activeTab !== 'watchlist',
+      pending: activeTab !== 'watchlist',
+      fundamentals: true
+    });
+  }, [activeTab]);
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ 
     key: 'entryTime', 
@@ -88,6 +106,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
       const marketCap = capData?.[t.symbol] || t.marketCap || 0;
       const sector = sectorData?.[t.symbol] || t.sector || 'General';
       
+      const ath = athData?.[t.symbol] || t.ath || 0;
+      
       let calculatedRoi = 0;
       if (t.status === 'CLOSED' && t.roi !== undefined) {
         calculatedRoi = t.roi;
@@ -96,12 +116,14 @@ const TradeTable: React.FC<TradeTableProps> = ({
       }
 
       const targetGap = (livePrice && t.target) ? ((t.target - livePrice) / livePrice) * 100 : 0;
+      const dfh = (livePrice && ath) ? ((livePrice / ath) - 1) * 100 : 0;
 
       return {
         ...t,
         livePrice,
         calculatedRoi,
         targetGap,
+        dfh,
         marketCap,
         sector
       };
@@ -119,6 +141,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
         else if (sortConfig.key === 'symbol') { valA = a.symbol; valB = b.symbol; }
         else if (sortConfig.key === 'price') { valA = a.livePrice || 0; valB = b.livePrice || 0; }
         else if (sortConfig.key === 'marketCap') { valA = a.marketCap; valB = b.marketCap; }
+        else if (sortConfig.key === 'dfh') { valA = a.dfh || 0; valB = b.dfh || 0; }
         else if (sortConfig.key === 'entryTime') {
           valA = a.entryTime && a.entryTime !== '-' ? new Date(a.entryTime).getTime() : 0;
           valB = b.entryTime && b.entryTime !== '-' ? new Date(b.entryTime).getTime() : 0;
@@ -157,6 +180,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
       if (visibleColumns.marketCap) row.push(t.marketCap);
       if (visibleColumns.basePrice) row.push(t.entryPrice);
       if (visibleColumns.cmp) row.push(t.livePrice);
+      if (visibleColumns.dfh) row.push(t.dfh?.toFixed(2) || '0');
       if (visibleColumns.objective) row.push(t.target);
       if (visibleColumns.roi) row.push(t.calculatedRoi.toFixed(2));
       if (visibleColumns.pending) row.push(t.targetGap.toFixed(2));
@@ -204,6 +228,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
           {visibleColumns.marketCap && <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('marketCap')}><div className="flex items-center">Cap <SortIcon column="marketCap" /></div></th>}
           {visibleColumns.basePrice && <th className="px-4 py-3 text-right">Base</th>}
           {visibleColumns.cmp && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('price')}><div className="flex items-center justify-end">CMP <SortIcon column="price" /></div></th>}
+          {visibleColumns.dfh && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div></th>}
           {visibleColumns.objective && <th className="px-4 py-3 text-right text-blue-600">Target</th>}
           {visibleColumns.roi && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('roi')}><div className="flex items-center justify-end">ROI% <SortIcon column="roi" /></div></th>}
           {visibleColumns.pending && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('pending')}><div className="flex items-center justify-end">Gap% <SortIcon column="pending" /></div></th>}
@@ -272,7 +297,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
               filteredAndSortedTrades.map((trade, idx) => {
                 const ath = athData?.[trade.symbol] || trade.ath;
                 const cap = trade.marketCap;
-                const dfh = (trade.livePrice && ath) ? ((trade.livePrice / ath) - 1) * 100 : null;
                 const capTag = getMarketCapTag(cap, trade.symbol);
                 const isTopFive = idx < 5 && !searchTerm; 
                 const isStarred = userWatchlist?.includes(trade.symbol);
@@ -329,6 +353,13 @@ const TradeTable: React.FC<TradeTableProps> = ({
                     {visibleColumns.marketCap && <td className="px-4 py-2.5">{capTag && <span className={`px-2 py-0.5 rounded text-[7px] font-black border ${capTag.class}`}>{capTag.label}</span>}</td>}
                     {visibleColumns.basePrice && <td className="px-4 py-2.5 text-[10px] font-bold text-slate-400 text-right">{ trade.entryPrice ? `₹${trade.entryPrice.toLocaleString(undefined, {maximumFractionDigits:0})}` : '-' }</td>}
                     {visibleColumns.cmp && <td className="px-4 py-2.5 text-[11px] font-black text-blue-600 text-right">₹{trade.livePrice?.toLocaleString(undefined, {maximumFractionDigits:1})}</td>}
+                    {visibleColumns.dfh && (
+                      <td className="px-4 py-2.5 text-right">
+                        <span className={`text-[10px] font-black ${trade.dfh <= -15 ? 'text-red-500' : 'text-slate-400'}`}>
+                          {trade.dfh?.toFixed(1)}%
+                        </span>
+                      </td>
+                    )}
                     {visibleColumns.objective && <td className="px-4 py-2.5 text-[10px] font-bold text-blue-600 text-right">₹{trade.target?.toLocaleString(undefined, {maximumFractionDigits:0})}</td>}
                     {visibleColumns.roi && (
                       <td className="px-4 py-2.5 text-right">

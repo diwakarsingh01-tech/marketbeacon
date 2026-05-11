@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { NIFTY_500 } from './universe.js';
+import { calculateEnvelope } from './strategies.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DYNAMIC_BASKET_PATH = path.join(__dirname, '../dynamic_basket.json');
@@ -55,11 +56,15 @@ export async function runScreener() {
 /**
  * DAILY MARKET SNAPSHOT (The "Speed Boost" & "Quota Saver")
  * Fetches 3 years of OHLCV data for all relevant stocks once a day.
+ * Now includes Envelope Indicator for Bluechip basket.
  */
 export async function updateMarketSnapshot(symbols: string[]) {
   console.log(`📡 [SNAPSHOT] Downloading history for ${symbols.length} symbols...`);
   const snapshot: Record<string, any> = {};
   
+  // Bluechip list to apply Envelope Strategy
+  const bluechipList = ['WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 'WIPRO', 'INFY', 'NAM-INDIA', 'HCLTECH', 'ICICIGI', 'PIDILITIND', 'HDFCAMC', 'ASIANPAINT', 'BERGEPAINT', 'ULTRACEMCO', 'BAJFINANCE', 'NESTLEIND', 'ICICIBANK', 'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 'NIFTYBEES', 'BANKBEES'];
+
   const batchSize = 10;
   for (let i = 0; i < symbols.length; i += batchSize) {
     const batch = symbols.slice(i, i + batchSize);
@@ -71,6 +76,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
         const period1 = new Date();
         period1.setFullYear(period1.getFullYear() - 3);
 
+        // High Accuracy: Fetching adjusted OHLCV
         const [history, quote, summary]: [any, any, any] = await Promise.all([
           yahooFinance.chart(symbol, { period1: period1.toISOString().split('T')[0], interval: '1d' as any }),
           yahooFinance.quote(symbol),
@@ -79,8 +85,14 @@ export async function updateMarketSnapshot(symbols: string[]) {
 
         const quotes = (history.quotes || []).filter((q: any) => q.close && q.low && q.high);
         
+        // Calculate Strategy Indicators for Bluechip basket
+        let strategy = null;
+        if (bluechipList.includes(baseSymbol)) {
+          strategy = calculateEnvelope(quotes);
+        }
+        
         snapshot[baseSymbol] = {
-          quotes,
+          quotes: quotes.slice(-500), // Keep 2 years for accurate trigger dates & SMA
           quote: {
             marketCap: quote.marketCap,
             regularMarketPrice: quote.regularMarketPrice,
@@ -89,6 +101,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
             roe: (summary?.defaultKeyStatistics?.returnOnEquity || 0) * 100,
             debtToEquity: summary?.financialData?.debtToEquity || 0
           },
+          strategy,
           lastUpdated: new Date().toISOString()
         };
       } catch (e) {
@@ -111,10 +124,10 @@ export function initScreenerCron() {
   // 2. Market Snapshot: 4:30 PM IST (11:00 UTC) - After market close
   cron.schedule('0 11 * * *', async () => {
     console.log('⏰ [CRON] Starting Daily Market Snapshot...');
-    // We snapshot everything in the main baskets
     const bluechip = ['WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 'WIPRO', 'INFY', 'NAM-INDIA', 'HCLTECH', 'ICICIGI', 'PIDILITIND', 'HDFCAMC', 'ASIANPAINT', 'BERGEPAINT', 'ULTRACEMCO', 'BAJFINANCE', 'NESTLEIND', 'ICICIBANK', 'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 'NIFTYBEES', 'BANKBEES'];
     const highBeta = ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KANSAINER', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'];
-    await updateMarketSnapshot([...bluechip, ...highBeta]);
+    // Include Nifty Index for accurate ROI comparison
+    await updateMarketSnapshot([...bluechip, ...highBeta, '^NSEI']);
   });
 }
 
