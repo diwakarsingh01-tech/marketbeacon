@@ -132,7 +132,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   };
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [marketStatus, setMarketStatus] = useState<string>('CLOSED');
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
 
   const loadingMessages = useMemo(() => [
@@ -155,19 +154,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     return () => clearInterval(interval);
   }, [isRefreshing, data, loadingMessages]);
 
-  const [marketPulse, setMarketPulse] = useState<any[]>([]);
-
   const fetchData = useCallback(async (forceRefresh = false) => {
     setIsRefreshing(true);
     setError(null);
     try {
-      const indicesRes = await fetch(`${API_URL}/api/market-indices`);
-      if (indicesRes.ok) {
-        const indicesData = await indicesRes.json();
-        setMarketStatus(indicesData.status);
-        setMarketPulse(indicesData.results || []);
-      }
-
       const response = await fetch(`${API_URL}/api/backtest/envelope?basket=${activeBasket}&strategy=${strategyId}`);
       if (response.ok) {
         const result = await response.json();
@@ -244,22 +234,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   return (
     <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-10 space-y-6 md:space-y-8 overflow-hidden">
       
-      {/* 0. Professional Market Pulse Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-slate-950 p-6 md:p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden shrink-0 border border-slate-800">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px] rounded-full" />
-        
-        <div className="flex flex-col space-y-2 relative z-10">
-          <div className="flex items-center space-x-3">
-             <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${marketStatus === 'LIVE' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-800 border-slate-700'}`}>
-               <div className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-slate-500'}`} />
-               <span className={`text-[10px] font-black uppercase tracking-widest ${marketStatus === 'LIVE' ? 'text-emerald-400' : 'text-slate-400'}`}>NSE {marketStatus}</span>
-             </div>
-             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Market Pulse</span>
-          </div>
-          <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter">Live Trading Window</h2>
-        </div>
-      </div>
-
       {/* 1. Page Identity & Controls - Minimalist approach */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-100 pb-6 md:pb-8 gap-6 shrink-0">
         <div className="space-y-1">

@@ -13,6 +13,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [indices, setIndices] = useState<any[]>([]);
+  const [marketStatus, setMarketStatus] = useState('CLOSED');
 
   const fetchIndices = useCallback(async () => {
     try {
@@ -20,6 +21,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
       if (res.ok) {
         const data = await res.json();
         setIndices(data.results || []);
+        setMarketStatus(data.status || 'CLOSED');
       }
     } catch (e) {
       console.error('Failed to fetch indices');
@@ -45,12 +47,18 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         </button>
 
         <div className="flex items-center space-x-3 shrink-0">
-          <div className="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">
+          <div className="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20 relative">
             <Activity className="h-4 w-4 text-emerald-600 animate-pulse" />
+            <div className={`absolute -top-1 -right-1 w-2 h-2 rounded-full border-2 border-white ${marketStatus === 'LIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
           </div>
           <div className="flex flex-col hidden sm:flex">
-            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none italic">Market Pulse</span>
-            <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest mt-1">Live Window</span>
+            <div className="flex items-center space-x-2">
+               <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none italic">Market Pulse</span>
+               <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-md border ${marketStatus === 'LIVE' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-slate-100 border-slate-200 text-slate-500'}`}>
+                  {marketStatus}
+               </span>
+            </div>
+            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Live Window</span>
           </div>
         </div>
 
