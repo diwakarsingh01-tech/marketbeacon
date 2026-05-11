@@ -1,13 +1,14 @@
 export const STRATEGIES = [
-  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['BLUECHIP'], isLive: true },
+  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'ENVELOPE_SHORT', name: 'Short Envelope (Uptrend)', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
   { id: 'SMA', name: 'SMA Support', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true },
   { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true },
   { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true },
-  { id: '67_FUNDA', name: '67 ka Funda', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT_PRUDENCE'], isLive: true },
-  { id: '20_RALLY', name: '20% ki rally', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT_PRUDENCE'], isLive: true },
+  { id: '67_FUNDA', name: '67 ka Funda', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: '20_RALLY', name: '20% ki rally', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
   { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true },
   { id: 'RHS_ABCD', name: 'Reverse Head & Shoulder', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true },
-  { id: 'SR_STRATEGY', name: 'Support & Resistance (S&R)', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT_PRUDENCE'], isLive: true },
+  { id: 'SR_STRATEGY', name: 'Support & Resistance (S&R)', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
 ];
 
 export const BASKETS: Record<string, string[]> = {
@@ -28,7 +29,7 @@ export const BASKETS: Record<string, string[]> = {
     'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 
     'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'
   ],
-  'PROFIT_PRUDENCE': ['Dynamic Screener']
+  'PROFIT': ['Dynamic Screener']
 };
 
 // Simplified stocks for backward compatibility if needed

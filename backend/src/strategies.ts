@@ -92,9 +92,68 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
     triggerDate
   };
 }
+/**
+ * Calculates Exponential Moving Average (EMA)
+ */
+export function calculateEMA(prices: number[], length: number): number[] {
+  const ema: number[] = [];
+  const k = 2 / (length + 1);
+
+  // Start with SMA for the first value
+  let initialSma = prices.slice(0, length).reduce((a, b) => a + b, 0) / length;
+  ema[length - 1] = initialSma;
+
+  for (let i = length; i < prices.length; i++) {
+    ema[i] = prices[i] * k + ema[i - 1] * (1 - k);
+  }
+  return ema;
+}
+
+/**
+ * Short Envelope Strategy Implementation
+ * B1: Buy at Middle (EMA), Sell at Upper
+ * B2: Buy at Lower, Sell at Middle (EMA)
+ */
+export function processShortEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
+  if (!quotes || quotes.length < length) return null;
+
+  const prices = quotes.map(q => q.adjClose || q.close);
+  const emaValues = calculateEMA(prices, length);
+
+  const latestIdx = quotes.length - 1;
+  const currentEMA = emaValues[latestIdx];
+  const currentPrice = prices[latestIdx];
+
+  const upperBand = currentEMA * (1 + percentage / 100);
+  const lowerBand = currentEMA * (1 - percentage / 100);
+
+  // State Machine Logic for current signal
+  let b1_open = false;
+  let b2_open = false;
+  let b1_entry = 0;
+  let b2_entry = 0;
+  let b1_target = 0;
+
+  // We look at the 2nd to last candle to see if we "fell from above" for B1
+  const prevPrice = prices[latestIdx - 1];
+  const prevEMA = emaValues[latestIdx - 1];
+
+  const signalB1 = prevPrice > prevEMA && currentPrice <= currentEMA;
+  const signalB2 = currentPrice <= lowerBand;
+
+  return {
+    ema: currentEMA,
+    upperBand,
+    lowerBand,
+    signalB1, // Buy at Orange
+    signalB2, // Buy at Lower Blue
+    currentPrice
+  };
+}
 
 /**
  * Trade Management Logic
+...
  * Determines if a trade should exit based on the target logic.
  */
 export function checkExitSignal(currentQuote: Quote, entryPrice: number, entryUpperBand: number): boolean {

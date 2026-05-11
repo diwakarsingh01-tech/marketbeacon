@@ -274,7 +274,16 @@ app.get('/api/backtest/envelope', async (req, res) => {
               defaultKeyStatistics: { returnOnEquity: (data.quote.roe || 15) / 100 },
               financialData: { debtToEquity: data.quote.debtToEquity || 0 }
             };
-            strategyData = data.strategy;
+            
+            // Strategy decision logic
+            if (strategyId === 'ENVELOPE_SHORT') {
+              strategyData = processShortEnvelope(history.quotes);
+              // Map Short signal to the unified display logic
+              strategyData.isBuyZone = strategyData.signalB1 || strategyData.signalB2;
+              strategyData.distanceFromLower = ((lastQuote.adjClose || lastQuote.close) - strategyData.lowerBand) / strategyData.lowerBand * 100;
+            } else {
+              strategyData = data.strategy;
+            }
           } else {
             [history, summary] = await Promise.all([
               yahooFinance.chart(symbol, { period1: '2024-01-01', interval: '1d' as any }).catch(() => null),
@@ -283,7 +292,14 @@ app.get('/api/backtest/envelope', async (req, res) => {
               }).catch(() => null)
             ]);
             const quotes = history?.quotes.filter((q:any) => q.close && q.low && q.high) || [];
-            strategyData = calculateEnvelope(quotes);
+            
+            if (strategyId === 'ENVELOPE_SHORT') {
+              strategyData = processShortEnvelope(quotes);
+              strategyData.isBuyZone = strategyData.signalB1 || strategyData.signalB2;
+              strategyData.distanceFromLower = ((quotes[quotes.length-1].adjClose || quotes[quotes.length-1].close) - strategyData.lowerBand) / strategyData.lowerBand * 100;
+            } else {
+              strategyData = calculateEnvelope(quotes);
+            }
           }
 
           if (!history || !summary || !strategyData) return;
@@ -292,19 +308,29 @@ app.get('/api/backtest/envelope', async (req, res) => {
           const audit = await validateBatch9(baseSymbol, summary, isSnapshotMode);
           const sector = await getAccurateSector(symbol, summary);
 
+          const isShort = strategyId === 'ENVELOPE_SHORT';
+          const entryPrice = isShort 
+            ? (strategyData.signalB1 ? strategyData.ema : strategyData.lowerBand)
+            : strategyData.lowerBand;
+
+          const target = isShort
+            ? (strategyData.signalB1 ? strategyData.upperBand : strategyData.ema)
+            : Math.max(strategyData.upperBand, (lastQuote.adjClose || lastQuote.close) * 1.30);
+
           const position = {
             symbol: baseSymbol,
-            entryPrice: strategyData.lowerBand, // The band level is our "Buy Point"
+            entryPrice, 
             actualEntryPrice: lastQuote.adjClose || lastQuote.close,
-            target: Math.max(strategyData.upperBand, (lastQuote.adjClose || lastQuote.close) * 1.30),
+            target,
             currentPrice: lastQuote.adjClose || lastQuote.close,
             marketCap: audit.metrics.marketCap,
             sector,
-            entryTime: strategyData.triggerDate || '-', // The date it touched the band
+            entryTime: strategyData.triggerDate || '-', 
             isPass: audit.isPass,
             rejectionReason: audit.reason,
             distanceFromLower: strategyData.distanceFromLower,
-            isBuyZone: strategyData.isBuyZone
+            isBuyZone: strategyData.isBuyZone,
+            tranche: isShort ? (strategyData.signalB1 ? 'B1 (Mid)' : strategyData.signalB2 ? 'B2 (Low)' : '-') : 'A'
           };
 
           allScannedStocks.push(position);
