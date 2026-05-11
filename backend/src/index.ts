@@ -291,22 +291,58 @@ app.get('/api/backtest/envelope', async (req, res) => {
           let techTrigger = false;
           let tradeType = 'ENTRY';
 
-          // --- TECHNICAL STRATEGY VALIDATION ---
+          // --- TECHNICAL STRATEGY VALIDATION (RELAXED FOR ACTIONABILITY) ---
           const sma200 = quotes.slice(-200).reduce((acc:any, q:any) => acc + q.close, 0) / 200;
           const lowerEnvelope = sma200 * 0.86;
           
           if (strategyId === 'ENVELOPE_LONG') {
-            // "Still Valid" Accuracy: Touched in last 10 days AND still within 3% of zone
-            const last10 = quotes.slice(-10);
-            const hadTrigger = last10.some((q: any) => q.low <= lowerEnvelope * 1.01);
-            const stillInZone = last.close <= (lowerEnvelope * 1.03);
-            
+            // Qualified: Touched Zone in last 20 days AND currently within 5% of Entry
+            const last20 = quotes.slice(-20);
+            const hadTrigger = last20.some((q: any) => q.low <= lowerEnvelope * 1.02);
+            const stillInZone = last.close <= (lowerEnvelope * 1.05);
             if (hadTrigger && stillInZone) techTrigger = true;
-            else if (last.close <= (lowerEnvelope * 1.20)) { techTrigger = true; tradeType = 'HOLD'; }
-          } else if (strategyId === 'ENVELOPE_KNOX') {
+            else if (last.close <= (lowerEnvelope * 1.25)) { techTrigger = true; tradeType = 'HOLD'; }
+          } 
+          else if (strategyId === 'SMA') {
+            // Qualified: Near 200 SMA Support (within 3%)
+            if (last.low <= (sma200 * 1.03) && last.close >= (sma200 * 0.95)) techTrigger = true;
+            else if (last.close <= (sma200 * 1.15)) { techTrigger = true; tradeType = 'HOLD'; }
+          }
+          else if (strategyId === 'BOLLINGER') {
+            const slice20 = quotes.slice(-20);
+            const sma20 = slice20.reduce((acc:any, q:any) => acc + q.close, 0) / 20;
+            const variance = slice20.reduce((acc:any, q:any) => acc + Math.pow(q.close - sma20, 2), 0) / 20;
+            const stdDev = Math.sqrt(variance);
+            const lowerBB = sma20 - (2 * stdDev);
+            if (last.low <= lowerBB * 1.03) techTrigger = true;
+            else if (last.close <= lowerBB * 1.10) { techTrigger = true; tradeType = 'HOLD'; }
+          }
+          else if (strategyId === '52W_HIGH_LOW') {
+            const low52 = Math.min(...quotes.slice(-252).map(q => q.low));
+            if (last.low <= low52 * 1.05) techTrigger = true;
+            else if (last.close <= low52 * 1.15) { techTrigger = true; tradeType = 'HOLD'; }
+          }
+          else if (strategyId === '67_FUNDA') {
+            const ath = Math.max(...quotes.map(q => q.high));
+            const entryTarget = ath * 0.33; 
+            if (last.close <= entryTarget * 1.10) techTrigger = true;
+            else if (last.close <= entryTarget * 1.30) { techTrigger = true; tradeType = 'HOLD'; }
+          }
+          else if (strategyId === '20_RALLY') {
+            const recentBottom = Math.min(...quotes.slice(-30).map(q => q.low));
+            const rallyPct = ((last.close - recentBottom) / recentBottom) * 100;
+            if (rallyPct >= 18) techTrigger = true;
+            else if (rallyPct >= 10) { techTrigger = true; tradeType = 'HOLD'; }
+          }
+          else if (strategyId === 'SR_STRATEGY') {
+            const historicalPrices = quotes.slice(-150, -20).map(q => q.close);
+            const nearSupport = historicalPrices.some(lvl => last.close >= lvl * 0.97 && last.close <= lvl * 1.03);
+            if (nearSupport) techTrigger = true;
+          }
+          else if (strategyId === 'ENVELOPE_KNOX' || strategyId === 'RHS_ABCD' || strategyId === 'CUP_HANDLE_ABCD') {
             const knox = checkKnoxville(quotes);
-            // Allow Knox signals within 12% of the lower band for better detection
-            if (last.low <= (lowerEnvelope * 1.12) && knox.bullish) techTrigger = true;
+            if (last.low <= (lowerEnvelope * 1.15) && knox.bullish) techTrigger = true;
+            else if (last.low <= lowerEnvelope * 1.25) { techTrigger = true; tradeType = 'HOLD'; }
           }
 
           // --- INSTITUTIONAL AUDIT ---
@@ -329,13 +365,18 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
           allScannedStocks.push(position);
 
-          if (techTrigger) {
-            if (audit.isPass) {
-              if (tradeType === 'ENTRY') openTrades.push(position);
-              else holdTrades.push(position);
-            } else {
-              rejectedStocks.push(position);
-            }
+          // --- ALL-NEW ACTIONABLE ROUTING LOGIC ---
+          if (!audit.isPass) {
+            // Failed Fundamental Audit (High Debt, Low ROE, etc.)
+            rejectedStocks.push(position);
+          } 
+          else if (techTrigger && tradeType === 'ENTRY') {
+            // Passed Audit + Technical 'Action' Zone hit
+            openTrades.push(position);
+          } 
+          else {
+            // Passed Audit but no trigger today, or technical 'Observation' zone hit
+            holdTrades.push(position);
           }
         } catch (e) {}
       }));
