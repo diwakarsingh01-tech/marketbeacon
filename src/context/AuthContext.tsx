@@ -22,12 +22,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage for persistent session
-    const savedUser = localStorage.getItem('mb_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+    const initAuth = async () => {
+      const token = localStorage.getItem('mb_token');
+      const savedUser = localStorage.getItem('mb_user');
+      
+      if (token && savedUser) {
+        try {
+          // Verify token with backend
+          const response = await fetch(`${API_URL}/api/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (response.ok) {
+            const { user: verifiedUser } = await response.json();
+            setUser(verifiedUser);
+          } else {
+            // Token expired or invalid
+            logout();
+          }
+        } catch (e) {
+          console.error('Auth verification failed:', e);
+          // Fallback to local storage if server is down to prevent logout during outages
+          setUser(JSON.parse(savedUser));
+        }
+      }
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = async (email: string, pass: string) => {

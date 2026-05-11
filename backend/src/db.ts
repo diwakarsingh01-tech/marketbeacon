@@ -11,16 +11,19 @@ export async function initDB() {
   const tursoToken = process.env.TURSO_AUTH_TOKEN?.replace(/\s/g, '');
 
   if (!tursoUrl || !tursoToken) {
-    throw new Error('❌ Missing Turso Cloud credentials. Deployment requires TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.');
+    console.log('🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...');
+    tursoClient = createClient({
+      url: 'file:marketbeacon.db',
+    });
+  } else {
+    console.log('☁️ Connecting to Turso Cloud Database...');
+    tursoClient = createClient({
+      url: tursoUrl,
+      authToken: tursoToken,
+    });
   }
-
-  console.log('☁️ Connecting to Turso Cloud Database...');
-  tursoClient = createClient({
-    url: tursoUrl,
-    authToken: tursoToken,
-  });
   
-  // Create Tables for Turso (LibSQL)
+  // Create Tables (Compatible with both Turso and Local LibSQL)
   await tursoClient.execute(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

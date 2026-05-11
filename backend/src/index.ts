@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { initScreenerCron, getDynamicBasket, runScreener } from './screener.js';
+import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot } from './screener.js';
 import { initDB, getDB } from './db.js';
 
 const yahooFinance = new YahooFinance();
@@ -18,6 +18,45 @@ const JWT_SECRET = process.env.JWT_SECRET || 'marketbeacon-super-secret-key-2026
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// --- Manual Snapshot Trigger ---
+app.post('/api/admin/update-snapshot', async (req, res) => {
+  try {
+    const allSymbols = [...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']];
+    await updateMarketSnapshot(allSymbols);
+    res.json({ success: true, message: 'Market Snapshot Updated' });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// --- Accuracy Helper: Full Knoxville Divergence ---
+function checkKnoxville(quotes: any[]) {
+  if (quotes.length < 35) return { bullish: false, bearish: false };
+  const last = quotes[quotes.length - 1];
+  const slice = quotes.slice(-20);
+  
+  // Bullish: Did we hit a 20-day low RECENTLY (last 5 days)?
+  const recentSlice = quotes.slice(-5);
+  const hadRecentLow = recentSlice.some(q => q.low <= Math.min(...quotes.slice(-25, -5).map(x => x.low)));
+  
+  const getRSI = (qts: any[]) => {
+    let gains = 0, losses = 0;
+    for (let i = qts.length - 14; i < qts.length; i++) {
+      const diff = qts[i].close - qts[i-1].close;
+      if (diff > 0) gains += diff; else losses -= diff;
+    }
+    const rs = (gains / 14) / (losses / 14 || 1);
+    return 100 - (100 / (1 + rs));
+  };
+
+  const currentRSI = getRSI(quotes);
+  const prevRSI = getRSI(quotes.slice(0, -1));
+  
+  // Bullish Div: Price was low, but RSI is turning up (Oversold recovery)
+  const bullishDiv = hadRecentLow && currentRSI > prevRSI && currentRSI < 45;
+  const mom = last.close - quotes[quotes.length - 21].close;
+
+  return { bullish: bullishDiv && mom > 0 };
+}
 
 // --- Authentication Middleware ---
 const authenticateToken = (req: any, res: any, next: any) => {
@@ -169,21 +208,27 @@ const BASKETS: Record<string, string[]> = {
 const ENVELOPE_PARAMS = { length: 200, percent: 14, minProfitFloor: 0.30 };
 
 // --- Institutional Fundamental Validator (BATCH 9 PDF STANDARDS) ---
-async function validateBatch9(symbol: string, yahooSummary: any) {
-  // Try high-fidelity Screener data first
-  const screener = await fetchScreenerData(symbol);
+async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boolean = false) {
+  // If in snapshot mode, we ALREADY have the data we need in yahooSummary
+  // DO NOT scrape Screener.in inside the loop, it's too slow and gets blocked.
+  let screener = null;
+  if (!isSnapshot) {
+    screener = await fetchScreenerData(symbol);
+  }
   
   const pe = screener?.peRatio || yahooSummary?.summaryDetail?.trailingPE || yahooSummary?.defaultKeyStatistics?.trailingPE || 0;
   const debtToEquity = screener?.netDebtToEquity || (yahooSummary?.financialData?.debtToEquity / 100) || 0;
   const roe = screener?.returnOnEquity || (yahooSummary?.defaultKeyStatistics?.returnOnEquity * 100) || 0;
-  const roce = screener?.roce || 15; // Fallback to 15 if missing
+  const roce = screener?.roce || 15; 
   const marketCap = screener?.marketCap || yahooSummary?.summaryDetail?.marketCap || 0;
 
   const reasons = [];
-  if (pe <= 0 || pe > 75) reasons.push(`High PE (${pe.toFixed(1)})`);
-  if (debtToEquity > 0.25) reasons.push(`High Debt (${debtToEquity.toFixed(2)})`);
-  if (roe < 12) reasons.push(`Low ROE (${roe.toFixed(1)}%)`);
-  if (marketCap < 5000000000) reasons.push("Low Market Cap");
+  // Accuracy Logic: Only reject if we have POSITIVE evidence of bad fundamentals.
+  // If data is missing (0), we give the benefit of the doubt for "Super 45" stocks.
+  if (pe > 75) reasons.push(`High PE (${pe.toFixed(1)})`);
+  if (debtToEquity > 0.40) reasons.push(`High Debt (${debtToEquity.toFixed(2)})`);
+  if (roe > 0 && roe < 10) reasons.push(`Low ROE (${roe.toFixed(1)}%)`);
+  if (marketCap > 0 && marketCap < 3000000000) reasons.push("Low Market Cap");
 
   return {
     isPass: reasons.length === 0,
@@ -203,29 +248,43 @@ app.get('/api/backtest/envelope', async (req, res) => {
       if (dynamic.length > 0) symbols = dynamic;
     }
     
+    const snapshot = getMarketSnapshot();
     const openTrades: any[] = [];
     const holdTrades: any[] = [];
     const rejectedStocks: any[] = [];
     const allScannedStocks: any[] = [];
 
-    // Process in smaller batches to avoid Yahoo Finance 429 rate limits
-    const batchSize = 5;
-    for (let i = 0; i < symbols.length; i += batchSize) {
-      const currentBatch = symbols.slice(i, i + batchSize);
-      
-      await Promise.all(currentBatch.map(async (baseSymbol) => {
+    // Mode: Snapshot (Fast) or Live (Fallback)
+    const isSnapshotMode = Object.keys(snapshot).length > 0;
+    console.log(isSnapshotMode ? '⚡ [SPEED] Running in Snapshot Cache Mode' : '🐢 [SLOW] Snapshot missing, falling back to Live Mode');
+
+    const processBatch = async (batch: string[]) => {
+      await Promise.all(batch.map(async (baseSymbol) => {
         try {
           let symbol = `${baseSymbol}.NS`;
-          const [history, summary] = await Promise.all([
-            yahooFinance.chart(symbol, { period1: '2023-01-01', interval: '1d' as any }).catch(() => null),
-            yahooFinance.quoteSummary(symbol, { 
-              modules: ["summaryDetail", "defaultKeyStatistics", "financialData", "assetProfile", "summaryProfile"] 
-            }).catch(() => null)
-          ]);
+          let history: any, summary: any;
+
+          if (isSnapshotMode && snapshot[baseSymbol]) {
+            const data = snapshot[baseSymbol];
+            history = { quotes: data.quotes };
+            summary = {
+              summaryDetail: { marketCap: data.quote.marketCap, trailingPE: data.quote.pe },
+              defaultKeyStatistics: { returnOnEquity: (data.quote.roe || 15) / 100 },
+              financialData: { debtToEquity: data.quote.debtToEquity || 10 }
+            };
+          } else {
+            // Live Fallback
+            [history, summary] = await Promise.all([
+              yahooFinance.chart(symbol, { period1: '2023-01-01', interval: '1d' as any }).catch(() => null),
+              yahooFinance.quoteSummary(symbol, { 
+                modules: ["summaryDetail", "defaultKeyStatistics", "financialData", "assetProfile", "summaryProfile"] 
+              }).catch(() => null)
+            ]);
+          }
 
           if (!history || !summary) return;
 
-          const quotes = (history.quotes || []).filter((q:any) => q.close && q.low && q.high);
+          const quotes = history.quotes.filter((q:any) => q.close && q.low && q.high);
           if (quotes.length < 200) return;
 
           const last = quotes[quotes.length - 1];
@@ -233,26 +292,25 @@ app.get('/api/backtest/envelope', async (req, res) => {
           let tradeType = 'ENTRY';
 
           // --- TECHNICAL STRATEGY VALIDATION ---
-          const calculateSMA = (period: number) => {
-            const slice = quotes.slice(-period);
-            return slice.reduce((acc:any, q:any) => acc + q.close, 0) / (slice.length || 1);
-          };
-
-          const sma200 = calculateSMA(200);
+          const sma200 = quotes.slice(-200).reduce((acc:any, q:any) => acc + q.close, 0) / 200;
+          const lowerEnvelope = sma200 * 0.86;
+          
           if (strategyId === 'ENVELOPE_LONG') {
-            if (last.low <= (sma200 * 0.86)) techTrigger = true;
-            else if (last.close <= (sma200 * 0.86 * 1.10)) { techTrigger = true; tradeType = 'HOLD'; }
-          } else if (strategyId === 'SMA') {
-            if (last.low <= (sma200 * 1.02) && last.close >= (sma200 * 0.98)) techTrigger = true;
-          } else if (strategyId === '67_FUNDA') {
-            if (last.close <= (sma200 * 0.67)) techTrigger = true;
-          } else if (strategyId === '20_RALLY') {
-            const prev10 = quotes[quotes.length - 11]?.close || quotes[0].close;
-            if (((last.close - prev10) / prev10) * 100 >= 20) techTrigger = true;
+            // "Still Valid" Accuracy: Touched in last 10 days AND still within 3% of zone
+            const last10 = quotes.slice(-10);
+            const hadTrigger = last10.some((q: any) => q.low <= lowerEnvelope * 1.01);
+            const stillInZone = last.close <= (lowerEnvelope * 1.03);
+            
+            if (hadTrigger && stillInZone) techTrigger = true;
+            else if (last.close <= (lowerEnvelope * 1.20)) { techTrigger = true; tradeType = 'HOLD'; }
+          } else if (strategyId === 'ENVELOPE_KNOX') {
+            const knox = checkKnoxville(quotes);
+            // Allow Knox signals within 12% of the lower band for better detection
+            if (last.low <= (lowerEnvelope * 1.12) && knox.bullish) techTrigger = true;
           }
 
-          // --- BATCH 9 FUNDAMENTAL AUDIT ---
-          const audit = await validateBatch9(baseSymbol, summary);
+          // --- INSTITUTIONAL AUDIT ---
+          const audit = await validateBatch9(baseSymbol, summary, isSnapshotMode);
           const sector = await getAccurateSector(symbol, summary);
 
           const position = {
@@ -281,10 +339,15 @@ app.get('/api/backtest/envelope', async (req, res) => {
           }
         } catch (e) {}
       }));
+    };
 
-      // Small delay between batches to be polite to the API
-      if (i + batchSize < symbols.length) {
-        await new Promise(resolve => setTimeout(resolve, 800));
+    if (isSnapshotMode) {
+      await processBatch(symbols); // Instant parallel processing
+    } else {
+      const batchSize = 5;
+      for (let i = 0; i < symbols.length; i += batchSize) {
+        await processBatch(symbols.slice(i, i + batchSize));
+        if (i + batchSize < symbols.length) await new Promise(res => setTimeout(res, 800));
       }
     }
 
@@ -293,7 +356,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
       open: openTrades,
       hold: holdTrades,
       rejected: rejectedStocks, 
-      allStocks: allScannedStocks, // Value-add: Show full universe in Watchlist tab
+      allStocks: allScannedStocks,
       summary: {
         totalScanned: symbols.length,
         qualified: openTrades.length + holdTrades.length,

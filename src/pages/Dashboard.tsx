@@ -133,6 +133,27 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [marketStatus, setMarketStatus] = useState<string>('CLOSED');
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+
+  const loadingMessages = useMemo(() => [
+    "🚀 Auditing Institutional Fundamentals...",
+    "🔍 Scanning Knoxville Divergence Signals...",
+    "🛡️ Analyzing SMA 200 Support Zones...",
+    "📊 Filtering Super 45 High-Growth Assets...",
+    "💎 Calculating Deep Value Entry Points...",
+    "⚖️ Optimizing Risk-to-Reward Ratios...",
+    "⚡ Synchronizing Real-Time Market Pulse..."
+  ], []);
+
+  useEffect(() => {
+    let interval: any;
+    if (isRefreshing || !data) {
+      interval = setInterval(() => {
+        setLoadingMessageIndex(prev => (prev + 1) % loadingMessages.length);
+      }, 2500);
+    }
+    return () => clearInterval(interval);
+  }, [isRefreshing, data, loadingMessages]);
 
   const fetchData = useCallback(async (forceRefresh = false) => {
     setIsRefreshing(true);
@@ -327,7 +348,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
              {isRefreshing && (
                 <div className="absolute inset-0 z-50 flex flex-col items-center justify-center space-y-3 bg-white/10 backdrop-blur-[1px]">
                    <div className="w-8 h-8 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin" />
-                   <p className="text-[8px] font-black text-blue-600 uppercase tracking-[0.3em]">Updating Universe...</p>
+                   <p className="text-[8px] font-black text-blue-600 uppercase tracking-[0.3em]">{loadingMessages[loadingMessageIndex]}</p>
                 </div>
              )}
              <div className="flex-1 overflow-auto custom-scrollbar">
@@ -347,7 +368,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         ) : (
           <div className="bg-white rounded-[2.5rem] h-full border border-slate-100 flex flex-col items-center justify-center space-y-6">
             <div className="w-12 h-12 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin" />
-            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">Processing Mathematical Chunks...</p>
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">{loadingMessages[loadingMessageIndex]}</p>
           </div>
         )}
       </section>
