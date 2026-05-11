@@ -622,80 +622,191 @@ app.get('/api/backtest/simulate', async (req, res) => {
             historicalCache.set(cacheKey, history);
           }
 
-          const quotes = history.quotes.filter((q:any) => q.close && q.low && q.high);
-          if (quotes.length < 200) return; // Need at least 200 days for SMA
-
-          let activeTrade: any = null;
-          let symbolTrades: any[] = [];
-
-          for (let i = 200; i < quotes.length; i++) {
-            const q = quotes[i];
+            const prices = quotes.map(q => q.adjClose || q.close);
+            const emaValues = calculateEMA(prices, 200);
             
-            // Accuracy: Calculate SMA 200 and Envelopes using adjClose
-            const slice = quotes.slice(i - 200, i);
-            const sma200 = slice.reduce((sum: number, q: any) => sum + (q.adjClose || q.close), 0) / 200;
-            const lowerBand = sma200 * 0.86; // 14% Lower
-            const upperBand = sma200 * 1.14; // 14% Upper
+            if (quotes.length < 200) return;
 
-            if (!activeTrade) {
-              // High Accuracy Entry Check: Did price touch or close below lower band?
-              if (q.low <= lowerBand || (q.adjClose || q.close) <= lowerBand) {
-                activeTrade = {
-                  entryDate: q.date,
-                  entryPrice: q.adjClose || q.close,
-                  entryUpperBand: upperBand, // Save "memory" of upper band at entry
-                  target: Math.max(upperBand, (q.adjClose || q.close) * 1.30)
-                };
+            let b1_active: any = null;
+            let b2_active: any = null;
+            let symbolTrades: any[] = [];
+
+            for (let i = 200; i < quotes.length; i++) {
+              const q = quotes[i];
+              const prevQ = quotes[i-1];
+              const currentEMA = emaValues[i];
+              const prevEMA = emaValues[i-1];
+              const lowerBand = currentEMA * 0.86;
+              const upperBand = currentEMA * 1.14;
+              const currentPrice = q.adjClose || q.close;
+              const prevPrice = prevQ.adjClose || prevQ.close;
+
+              // --- B1 TRANCHE LOGIC (Buy at Middle/EMA) ---
+              if (!b1_active) {
+                // Trigger: Price falls from above EMA to touch or cross below EMA
+                if (prevPrice > prevEMA && q.low <= currentEMA) {
+                  b1_active = {
+                    entryDate: q.date,
+                    entryPrice: currentEMA, // Logic: Triggers exactly at EMA
+                    target: upperBand,
+                    type: 'B1 (Mid)'
+                  };
+                }
+              } else {
+                // Exit: Reach Upper Band or Time-based target
+                if (q.high >= b1_active.target) {
+                  const exitPrice = b1_active.target;
+                  symbolTrades.push(finalizeTrade(b1_active, q, exitPrice, baseSymbol));
+                  b1_active = null;
+                }
               }
-            } else {
-              // High Accuracy Exit Check: Did price reach the Target?
-              if (q.high >= activeTrade.target) {
-                const exitPrice = activeTrade.target;
-                const roi = ((exitPrice - activeTrade.entryPrice) / activeTrade.entryPrice) * 100;
-                const daysHeld = Math.ceil((q.date.getTime() - activeTrade.entryDate.getTime()) / (1000 * 60 * 60 * 24));
-                
-                const tradeResult = {
-                  symbol: baseSymbol,
-                  entryDate: activeTrade.entryDate.toISOString().split('T')[0],
-                  exitDate: q.date.toISOString().split('T')[0],
-                  roi: roi,
-                  daysHeld,
-                  status: 'CLOSED',
-                  lots: 'A'
-                };
-                symbolTrades.push(tradeResult);
-                allTrades.push(tradeResult);
-                activeTrade = null;
+
+              // --- B2 TRANCHE LOGIC (Buy at Lower Band) ---
+              if (!b2_active) {
+                // Trigger: Price touches or crosses below Lower Band
+                if (q.low <= lowerBand) {
+                  b2_active = {
+                    entryDate: q.date,
+                    entryPrice: lowerBand, // Logic: Triggers exactly at Lower Band
+                    target: currentEMA, // Target is return to Middle
+                    type: 'B2 (Low)'
+                  };
+                }
+              } else {
+                // Exit: Reach Middle Band (EMA)
+                if (q.high >= currentEMA) {
+                  const exitPrice = currentEMA;
+                  symbolTrades.push(finalizeTrade(b2_active, q, exitPrice, baseSymbol));
+                  b2_active = null;
+                }
               }
             }
-          }
 
-          // If a trade is still open at the end of the period, include it as MTM
-          if (activeTrade) {
-            const lastQuote = quotes[quotes.length - 1];
-            const currentPrice = lastQuote.adjClose || lastQuote.close;
-            const mtmRoi = ((currentPrice - activeTrade.entryPrice) / activeTrade.entryPrice) * 100;
-            const daysHeld = Math.ceil((new Date(toDate).getTime() - activeTrade.entryDate.getTime()) / (1000 * 60 * 60 * 24));
-            
-            const openTrade = {
-              symbol: baseSymbol,
-              entryDate: activeTrade.entryDate.toISOString().split('T')[0],
-              exitDate: 'ACTIVE',
-              roi: mtmRoi,
-              daysHeld,
-              status: 'OPEN',
-              lots: 'A'
+            // Handle open positions at end of history
+            [b1_active, b2_active].forEach(trade => {
+              if (trade) {
+                const lastQ = quotes[quotes.length-1];
+                const currentPrice = lastQ.adjClose || lastQ.close;
+                const daysHeld = Math.ceil((new Date(toDate).getTime() - trade.entryDate.getTime()) / (1000 * 60 * 60 * 24));
+                const openRes = {
+                  symbol: baseSymbol,
+                  entryDate: trade.entryDate.toISOString().split('T')[0],
+                  exitDate: 'ACTIVE',
+                  roi: ((currentPrice - trade.entryPrice) / trade.entryPrice) * 100,
+                  daysHeld,
+                  status: 'OPEN',
+                  lots: trade.type
+                };
+                symbolTrades.push(openRes);
+                allTrades.push(openRes);
+              }
+            });
+
+            symbolSummary[baseSymbol] = {
+              tradeCount: symbolTrades.filter(t => t.status === 'CLOSED').length,
+              openCount: symbolTrades.filter(t => t.status === 'OPEN').length,
+              totalROI: symbolTrades.reduce((s, t) => s + t.roi, 0),
+              avgDays: symbolTrades.length > 0 ? Math.ceil(symbolTrades.reduce((s, t) => s + t.daysHeld, 0) / symbolTrades.length) : 0
             };
-            symbolTrades.push(openTrade);
-            allTrades.push(openTrade);
+          } else {
+            const quotes = history.quotes.filter((q:any) => q.close && q.low && q.high);
+            if (quotes.length < 200) return; // Need at least 200 days for SMA
+
+            let activeTrade: any = null;
+            let symbolTrades: any[] = [];
+
+            for (let i = 200; i < quotes.length; i++) {
+              const q = quotes[i];
+              
+              // Accuracy: Calculate SMA 200 and Envelopes using adjClose
+              const slice = quotes.slice(i - 200, i);
+              const sma200 = slice.reduce((sum: number, q: any) => sum + (q.adjClose || q.close), 0) / 200;
+              const lowerBand = sma200 * 0.86; // 14% Lower
+              const upperBand = sma200 * 1.14; // 14% Upper
+
+              if (!activeTrade) {
+                // High Accuracy Entry Check: Did price touch or close below lower band?
+                if (q.low <= lowerBand || (q.adjClose || q.close) <= lowerBand) {
+                  activeTrade = {
+                    entryDate: q.date,
+                    entryPrice: q.adjClose || q.close,
+                    entryUpperBand: upperBand, // Save "memory" of upper band at entry
+                    target: Math.max(upperBand, (q.adjClose || q.close) * 1.30)
+                  };
+                }
+              } else {
+                // High Accuracy Exit Check: Did price reach the Target?
+                if (q.high >= activeTrade.target) {
+                  const exitPrice = activeTrade.target;
+                  const roi = ((exitPrice - activeTrade.entryPrice) / activeTrade.entryPrice) * 100;
+                  const daysHeld = Math.ceil((q.date.getTime() - activeTrade.entryDate.getTime()) / (1000 * 60 * 60 * 24));
+                  
+                  const tradeResult = {
+                    symbol: baseSymbol,
+                    entryDate: activeTrade.entryDate.toISOString().split('T')[0],
+                    exitDate: q.date.toISOString().split('T')[0],
+                    roi: roi,
+                    daysHeld,
+                    status: 'CLOSED',
+                    lots: 'A'
+                  };
+                  symbolTrades.push(tradeResult);
+                  allTrades.push(tradeResult);
+                  activeTrade = null;
+                }
+              }
+            }
+
+            // If a trade is still open at the end of the period, include it as MTM
+            if (activeTrade) {
+              const lastQuote = quotes[quotes.length - 1];
+              const currentPrice = lastQuote.adjClose || lastQuote.close;
+              const mtmRoi = ((currentPrice - activeTrade.entryPrice) / activeTrade.entryPrice) * 100;
+              const daysHeld = Math.ceil((new Date(toDate).getTime() - activeTrade.entryDate.getTime()) / (1000 * 60 * 60 * 24));
+              
+              const openTrade = {
+                symbol: baseSymbol,
+                entryDate: activeTrade.entryDate.toISOString().split('T')[0],
+                exitDate: 'ACTIVE',
+                roi: mtmRoi,
+                daysHeld,
+                status: 'OPEN',
+                lots: 'A'
+              };
+              symbolTrades.push(openTrade);
+              allTrades.push(openTrade);
+            }
+            
+            symbolSummary[baseSymbol] = {
+              tradeCount: symbolTrades.filter(t => t.status === 'CLOSED').length,
+              openCount: symbolTrades.filter(t => t.status === 'OPEN').length,
+              totalROI: symbolTrades.reduce((s, t) => s + t.roi, 0),
+              avgDays: symbolTrades.length > 0 ? Math.ceil(symbolTrades.reduce((s, t) => s + t.daysHeld, 0) / symbolTrades.length) : 0
+            };
           }
-          
-          symbolSummary[baseSymbol] = {
-            tradeCount: symbolTrades.filter(t => t.status === 'CLOSED').length,
-            openCount: symbolTrades.filter(t => t.status === 'OPEN').length,
-            totalROI: symbolTrades.reduce((s, t) => s + t.roi, 0),
-            avgDays: symbolTrades.length > 0 ? Math.ceil(symbolTrades.reduce((s, t) => s + t.daysHeld, 0) / symbolTrades.length) : 0
-          };
+        } catch (e) {
+          console.error(`Simulation failed for ${baseSymbol}:`, e);
+        }
+      }));
+    };
+
+    // Helper to finalize trade data
+    function finalizeTrade(trade: any, q: any, exitPrice: number, symbol: string) {
+      const roi = ((exitPrice - trade.entryPrice) / trade.entryPrice) * 100;
+      const daysHeld = Math.ceil((q.date.getTime() - trade.entryDate.getTime()) / (1000 * 60 * 60 * 24));
+      const res = {
+        symbol: symbol,
+        entryDate: trade.entryDate.toISOString().split('T')[0],
+        exitDate: q.date.toISOString().split('T')[0],
+        roi: roi,
+        daysHeld,
+        status: 'CLOSED',
+        lots: trade.type
+      };
+      allTrades.push(res);
+      return res;
+    }
+
         } catch (e) {
           console.error(`Simulation failed for ${baseSymbol}:`, e);
         }
