@@ -1,6 +1,6 @@
 export const STRATEGIES = [
-  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'ENVELOPE_SHORT', name: 'Short Envelope (Uptrend)', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['BLUECHIP'], isLive: true },
+  { id: 'ENVELOPE_SHORT', name: 'Short Envelope (Uptrend)', baskets: ['BLUECHIP'], isLive: true },
   { id: 'SMA', name: 'SMA Support', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true },
   { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true },
   { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true },
