@@ -17,6 +17,7 @@ export interface Quote {
   date: Date | string;
   close: number;
   adjClose?: number;
+  adjclose?: number;
   low: number;
   high: number;
 }
@@ -28,10 +29,10 @@ export interface Quote {
 export function calculateEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200): EnvelopeResult | null {
   if (!quotes || quotes.length < length) return null;
 
-  // Use adjClose for accuracy, fallback to close
-  const prices = quotes.map(q => q.adjClose || q.close);
+  // Use adjClose/adjclose for accuracy, fallback to close
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
   const latestQuote = quotes[quotes.length - 1];
-  const currentPrice = latestQuote.adjClose || latestQuote.close;
+  const currentPrice = latestQuote.adjclose || latestQuote.adjClose || latestQuote.close;
 
   // SMA calculation for the last 'length' days
   const periodPrices = prices.slice(-length);
@@ -113,38 +114,38 @@ export function calculateEMA(prices: number[], length: number): number[] {
  * Short Envelope Strategy Implementation (Simplified)
  * Entry: Price touches 200 EMA from above
  * Target: Entry Price + 14%
- */
-export function processShortEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
-  if (!quotes || quotes.length < length) return null;
+ export function processShortEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
+   if (!quotes || quotes.length < length) return null;
 
-  const prices = quotes.map(q => q.adjClose || q.close);
-  const emaValues = calculateEMA(prices, length);
+   const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+   const emaValues = calculateEMA(prices, length);
 
-  const latestIdx = quotes.length - 1;
-  const currentEMA = emaValues[latestIdx];
-  const latestQuote = quotes[latestIdx];
+   const latestIdx = quotes.length - 1;
+   const currentEMA = emaValues[latestIdx];
+   const latestQuote = quotes[latestIdx];
 
-  const prevPrice = prices[latestIdx - 1];
-  const prevEMA = emaValues[latestIdx - 1];
+   const prevPrice = prices[latestIdx - 1];
+   const prevEMA = emaValues[latestIdx - 1];
 
-  // Trigger: Price is at or below the 200 EMA
-  const isBuyZone = latestQuote.low <= currentEMA;
+   // Trigger: Price is at or below the 200 EMA
+   const isBuyZone = latestQuote.low <= currentEMA;
 
-  let triggerDate: string | undefined = undefined;
-  if (isBuyZone) {
-    const latestDate = typeof latestQuote.date === 'string' 
-      ? latestQuote.date.split('T')[0] 
-      : latestQuote.date.toISOString().split('T')[0];
-    triggerDate = latestDate;
+   let triggerDate: string | undefined = undefined;
+   if (isBuyZone) {
+     const latestDate = typeof latestQuote.date === 'string' 
+       ? latestQuote.date.split('T')[0] 
+       : latestQuote.date.toISOString().split('T')[0];
+     triggerDate = latestDate;
 
-    // Search back for the start of the EMA touch streak
-    for (let i = latestIdx; i >= length; i--) {
-      const q = quotes[i];
-      const pEMA = emaValues[i-1];
-      const pPrice = quotes[i-1].adjClose || quotes[i-1].close;
-      const cEMA = emaValues[i];
+     // Search back for the start of the EMA touch streak
+     for (let i = latestIdx; i >= length; i--) {
+       const q = quotes[i];
+       const pEMA = emaValues[i-1];
+       const pPrice = quotes[i-1].adjclose || quotes[i-1].adjClose || quotes[i-1].close;
+       const cEMA = emaValues[i];
 
-      if (q.low <= cEMA && pPrice > pEMA) {
+       if (q.low <= cEMA && pPrice > pEMA) {
+ ...
         const d = typeof q.date === 'string' ? q.date.split('T')[0] : q.date.toISOString().split('T')[0];
         triggerDate = d;
       } else if (q.low <= cEMA) {
@@ -172,7 +173,7 @@ export function processShortEnvelope(quotes: Quote[], percentage: number = 14, l
  * Determines if a trade should exit based on the target logic.
  */
 export function checkExitSignal(currentQuote: Quote, entryPrice: number, entryUpperBand: number): boolean {
-  const currentPrice = currentQuote.adjClose || currentQuote.close;
+  const currentPrice = currentQuote.adjclose || currentQuote.adjClose || currentQuote.close;
   const target = Math.max(entryUpperBand, entryPrice * 1.30);
   
   // High accuracy check: Did the high of the day reach the target?
@@ -186,9 +187,9 @@ export function checkExitSignal(currentQuote: Quote, entryPrice: number, entryUp
 export function calculateBollingerBand(quotes: Quote[], length: number = 200, stdDevMultiplier: number = 2.5) {
   if (!quotes || quotes.length < length) return null;
 
-  const prices = quotes.map(q => q.adjClose || q.close);
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
   const latestQuote = quotes[quotes.length - 1];
-  const currentPrice = latestQuote.adjClose || latestQuote.close;
+  const currentPrice = latestQuote.adjclose || latestQuote.adjClose || latestQuote.close;
 
   // SMA calculation
   const periodPrices = prices.slice(-length);
@@ -225,7 +226,7 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, st
       const currentStdDev = Math.sqrt(windowSqDiffs.reduce((a, b) => a + b, 0) / length);
       const currentLower = currentSma - stdDevMultiplier * currentStdDev;
       
-      if (q.low <= currentLower || (q.adjClose || q.close) <= currentLower) {
+      if (q.low <= currentLower || (q.adjclose || q.adjClose || q.close) <= currentLower) {
         const d = typeof q.date === 'string' ? q.date.split('T')[0] : q.date.toISOString().split('T')[0];
         triggerDate = d;
       } else {
