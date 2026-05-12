@@ -294,10 +294,10 @@ app.get('/api/backtest/envelope', async (req, res) => {
             const quotes = history?.quotes.filter((q:any) => q.close && q.low && q.high) || [];
             
             if (strategyId === 'ENVELOPE_SHORT') {
-              strategyData = processShortEnvelope(quotes);
+              strategyData = processShortEnvelope(history.quotes);
               strategyData.isBuyZone = strategyData.isBuyZone;
-              // Distance from the Orange line (EMA)
-              strategyData.distanceFromLower = ((quotes[quotes.length-1].adjClose || quotes[quotes.length-1].close) - strategyData.ema) / strategyData.ema * 100;
+              // CRITICAL: Distance from the ORANGE line (EMA 200)
+              strategyData.distanceFromEMA = ((lastQuote.adjClose || lastQuote.close) - strategyData.ema) / strategyData.ema * 100;
             } else {
               strategyData = calculateEnvelope(quotes);
             }
@@ -310,6 +310,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
           const sector = await getAccurateSector(symbol, summary);
 
           const isShort = strategyId === 'ENVELOPE_SHORT';
+          
+          // CRITICAL ACCURACY: Short Envelope uses EMA (Orange), Long uses Lower Band (Blue)
           const entryPrice = isShort ? strategyData.ema : strategyData.lowerBand;
           const target = isShort ? (strategyData.ema * 1.14) : Math.max(strategyData.upperBand, (lastQuote.adjClose || lastQuote.close) * 1.30);
 
@@ -324,7 +326,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
             entryTime: strategyData.triggerDate || '-', 
             isPass: audit.isPass,
             rejectionReason: audit.reason,
-            distanceFromLower: strategyData.distanceFromLower,
+            distanceFromLower: isShort ? strategyData.distanceFromEMA : strategyData.distanceFromLower,
             isBuyZone: strategyData.isBuyZone,
             tranche: isShort ? 'B1 (Mid)' : 'A'
           };
