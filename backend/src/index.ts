@@ -9,7 +9,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot } from './screener.js';
 import { initDB, getDB } from './db.js';
-import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand } from './strategies.js';
+import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy } from './strategies.js';
 
 const yahooFinance = new YahooFinance();
 dotenv.config();
@@ -291,11 +291,15 @@ app.get('/api/backtest/envelope', async (req, res) => {
               if (strategyData) {
                 strategyData.isBuyZone = !!strategyData.isBuyZone;
                 const lastQ = quotes[quotes.length - 1];
-                const lastPrice = lastQ ? (lastQ.adjClose || lastQ.close) : 0;
+                const lastPrice = lastQ ? (lastQ.adjclose || lastQ.adjClose || lastQ.close) : 0;
                 strategyData.distanceFromEMA = strategyData.ema > 0 ? ((lastPrice - strategyData.ema) / strategyData.ema * 100) : 0;
               }
             } else if (strategyId === 'BOLLINGER') {
               strategyData = calculateBollingerBand(quotes);
+            } else if (strategyId === 'SMA') {
+              strategyData = calculateSMAStacking(quotes);
+            } else if (strategyId === '52W_HIGH_LOW') {
+              strategyData = calculate52WeekStrategy(quotes);
             } else {
               strategyData = calculateEnvelope(quotes);
             }
@@ -313,11 +317,15 @@ app.get('/api/backtest/envelope', async (req, res) => {
               if (strategyData) {
                 strategyData.isBuyZone = !!strategyData.isBuyZone;
                 const lastQ = quotes[quotes.length - 1];
-                const lastPrice = lastQ ? (lastQ.adjClose || lastQ.close) : 0;
+                const lastPrice = lastQ ? (lastQ.adjclose || lastQ.adjClose || lastQ.close) : 0;
                 strategyData.distanceFromEMA = strategyData.ema > 0 ? ((lastPrice - strategyData.ema) / strategyData.ema * 100) : 0;
               }
             } else if (strategyId === 'BOLLINGER') {
               strategyData = calculateBollingerBand(quotes);
+            } else if (strategyId === 'SMA') {
+              strategyData = calculateSMAStacking(quotes);
+            } else if (strategyId === '52W_HIGH_LOW') {
+              strategyData = calculate52WeekStrategy(quotes);
             } else {
               strategyData = calculateEnvelope(quotes);
             }
@@ -333,24 +341,31 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
           const isShort = strategyId === 'ENVELOPE_SHORT';
           const isBollinger = strategyId === 'BOLLINGER';
+          const isSMAStack = strategyId === 'SMA';
+          const is52W = strategyId === '52W_HIGH_LOW';
 
-          let entryPrice = strategyData.lowerBand || 0;
-          let target = strategyData.upperBand || 0;
+          let entryPrice = strategyData.lowerBand || strategyData.entryPrice || 0;
+          let target = strategyData.upperBand || strategyData.target || 0;
 
           if (isShort) {
             entryPrice = strategyData.ema || 0;
             target = entryPrice * 1.14;
+          } else if (is52W) {
+            entryPrice = strategyData.rollingLow || 0;
+            target = strategyData.rollingHigh || 0;
+          } else if (isSMAStack) {
+            entryPrice = strategyData.sma200 || 0;
           } else if (!isBollinger) {
             // Default Envelope Long logic
-            target = Math.max(strategyData.upperBand || 0, (lastQuote.adjClose || lastQuote.close || 0) * 1.30);
+            target = Math.max(strategyData.upperBand || 0, (lastQuote.adjclose || lastQuote.adjClose || lastQuote.close || 0) * 1.30);
           }
 
           const position = {
             symbol: baseSymbol,
             entryPrice, 
-            actualEntryPrice: lastQuote.adjClose || lastQuote.close || 0,
+            actualEntryPrice: lastQuote.adjclose || lastQuote.adjClose || lastQuote.close || 0,
             target,
-            currentPrice: lastQuote.adjClose || lastQuote.close || 0,
+            currentPrice: lastQuote.adjclose || lastQuote.adjClose || lastQuote.close || 0,
             marketCap: audit.metrics.marketCap || 0,
             sector,
             entryTime: strategyData.triggerDate || '-', 

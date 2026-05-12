@@ -263,3 +263,129 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, st
     currentPrice
   };
 }
+
+/**
+ * SMA Stacking Strategy (20/50/200)
+ * Buy: Price < SMA20 < SMA50 < SMA200 (Bearish Stacking)
+ * Sell: Price > SMA20 > SMA50 > SMA200 (Bullish Stacking)
+ */
+export function calculateSMAStacking(quotes: Quote[]) {
+  if (!quotes || quotes.length < 200) return null;
+
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const latestQuote = quotes[quotes.length - 1];
+  const currentPrice = latestQuote.adjclose || latestQuote.adjClose || latestQuote.close;
+
+  // Helper to calculate SMA for a specific window
+  const getSMA = (data: number[], len: number) => data.slice(-len).reduce((a, b) => a + b, 0) / len;
+
+  const sma20 = getSMA(prices, 20);
+  const sma50 = getSMA(prices, 50);
+  const sma200 = getSMA(prices, 200);
+
+  let isBuyZone = false;
+  let triggerDate: string | undefined = undefined;
+  let entryPrice: number | undefined = undefined;
+
+  // Search back for most recent buy trigger
+  for (let i = quotes.length - 1; i >= 200; i--) {
+    const q = quotes[i];
+    const pI = prices.slice(0, i + 1);
+    const s20 = getSMA(pI, 20);
+    const s50 = getSMA(pI, 50);
+    const s200 = getSMA(pI, 200);
+    const cI = prices[i];
+
+    // Check if triggered at index 'i'
+    if (cI < s20 && s20 < s50 && s50 < s200) {
+      // Triggered! Check if target was hit later
+      let targetHit = false;
+      for (let j = i + 1; j < quotes.length; j++) {
+        const pJ = prices.slice(0, j + 1);
+        const sj20 = getSMA(pJ, 20);
+        const sj50 = getSMA(pJ, 50);
+        const sj200 = getSMA(pJ, 200);
+        const cJ = prices[j];
+
+        if (cJ > sj20 && sj20 > sj50 && sj50 > sj200 && cJ >= cI) {
+          targetHit = true;
+          break;
+        }
+      }
+
+      if (!targetHit) {
+        isBuyZone = true;
+        triggerDate = typeof q.date === 'string' ? q.date.split('T')[0] : q.date.toISOString().split('T')[0];
+        entryPrice = cI;
+      }
+      break;
+    }
+  }
+
+  return {
+    sma20, sma50, sma200,
+    isBuyZone,
+    triggerDate,
+    entryPrice,
+    currentPrice,
+    target: sma200 * 1.10 // Indicative target
+  };
+}
+
+/**
+ * 52-Week High/Low Strategy
+ * Buy at 52-week low (+ tolerance)
+ * Sell at 52-week high (- tolerance)
+ */
+export function calculate52WeekStrategy(quotes: Quote[], tolerance: number = 0.02) {
+  const window = 252; // Trading days in a year
+  if (!quotes || quotes.length < window) return null;
+
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const lows = quotes.map(q => q.low);
+  const highs = quotes.map(q => q.high);
+  const latestIdx = quotes.length - 1;
+  const currentPrice = prices[latestIdx];
+
+  const rollingLow = Math.min(...lows.slice(-window));
+  const rollingHigh = Math.max(...highs.slice(-window));
+
+  let isBuyZone = false;
+  let triggerDate: string | undefined = undefined;
+  let entryPrice: number | undefined = undefined;
+
+  for (let i = latestIdx; i >= window; i--) {
+    const rLow = Math.min(...lows.slice(i - window + 1, i + 1));
+    const rHigh = Math.max(...highs.slice(i - window + 1, i + 1));
+    const cI = prices[i];
+
+    if (cI <= rLow * (1 + tolerance)) {
+      // Triggered at i! Check if 52w high was hit since then
+      let targetHit = false;
+      for (let j = i + 1; j < quotes.length; j++) {
+        const rHighJ = Math.max(...highs.slice(j - window + 1, j + 1));
+        if (prices[j] >= rHighJ * (1 - tolerance)) {
+          targetHit = true;
+          break;
+        }
+      }
+
+      if (!targetHit) {
+        isBuyZone = true;
+        triggerDate = typeof quotes[i].date === 'string' ? (quotes[i].date as string).split('T')[0] : (quotes[i].date as Date).toISOString().split('T')[0];
+        entryPrice = cI;
+      }
+      break;
+    }
+  }
+
+  return {
+    rollingLow,
+    rollingHigh,
+    isBuyZone,
+    triggerDate,
+    entryPrice,
+    currentPrice,
+    target: rollingHigh
+  };
+}
