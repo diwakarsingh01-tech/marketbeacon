@@ -178,3 +178,69 @@ export function checkExitSignal(currentQuote: Quote, entryPrice: number, entryUp
   // High accuracy check: Did the high of the day reach the target?
   return currentQuote.high >= target;
 }
+
+/**
+ * Bollinger Band Strategy (Sibling of Long Envelope)
+ * Length: 200, StdDev: 2.5
+ */
+export function calculateBollingerBand(quotes: Quote[], length: number = 200, stdDevMultiplier: number = 2.5) {
+  if (!quotes || quotes.length < length) return null;
+
+  const prices = quotes.map(q => q.adjClose || q.close);
+  const latestQuote = quotes[quotes.length - 1];
+  const currentPrice = latestQuote.adjClose || latestQuote.close;
+
+  // SMA calculation
+  const periodPrices = prices.slice(-length);
+  const sma = periodPrices.reduce((a, b) => a + b, 0) / length;
+
+  // Standard Deviation calculation
+  const squareDiffs = periodPrices.map(p => Math.pow(p - sma, 2));
+  const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / length;
+  const stdDev = Math.sqrt(avgSquareDiff);
+
+  const upperBand = sma + stdDevMultiplier * stdDev;
+  const lowerBand = sma - stdDevMultiplier * stdDev;
+
+  // Buy Zone: Price at or below lower band
+  const isBuyZone = latestQuote.low <= lowerBand || currentPrice <= lowerBand;
+  const distanceFromLower = ((currentPrice - lowerBand) / lowerBand) * 100;
+
+  let triggerDate: string | undefined = undefined;
+  if (isBuyZone) {
+    const latestDate = typeof latestQuote.date === 'string' 
+      ? latestQuote.date.split('T')[0] 
+      : latestQuote.date.toISOString().split('T')[0];
+    triggerDate = latestDate;
+
+    // Backward search for streak start
+    for (let i = quotes.length - 1; i >= length - 1; i--) {
+      const q = quotes[i];
+      const startIdx = Math.max(0, i - length + 1);
+      const window = prices.slice(startIdx, i + 1);
+      if (window.length < length) break;
+
+      const currentSma = window.reduce((a, b) => a + b, 0) / length;
+      const windowSqDiffs = window.map(p => Math.pow(p - currentSma, 2));
+      const currentStdDev = Math.sqrt(windowSqDiffs.reduce((a, b) => a + b, 0) / length);
+      const currentLower = currentSma - stdDevMultiplier * currentStdDev;
+      
+      if (q.low <= currentLower || (q.adjClose || q.close) <= currentLower) {
+        const d = typeof q.date === 'string' ? q.date.split('T')[0] : q.date.toISOString().split('T')[0];
+        triggerDate = d;
+      } else {
+        break;
+      }
+    }
+  }
+
+  return {
+    sma,
+    upperBand,
+    lowerBand,
+    isBuyZone,
+    distanceFromLower,
+    triggerDate,
+    currentPrice
+  };
+}

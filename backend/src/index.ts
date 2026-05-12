@@ -9,7 +9,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot } from './screener.js';
 import { initDB, getDB } from './db.js';
-import { calculateEnvelope, processShortEnvelope, calculateEMA } from './strategies.js';
+import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand } from './strategies.js';
 
 const yahooFinance = new YahooFinance();
 dotenv.config();
@@ -283,6 +283,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
                 const lastPrice = lastQ ? (lastQ.adjClose || lastQ.close) : 0;
                 strategyData.distanceFromEMA = strategyData.ema > 0 ? ((lastPrice - strategyData.ema) / strategyData.ema * 100) : 0;
               }
+            } else if (strategyId === 'BOLLINGER') {
+              strategyData = calculateBollingerBand(quotes);
             } else {
               strategyData = calculateEnvelope(quotes);
             }
@@ -303,6 +305,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
                 const lastPrice = lastQ ? (lastQ.adjClose || lastQ.close) : 0;
                 strategyData.distanceFromEMA = strategyData.ema > 0 ? ((lastPrice - strategyData.ema) / strategyData.ema * 100) : 0;
               }
+            } else if (strategyId === 'BOLLINGER') {
+              strategyData = calculateBollingerBand(quotes);
             } else {
               strategyData = calculateEnvelope(quotes);
             }
@@ -317,8 +321,18 @@ app.get('/api/backtest/envelope', async (req, res) => {
           const sector = await getAccurateSector(symbol, summary);
 
           const isShort = strategyId === 'ENVELOPE_SHORT';
-          const entryPrice = isShort ? (strategyData.ema || 0) : (strategyData.lowerBand || 0);
-          const target = isShort ? (entryPrice * 1.14) : Math.max(strategyData.upperBand || 0, (lastQuote.adjClose || lastQuote.close || 0) * 1.30);
+          const isBollinger = strategyId === 'BOLLINGER';
+
+          let entryPrice = strategyData.lowerBand || 0;
+          let target = strategyData.upperBand || 0;
+
+          if (isShort) {
+            entryPrice = strategyData.ema || 0;
+            target = entryPrice * 1.14;
+          } else if (!isBollinger) {
+            // Default Envelope Long logic
+            target = Math.max(strategyData.upperBand || 0, (lastQuote.adjClose || lastQuote.close || 0) * 1.30);
+          }
 
           const position = {
             symbol: baseSymbol,
