@@ -51,33 +51,32 @@ const TradeTable: React.FC<TradeTableProps> = ({
   const [showColumnSettings, setShowColumnSettings] = useState(false);
   
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
-    observation: activeTab !== 'watchlist',
+    observation: true,
     symbol: true,
     sector: true,
     marketCap: true,
-    basePrice: activeTab !== 'watchlist',
+    abcd: true,
+    basePrice: true,
     cmp: true,
     dfh: true,
-    objective: activeTab !== 'watchlist',
-    roi: activeTab !== 'watchlist',
-    pending: activeTab !== 'watchlist',
+    objective: true,
+    roi: true,
+    pending: true,
     fundamentals: true
   });
 
   useEffect(() => {
-    setVisibleColumns({
-      observation: activeTab !== 'watchlist',
-      symbol: true,
-      sector: true,
-      marketCap: true,
-      basePrice: activeTab !== 'watchlist',
-      cmp: true,
-      dfh: true,
-      objective: activeTab !== 'watchlist',
-      roi: activeTab !== 'watchlist',
-      pending: activeTab !== 'watchlist',
-      fundamentals: true
-    });
+    // Keep ABCD visible if not in watchlist
+    const isWatchlistTab = activeTab === 'watchlist' || activeTab === 'portfolio';
+    setVisibleColumns(prev => ({
+      ...prev,
+      abcd: !isWatchlistTab,
+      observation: !isWatchlistTab,
+      basePrice: !isWatchlistTab,
+      objective: !isWatchlistTab,
+      roi: !isWatchlistTab,
+      pending: !isWatchlistTab
+    }));
   }, [activeTab]);
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ 
@@ -125,7 +124,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
         targetGap,
         dfh,
         marketCap,
-        sector
+        sector,
+        abcd: t.abcd,
+        tranche: t.tranche
       };
     });
 
@@ -178,6 +179,13 @@ const TradeTable: React.FC<TradeTableProps> = ({
       if (visibleColumns.symbol) row.push(t.symbol);
       if (visibleColumns.sector) row.push(t.sector);
       if (visibleColumns.marketCap) row.push(t.marketCap);
+      if (visibleColumns.abcd) {
+        const a = t.abcd?.a?.toFixed(0) || '-';
+        const b = t.abcd?.b?.toFixed(0) || '-';
+        const c = t.abcd?.c?.toFixed(0) || '-';
+        const d = t.abcd?.d?.toFixed(0) || '-';
+        row.push(`A:${a}|B:${b}|C:${c}|D:${d}`);
+      }
       if (visibleColumns.basePrice) row.push(t.entryPrice);
       if (visibleColumns.cmp) row.push(t.livePrice);
       if (visibleColumns.dfh) row.push(t.dfh?.toFixed(2) || '0');
@@ -226,6 +234,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
           {visibleColumns.symbol && <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('symbol')}><div className="flex items-center">Symbol <SortIcon column="symbol" /></div></th>}
           {visibleColumns.sector && <th className="px-4 py-3">Sector</th>}
           {visibleColumns.marketCap && <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('marketCap')}><div className="flex items-center">Cap <SortIcon column="marketCap" /></div></th>}
+          {visibleColumns.abcd && <th className="px-4 py-3 text-center">Ladder (ABCD)</th>}
           {visibleColumns.basePrice && <th className="px-4 py-3 text-right">Base</th>}
           {visibleColumns.cmp && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('price')}><div className="flex items-center justify-end">CMP <SortIcon column="price" /></div></th>}
           {visibleColumns.dfh && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div></th>}
@@ -351,6 +360,35 @@ const TradeTable: React.FC<TradeTableProps> = ({
                     )}
                     {visibleColumns.sector && <td className="px-4 py-2.5 text-[8px] font-black uppercase text-slate-400 truncate max-w-[80px]">{trade.sector || 'N/A'}</td>}
                     {visibleColumns.marketCap && <td className="px-4 py-2.5">{capTag && <span className={`px-2 py-0.5 rounded text-[7px] font-black border ${capTag.class}`}>{capTag.label}</span>}</td>}
+                    {visibleColumns.abcd && (
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center justify-center space-x-1">
+                          {['a', 'b', 'c', 'd'].map((level) => {
+                            const priceAtLevel = trade.abcd?.[level];
+                            // Skip Level A for High Beta (gap 15) or if tranche is B1
+                            const isSkipped = level === 'a' && (trade.abcd?.gap === 15);
+                            const isActive = trade.livePrice <= priceAtLevel;
+                            
+                            return (
+                              <div key={level} className="group/ladder relative">
+                                <div className={`w-5 h-5 rounded flex items-center justify-center text-[8px] font-black border transition-all ${
+                                  isSkipped ? 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed' :
+                                  isActive ? 'bg-blue-600 text-white border-blue-700 shadow-sm scale-110' :
+                                  'bg-white text-slate-400 border-slate-100 hover:border-slate-300'
+                                }`}>
+                                  {isSkipped ? '×' : level.toUpperCase()}
+                                </div>
+                                {priceAtLevel && (
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/ladder:block bg-slate-900 text-white text-[7px] px-1.5 py-0.5 rounded whitespace-nowrap z-50">
+                                    {isSkipped ? 'A Skipped: ' : `${level.toUpperCase()}: `}₹{priceAtLevel.toFixed(0)}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    )}
                     {visibleColumns.basePrice && <td className="px-4 py-2.5 text-[10px] font-bold text-slate-400 text-right">{ trade.entryPrice ? `₹${trade.entryPrice.toLocaleString(undefined, {maximumFractionDigits:0})}` : '-' }</td>}
                     {visibleColumns.cmp && <td className="px-4 py-2.5 text-[11px] font-black text-blue-600 text-right">₹{trade.livePrice?.toLocaleString(undefined, {maximumFractionDigits:1})}</td>}
                     {visibleColumns.dfh && (

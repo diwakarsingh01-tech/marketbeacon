@@ -13,6 +13,41 @@ export interface EnvelopeResult {
   triggerDate?: string;
   entryLowerBand?: number;
   currentPrice: number;
+  abcd?: {
+    a: number;
+    b: number;
+    c: number;
+    d: number;
+    gap: number;
+  };
+}
+
+/**
+ * Calculates ABCD Laddered Levels based on Market Cap and Basket Type
+ * Large: 10%, Mid: 15%, Small/HighBeta: 15-20%
+ */
+export function calculateABCDLevels(anchorPrice: number, marketCap: number, basket: string = 'BLUECHIP') {
+  let gapPct = 0.10; // Default Large Cap 10%
+  
+  const mCapCr = marketCap / 10000000; // Convert to Crores
+  
+  if (basket === 'HIGH_BETA' || basket === 'HIGH_BITA' || basket === 'PROFIT') {
+    gapPct = 0.15;
+  } else if (mCapCr > 100000) {
+    gapPct = 0.10; // Large Cap
+  } else if (mCapCr > 33000) {
+    gapPct = 0.15; // Mid Cap
+  } else {
+    gapPct = 0.15; // Small Cap
+  }
+
+  return {
+    a: anchorPrice,
+    b: anchorPrice * (1 - gapPct),
+    c: anchorPrice * (1 - 2 * gapPct),
+    d: anchorPrice * (1 - 3 * gapPct),
+    gap: gapPct * 100
+  };
 }
 
 export interface Quote {
@@ -168,7 +203,8 @@ export function processShortEnvelope(quotes: Quote[], percentage: number = 14, l
     target,
     isBuyZone,
     triggerDate,
-    currentPrice: prices[latestIdx]
+    currentPrice: prices[latestIdx],
+    abcd: calculateABCDLevels(currentEMA, 50000000000) // Dummy MCap for now, actual MCap passed in index.ts
   };
 }
 
@@ -260,7 +296,8 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, st
     distanceFromLower,
     triggerDate,
     entryLowerBand,
-    currentPrice
+    currentPrice,
+    abcd: calculateABCDLevels(lowerBand, 50000000000)
   };
 }
 
@@ -287,38 +324,49 @@ export function calculateSMAStacking(quotes: Quote[]) {
   let triggerDate: string | undefined = undefined;
   let entryPrice: number | undefined = undefined;
 
-  // Search back for most recent buy trigger
-  for (let i = quotes.length - 1; i >= 200; i--) {
-    const q = quotes[i];
+  // Search back for NEAREST CROSSOVER
+  for (let i = quotes.length - 1; i >= 201; i--) {
     const pI = prices.slice(0, i + 1);
+    const pPrev = prices.slice(0, i);
     const s20 = getSMA(pI, 20);
     const s50 = getSMA(pI, 50);
     const s200 = getSMA(pI, 200);
     const cI = prices[i];
 
-    // Check if triggered at index 'i'
-    if (cI < s20 && s20 < s50 && s50 < s200) {
-      // Triggered! Check if target was hit later
-      let targetHit = false;
-      for (let j = i + 1; j < quotes.length; j++) {
-        const pJ = prices.slice(0, j + 1);
-        const sj20 = getSMA(pJ, 20);
-        const sj50 = getSMA(pJ, 50);
-        const sj200 = getSMA(pJ, 200);
-        const cJ = prices[j];
+    // Today's Condition
+    const isTodaySatisfied = cI < s20 && s20 < s50 && s50 < s200;
 
-        if (cJ > sj20 && sj20 > sj50 && sj50 > sj200 && cJ >= cI) {
-          targetHit = true;
-          break;
+    if (isTodaySatisfied) {
+      // Check if it's the START of the crossover (Yesterday was NOT satisfied)
+      const prev20 = getSMA(pPrev, 20);
+      const prev50 = getSMA(pPrev, 50);
+      const prev200 = getSMA(pPrev, 200);
+      const cPrev = prices[i-1];
+      const isPrevSatisfied = cPrev < prev20 && prev20 < prev50 && prev50 < prev200;
+
+      if (!isPrevSatisfied) {
+        // This is the NEAREST CROSSOVER
+        // Check if EXIT has occurred between this crossover and today
+        let targetHit = false;
+        for (let j = i + 1; j < quotes.length; j++) {
+          const pJ = prices.slice(0, j + 1);
+          const sj20 = getSMA(pJ, 20);
+          const sj50 = getSMA(pJ, 50);
+          const sj200 = getSMA(pJ, 200);
+          if (prices[j] > sj20 && sj20 > sj50 && sj50 > sj200) {
+            targetHit = true;
+            break;
+          }
         }
-      }
 
-      if (!targetHit) {
-        isBuyZone = true;
-        triggerDate = typeof q.date === 'string' ? q.date.split('T')[0] : q.date.toISOString().split('T')[0];
-        entryPrice = cI;
+        if (!targetHit) {
+          isBuyZone = true; 
+          const crossoverQ = quotes[i];
+          triggerDate = typeof crossoverQ.date === 'string' ? crossoverQ.date.split('T')[0] : crossoverQ.date.toISOString().split('T')[0];
+          entryPrice = cI;
+        }
+        break; 
       }
-      break;
     }
   }
 
@@ -328,7 +376,7 @@ export function calculateSMAStacking(quotes: Quote[]) {
     triggerDate,
     entryPrice,
     currentPrice,
-    target: sma200 * 1.10 // Indicative target
+    target: sma200 // SMA 200 as the primary milestone target
   };
 }
 
@@ -386,6 +434,7 @@ export function calculate52WeekStrategy(quotes: Quote[], tolerance: number = 0.0
     triggerDate,
     entryPrice,
     currentPrice,
-    target: rollingHigh
+    target: rollingHigh,
+    abcd: calculateABCDLevels(rollingLow, 50000000000)
   };
 }

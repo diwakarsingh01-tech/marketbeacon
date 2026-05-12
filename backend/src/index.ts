@@ -9,7 +9,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot } from './screener.js';
 import { initDB, getDB } from './db.js';
-import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy } from './strategies.js';
+import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels } from './strategies.js';
 
 const yahooFinance = new YahooFinance();
 dotenv.config();
@@ -354,11 +354,13 @@ app.get('/api/backtest/envelope', async (req, res) => {
             entryPrice = strategyData.rollingLow || 0;
             target = strategyData.rollingHigh || 0;
           } else if (isSMAStack) {
-            entryPrice = strategyData.sma200 || 0;
+            entryPrice = strategyData.entryPrice || 0;
           } else if (!isBollinger) {
             // Default Envelope Long logic
             target = Math.max(strategyData.upperBand || 0, (lastQuote.adjclose || lastQuote.adjClose || lastQuote.close || 0) * 1.30);
           }
+
+          const abcd = calculateABCDLevels(entryPrice, audit.metrics.marketCap || 0, basketId);
 
           const position = {
             symbol: baseSymbol,
@@ -373,7 +375,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
             rejectionReason: audit.reason,
             distanceFromLower: isShort ? (strategyData.distanceFromEMA || 0) : (strategyData.distanceFromLower || 0),
             isBuyZone: !!strategyData.isBuyZone,
-            tranche: isShort ? 'B1 (Mid)' : 'A'
+            tranche: isShort ? 'B1 (Mid)' : 'A',
+            abcd
           };
 
           allScannedStocks.push(position);
@@ -609,53 +612,133 @@ app.get('/api/backtest/simulate', async (req, res) => {
           if (quotes.length < 200) return;
 
           const prices = quotes.map(q => q.adjClose || q.close);
-          const emaValues = calculateEMA(prices, 200);
-          let activeTrade: any = null;
+          const getSMA = (data: number[], len: number) => data.slice(-len).reduce((a, b) => a + b, 0) / len;
+
+          const isHighBeta = basketId === 'HIGH_BITA' || basketId === 'HIGH_BETA' || basketId === 'PROFIT';
+          
+          // Pre-calculate technicals for performance
+          const ema200Values = calculateEMA(prices, 200);
+          
+          // Tranche state tracking
+          let activeTranches: any[] = []; // { level: 'A'|'B'|'C'|'D', entryPrice, target }
           let symbolTrades: any[] = [];
 
           for (let i = 200; i < quotes.length; i++) {
             const q = quotes[i];
-            const prevQ = quotes[i-1];
-            const currentEMA = emaValues[i];
-            const prevEMA = emaValues[i-1];
-            const lowerBand = currentEMA * 0.86;
+            const pI = prices.slice(0, i + 1);
+            const currentPrice = prices[i];
+            const lowPrice = quotes[i].low;
+            const highPrice = quotes[i].high;
 
-            if (!activeTrade) {
-              if (strategyId === 'ENVELOPE_SHORT') {
-                if (prevQ.close > prevEMA && q.low <= currentEMA) {
-                  activeTrade = { entryDate: q.date, entryPrice: currentEMA, target: currentEMA * 1.14 };
-                }
-              } else {
-                if (q.low <= lowerBand) {
-                  activeTrade = { entryDate: q.date, entryPrice: lowerBand, target: Math.max(currentEMA * 1.14, lowerBand * 1.30) };
-                }
+            // 1. Check for Initial Setup (A-Anchor)
+            let setupFound = false;
+            let anchorPrice = 0;
+            let currentSma200 = getSMA(pI, 200);
+
+            if (strategyId === 'SMA') {
+              const s20 = getSMA(pI, 20);
+              const s50 = getSMA(pI, 50);
+              const s200 = getSMA(pI, 200);
+              const pPrev = prices.slice(0, i);
+              const isTodaySatisfied = currentPrice < s20 && s20 < s50 && s50 < s200;
+              const isPrevSatisfied = i > 200 && (prices[i-1] || 0) < getSMA(pPrev, 20) && getSMA(pPrev, 20) < getSMA(pPrev, 50) && getSMA(pPrev, 50) < getSMA(pPrev, 200);
+              
+              if (isTodaySatisfied && !isPrevSatisfied) {
+                setupFound = true;
+                anchorPrice = currentPrice;
               }
-            } else {
-              if (q.high >= activeTrade.target) {
-                const tr = {
-                  symbol: baseSymbol,
-                  entryDate: activeTrade.entryDate.toISOString().split('T')[0],
-                  exitDate: q.date.toISOString().split('T')[0],
-                  roi: ((activeTrade.target - activeTrade.entryPrice) / activeTrade.entryPrice) * 100,
-                  daysHeld: Math.ceil((q.date.getTime() - activeTrade.entryDate.getTime()) / (1000 * 60 * 60 * 24)),
-                  status: 'CLOSED', lots: 'A'
-                };
-                symbolTrades.push(tr);
-                allTrades.push(tr);
-                activeTrade = null;
+            } else if (strategyId === 'ENVELOPE_LONG') {
+              const lowerBand = currentSma200 * 0.86;
+              if (lowPrice <= lowerBand) {
+                setupFound = true;
+                anchorPrice = lowerBand;
+              }
+            } else if (strategyId === 'BOLLINGER') {
+              const sma = getSMA(pI, 200);
+              const squareDiffs = pI.slice(-200).map(p => Math.pow(p - sma, 2));
+              const stdDev = Math.sqrt(squareDiffs.reduce((a, b) => a + b, 0) / 200);
+              const lowerBB = sma - 2.5 * stdDev;
+              if (lowPrice <= lowerBB) {
+                setupFound = true;
+                anchorPrice = lowerBB;
+              }
+            } else if (strategyId === '52W_HIGH_LOW') {
+              const rollingLow = Math.min(...quotes.slice(Math.max(0, i - 252), i + 1).map(x => x.low));
+              if (lowPrice <= rollingLow * 1.02) {
+                setupFound = true;
+                anchorPrice = rollingLow;
+              }
+            } else if (strategyId === 'ENVELOPE_SHORT') {
+              const currentEMA = ema200Values[i];
+              if (lowPrice <= currentEMA) {
+                setupFound = true;
+                anchorPrice = currentEMA;
               }
             }
+
+            if (setupFound && activeTranches.length === 0) {
+              const levels = calculateABCDLevels(anchorPrice, 50000000000, basketId);
+              
+              // Bluechip: ABCD (Entry A Enabled)
+              // High Beta / Good 45: BCD (Entry A Skipped)
+              const skipA = isHighBeta; 
+              
+              if (!skipA) {
+                activeTranches.push({ level: 'A', status: 'ACTIVE', entryDate: q.date, entryPrice: levels.a, target: (strategyId === 'SMA' ? currentSma200 : anchorPrice * 1.14) });
+              }
+              activeTranches.push({ level: 'B', status: 'PENDING', entryPrice: levels.b, target: levels.a });
+              activeTranches.push({ level: 'C', status: 'PENDING', entryPrice: levels.c, target: levels.b });
+              activeTranches.push({ level: 'D', status: 'PENDING', entryPrice: levels.d, target: levels.c });
+            }
+
+            // 2. Process Active/Pending Tranches
+            for (let tIdx = activeTranches.length - 1; tIdx >= 0; tIdx--) {
+              const t = activeTranches[tIdx];
+
+              // Entry logic for pending tranches
+              if (t.status === 'PENDING') {
+                if (lowPrice <= t.entryPrice) {
+                  t.status = 'ACTIVE';
+                  t.entryDate = q.date;
+                }
+                continue;
+              }
+
+              if (t.status === 'ACTIVE') {
+                // Exit logic: Laddered rebound selling
+                if (highPrice >= t.target) {
+                  const tr = {
+                    symbol: baseSymbol,
+                    entryDate: t.entryDate.toISOString().split('T')[0],
+                    exitDate: q.date.toISOString().split('T')[0],
+                    roi: ((t.target - t.entryPrice) / t.entryPrice) * 100,
+                    daysHeld: Math.ceil((q.date.getTime() - t.entryDate.getTime()) / (1000 * 60 * 60 * 24)),
+                    status: 'CLOSED',
+                    lots: t.level
+                  };
+                  symbolTrades.push(tr);
+                  allTrades.push(tr);
+                  activeTranches.splice(tIdx, 1);
+                }
+              }
+            }
+
+            // Reset setup if all tranches closed
+            if (activeTranches.length > 0 && activeTranches.every(t => t.status === 'CLOSED')) {
+              activeTranches = [];
+            }
           }
-          if (activeTrade) {
+          
+          // Handle Open Tranches at the end of simulation
+          activeTranches.filter(t => t.status === 'ACTIVE').forEach(t => {
             const lastQ = quotes[quotes.length-1];
-            const mtmRoi = (((lastQ.adjClose || lastQ.close) - activeTrade.entryPrice) / activeTrade.entryPrice) * 100;
-            const openRes = {
-              symbol: baseSymbol, entryDate: activeTrade.entryDate.toISOString().split('T')[0], exitDate: 'ACTIVE',
-              roi: mtmRoi, daysHeld: Math.ceil((new Date(toDate).getTime() - activeTrade.entryDate.getTime()) / (1000 * 60 * 60 * 24)),
-              status: 'OPEN', lots: 'A'
-            };
-            allTrades.push(openRes);
-          }
+            const mtmRoi = (((lastQ.adjClose || lastQ.close) - t.entryPrice) / t.entryPrice) * 100;
+            allTrades.push({
+              symbol: baseSymbol, entryDate: t.entryDate.toISOString().split('T')[0], exitDate: 'ACTIVE',
+              roi: mtmRoi, daysHeld: Math.ceil((new Date(toDate).getTime() - t.entryDate.getTime()) / (1000 * 60 * 60 * 24)),
+              status: 'OPEN', lots: t.level
+            });
+          });
           symbolSummary[baseSymbol] = {
             tradeCount: symbolTrades.length,
             totalROI: symbolTrades.reduce((s, t) => s + t.roi, 0),
