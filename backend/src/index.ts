@@ -227,10 +227,21 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
   const roe = (screener?.returnOnEquity || (yahooSummary?.defaultKeyStatistics?.returnOnEquity * 100) || 0) as number;
   const marketCap = (screener?.marketCap || yahooSummary?.summaryDetail?.marketCap || 0) as number;
 
+  // Determine Sector for custom rules
+  const baseSymbol = symbol.split('.')[0].toUpperCase();
+  const manualSector = MANUAL_SECTOR_MAP[baseSymbol] || '';
+  const isBankingOrNBFC = manualSector.includes('Bank') || manualSector.includes('NBFC') || manualSector.includes('Insurance') || manualSector.includes('Asset Management');
+
   const reasons = [];
   if (pe > 75) reasons.push(`High PE (${pe.toFixed(1)})`);
-  if (debtToEquity > 0.40) reasons.push(`High Debt (${debtToEquity.toFixed(2)})`);
-  if (roe > 0 && roe < 10) reasons.push(`Low ROE (${roe.toFixed(1)}%)`);
+  
+  // Custom Rule: Skip debt check for Banking/NBFC/Insurance/Asset Management
+  if (!isBankingOrNBFC && debtToEquity > 0.40) {
+    reasons.push(`High Debt (${debtToEquity.toFixed(2)})`);
+  }
+  
+  // Using ROE as requested (Batch 9 Standard)
+  if (roe > 0 && roe < 12) reasons.push(`Low ROE (${roe.toFixed(1)}%)`);
   if (marketCap > 0 && marketCap < 3000000000) reasons.push("Low Market Cap");
 
   return {

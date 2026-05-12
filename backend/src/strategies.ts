@@ -11,6 +11,8 @@ export interface EnvelopeResult {
   isBuyZone: boolean;
   distanceFromLower: number;
   triggerDate?: string;
+  entryLowerBand?: number;
+  currentPrice: number;
 }
 
 export interface Quote {
@@ -71,7 +73,7 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
 
       const currentSma = window.reduce((a, b) => a + b, 0) / length;
       const currentLower = currentSma * (1 - percentage / 100);
-      const currentPriceInLoop = q.adjClose || q.close;
+      const currentPriceInLoop = q.adjclose || q.adjClose || q.close;
       
       if (q.low <= currentLower || currentPriceInLoop <= currentLower) {
         // Condition met, update triggerDate to this earlier date
@@ -90,7 +92,8 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
     lowerBand,
     isBuyZone,
     distanceFromLower,
-    triggerDate
+    triggerDate,
+    currentPrice
   };
 }
 /**
@@ -114,38 +117,38 @@ export function calculateEMA(prices: number[], length: number): number[] {
  * Short Envelope Strategy Implementation (Simplified)
  * Entry: Price touches 200 EMA from above
  * Target: Entry Price + 14%
- export function processShortEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
-   if (!quotes || quotes.length < length) return null;
+ */
+export function processShortEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
+  if (!quotes || quotes.length < length) return null;
 
-   const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
-   const emaValues = calculateEMA(prices, length);
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const emaValues = calculateEMA(prices, length);
 
-   const latestIdx = quotes.length - 1;
-   const currentEMA = emaValues[latestIdx];
-   const latestQuote = quotes[latestIdx];
+  const latestIdx = quotes.length - 1;
+  const currentEMA = emaValues[latestIdx];
+  const latestQuote = quotes[latestIdx];
 
-   const prevPrice = prices[latestIdx - 1];
-   const prevEMA = emaValues[latestIdx - 1];
+  const prevPrice = prices[latestIdx - 1];
+  const prevEMA = emaValues[latestIdx - 1];
 
-   // Trigger: Price is at or below the 200 EMA
-   const isBuyZone = latestQuote.low <= currentEMA;
+  // Trigger: Price is at or below the 200 EMA
+  const isBuyZone = latestQuote.low <= currentEMA;
 
-   let triggerDate: string | undefined = undefined;
-   if (isBuyZone) {
-     const latestDate = typeof latestQuote.date === 'string' 
-       ? latestQuote.date.split('T')[0] 
-       : latestQuote.date.toISOString().split('T')[0];
-     triggerDate = latestDate;
+  let triggerDate: string | undefined = undefined;
+  if (isBuyZone) {
+    const latestDate = typeof latestQuote.date === 'string' 
+      ? latestQuote.date.split('T')[0] 
+      : latestQuote.date.toISOString().split('T')[0];
+    triggerDate = latestDate;
 
-     // Search back for the start of the EMA touch streak
-     for (let i = latestIdx; i >= length; i--) {
-       const q = quotes[i];
-       const pEMA = emaValues[i-1];
-       const pPrice = quotes[i-1].adjclose || quotes[i-1].adjClose || quotes[i-1].close;
-       const cEMA = emaValues[i];
+    // Search back for the start of the EMA touch streak
+    for (let i = latestIdx; i >= length; i--) {
+      const q = quotes[i];
+      const pEMA = emaValues[i-1];
+      const pPrice = quotes[i-1].adjclose || quotes[i-1].adjClose || quotes[i-1].close;
+      const cEMA = emaValues[i];
 
-       if (q.low <= cEMA && pPrice > pEMA) {
- ...
+      if (q.low <= cEMA && pPrice > pEMA) {
         const d = typeof q.date === 'string' ? q.date.split('T')[0] : q.date.toISOString().split('T')[0];
         triggerDate = d;
       } else if (q.low <= cEMA) {
@@ -167,10 +170,10 @@ export function calculateEMA(prices: number[], length: number): number[] {
     triggerDate,
     currentPrice: prices[latestIdx]
   };
-}/**
+}
+
+/**
  * Trade Management Logic
-...
- * Determines if a trade should exit based on the target logic.
  */
 export function checkExitSignal(currentQuote: Quote, entryPrice: number, entryUpperBand: number): boolean {
   const currentPrice = currentQuote.adjclose || currentQuote.adjClose || currentQuote.close;
@@ -183,6 +186,9 @@ export function checkExitSignal(currentQuote: Quote, entryPrice: number, entryUp
 /**
  * Bollinger Band Strategy (Sibling of Long Envelope)
  * Length: 200, StdDev: 2.5
+ * Rule: Buy at lower band, Sell at upper band.
+ * Logic: We search back for the most recent lower-band touch. 
+ * If found, we check if the price hit the upper band after that touch.
  */
 export function calculateBollingerBand(quotes: Quote[], length: number = 200, stdDevMultiplier: number = 2.5) {
   if (!quotes || quotes.length < length) return null;
@@ -191,49 +197,60 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, st
   const latestQuote = quotes[quotes.length - 1];
   const currentPrice = latestQuote.adjclose || latestQuote.adjClose || latestQuote.close;
 
-  // SMA calculation
+  // 1. Calculate Current Levels
   const periodPrices = prices.slice(-length);
   const sma = periodPrices.reduce((a, b) => a + b, 0) / length;
-
-  // Standard Deviation calculation
   const squareDiffs = periodPrices.map(p => Math.pow(p - sma, 2));
-  const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / length;
-  const stdDev = Math.sqrt(avgSquareDiff);
-
+  const stdDev = Math.sqrt(squareDiffs.reduce((a, b) => a + b, 0) / length);
   const upperBand = sma + stdDevMultiplier * stdDev;
   const lowerBand = sma - stdDevMultiplier * stdDev;
 
-  // Buy Zone: Price at or below lower band
-  const isBuyZone = latestQuote.low <= lowerBand || currentPrice <= lowerBand;
-  const distanceFromLower = ((currentPrice - lowerBand) / lowerBand) * 100;
-
+  let isBuyZone = false;
   let triggerDate: string | undefined = undefined;
-  if (isBuyZone) {
-    const latestDate = typeof latestQuote.date === 'string' 
-      ? latestQuote.date.split('T')[0] 
-      : latestQuote.date.toISOString().split('T')[0];
-    triggerDate = latestDate;
+  let entryLowerBand: number | undefined = undefined;
 
-    // Backward search for streak start
-    for (let i = quotes.length - 1; i >= length - 1; i--) {
-      const q = quotes[i];
-      const startIdx = Math.max(0, i - length + 1);
-      const window = prices.slice(startIdx, i + 1);
-      if (window.length < length) break;
+  // 2. Search back for the most recent trigger
+  for (let i = quotes.length - 1; i >= length - 1; i--) {
+    const q = quotes[i];
+    const startIdx = Math.max(0, i - length + 1);
+    const window = prices.slice(startIdx, i + 1);
+    const currentSma = window.reduce((a, b) => a + b, 0) / length;
+    const windowSqDiffs = window.map(p => Math.pow(p - currentSma, 2));
+    const currentStdDev = Math.sqrt(windowSqDiffs.reduce((a, b) => a + b, 0) / length);
+    const currentLower = currentSma - stdDevMultiplier * currentStdDev;
+    const currentUpper = currentSma + stdDevMultiplier * currentStdDev;
 
-      const currentSma = window.reduce((a, b) => a + b, 0) / length;
-      const windowSqDiffs = window.map(p => Math.pow(p - currentSma, 2));
-      const currentStdDev = Math.sqrt(windowSqDiffs.reduce((a, b) => a + b, 0) / length);
-      const currentLower = currentSma - stdDevMultiplier * currentStdDev;
-      
-      if (q.low <= currentLower || (q.adjclose || q.adjClose || q.close) <= currentLower) {
-        const d = typeof q.date === 'string' ? q.date.split('T')[0] : q.date.toISOString().split('T')[0];
-        triggerDate = d;
-      } else {
-        break;
+    // Check if triggered at index 'i'
+    if (q.low <= currentLower || (q.adjclose || q.adjClose || q.close) <= currentLower) {
+      // Trigger found! Now check if target was hit between i and Today
+      let targetHit = false;
+      for (let j = i + 1; j < quotes.length; j++) {
+        // Recalculate Upper Band for day 'j' to see if it was hit
+        const sJ = Math.max(0, j - length + 1);
+        const wJ = prices.slice(sJ, j + 1);
+        const smaJ = wJ.reduce((a, b) => a + b, 0) / length;
+        const sqDJ = wJ.map(p => Math.pow(p - smaJ, 2));
+        const sdJ = Math.sqrt(sqDJ.reduce((a, b) => a + b, 0) / length);
+        const upperJ = smaJ + stdDevMultiplier * sdJ;
+
+        if (quotes[j].high >= upperJ) {
+          targetHit = true;
+          break;
+        }
       }
+
+      if (!targetHit) {
+        isBuyZone = true;
+        triggerDate = typeof q.date === 'string' ? q.date.split('T')[0] : q.date.toISOString().split('T')[0];
+        entryLowerBand = currentLower;
+      }
+      
+      // Found the most recent streak/touch, stop search
+      break;
     }
   }
+
+  const distanceFromLower = ((currentPrice - lowerBand) / lowerBand) * 100;
 
   return {
     sma,
@@ -242,6 +259,7 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, st
     isBuyZone,
     distanceFromLower,
     triggerDate,
+    entryLowerBand,
     currentPrice
   };
 }
