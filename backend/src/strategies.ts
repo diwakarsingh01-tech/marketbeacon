@@ -110,9 +110,9 @@ export function calculateEMA(prices: number[], length: number): number[] {
 }
 
 /**
- * Short Envelope Strategy Implementation
- * B1: Buy at Middle (EMA), Sell at Upper
- * B2: Buy at Lower, Sell at Middle (EMA)
+ * Short Envelope Strategy Implementation (Simplified)
+ * Entry: Price touches 200 EMA from above
+ * Target: Entry Price + 14%
  */
 export function processShortEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
   if (!quotes || quotes.length < length) return null;
@@ -122,35 +122,24 @@ export function processShortEnvelope(quotes: Quote[], percentage: number = 14, l
 
   const latestIdx = quotes.length - 1;
   const currentEMA = emaValues[latestIdx];
+  const latestQuote = quotes[latestIdx];
   const currentPrice = prices[latestIdx];
 
-  const upperBand = currentEMA * (1 + percentage / 100);
-  const lowerBand = currentEMA * (1 - percentage / 100);
-
-  // State Machine Logic for current signal
-  let b1_open = false;
-  let b2_open = false;
-  let b1_entry = 0;
-  let b2_entry = 0;
-  let b1_target = 0;
-
-  // We look at the 2nd to last candle to see if we "fell from above" for B1
   const prevPrice = prices[latestIdx - 1];
   const prevEMA = emaValues[latestIdx - 1];
 
-  const signalB1 = prevPrice > prevEMA && currentPrice <= currentEMA;
-  const signalB2 = currentPrice <= lowerBand;
+  // Trigger: Price was above EMA and now touches or goes below EMA
+  const isBuyZone = prevPrice > prevEMA && latestQuote.low <= currentEMA;
+
+  const target = currentEMA * (1 + percentage / 100);
 
   return {
     ema: currentEMA,
-    upperBand,
-    lowerBand,
-    signalB1, // Buy at Orange
-    signalB2, // Buy at Lower Blue
+    target,
+    isBuyZone,
     currentPrice
   };
 }
-
 /**
  * Trade Management Logic
 ...

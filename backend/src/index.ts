@@ -627,8 +627,7 @@ app.get('/api/backtest/simulate', async (req, res) => {
             
             if (quotes.length < 200) return;
 
-            let b1_active: any = null;
-            let b2_active: any = null;
+            let activeTrade: any = null;
             let symbolTrades: any[] = [];
 
             for (let i = 200; i < quotes.length; i++) {
@@ -636,71 +635,55 @@ app.get('/api/backtest/simulate', async (req, res) => {
               const prevQ = quotes[i-1];
               const currentEMA = emaValues[i];
               const prevEMA = emaValues[i-1];
-              const lowerBand = currentEMA * 0.86;
-              const upperBand = currentEMA * 1.14;
-              const currentPrice = q.adjClose || q.close;
+              const targetPrice = currentEMA * 1.14; // Fixed 14% target from EMA
               const prevPrice = prevQ.adjClose || prevQ.close;
 
-              // --- B1 TRANCHE LOGIC (Buy at Middle/EMA) ---
-              if (!b1_active) {
+              if (!activeTrade) {
                 // Trigger: Price falls from above EMA to touch or cross below EMA
                 if (prevPrice > prevEMA && q.low <= currentEMA) {
-                  b1_active = {
+                  activeTrade = {
                     entryDate: q.date,
-                    entryPrice: currentEMA, // Logic: Triggers exactly at EMA
-                    target: upperBand,
-                    type: 'B1 (Mid)'
+                    entryPrice: currentEMA, // Logic: Buy level is the EMA itself
+                    target: targetPrice,
+                    type: 'EMA_TOUCH'
                   };
                 }
               } else {
-                // Exit: Reach Upper Band or Time-based target
-                if (q.high >= b1_active.target) {
-                  const exitPrice = b1_active.target;
-                  symbolTrades.push(finalizeTrade(b1_active, q, exitPrice, baseSymbol));
-                  b1_active = null;
-                }
-              }
-
-              // --- B2 TRANCHE LOGIC (Buy at Lower Band) ---
-              if (!b2_active) {
-                // Trigger: Price touches or crosses below Lower Band
-                if (q.low <= lowerBand) {
-                  b2_active = {
-                    entryDate: q.date,
-                    entryPrice: lowerBand, // Logic: Triggers exactly at Lower Band
-                    target: currentEMA, // Target is return to Middle
-                    type: 'B2 (Low)'
+                // Exit: Reach +14% Target
+                if (q.high >= activeTrade.target) {
+                  const res = {
+                    symbol: baseSymbol,
+                    entryDate: activeTrade.entryDate.toISOString().split('T')[0],
+                    exitDate: q.date.toISOString().split('T')[0],
+                    roi: 14.0, // Fixed 14% logic
+                    daysHeld: Math.ceil((q.date.getTime() - activeTrade.entryDate.getTime()) / (1000 * 60 * 60 * 24)),
+                    status: 'CLOSED',
+                    lots: 'A'
                   };
-                }
-              } else {
-                // Exit: Reach Middle Band (EMA)
-                if (q.high >= currentEMA) {
-                  const exitPrice = currentEMA;
-                  symbolTrades.push(finalizeTrade(b2_active, q, exitPrice, baseSymbol));
-                  b2_active = null;
+                  symbolTrades.push(res);
+                  allTrades.push(res);
+                  activeTrade = null;
                 }
               }
             }
 
-            // Handle open positions at end of history
-            [b1_active, b2_active].forEach(trade => {
-              if (trade) {
-                const lastQ = quotes[quotes.length-1];
-                const currentPrice = lastQ.adjClose || lastQ.close;
-                const daysHeld = Math.ceil((new Date(toDate).getTime() - trade.entryDate.getTime()) / (1000 * 60 * 60 * 24));
-                const openRes = {
-                  symbol: baseSymbol,
-                  entryDate: trade.entryDate.toISOString().split('T')[0],
-                  exitDate: 'ACTIVE',
-                  roi: ((currentPrice - trade.entryPrice) / trade.entryPrice) * 100,
-                  daysHeld,
-                  status: 'OPEN',
-                  lots: trade.type
-                };
-                symbolTrades.push(openRes);
-                allTrades.push(openRes);
-              }
-            });
+            // Handle open position
+            if (activeTrade) {
+              const lastQ = quotes[quotes.length-1];
+              const currentPrice = lastQ.adjClose || lastQ.close;
+              const daysHeld = Math.ceil((new Date(toDate).getTime() - activeTrade.entryDate.getTime()) / (1000 * 60 * 60 * 24));
+              const openRes = {
+                symbol: baseSymbol,
+                entryDate: activeTrade.entryDate.toISOString().split('T')[0],
+                exitDate: 'ACTIVE',
+                roi: ((currentPrice - activeTrade.entryPrice) / activeTrade.entryPrice) * 100,
+                daysHeld,
+                status: 'OPEN',
+                lots: 'A'
+              };
+              symbolTrades.push(openRes);
+              allTrades.push(openRes);
+            }
 
             symbolSummary[baseSymbol] = {
               tradeCount: symbolTrades.filter(t => t.status === 'CLOSED').length,
