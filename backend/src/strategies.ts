@@ -123,13 +123,39 @@ export function processShortEnvelope(quotes: Quote[], percentage: number = 14, l
   const latestIdx = quotes.length - 1;
   const currentEMA = emaValues[latestIdx];
   const latestQuote = quotes[latestIdx];
-  const currentPrice = prices[latestIdx];
 
   const prevPrice = prices[latestIdx - 1];
   const prevEMA = emaValues[latestIdx - 1];
 
-  // Trigger: Price was above EMA and now touches or goes below EMA
-  const isBuyZone = prevPrice > prevEMA && latestQuote.low <= currentEMA;
+  // Trigger: Price is at or below the 200 EMA
+  const isBuyZone = latestQuote.low <= currentEMA;
+
+  let triggerDate: string | undefined = undefined;
+  if (isBuyZone) {
+    const latestDate = typeof latestQuote.date === 'string' 
+      ? latestQuote.date.split('T')[0] 
+      : latestQuote.date.toISOString().split('T')[0];
+    triggerDate = latestDate;
+
+    // Search back for the start of the EMA touch streak
+    for (let i = latestIdx; i >= length; i--) {
+      const q = quotes[i];
+      const pEMA = emaValues[i-1];
+      const pPrice = quotes[i-1].adjClose || quotes[i-1].close;
+      const cEMA = emaValues[i];
+
+      if (q.low <= cEMA && pPrice > pEMA) {
+        const d = typeof q.date === 'string' ? q.date.split('T')[0] : q.date.toISOString().split('T')[0];
+        triggerDate = d;
+      } else if (q.low <= cEMA) {
+        // Continuous touch, keep going back
+        const d = typeof q.date === 'string' ? q.date.split('T')[0] : q.date.toISOString().split('T')[0];
+        triggerDate = d;
+      } else {
+        break;
+      }
+    }
+  }
 
   const target = currentEMA * (1 + percentage / 100);
 
@@ -137,10 +163,10 @@ export function processShortEnvelope(quotes: Quote[], percentage: number = 14, l
     ema: currentEMA,
     target,
     isBuyZone,
-    currentPrice
+    triggerDate,
+    currentPrice: prices[latestIdx]
   };
-}
-/**
+}/**
  * Trade Management Logic
 ...
  * Determines if a trade should exit based on the target logic.
