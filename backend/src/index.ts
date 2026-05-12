@@ -295,8 +295,9 @@ app.get('/api/backtest/envelope', async (req, res) => {
             
             if (strategyId === 'ENVELOPE_SHORT') {
               strategyData = processShortEnvelope(quotes);
-              strategyData.isBuyZone = strategyData.signalB1 || strategyData.signalB2;
-              strategyData.distanceFromLower = ((quotes[quotes.length-1].adjClose || quotes[quotes.length-1].close) - strategyData.lowerBand) / strategyData.lowerBand * 100;
+              strategyData.isBuyZone = strategyData.isBuyZone;
+              // Distance from the Orange line (EMA)
+              strategyData.distanceFromLower = ((quotes[quotes.length-1].adjClose || quotes[quotes.length-1].close) - strategyData.ema) / strategyData.ema * 100;
             } else {
               strategyData = calculateEnvelope(quotes);
             }
@@ -309,13 +310,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
           const sector = await getAccurateSector(symbol, summary);
 
           const isShort = strategyId === 'ENVELOPE_SHORT';
-          const entryPrice = isShort 
-            ? (strategyData.signalB1 ? strategyData.ema : strategyData.lowerBand)
-            : strategyData.lowerBand;
-
-          const target = isShort
-            ? (strategyData.signalB1 ? strategyData.upperBand : strategyData.ema)
-            : Math.max(strategyData.upperBand, (lastQuote.adjClose || lastQuote.close) * 1.30);
+          const entryPrice = isShort ? strategyData.ema : strategyData.lowerBand;
+          const target = isShort ? (strategyData.ema * 1.14) : Math.max(strategyData.upperBand, (lastQuote.adjClose || lastQuote.close) * 1.30);
 
           const position = {
             symbol: baseSymbol,
@@ -330,7 +326,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
             rejectionReason: audit.reason,
             distanceFromLower: strategyData.distanceFromLower,
             isBuyZone: strategyData.isBuyZone,
-            tranche: isShort ? (strategyData.signalB1 ? 'B1 (Mid)' : strategyData.signalB2 ? 'B2 (Low)' : '-') : 'A'
+            tranche: isShort ? 'B1 (Mid)' : 'A'
           };
 
           allScannedStocks.push(position);
