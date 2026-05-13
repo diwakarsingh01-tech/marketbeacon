@@ -282,6 +282,9 @@ app.get('/api/backtest/envelope', async (req, res) => {
       symbols = [...BASKETS['BLUECHIP'], ...(BASKETS['HIGH_BETA'] || BASKETS['HIGH_BITA'] || [])];
     }
 
+    // --- De-duplication Logic ---
+    symbols = [...new Set(symbols)];
+
     const snapshot = getMarketSnapshot();    const openTrades: any[] = [];
     const holdTrades: any[] = [];
     const rejectedStocks: any[] = [];
