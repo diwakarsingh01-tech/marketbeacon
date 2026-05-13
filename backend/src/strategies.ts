@@ -546,7 +546,7 @@ export function calculate52WeekStrategy(quotes: Quote[], tolerance: number = 0.0
  * Min Gap: 30%
  */
 export function calculateSRStrategy(quotes: Quote[]) {
-  const pivotLen = 3; // Reduced from 5 for higher sensitivity
+  const pivotLen = 5; // Reverting to 5 for more significant structural pivots
   const lookback = 1100;
   if (!quotes || quotes.length < 200) return null;
 
@@ -556,7 +556,7 @@ export function calculateSRStrategy(quotes: Quote[]) {
   const loPivs = pivots.filter(p => p.type === 'low');
 
   const latestPrice = prices[prices.length - 1];
-  const mergeTol = 0.025; // Upper end of 2.2-2.5% range
+  const mergeTol = 0.022; // Strict 2.2% as per user feedback/Pine Script min
   const minGap = 0.30; // 30% gap
 
   // 1. Cluster Lows to find Support Bands
@@ -565,7 +565,8 @@ export function calculateSRStrategy(quotes: Quote[]) {
     let matched = false;
     for (const band of supportBands) {
       if (Math.abs(lp.price - band.price) / band.price <= mergeTol) {
-        band.price = (band.price * band.count + lp.price) / (band.count + 1);
+        // High Accuracy: Use the lowest price of the cluster as the base
+        band.price = Math.min(band.price, lp.price);
         band.count++;
         band.bars.push(lp.index);
         matched = true;
@@ -581,7 +582,8 @@ export function calculateSRStrategy(quotes: Quote[]) {
     let matched = false;
     for (const band of resistanceBands) {
       if (Math.abs(hp.price - band.price) / band.price <= mergeTol) {
-        band.price = (band.price * band.count + hp.price) / (band.count + 1);
+        // High Accuracy: Use the highest price of the cluster as resistance
+        band.price = Math.max(band.price, hp.price);
         band.count++;
         band.bars.push(hp.index);
         matched = true;
@@ -595,15 +597,15 @@ export function calculateSRStrategy(quotes: Quote[]) {
 
   // 3. Find the best R-S Pair with 30% Gap
   for (const sBand of supportBands) {
-    if (sBand.count < 2) continue; // Minimum 2 bottoms (B1, B2)
+    if (sBand.count < 2) continue; // Minimum 2 bottoms
 
     for (const rBand of resistanceBands) {
-      if (rBand.count < 1) continue; // Minimum 1 top (T1)
+      if (rBand.count < 1) continue; 
       
       const gap = (rBand.price - sBand.price) / sBand.price;
       if (gap < minGap) continue;
 
-      // 4. Validate Sequence: B1 -> T1 -> B2 (Minimum Swing)
+      // 4. Validate Sequence: B1 -> T1 -> B2 (Minimum required swing)
       const timeline: { type: 'T' | 'B'; bar: number }[] = [
         ...sBand.bars.map(bar => ({ type: 'B' as const, bar })),
         ...rBand.bars.map(bar => ({ type: 'T' as const, bar }))
@@ -621,7 +623,7 @@ export function calculateSRStrategy(quotes: Quote[]) {
         }
       });
 
-      // Find if B-T-B exists ending with a Bottom
+      // Pattern: B -> T -> B (minimum)
       let foundPattern = false;
       let patternEndBar = 0;
       for (let k = seq.length - 1; k >= 2; k--) {
@@ -633,8 +635,8 @@ export function calculateSRStrategy(quotes: Quote[]) {
       }
 
       if (foundPattern) {
-        // Proximity Check: Price must be near Support
-        const isNearSupport = Math.abs(latestPrice - sBand.price) / sBand.price <= mergeTol;
+        // Proximity Check: Price must be at Support (Entry Zone)
+        const isNearSupport = latestPrice <= sBand.price * (1 + mergeTol) && latestPrice >= sBand.price * (1 - mergeTol);
         
         if (isNearSupport) {
           bestSetup = {
