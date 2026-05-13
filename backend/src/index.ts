@@ -9,7 +9,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot } from './screener.js';
 import { initDB, getDB } from './db.js';
-import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle } from './strategies.js';
+import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle, calculateSRStrategy } from './strategies.js';
 
 const yahooFinance = new YahooFinance();
 dotenv.config();
@@ -278,7 +278,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
     // --- Basket Enforcement Logic (User Directive) ---
     if (strategyId === 'ENVELOPE_SHORT' || strategyId === '52W_HIGH_LOW' || strategyId === 'BOLLINGER' || strategyId === 'SMA' || strategyId === 'ENVELOPE_LONG') {
       symbols = BASKETS['BLUECHIP'];
-    } else if (strategyId === 'SMA_ABCD' || strategyId === 'CUP_HANDLE_ABCD' || strategyId === 'RHS_ABCD') {
+    } else if (strategyId === 'SMA_ABCD' || strategyId === 'CUP_HANDLE_ABCD' || strategyId === 'RHS_ABCD' || strategyId === 'SR_STRATEGY') {
       symbols = [...BASKETS['BLUECHIP'], ...(BASKETS['HIGH_BETA'] || BASKETS['HIGH_BITA'] || [])];
     }
 
@@ -326,6 +326,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
               strategyData = calculateCupHandle(quotes);
             } else if (strategyId === 'RHS_ABCD') {
               strategyData = calculateRHS(quotes);
+            } else if (strategyId === 'SR_STRATEGY') {
+              strategyData = calculateSRStrategy(quotes);
             } else {
               strategyData = calculateEnvelope(quotes);
             }
@@ -356,6 +358,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
               strategyData = calculateCupHandle(quotes);
             } else if (strategyId === 'RHS_ABCD') {
               strategyData = calculateRHS(quotes);
+            } else if (strategyId === 'SR_STRATEGY') {
+              strategyData = calculateSRStrategy(quotes);
             } else {
               strategyData = calculateEnvelope(quotes);
             }
@@ -375,6 +379,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
           const is52W = strategyId === '52W_HIGH_LOW';
           const isCupHandle = strategyId === 'CUP_HANDLE_ABCD';
           const isRHS = strategyId === 'RHS_ABCD';
+          const isSR = strategyId === 'SR_STRATEGY';
 
           let entryPrice = strategyData.lowerBand || strategyData.entryPrice || strategyData.anchorA || 0;
           let target = strategyData.upperBand || strategyData.target || 0;
@@ -387,7 +392,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
             target = strategyData.rollingHigh || 0;
           } else if (isSMAStack) {
             entryPrice = strategyData.entryPrice || 0;
-          } else if (isCupHandle || isRHS) {
+          } else if (isCupHandle || isRHS || isSR) {
             entryPrice = strategyData.anchorA || 0;
             target = strategyData.target || 0;
           } else if (!isBollinger) {

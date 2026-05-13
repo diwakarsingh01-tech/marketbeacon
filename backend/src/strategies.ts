@@ -532,12 +532,92 @@ export function calculate52WeekStrategy(quotes: Quote[], tolerance: number = 0.0
             triggerDate: rs.date
           };
         }
-      }
-    }
-  }
-  }
-  return null;
-  }
+        }
+        }
+        }
+        }
+        return null;
+        }
+
+        /**
+        * Support & Resistance Strategy
+        * Logic: Cluster pivots to find strong zones. Require 2 rebounds. 30% upside.
+        */
+        export function calculateSRStrategy(quotes: Quote[]) {
+        if (!quotes || quotes.length < 100) return null;
+
+        const pivots = findPivots(quotes, 5);
+        const lowPivots = pivots.filter(p => p.type === 'low');
+        const highPivots = pivots.filter(p => p.type === 'high');
+        const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+        const latestPrice = prices[prices.length - 1];
+
+        // 1. Cluster Lows to find Support Zones
+        const clusterTolerance = 0.04; // 4% tolerance for clustering
+        const supportZones: { price: number; count: number; indices: number[] }[] = [];
+
+        lowPivots.forEach(lp => {
+        let matched = false;
+        for (const zone of supportZones) {
+        if (Math.abs(lp.price - zone.price) / zone.price <= clusterTolerance) {
+        zone.price = (zone.price * zone.count + lp.price) / (zone.count + 1);
+        zone.count++;
+        zone.indices.push(lp.index);
+        matched = true;
+        break;
+        }
+        }
+        if (!matched) {
+        supportZones.push({ price: lp.price, count: 1, indices: [lp.index] });
+        }
+        });
+
+        // 2. Cluster Highs to find Resistance Zones
+        const resistanceZones: { price: number; count: number; indices: number[] }[] = [];
+        highPivots.forEach(hp => {
+        let matched = false;
+        for (const zone of resistanceZones) {
+        if (Math.abs(hp.price - zone.price) / zone.price <= clusterTolerance) {
+        zone.price = (zone.price * zone.count + hp.price) / (zone.count + 1);
+        zone.count++;
+        zone.indices.push(hp.index);
+        matched = true;
+        break;
+        }
+        }
+        if (!matched) {
+        resistanceZones.push({ price: hp.price, count: 1, indices: [hp.index] });
+        }
+        });
+
+        // 3. Find the valid Support Zone (Today's proximity)
+        const activeSupport = supportZones.find(z => 
+        z.count >= 2 && // Require at least 2 rebounds
+        latestPrice <= z.price * (1 + clusterTolerance) && // Price is near support
+        latestPrice >= z.price * (1 - clusterTolerance)
+        );
+
+        if (activeSupport) {
+        // 4. Find nearest valid Resistance Zone ABOVE current support
+        const validResistance = resistanceZones
+        .filter(rz => rz.price >= activeSupport.price * 1.30) // Minimum 30% upside
+        .sort((a, b) => a.price - b.price)[0];
+
+        if (validResistance) {
+        return {
+        type: 'SR_STRATEGY',
+        anchorA: activeSupport.price,
+        target: validResistance.price,
+        reboundCount: activeSupport.count,
+        isBuyZone: true,
+        triggerDate: quotes[activeSupport.indices[activeSupport.indices.length - 1]].date,
+        currentPrice: latestPrice
+        };
+        }
+        }
+
+        return null;
+        }
 
   /**
   * Cup & Handle + ABCD Strategy

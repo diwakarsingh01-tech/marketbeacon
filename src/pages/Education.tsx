@@ -115,6 +115,18 @@ const StrategyEducation: React.FC = () => {
         accuracy: 'Lips must be within 5% symmetry. Messy structures are ignored.',
         abcd_rule: 'Breakout level serves as Anchor A. Preferred entry is at B/C/D levels unless target is massive.'
       }
+    },
+    {
+      id: 'sr_strategy',
+      title: 'Support & Resistance',
+      icon: Layers,
+      color: 'text-teal-600',
+      content: {
+        logic: 'Identifying accumulation zones through pivot clustering.',
+        rebound_rule: 'Requires at least 2 historical rebounds from the support zone.',
+        upside_rule: 'Target resistance must be at least 30% above support.',
+        fundamental_check: 'Current profits must be stable or improving compared to previous visits to this support zone.'
+      }
     }
   ];
 

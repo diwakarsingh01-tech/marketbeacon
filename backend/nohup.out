@@ -148,3 +148,106 @@ Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedba
 2026-05-13T03:21:13.477Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
 2026-05-13T03:21:13.608Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,KANSAINER,AVANTIFEED
 2026-05-13T03:21:14.059Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,KANSAINER,AVANTIFEED
+2026-05-13T03:22:12.336Z - GET /api/market-indices
+2026-05-13T03:23:12.337Z - GET /api/market-indices
+2026-05-13T03:24:12.340Z - GET /api/market-indices
+2026-05-13T03:25:12.339Z - GET /api/market-indices
+2026-05-13T03:26:12.335Z - GET /api/market-indices
+2026-05-13T03:27:12.332Z - GET /api/market-indices
+2026-05-13T03:28:46.334Z - GET /api/market-indices
+2026-05-13T03:29:47.337Z - GET /api/market-indices
+2026-05-13T03:30:48.339Z - GET /api/market-indices
+2026-05-13T03:31:49.331Z - GET /api/market-indices
+2026-05-13T03:32:19.620Z - GET /api/market-indices
+2026-05-13T03:32:19.624Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:32:20.060Z - GET /api/market-indices
+2026-05-13T03:32:20.253Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:32:20.389Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,KANSAINER,AVANTIFEED
+2026-05-13T03:32:21.291Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,KANSAINER,AVANTIFEED
+
+> backend@1.0.0 dev
+> tsx src/index.ts
+
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
+✅ Connected to Turso!
+SuperTracker Backend running on port 3001
+2026-05-13T03:33:29.340Z - GET /api/market-indices
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-05-13T03:34:28.768Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:34:29.343Z - GET /api/market-indices
+2026-05-13T03:35:29.348Z - GET /api/market-indices
+2026-05-13T03:36:29.348Z - GET /api/market-indices
+2026-05-13T03:37:29.346Z - GET /api/market-indices
+2026-05-13T03:38:13.027Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:38:29.350Z - GET /api/market-indices
+2026-05-13T03:39:59.366Z - GET /api/market-indices
+2026-05-13T03:40:23.777Z - GET /api/market-indices
+2026-05-13T03:40:23.781Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:40:24.394Z - GET /api/market-indices
+2026-05-13T03:40:24.844Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:40:24.970Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:40:25.395Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:40:51.270Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:41:24.363Z - GET /api/market-indices
+2026-05-13T03:42:24.364Z - GET /api/market-indices
+2026-05-13T03:43:24.359Z - GET /api/market-indices
+2026-05-13T03:44:00.516Z - GET /api/market-indices
+2026-05-13T03:44:00.519Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:44:00.945Z - GET /api/market-indices
+2026-05-13T03:44:01.218Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:44:01.347Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:44:01.799Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:45:01.360Z - GET /api/market-indices
+2026-05-13T03:46:01.363Z - GET /api/market-indices
+2026-05-13T03:47:01.362Z - GET /api/market-indices
+2026-05-13T03:48:01.363Z - GET /api/market-indices
+2026-05-13T03:49:01.359Z - GET /api/market-indices
+2026-05-13T03:50:01.361Z - GET /api/market-indices
+2026-05-13T03:51:35.356Z - GET /api/market-indices
+2026-05-13T03:52:36.357Z - GET /api/market-indices
+2026-05-13T03:53:37.360Z - GET /api/market-indices
+2026-05-13T03:54:38.361Z - GET /api/market-indices
+2026-05-13T03:54:57.479Z - GET /api/market-indices
+2026-05-13T03:54:57.482Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:54:57.879Z - GET /api/market-indices
+2026-05-13T03:54:58.083Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:54:58.211Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:54:58.807Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:55:07.435Z - GET /api/market-indices
+2026-05-13T03:55:07.438Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:55:07.927Z - GET /api/market-indices
+2026-05-13T03:55:08.063Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:55:08.184Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:55:08.472Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:55:23.424Z - GET /api/market-indices
+2026-05-13T03:55:23.426Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:55:23.789Z - GET /api/market-indices
+2026-05-13T03:55:24.060Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:55:24.177Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:55:24.554Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:55:33.479Z - GET /api/market-indices
+2026-05-13T03:55:33.484Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:55:33.891Z - GET /api/market-indices
+2026-05-13T03:55:33.982Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:55:34.093Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:55:34.435Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:55:43.443Z - GET /api/market-indices
+2026-05-13T03:55:43.445Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:55:43.741Z - GET /api/market-indices
+2026-05-13T03:55:43.949Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+2026-05-13T03:55:44.058Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+2026-05-13T03:55:44.482Z - GET /api/stock-prices?symbols=KANSAINER,MARICO,AVANTIFEED
+
+> backend@1.0.0 dev
+> tsx src/index.ts
+
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
+✅ Connected to Turso!
+SuperTracker Backend running on port 3001
+2026-05-13T03:56:27.154Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=CUP_HANDLE_ABCD
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-05-13T03:56:27.421Z - GET /api/market-indices
