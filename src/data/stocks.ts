@@ -30,7 +30,10 @@ export const BASKETS: Record<string, string[]> = {
     'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 
     'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'
   ],
-  'PROFIT': ['Dynamic Screener']
+  'PROFIT': [
+    'CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 
+    'MTARTECH', 'MAHLOG', 'PRINCEPIPE'
+  ]
 };
 
 // Simplified stocks for backward compatibility if needed

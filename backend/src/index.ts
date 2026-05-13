@@ -212,8 +212,8 @@ app.get('/api/market-indices', async (req, res) => {
 
 const BASKETS: Record<string, string[]> = {
   'BLUECHIP': ['WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 'WIPRO', 'INFY', 'NAM-INDIA', 'HCLTECH', 'ICICIGI', 'PIDILITIND', 'HDFCAMC', 'ASIANPAINT', 'BERGEPAINT', 'ULTRACEMCO', 'BAJFINANCE', 'NESTLEIND', 'ICICIBANK', 'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 'NIFTYBEES', 'BANKBEES'],
-  'HIGH_BITA': ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KANSAINER', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'],
-  'PROFIT': getDynamicBasket().length > 0 ? getDynamicBasket() : ['CDSL', 'BSE', 'MCX', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 'MTARTECH', 'MAHLOG', 'PRINCEPIPE']
+  'HIGH_BETA': ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'],
+  'PROFIT': ['CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 'MTARTECH', 'MAHLOG', 'PRINCEPIPE']
 };
 
 // --- Institutional Fundamental Validator (BATCH 9 PDF STANDARDS) ---
@@ -279,16 +279,17 @@ app.get('/api/backtest/envelope', async (req, res) => {
     if (strategyId === 'ENVELOPE_SHORT' || strategyId === '52W_HIGH_LOW' || strategyId === 'BOLLINGER' || strategyId === 'SMA' || strategyId === 'ENVELOPE_LONG') {
       symbols = BASKETS['BLUECHIP'];
     } else if (strategyId === 'SMA_ABCD' || strategyId === 'CUP_HANDLE_ABCD' || strategyId === 'RHS_ABCD') {
-      symbols = [...BASKETS['BLUECHIP'], ...(BASKETS['HIGH_BETA'] || BASKETS['HIGH_BITA'] || [])];
+      symbols = [...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']];
     } else if (strategyId === 'SR_STRATEGY') {
-      // SR_STRATEGY now uses ALL baskets for maximum signal discovery
-      symbols = [...BASKETS['BLUECHIP'], ...(BASKETS['HIGH_BETA'] || BASKETS['HIGH_BITA'] || []), ...BASKETS['PROFIT']];
+      // SR_STRATEGY uses ALL distinct baskets
+      symbols = [...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']];
     }
 
     // --- De-duplication Logic ---
     symbols = [...new Set(symbols)];
 
-    const snapshot = getMarketSnapshot();    const openTrades: any[] = [];
+    const snapshot = getMarketSnapshot();
+    const openTrades: any[] = [];
     const holdTrades: any[] = [];
     const rejectedStocks: any[] = [];
     const allScannedStocks: any[] = [];

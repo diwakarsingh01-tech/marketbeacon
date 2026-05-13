@@ -344,3 +344,50 @@ Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedba
 🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
 ✅ Connected to Turso!
 SuperTracker Backend running on port 3001
+2026-05-13T04:37:45.639Z - GET /api/market-indices
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-05-13T04:37:55.619Z - GET /api/market-indices
+2026-05-13T04:37:55.626Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:37:56.391Z - GET /api/market-indices
+2026-05-13T04:37:58.518Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:37:58.653Z - GET /api/stock-prices?symbols=HDFCLIFE,HDFCBANK,AKZOINDIA,WHIRLPOOL,BAJAJHLDNG,GLAXO,GILLETTE,PAGEIND,ABBOTINDIA,TASTYBITE,BAYERCROP,CAPLIPOINT,VIPIND,ERIS,CDSL,PRINCEPIPE,KAYNES,MAHLOG
+2026-05-13T04:38:00.086Z - GET /api/stock-prices?symbols=HDFCLIFE,HDFCBANK,AKZOINDIA,GLAXO,WHIRLPOOL,GILLETTE,PAGEIND,ABBOTINDIA,TASTYBITE,BAJAJHLDNG,BAYERCROP,VIPIND,CAPLIPOINT,ERIS,CDSL,MAHLOG,PRINCEPIPE,KAYNES
+2026-05-13T04:42:48.466Z - GET /api/market-indices
+2026-05-13T04:43:48.456Z - GET /api/market-indices
+2026-05-13T04:44:48.455Z - GET /api/market-indices
+2026-05-13T04:45:07.589Z - GET /api/market-indices
+2026-05-13T04:45:07.591Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:45:08.007Z - GET /api/market-indices
+2026-05-13T04:45:09.472Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:45:09.601Z - GET /api/stock-prices?symbols=HDFCLIFE,HDFCBANK,AKZOINDIA,WHIRLPOOL,GILLETTE,PAGEIND,GLAXO,BAJAJHLDNG,ABBOTINDIA,TASTYBITE,VIPIND,BAYERCROP,CAPLIPOINT,ERIS,CDSL,KAYNES,PRINCEPIPE,MAHLOG
+2026-05-13T04:45:11.435Z - GET /api/stock-prices?symbols=HDFCLIFE,HDFCBANK,AKZOINDIA,GLAXO,WHIRLPOOL,GILLETTE,BAJAJHLDNG,ABBOTINDIA,PAGEIND,TASTYBITE,VIPIND,BAYERCROP,CAPLIPOINT,ERIS,CDSL,KAYNES,PRINCEPIPE,MAHLOG
+2026-05-13T04:45:18.567Z - GET /api/market-indices
+2026-05-13T04:45:18.571Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:45:19.039Z - GET /api/market-indices
+2026-05-13T04:45:20.621Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:45:20.743Z - GET /api/stock-prices?symbols=HDFCLIFE,HDFCBANK,AKZOINDIA,WHIRLPOOL,GILLETTE,PAGEIND,GLAXO,BAJAJHLDNG,ABBOTINDIA,TASTYBITE,BAYERCROP,CAPLIPOINT,VIPIND,CDSL,ERIS,MAHLOG,PRINCEPIPE,KAYNES
+2026-05-13T04:45:22.446Z - GET /api/stock-prices?symbols=HDFCLIFE,HDFCBANK,AKZOINDIA,WHIRLPOOL,GLAXO,BAJAJHLDNG,PAGEIND,ABBOTINDIA,VIPIND,TASTYBITE,BAYERCROP,CAPLIPOINT,GILLETTE,CDSL,ERIS,KAYNES,MAHLOG,PRINCEPIPE
+2026-05-13T04:45:32.574Z - GET /api/market-indices
+2026-05-13T04:45:32.575Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:45:33.132Z - GET /api/market-indices
+2026-05-13T04:45:34.263Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:45:34.391Z - GET /api/stock-prices?symbols=HDFCLIFE,HDFCBANK,AKZOINDIA,WHIRLPOOL,GLAXO,GILLETTE,ABBOTINDIA,TASTYBITE,PAGEIND,BAJAJHLDNG,BAYERCROP,VIPIND,CAPLIPOINT,ERIS,CDSL,MAHLOG,PRINCEPIPE,KAYNES
+2026-05-13T04:45:35.854Z - GET /api/stock-prices?symbols=HDFCLIFE,HDFCBANK,AKZOINDIA,WHIRLPOOL,GLAXO,BAJAJHLDNG,GILLETTE,PAGEIND,ABBOTINDIA,TASTYBITE,VIPIND,BAYERCROP,ERIS,CDSL,CAPLIPOINT,KAYNES,PRINCEPIPE,MAHLOG
+2026-05-13T04:45:49.524Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:45:51.012Z - GET /api/stock-prices?symbols=HDFCLIFE,HDFCBANK,AKZOINDIA,GLAXO,WHIRLPOOL,BAJAJHLDNG,GILLETTE,ABBOTINDIA,PAGEIND,TASTYBITE,VIPIND,BAYERCROP,CAPLIPOINT,ERIS,CDSL,KAYNES,PRINCEPIPE,MAHLOG
+
+> backend@1.0.0 dev
+> tsx src/index.ts
+
+◇ injected env (0) from .env // tip: ⌘ override existing { override: true }
+◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
+✅ Connected to Turso!
+SuperTracker Backend running on port 3001
+2026-05-13T04:45:59.518Z - GET /api/market-indices
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-05-13T04:45:59.532Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:46:00.390Z - GET /api/market-indices
+2026-05-13T04:46:01.336Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:46:01.472Z - GET /api/stock-prices?symbols=HDFCLIFE,HDFCBANK,AKZOINDIA,WHIRLPOOL,PAGEIND,GILLETTE,BAJAJHLDNG,ABBOTINDIA,TASTYBITE,GLAXO,BAYERCROP,VIPIND,CAPLIPOINT,ERIS,CDSL,KAYNES,PRINCEPIPE,MAHLOG
+2026-05-13T04:46:02.998Z - GET /api/stock-prices?symbols=HDFCLIFE,HDFCBANK,AKZOINDIA,WHIRLPOOL,GLAXO,GILLETTE,ABBOTINDIA,PAGEIND,VIPIND,BAJAJHLDNG,ERIS,BAYERCROP,CDSL,CAPLIPOINT,TASTYBITE,MAHLOG,PRINCEPIPE,KAYNES
