@@ -682,3 +682,43 @@ Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedba
 🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
 ✅ Connected to Turso!
 SuperTracker Backend running on port 3001
+2026-05-13T06:57:52.796Z - GET /api/market-indices
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-05-13T06:58:52.789Z - GET /api/market-indices
+2026-05-13T06:59:52.786Z - GET /api/market-indices
+2026-05-13T07:00:52.788Z - GET /api/market-indices
+2026-05-13T07:01:52.795Z - GET /api/market-indices
+2026-05-13T07:02:52.788Z - GET /api/market-indices
+2026-05-13T07:03:52.798Z - GET /api/market-indices
+2026-05-13T07:04:52.787Z - GET /api/market-indices
+2026-05-13T07:05:52.786Z - GET /api/market-indices
+2026-05-13T07:07:43.803Z - GET /api/market-indices
+2026-05-13T07:08:02.916Z - GET /api/market-indices
+2026-05-13T07:08:02.930Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T07:08:04.002Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T07:08:04.103Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,GLAXO,GILLETTE,PAGEIND,BAJAJHLDNG
+2026-05-13T07:08:04.465Z - GET /api/market-indices
+2026-05-13T07:08:04.539Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,PAGEIND,GILLETTE,BAJAJHLDNG,GLAXO
+2026-05-13T07:09:03.786Z - GET /api/market-indices
+2026-05-13T07:10:03.798Z - GET /api/market-indices
+2026-05-13T07:11:03.795Z - GET /api/market-indices
+2026-05-13T07:12:03.791Z - GET /api/market-indices
+2026-05-13T07:13:03.792Z - GET /api/market-indices
+2026-05-13T07:14:03.791Z - GET /api/market-indices
+2026-05-13T07:14:59.040Z - GET /api/market-indices
+2026-05-13T07:14:59.043Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T07:14:59.742Z - GET /api/market-indices
+2026-05-13T07:15:00.097Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T07:15:00.206Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,GILLETTE,GLAXO,PAGEIND,BAJAJHLDNG
+2026-05-13T07:15:00.514Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,GLAXO,GILLETTE,PAGEIND,BAJAJHLDNG
+
+> backend@1.0.0 dev
+> tsx src/index.ts
+
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
+✅ Connected to Turso!
+SuperTracker Backend running on port 3001
+2026-05-13T07:16:27.799Z - GET /api/market-indices
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.

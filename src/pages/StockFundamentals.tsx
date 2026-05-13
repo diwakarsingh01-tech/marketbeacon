@@ -161,14 +161,37 @@ const StockFundamentalsPage: React.FC = () => {
           <section className="bg-white rounded-[2rem] border border-slate-200 shadow-sm p-10 overflow-hidden relative">
              <div className="flex items-center justify-between mb-10">
                 <div className="space-y-1">
-                   <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest">Investment Checklist</h2>
-                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Core Engineering Audit</p>
+                   <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest">Investment Audit</h2>
+                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Batch 9 Core Engineering</p>
                 </div>
                 <div className="flex flex-col items-end">
-                   <div className="text-5xl font-black tracking-tighter text-blue-600">{model.score.toFixed(0)}<span className="text-lg text-slate-300 ml-1">/100</span></div>
+                   <div className="text-5xl font-black tracking-tighter text-blue-600">{data?.audit?.score?.toFixed(0) || model.score.toFixed(0)}<span className="text-lg text-slate-300 ml-1">/100</span></div>
                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Model Score</span>
                 </div>
              </div>
+
+             {/* Segment 1: Business Quality */}
+             {data?.audit?.businessQuality && (
+               <div className="mb-12 space-y-6">
+                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                   <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center">
+                     <ShieldCheck className="h-3 w-3 mr-2 text-blue-600" /> Segment 1: Business Quality
+                   </h3>
+                   <span className="text-[10px] font-black text-blue-600">{data.audit.businessQuality.score}/{data.audit.businessQuality.max} Points</span>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {data.audit.businessQuality.checks.map((check: any, idx: number) => (
+                     <div key={idx} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-2 h-2 rounded-full ${check.pass ? 'bg-green-500' : 'bg-slate-200'}`} />
+                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">{check.label}</span>
+                        </div>
+                        <span className={`text-[10px] font-black ${check.pass ? 'text-slate-900' : 'text-slate-400'}`}>{check.value}</span>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             )}
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                 {model.checks.map((check, idx) => (

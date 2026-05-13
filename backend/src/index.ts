@@ -243,11 +243,36 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
 
   // 2. SOFT SCORING (0-100 Framework)
   
-  // Category A: Business Quality (Weight: 15)
+  // --- SEGMENT 1: BUSINESS QUALITY (Weight: 15) ---
   const yearsListed = screener?.yearsListed || 10;
-  if (yearsListed > 15) score += 15;
-  else if (yearsListed > 10) score += 10;
-  else if (yearsListed > 5) score += 5;
+  const annualSales = screener?.historicalSales?.slice(-1)[0] || 0;
+  const annualProfit = screener?.historicalNetProfits?.slice(-1)[0] || 0;
+  
+  // Proxy: Market Leader (Top quartile market cap > 50k Cr)
+  const isMarketLeader = marketCap > 500000000000; 
+  // Proxy: Pricing Power (Operating margin stability and high ROE)
+  const hasPricingPower = roe > 15 && screener?.profitGrowth3Y > 10;
+  // Proxy: Private Sector (Exclude known PSU patterns)
+  const isPrivateSector = !baseSymbol.includes('OIL') && !baseSymbol.includes('GAS') && !baseSymbol.includes('POWER') && !baseSymbol.includes('NTPC');
+
+  let bizQualityScore = 0;
+  if (yearsListed > 15) bizQualityScore += 5;
+  if (isMarketLeader) bizQualityScore += 4;
+  if (isPrivateSector) bizQualityScore += 3;
+  if (hasPricingPower) bizQualityScore += 3;
+  score += bizQualityScore;
+
+  // Add Segment Meta for UI
+  const businessQuality = {
+    score: bizQualityScore,
+    max: 15,
+    checks: [
+      { label: 'Established (15Y+)', pass: yearsListed >= 15, value: `${yearsListed} Years` },
+      { label: 'Market Leader Proxy', pass: isMarketLeader, value: isMarketLeader ? 'YES' : 'NO' },
+      { label: 'Pricing Power Proxy', pass: hasPricingPower, value: hasPricingPower ? 'High' : 'Low' },
+      { label: 'Private Sector', pass: isPrivateSector, value: isPrivateSector ? 'Private' : 'PSU' }
+    ]
+  };
 
   // Category B: Profitability Quality (Weight: 15)
   if (roe > 20) score += 15;
@@ -293,6 +318,7 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
     isPass: reasons.length === 0 && score >= 55,
     score,
     universe,
+    businessQuality,
     reason: reasons.length > 0 ? reasons.join(', ') : (score < 55 ? `Low Score (${score})` : 'BATCH 9 COMPLIANT'),
     metrics: { pe, debtToEquity, roe, marketCap, score, universe }
   };
@@ -641,11 +667,14 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     const yahooSymbol = `${cleanSymbol}.NS`;
     const [screenerData, yahooSummary] = await Promise.all([
       fetchScreenerData(cleanSymbol),
-      yahooFinance.quoteSummary(yahooSymbol, { 
-        modules: ["summaryDetail", "defaultKeyStatistics", "assetProfile", "financialData", "summaryProfile"] 
+      yahooFinance.quoteSummary(yahooSymbol, {
+        modules: ["summaryDetail", "defaultKeyStatistics", "assetProfile", "financialData", "summaryProfile"]
       }).catch(() => null)
     ]);
     if (!screenerData && !yahooSummary) throw new Error('Data not found');
+
+    const audit = await validateBatch9(cleanSymbol, yahooSummary, false);
+
     const sd = yahooSummary?.summaryDetail;
     const stats = yahooSummary?.defaultKeyStatistics;
     const profile = yahooSummary?.summaryProfile;
@@ -656,19 +685,20 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       change: yahooSummary?.price?.regularMarketChangePercent || 0,
       marketCap: screenerData?.marketCap || sd?.marketCap,
       peRatio: screenerData?.peRatio || sd?.trailingPE || stats?.trailingPE,
-      dividendYield: screenerData?.dividendYield || (sd?.dividendYield * 100).toFixed(2) || 0,
+      dividendYield: screenerData?.dividendYield || (sd?.dividendYield * 100)?.toFixed(2) || 0,
       roce: screenerData?.roce || 18.5,
-      returnOnEquity: screenerData?.returnOnEquity || (stats?.returnOnEquity * 100).toFixed(1) || 0,
-      netDebtToEquity: screenerData?.netDebtToEquity || (yahooSummary?.financialData?.debtToEquity / 100).toFixed(2) || 0,
+      returnOnEquity: screenerData?.returnOnEquity || (stats?.returnOnEquity * 100)?.toFixed(1) || 0,
+      netDebtToEquity: screenerData?.netDebtToEquity || (yahooSummary?.financialData?.debtToEquity / 100)?.toFixed(2) || 0,
       fiftTwoWeekHigh: sd?.fiftyTwoWeekHigh || yahooSummary?.price?.regularMarketDayHigh,
       fiftTwoWeekLow: sd?.fiftyTwoWeekLow || yahooSummary?.price?.regularMarketDayLow,
       beta: sd?.beta || 0,
-      industry: screenerData?.industry || yahooSummary?.price?.industry || 'N/A',
+      industry: screenerData?.industry || profile?.industry || 'N/A',
       sector: profile?.sector || 'N/A',
       summary: profile?.longBusinessSummary || `Institutional analysis for ${cleanSymbol} based on Batch 9 framework.`,
       faceValue: screenerData?.faceValue || 10,
+      audit,
       peComparison: { current: screenerData?.peRatio || sd?.trailingPE, fiveYearAvg: 28.5 },
-      growth3Yr: { sales: 15.2, roe: screenerData?.returnOnEquity || 18.0 },
+      growth3Yr: { sales: screenerData?.salesGrowth3Y || 15.2, roe: screenerData?.returnOnEquity || 18.0 },
       shareholding: { promoter: 54.2, fii: 16.8, dii: 11.5, public: 17.5, pledged: 0.5 },
       forwardPE: stats?.forwardPE || 0,
       industryPe: screenerData ? (screenerData.peRatio * 0.9).toFixed(1) : 25.0
@@ -676,7 +706,6 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     res.json(result);
   } catch (error: any) { res.status(500).json({ error: error.message }); }
 });
-
 const historicalCache = new Map<string, any>();
 
 app.get('/api/backtest/simulate', async (req, res) => {
