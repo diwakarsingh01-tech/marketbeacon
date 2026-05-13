@@ -274,10 +274,32 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
     ]
   };
 
-  // Category B: Profitability Quality (Weight: 15)
-  if (roe > 20) score += 15;
-  else if (roe > 15) score += 10;
-  else if (roe > 12) score += 5;
+  // --- SEGMENT 2: PROFITABILITY QUALITY (Weight: 15) ---
+  const latestNetProfit = annualProfit; // Cr
+  const profitableYears5Y = profits.slice(-5).filter((p: number) => p > 0).length;
+  
+  // Margin Stability (Check if latest OPM is higher than 5Y average)
+  const opmHistory = screener?.historicalOPM || [];
+  const avgOPM = opmHistory.slice(-5).reduce((a: number, b: number) => a + b, 0) / (opmHistory.slice(-5).length || 1);
+  const latestOPM = opmHistory.slice(-1)[0] || 0;
+  const isMarginStable = latestOPM >= avgOPM * 0.95; // 5% flexibility
+
+  let profitQualityScore = 0;
+  if (latestNetProfit > 200) profitQualityScore += 5;
+  if (profitableYears5Y >= 4) profitQualityScore += 5;
+  if (isMarginStable) profitQualityScore += 5;
+  score += profitQualityScore;
+
+  const profitabilityQuality = {
+    score: profitQualityScore,
+    max: 15,
+    checks: [
+      { label: 'Net Profit > 200 Cr', pass: latestNetProfit > 200, value: `₹ ${latestNetProfit.toFixed(0)} Cr` },
+      { label: '5Y Profit Consistency', pass: profitableYears5Y >= 4, value: `${profitableYears5Y}/5 Years` },
+      { label: 'Margin Stability', pass: isMarginStable, value: `${latestOPM.toFixed(1)}% OPM` },
+      { label: 'Real Earnings Gen', pass: latestNetProfit > 0, value: 'Active' }
+    ]
+  };
 
   // Category C: Balance Sheet Safety (Weight: 20)
   if (isBankingOrNBFC) score += 15; // Banking has separate risk model
@@ -298,15 +320,11 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
   else if (pe < 40) score += 10;
   else if (pe < 70) score += 5;
 
-  // Category F: Historical Consistency (Weight: 20)
-  const profits = screener?.historicalNetProfits || [];
-  if (profits.length > 5) {
-    const profitableYears = profits.filter((p: number) => p > 0).length;
-    const consistencyScore = (profitableYears / profits.length) * 20;
-    score += Math.round(consistencyScore);
-  } else {
-    score += 10; // Default mid-score for limited history
-  }
+  // Category F: Historical Consistency (Weight: 20) - ALREADY INTEGRATED IN SCORE CALC, BUT LET'S CLEAN UP
+  const profitableYearsAll = profits.filter((p: number) => p > 0).length;
+  const consistencyWeight = 20;
+  const consistencyScore = profits.length > 0 ? Math.round((profitableYearsAll / profits.length) * consistencyWeight) : 10;
+  score += consistencyScore;
 
   // Final Universe Mapping
   let universe = "WATCHLIST";
@@ -319,6 +337,7 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
     score,
     universe,
     businessQuality,
+    profitabilityQuality,
     reason: reasons.length > 0 ? reasons.join(', ') : (score < 55 ? `Low Score (${score})` : 'BATCH 9 COMPLIANT'),
     metrics: { pe, debtToEquity, roe, marketCap, score, universe }
   };
@@ -652,6 +671,10 @@ async function fetchScreenerData(symbol: string) {
       profitGrowth3Y: parseFloat($('li:contains("Profit growth 3Years") .number').text().trim() || '0'),
       historicalNetProfits: getAnnualTableData('profit-loss', 'Net Profit'),
       historicalSales: getAnnualTableData('profit-loss', 'Sales'),
+      historicalOPM: getAnnualTableData('profit-loss', 'OPM %'),
+      ebitda: parseFloat(getRatio('EBITDA')) || 0,
+      operatingMargin: parseFloat(getRatio('Operating Margin')) || 0,
+      netMargin: parseFloat(getRatio('Net Profit Margin')) || 0,
       yearsListed: getAnnualTableData('profit-loss', 'Sales').length
     };
   } catch (e: any) {

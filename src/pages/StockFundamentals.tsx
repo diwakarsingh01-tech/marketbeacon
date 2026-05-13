@@ -193,6 +193,29 @@ const StockFundamentalsPage: React.FC = () => {
                </div>
              )}
 
+             {/* Segment 2: Profitability Quality */}
+             {data?.audit?.profitabilityQuality && (
+               <div className="mb-12 space-y-6">
+                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                   <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center">
+                     <TrendingUp className="h-3 w-3 mr-2 text-blue-600" /> Segment 2: Profitability Quality
+                   </h3>
+                   <span className="text-[10px] font-black text-blue-600">{data.audit.profitabilityQuality.score}/{data.audit.profitabilityQuality.max} Points</span>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {data.audit.profitabilityQuality.checks.map((check: any, idx: number) => (
+                     <div key={idx} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-2 h-2 rounded-full ${check.pass ? 'bg-green-500' : 'bg-slate-200'}`} />
+                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">{check.label}</span>
+                        </div>
+                        <span className={`text-[10px] font-black ${check.pass ? 'text-slate-900' : 'text-slate-400'}`}>{check.value}</span>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             )}
+
              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                 {model.checks.map((check, idx) => (
                   <div key={idx} className="flex items-start justify-between py-4 border-b border-slate-50 last:border-0 group">
