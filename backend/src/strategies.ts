@@ -545,118 +545,128 @@ export function calculate52WeekStrategy(quotes: Quote[], tolerance: number = 0.0
  * Merge Tolerance: 2.2% to 2.5%
  * Min Gap: 30%
  */
+/**
+ * WM Bands – Swing Entry Strategy (RE-ENGINEERED FROM PINE SCRIPT)
+ * Sequence: B-T-B-T-B (3 Bottoms, 2 Tops)
+ * Lookback: 1100 bars
+ * Merge: 2.2% - 2.5%
+ */
 export function calculateSRStrategy(quotes: Quote[]) {
-  const pivotLen = 5; // Reverting to 5 for more significant structural pivots
+  const pivotLen = 5;
   const lookback = 1100;
-  if (!quotes || quotes.length < 200) return null;
+  if (!quotes || quotes.length < 500) return null;
 
   const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
-  const pivots = findPivots(quotes, pivotLen);
-  const hiPivs = pivots.filter(p => p.type === 'high');
-  const loPivs = pivots.filter(p => p.type === 'low');
-
+  const highs = quotes.map(q => q.high);
+  const lows = quotes.map(q => q.low);
   const latestPrice = prices[prices.length - 1];
-  const mergeTol = 0.022; // Strict 2.2% as per user feedback/Pine Script min
-  const minGap = 0.30; // 30% gap
 
-  // 1. Cluster Lows to find Support Bands
-  const supportBands: { price: number; count: number; bars: number[] }[] = [];
-  loPivs.forEach(lp => {
-    let matched = false;
-    for (const band of supportBands) {
-      if (Math.abs(lp.price - band.price) / band.price <= mergeTol) {
-        // High Accuracy: Use the lowest price of the cluster as the base
-        band.price = Math.min(band.price, lp.price);
-        band.count++;
-        band.bars.push(lp.index);
-        matched = true;
-        break;
-      }
-    }
-    if (!matched) supportBands.push({ price: lp.price, count: 1, bars: [lp.index] });
-  });
+  // 1. Detect ALL Pivots in lookback
+  const hiPivs: { p: number, b: number }[] = [];
+  const loPivs: { p: number, b: number }[] = [];
 
-  // 2. Cluster Highs to find Resistance Bands
-  const resistanceBands: { price: number; count: number; bars: number[] }[] = [];
-  hiPivs.forEach(hp => {
-    let matched = false;
-    for (const band of resistanceBands) {
-      if (Math.abs(hp.price - band.price) / band.price <= mergeTol) {
-        // High Accuracy: Use the highest price of the cluster as resistance
-        band.price = Math.max(band.price, hp.price);
-        band.count++;
-        band.bars.push(hp.index);
-        matched = true;
-        break;
-      }
+  const startIdx = Math.max(0, quotes.length - lookback);
+  for (let i = startIdx + pivotLen; i < quotes.length - pivotLen; i++) {
+    const leftH = highs.slice(i - pivotLen, i);
+    const rightH = highs.slice(i + 1, i + pivotLen + 1);
+    if (highs[i] >= Math.max(...leftH) && highs[i] >= Math.max(...rightH)) {
+      hiPivs.push({ p: highs[i], b: i });
     }
-    if (!matched) resistanceBands.push({ price: hp.price, count: 1, bars: [hp.index] });
-  });
+
+    const leftL = lows.slice(i - pivotLen, i);
+    const rightL = lows.slice(i + 1, i + pivotLen + 1);
+    if (lows[i] <= Math.min(...leftL) && lows[i] <= Math.min(...rightL)) {
+      loPivs.push({ p: lows[i], b: i });
+    }
+  }
+
+  const mergeTol = 0.0235; // 2.35%
+  const minGap = 0.30; // 30%
+
+  // 2. Pivot Clustering (Pine Script Method)
+  const buildBands = (pivs: { p: number, b: number }[]) => {
+    const bands: { price: number, count: number, bars: number[] }[] = [];
+    pivs.forEach(piv => {
+      let found = false;
+      for (let b of bands) {
+        if (Math.abs(b.price - piv.p) <= (b.price * mergeTol)) {
+          b.price = (b.price * b.count + piv.p) / (b.count + 1);
+          b.count++;
+          b.bars.push(piv.b);
+          found = true;
+          break;
+        }
+      }
+      if (!found) bands.push({ price: piv.p, count: 1, bars: [piv.b] });
+    });
+    return bands;
+  };
+
+  const supportBands = buildBands(loPivs);
+  const resistanceBands = buildBands(hiPivs);
 
   let bestSetup: any = null;
+  let maxScore = -1;
 
-  // 3. Find the best R-S Pair with 30% Gap
-  for (const sBand of supportBands) {
-    if (sBand.count < 2) continue; // Minimum 2 bottoms
+  // 3. Pair Scoring and Sequence Validation
+  for (let s of supportBands) {
+    if (s.count < 3) continue; // B1, B2, B3 mandatory
 
-    for (const rBand of resistanceBands) {
-      if (rBand.count < 1) continue; 
-      
-      const gap = (rBand.price - sBand.price) / sBand.price;
+    for (let r of resistanceBands) {
+      if (r.count < 2 || r.price <= s.price) continue;
+
+      const gap = (r.price - s.price) / s.price;
       if (gap < minGap) continue;
 
-      // 4. Validate Sequence: B1 -> T1 -> B2 (Minimum required swing)
-      const timeline: { type: 'T' | 'B'; bar: number }[] = [
-        ...sBand.bars.map(bar => ({ type: 'B' as const, bar })),
-        ...rBand.bars.map(bar => ({ type: 'T' as const, bar }))
-      ].sort((a, b) => a.bar - b.bar);
+      // 4. Sequencing: Combine and sort touches
+      const timeline = [
+        ...s.bars.map(b => ({ t: 'B', b })),
+        ...r.bars.map(b => ({ t: 'T', b }))
+      ].sort((a, b) => a.b - b.b);
 
-      let seq: string[] = [];
+      // Extract unique sequential touches (B-T-B-T-B)
+      let sequence: string = "";
+      let lastType = "";
       let seqBars: number[] = [];
-      let lastType = '';
-      
-      timeline.forEach(touch => {
-        if (touch.type !== lastType) {
-          seq.push(touch.type);
-          seqBars.push(touch.bar);
-          lastType = touch.type;
+
+      timeline.forEach(point => {
+        if (point.t !== lastType) {
+          sequence += point.t;
+          seqBars.push(point.b);
+          lastType = point.t;
         }
       });
 
-      // Pattern: B -> T -> B (minimum)
-      let foundPattern = false;
-      let patternEndBar = 0;
-      for (let k = seq.length - 1; k >= 2; k--) {
-        if (seq[k] === 'B' && seq[k-1] === 'T' && seq[k-2] === 'B') {
-          foundPattern = true;
-          patternEndBar = seqBars[k];
-          break;
-        }
-      }
+      // Find last B-T-B-T-B
+      if (sequence.includes("BTBTB")) {
+        const patternIdx = sequence.lastIndexOf("BTBTB");
+        const patternEndBar = seqBars[patternIdx + 4];
 
-      if (foundPattern) {
-        // Proximity Check: Price must be at Support (Entry Zone)
-        const isNearSupport = latestPrice <= sBand.price * (1 + mergeTol) && latestPrice >= sBand.price * (1 - mergeTol);
+        // 5. Entry & Target Logic
+        const isNearSupport = Math.abs(latestPrice - s.price) / s.price <= mergeTol;
         
-        if (isNearSupport) {
+        // Scoring (Simplified Pine Score)
+        const score = s.count * 0.4 + (gap / 0.4) * 0.3 + (s.count + r.count) * 0.2;
+
+        if (isNearSupport && score > maxScore) {
+          maxScore = score;
           bestSetup = {
             type: 'WM_SWING',
-            anchorA: sBand.price,
-            target: rBand.price,
+            anchorA: s.price,
+            target: r.price,
             isBuyZone: true,
-            triggerDate: quotes[patternEndBar].date,
-            reboundCount: sBand.count,
+            triggerDate: typeof quotes[patternEndBar].date === 'string' ? quotes[patternEndBar].date : (quotes[patternEndBar].date as Date).toISOString(),
+            reboundCount: s.count,
             gap: gap * 100
           };
-          break;
         }
       }
     }
-    if (bestSetup) break;
   }
 
   return bestSetup;
 }
+
 
 
   /**
