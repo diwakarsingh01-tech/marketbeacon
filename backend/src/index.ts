@@ -9,7 +9,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot } from './screener.js';
 import { initDB, getDB } from './db.js';
-import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels } from './strategies.js';
+import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle } from './strategies.js';
 
 const yahooFinance = new YahooFinance();
 dotenv.config();
@@ -278,8 +278,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
     // --- Basket Enforcement Logic (User Directive) ---
     if (strategyId === 'ENVELOPE_SHORT' || strategyId === '52W_HIGH_LOW' || strategyId === 'BOLLINGER' || strategyId === 'SMA' || strategyId === 'ENVELOPE_LONG') {
       symbols = BASKETS['BLUECHIP'];
-    } else if (strategyId === 'SMA_ABCD') {
-      // Use HIGH_BITA (typo-fixed in backend BASKETS earlier but let's be careful)
+    } else if (strategyId === 'SMA_ABCD' || strategyId === 'CUP_HANDLE_ABCD' || strategyId === 'RHS_ABCD') {
       symbols = [...BASKETS['BLUECHIP'], ...(BASKETS['HIGH_BETA'] || BASKETS['HIGH_BITA'] || [])];
     }
 
@@ -320,6 +319,10 @@ app.get('/api/backtest/envelope', async (req, res) => {
               strategyData = calculateSMAStacking(quotes);
             } else if (strategyId === '52W_HIGH_LOW') {
               strategyData = calculate52WeekStrategy(quotes);
+            } else if (strategyId === 'CUP_HANDLE_ABCD') {
+              strategyData = calculateCupHandle(quotes);
+            } else if (strategyId === 'RHS_ABCD') {
+              strategyData = calculateRHS(quotes);
             } else {
               strategyData = calculateEnvelope(quotes);
             }
@@ -346,6 +349,10 @@ app.get('/api/backtest/envelope', async (req, res) => {
               strategyData = calculateSMAStacking(quotes);
             } else if (strategyId === '52W_HIGH_LOW') {
               strategyData = calculate52WeekStrategy(quotes);
+            } else if (strategyId === 'CUP_HANDLE_ABCD') {
+              strategyData = calculateCupHandle(quotes);
+            } else if (strategyId === 'RHS_ABCD') {
+              strategyData = calculateRHS(quotes);
             } else {
               strategyData = calculateEnvelope(quotes);
             }
@@ -363,8 +370,10 @@ app.get('/api/backtest/envelope', async (req, res) => {
           const isBollinger = strategyId === 'BOLLINGER';
           const isSMAStack = strategyId === 'SMA';
           const is52W = strategyId === '52W_HIGH_LOW';
+          const isCupHandle = strategyId === 'CUP_HANDLE_ABCD';
+          const isRHS = strategyId === 'RHS_ABCD';
 
-          let entryPrice = strategyData.lowerBand || strategyData.entryPrice || 0;
+          let entryPrice = strategyData.lowerBand || strategyData.entryPrice || strategyData.anchorA || 0;
           let target = strategyData.upperBand || strategyData.target || 0;
 
           if (isShort) {
@@ -375,10 +384,17 @@ app.get('/api/backtest/envelope', async (req, res) => {
             target = strategyData.rollingHigh || 0;
           } else if (isSMAStack) {
             entryPrice = strategyData.entryPrice || 0;
+          } else if (isCupHandle || isRHS) {
+            entryPrice = strategyData.anchorA || 0;
+            target = strategyData.target || 0;
           } else if (!isBollinger) {
             // Default Envelope Long logic
             target = Math.max(strategyData.upperBand || 0, (lastQuote.adjclose || lastQuote.adjClose || lastQuote.close || 0) * 1.30);
           }
+
+          // --- Direct Entry Rule: Only if Target > 30% ---
+          const targetPct = entryPrice > 0 ? ((target - entryPrice) / entryPrice) * 100 : 0;
+          const isDirectAllowed = targetPct > 30;
 
           const abcd = calculateABCDLevels(entryPrice, audit.metrics.marketCap || 0, basketId);
 
@@ -394,8 +410,12 @@ app.get('/api/backtest/envelope', async (req, res) => {
             isPass: audit.isPass,
             rejectionReason: audit.reason,
             distanceFromLower: isShort ? (strategyData.distanceFromEMA || 0) : (strategyData.distanceFromLower || 0),
-            isBuyZone: !!strategyData.isBuyZone,
+            isBuyZone: (isCupHandle || isRHS) 
+              ? (isDirectAllowed ? !!strategyData.isBuyZone : false) 
+              : !!strategyData.isBuyZone,
             tranche: isShort ? 'B1 (Mid)' : 'A',
+            isDirectAllowed,
+            targetPct,
             abcd
           };
 

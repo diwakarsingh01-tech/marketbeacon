@@ -428,13 +428,175 @@ export function calculate52WeekStrategy(quotes: Quote[], tolerance: number = 0.0
   }
 
   return {
-    rollingLow,
-    rollingHigh,
-    isBuyZone,
-    triggerDate,
-    entryPrice,
-    currentPrice,
-    target: rollingHigh,
-    abcd: calculateABCDLevels(rollingLow, 50000000000)
+  rollingLow,
+  rollingHigh,
+  isBuyZone,
+  triggerDate,
+  entryPrice,
+  currentPrice,
+  target: rollingHigh,
+  abcd: calculateABCDLevels(rollingLow, 50000000000)
   };
-}
+  }
+
+  /**
+  * --- Advanced Pattern Engineering (Institutional Grade) ---
+  */
+
+  export interface Pivot {
+  index: number;
+  price: number;
+  type: 'high' | 'low';
+  date: string;
+  }
+
+  /**
+  * Finds local pivots (highs and lows) using a fixed window.
+  * High Accuracy: Requires being higher/lower than ALL neighbors in the window.
+  */
+  export function findPivots(quotes: Quote[], window: number = 10): Pivot[] {
+  const pivots: Pivot[] = [];
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+
+  for (let i = window; i < quotes.length - window; i++) {
+  const current = prices[i];
+  const leftSide = prices.slice(i - window, i);
+  const rightSide = prices.slice(i + 1, i + window + 1);
+
+  // High Pivot
+  if (current > Math.max(...leftSide) && current > Math.max(...rightSide)) {
+    pivots.push({
+      index: i,
+      price: current,
+      type: 'high',
+      date: typeof quotes[i].date === 'string' ? (quotes[i].date as string).split('T')[0] : (quotes[i].date as Date).toISOString().split('T')[0]
+    });
+  }
+
+  // Low Pivot
+  if (current < Math.min(...leftSide) && current < Math.min(...rightSide)) {
+    pivots.push({
+      index: i,
+      price: current,
+      type: 'low',
+      date: typeof quotes[i].date === 'string' ? (quotes[i].date as string).split('T')[0] : (quotes[i].date as Date).toISOString().split('T')[0]
+    });
+  }
+  }
+  return pivots;
+  }
+
+  /**
+  * RHS + ABCD Strategy
+  * Strict Rule: Shoulders within 5% height. Head must be lowest. Neckline relatively flat.
+  */
+  export function calculateRHS(quotes: Quote[]) {
+  if (!quotes || quotes.length < 100) return null;
+
+  const pivots = findPivots(quotes, 5);
+  const lowPivots = pivots.filter(p => p.type === 'low');
+  const highPivots = pivots.filter(p => p.type === 'high');
+
+  if (lowPivots.length < 3) return null;
+
+  // We need 3 consecutive lows: L-Shoulder, Head, R-Shoulder
+  for (let i = lowPivots.length - 1; i >= 2; i--) {
+  const ls = lowPivots[i - 2];
+  const head = lowPivots[i - 1];
+  const rs = lowPivots[i];
+
+  // Head must be lower than shoulders
+  if (head.price < ls.price && head.price < rs.price) {
+    // Symmetry: Shoulders within 5%
+    const diff = Math.abs(ls.price - rs.price) / Math.max(ls.price, rs.price);
+    if (diff <= 0.05) {
+      // Neckline: Find the high pivot between LS and Head, and between Head and RS
+      const n1 = highPivots.find(p => p.index > ls.index && p.index < head.index);
+      const n2 = highPivots.find(p => p.index > head.index && p.index < rs.index);
+
+      if (n1 && n2) {
+        const neckline = (n1.price + n2.price) / 2;
+        const target = neckline + (neckline - head.price);
+        const latestPrice = quotes[quotes.length - 1].adjclose || quotes[quotes.length - 1].adjClose || quotes[quotes.length - 1].close;
+
+        // Breakout Check: Has price crossed the neckline?
+        if (latestPrice >= neckline * 0.98) { // 2% buffer for proximity
+          return {
+            type: 'RHS',
+            anchorA: neckline,
+            target,
+            head,
+            ls,
+            rs,
+            isBuyZone: true, // Used by API to filter
+            triggerDate: rs.date
+          };
+        }
+      }
+    }
+  }
+  }
+  return null;
+  }
+
+  /**
+  * Cup & Handle + ABCD Strategy
+  * Strict Rule: Lips within 5%. Cup Depth > 15%. Handle retracement < 50% of Cup.
+  */
+  export function calculateCupHandle(quotes: Quote[]) {
+  if (!quotes || quotes.length < 150) return null;
+
+  const pivots = findPivots(quotes, 10);
+  const highPivots = pivots.filter(p => p.type === 'high');
+  const lowPivots = pivots.filter(p => p.type === 'low');
+
+  if (highPivots.length < 2) return null;
+
+  // Look for two high pivots forming the "rim" of the cup
+  for (let i = highPivots.length - 1; i >= 1; i--) {
+  const leftLip = highPivots[i - 1];
+  const rightLip = highPivots[i];
+
+  // Symmetry: Lips within 5%
+  const diff = Math.abs(leftLip.price - rightLip.price) / Math.max(leftLip.price, rightLip.price);
+  if (diff <= 0.05) {
+    // Find the lowest point between lips (The Cup bottom)
+    const cupLow = lowPivots.find(p => p.index > leftLip.index && p.index < rightLip.index);
+    if (cupLow) {
+      const cupDepth = (Math.max(leftLip.price, rightLip.price) - cupLow.price) / Math.max(leftLip.price, rightLip.price);
+
+      // Cup Depth must be > 15%
+      if (cupDepth >= 0.15) {
+        // Handle: Minor consolidation after right lip
+        const handleLow = quotes.slice(rightLip.index).reduce((min, q) => {
+          const p = q.adjclose || q.adjClose || q.close;
+          return p < min ? p : min;
+        }, rightLip.price);
+
+        const handleRetrace = (rightLip.price - handleLow) / (rightLip.price - cupLow.price);
+
+        // Handle retrace max 50% of cup depth
+        if (handleRetrace <= 0.50) {
+          const latestPrice = quotes[quotes.length - 1].adjclose || quotes[quotes.length - 1].adjClose || quotes[quotes.length - 1].close;
+          const target = rightLip.price * (1 + cupDepth);
+
+          // Breakout check
+          if (latestPrice >= rightLip.price * 0.98) {
+            return {
+              type: 'CUP_HANDLE',
+              anchorA: rightLip.price,
+              target,
+              cupLow,
+              leftLip,
+              rightLip,
+              isBuyZone: true,
+              triggerDate: rightLip.date
+            };
+          }
+        }
+      }
+    }
+  }
+  }
+  return null;
+  }

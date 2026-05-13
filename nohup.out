@@ -1,0 +1,25 @@
+
+> supertracker@0.0.0 dev
+> vite --host
+
+
+  VITE v8.0.10  ready in 330 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.1.2:5173/
+8:50:52 am [vite] (client) hmr update /src/pages/Education.tsx, /src/index.css
+
+> supertracker@0.0.0 dev
+> vite --host
+
+
+  VITE v8.0.10  ready in 277 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.1.2:5173/
+8:51:13 am [vite] (client) [console.error] Encountered two children with the same key, `KANSAINER`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+8:51:13 am [vite] (client) [console.error] Encountered two children with the same key, `KANSAINER`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+8:51:13 am [vite] (client) [console.error] Encountered two children with the same key, `KANSAINER`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+8:51:13 am [vite] (client) [console.error] Encountered two children with the same key, `KANSAINER`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+8:51:14 am [vite] (client) [console.error] Encountered two children with the same key, `KANSAINER`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+8:51:14 am [vite] (client) [console.error] Encountered two children with the same key, `KANSAINER`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.

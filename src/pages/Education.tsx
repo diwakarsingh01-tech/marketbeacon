@@ -91,6 +91,30 @@ const StrategyEducation: React.FC = () => {
         sell: 'Price near rolling 252-day high.',
         intent: 'Revisits to 52-week lows in bluechips are high-conviction zones.'
       }
+    },
+    {
+      id: 'rhs',
+      title: 'Reverse Head & Shoulders',
+      icon: TrendingUp,
+      color: 'text-cyan-600',
+      content: {
+        logic: 'Bullish reversal pattern with strict geometric symmetry.',
+        structure: 'Left Shoulder, Head (Lowest), and Right Shoulder.',
+        accuracy: 'Shoulders must be within 5% height of each other for institutional validity.',
+        abcd_rule: 'If target < 30%, direct entry at neckline is rejected. Wait for ABCD retracement.'
+      }
+    },
+    {
+      id: 'cup_handle',
+      title: 'Cup & Handle',
+      icon: Target,
+      color: 'text-orange-600',
+      content: {
+        logic: 'Rounding bottom (Cup) followed by minor consolidation (Handle).',
+        structure: 'Cup depth > 15%. Handle retrace < 50% of cup depth.',
+        accuracy: 'Lips must be within 5% symmetry. Messy structures are ignored.',
+        abcd_rule: 'Breakout level serves as Anchor A. Preferred entry is at B/C/D levels unless target is massive.'
+      }
     }
   ];
 
