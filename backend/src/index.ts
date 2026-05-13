@@ -270,23 +270,6 @@ app.get('/api/backtest/envelope', async (req, res) => {
     const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
 
     let symbols = BASKETS[basketId] || BASKETS['BLUECHIP'];
-    if (basketId === 'PROFIT') {
-      const dynamic = getDynamicBasket();
-      if (dynamic.length > 0) symbols = dynamic;
-    }
-
-    // --- Basket Enforcement Logic (User Directive) ---
-    if (strategyId === 'ENVELOPE_SHORT' || strategyId === '52W_HIGH_LOW' || strategyId === 'BOLLINGER' || strategyId === 'SMA' || strategyId === 'ENVELOPE_LONG') {
-      symbols = BASKETS['BLUECHIP'];
-    } else if (strategyId === 'SMA_ABCD' || strategyId === 'CUP_HANDLE_ABCD' || strategyId === 'RHS_ABCD') {
-      symbols = [...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']];
-    } else if (strategyId === 'SR_STRATEGY') {
-      // SR_STRATEGY uses ALL distinct baskets
-      symbols = [...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']];
-    }
-
-    // --- De-duplication Logic ---
-    symbols = [...new Set(symbols)];
 
     const snapshot = getMarketSnapshot();
     const openTrades: any[] = [];
