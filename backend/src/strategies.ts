@@ -539,85 +539,125 @@ export function calculate52WeekStrategy(quotes: Quote[], tolerance: number = 0.0
         return null;
         }
 
-        /**
-        * Support & Resistance Strategy
-        * Logic: Cluster pivots to find strong zones. Require 2 rebounds. 30% upside.
-        */
-        export function calculateSRStrategy(quotes: Quote[]) {
-        if (!quotes || quotes.length < 100) return null;
+/**
+ * WM Bands – Swing Entry Strategy (Batch 9 Standard)
+ * Sequence: B-T-B-T-B (Bottom-Top-Bottom-Top-Bottom)
+ * Merge Tolerance: 2.2% to 2.5%
+ * Min Gap: 30%
+ */
+export function calculateSRStrategy(quotes: Quote[]) {
+  const pivotLen = 5;
+  const lookback = 1100;
+  if (!quotes || quotes.length < 200) return null;
 
-        const pivots = findPivots(quotes, 5);
-        const lowPivots = pivots.filter(p => p.type === 'low');
-        const highPivots = pivots.filter(p => p.type === 'high');
-        const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
-        const latestPrice = prices[prices.length - 1];
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const pivots = findPivots(quotes, pivotLen);
+  const hiPivs = pivots.filter(p => p.type === 'high');
+  const loPivs = pivots.filter(p => p.type === 'low');
 
-        // 1. Cluster Lows to find Support Zones
-        const clusterTolerance = 0.04; // 4% tolerance for clustering
-        const supportZones: { price: number; count: number; indices: number[] }[] = [];
+  const latestPrice = prices[prices.length - 1];
+  const mergeTol = 0.0235; // Avg of 2.2% and 2.5%
+  const minGap = 0.30; // 30% gap
 
-        lowPivots.forEach(lp => {
-        let matched = false;
-        for (const zone of supportZones) {
-        if (Math.abs(lp.price - zone.price) / zone.price <= clusterTolerance) {
-        zone.price = (zone.price * zone.count + lp.price) / (zone.count + 1);
-        zone.count++;
-        zone.indices.push(lp.index);
+  // 1. Cluster Lows to find Support Bands
+  const supportBands: { price: number; count: number; bars: number[] }[] = [];
+  loPivs.forEach(lp => {
+    let matched = false;
+    for (const band of supportBands) {
+      if (Math.abs(lp.price - band.price) / band.price <= mergeTol) {
+        band.price = (band.price * band.count + lp.price) / (band.count + 1);
+        band.count++;
+        band.bars.push(lp.index);
         matched = true;
         break;
-        }
-        }
-        if (!matched) {
-        supportZones.push({ price: lp.price, count: 1, indices: [lp.index] });
-        }
-        });
+      }
+    }
+    if (!matched) supportBands.push({ price: lp.price, count: 1, bars: [lp.index] });
+  });
 
-        // 2. Cluster Highs to find Resistance Zones
-        const resistanceZones: { price: number; count: number; indices: number[] }[] = [];
-        highPivots.forEach(hp => {
-        let matched = false;
-        for (const zone of resistanceZones) {
-        if (Math.abs(hp.price - zone.price) / zone.price <= clusterTolerance) {
-        zone.price = (zone.price * zone.count + hp.price) / (zone.count + 1);
-        zone.count++;
-        zone.indices.push(hp.index);
+  // 2. Cluster Highs to find Resistance Bands
+  const resistanceBands: { price: number; count: number; bars: number[] }[] = [];
+  hiPivs.forEach(hp => {
+    let matched = false;
+    for (const band of resistanceBands) {
+      if (Math.abs(hp.price - band.price) / band.price <= mergeTol) {
+        band.price = (band.price * band.count + hp.price) / (band.count + 1);
+        band.count++;
+        band.bars.push(hp.index);
         matched = true;
         break;
-        }
-        }
-        if (!matched) {
-        resistanceZones.push({ price: hp.price, count: 1, indices: [hp.index] });
-        }
-        });
+      }
+    }
+    if (!matched) resistanceBands.push({ price: hp.price, count: 1, bars: [hp.index] });
+  });
 
-        // 3. Find the valid Support Zone (Today's proximity)
-        const activeSupport = supportZones.find(z => 
-        z.count >= 2 && // Require at least 2 rebounds
-        latestPrice <= z.price * (1 + clusterTolerance) && // Price is near support
-        latestPrice >= z.price * (1 - clusterTolerance)
-        );
+  let bestSetup: any = null;
 
-        if (activeSupport) {
-        // 4. Find nearest valid Resistance Zone ABOVE current support
-        const validResistance = resistanceZones
-        .filter(rz => rz.price >= activeSupport.price * 1.30) // Minimum 30% upside
-        .sort((a, b) => a.price - b.price)[0];
+  // 3. Find the best R-S Pair with 30% Gap
+  for (const sBand of supportBands) {
+    if (sBand.count < 3) continue; // Need at least 3 bottoms (B1, B2, B3)
 
-        if (validResistance) {
-        return {
-        type: 'SR_STRATEGY',
-        anchorA: activeSupport.price,
-        target: validResistance.price,
-        reboundCount: activeSupport.count,
-        isBuyZone: true,
-        triggerDate: quotes[activeSupport.indices[activeSupport.indices.length - 1]].date,
-        currentPrice: latestPrice
-        };
-        }
-        }
+    for (const rBand of resistanceBands) {
+      if (rBand.count < 2) continue; // Need at least 2 tops (T1, T2)
+      
+      const gap = (rBand.price - sBand.price) / sBand.price;
+      if (gap < minGap) continue;
 
-        return null;
+      // 4. Validate Sequence: B1 -> T1 -> B2 -> T2 -> B3
+      // We combine and sort all touches of these two specific bands
+      const timeline: { type: 'T' | 'B'; bar: number }[] = [
+        ...sBand.bars.map(bar => ({ type: 'B' as const, bar })),
+        ...rBand.bars.map(bar => ({ type: 'T' as const, bar }))
+      ].sort((a, b) => a.bar - b.bar);
+
+      // Search for sequence ending with a recent Bottom
+      let seq: string[] = [];
+      let seqBars: number[] = [];
+      let lastType = '';
+      
+      timeline.forEach(touch => {
+        if (touch.type !== lastType) {
+          seq.push(touch.type);
+          seqBars.push(touch.bar);
+          lastType = touch.type;
         }
+      });
+
+      // Find the last B-T-B-T-B pattern
+      let foundPattern = false;
+      let patternEndBar = 0;
+      for (let k = seq.length - 1; k >= 4; k--) {
+        if (seq[k] === 'B' && seq[k-1] === 'T' && seq[k-2] === 'B' && seq[k-3] === 'T' && seq[k-4] === 'B') {
+          foundPattern = true;
+          patternEndBar = seqBars[k];
+          break;
+        }
+      }
+
+      if (foundPattern) {
+        // Proximity Check: Is price currently near this Support?
+        const isBuyZone = Math.abs(latestPrice - sBand.price) / sBand.price <= mergeTol;
+        
+        if (isBuyZone || seqBars[seqBars.length - 1] === patternEndBar) {
+          bestSetup = {
+            type: 'WM_SWING',
+            anchorA: sBand.price,
+            target: rBand.price,
+            isBuyZone: true,
+            triggerDate: quotes[patternEndBar].date,
+            reboundCount: sBand.count,
+            gap: gap * 100
+          };
+          break;
+        }
+      }
+    }
+    if (bestSetup) break;
+  }
+
+  return bestSetup;
+}
+
 
   /**
   * Cup & Handle + ABCD Strategy
