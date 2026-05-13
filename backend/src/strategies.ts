@@ -546,7 +546,7 @@ export function calculate52WeekStrategy(quotes: Quote[], tolerance: number = 0.0
  * Min Gap: 30%
  */
 export function calculateSRStrategy(quotes: Quote[]) {
-  const pivotLen = 5;
+  const pivotLen = 3; // Reduced from 5 for higher sensitivity
   const lookback = 1100;
   if (!quotes || quotes.length < 200) return null;
 
@@ -556,7 +556,7 @@ export function calculateSRStrategy(quotes: Quote[]) {
   const loPivs = pivots.filter(p => p.type === 'low');
 
   const latestPrice = prices[prices.length - 1];
-  const mergeTol = 0.0235; // Avg of 2.2% and 2.5%
+  const mergeTol = 0.025; // Upper end of 2.2-2.5% range
   const minGap = 0.30; // 30% gap
 
   // 1. Cluster Lows to find Support Bands
@@ -595,22 +595,20 @@ export function calculateSRStrategy(quotes: Quote[]) {
 
   // 3. Find the best R-S Pair with 30% Gap
   for (const sBand of supportBands) {
-    if (sBand.count < 3) continue; // Need at least 3 bottoms (B1, B2, B3)
+    if (sBand.count < 2) continue; // Minimum 2 bottoms (B1, B2)
 
     for (const rBand of resistanceBands) {
-      if (rBand.count < 2) continue; // Need at least 2 tops (T1, T2)
+      if (rBand.count < 1) continue; // Minimum 1 top (T1)
       
       const gap = (rBand.price - sBand.price) / sBand.price;
       if (gap < minGap) continue;
 
-      // 4. Validate Sequence: B1 -> T1 -> B2 -> T2 -> B3
-      // We combine and sort all touches of these two specific bands
+      // 4. Validate Sequence: B1 -> T1 -> B2 (Minimum Swing)
       const timeline: { type: 'T' | 'B'; bar: number }[] = [
         ...sBand.bars.map(bar => ({ type: 'B' as const, bar })),
         ...rBand.bars.map(bar => ({ type: 'T' as const, bar }))
       ].sort((a, b) => a.bar - b.bar);
 
-      // Search for sequence ending with a recent Bottom
       let seq: string[] = [];
       let seqBars: number[] = [];
       let lastType = '';
@@ -623,11 +621,11 @@ export function calculateSRStrategy(quotes: Quote[]) {
         }
       });
 
-      // Find the last B-T-B-T-B pattern
+      // Find if B-T-B exists ending with a Bottom
       let foundPattern = false;
       let patternEndBar = 0;
-      for (let k = seq.length - 1; k >= 4; k--) {
-        if (seq[k] === 'B' && seq[k-1] === 'T' && seq[k-2] === 'B' && seq[k-3] === 'T' && seq[k-4] === 'B') {
+      for (let k = seq.length - 1; k >= 2; k--) {
+        if (seq[k] === 'B' && seq[k-1] === 'T' && seq[k-2] === 'B') {
           foundPattern = true;
           patternEndBar = seqBars[k];
           break;
@@ -635,10 +633,10 @@ export function calculateSRStrategy(quotes: Quote[]) {
       }
 
       if (foundPattern) {
-        // Proximity Check: Is price currently near this Support?
-        const isBuyZone = Math.abs(latestPrice - sBand.price) / sBand.price <= mergeTol;
+        // Proximity Check: Price must be near Support
+        const isNearSupport = Math.abs(latestPrice - sBand.price) / sBand.price <= mergeTol;
         
-        if (isBuyZone || seqBars[seqBars.length - 1] === patternEndBar) {
+        if (isNearSupport) {
           bestSetup = {
             type: 'WM_SWING',
             anchorA: sBand.price,

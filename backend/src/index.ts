@@ -278,8 +278,11 @@ app.get('/api/backtest/envelope', async (req, res) => {
     // --- Basket Enforcement Logic (User Directive) ---
     if (strategyId === 'ENVELOPE_SHORT' || strategyId === '52W_HIGH_LOW' || strategyId === 'BOLLINGER' || strategyId === 'SMA' || strategyId === 'ENVELOPE_LONG') {
       symbols = BASKETS['BLUECHIP'];
-    } else if (strategyId === 'SMA_ABCD' || strategyId === 'CUP_HANDLE_ABCD' || strategyId === 'RHS_ABCD' || strategyId === 'SR_STRATEGY') {
+    } else if (strategyId === 'SMA_ABCD' || strategyId === 'CUP_HANDLE_ABCD' || strategyId === 'RHS_ABCD') {
       symbols = [...BASKETS['BLUECHIP'], ...(BASKETS['HIGH_BETA'] || BASKETS['HIGH_BITA'] || [])];
+    } else if (strategyId === 'SR_STRATEGY') {
+      // SR_STRATEGY now uses ALL baskets for maximum signal discovery
+      symbols = [...BASKETS['BLUECHIP'], ...(BASKETS['HIGH_BETA'] || BASKETS['HIGH_BITA'] || []), ...BASKETS['PROFIT']];
     }
 
     // --- De-duplication Logic ---

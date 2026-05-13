@@ -315,3 +315,32 @@ Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedba
 🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
 ✅ Connected to Turso!
 SuperTracker Backend running on port 3001
+2026-05-13T04:29:46.647Z - GET /api/market-indices
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-05-13T04:30:46.642Z - GET /api/market-indices
+2026-05-13T04:31:46.639Z - GET /api/market-indices
+2026-05-13T04:32:46.640Z - GET /api/market-indices
+2026-05-13T04:33:45.810Z - GET /api/market-indices
+2026-05-13T04:34:46.634Z - GET /api/market-indices
+2026-05-13T04:35:46.647Z - GET /api/market-indices
+2026-05-13T04:36:12.748Z - GET /api/market-indices
+2026-05-13T04:36:12.751Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:36:13.228Z - GET /api/market-indices
+2026-05-13T04:36:13.376Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:36:13.512Z - GET /api/stock-prices?symbols=GILLETTE,BAYERCROP
+2026-05-13T04:36:14.606Z - GET /api/stock-prices?symbols=BAYERCROP,GILLETTE
+2026-05-13T04:36:34.706Z - GET /api/market-indices
+2026-05-13T04:36:34.708Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:36:35.185Z - GET /api/market-indices
+2026-05-13T04:36:35.336Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T04:36:35.460Z - GET /api/stock-prices?symbols=GILLETTE,BAYERCROP
+2026-05-13T04:36:35.890Z - GET /api/stock-prices?symbols=GILLETTE,BAYERCROP
+
+> backend@1.0.0 dev
+> tsx src/index.ts
+
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
+✅ Connected to Turso!
+SuperTracker Backend running on port 3001
