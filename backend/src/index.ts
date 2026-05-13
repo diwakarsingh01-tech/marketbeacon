@@ -448,10 +448,10 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
     res.json({
       basketName: basketId,
-      open: openTrades,
-      hold: holdTrades,
-      rejected: rejectedStocks, 
-      allStocks: allScannedStocks,
+      open: [...new Map(openTrades.map(i => [i.symbol, i])).values()],
+      hold: [...new Map(holdTrades.map(i => [i.symbol, i])).values()],
+      rejected: [...new Map(rejectedStocks.map(i => [i.symbol, i])).values()], 
+      allStocks: [...new Map(allScannedStocks.map(i => [i.symbol, i])).values()],
       summary: {
         totalScanned: symbols.length,
         qualified: openTrades.length,
