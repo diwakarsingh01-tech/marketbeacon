@@ -23,6 +23,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
     { icon: Zap, label: 'Screener', path: '/screener', desc: 'Signal Discovery' },
     { icon: Globe, label: 'Market Watch', path: '/market', desc: 'Universe Scan' },
     { icon: Briefcase, label: 'My Portfolio', path: '/portfolio', desc: 'Wealth Manager' },
+    { icon: ShieldCheck, label: 'Education', path: '/education', desc: 'Strategy Guides' },
     { icon: BookOpen, label: 'Trade Journal', path: '/journal', desc: 'Order Ledger' },
     { icon: Store, label: 'Marketplace', path: '/marketplace', desc: 'Premium Alpha' },
     { icon: HistoryIcon, label: 'Performance Lab', path: '/backtest', desc: 'Backtest Engine' }

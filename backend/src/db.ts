@@ -30,6 +30,8 @@ export async function initDB() {
       name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
+      role TEXT DEFAULT 'USER',
+      is_beta_tester BOOLEAN DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -43,7 +45,20 @@ export async function initDB() {
       buy_price REAL DEFAULT 0.0,
       added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(user_id, symbol),
-      FOREIGN KEY (user_id) REFERENCES users (id)
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      rating INTEGER,
+      disposition TEXT,
+      comment TEXT,
+      timestamp TEXT,
+      url TEXT,
+      FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
 

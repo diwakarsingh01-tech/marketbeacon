@@ -13,7 +13,8 @@ import {
   Briefcase as BriefcaseIcon, 
   Star as StarIcon,
   Download as DownloadIcon,
-  ShieldCheck
+  ShieldCheck,
+  Info as InfoIcon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -234,12 +235,40 @@ const TradeTable: React.FC<TradeTableProps> = ({
           {visibleColumns.symbol && <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('symbol')}><div className="flex items-center">Symbol <SortIcon column="symbol" /></div></th>}
           {visibleColumns.sector && <th className="px-4 py-3">Sector</th>}
           {visibleColumns.marketCap && <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('marketCap')}><div className="flex items-center">Cap <SortIcon column="marketCap" /></div></th>}
-          {visibleColumns.abcd && <th className="px-4 py-3 text-center">Ladder (ABCD)</th>}
+          {visibleColumns.abcd && (
+            <th className="px-4 py-3 text-center">
+              <div className="flex items-center justify-center">
+                Ladder (ABCD)
+                <Link to="/education" className="ml-1 opacity-20 hover:opacity-100 transition-opacity">
+                  <InfoIcon className="h-2.5 w-2.5" />
+                </Link>
+              </div>
+            </th>
+          )}
           {visibleColumns.basePrice && <th className="px-4 py-3 text-right">Base</th>}
           {visibleColumns.cmp && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('price')}><div className="flex items-center justify-end">CMP <SortIcon column="price" /></div></th>}
           {visibleColumns.dfh && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div></th>}
-          {visibleColumns.objective && <th className="px-4 py-3 text-right text-blue-600">Target</th>}
-          {visibleColumns.roi && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('roi')}><div className="flex items-center justify-end">ROI% <SortIcon column="roi" /></div></th>}
+          {visibleColumns.objective && (
+            <th className="px-4 py-3 text-right text-blue-600">
+              <div className="flex items-center justify-end">
+                Target
+                <Link to="/education" className="ml-1 opacity-20 hover:opacity-100 transition-opacity">
+                  <InfoIcon className="h-2.5 w-2.5" />
+                </Link>
+              </div>
+            </th>
+          )}
+          {visibleColumns.roi && (
+            <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('roi')}>
+              <div className="flex items-center justify-end">
+                ROI%
+                <Link to="/education" className="ml-1 opacity-20 hover:opacity-100 transition-opacity">
+                  <InfoIcon className="h-2.5 w-2.5" />
+                </Link>
+                <SortIcon column="roi" />
+              </div>
+            </th>
+          )}
           {visibleColumns.pending && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('pending')}><div className="flex items-center justify-end">Gap% <SortIcon column="pending" /></div></th>}
           {visibleColumns.fundamentals && <th className="px-4 py-3 text-right">Audit</th>}
         </tr>

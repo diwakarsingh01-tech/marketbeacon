@@ -143,6 +143,7 @@ app.post('/api/watchlist', authenticateToken, async (req: any, res) => {
   try {
     const { symbol } = req.body;
     const db = getDB();
+    console.log(`📝 Activity Log: User ${req.user.id} added ${symbol} to watchlist`);
     await db.run('INSERT OR IGNORE INTO watchlists (user_id, symbol) VALUES (?, ?)', [req.user.id, symbol.toUpperCase()]);
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -251,19 +252,38 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
   };
 }
 
+app.post('/api/feedback', authenticateToken, async (req: any, res) => {
+  try {
+    const { rating, disposition, comment, timestamp, url } = req.body;
+    const db = getDB();
+    await db.run(
+      'INSERT INTO feedback (user_id, rating, disposition, comment, timestamp, url) VALUES (?, ?, ?, ?, ?, ?)',
+      [req.user.id, rating, disposition, comment, timestamp, url]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/backtest/envelope', async (req, res) => {
   try {
     const basketId = (req.query.basket as string) || 'BLUECHIP';
     const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
-    
+
     let symbols = BASKETS[basketId] || BASKETS['BLUECHIP'];
     if (basketId === 'PROFIT') {
       const dynamic = getDynamicBasket();
       if (dynamic.length > 0) symbols = dynamic;
     }
-    
-    const snapshot = getMarketSnapshot();
-    const openTrades: any[] = [];
+
+    // --- Basket Enforcement Logic (User Directive) ---
+    if (strategyId === 'ENVELOPE_SHORT' || strategyId === '52W_HIGH_LOW' || strategyId === 'BOLLINGER' || strategyId === 'SMA' || strategyId === 'ENVELOPE_LONG') {
+      symbols = BASKETS['BLUECHIP'];
+    } else if (strategyId === 'SMA_ABCD') {
+      // Use HIGH_BITA (typo-fixed in backend BASKETS earlier but let's be careful)
+      symbols = [...BASKETS['BLUECHIP'], ...(BASKETS['HIGH_BETA'] || BASKETS['HIGH_BITA'] || [])];
+    }
+
+    const snapshot = getMarketSnapshot();    const openTrades: any[] = [];
     const holdTrades: any[] = [];
     const rejectedStocks: any[] = [];
     const allScannedStocks: any[] = [];

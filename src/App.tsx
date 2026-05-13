@@ -11,6 +11,8 @@ import BacktestPage from './pages/Backtest';
 import TradeJournalPage from './pages/TradeJournal';
 import ProfilePage from './pages/Profile';
 import MarketplacePage from './pages/Marketplace';
+import EducationPage from './pages/Education';
+import PricingPage from './pages/Pricing';
 
 function App() {
   return (
@@ -21,6 +23,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
 
           {/* Authenticated SaaS Platform */}
           <Route 
@@ -39,6 +42,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/marketplace" element={<MarketplacePage />} />
             <Route path="/stock/:symbol" element={<StockFundamentalsPage />} />
+            <Route path="/education" element={<EducationPage />} />
           </Route>
 
           {/* Legacy & Redirects */}
