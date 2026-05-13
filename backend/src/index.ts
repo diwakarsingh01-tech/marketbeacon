@@ -228,27 +228,73 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
   const roe = (screener?.returnOnEquity || (yahooSummary?.defaultKeyStatistics?.returnOnEquity * 100) || 0) as number;
   const marketCap = (screener?.marketCap || yahooSummary?.summaryDetail?.marketCap || 0) as number;
 
-  // Determine Sector for custom rules
   const baseSymbol = symbol.split('.')[0].toUpperCase();
-  const manualSector = MANUAL_SECTOR_MAP[baseSymbol] || '';
+  const manualSector = MANUAL_SECTOR_MAP[baseSymbol] || screener?.industry || '';
   const isBankingOrNBFC = manualSector.includes('Bank') || manualSector.includes('NBFC') || manualSector.includes('Insurance') || manualSector.includes('Asset Management');
 
+  let score = 0;
   const reasons = [];
+  const reports = [];
+
+  // 1. HARD FILTERS (Non-Negotiables)
   if (pe > 75) reasons.push(`High PE (${pe.toFixed(1)})`);
-  
-  // Custom Rule: Skip debt check for Banking/NBFC/Insurance/Asset Management
-  if (!isBankingOrNBFC && debtToEquity > 0.40) {
-    reasons.push(`High Debt (${debtToEquity.toFixed(2)})`);
-  }
-  
-  // Using ROE as requested (Batch 9 Standard)
-  if (roe > 0 && roe < 12) reasons.push(`Low ROE (${roe.toFixed(1)}%)`);
+  if (!isBankingOrNBFC && debtToEquity > 0.40) reasons.push(`High Debt (${debtToEquity.toFixed(2)})`);
   if (marketCap > 0 && marketCap < 3000000000) reasons.push("Low Market Cap");
 
+  // 2. SOFT SCORING (0-100 Framework)
+  
+  // Category A: Business Quality (Weight: 15)
+  const yearsListed = screener?.yearsListed || 10;
+  if (yearsListed > 15) score += 15;
+  else if (yearsListed > 10) score += 10;
+  else if (yearsListed > 5) score += 5;
+
+  // Category B: Profitability Quality (Weight: 15)
+  if (roe > 20) score += 15;
+  else if (roe > 15) score += 10;
+  else if (roe > 12) score += 5;
+
+  // Category C: Balance Sheet Safety (Weight: 20)
+  if (isBankingOrNBFC) score += 15; // Banking has separate risk model
+  else {
+    if (debtToEquity < 0.1) score += 20;
+    else if (debtToEquity < 0.25) score += 15;
+    else if (debtToEquity < 0.4) score += 5;
+  }
+
+  // Category D: Growth Quality (Weight: 15)
+  const salesGrowth = screener?.salesGrowth3Y || 0;
+  if (salesGrowth > 15) score += 15;
+  else if (salesGrowth > 10) score += 10;
+  else if (salesGrowth > 5) score += 5;
+
+  // Category E: Valuation Quality (Weight: 15)
+  if (pe < 25) score += 15;
+  else if (pe < 40) score += 10;
+  else if (pe < 70) score += 5;
+
+  // Category F: Historical Consistency (Weight: 20)
+  const profits = screener?.historicalNetProfits || [];
+  if (profits.length > 5) {
+    const profitableYears = profits.filter((p: number) => p > 0).length;
+    const consistencyScore = (profitableYears / profits.length) * 20;
+    score += Math.round(consistencyScore);
+  } else {
+    score += 10; // Default mid-score for limited history
+  }
+
+  // Final Universe Mapping
+  let universe = "WATCHLIST";
+  if (score >= 85 && reasons.length === 0) universe = "SUPER 45 candidate";
+  else if (score >= 70 && reasons.length === 0) universe = "GOOD 45 candidate";
+  else if (score >= 55) universe = "GOOD 200 candidate";
+
   return {
-    isPass: reasons.length === 0,
-    reason: reasons.join(', ') || 'BATCH 9 COMPLIANT',
-    metrics: { pe, debtToEquity, roe, marketCap }
+    isPass: reasons.length === 0 && score >= 55,
+    score,
+    universe,
+    reason: reasons.length > 0 ? reasons.join(', ') : (score < 55 ? `Low Score (${score})` : 'BATCH 9 COMPLIANT'),
+    metrics: { pe, debtToEquity, roe, marketCap, score, universe }
   };
 }
 
@@ -557,6 +603,14 @@ async function fetchScreenerData(symbol: string) {
       const el = $(`#top-ratios li:contains("${name}") .number`);
       return el.text().trim().replace(/,/g, '');
     };
+
+    const getAnnualTableData = (tableName: string, rowName: string) => {
+      const table = $(`section#${tableName} table`);
+      const row = table.find(`tr:contains("${rowName}")`);
+      const values = row.find('td').map((i, el) => $(el).text().trim().replace(/,/g, '')).get();
+      return values.slice(1).map(v => parseFloat(v)); // Skip label, return numbers
+    };
+
     return {
       marketCap: parseFloat(getRatio('Market Cap')) * 10000000,
       peRatio: parseFloat(getRatio('Stock P/E')),
@@ -567,7 +621,12 @@ async function fetchScreenerData(symbol: string) {
       netDebtToEquity: parseFloat($('li:contains("Debt to equity") .number').text().trim() || '0'),
       bookValue: parseFloat(getRatio('Book Value')),
       currentPrice: parseFloat(getRatio('Current Price')),
-      industry: $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'N/A'
+      industry: $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'N/A',
+      salesGrowth3Y: parseFloat($('li:contains("Sales growth 3Years") .number').text().trim() || '0'),
+      profitGrowth3Y: parseFloat($('li:contains("Profit growth 3Years") .number').text().trim() || '0'),
+      historicalNetProfits: getAnnualTableData('profit-loss', 'Net Profit'),
+      historicalSales: getAnnualTableData('profit-loss', 'Sales'),
+      yearsListed: getAnnualTableData('profit-loss', 'Sales').length
     };
   } catch (e: any) {
     return null;

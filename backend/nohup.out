@@ -599,3 +599,86 @@ Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedba
 2026-05-13T06:09:00.071Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
 2026-05-13T06:09:22.568Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
 2026-05-13T06:09:26.350Z - GET /api/market-indices
+2026-05-13T06:10:26.348Z - GET /api/market-indices
+2026-05-13T06:11:26.351Z - GET /api/market-indices
+2026-05-13T06:11:30.387Z - GET /api/market-indices
+2026-05-13T06:11:30.391Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:11:30.758Z - GET /api/market-indices
+2026-05-13T06:11:31.542Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:11:31.649Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,GLAXO,GILLETTE,PAGEIND,BAJAJHLDNG
+2026-05-13T06:11:32.255Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,GILLETTE,GLAXO,BAJAJHLDNG,PAGEIND
+2026-05-13T06:19:14.076Z - GET /api/market-indices
+2026-05-13T06:20:14.071Z - GET /api/market-indices
+2026-05-13T06:21:14.075Z - GET /api/market-indices
+2026-05-13T06:22:14.072Z - GET /api/market-indices
+2026-05-13T06:23:14.071Z - GET /api/market-indices
+2026-05-13T06:24:14.074Z - GET /api/market-indices
+2026-05-13T06:25:14.078Z - GET /api/market-indices
+2026-05-13T06:26:14.078Z - GET /api/market-indices
+2026-05-13T06:27:14.078Z - GET /api/market-indices
+2026-05-13T06:28:14.078Z - GET /api/market-indices
+2026-05-13T06:30:08.083Z - GET /api/market-indices
+2026-05-13T06:31:08.085Z - GET /api/market-indices
+2026-05-13T06:32:08.080Z - GET /api/market-indices
+2026-05-13T06:32:29.885Z - GET /api/market-indices
+2026-05-13T06:32:29.894Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:32:30.251Z - GET /api/market-indices
+2026-05-13T06:32:30.558Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:32:30.681Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,GLAXO,WHIRLPOOL,PAGEIND,GILLETTE,BAJAJHLDNG
+2026-05-13T06:32:30.864Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,GILLETTE,PAGEIND,GLAXO,WHIRLPOOL,BAJAJHLDNG
+2026-05-13T06:33:33.214Z - GET /api/market-indices
+2026-05-13T06:34:33.207Z - GET /api/market-indices
+2026-05-13T06:35:33.207Z - GET /api/market-indices
+2026-05-13T06:36:33.210Z - GET /api/market-indices
+2026-05-13T06:37:33.208Z - GET /api/market-indices
+2026-05-13T06:38:12.630Z - GET /api/market-indices
+2026-05-13T06:38:12.640Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:38:13.223Z - GET /api/market-indices
+2026-05-13T06:38:13.779Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:38:13.901Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,GILLETTE,GLAXO,PAGEIND,BAJAJHLDNG
+2026-05-13T06:38:14.278Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,GLAXO,GILLETTE,PAGEIND,BAJAJHLDNG
+2026-05-13T06:39:18.431Z - GET /api/market-indices
+2026-05-13T06:40:18.431Z - GET /api/market-indices
+2026-05-13T06:41:18.432Z - GET /api/market-indices
+2026-05-13T06:41:54.057Z - GET /api/market-indices
+2026-05-13T06:41:54.066Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:41:54.464Z - GET /api/market-indices
+2026-05-13T06:41:54.700Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:41:54.811Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,GLAXO,GILLETTE,PAGEIND,BAJAJHLDNG
+2026-05-13T06:41:55.013Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,GILLETTE,PAGEIND,GLAXO,BAJAJHLDNG
+2026-05-13T06:43:00.673Z - GET /api/market-indices
+2026-05-13T06:44:00.674Z - GET /api/market-indices
+2026-05-13T06:45:00.808Z - GET /api/market-indices
+2026-05-13T06:46:00.673Z - GET /api/market-indices
+2026-05-13T06:46:10.158Z - GET /api/market-indices
+2026-05-13T06:46:10.166Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:46:10.692Z - GET /api/market-indices
+2026-05-13T06:46:11.218Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:46:11.337Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,GILLETTE,BAJAJHLDNG,PAGEIND,GLAXO
+2026-05-13T06:46:11.747Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,GLAXO,WHIRLPOOL,BAJAJHLDNG,GILLETTE,PAGEIND
+2026-05-13T06:51:31.791Z - GET /api/market-indices
+2026-05-13T06:52:31.786Z - GET /api/market-indices
+2026-05-13T06:53:31.785Z - GET /api/market-indices
+2026-05-13T06:54:31.790Z - GET /api/market-indices
+2026-05-13T06:55:31.787Z - GET /api/market-indices
+2026-05-13T06:55:42.958Z - GET /api/market-indices
+2026-05-13T06:55:42.966Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:55:43.301Z - GET /api/market-indices
+2026-05-13T06:55:43.608Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:55:43.730Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,GLAXO,GILLETTE,WHIRLPOOL,PAGEIND,BAJAJHLDNG
+2026-05-13T06:55:43.985Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,GILLETTE,PAGEIND,BAJAJHLDNG,GLAXO
+2026-05-13T06:56:12.930Z - GET /api/market-indices
+2026-05-13T06:56:12.936Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:56:13.323Z - GET /api/market-indices
+2026-05-13T06:56:13.652Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:56:13.767Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,WHIRLPOOL,PAGEIND,GILLETTE,GLAXO,BAJAJHLDNG
+2026-05-13T06:56:14.014Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,GLAXO,WHIRLPOOL,BAJAJHLDNG,GILLETTE,PAGEIND
+
+> backend@1.0.0 dev
+> tsx src/index.ts
+
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
+✅ Connected to Turso!
+SuperTracker Backend running on port 3001
