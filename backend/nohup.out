@@ -498,3 +498,104 @@ Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedba
 🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
 ✅ Connected to Turso!
 SuperTracker Backend running on port 3001
+2026-05-13T05:42:52.536Z - GET /api/market-indices
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-05-13T05:42:52.561Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T05:42:54.248Z - GET /api/market-indices
+2026-05-13T05:42:54.427Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T05:48:03.570Z - GET /api/market-indices
+2026-05-13T05:50:31.398Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=ENVELOPE_LONG
+2026-05-13T05:50:32.748Z - GET /api/stock-prices?symbols=COLPAL,KANSAINER,TCS,BAJAJ-AUTO,DABUR,ITC,HINDUNILVR,ICICIPRULI,WIPRO,INFY,NAM-INDIA,HCLTECH,PIDILITIND,HDFCAMC,ASIANPAINT,BERGEPAINT,BAJFINANCE,NESTLEIND,ICICIBANK,KOTAKBANK,HDFCLIFE,BAJAJFINSV,AXISBANK,MARICO,TITAN,HDFCBANK,NIFTYBEES,BANKBEES,WHIRLPOOL,SANOFI,AKZOINDIA,HAVELLS,GILLETTE,BATAINDIA,GLAXO,PAGEIND,PGHH,BAJAJHLDNG,PFIZER,ABBOTINDIA,ICICIGI,AMBUJACEM,ULTRACEMCO
+2026-05-13T05:50:40.578Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T05:50:43.774Z - GET /api/market-indices
+2026-05-13T05:50:44.823Z - GET /api/backtest/envelope?basket=HIGH_BETA&strategy=SR_STRATEGY
+2026-05-13T05:50:46.331Z - GET /api/backtest/envelope?basket=PROFIT&strategy=SR_STRATEGY
+2026-05-13T05:50:48.641Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T05:51:00.404Z - GET /api/backtest/envelope?basket=HIGH_BETA&strategy=SR_STRATEGY
+2026-05-13T05:51:01.880Z - GET /api/backtest/envelope?basket=PROFIT&strategy=SR_STRATEGY
+2026-05-13T05:51:04.393Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T05:51:43.772Z - GET /api/market-indices
+2026-05-13T05:52:43.775Z - GET /api/market-indices
+2026-05-13T05:53:44.351Z - GET /api/market-indices
+2026-05-13T05:54:06.978Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=ENVELOPE_LONG
+2026-05-13T05:54:07.785Z - GET /api/stock-prices?symbols=COLPAL,KANSAINER,TCS,BAJAJ-AUTO,DABUR,ITC,HINDUNILVR,ICICIPRULI,WIPRO,INFY,NAM-INDIA,HCLTECH,PIDILITIND,HDFCAMC,ASIANPAINT,BERGEPAINT,BAJFINANCE,NESTLEIND,ICICIBANK,KOTAKBANK,HDFCLIFE,BAJAJFINSV,AXISBANK,MARICO,TITAN,HDFCBANK,NIFTYBEES,BANKBEES,WHIRLPOOL,SANOFI,HAVELLS,AKZOINDIA,BATAINDIA,PGHH,GLAXO,AMBUJACEM,BAJAJHLDNG,GILLETTE,PAGEIND,ABBOTINDIA,PFIZER,ICICIGI,ULTRACEMCO
+2026-05-13T05:54:11.544Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T05:54:14.127Z - GET /api/backtest/envelope?basket=HIGH_BETA&strategy=SR_STRATEGY
+2026-05-13T05:54:15.309Z - GET /api/backtest/envelope?basket=PROFIT&strategy=SR_STRATEGY
+2026-05-13T05:54:44.353Z - GET /api/market-indices
+2026-05-13T05:55:55.488Z - GET /api/market-indices
+2026-05-13T05:55:57.866Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T05:55:59.715Z - GET /api/backtest/envelope?basket=HIGH_BETA&strategy=SR_STRATEGY
+2026-05-13T05:56:00.713Z - GET /api/backtest/envelope?basket=PROFIT&strategy=SR_STRATEGY
+2026-05-13T05:56:44.357Z - GET /api/market-indices
+2026-05-13T05:57:44.351Z - GET /api/market-indices
+2026-05-13T05:59:07.174Z - GET /api/market-indices
+2026-05-13T05:59:07.291Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T05:59:08.057Z - GET /api/market-indices
+2026-05-13T05:59:08.579Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:00:18.365Z - GET /api/market-indices
+2026-05-13T06:01:18.350Z - GET /api/market-indices
+2026-05-13T06:02:18.363Z - GET /api/market-indices
+2026-05-13T06:02:21.543Z - GET /api/market-indices
+2026-05-13T06:02:21.549Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:02:21.724Z - GET /api/market-indices
+2026-05-13T06:02:22.065Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:02:46.448Z - GET /api/market-indices
+2026-05-13T06:02:46.461Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:02:48.032Z - GET /api/market-indices
+2026-05-13T06:02:48.168Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+
+> backend@1.0.0 dev
+> tsx src/index.ts
+
+◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ⌘ override existing { override: true }
+🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
+✅ Connected to Turso!
+SuperTracker Backend running on port 3001
+2026-05-13T06:03:06.992Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-05-13T06:03:36.463Z - GET /api/market-indices
+2026-05-13T06:03:36.471Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:03:36.965Z - GET /api/market-indices
+2026-05-13T06:03:37.447Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+
+> backend@1.0.0 dev
+> tsx src/index.ts
+
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
+✅ Connected to Turso!
+SuperTracker Backend running on port 3001
+2026-05-13T06:04:06.070Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-05-13T06:04:52.363Z - GET /api/market-indices
+2026-05-13T06:04:54.064Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:05:24.470Z - GET /api/market-indices
+2026-05-13T06:05:24.473Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:05:25.474Z - GET /api/market-indices
+2026-05-13T06:05:25.815Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:05:25.941Z - GET /api/stock-prices?symbols=HDFCLIFE,WHIRLPOOL,PAGEIND,GILLETTE,ABBOTINDIA,GLAXO,BAJAJHLDNG
+2026-05-13T06:05:26.198Z - GET /api/stock-prices?symbols=HDFCLIFE,WHIRLPOOL,GILLETTE,PAGEIND,GLAXO,ABBOTINDIA,BAJAJHLDNG
+2026-05-13T06:06:25.348Z - GET /api/market-indices
+
+> backend@1.0.0 dev
+> tsx src/index.ts
+
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...
+✅ Connected to Turso!
+SuperTracker Backend running on port 3001
+2026-05-13T06:07:25.382Z - GET /api/market-indices
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-05-13T06:07:25.396Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:07:26.800Z - GET /api/market-indices
+2026-05-13T06:07:26.992Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:07:27.115Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,GLAXO,WHIRLPOOL,GILLETTE,PAGEIND,BAJAJHLDNG
+2026-05-13T06:07:27.338Z - GET /api/stock-prices?symbols=HINDUNILVR,HDFCLIFE,GLAXO,GILLETTE,WHIRLPOOL,PAGEIND,BAJAJHLDNG
+2026-05-13T06:08:26.352Z - GET /api/market-indices
+2026-05-13T06:09:00.071Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:09:22.568Z - GET /api/backtest/envelope?basket=BLUECHIP&strategy=SR_STRATEGY
+2026-05-13T06:09:26.350Z - GET /api/market-indices

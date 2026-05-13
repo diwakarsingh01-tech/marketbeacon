@@ -552,9 +552,9 @@ export function calculate52WeekStrategy(quotes: Quote[], tolerance: number = 0.0
  * Merge: 2.2% - 2.5%
  */
 export function calculateSRStrategy(quotes: Quote[]) {
-  const pivotLen = 5;
-  const lookback = 1100;
-  if (!quotes || quotes.length < 500) return null;
+  const pivotLen = 3; // Reduced from 5 for higher sensitivity
+  const lookback = 500; 
+  if (!quotes || quotes.length < 300) return null;
 
   const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
   const highs = quotes.map(q => q.high);
@@ -583,14 +583,16 @@ export function calculateSRStrategy(quotes: Quote[]) {
   const mergeTol = 0.0235; // 2.35%
   const minGap = 0.30; // 30%
 
-  // 2. Pivot Clustering (Pine Script Method)
+  // 2. Pivot Clustering (Matching Pine Script Simple Average)
   const buildBands = (pivs: { p: number, b: number }[]) => {
     const bands: { price: number, count: number, bars: number[] }[] = [];
     pivs.forEach(piv => {
       let found = false;
       for (let b of bands) {
-        if (Math.abs(b.price - piv.p) <= (b.price * mergeTol)) {
-          b.price = (b.price * b.count + piv.p) / (b.count + 1);
+        // Strict 2.2% tolerance for clustering
+        if (Math.abs(b.price - piv.p) <= (b.price * 0.022)) {
+          // Pine Script: (old + p) / 2.0
+          b.price = (b.price + piv.p) / 2.0;
           b.count++;
           b.bars.push(piv.b);
           found = true;
@@ -637,16 +639,27 @@ export function calculateSRStrategy(quotes: Quote[]) {
         }
       });
 
-      // Find last B-T-B-T-B
+      // Find last valid sequence (Prefer BTBTB, fallback to BTB)
+      let foundPattern = false;
+      let patternEndBar = 0;
+      
       if (sequence.includes("BTBTB")) {
-        const patternIdx = sequence.lastIndexOf("BTBTB");
-        const patternEndBar = seqBars[patternIdx + 4];
+        foundPattern = true;
+        const idx = sequence.lastIndexOf("BTBTB");
+        patternEndBar = seqBars[idx + 4];
+      } else if (sequence.includes("BTB")) {
+        foundPattern = true;
+        const idx = sequence.lastIndexOf("BTB");
+        patternEndBar = seqBars[idx + 2];
+      }
 
-        // 5. Entry & Target Logic
+      if (foundPattern) {
+        // Proximity Check: Is latest price near this specific support?
         const isNearSupport = Math.abs(latestPrice - s.price) / s.price <= mergeTol;
         
-        // Scoring (Simplified Pine Score)
-        const score = s.count * 0.4 + (gap / 0.4) * 0.3 + (s.count + r.count) * 0.2;
+        // Scoring: Higher score for longer sequences
+        let score = s.count * 0.4 + (gap / 0.4) * 0.3 + (s.count + r.count) * 0.2;
+        if (sequence.includes("BTBTB")) score += 2; // Priority boost for 5-point sequence
 
         if (isNearSupport && score > maxScore) {
           maxScore = score;
