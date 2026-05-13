@@ -153,7 +153,7 @@ export function calculateEMA(prices: number[], length: number): number[] {
  * Entry: Price touches 200 EMA from above
  * Target: Entry Price + 14%
  */
-export function processShortEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
+export function processShortEnvelope(quotes: Quote[], marketCap: number, percentage: number = 14, length: number = 200) {
   if (!quotes || quotes.length < length) return null;
 
   const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
@@ -204,7 +204,7 @@ export function processShortEnvelope(quotes: Quote[], percentage: number = 14, l
     isBuyZone,
     triggerDate,
     currentPrice: prices[latestIdx],
-    abcd: calculateABCDLevels(currentEMA, 50000000000) // Dummy MCap for now, actual MCap passed in index.ts
+    abcd: calculateABCDLevels(currentEMA, marketCap)
   };
 }
 
@@ -507,9 +507,9 @@ export function calculate52WeekStrategy(quotes: Quote[], tolerance: number = 0.0
 
   // Head must be lower than shoulders
   if (head.price < ls.price && head.price < rs.price) {
-    // Symmetry: Shoulders within 5%
+    // Symmetry: Shoulders within 8%
     const diff = Math.abs(ls.price - rs.price) / Math.max(ls.price, rs.price);
-    if (diff <= 0.05) {
+    if (diff <= 0.08) {
       // Neckline: Find the high pivot between LS and Head, and between Head and RS
       const n1 = highPivots.find(p => p.index > ls.index && p.index < head.index);
       const n2 = highPivots.find(p => p.index > head.index && p.index < rs.index);
@@ -700,9 +700,9 @@ export function calculateSRStrategy(quotes: Quote[]) {
   const leftLip = highPivots[i - 1];
   const rightLip = highPivots[i];
 
-  // Symmetry: Lips within 5%
+  // Symmetry: Lips within 8%
   const diff = Math.abs(leftLip.price - rightLip.price) / Math.max(leftLip.price, rightLip.price);
-  if (diff <= 0.05) {
+  if (diff <= 0.08) {
     // Find the lowest point between lips (The Cup bottom)
     const cupLow = lowPivots.find(p => p.index > leftLip.index && p.index < rightLip.index);
     if (cupLow) {

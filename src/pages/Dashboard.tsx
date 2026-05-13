@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TradeTable from '../components/tables/TradeTable';
+import StrategyGuide from '../components/StrategyGuide';
 import { BASKETS, STRATEGIES } from '../data/stocks';
-import { ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet } from 'lucide-react';
+import { ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet, BookOpen, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -24,6 +25,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const [error, setError] = useState<string | null>(null);
   const [activeBasket, setActiveBasket] = useState<string>(currentStrategy.baskets[0]);
   const [activeTab, setActiveTab] = useState<'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected'>(defaultTab);
+  const [showGuide, setShowGuide] = useState(false);
   
   const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
   const [stockATHs, setStockATHs] = useState<Record<string, number>>({});
@@ -245,17 +247,28 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           <div className="flex-1 lg:flex-none flex flex-col space-y-2 items-start lg:items-end">
             {/* Strategy Select - Only visible on Screener/Market tabs */}
             {activeTab !== 'portfolio' && (
-              <div className="relative group w-full lg:w-auto">
-                <select 
-                  value={strategyId}
-                  onChange={(e) => navigate(`?strategy=${e.target.value}`)}
-                  className="appearance-none bg-white border border-slate-100 rounded-2xl pl-5 pr-12 py-3.5 text-[10px] font-black uppercase tracking-[0.1em] focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer w-full lg:min-w-[280px]"
+              <div className="flex items-center space-x-2 w-full lg:w-auto">
+                <div className="relative group flex-1 lg:flex-none">
+                  <select 
+                    value={strategyId}
+                    onChange={(e) => navigate(`?strategy=${e.target.value}`)}
+                    className="appearance-none bg-white border border-slate-100 rounded-2xl pl-5 pr-12 py-3.5 text-[10px] font-black uppercase tracking-[0.1em] focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer w-full lg:min-w-[280px]"
+                  >
+                    {STRATEGIES.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} {s.isLive ? '🟢' : '⏳'}</option>
+                    ))}
+                  </select>
+                  <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 rotate-90" />
+                </div>
+                
+                <button 
+                  onClick={() => setShowGuide(!showGuide)}
+                  className={`p-3.5 rounded-2xl border transition-all flex items-center space-x-2 ${showGuide ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border-slate-100 text-slate-400 hover:bg-slate-50'}`}
+                  title="View Strategy Guide"
                 >
-                  {STRATEGIES.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} {s.isLive ? '🟢' : '⏳'}</option>
-                  ))}
-                </select>
-                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 rotate-90" />
+                  <BookOpen className="h-4 w-4" />
+                  <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">Guide</span>
+                </button>
               </div>
             )}
           </div>
@@ -268,6 +281,19 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           </button>
         </div>
       </div>
+
+      {/* Strategy Guide (Conditional) */}
+      {showGuide && (
+        <div className="relative shrink-0 animate-in fade-in slide-in-from-top-4 duration-500">
+          <button 
+            onClick={() => setShowGuide(false)}
+            className="absolute top-4 right-4 z-10 p-2 bg-slate-800 text-white rounded-full hover:bg-black transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <StrategyGuide strategyId={strategyId} />
+        </div>
+      )}
 
       {/* 2. Portfolio Summary Cards (Conditional) */}
       {activeTab === 'portfolio' && portfolioSummary.totalInvested > 0 && (

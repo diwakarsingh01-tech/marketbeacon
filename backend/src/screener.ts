@@ -2,6 +2,8 @@ import YahooFinance from 'yahoo-finance2';
 import cron from 'node-cron';
 import fs from 'fs';
 import path from 'path';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 import { fileURLToPath } from 'url';
 import { NIFTY_500 } from './universe.js';
 import { calculateEnvelope } from './strategies.js';
@@ -10,6 +12,59 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DYNAMIC_BASKET_PATH = path.join(__dirname, '../dynamic_basket.json');
 const MARKET_SNAPSHOT_PATH = path.join(__dirname, '../market_snapshot.json');
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
+
+// --- Screener.in Data Connector ---
+export async function fetchScreenerData(symbol: string) {
+  try {
+    const cleanSymbol = symbol.split('.')[0]; 
+    const url = `https://www.screener.in/company/${cleanSymbol}/consolidated/`;
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+    const { data } = await axios.get(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+      timeout: 8000
+    });
+    const $ = cheerio.load(data);
+    const getRatio = (name: string) => {
+      const el = $(`#top-ratios li:contains("${name}") .number`);
+      return el.text().trim().replace(/,/g, '');
+    };
+
+    const getAnnualTableData = (tableName: string, rowName: string) => {
+      const table = $(`section#${tableName} table`);
+      const row = table.find(`tr:contains("${rowName}")`);
+      const values = row.find('td').map((i, el) => $(el).text().trim().replace(/,/g, '')).get();
+      return values.slice(1).map(v => parseFloat(v)); // Skip label, return numbers
+    };
+
+    return {
+      marketCap: parseFloat(getRatio('Market Cap')) * 10000000,
+      peRatio: parseFloat(getRatio('Stock P/E')),
+      dividendYield: parseFloat(getRatio('Dividend Yield')),
+      roce: parseFloat(getRatio('ROCE')),
+      returnOnEquity: parseFloat(getRatio('ROE')),
+      faceValue: parseFloat(getRatio('Face Value')),
+      netDebtToEquity: parseFloat($('li:contains("Debt to equity") .number').text().trim() || '0'),
+      interestCoverage: parseFloat($('li:contains("Interest Coverage") .number').text().trim() || '0'),
+      currentRatio: parseFloat($('li:contains("Current ratio") .number').text().trim() || '0'),
+      cashAndEquivalents: parseFloat($('li:contains("Cash Equivalent") .number').text().trim() || '0'),
+      bookValue: parseFloat(getRatio('Book Value')),
+      currentPrice: parseFloat(getRatio('Current Price')),
+      industry: $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'N/A',
+      salesGrowth3Y: parseFloat($('li:contains("Sales growth 3Years") .number').text().trim() || '0'),
+      profitGrowth3Y: parseFloat($('li:contains("Profit growth 3Years") .number').text().trim() || '0'),
+      historicalNetProfits: getAnnualTableData('profit-loss', 'Net Profit'),
+      historicalSales: getAnnualTableData('profit-loss', 'Sales'),
+      historicalOPM: getAnnualTableData('profit-loss', 'OPM %'),
+      historicalEPS: getAnnualTableData('profit-loss', 'EPS in Rs'),
+      ebitda: parseFloat(getRatio('EBITDA')) || 0,
+      operatingMargin: parseFloat(getRatio('Operating Margin')) || 0,
+      netMargin: parseFloat(getRatio('Net Profit Margin')) || 0,
+      yearsListed: getAnnualTableData('profit-loss', 'Sales').length
+    };
+  } catch (e: any) {
+    return null;
+  }
+}
 
 /**
  * BATCH 9 CORE STANDARDS
@@ -77,10 +132,11 @@ export async function updateMarketSnapshot(symbols: string[]) {
         period1.setFullYear(period1.getFullYear() - 3);
 
         // High Accuracy: Fetching adjusted OHLCV
-        const [history, quote, summary]: [any, any, any] = await Promise.all([
+        const [history, quote, summary, screenerData]: [any, any, any, any] = await Promise.all([
           yahooFinance.chart(symbol, { period1: period1.toISOString().split('T')[0], interval: '1d' as any }),
           yahooFinance.quote(symbol),
-          yahooFinance.quoteSummary(symbol, { modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail'] }).catch(() => null)
+          yahooFinance.quoteSummary(symbol, { modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail'] }).catch(() => null),
+          fetchScreenerData(baseSymbol)
         ]);
 
         const quotes = (history.quotes || []).filter((q: any) => q.close && q.low && q.high);
@@ -101,6 +157,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
             roe: (summary?.defaultKeyStatistics?.returnOnEquity || 0) * 100,
             debtToEquity: summary?.financialData?.debtToEquity || 0
           },
+          screener: screenerData,
           strategy,
           lastUpdated: new Date().toISOString()
         };

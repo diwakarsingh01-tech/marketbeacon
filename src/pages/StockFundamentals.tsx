@@ -54,8 +54,8 @@ const StockFundamentalsPage: React.FC = () => {
     const hardReject = !isPEValid || !isDebtValid;
 
     const checks = [
-      { category: 'Quality', label: 'Positive Rev Growth', pass: parseFloat(data.revenueGrowth) > 0, value: `${data.revenueGrowth}%` },
-      { category: 'Quality', label: 'Positive EPS Growth', pass: parseFloat(data.epsGrowth) > 0, value: `${data.epsGrowth}%` },
+      { category: 'Quality', label: 'Positive Rev Growth', pass: (data.growth3Yr?.sales || 0) > 0, value: `${data.growth3Yr?.sales || '0'}%` },
+      { category: 'Quality', label: 'Positive EPS Growth', pass: (data.audit?.growthQuality?.checks?.find((c: any) => c.label.includes('EPS'))?.pass) || false, value: data.audit?.growthQuality?.checks?.find((c: any) => c.label.includes('EPS'))?.value || '0%' },
       { category: 'Safety', label: 'Net Debt/Equity < 0.2', pass: isDebtValid, value: data.netDebtToEquity },
       { category: 'Efficiency', label: 'ROE > 15%', pass: roe > 15, value: `${data.returnOnEquity}%` },
       { category: 'Efficiency', label: 'ROCE > 15%', pass: roce > 15, value: `${data.roce}%` },
@@ -204,6 +204,29 @@ const StockFundamentalsPage: React.FC = () => {
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    {data.audit.profitabilityQuality.checks.map((check: any, idx: number) => (
+                     <div key={idx} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-2 h-2 rounded-full ${check.pass ? 'bg-green-500' : 'bg-slate-200'}`} />
+                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">{check.label}</span>
+                        </div>
+                        <span className={`text-[10px] font-black ${check.pass ? 'text-slate-900' : 'text-slate-400'}`}>{check.value}</span>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             )}
+
+             {/* Segment 3: Growth Quality Audit */}
+             {data?.audit?.growthQuality && (
+               <div className="mb-12 space-y-6">
+                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                   <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center">
+                     <Activity className="h-3 w-3 mr-2 text-blue-600" /> Segment 3: Growth Quality Audit
+                   </h3>
+                   <span className="text-[10px] font-black text-blue-600">{data.audit.growthQuality.score}/{data.audit.growthQuality.max} Points</span>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {data.audit.growthQuality.checks.map((check: any, idx: number) => (
                      <div key={idx} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <div className={`w-2 h-2 rounded-full ${check.pass ? 'bg-green-500' : 'bg-slate-200'}`} />

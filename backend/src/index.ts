@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot } from './screener.js';
+import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot, fetchScreenerData } from './screener.js';
 import { initDB, getDB } from './db.js';
 import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle, calculateSRStrategy } from './strategies.js';
 
@@ -23,7 +23,7 @@ app.use(express.json({ limit: '50mb' }));
 // --- Manual Snapshot Trigger ---
 app.post('/api/admin/update-snapshot', async (req, res) => {
   try {
-    const allSymbols = [...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BITA'], ...BASKETS['PROFIT']];
+    const allSymbols = [...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']];
     await updateMarketSnapshot(allSymbols);
     res.json({ success: true, message: 'Market Snapshot Updated with Batch 9 Strategy Logic' });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -73,23 +73,39 @@ const authenticateToken = (req: any, res: any, next: any) => {
   });
 };
 
+const WHITELISTED_EMAILS = [
+  'diwakar@marketbeacon.com',
+  'test@example.com' // Add user's known emails here
+];
+
 // --- AUTH ROUTES ---
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, referralCode } = req.body;
+    
+    // Beta Testing Restriction
+    const isWhitelisted = WHITELISTED_EMAILS.some(e => e.toLowerCase() === email.toLowerCase()) || email.endsWith('@marketbeacon.com');
+    if (!isWhitelisted) {
+      return res.status(403).json({ error: 'MarketBeacon Terminal is currently in Private Beta. Please contact the administrator for access.' });
+    }
+
     const db = getDB();
     
     const existing = await db.get('SELECT id FROM users WHERE email = ?', [email]);
     if (existing) return res.status(400).json({ error: 'Email already registered' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Generate a unique referral code for this user
+    const userReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
     const result = await db.run(
-      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-      [name, email, hashedPassword]
+      'INSERT INTO users (name, email, password, referral_code, referred_by) VALUES (?, ?, ?, ?, ?)',
+      [name, email, hashedPassword, userReferralCode, referralCode || null]
     );
 
     const token = jwt.sign({ id: result.lastID, email, name }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: result.lastID, email, name } });
+    res.json({ token, user: { id: result.lastID, email, name, referral_code: userReferralCode } });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -105,7 +121,16 @@ app.post('/api/auth/login', async (req, res) => {
     if (!validPass) return res.status(400).json({ error: 'Invalid password' });
 
     const token = jwt.sign({ id: user.id, email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email, name: user.name } });
+    res.json({ 
+      token, 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name, 
+        referral_code: user.referral_code,
+        subscription_status: user.subscription_status
+      } 
+    });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -218,8 +243,8 @@ const BASKETS: Record<string, string[]> = {
 
 // --- Institutional Fundamental Validator (BATCH 9 PDF STANDARDS) ---
 async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boolean = false) {
-  let screener = null;
-  if (!isSnapshot) {
+  let screener = yahooSummary?.screener || null;
+  if (!isSnapshot && !screener) {
     screener = await fetchScreenerData(symbol);
   }
   
@@ -275,6 +300,7 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
   };
 
   // --- SEGMENT 2: PROFITABILITY QUALITY (Weight: 15) ---
+  const profits = screener?.historicalNetProfits || [];
   const latestNetProfit = annualProfit; // Cr
   const profitableYears5Y = profits.slice(-5).filter((p: number) => p > 0).length;
   
@@ -301,30 +327,95 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
     ]
   };
 
-  // Category C: Balance Sheet Safety (Weight: 20)
-  if (isBankingOrNBFC) score += 15; // Banking has separate risk model
-  else {
-    if (debtToEquity < 0.1) score += 20;
-    else if (debtToEquity < 0.25) score += 15;
-    else if (debtToEquity < 0.4) score += 5;
+  // --- SEGMENT 3: GROWTH QUALITY AUDIT (Weight: 20) ---
+  const salesHistory = screener?.historicalSales || [];
+  const epsHistory = screener?.historicalEPS || [];
+
+  const calcCAGR = (data: number[], years: number) => {
+    if (data.length < years + 1) return 0;
+    const start = data[data.length - (years + 1)];
+    const end = data[data.length - 1];
+    if (start <= 0 || end <= 0) return 0;
+    return (Math.pow(end / start, 1 / years) - 1) * 100;
+  };
+
+  const salesCAGR3 = calcCAGR(salesHistory, 3);
+  const epsCAGR3 = calcCAGR(epsHistory, 3);
+  
+  // Consistency Score: Penalty for any year with >15% decline in Sales or EPS
+  let consistencyPenalty = 0;
+  if (salesHistory.length > 3) {
+    for (let i = salesHistory.length - 3; i < salesHistory.length; i++) {
+      if (salesHistory[i] < salesHistory[i-1] * 0.85) consistencyPenalty += 5;
+      if (epsHistory[i] < epsHistory[i-1] * 0.80) consistencyPenalty += 5;
+    }
   }
 
-  // Category D: Growth Quality (Weight: 15)
-  const salesGrowth = screener?.salesGrowth3Y || 0;
-  if (salesGrowth > 15) score += 15;
-  else if (salesGrowth > 10) score += 10;
-  else if (salesGrowth > 5) score += 5;
+  const rawGrowthScore = (salesCAGR3 > 12 ? 10 : (salesCAGR3 > 8 ? 5 : 0)) + (epsCAGR3 > 15 ? 10 : (epsCAGR3 > 10 ? 5 : 0));
+  const growthScore = Math.max(0, rawGrowthScore - consistencyPenalty);
+  score += growthScore;
 
-  // Category E: Valuation Quality (Weight: 15)
-  if (pe < 25) score += 15;
-  else if (pe < 40) score += 10;
-  else if (pe < 70) score += 5;
+  const growthQuality = {
+    score: growthScore,
+    max: 20,
+    checks: [
+      { label: 'Sales CAGR (3Y) > 12%', pass: salesCAGR3 > 12, value: `${salesCAGR3.toFixed(1)}%` },
+      { label: 'EPS CAGR (3Y) > 15%', pass: epsCAGR3 > 15, value: `${epsCAGR3.toFixed(1)}%` },
+      { label: 'Growth Consistency', pass: consistencyPenalty === 0, value: consistencyPenalty > 0 ? 'Volatile' : 'Stable' }
+    ]
+  };
 
-  // Category F: Historical Consistency (Weight: 20) - ALREADY INTEGRATED IN SCORE CALC, BUT LET'S CLEAN UP
+  // --- SEGMENT 4: BALANCE SHEET SAFETY (Weight: 20) ---
+  const interestCoverage = screener?.interestCoverage || 100;
+  const currentRatio = screener?.currentRatio || 2;
+  const cashToMCap = (screener?.cashAndEquivalents || 0) / (marketCap || 1);
+
+  let balanceSheetScore = 0;
+  if (isBankingOrNBFC) {
+    // Financials logic: Focus on ROE and Scale instead of Debt/Equity
+    balanceSheetScore = 20; // Default pass for top-tier banks if ROE > 12%
+    if (roe < 12) balanceSheetScore -= 10;
+  } else {
+    if (debtToEquity < 0.20) balanceSheetScore += 10;
+    else if (debtToEquity < 0.50) balanceSheetScore += 5;
+    
+    if (interestCoverage > 4) balanceSheetScore += 5;
+    if (currentRatio > 1.25) balanceSheetScore += 5;
+  }
+  score += balanceSheetScore;
+
+  const balanceSheetSafety = {
+    score: balanceSheetScore,
+    max: 20,
+    checks: [
+      { label: 'Net Debt/Equity < 0.2', pass: isBankingOrNBFC || debtToEquity < 0.20, value: isBankingOrNBFC ? 'N/A' : debtToEquity.toFixed(2) },
+      { label: 'Interest Coverage > 4', pass: isBankingOrNBFC || interestCoverage > 4, value: isBankingOrNBFC ? 'N/A' : interestCoverage.toFixed(1) },
+      { label: 'Current Ratio > 1.25', pass: isBankingOrNBFC || currentRatio > 1.25, value: isBankingOrNBFC ? 'N/A' : currentRatio.toFixed(1) }
+    ]
+  };
+
+  // --- SEGMENT 5: VALUATION & CONSISTENCY (Weight: 30) ---
+  let valConsistencyScore = 0;
+  // Valuation (15 Points)
+  if (pe < 25) valConsistencyScore += 15;
+  else if (pe < 45) valConsistencyScore += 10;
+  else if (pe < 65) valConsistencyScore += 5;
+
+  // Consistency (15 Points)
   const profitableYearsAll = profits.filter((p: number) => p > 0).length;
-  const consistencyWeight = 20;
+  const consistencyWeight = 15;
   const consistencyScore = profits.length > 0 ? Math.round((profitableYearsAll / profits.length) * consistencyWeight) : 10;
-  score += consistencyScore;
+  valConsistencyScore += consistencyScore;
+  score += valConsistencyScore;
+
+  const valuationConsistency = {
+    score: valConsistencyScore,
+    max: 30,
+    checks: [
+      { label: 'Valuation Ceiling (PE < 65)', pass: pe < 65, value: pe.toFixed(1) },
+      { label: 'Historical Consistency', pass: consistencyScore >= 12, value: `${profitableYearsAll}/${profits.length} Yrs` }
+    ]
+  };
 
   // Final Universe Mapping
   let universe = "WATCHLIST";
@@ -338,6 +429,9 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
     universe,
     businessQuality,
     profitabilityQuality,
+    growthQuality,
+    balanceSheetSafety,
+    valuationConsistency,
     reason: reasons.length > 0 ? reasons.join(', ') : (score < 55 ? `Low Score (${score})` : 'BATCH 9 COMPLIANT'),
     metrics: { pe, debtToEquity, roe, marketCap, score, universe }
   };
@@ -383,11 +477,12 @@ app.get('/api/backtest/envelope', async (req, res) => {
             summary = {
               summaryDetail: { marketCap: data.quote.marketCap, trailingPE: data.quote.pe },
               defaultKeyStatistics: { returnOnEquity: (data.quote.roe || 15) / 100 },
-              financialData: { debtToEquity: data.quote.debtToEquity || 0 }
+              financialData: { debtToEquity: data.quote.debtToEquity || 0 },
+              screener: data.screener
             };
             
             if (strategyId === 'ENVELOPE_SHORT') {
-              strategyData = processShortEnvelope(quotes);
+              strategyData = processShortEnvelope(quotes, data.quote.marketCap);
               if (strategyData) {
                 strategyData.isBuyZone = !!strategyData.isBuyZone;
                 const lastQ = quotes[quotes.length - 1];
@@ -419,7 +514,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
             quotes = history?.quotes.filter((q:any) => q.close && q.low && q.high) || [];
             
             if (strategyId === 'ENVELOPE_SHORT') {
-              strategyData = processShortEnvelope(quotes);
+              strategyData = processShortEnvelope(quotes, summary?.summaryDetail?.marketCap || 0);
               if (strategyData) {
                 strategyData.isBuyZone = !!strategyData.isBuyZone;
                 const lastQ = quotes[quotes.length - 1];
@@ -633,55 +728,6 @@ app.get('/api/stock-prices', async (req, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-// --- Screener.in Data Connector ---
-async function fetchScreenerData(symbol: string) {
-  try {
-    const cleanSymbol = symbol.split('.')[0]; 
-    const url = `https://www.screener.in/company/${cleanSymbol}/consolidated/`;
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-    const { data } = await axios.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
-      timeout: 8000
-    });
-    const $ = cheerio.load(data);
-    const getRatio = (name: string) => {
-      const el = $(`#top-ratios li:contains("${name}") .number`);
-      return el.text().trim().replace(/,/g, '');
-    };
-
-    const getAnnualTableData = (tableName: string, rowName: string) => {
-      const table = $(`section#${tableName} table`);
-      const row = table.find(`tr:contains("${rowName}")`);
-      const values = row.find('td').map((i, el) => $(el).text().trim().replace(/,/g, '')).get();
-      return values.slice(1).map(v => parseFloat(v)); // Skip label, return numbers
-    };
-
-    return {
-      marketCap: parseFloat(getRatio('Market Cap')) * 10000000,
-      peRatio: parseFloat(getRatio('Stock P/E')),
-      dividendYield: parseFloat(getRatio('Dividend Yield')),
-      roce: parseFloat(getRatio('ROCE')),
-      returnOnEquity: parseFloat(getRatio('ROE')),
-      faceValue: parseFloat(getRatio('Face Value')),
-      netDebtToEquity: parseFloat($('li:contains("Debt to equity") .number').text().trim() || '0'),
-      bookValue: parseFloat(getRatio('Book Value')),
-      currentPrice: parseFloat(getRatio('Current Price')),
-      industry: $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'N/A',
-      salesGrowth3Y: parseFloat($('li:contains("Sales growth 3Years") .number').text().trim() || '0'),
-      profitGrowth3Y: parseFloat($('li:contains("Profit growth 3Years") .number').text().trim() || '0'),
-      historicalNetProfits: getAnnualTableData('profit-loss', 'Net Profit'),
-      historicalSales: getAnnualTableData('profit-loss', 'Sales'),
-      historicalOPM: getAnnualTableData('profit-loss', 'OPM %'),
-      ebitda: parseFloat(getRatio('EBITDA')) || 0,
-      operatingMargin: parseFloat(getRatio('Operating Margin')) || 0,
-      netMargin: parseFloat(getRatio('Net Profit Margin')) || 0,
-      yearsListed: getAnnualTableData('profit-loss', 'Sales').length
-    };
-  } catch (e: any) {
-    return null;
-  }
-}
-
 app.get('/api/stock-fundamentals', async (req, res) => {
   try {
     const symbol = (req.query.symbol as string);
@@ -696,7 +742,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     ]);
     if (!screenerData && !yahooSummary) throw new Error('Data not found');
 
-    const audit = await validateBatch9(cleanSymbol, yahooSummary, false);
+    const audit = await validateBatch9(cleanSymbol, { ...yahooSummary, screener: screenerData }, false);
 
     const sd = yahooSummary?.summaryDetail;
     const stats = yahooSummary?.defaultKeyStatistics;
@@ -721,7 +767,10 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       faceValue: screenerData?.faceValue || 10,
       audit,
       peComparison: { current: screenerData?.peRatio || sd?.trailingPE, fiveYearAvg: 28.5 },
-      growth3Yr: { sales: screenerData?.salesGrowth3Y || 15.2, roe: screenerData?.returnOnEquity || 18.0 },
+      growth3Yr: { 
+        sales: screenerData?.salesGrowth3Y || 0, 
+        eps: audit?.growthQuality?.checks?.find((c: any) => c.label.includes('EPS'))?.value || '0%'
+      },
       shareholding: { promoter: 54.2, fii: 16.8, dii: 11.5, public: 17.5, pledged: 0.5 },
       forwardPE: stats?.forwardPE || 0,
       industryPe: screenerData ? (screenerData.peRatio * 0.9).toFixed(1) : 25.0

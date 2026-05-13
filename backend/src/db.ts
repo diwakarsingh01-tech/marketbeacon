@@ -32,9 +32,29 @@ export async function initDB() {
       password TEXT NOT NULL,
       role TEXT DEFAULT 'USER',
       is_beta_tester BOOLEAN DEFAULT 0,
+      subscription_status TEXT DEFAULT 'FREE',
+      subscription_expiry DATETIME,
+      referral_code TEXT UNIQUE,
+      referred_by TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Ensure new columns exist for existing databases
+  const alterColumns = [
+    'ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT "FREE"',
+    'ALTER TABLE users ADD COLUMN subscription_expiry DATETIME',
+    'ALTER TABLE users ADD COLUMN referral_code TEXT UNIQUE',
+    'ALTER TABLE users ADD COLUMN referred_by TEXT'
+  ];
+
+  for (const sql of alterColumns) {
+    try {
+      await tursoClient.execute(sql);
+    } catch (e) {
+      // Ignore errors if columns already exist
+    }
+  }
 
   await tursoClient.execute(`
     CREATE TABLE IF NOT EXISTS watchlists (
