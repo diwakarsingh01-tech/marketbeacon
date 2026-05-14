@@ -306,54 +306,48 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, st
  * Buy: Price < SMA20 < SMA50 < SMA200 (Bearish Stacking)
  * Sell: Price > SMA20 > SMA50 > SMA200 (Bullish Stacking)
  */
-export function calculateSMAStacking(quotes: Quote[]) {
+export function calculateEMAStacking(quotes: Quote[]) {
   if (!quotes || quotes.length < 200) return null;
 
   const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
-  const latestQuote = quotes[quotes.length - 1];
-  const currentPrice = latestQuote.adjclose || latestQuote.adjClose || latestQuote.close;
+  const ema20Arr = calculateEMA(prices, 20);
+  const ema50Arr = calculateEMA(prices, 50);
+  const ema200Arr = calculateEMA(prices, 200);
 
-  // Helper to calculate SMA for a specific window
-  const getSMA = (data: number[], len: number) => data.slice(-len).reduce((a, b) => a + b, 0) / len;
-
-  const sma20 = getSMA(prices, 20);
-  const sma50 = getSMA(prices, 50);
-  const sma200 = getSMA(prices, 200);
+  const latestIdx = quotes.length - 1;
+  const ema20 = ema20Arr[latestIdx];
+  const ema50 = ema50Arr[latestIdx];
+  const ema200 = ema200Arr[latestIdx];
+  const currentPrice = prices[latestIdx];
 
   let isBuyZone = false;
   let triggerDate: string | undefined = undefined;
   let entryPrice: number | undefined = undefined;
 
-  // Search back for NEAREST CROSSOVER
-  for (let i = quotes.length - 1; i >= 201; i--) {
-    const pI = prices.slice(0, i + 1);
-    const pPrev = prices.slice(0, i);
-    const s20 = getSMA(pI, 20);
-    const s50 = getSMA(pI, 50);
-    const s200 = getSMA(pI, 200);
+  // Search back for NEAREST BEARISH CROSSOVER (Price < 20 < 50 < 200)
+  for (let i = latestIdx; i >= 201; i--) {
+    const e20 = ema20Arr[i];
+    const e50 = ema50Arr[i];
+    const e200 = ema200Arr[i];
     const cI = prices[i];
 
     // Today's Condition
-    const isTodaySatisfied = cI < s20 && s20 < s50 && s50 < s200;
+    const isTodaySatisfied = cI < e20 && e20 < e50 && e50 < e200;
 
     if (isTodaySatisfied) {
       // Check if it's the START of the crossover (Yesterday was NOT satisfied)
-      const prev20 = getSMA(pPrev, 20);
-      const prev50 = getSMA(pPrev, 50);
-      const prev200 = getSMA(pPrev, 200);
+      const prev20 = ema20Arr[i-1];
+      const prev50 = ema50Arr[i-1];
+      const prev200 = ema200Arr[i-1];
       const cPrev = prices[i-1];
       const isPrevSatisfied = cPrev < prev20 && prev20 < prev50 && prev50 < prev200;
 
       if (!isPrevSatisfied) {
         // This is the NEAREST CROSSOVER
-        // Check if EXIT has occurred between this crossover and today
+        // Check if EXIT (Bullish Alignment) has occurred between this crossover and today
         let targetHit = false;
-        for (let j = i + 1; j < quotes.length; j++) {
-          const pJ = prices.slice(0, j + 1);
-          const sj20 = getSMA(pJ, 20);
-          const sj50 = getSMA(pJ, 50);
-          const sj200 = getSMA(pJ, 200);
-          if (prices[j] > sj20 && sj20 > sj50 && sj50 > sj200) {
+        for (let j = i + 1; j <= latestIdx; j++) {
+          if (prices[j] > ema20Arr[j] && ema20Arr[j] > ema50Arr[j] && ema50Arr[j] > ema200Arr[j]) {
             targetHit = true;
             break;
           }
@@ -371,12 +365,12 @@ export function calculateSMAStacking(quotes: Quote[]) {
   }
 
   return {
-    sma20, sma50, sma200,
+    ema20, ema50, ema200,
     isBuyZone,
     triggerDate,
     entryPrice,
     currentPrice,
-    target: sma200 // SMA 200 as the primary milestone target
+    target: ema200
   };
 }
 

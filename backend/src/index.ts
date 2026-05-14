@@ -597,7 +597,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
             } else if (strategyId === 'BOLLINGER') {
               strategyData = calculateBollingerBand(quotes);
             } else if (strategyId === 'SMA') {
-              strategyData = calculateSMAStacking(quotes);
+              strategyData = calculateEMAStacking(quotes);
             } else if (strategyId === '52W_HIGH_LOW') {
               strategyData = calculate52WeekStrategy(quotes);
             } else if (strategyId === 'CUP_HANDLE_ABCD') {
@@ -629,7 +629,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
             } else if (strategyId === 'BOLLINGER') {
               strategyData = calculateBollingerBand(quotes);
             } else if (strategyId === 'SMA') {
-              strategyData = calculateSMAStacking(quotes);
+              strategyData = calculateEMAStacking(quotes);
             } else if (strategyId === '52W_HIGH_LOW') {
               strategyData = calculate52WeekStrategy(quotes);
             } else if (strategyId === 'CUP_HANDLE_ABCD') {
