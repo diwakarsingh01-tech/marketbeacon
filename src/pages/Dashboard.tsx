@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 interface DashboardPageProps {
-  defaultTab?: 'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected';
+  defaultTab?: 'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral';
 }
 
 const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) => {
@@ -24,7 +24,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const [data, setData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeBasket, setActiveBasket] = useState<string>(currentStrategy.baskets[0]);
-  const [activeTab, setActiveTab] = useState<'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral'>(defaultTab);
   const [showGuide, setShowGuide] = useState(false);
   
   const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
@@ -349,6 +349,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 overflow-x-auto no-scrollbar">
              <button onClick={() => setActiveTab('open')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'open' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>Qualified</button>
              <button onClick={() => setActiveTab('hold')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'hold' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>Observation</button>
+             <button onClick={() => setActiveTab('neutral')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'neutral' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Neutral</button>
+             <button onClick={() => setActiveTab('watchlist')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'watchlist' ? 'bg-white text-amber-500 shadow-sm' : 'text-slate-400'}`}>Watchlist</button>
              <button onClick={() => setActiveTab('rejected')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'rejected' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Rejected</button>
           </div>
 

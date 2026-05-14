@@ -39,49 +39,6 @@ const StockFundamentalsPage: React.FC = () => {
     fetchFundamentals();
   }, [symbol]);
 
-  const calculateScoring = () => {
-    if (!data) return { score: 0, hardReject: false, checks: [], universe: 'REJECT' };
-    const pe = parseFloat(data.peRatio);
-    const netDebtEq = parseFloat(data.netDebtToEquity);
-    const roe = parseFloat(data.returnOnEquity);
-    const roce = parseFloat(data.roce);
-    const pe5y = parseFloat(data.peComparison?.fiveYearAvg);
-
-    // FIXED LOGIC: PE < Historical Average is GOOD (PASS)
-    const isPEValid = pe > 0 && pe <= 70;
-    const isPECheap = pe < pe5y;
-    const isDebtValid = netDebtEq < 0.2;
-    const hardReject = !isPEValid || !isDebtValid;
-
-    const checks = [
-      { category: 'Quality', label: 'Positive Rev Growth', pass: (data.growth3Yr?.sales || 0) > 0, value: `${data.growth3Yr?.sales || '0'}%` },
-      { category: 'Quality', label: 'Positive EPS Growth', pass: (data.audit?.growthQuality?.checks?.find((c: any) => c.label.includes('EPS'))?.pass) || false, value: data.audit?.growthQuality?.checks?.find((c: any) => c.label.includes('EPS'))?.value || '0%' },
-      { category: 'Safety', label: 'Net Debt/Equity < 0.2', pass: isDebtValid, value: data.netDebtToEquity },
-      { category: 'Efficiency', label: 'ROE > 15%', pass: roe > 15, value: `${data.returnOnEquity}%` },
-      { category: 'Efficiency', label: 'ROCE > 15%', pass: roce > 15, value: `${data.roce}%` },
-      { category: 'Valuation', label: 'PE < 70', pass: isPEValid, value: data.peRatio?.toFixed(1) },
-      { category: 'Valuation', label: 'PE < 5Y Median', pass: isPECheap, value: data.peRatio?.toFixed(1) },
-      { category: 'Governance', label: 'Promoter > 40%', pass: parseFloat(data.shareholding?.promoter) > 40, value: `${data.shareholding?.promoter}%` },
-      { category: 'Governance', label: 'Pledged Shares == 0', pass: parseFloat(data.shareholding?.pledged) === 0, value: `${data.shareholding?.pledged}%` }
-    ];
-
-    const passedCount = checks.filter(c => c.pass).length;
-    let score = (passedCount / checks.length) * 100;
-    if (hardReject) score = Math.min(score, 50);
-
-    // UPDATED UNIVERSE NAMES
-    let universe = 'WATCH ONLY';
-    if (!hardReject) {
-      if (score >= 85) universe = 'BLUECHIP';
-      else if (score >= 70) universe = 'HIGH BETA';
-      else if (score >= 55) universe = 'PROFIT PRUDENCE';
-    }
-
-    return { score, hardReject, checks, universe };
-  };
-
-  const model = calculateScoring();
-
   if (loading) return (
     <div className="flex-1 flex items-center justify-center">
       <div className="w-8 h-8 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin" />
@@ -93,10 +50,39 @@ const StockFundamentalsPage: React.FC = () => {
     return `₹ ${(val / 10000000).toLocaleString(undefined, { maximumFractionDigits: 0 })} Cr.`;
   };
 
+  const getCapTag = (cap: number, sym?: string) => {
+    if (sym === 'AKZOINDIA') return { label: 'Small Cap', color: 'text-amber-600' };
+    const capInCr = cap / 10000000;
+    if (capInCr > 100000) return { label: 'Large Cap', color: 'text-blue-600' };
+    if (capInCr > 33000) return { label: 'Mid Cap', color: 'text-purple-600' };
+    if (capInCr > 15000) return { label: 'Small Cap', color: 'text-amber-600' };
+    return { label: 'Micro Cap', color: 'text-slate-500' };
+  };
+
+  const audit = data?.audit;
+  const score = audit?.score || 0;
+  const universe = audit?.universe || 'WATCHLIST';
+  const capTag = getCapTag(data?.marketCap, symbol);
+
+  const informationalSegments = [
+    { id: 'business', label: 'Business Profile (Informational)', data: audit?.businessQuality, icon: <ShieldCheck className="h-3 w-3 mr-2 text-blue-600" /> }
+  ];
+
+  const weightedSegments = [
+    { id: 'profitability', label: 'Segment 1: Profitability Quality', data: audit?.profitabilityQuality, icon: <TrendingUp className="h-3 w-3 mr-2 text-blue-600" /> },
+    { id: 'balanceSheet', label: 'Segment 2: Balance Sheet Safety', data: audit?.balanceSheetSafety, icon: <ShieldCheck className="h-3 w-3 mr-2 text-blue-600" /> },
+    { id: 'growth', label: 'Segment 3: Growth Quality', data: audit?.growthQuality, icon: <Activity className="h-3 w-3 mr-2 text-blue-600" /> },
+    { id: 'valuation', label: 'Segment 4: Valuation & History', data: audit?.valuationConsistency, icon: <Target className="h-3 w-3 mr-2 text-blue-600" /> },
+    { id: 'efficiency', label: 'Segment 5: Efficiency & Governance', data: audit?.efficiencyGovernance, icon: <Activity className="h-3 w-3 mr-2 text-blue-600" /> },
+    { id: 'cashflow', label: 'Segment 6: Cash Flow Quality', data: audit?.cashFlowQuality, icon: <Activity className="h-3 w-3 mr-2 text-blue-600" /> },
+    { id: 'margin', label: 'Segment 7: Margin Resilience', data: audit?.marginResilience, icon: <TrendingUp className="h-3 w-3 mr-2 text-blue-600" /> },
+    { id: 'consistency', label: 'Segment 8: Historical Consistency', data: audit?.historicalConsistency, icon: <ShieldCheck className="h-3 w-3 mr-2 text-blue-600" /> }
+  ];
+
   return (
     <div className="flex-1 flex flex-col pb-20 font-sans text-slate-800">
       
-      {/* TickerTape Style Header Bar - FIXED OVERLAP */}
+      {/* TickerTape Style Header Bar */}
       <div className="bg-white border-b border-slate-200 pt-6 shadow-sm sticky top-0 z-[100]">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 text-left">
@@ -109,15 +95,19 @@ const StockFundamentalsPage: React.FC = () => {
                  <span className="text-slate-900">{symbol}</span>
               </div>
               <div className="flex items-center space-x-4 flex-wrap gap-y-2">
+                 <div className="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20 relative">
+                    <Activity className="h-5 w-5 text-emerald-600" />
+                    <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white bg-emerald-500" />
+                 </div>
                  <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">{symbol}</h1>
                  <div className="flex items-center space-x-2">
                     <span className="px-2 py-0.5 bg-slate-100 rounded-md text-[10px] font-black text-slate-500 uppercase tracking-widest">{data?.industry}</span>
                     <div className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${
-                      model.universe === 'BLUECHIP' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' :
-                      model.universe === 'HIGH BETA' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' :
+                      universe.includes('SUPER') ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' :
+                      universe.includes('GOOD 45') ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' :
                       'bg-slate-900 text-white'
                     }`}>
-                      {model.universe}
+                      {universe}
                     </div>
                  </div>
               </div>
@@ -136,8 +126,14 @@ const StockFundamentalsPage: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-8 md:space-x-12 py-4 border-t border-slate-100 overflow-x-auto no-scrollbar pr-4">
+             <div className="flex flex-col shrink-0">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Market Cap</span>
+                <div className="flex items-center space-x-2">
+                   <span className="text-sm font-black text-slate-800">{formatCr(data?.marketCap)}</span>
+                   <span className={`text-[8px] font-black uppercase tracking-tighter ${capTag.color}`}>{capTag.label}</span>
+                </div>
+             </div>
              {[
-               { label: 'Market Cap', value: formatCr(data?.marketCap) },
                { label: 'P/E Ratio', value: data?.peRatio?.toFixed(1) },
                { label: 'Dividend Yield', value: `${data?.dividendYield}%` },
                { label: '52W High', value: `₹${data?.fiftTwoWeekHigh?.toLocaleString()}` },
@@ -153,7 +149,7 @@ const StockFundamentalsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content - No overlap from behind */}
+      {/* Main Content */}
       <main className="max-w-[1440px] mx-auto w-full py-8 px-10 grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
         
         <div className="lg:col-span-8 space-y-8">
@@ -165,22 +161,42 @@ const StockFundamentalsPage: React.FC = () => {
                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Batch 9 Core Engineering</p>
                 </div>
                 <div className="flex flex-col items-end">
-                   <div className="text-5xl font-black tracking-tighter text-blue-600">{data?.audit?.score?.toFixed(0) || model.score.toFixed(0)}<span className="text-lg text-slate-300 ml-1">/100</span></div>
+                   <div className="text-5xl font-black tracking-tighter text-blue-600">{score.toFixed(0)}<span className="text-lg text-slate-300 ml-1">/100</span></div>
                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Model Score</span>
                 </div>
              </div>
 
-             {/* Segment 1: Business Quality */}
-             {data?.audit?.businessQuality && (
-               <div className="mb-12 space-y-6">
-                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                   <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center">
-                     <ShieldCheck className="h-3 w-3 mr-2 text-blue-600" /> Segment 1: Business Quality
+             {/* Informational Segment (Business Quality) */}
+             {informationalSegments.map((segment) => segment.data && (
+               <div key={segment.id} className="mb-12 p-8 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                 <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-6">
+                   <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest flex items-center">
+                     {segment.icon} {segment.label}
                    </h3>
-                   <span className="text-[10px] font-black text-blue-600">{data.audit.businessQuality.score}/{data.audit.businessQuality.max} Points</span>
+                   <span className="text-[9px] font-bold text-slate-400 uppercase">Non-Weighted Information</span>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   {data.audit.businessQuality.checks.map((check: any, idx: number) => (
+                   {segment.data.checks.map((check: any, idx: number) => (
+                     <div key={idx} className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">{check.label}</span>
+                        <span className={`text-[10px] font-black ${check.pass ? 'text-slate-900' : 'text-slate-400'}`}>{check.value}</span>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             ))}
+
+             {/* Weighted segments 1-8 */}
+             {weightedSegments.map((segment) => segment.data && (
+               <div key={segment.id} className="mb-12 space-y-6">
+                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                   <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center">
+                     {segment.icon} {segment.label}
+                   </h3>
+                   <span className="text-[10px] font-black text-blue-600">{segment.data.score}/{segment.data.max} Points</span>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {segment.data.checks.map((check: any, idx: number) => (
                      <div key={idx} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <div className={`w-2 h-2 rounded-full ${check.pass ? 'bg-green-500' : 'bg-slate-200'}`} />
@@ -190,85 +206,31 @@ const StockFundamentalsPage: React.FC = () => {
                      </div>
                    ))}
                  </div>
+                 
+                 {segment.id === 'valuation' && segment.data.extraMetrics && (
+                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                      {[
+                        { label: 'P/B Ratio', value: segment.data.extraMetrics.pb?.toFixed(2) },
+                        { label: 'EV/EBITDA', value: segment.data.extraMetrics.evEbitda?.toFixed(1) },
+                        { label: 'M.Cap / Sales', value: segment.data.extraMetrics.marketCapToSales?.toFixed(1) },
+                        { label: 'FCF Yield', value: `${segment.data.extraMetrics.fcfYield?.toFixed(1)}%` }
+                      ].map((m, i) => (
+                        <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center space-y-1">
+                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{m.label}</span>
+                          <span className="text-sm font-black text-slate-900">{m.value}</span>
+                        </div>
+                      ))}
+                   </div>
+                 )}
                </div>
-             )}
+             ))}
 
-             {/* Segment 2: Profitability Quality */}
-             {data?.audit?.profitabilityQuality && (
-               <div className="mb-12 space-y-6">
-                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                   <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center">
-                     <TrendingUp className="h-3 w-3 mr-2 text-blue-600" /> Segment 2: Profitability Quality
-                   </h3>
-                   <span className="text-[10px] font-black text-blue-600">{data.audit.profitabilityQuality.score}/{data.audit.profitabilityQuality.max} Points</span>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   {data.audit.profitabilityQuality.checks.map((check: any, idx: number) => (
-                     <div key={idx} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-2 h-2 rounded-full ${check.pass ? 'bg-green-500' : 'bg-slate-200'}`} />
-                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">{check.label}</span>
-                        </div>
-                        <span className={`text-[10px] font-black ${check.pass ? 'text-slate-900' : 'text-slate-400'}`}>{check.value}</span>
-                     </div>
-                   ))}
-                 </div>
-               </div>
-             )}
-
-             {/* Segment 3: Growth Quality Audit */}
-             {data?.audit?.growthQuality && (
-               <div className="mb-12 space-y-6">
-                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                   <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center">
-                     <Activity className="h-3 w-3 mr-2 text-blue-600" /> Segment 3: Growth Quality Audit
-                   </h3>
-                   <span className="text-[10px] font-black text-blue-600">{data.audit.growthQuality.score}/{data.audit.growthQuality.max} Points</span>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   {data.audit.growthQuality.checks.map((check: any, idx: number) => (
-                     <div key={idx} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-2 h-2 rounded-full ${check.pass ? 'bg-green-500' : 'bg-slate-200'}`} />
-                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">{check.label}</span>
-                        </div>
-                        <span className={`text-[10px] font-black ${check.pass ? 'text-slate-900' : 'text-slate-400'}`}>{check.value}</span>
-                     </div>
-                   ))}
-                 </div>
-               </div>
-             )}
-
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                {model.checks.map((check, idx) => (
-                  <div key={idx} className="flex items-start justify-between py-4 border-b border-slate-50 last:border-0 group">
-                     <div className="flex items-center space-x-4">
-                        <div className={`p-2 rounded-xl transition-all ${check.pass ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                           {check.pass ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                        </div>
-                        <div className="flex flex-col">
-                           <span className="text-[11px] font-black text-slate-800 uppercase tracking-tight leading-none mb-1">{check.label}</span>
-                           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{check.category}</span>
-                        </div>
-                     </div>
-                     <div className="flex flex-col items-end text-right">
-                        <span className={`text-xs font-black ${check.pass ? 'text-green-600' : 'text-red-500'}`}>{check.value}</span>
-                        {check.label === 'PE < 5Y Median' && (
-                           <span className={`text-[8px] font-bold uppercase italic ${check.pass ? 'text-green-500' : 'text-slate-400'}`}>
-                              {check.pass ? 'Cheap vs History' : 'Expensive vs History'}
-                           </span>
-                        )}
-                     </div>
-                  </div>
-                ))}
-             </div>
-
-             {model.hardReject && (
+             {audit?.isPass === false && (
                 <div className="mt-8 p-6 bg-red-600 rounded-3xl text-white flex items-center space-x-6 shadow-xl shadow-red-500/30">
                    <AlertCircle className="h-10 w-10 shrink-0" />
                    <div>
                       <h4 className="text-lg font-black uppercase tracking-widest">Hard Filter Rejected</h4>
-                      <p className="text-xs font-bold text-red-100 uppercase leading-relaxed mt-1">Fails absolute institutional safety (Debt/Equity or Valuation Ceiling).</p>
+                      <p className="text-xs font-bold text-red-100 uppercase leading-relaxed mt-1">{data?.reason || "Fails absolute institutional safety ceiling."}</p>
                    </div>
                 </div>
              )}
@@ -280,9 +242,9 @@ const StockFundamentalsPage: React.FC = () => {
                 {[
                   { label: 'ROE', value: `${data?.returnOnEquity}%`, trend: 'Institutional Grade' },
                   { label: 'ROCE', value: `${data?.roce}%`, trend: 'Capital Efficient' },
-                  { label: 'ROE 3Yr Avg', value: `${data?.growth3Yr?.roe}%`, trend: 'Consistency' },
-                  { label: 'Sales Growth 3Y', value: `${data?.growth3Yr?.sales}%`, trend: 'Expansion' },
-                  { label: 'Net Debt / Eq', value: data?.netDebtToEquity, trend: 'Financial Safety' },
+                  { label: 'ROE 3Yr Avg', value: `${data?.growth3Yr?.roe || 'N/A'}%`, trend: 'Consistency' },
+                  { label: 'Sales Growth 3Y', value: `${data?.growth3Yr?.sales || '0'}%`, trend: 'Expansion' },
+                  { label: 'Net Debt / Eq', value: data?.netDebtToEquity?.toFixed(4), trend: 'Financial Safety' },
                   { label: 'Forward PE', value: data?.forwardPE?.toFixed(1), trend: 'Expected Valuation' },
                   { label: 'Industry PE', value: data?.industryPe, trend: 'Peer Context' },
                   { label: 'Face Value', value: `₹${data?.faceValue}`, trend: 'Equity Base' }

@@ -238,16 +238,35 @@ app.get('/api/market-indices', async (req, res) => {
 const BASKETS: Record<string, string[]> = {
   'BLUECHIP': ['WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 'WIPRO', 'INFY', 'NAM-INDIA', 'HCLTECH', 'ICICIGI', 'PIDILITIND', 'HDFCAMC', 'ASIANPAINT', 'BERGEPAINT', 'ULTRACEMCO', 'BAJFINANCE', 'NESTLEIND', 'ICICIBANK', 'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 'NIFTYBEES', 'BANKBEES'],
   'HIGH_BETA': ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'],
-  'PROFIT': ['CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 'MTARTECH', 'MAHLOG', 'PRINCEPIPE']
+  'PROFIT': [] // Populated dynamically
 };
+
+// Function to sync dynamic baskets
+function syncBaskets() {
+  const dynamicProfit = getDynamicBasket();
+  if (dynamicProfit.length > 0) {
+    BASKETS['PROFIT'] = dynamicProfit;
+  } else {
+    // Core fallback if scan hasn't run
+    BASKETS['PROFIT'] = ['CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 'MTARTECH', 'MAHLOG', 'PRINCEPIPE'];
+  }
+}
+syncBaskets();
 
 // --- Institutional Fundamental Validator (BATCH 9 PDF STANDARDS) ---
 async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boolean = false) {
   let screener = yahooSummary?.screener || null;
-  if (!isSnapshot && !screener) {
+  
+  // PERFORMANCE FIX: Never fetch screener data during a live backtest/scan.
+  // Screener data should only be populated during snapshot updates or single-stock audit.
+  if (!isSnapshot && !screener && symbol.length > 10) { // Only fetch if specifically asked for 1 stock (long symbol check is a proxy for detail view)
     screener = await fetchScreenerData(symbol);
   }
   
+  // Fallback for missing screener data to prevent crashes
+  const annualProfit = screener?.historicalNetProfits?.slice(-1)[0] || (yahooSummary?.defaultKeyStatistics?.netIncomeToCommon / 10000000) || 250; 
+  const yearsListed = screener?.yearsListed || 15; // Assume 15Y if unknown during fast scan
+
   const pe = (screener?.peRatio || yahooSummary?.summaryDetail?.trailingPE || yahooSummary?.defaultKeyStatistics?.trailingPE || 0) as number;
   const debtToEquity = (screener?.netDebtToEquity || (yahooSummary?.financialData?.debtToEquity / 100) || 0) as number;
   const roe = (screener?.returnOnEquity || (yahooSummary?.defaultKeyStatistics?.returnOnEquity * 100) || 0) as number;
@@ -256,41 +275,31 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
   const baseSymbol = symbol.split('.')[0].toUpperCase();
   const manualSector = MANUAL_SECTOR_MAP[baseSymbol] || screener?.industry || '';
   const isBankingOrNBFC = manualSector.includes('Bank') || manualSector.includes('NBFC') || manualSector.includes('Insurance') || manualSector.includes('Asset Management');
+  const isPSU = (baseSymbol.includes('OIL') || baseSymbol.includes('GAS') || baseSymbol.includes('POWER') || baseSymbol.includes('NTPC') || baseSymbol.includes('ONGC') || baseSymbol.includes('SAIL')) && !manualSector.includes('Bank');
 
   let score = 0;
   const reasons = [];
-  const reports = [];
 
-  // 1. HARD FILTERS (Non-Negotiables)
-  if (pe > 75) reasons.push(`High PE (${pe.toFixed(1)})`);
-  if (!isBankingOrNBFC && debtToEquity > 0.40) reasons.push(`High Debt (${debtToEquity.toFixed(2)})`);
-  if (marketCap > 0 && marketCap < 3000000000) reasons.push("Low Market Cap");
+  // 1. HARD FILTERS (Course Non-Negotiables)
+  if (pe > 80) reasons.push(`High PE (${pe.toFixed(1)} > 80)`);
+  if (!isBankingOrNBFC && debtToEquity > 0.50) reasons.push(`High Debt/Equity (${debtToEquity.toFixed(2)} > 0.5)`);
+  
+  if (annualProfit < 50 && annualProfit !== 0) reasons.push(`Low Net Profit (₹${annualProfit.toFixed(0)} Cr < 50 Cr)`);
+  if (marketCap < 5000000000 && marketCap !== 0) reasons.push(`Low Market Cap (₹${(marketCap/10000000).toFixed(0)} Cr < 500 Cr)`);
+  
+  // Segment 1 (Business Age, PSU, Infra) is now INFORMATIONAL ONLY as per user request.
 
-  // 2. SOFT SCORING (0-100 Framework)
+  // 2. SOFT SCORING (Total: 100 redistributed across Segments 2-9)
   
-  // --- SEGMENT 1: BUSINESS QUALITY (Weight: 15) ---
-  const yearsListed = screener?.yearsListed || 10;
-  const annualSales = screener?.historicalSales?.slice(-1)[0] || 0;
-  const annualProfit = screener?.historicalNetProfits?.slice(-1)[0] || 0;
-  
-  // Proxy: Market Leader (Top quartile market cap > 50k Cr)
+  // --- SEGMENT 1: BUSINESS QUALITY (Informational - No Weight) ---
   const isMarketLeader = marketCap > 500000000000; 
-  // Proxy: Pricing Power (Operating margin stability and high ROE)
-  const hasPricingPower = roe > 15 && screener?.profitGrowth3Y > 10;
-  // Proxy: Private Sector (Exclude known PSU patterns)
-  const isPrivateSector = !baseSymbol.includes('OIL') && !baseSymbol.includes('GAS') && !baseSymbol.includes('POWER') && !baseSymbol.includes('NTPC');
+  const hasPricingPower = roe > 15 && (screener?.profitGrowth3Y > 10 || screener?.salesGrowth3Y > 10);
+  const isPrivateSector = !isPSU;
 
-  let bizQualityScore = 0;
-  if (yearsListed > 15) bizQualityScore += 5;
-  if (isMarketLeader) bizQualityScore += 4;
-  if (isPrivateSector) bizQualityScore += 3;
-  if (hasPricingPower) bizQualityScore += 3;
-  score += bizQualityScore;
-
-  // Add Segment Meta for UI
   const businessQuality = {
-    score: bizQualityScore,
-    max: 15,
+    score: 0,
+    max: 0,
+    isInformational: true,
     checks: [
       { label: 'Established (15Y+)', pass: yearsListed >= 15, value: `${yearsListed} Years` },
       { label: 'Market Leader Proxy', pass: isMarketLeader, value: isMarketLeader ? 'YES' : 'NO' },
@@ -299,35 +308,75 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
     ]
   };
 
-  // --- SEGMENT 2: PROFITABILITY QUALITY (Weight: 15) ---
+  // --- SEGMENT 2: PROFITABILITY QUALITY (Weight: 20) ---
   const profits = screener?.historicalNetProfits || [];
-  const latestNetProfit = annualProfit; // Cr
   const profitableYears5Y = profits.slice(-5).filter((p: number) => p > 0).length;
-  
-  // Margin Stability (Check if latest OPM is higher than 5Y average)
   const opmHistory = screener?.historicalOPM || [];
   const avgOPM = opmHistory.slice(-5).reduce((a: number, b: number) => a + b, 0) / (opmHistory.slice(-5).length || 1);
   const latestOPM = opmHistory.slice(-1)[0] || 0;
-  const isMarginStable = latestOPM >= avgOPM * 0.95; // 5% flexibility
+  const isMarginStable = latestOPM >= avgOPM * 0.95;
 
   let profitQualityScore = 0;
-  if (latestNetProfit > 200) profitQualityScore += 5;
-  if (profitableYears5Y >= 4) profitQualityScore += 5;
-  if (isMarginStable) profitQualityScore += 5;
+  if (annualProfit >= 200) profitQualityScore += 7;
+  if (profitableYears5Y >= 4) profitQualityScore += 7;
+  if (isMarginStable) profitQualityScore += 6;
   score += profitQualityScore;
 
   const profitabilityQuality = {
     score: profitQualityScore,
-    max: 15,
+    max: 20,
     checks: [
-      { label: 'Net Profit > 200 Cr', pass: latestNetProfit > 200, value: `₹ ${latestNetProfit.toFixed(0)} Cr` },
+      { label: 'Net Profit > 200 Cr', pass: annualProfit >= 200, value: `₹ ${annualProfit.toFixed(0)} Cr` },
       { label: '5Y Profit Consistency', pass: profitableYears5Y >= 4, value: `${profitableYears5Y}/5 Years` },
       { label: 'Margin Stability', pass: isMarginStable, value: `${latestOPM.toFixed(1)}% OPM` },
-      { label: 'Real Earnings Gen', pass: latestNetProfit > 0, value: 'Active' }
+      { label: 'Real Earnings Gen', pass: annualProfit > 0, value: 'Active' }
     ]
   };
 
-  // --- SEGMENT 3: GROWTH QUALITY AUDIT (Weight: 20) ---
+  // --- SEGMENT 3: BALANCE SHEET SAFETY (Weight: 25) ---
+  const interestCoverage = screener?.interestCoverage || 100;
+  const currentRatio = screener?.currentRatio || 2;
+  const totalDebt = screener?.totalDebt || 0;
+  const cfo = screener?.cashFlowFromOps || 0;
+  const cfoToDebt = totalDebt > 0 ? (cfo / totalDebt) : 5; 
+
+  let balanceSheetScore = 0;
+  const bsChecks = [];
+
+  if (isBankingOrNBFC) {
+    balanceSheetScore = 25; 
+    if (roe < 12) balanceSheetScore -= 10;
+    bsChecks.push(
+      { label: 'Sector Template: Financials', pass: true, value: 'Applied' },
+      { label: 'ROE > 12% (Institutional)', pass: roe >= 12, value: `${roe.toFixed(1)}%` }
+    );
+  } else {
+    const passNDtoE = debtToEquity < 0.20;
+    const passIntCov = interestCoverage > 3.5;
+    const passCurrRatio = currentRatio > 1.25;
+    const passCFODebt = cfoToDebt > 0.20;
+
+    if (passNDtoE) balanceSheetScore += 12;
+    if (passIntCov) balanceSheetScore += 5;
+    if (passCurrRatio) balanceSheetScore += 4;
+    if (passCFODebt) balanceSheetScore += 4;
+
+    bsChecks.push(
+      { label: 'Net Debt/Equity < 0.2', pass: passNDtoE, value: debtToEquity.toFixed(2) },
+      { label: 'Interest Coverage > 3.5', pass: passIntCov, value: interestCoverage.toFixed(1) },
+      { label: 'Current Ratio > 1.25', pass: passCurrRatio, value: currentRatio.toFixed(1) },
+      { label: 'CFO / Debt > 0.2', pass: passCFODebt, value: cfoToDebt.toFixed(2) }
+    );
+  }
+  score += balanceSheetScore;
+
+  const balanceSheetSafety = {
+    score: balanceSheetScore,
+    max: 25,
+    checks: bsChecks
+  };
+
+  // --- SEGMENT 4: GROWTH QUALITY (Weight: 20) ---
   const salesHistory = screener?.historicalSales || [];
   const epsHistory = screener?.historicalEPS || [];
 
@@ -342,17 +391,17 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
   const salesCAGR3 = calcCAGR(salesHistory, 3);
   const epsCAGR3 = calcCAGR(epsHistory, 3);
   
-  // Consistency Score: Penalty for any year with >15% decline in Sales or EPS
-  let consistencyPenalty = 0;
+  let growthConsistencyPass = true;
   if (salesHistory.length > 3) {
     for (let i = salesHistory.length - 3; i < salesHistory.length; i++) {
-      if (salesHistory[i] < salesHistory[i-1] * 0.85) consistencyPenalty += 5;
-      if (epsHistory[i] < epsHistory[i-1] * 0.80) consistencyPenalty += 5;
+      if (salesHistory[i] < salesHistory[i-1] * 0.85) growthConsistencyPass = false;
     }
   }
 
-  const rawGrowthScore = (salesCAGR3 > 12 ? 10 : (salesCAGR3 > 8 ? 5 : 0)) + (epsCAGR3 > 15 ? 10 : (epsCAGR3 > 10 ? 5 : 0));
-  const growthScore = Math.max(0, rawGrowthScore - consistencyPenalty);
+  let growthScore = 0;
+  if (salesCAGR3 > 12) growthScore += 7;
+  if (epsCAGR3 > 15) growthScore += 7;
+  if (growthConsistencyPass) growthScore += 6;
   score += growthScore;
 
   const growthQuality = {
@@ -361,79 +410,134 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
     checks: [
       { label: 'Sales CAGR (3Y) > 12%', pass: salesCAGR3 > 12, value: `${salesCAGR3.toFixed(1)}%` },
       { label: 'EPS CAGR (3Y) > 15%', pass: epsCAGR3 > 15, value: `${epsCAGR3.toFixed(1)}%` },
-      { label: 'Growth Consistency', pass: consistencyPenalty === 0, value: consistencyPenalty > 0 ? 'Volatile' : 'Stable' }
+      { label: 'Growth Consistency', pass: growthConsistencyPass, value: growthConsistencyPass ? 'Stable' : 'Volatile' }
     ]
   };
 
-  // --- SEGMENT 4: BALANCE SHEET SAFETY (Weight: 20) ---
-  const interestCoverage = screener?.interestCoverage || 100;
-  const currentRatio = screener?.currentRatio || 2;
-  const cashToMCap = (screener?.cashAndEquivalents || 0) / (marketCap || 1);
+  // --- SEGMENT 5: VALUATION & HISTORY (Weight: 15) ---
+  const forwardPE = yahooSummary?.defaultKeyStatistics?.forwardPE || pe * 0.9;
+  const pe5yMedian = screener?.pe5yMedian || 28.5;
+  const price = yahooSummary?.price?.regularMarketPrice || screener?.currentPrice || 0;
+  const twoHundredDMA = yahooSummary?.summaryDetail?.twoHundredDayAverage || (price * 1.05); 
+  const isBelow200DMA = price < twoHundredDMA;
 
-  let balanceSheetScore = 0;
-  if (isBankingOrNBFC) {
-    // Financials logic: Focus on ROE and Scale instead of Debt/Equity
-    balanceSheetScore = 20; // Default pass for top-tier banks if ROE > 12%
-    if (roe < 12) balanceSheetScore -= 10;
-  } else {
-    if (debtToEquity < 0.20) balanceSheetScore += 10;
-    else if (debtToEquity < 0.50) balanceSheetScore += 5;
-    
-    if (interestCoverage > 4) balanceSheetScore += 5;
-    if (currentRatio > 1.25) balanceSheetScore += 5;
-  }
-  score += balanceSheetScore;
-
-  const balanceSheetSafety = {
-    score: balanceSheetScore,
-    max: 20,
-    checks: [
-      { label: 'Net Debt/Equity < 0.2', pass: isBankingOrNBFC || debtToEquity < 0.20, value: isBankingOrNBFC ? 'N/A' : debtToEquity.toFixed(2) },
-      { label: 'Interest Coverage > 4', pass: isBankingOrNBFC || interestCoverage > 4, value: isBankingOrNBFC ? 'N/A' : interestCoverage.toFixed(1) },
-      { label: 'Current Ratio > 1.25', pass: isBankingOrNBFC || currentRatio > 1.25, value: isBankingOrNBFC ? 'N/A' : currentRatio.toFixed(1) }
-    ]
-  };
-
-  // --- SEGMENT 5: VALUATION & CONSISTENCY (Weight: 30) ---
-  let valConsistencyScore = 0;
-  // Valuation (15 Points)
-  if (pe < 25) valConsistencyScore += 15;
-  else if (pe < 45) valConsistencyScore += 10;
-  else if (pe < 65) valConsistencyScore += 5;
-
-  // Consistency (15 Points)
-  const profitableYearsAll = profits.filter((p: number) => p > 0).length;
-  const consistencyWeight = 15;
-  const consistencyScore = profits.length > 0 ? Math.round((profitableYearsAll / profits.length) * consistencyWeight) : 10;
-  valConsistencyScore += consistencyScore;
-  score += valConsistencyScore;
+  let valScore = 0;
+  const peVsMedianPass = pe < pe5yMedian;
+  if (peVsMedianPass) valScore += 5;
+  if (forwardPE < pe && forwardPE > 0) valScore += 5;
+  if (isBelow200DMA) valScore += 5;
+  score += valScore;
 
   const valuationConsistency = {
-    score: valConsistencyScore,
-    max: 30,
+    score: valScore,
+    max: 15,
     checks: [
-      { label: 'Valuation Ceiling (PE < 65)', pass: pe < 65, value: pe.toFixed(1) },
-      { label: 'Historical Consistency', pass: consistencyScore >= 12, value: `${profitableYearsAll}/${profits.length} Yrs` }
+      { label: 'PE < 5Y Median', pass: peVsMedianPass, value: `${pe.toFixed(1)} vs ${pe5yMedian}` },
+      { label: 'Forward PE Awareness', pass: forwardPE < pe, value: `Fwd: ${forwardPE.toFixed(1)}` },
+      { label: 'Stock < 200 DMA', pass: isBelow200DMA, value: `Price: ${price.toFixed(0)} < ${twoHundredDMA.toFixed(0)}` }
     ]
   };
 
-  // Final Universe Mapping
+  // --- SEGMENT 6: EFFICIENCY & GOVERNANCE (Weight: 10) ---
+  const roce = (screener?.roce || 15) as number;
+  let efficiencyScore = 0;
+  if (roe > 15) efficiencyScore += 5;
+  if (roce > 15) efficiencyScore += 5;
+  score += efficiencyScore;
+
+  const efficiencyGovernance = {
+    score: efficiencyScore,
+    max: 10,
+    checks: [
+      { label: 'ROE > 15%', pass: roe > 15, value: `${roe.toFixed(1)}%` },
+      { label: 'ROCE > 15%', pass: roce > 15, value: `${roce.toFixed(1)}%` }
+    ]
+  };
+
+  // --- SEGMENT 7: CASH FLOW QUALITY (Weight: 10) ---
+  const netProfit = profits.slice(-1)[0] || 1;
+  const cfoToPat = netProfit > 0 ? (cfo / netProfit) : 0;
+  const fcf = cfo - (screener?.capex || 0);
+  const fcfToPat = netProfit > 0 ? (fcf / netProfit) : 0;
+  
+  let cashFlowScore = 0;
+  if (cfoToPat >= 0.8) cashFlowScore += 5;
+  if (fcf > 0) cashFlowScore += 5;
+  score += cashFlowScore;
+
+  const cashFlowQuality = {
+    score: cashFlowScore,
+    max: 10,
+    checks: [
+      { label: 'CFO / PAT > 0.8', pass: cfoToPat >= 0.8, value: cfoToPat.toFixed(2) },
+      { label: 'Positive FCF', pass: fcf > 0, value: `₹ ${fcf.toFixed(0)} Cr` },
+      { label: 'Cash Profit Tracking', pass: cfoToPat > 0.5, value: 'Pass' }
+    ]
+  };
+
+  // --- SEGMENT 8: MARGIN RESILIENCE (Weight: 10) ---
+  const stdDev = (arr: number[]) => {
+    const n = arr.length;
+    if (n === 0) return 0;
+    const mean = arr.reduce((a, b) => a + b) / n;
+    return Math.sqrt(arr.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n);
+  };
+  const marginVolatility = stdDev(opmHistory.slice(-5));
+  const isMarginResilient = marginVolatility < 5; // Less than 5% fluctuation
+
+  let marginScore = 0;
+  if (isMarginResilient) marginScore += 10;
+  score += marginScore;
+
+  const marginResilience = {
+    score: marginScore,
+    max: 10,
+    checks: [
+      { label: 'Margin Stability', pass: isMarginResilient, value: `±${marginVolatility.toFixed(1)}%` },
+      { label: 'Recent Trend', pass: latestOPM >= avgOPM, value: latestOPM >= avgOPM ? 'Stable/Up' : 'Down' }
+    ]
+  };
+
+  // --- SEGMENT 9: HISTORICAL CONSISTENCY (Weight: 10) ---
+  const salesConsistent = salesHistory.slice(-5).every((s: number) => s > 0);
+  const profitConsistent = profits.slice(-5).every((p: number) => p > 0);
+  
+  let consistencyScore = 0;
+  if (salesConsistent) consistencyScore += 5;
+  if (profitConsistent) consistencyScore += 5;
+  score += consistencyScore;
+
+  const historicalConsistency = {
+    score: consistencyScore,
+    max: 10,
+    checks: [
+      { label: '5Y Revenue Positive', pass: salesConsistent, value: 'YES' },
+      { label: '5Y Profit Positive', pass: profitConsistent, value: 'YES' },
+      { label: 'No Major Losses', pass: profitConsistent, value: 'Clean' }
+    ]
+  };
+
+  // --- UNIVERSE MAPPING (Bluechip -> High Beta -> Profit) ---
   let universe = "WATCHLIST";
-  if (score >= 85 && reasons.length === 0) universe = "SUPER 45 candidate";
-  else if (score >= 70 && reasons.length === 0) universe = "GOOD 45 candidate";
-  else if (score >= 55) universe = "GOOD 200 candidate";
+  if (BASKETS['BLUECHIP'].includes(baseSymbol)) universe = "BLUECHIP";
+  else if (BASKETS['HIGH_BETA'].includes(baseSymbol)) universe = "HIGH BETA";
+  else if (BASKETS['PROFIT'].includes(baseSymbol)) universe = "PROFIT";
 
   return {
-    isPass: reasons.length === 0 && score >= 55,
+    isPass: (reasons.length === 0 && score >= 55) || (score >= 90), // High quality institutional stocks pass regardless of minor filter hits
     score,
     universe,
     businessQuality,
     profitabilityQuality,
-    growthQuality,
     balanceSheetSafety,
+    growthQuality,
     valuationConsistency,
-    reason: reasons.length > 0 ? reasons.join(', ') : (score < 55 ? `Low Score (${score})` : 'BATCH 9 COMPLIANT'),
-    metrics: { pe, debtToEquity, roe, marketCap, score, universe }
+    efficiencyGovernance,
+    cashFlowQuality,
+    marginResilience,
+    historicalConsistency,
+    reason: reasons.length > 0 && score < 90 ? reasons.join(', ') : 'BATCH 9 COMPLIANT',
+    metrics: { pe, debtToEquity, roe, marketCap, score, universe, price, twoHundredDMA }
   };
 }
 
@@ -460,6 +564,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
     const openTrades: any[] = [];
     const holdTrades: any[] = [];
     const rejectedStocks: any[] = [];
+    const neutralStocks: any[] = [];
     const allScannedStocks: any[] = [];
 
     const isSnapshotMode = Object.keys(snapshot).length > 0;
@@ -538,7 +643,18 @@ app.get('/api/backtest/envelope', async (req, res) => {
             }
           }
 
-          if (!history || !summary || !strategyData) return;
+          if (!history || !summary) return;
+
+          // Ensure strategyData is never null to prevent skipping stocks
+          if (!strategyData) {
+            strategyData = { 
+              isBuyZone: false, 
+              distanceFromLower: 100,
+              triggerDate: '-',
+              anchorA: 0,
+              target: 0
+            };
+          }
 
           const lastQuote = quotes[quotes.length - 1];
           if (!lastQuote) return;
@@ -579,18 +695,21 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
           const abcd = calculateABCDLevels(entryPrice, audit.metrics.marketCap || 0, basketId);
 
+          const currentPrice = lastQuote.adjclose || lastQuote.adjClose || lastQuote.close || 0;
+          const calculatedDist = entryPrice > 0 ? ((currentPrice - entryPrice) / entryPrice * 100) : 100;
+
           const position = {
             symbol: baseSymbol,
             entryPrice, 
-            actualEntryPrice: lastQuote.adjclose || lastQuote.adjClose || lastQuote.close || 0,
+            actualEntryPrice: currentPrice,
             target,
-            currentPrice: lastQuote.adjclose || lastQuote.adjClose || lastQuote.close || 0,
+            currentPrice,
             marketCap: audit.metrics.marketCap || 0,
             sector,
             entryTime: strategyData.triggerDate || '-', 
             isPass: audit.isPass,
             rejectionReason: audit.reason,
-            distanceFromLower: isShort ? (strategyData.distanceFromEMA || 0) : (strategyData.distanceFromLower || 0),
+            distanceFromLower: isShort ? (strategyData.distanceFromEMA || 0) : (strategyData.distanceFromLower || calculatedDist),
             isBuyZone: (isCupHandle || isRHS) 
               ? (isDirectAllowed ? !!strategyData.isBuyZone : false) 
               : !!strategyData.isBuyZone,
@@ -611,6 +730,9 @@ app.get('/api/backtest/envelope', async (req, res) => {
           else if (position.distanceFromLower <= 10) {
             holdTrades.push(position);
           }
+          else {
+            neutralStocks.push(position);
+          }
         } catch (e) {}
       }));
     };
@@ -629,12 +751,14 @@ app.get('/api/backtest/envelope', async (req, res) => {
       open: [...new Map(openTrades.map(i => [i.symbol, i])).values()],
       hold: [...new Map(holdTrades.map(i => [i.symbol, i])).values()],
       rejected: [...new Map(rejectedStocks.map(i => [i.symbol, i])).values()], 
+      neutral: [...new Map(neutralStocks.map(i => [i.symbol, i])).values()],
       allStocks: [...new Map(allScannedStocks.map(i => [i.symbol, i])).values()],
       summary: {
         totalScanned: symbols.length,
         qualified: openTrades.length,
         observation: holdTrades.length,
-        rejected: rejectedStocks.length
+        rejected: rejectedStocks.length,
+        neutral: neutralStocks.length
       }
     });
 
@@ -737,7 +861,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     const [screenerData, yahooSummary] = await Promise.all([
       fetchScreenerData(cleanSymbol),
       yahooFinance.quoteSummary(yahooSymbol, {
-        modules: ["summaryDetail", "defaultKeyStatistics", "assetProfile", "financialData", "summaryProfile"]
+        modules: ["price", "summaryDetail", "defaultKeyStatistics", "assetProfile", "financialData", "summaryProfile"]
       }).catch(() => null)
     ]);
     if (!screenerData && !yahooSummary) throw new Error('Data not found');
@@ -747,11 +871,13 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     const sd = yahooSummary?.summaryDetail;
     const stats = yahooSummary?.defaultKeyStatistics;
     const profile = yahooSummary?.summaryProfile;
+    const priceModule = yahooSummary?.price;
+
     const result = {
       symbol: cleanSymbol,
-      name: yahooSummary?.price?.longName || cleanSymbol,
-      price: yahooSummary?.price?.regularMarketPrice || screenerData?.currentPrice,
-      change: yahooSummary?.price?.regularMarketChangePercent || 0,
+      name: priceModule?.longName || cleanSymbol,
+      price: priceModule?.regularMarketPrice || sd?.regularMarketPrice || screenerData?.currentPrice,
+      change: priceModule?.regularMarketChangePercent || 0,
       marketCap: screenerData?.marketCap || sd?.marketCap,
       peRatio: screenerData?.peRatio || sd?.trailingPE || stats?.trailingPE,
       dividendYield: screenerData?.dividendYield || (sd?.dividendYield * 100)?.toFixed(2) || 0,

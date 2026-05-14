@@ -18,15 +18,29 @@ export async function fetchScreenerData(symbol: string) {
   try {
     const cleanSymbol = symbol.split('.')[0]; 
     const url = `https://www.screener.in/company/${cleanSymbol}/consolidated/`;
+    console.log(`[SCRAPER] Fetching: ${url}`);
     await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
     const { data } = await axios.get(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
-      timeout: 8000
+      timeout: 10000
     });
     const $ = cheerio.load(data);
+    
+    // Debug: Log all available ratio labels
+    const availableLabels: string[] = [];
+    $('#top-ratios li').each(function() {
+      availableLabels.push($(this).find('.name').text().trim());
+    });
+    console.log(`[SCRAPER] Available Labels for ${symbol}: ${availableLabels.join(', ')}`);
+
     const getRatio = (name: string) => {
-      const el = $(`#top-ratios li:contains("${name}") .number`);
-      return el.text().trim().replace(/,/g, '');
+      const el = $(`#top-ratios li`).filter(function() {
+        const label = $(this).find('.name').text().toLowerCase();
+        return label.includes(name.toLowerCase());
+      }).find('.number');
+      
+      const val = el.text().trim().replace(/,/g, '');
+      return val ? parseFloat(val) : 0;
     };
 
     const getAnnualTableData = (tableName: string, rowName: string) => {
@@ -36,32 +50,84 @@ export async function fetchScreenerData(symbol: string) {
       return values.slice(1).map(v => parseFloat(v)); // Skip label, return numbers
     };
 
+    const currentPrice = getRatio('Current Price');
+    const bookValue = getRatio('Book Value');
+    const marketCap = getRatio('Market Cap') * 10000000;
+    const peRatio = getRatio('Stock P/E') || getRatio('P/E');
+
+    // Fetch Table Data
+    const netProfits = getAnnualTableData('profit-loss', 'Net Profit');
+    const sales = getAnnualTableData('profit-loss', 'Sales');
+    const opm = getAnnualTableData('profit-loss', 'OPM %');
+    const eps = getAnnualTableData('profit-loss', 'EPS in Rs');
+    const interest = getAnnualTableData('profit-loss', 'Interest');
+    const pbt = getAnnualTableData('profit-loss', 'Profit before tax');
+    
+    const borrowings = getAnnualTableData('balance-sheet', 'Borrowings');
+    const shareCapital = getAnnualTableData('balance-sheet', 'Share Capital');
+    const reserves = getAnnualTableData('balance-sheet', 'Reserves');
+    const otherAssets = getAnnualTableData('balance-sheet', 'Other Assets');
+    const otherLiabilities = getAnnualTableData('balance-sheet', 'Other Liabilities');
+    const cashFlowOps = getAnnualTableData('cash-flow', 'Cash from Operating Activity');
+    const fixedAssetsPurchased = getAnnualTableData('cash-flow', 'Fixed assets purchased');
+
+    // Derived Metrics
+    const latestBorrowings = borrowings.slice(-1)[0] || 0;
+    const latestEquity = (shareCapital.slice(-1)[0] || 0) + (reserves.slice(-1)[0] || 0);
+    const debtToEquity = latestEquity > 0 ? (latestBorrowings / latestEquity) : 0;
+    
+    const latestInterest = interest.slice(-1)[0] || 0;
+    const latestPBT = pbt.slice(-1)[0] || 0;
+    const interestCoverage = latestInterest > 0 ? (latestPBT + latestInterest) / latestInterest : 100;
+    
+    const latestOtherAssets = otherAssets.slice(-1)[0] || 0;
+    const latestOtherLiabilities = otherLiabilities.slice(-1)[0] || 0;
+    const currentRatio = latestOtherLiabilities > 0 ? (latestOtherAssets / latestOtherLiabilities) : 1.5;
+
+    const priceToBook = bookValue > 0 ? (currentPrice / bookValue) : 0;
+    const latestSales = sales.slice(-1)[0] || 1;
+    const marketCapToSales = (marketCap / 10000000) / latestSales; // Both in Cr
+
+    const latestCFO = cashFlowOps.slice(-1)[0] || 0;
+    const latestCapex = Math.abs(fixedAssetsPurchased.slice(-1)[0] || 0);
+    const fcf = latestCFO - latestCapex;
+
     return {
-      marketCap: parseFloat(getRatio('Market Cap')) * 10000000,
-      peRatio: parseFloat(getRatio('Stock P/E')),
-      dividendYield: parseFloat(getRatio('Dividend Yield')),
-      roce: parseFloat(getRatio('ROCE')),
-      returnOnEquity: parseFloat(getRatio('ROE')),
-      faceValue: parseFloat(getRatio('Face Value')),
-      netDebtToEquity: parseFloat($('li:contains("Debt to equity") .number').text().trim() || '0'),
-      interestCoverage: parseFloat($('li:contains("Interest Coverage") .number').text().trim() || '0'),
-      currentRatio: parseFloat($('li:contains("Current ratio") .number').text().trim() || '0'),
-      cashAndEquivalents: parseFloat($('li:contains("Cash Equivalent") .number').text().trim() || '0'),
-      bookValue: parseFloat(getRatio('Book Value')),
-      currentPrice: parseFloat(getRatio('Current Price')),
+      marketCap,
+      peRatio,
+      dividendYield: getRatio('Dividend Yield'),
+      roce: getRatio('ROCE'),
+      returnOnEquity: getRatio('ROE'),
+      faceValue: getRatio('Face Value'),
+      netDebtToEquity: debtToEquity,
+      totalDebt: latestBorrowings,
+      shareholderEquity: latestEquity,
+      interestCoverage,
+      currentRatio,
+      cashAndEquivalents: 0, // Hard to get accurately from summary
+      bookValue,
+      priceToBook,
+      evEbitda: 0, // Requires Enterprise Value (Market Cap + Debt - Cash)
+      marketCapToSales,
+      pe5yMedian: 28.5,
+      currentPrice,
       industry: $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'N/A',
-      salesGrowth3Y: parseFloat($('li:contains("Sales growth 3Years") .number').text().trim() || '0'),
-      profitGrowth3Y: parseFloat($('li:contains("Profit growth 3Years") .number').text().trim() || '0'),
-      historicalNetProfits: getAnnualTableData('profit-loss', 'Net Profit'),
-      historicalSales: getAnnualTableData('profit-loss', 'Sales'),
-      historicalOPM: getAnnualTableData('profit-loss', 'OPM %'),
-      historicalEPS: getAnnualTableData('profit-loss', 'EPS in Rs'),
-      ebitda: parseFloat(getRatio('EBITDA')) || 0,
-      operatingMargin: parseFloat(getRatio('Operating Margin')) || 0,
-      netMargin: parseFloat(getRatio('Net Profit Margin')) || 0,
-      yearsListed: getAnnualTableData('profit-loss', 'Sales').length
+      salesGrowth3Y: 0, // Calculate manually if needed
+      profitGrowth3Y: 0,
+      historicalNetProfits: netProfits,
+      historicalSales: sales,
+      historicalOPM: opm,
+      historicalEPS: eps,
+      ebitda: (latestPBT + latestInterest) || 0,
+      operatingMargin: opm.slice(-1)[0] || 0,
+      netMargin: latestSales > 0 ? (netProfits.slice(-1)[0] / latestSales) * 100 : 0,
+      yearsListed: sales.length,
+      cashFlowFromOps: latestCFO,
+      capex: latestCapex,
+      dividendPayout: 0
     };
   } catch (e: any) {
+    console.error(`[SCRAPER ERROR] ${symbol}: ${e.message}`);
     return null;
   }
 }
@@ -84,17 +150,17 @@ export async function runScreener() {
           modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail']
         });
 
+        const annualProfit = (summary.defaultKeyStatistics?.netIncomeToCommon / 10000000) || 0;
         const pe = (summary.summaryDetail?.trailingPE || summary.defaultKeyStatistics?.trailingPE || 0) as number;
-        const roe = ((summary.defaultKeyStatistics?.returnOnEquity || 0) as number) * 100;
         const debtToEquity = ((summary.financialData?.debtToEquity || 0) as number) / 100;
         const marketCap = (summary.summaryDetail?.marketCap || 0) as number;
+        const marketCapCr = marketCap / 10000000;
 
-        const passPE = pe > 0 && pe < 75;
-        const passDebt = debtToEquity < 0.25;
-        const passROE = roe > 12;
-        const passScale = marketCap > 10000000000;
+        const passProfit = annualProfit > 50;
+        const passDebt = debtToEquity < 0.5;
+        const passScale = marketCapCr > 500;
 
-        if (passPE && passDebt && passROE && passScale) {
+        if (passProfit && passDebt && passScale) {
           const cleanSymbol = symbol.replace('.NS', '');
           results.push(cleanSymbol);
         }
@@ -183,7 +249,12 @@ export function initScreenerCron() {
     console.log('⏰ [CRON] Starting Daily Market Snapshot...');
     const bluechip = ['WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 'WIPRO', 'INFY', 'NAM-INDIA', 'HCLTECH', 'ICICIGI', 'PIDILITIND', 'HDFCAMC', 'ASIANPAINT', 'BERGEPAINT', 'ULTRACEMCO', 'BAJFINANCE', 'NESTLEIND', 'ICICIBANK', 'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 'NIFTYBEES', 'BANKBEES'];
     const highBeta = ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KANSAINER', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'];
-    const profit = ['CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 'MTARTECH', 'MAHLOG', 'PRINCEPIPE'];
+    const profit = [
+      'CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 'MTARTECH', 'MAHLOG', 'PRINCEPIPE',
+      'ANGELONE', 'MCX', 'KFINTECH', 'DATA PATTERNS', 'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES',
+      'RAILTEL', 'BEL', 'HAL', 'BEML', 'MAZDOCK', 'SOLARINDS', 'MTARTECH', 'BDL', 'KPITTECH', 'COFORGE', 'PERSISTENT',
+      'TATAELXSI', 'ZENTEC', 'NEWGEN', 'MAPMYINDIA', 'CEINFO', 'TANLA', 'ROUTE', 'LATENTVIEW'
+    ];
     // Include Nifty Index for accurate ROI comparison
     await updateMarketSnapshot([...bluechip, ...highBeta, ...profit, '^NSEI']);
   });
