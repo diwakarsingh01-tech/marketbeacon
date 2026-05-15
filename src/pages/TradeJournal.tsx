@@ -229,10 +229,10 @@ const TradeJournalPage: React.FC = () => {
             const symbol = findVal(['symbol', 'stock', 'instrument', 'ticker', 'scrip']);
             const buyPrice = findVal(['buyprice', 'buyrate', 'avg', 'cost', 'entryprice']);
             const qty = findVal(['qty', 'quantity', 'units', 'shares', 'holding']);
-            const buyDate = findVal(['buydate', 'entrydate', 'date', 'time']) || new Date().toISOString().split('T')[0];
+            const rawBuyDate = findVal(['buydate', 'entrydate', 'date', 'time']);
             
             const sellPrice = findVal(['sellprice', 'exitprice', 'cmp']);
-            const sellDate = findVal(['selldate', 'exitdate']);
+            const rawSellDate = findVal(['selldate', 'exitdate']);
             const status = findVal(['status', 'type', 'state']);
             const strategy = findVal(['strategy', 'model', 'setup', 'strategyname']) || 'CSV Import';
             const target = findVal(['target', 'goal', 'objective', 'targetprice']);
@@ -244,6 +244,16 @@ const TradeJournalPage: React.FC = () => {
             const exitPrice = sellPrice ? parseFloat(String(sellPrice).replace(/[^0-9.]/g, '')) : null;
             const targetPrice = target ? parseFloat(String(target).replace(/[^0-9.]/g, '')) : (entryPrice * 1.25);
 
+            // Date Normalization (SQL Friendly)
+            const formatDate = (raw: any) => {
+              if (!raw) return new Date().toISOString().split('T')[0];
+              const d = new Date(raw);
+              return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
+            };
+
+            const buyDate = formatDate(rawBuyDate);
+            const sellDate = rawSellDate ? formatDate(rawSellDate) : null;
+
             // Determine status: If Sell Date exists or status contains 'Booked', it's CLOSED
             const tradeStatus = (sellDate || (status && String(status).toLowerCase().includes('booked'))) ? 'CLOSED' : 'OPEN';
 
@@ -253,8 +263,8 @@ const TradeJournalPage: React.FC = () => {
               quantity: parseInt(String(qty).replace(/[^0-9]/g, '')),
               target_price: targetPrice,
               level: findVal(['level', 'phase', 'step']) || 'A',
-              entry_date: String(buyDate).trim(),
-              exit_date: sellDate ? String(sellDate).trim() : null,
+              entry_date: buyDate,
+              exit_date: sellDate,
               exit_price: exitPrice,
               status: tradeStatus,
               strategy: strategy,
@@ -275,7 +285,9 @@ const TradeJournalPage: React.FC = () => {
           });
 
           if (res.ok) {
-            alert(`Import Successful: ${tradesToImport.length} trades added.`);
+            const openCount = tradesToImport.filter(t => t.status === 'OPEN').length;
+            const closedCount = tradesToImport.filter(t => t.status === 'CLOSED').length;
+            alert(`Import Successful!\n- ${openCount} Open Trades\n- ${closedCount} Closed Trades`);
             fetchTrades();
           }
         } catch (err) { 

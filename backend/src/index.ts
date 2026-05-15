@@ -983,14 +983,20 @@ app.post('/api/trades/batch', authenticateToken, async (req: any, res) => {
   try {
     const { trades } = req.body;
     const db = getDB();
+    console.log(`[BATCH IMPORT] Received ${trades?.length} trades for user ${req.user.id}`);
+    
     for (const t of trades) {
       await db.run(
         'INSERT INTO trades (user_id, symbol, status, entry_date, entry_price, quantity, target_price, level, strategy, notes, exit_date, exit_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [req.user.id, t.symbol, t.status || 'OPEN', t.entry_date, t.entry_price, t.quantity, t.target_price, t.level || 'A', t.strategy, t.notes, t.exit_date || null, t.exit_price || null]
       );
     }
+    console.log(`[BATCH IMPORT] Successfully processed all trades`);
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+  } catch (e: any) { 
+    console.error(`[BATCH IMPORT ERROR]: ${e.message}`);
+    res.status(500).json({ error: e.message }); 
+  }
 });
 
 app.post('/api/trades/batch-delete', authenticateToken, async (req: any, res) => {
