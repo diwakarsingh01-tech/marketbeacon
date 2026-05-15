@@ -593,6 +593,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
               strategyData = processShortEnvelope(quotes, data.quote.marketCap);
             } else if (strategyId === 'BOLLINGER') {
               strategyData = calculateBollingerBand(quotes);
+            } else if (strategyId === 'SMA_ABCD') {
+              strategyData = calculateEMAStacking(quotes);
             } else if (strategyId === '52W_HIGH_LOW') {
               strategyData = calculate52WeekStrategy(quotes);
             } else if (strategyId === 'CUP_HANDLE_ABCD') {
@@ -631,7 +633,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
               }
             } else if (strategyId === 'BOLLINGER') {
               strategyData = calculateBollingerBand(quotes);
-            } else if (strategyId === 'SMA') {
+            } else if (strategyId === 'SMA_ABCD') {
               strategyData = calculateEMAStacking(quotes);
             } else if (strategyId === '52W_HIGH_LOW') {
               strategyData = calculate52WeekStrategy(quotes);
@@ -667,7 +669,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
           const isShort = strategyId === 'ENVELOPE_SHORT';
           const isBollinger = strategyId === 'BOLLINGER';
-          const isSMAStack = strategyId === 'SMA';
+          const isSMAStack = strategyId === 'SMA_ABCD';
           const is52W = strategyId === '52W_HIGH_LOW';
           const isCupHandle = strategyId === 'CUP_HANDLE_ABCD';
           const isRHS = strategyId === 'RHS_ABCD';
@@ -937,6 +939,66 @@ app.patch('/api/trades/:id', authenticateToken, async (req: any, res) => {
       'UPDATE trades SET status = ?, exit_price = ?, exit_date = ?, notes = ? WHERE id = ? AND user_id = ?',
       [status, exit_price, exit_date, notes, req.params.id, req.user.id]
     );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/trades/:id/close', authenticateToken, async (req: any, res) => {
+  try {
+    const { exit_price, exit_date, quantity_to_close, notes } = req.body;
+    const db = getDB();
+    const trade = await db.get('SELECT * FROM trades WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    
+    if (!trade) return res.status(404).json({ error: 'Trade not found' });
+
+    if (quantity_to_close < trade.quantity) {
+      // Partial close: split trade
+      const remainingQty = trade.quantity - quantity_to_close;
+      await db.run('UPDATE trades SET quantity = ? WHERE id = ?', [remainingQty, trade.id]);
+      
+      await db.run(
+        'INSERT INTO trades (user_id, symbol, status, entry_date, entry_price, quantity, target_price, level, exit_date, exit_price, strategy, notes) VALUES (?, ?, "CLOSED", ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [req.user.id, trade.symbol, trade.entry_date, trade.entry_price, quantity_to_close, trade.target_price, trade.level, exit_date, exit_price, trade.strategy, notes]
+      );
+    } else {
+      // Full close
+      await db.run(
+        'UPDATE trades SET status = "CLOSED", exit_price = ?, exit_date = ?, notes = ? WHERE id = ?',
+        [exit_price, exit_date, notes, req.params.id]
+      );
+    }
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/trades/:id/reopen', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    await db.run('UPDATE trades SET status = "OPEN", exit_price = NULL, exit_date = NULL WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/trades/batch', authenticateToken, async (req: any, res) => {
+  try {
+    const { trades } = req.body;
+    const db = getDB();
+    for (const t of trades) {
+      await db.run(
+        'INSERT INTO trades (user_id, symbol, status, entry_date, entry_price, quantity, target_price, level, strategy, notes, exit_date, exit_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [req.user.id, t.symbol, t.status || 'OPEN', t.entry_date, t.entry_price, t.quantity, t.target_price, t.level || 'A', t.strategy, t.notes, t.exit_date || null, t.exit_price || null]
+      );
+    }
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/trades/batch-delete', authenticateToken, async (req: any, res) => {
+  try {
+    const { ids } = req.body;
+    const db = getDB();
+    const placeholders = ids.map(() => '?').join(',');
+    await db.run(`DELETE FROM trades WHERE user_id = ? AND id IN (${placeholders})`, [req.user.id, ...ids]);
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });

@@ -130,7 +130,7 @@ const TradeJournalPage: React.FC = () => {
   const processedTrades = useMemo(() => {
     const tradeData = trades.filter(t => t.status === activeSegment).map(t => {
       const cmp = livePrices[t.symbol] || t.entry_price;
-      const price = activeSegment === 'OPEN' ? cmp : t.exit_price;
+      const price = activeSegment === 'OPEN' ? cmp : (t.exit_price || cmp);
       const invested = (t.quantity || 0) * (t.entry_price || 0);
       const currentVal = (t.quantity || 0) * (price || 0);
       const pnl = currentVal - invested;
@@ -138,7 +138,13 @@ const TradeJournalPage: React.FC = () => {
       const targetVal = t.target_price || (t.entry_price * 1.25);
       const gap = ((targetVal - cmp) / (cmp || 1)) * 100;
       
-      return { ...t, cmp, invested, currentVal, pnl, pnlPer, targetVal, gap };
+      // Calculate holding days
+      const d1 = new Date(t.entry_date).getTime();
+      const d2 = t.exit_date ? new Date(t.exit_date).getTime() : new Date().getTime();
+      const days = Math.max(1, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)));
+      const annualGain = days > 0 ? (pnlPer / days * 365) : 0;
+
+      return { ...t, cmp, invested, currentVal, pnl, pnlPer, targetVal, gap, days, annualGain };
     });
 
     if (sortConfig) {
@@ -207,25 +213,36 @@ const TradeJournalPage: React.FC = () => {
             };
 
             const symbol = findVal(['symbol', 'stock', 'instrument', 'ticker', 'scrip']);
-            const price = findVal(['price', 'avg', 'cost', 'buy', 'entry']);
+            const buyPrice = findVal(['buyprice', 'buyrate', 'avg', 'cost', 'entryprice']);
             const qty = findVal(['qty', 'quantity', 'units', 'shares', 'holding']);
-            const date = findVal(['date', 'time', 'transaction']) || new Date().toISOString().split('T')[0];
-            const lvl = findVal(['level', 'phase', 'step']) || 'A';
-            const target = findVal(['target', 'goal', 'objective']);
+            const buyDate = findVal(['buydate', 'entrydate', 'date', 'time']) || new Date().toISOString().split('T')[0];
             
-            if (!symbol || !price || !qty) return null;
+            const sellPrice = findVal(['sellprice', 'exitprice', 'cmp']);
+            const sellDate = findVal(['selldate', 'exitdate']);
+            const status = findVal(['status', 'type', 'state']);
+            const strategy = findVal(['strategy', 'model', 'setup', 'strategyname']) || 'CSV Import';
+            const target = findVal(['target', 'goal', 'objective', 'targetprice']);
+            
+            if (!symbol || !buyPrice || !qty) return null;
 
-            const entryPrice = parseFloat(String(price).replace(/[^0-9.]/g, ''));
+            const entryPrice = parseFloat(String(buyPrice).replace(/[^0-9.]/g, ''));
+            const exitPrice = sellPrice ? parseFloat(String(sellPrice).replace(/[^0-9.]/g, '')) : null;
             const targetPrice = target ? parseFloat(String(target).replace(/[^0-9.]/g, '')) : (entryPrice * 1.25);
+
+            // Determine status: If Sell Date/Price exists, it's CLOSED
+            const tradeStatus = (sellDate || (status && String(status).toLowerCase().includes('booked'))) ? 'CLOSED' : 'OPEN';
 
             return {
               symbol: String(symbol).toUpperCase().trim(),
               entry_price: entryPrice,
               quantity: parseInt(String(qty).replace(/[^0-9]/g, '')),
               target_price: targetPrice,
-              level: String(lvl).toUpperCase().trim().charAt(0),
-              entry_date: String(date).trim(),
-              strategy: findVal(['strategy', 'model', 'setup']) || 'CSV Import',
+              level: findVal(['level', 'phase', 'step']) || 'A',
+              entry_date: String(buyDate).trim(),
+              exit_date: sellDate ? String(sellDate).trim() : null,
+              exit_price: exitPrice,
+              status: tradeStatus,
+              strategy: strategy,
               notes: findVal(['notes', 'remark']) || ''
             };
           }).filter((t: any) => t && t.symbol && t.entry_price > 0 && !isNaN(t.entry_price));
@@ -430,14 +447,31 @@ const TradeJournalPage: React.FC = () => {
                         </button>
                      </th>
                      <th className="px-4 py-4 text-left cursor-pointer" onClick={() => handleSort('symbol')}>Instrument {SortIcon('symbol')}</th>
-                     <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('entry_date')}>Entry {SortIcon('entry_date')}</th>
-                     <th className="px-4 py-4 text-center">Qty</th>
-                     <th className="px-4 py-4 text-center cursor-pointer" onClick={() => handleSort('level')}>Level {SortIcon('level')}</th>
-                     <th className="px-4 py-4">Avg Price</th>
-                     <th className="px-4 py-4 text-blue-600">{activeSegment === 'OPEN' ? 'CMP' : 'Exit Price'}</th>
-                     <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('pnl')}>P&L Amt {SortIcon('pnl')}</th>
-                     <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('pnlPer')}>ROI % {SortIcon('pnlPer')}</th>
-                     <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('gap')}>Target/Gap {SortIcon('gap')}</th>
+                     
+                     {activeSegment === 'OPEN' ? (
+                       <>
+                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('entry_date')}>Entry {SortIcon('entry_date')}</th>
+                         <th className="px-4 py-4 text-center">Qty</th>
+                         <th className="px-4 py-4 text-center cursor-pointer" onClick={() => handleSort('level')}>Level {SortIcon('level')}</th>
+                         <th className="px-4 py-4">Avg Price</th>
+                         <th className="px-4 py-4 text-blue-600">CMP</th>
+                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('pnl')}>P&L Amt {SortIcon('pnl')}</th>
+                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('pnlPer')}>ROI % {SortIcon('pnlPer')}</th>
+                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('gap')}>Target/Gap {SortIcon('gap')}</th>
+                       </>
+                     ) : (
+                       <>
+                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('entry_date')}>Buy Date {SortIcon('entry_date')}</th>
+                         <th className="px-4 py-4 text-center">Qty</th>
+                         <th className="px-4 py-4">Buy Price</th>
+                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('exit_date')}>Sell Date {SortIcon('exit_date')}</th>
+                         <th className="px-4 py-4">Sell Price</th>
+                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('pnl')}>Gain {SortIcon('pnl')}</th>
+                         <th className="px-4 py-4 text-center cursor-pointer" onClick={() => handleSort('days')}>Days {SortIcon('days')}</th>
+                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('pnlPer')}>% Gain {SortIcon('pnlPer')}</th>
+                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('annualGain')}>% Annual {SortIcon('annualGain')}</th>
+                       </>
+                     )}
                      <th className="px-6 py-4 text-center">Action</th>
                   </tr>
                </thead>
@@ -455,26 +489,44 @@ const TradeJournalPage: React.FC = () => {
                                <span className="text-[7px] text-slate-400">{t.strategy}</span>
                             </div>
                          </td>
-                         <td className="px-4 py-3 text-slate-400 font-bold">{t.entry_date}</td>
-                         <td className="px-4 py-3 text-center text-slate-900">{t.quantity}</td>
-                         <td className="px-4 py-3 text-center">
-                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${
-                               t.level === 'A' ? 'bg-blue-600 text-white border-blue-700' : 
-                               t.level === 'B' ? 'bg-amber-500 text-white border-amber-600' :
-                               t.level === 'C' ? 'bg-indigo-600 text-white border-indigo-700' :
-                               'bg-slate-900 text-white border-slate-950'
-                            }`}>{t.level}</span>
-                         </td>
-                         <td className="px-4 py-3 text-slate-600">₹{t.entry_price.toLocaleString()}</td>
-                         <td className={`px-4 py-3 font-black ${activeSegment === 'OPEN' ? 'text-blue-600' : 'text-slate-900'}`}>₹{t.cmp.toLocaleString()}</td>
-                         <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3`}>₹{Math.abs(t.pnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                         <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
-                         <td className="px-4 py-3">
-                            <div className="flex flex-col items-end text-right">
-                               <span className="text-slate-400">₹{t.targetVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                               <span className={`${t.gap > 0 ? 'text-orange-500' : 'text-green-500'} text-[8px]`}>{t.gap > 0 ? `${t.gap.toFixed(1)}% Gap` : 'TARGET HIT'}</span>
-                            </div>
-                         </td>
+
+                         {activeSegment === 'OPEN' ? (
+                           <>
+                             <td className="px-4 py-3 text-slate-400 font-bold">{t.entry_date}</td>
+                             <td className="px-4 py-3 text-center text-slate-900">{t.quantity}</td>
+                             <td className="px-4 py-3 text-center">
+                                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${
+                                   t.level === 'A' ? 'bg-blue-600 text-white border-blue-700' : 
+                                   t.level === 'B' ? 'bg-amber-500 text-white border-amber-600' :
+                                   t.level === 'C' ? 'bg-indigo-600 text-white border-indigo-700' :
+                                   'bg-slate-900 text-white border-slate-950'
+                                }`}>{t.level}</span>
+                             </td>
+                             <td className="px-4 py-3 text-slate-600">₹{t.entry_price.toLocaleString()}</td>
+                             <td className="px-4 py-3 font-black text-blue-600">₹{t.cmp.toLocaleString()}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3`}>₹{Math.abs(t.pnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
+                             <td className="px-4 py-3">
+                                <div className="flex flex-col items-end text-right">
+                                   <span className="text-slate-400">₹{t.targetVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                   <span className={`${t.gap > 0 ? 'text-orange-500' : 'text-green-500'} text-[8px]`}>{t.gap > 0 ? `${t.gap.toFixed(1)}% Gap` : 'TARGET HIT'}</span>
+                                </div>
+                             </td>
+                           </>
+                         ) : (
+                           <>
+                             <td className="px-4 py-3 text-slate-400 font-bold">{t.entry_date}</td>
+                             <td className="px-4 py-3 text-center text-slate-900">{t.quantity}</td>
+                             <td className="px-4 py-3 text-slate-600">₹{t.entry_price.toLocaleString()}</td>
+                             <td className="px-4 py-3 text-slate-400 font-bold">{t.exit_date}</td>
+                             <td className="px-4 py-3 text-slate-900">₹{t.exit_price?.toLocaleString() || '-'}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 font-black`}>₹{Math.abs(t.pnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                             <td className="px-4 py-3 text-center text-slate-500">{t.days}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
+                             <td className={`${t.annualGain >= 0 ? 'text-blue-600' : 'text-red-600'} px-4 py-3`}>{t.annualGain >= 0 ? '+' : ''}{t.annualGain.toFixed(0)}%</td>
+                           </>
+                         )}
+
                          <td className="px-6 py-3 text-center">
                             <div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                {activeSegment === 'OPEN' ? (
