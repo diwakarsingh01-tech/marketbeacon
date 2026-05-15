@@ -1,22 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   BookOpen, 
-  Search, 
   Plus, 
   Trash2, 
   CheckCircle2, 
   RotateCcw,
-  History, 
-  TrendingUp, 
-  ArrowUpRight, 
   X,
-  PlusCircle,
-  FileSpreadsheet,
   Upload,
   ArrowUpDown,
   Square,
-  CheckSquare,
-  ShieldCheck
+  CheckSquare
 } from 'lucide-react';
 import Papa from 'papaparse';
 import { BASKETS, STRATEGIES } from '../data/stocks';
@@ -34,10 +27,8 @@ const TradeJournalPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'entry_date', direction: 'desc' });
 
-  // Form State
   const [newTrade, setNewTrade] = useState({
     symbol: '',
     entry_price: '',
@@ -49,43 +40,11 @@ const TradeJournalPage: React.FC = () => {
     notes: ''
   });
 
-  // Close Form State
   const [closeTradeData, setCloseTradeData] = useState({
     exit_price: '',
     quantity_to_close: '',
     notes: 'Target Hit'
   });
-
-  const allSymbols = useMemo(() => {
-    const symbols = new Set<string>();
-    Object.values(BASKETS).forEach(list => list.forEach(s => symbols.add(s)));
-    return Array.from(symbols).sort();
-  }, []);
-
-  const filteredSearchSymbols = useMemo(() => {
-    const query = symbolSearch.trim().toLowerCase();
-    if (!query) return [];
-    return allSymbols.filter(s => s.toLowerCase().includes(query)).slice(0, 10);
-  }, [symbolSearch, allSymbols]);
-
-  const fetchTrades = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) return;
-    try {
-      console.log(`[LEDGER] Fetching from ${API_URL}/api/trades`);
-      const res = await fetch(`${API_URL}/api/trades`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        console.log(`[LEDGER] Fetched ${data.length} trades`);
-        setTrades(data);
-        const symbolsToFetch = Array.from(new Set(data.filter((t:any) => t.status === 'OPEN').map((t:any) => t.symbol)));
-        if (symbolsToFetch.length > 0) fetchLivePrices(symbolsToFetch as string[]);
-      }
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }, []);
 
   const fetchLivePrices = async (symbols: string[]) => {
     try {
@@ -99,12 +58,28 @@ const TradeJournalPage: React.FC = () => {
     } catch (e) { console.error(e); }
   };
 
+  const fetchTrades = useCallback(async () => {
+    const token = localStorage.getItem('mb_token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_URL}/api/trades`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTrades(data);
+        const symbolsToFetch = Array.from(new Set(data.filter((t:any) => t.status === 'OPEN').map((t:any) => t.symbol)));
+        if (symbolsToFetch.length > 0) fetchLivePrices(symbolsToFetch as string[]);
+      }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  }, []);
+
   useEffect(() => { fetchTrades(); }, [fetchTrades]);
 
   const stats = useMemo(() => {
     const openTrades = trades.filter(t => t.status === 'OPEN');
     const closedTrades = trades.filter(t => t.status === 'CLOSED');
-
     const totalRealized = closedTrades.reduce((acc, t) => acc + ( ((t.exit_price || 0) - (t.entry_price || 0)) * (t.quantity || 0) ), 0);
     const totalUnrealized = openTrades.reduce((acc, t) => {
       const cmp = livePrices[t.symbol] || t.entry_price;
@@ -115,9 +90,7 @@ const TradeJournalPage: React.FC = () => {
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
     setSortConfig({ key, direction });
   };
 
@@ -131,15 +104,12 @@ const TradeJournalPage: React.FC = () => {
       const pnlPer = invested > 0 ? (pnl / invested) * 100 : 0;
       const targetVal = t.target_price || (t.entry_price * 1.25);
       const gap = ((targetVal - cmp) / (cmp || 1)) * 100;
-      
       const d1 = new Date(t.entry_date).getTime();
       const d2 = t.exit_date ? new Date(t.exit_date).getTime() : new Date().getTime();
       const days = Math.max(1, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)));
       const annualGain = days > 0 ? (pnlPer / days * 365) : 0;
-
       return { ...t, cmp, price, invested, currentVal, pnl, pnlPer, targetVal, gap, days, annualGain };
     });
-
     if (sortConfig) {
       tradeData.sort((a: any, b: any) => {
         const valA = a[sortConfig.key];
@@ -153,7 +123,7 @@ const TradeJournalPage: React.FC = () => {
   }, [trades, activeSegment, livePrices, sortConfig]);
 
   const handleBulkDelete = async () => {
-    if (!window.confirm(`Delete ${selectedIds.length} selected records?`)) return;
+    if (!window.confirm(`Delete ${selectedIds.length} records?`)) return;
     const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/trades/batch-delete`, {
@@ -161,17 +131,13 @@ const TradeJournalPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ ids: selectedIds })
       });
-      if (res.ok) {
-        setSelectedIds([]);
-        fetchTrades();
-      }
+      if (res.ok) { setSelectedIds([]); fetchTrades(); }
     } catch (e) { console.error(e); }
   };
 
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setIsImporting(true);
     Papa.parse(file, {
       header: false,
@@ -181,22 +147,14 @@ const TradeJournalPage: React.FC = () => {
         try {
           const rawRows = results.data as string[][];
           const headerIdx = rawRows.findIndex(r => r.some(c => ['stock', 'symbol', 'instrument'].includes(String(c).toLowerCase().trim())));
-
-          if (headerIdx === -1) {
-            alert("No valid trade header found (Needs 'Stock' or 'Symbol' column).");
-            setIsImporting(false);
-            return;
-          }
-
+          if (headerIdx === -1) { alert("No valid header found."); setIsImporting(false); return; }
           const headerRow = rawRows[headerIdx].map(h => String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
           const dataRows = rawRows.slice(headerIdx + 1);
-
           const tradesToImport = dataRows.map((row) => {
             const findVal = (keywords: string[]) => {
               const colIdx = headerRow.findIndex(h => keywords.some(kw => h.includes(kw)));
               return colIdx !== -1 ? row[colIdx] : null;
             };
-
             const symbol = findVal(['symbol', 'stock', 'instrument']);
             const buyPrice = findVal(['buyprice', 'buyrate', 'avg', 'cost']);
             const qty = findVal(['qty', 'quantity', 'units']);
@@ -204,19 +162,15 @@ const TradeJournalPage: React.FC = () => {
             const sellPrice = findVal(['sellprice', 'exitprice', 'cmp']);
             const rawSellDate = findVal(['selldate', 'exitdate']);
             const status = findVal(['status', 'type', 'state']);
-
             if (!symbol || !buyPrice || !qty || String(symbol).toLowerCase().includes('total')) return null;
-
             const formatDate = (raw: any) => {
               if (!raw) return new Date().toISOString().split('T')[0];
               const d = new Date(raw);
               return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
             };
-
             const buyDate = formatDate(rawBuyDate);
             const sellDate = rawSellDate ? formatDate(rawSellDate) : null;
             const tradeStatus = (sellDate || (status && String(status).toLowerCase().includes('booked'))) ? 'CLOSED' : 'OPEN';
-
             return {
               symbol: String(symbol).toUpperCase().trim(),
               entry_price: parseFloat(String(buyPrice).replace(/[^0-9.]/g, '')),
@@ -231,35 +185,20 @@ const TradeJournalPage: React.FC = () => {
               notes: findVal(['notes', 'remark']) || ''
             };
           }).filter((t: any) => t && t.symbol && t.entry_price > 0);
-
-          if (tradesToImport.length === 0) {
-            alert("No valid data found in the remaining rows.");
-            setIsImporting(false);
-            return;
-          }
-
+          if (tradesToImport.length === 0) { alert("No valid trades detected."); setIsImporting(false); return; }
           const res = await fetch(`${API_URL}/api/trades/batch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ trades: tradesToImport })
           });
-
           if (res.ok) {
             const openCount = tradesToImport.filter(t => t.status === 'OPEN').length;
             const closedCount = tradesToImport.filter(t => t.status === 'CLOSED').length;
-            alert(`Import Successful!\n- ${openCount} Open Trades\n- ${closedCount} Closed Trades`);
+            alert(`Import Successful!\n- ${openCount} Open\n- ${closedCount} Closed`);
             fetchTrades();
-          } else {
-            const errData = await res.json().catch(() => ({}));
-            alert(`Server Error: ${errData.error || 'Failed to save trades.'}`);
-          }
-        } catch (err) { 
-          console.error(err);
-          alert("Error processing file."); 
-        } finally {
-          setIsImporting(false);
-          if (fileInputRef.current) fileInputRef.current.value = '';
-        }
+          } else { alert("Server Error saving trades."); }
+        } catch (err) { alert("Processing Error."); }
+        finally { setIsImporting(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
       }
     });
   };
@@ -286,24 +225,6 @@ const TradeJournalPage: React.FC = () => {
         body: JSON.stringify({ exit_price: parseFloat(closeTradeData.exit_price), exit_date: new Date().toISOString().split('T')[0], quantity_to_close: parseInt(closeTradeData.quantity_to_close), notes: closeTradeData.notes })
       });
       if (res.ok) { setShowCloseModal(null); fetchTrades(); }
-    } catch (e) { console.error(e); }
-  };
-
-  const handleReopenTrade = async (id: number) => {
-    if (!window.confirm('Re-open?')) return;
-    const token = localStorage.getItem('mb_token');
-    try {
-      const res = await fetch(`${API_URL}/api/trades/${id}/reopen`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } });
-      if (res.ok) fetchTrades();
-    } catch (e) { console.error(e); }
-  };
-
-  const handleDeleteTrade = async (id: number) => {
-    if (!window.confirm('Delete?')) return;
-    const token = localStorage.getItem('mb_token');
-    try {
-      const res = await fetch(`${API_URL}/api/trades/` + id, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-      if (res.ok) fetchTrades();
     } catch (e) { console.error(e); }
   };
 
@@ -364,7 +285,7 @@ const TradeJournalPage: React.FC = () => {
                          <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('entry_date')}>Buy Date {SortIcon('entry_date')}</th>
                          <th className="px-4 py-4 text-center">Qty</th>
                          <th className="px-4 py-4 text-right">Buy Price</th>
-                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('exit_date')}>Sell Date {SortIcon('exit_date')}</th>
+                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('exit_date')}>Sell Date {SortIcon('exit_date')}</th>
                          <th className="px-4 py-4 text-right">Sell Price</th>
                          <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnl')}>Gain {SortIcon('pnl')}</th>
                          <th className="px-4 py-4 text-center cursor-pointer" onClick={() => handleSort('days')}>Days {SortIcon('days')}</th>
@@ -404,7 +325,7 @@ const TradeJournalPage: React.FC = () => {
                              <td className={`${t.annualGain >= 0 ? 'text-blue-600' : 'text-red-600'} px-4 py-3 text-right`}>{t.annualGain >= 0 ? '+' : ''}{t.annualGain.toFixed(0)}%</td>
                            </>
                          )}
-                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-50 text-emerald-600 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => handleReopenTrade(t.id)} className="p-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => handleDeleteTrade(t.id)} className="p-1 bg-slate-50 text-slate-400 rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
+                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-50 text-emerald-600 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Re-open?')) { fetch(`${API_URL}/api/trades/${t.id}/reopen`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => { if(window.confirm('Delete?')) { fetch(`${API_URL}/api/trades/${t.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-slate-50 text-slate-400 rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
                       </tr>
                   ))}
                </tbody>
@@ -412,7 +333,7 @@ const TradeJournalPage: React.FC = () => {
          </div>
       </div>
 
-      {showAddModal && <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"><div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300"><div className="p-8 border-b border-slate-100 flex items-center justify-between"><h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">New Trade Entry</h3><button onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:text-slate-600"><X className="h-6 w-6" /></button></div><form onSubmit={handleAddTrade} className="p-8 space-y-6 text-left"><div className="grid grid-cols-2 gap-x-6 gap-y-4"><div className="col-span-2 relative"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Instrument</label><input type="text" required value={symbolSearch} onChange={(e) => { const val = e.target.value.toUpperCase(); setSymbolSearch(val); setNewTrade(prev => ({...prev, symbol: val})); }} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Entry Price</label><input type="number" step="0.05" required value={newTrade.entry_price} onChange={(e) => setNewTrade({...newTrade, entry_price: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity</label><input type="number" required value={newTrade.quantity} onChange={(e) => setNewTrade({...newTrade, quantity: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Strategy</label><select value={newTrade.strategy} onChange={(e) => setNewTrade({...newTrade, strategy: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black appearance-none"><{STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}></select></div></div><button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-3xl text-xs font-black uppercase tracking-widest mt-4 text-center">Confirm Trade Record</button></form></div></div>}
+      {showAddModal && <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"><div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300"><div className="p-8 border-b border-slate-100 flex items-center justify-between"><h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">New Trade Entry</h3><button onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:text-slate-600"><X className="h-6 w-6" /></button></div><form onSubmit={handleAddTrade} className="p-8 space-y-6 text-left"><div className="grid grid-cols-2 gap-x-6 gap-y-4"><div className="col-span-2 relative"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Instrument</label><input type="text" required value={symbolSearch} onChange={(e) => { const val = e.target.value.toUpperCase(); setSymbolSearch(val); setNewTrade(prev => ({...prev, symbol: val})); }} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Entry Price</label><input type="number" step="0.05" required value={newTrade.entry_price} onChange={(e) => setNewTrade({...newTrade, entry_price: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity</label><input type="number" required value={newTrade.quantity} onChange={(e) => setNewTrade({...newTrade, quantity: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Strategy</label><select value={newTrade.strategy} onChange={(e) => setNewTrade({...newTrade, strategy: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black appearance-none">{STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select></div></div><button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-3xl text-xs font-black uppercase tracking-widest mt-4 text-center">Confirm Trade Record</button></form></div></div>}
 
       {showCloseModal && <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"><div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in duration-300"><h3 className="text-xl font-black text-slate-900 uppercase italic mb-6">Realize Profit: {showCloseModal.symbol}</h3><form onSubmit={handleConfirmClose} className="space-y-6 text-left"><div><label className="text-[9px] font-black text-slate-400 uppercase ml-1">Exit Price</label><input type="number" step="0.05" required value={closeTradeData.exit_price} onChange={(e) => setCloseTradeData({...closeTradeData, exit_price: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-emerald-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase ml-1">Quantity to Book</label><input type="number" required value={closeTradeData.quantity_to_close} onChange={(e) => setCloseTradeData({...closeTradeData, quantity_to_close: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-emerald-500/20" /></div><div className="flex space-x-3 mt-8"><button type="button" onClick={() => setShowCloseModal(null)} className="flex-1 py-4 bg-slate-100 text-slate-400 rounded-2xl text-xs font-black uppercase">Cancel</button><button type="submit" className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase shadow-lg">Confirm Booking</button></div></form></div></div>}
 
