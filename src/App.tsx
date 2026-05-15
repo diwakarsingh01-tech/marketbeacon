@@ -7,7 +7,6 @@ import LoginPage from './pages/Login';
 import RegisterPage from './pages/Register';
 import DashboardPage from './pages/Dashboard';
 import StockFundamentalsPage from './pages/StockFundamentals';
-import BacktestPage from './pages/Backtest';
 import TradeJournalPage from './pages/TradeJournal';
 import ProfilePage from './pages/Profile';
 import MarketplacePage from './pages/Marketplace';
@@ -37,7 +36,6 @@ function App() {
             <Route path="/screener" element={<DashboardPage key="screener" defaultTab="open" />} />
             <Route path="/market" element={<DashboardPage key="market" defaultTab="watchlist" />} />
             <Route path="/portfolio" element={<DashboardPage key="portfolio" defaultTab="portfolio" />} />
-            <Route path="/backtest" element={<BacktestPage />} />
             <Route path="/journal" element={<TradeJournalPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/marketplace" element={<MarketplacePage />} />

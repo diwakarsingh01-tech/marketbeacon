@@ -6,7 +6,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { fileURLToPath } from 'url';
 import { NIFTY_500 } from './universe.js';
-import { calculateEnvelope } from './strategies.js';
+import { calculateEnvelope, processShortEnvelope, calculateEMAStacking, calculateBollingerBand, calculate52WeekStrategy, calculateCupHandle, calculateRHS, calculateSRStrategy } from './strategies.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DYNAMIC_BASKET_PATH = path.join(__dirname, '../dynamic_basket.json');
@@ -206,17 +206,23 @@ export async function updateMarketSnapshot(symbols: string[]) {
         ]);
 
         const quotes = (history.quotes || []).filter((q: any) => q.close && q.low && q.high);
+        const marketCap = quote.marketCap || 0;
         
-        // Calculate Strategy Indicators for Bluechip basket
-        let strategy = null;
-        if (bluechipList.includes(baseSymbol)) {
-          strategy = calculateEnvelope(quotes);
-        }
+        // --- Pre-Calculate ALL Strategies (Batch 9 Optimization) ---
+        const strategies: Record<string, any> = {
+          'ENVELOPE_LONG': calculateEnvelope(quotes),
+          'ENVELOPE_SHORT': processShortEnvelope(quotes, marketCap),
+          'BOLLINGER': calculateBollingerBand(quotes),
+          '52W_HIGH_LOW': calculate52WeekStrategy(quotes),
+          'CUP_HANDLE_ABCD': calculateCupHandle(quotes),
+          'RHS_ABCD': calculateRHS(quotes),
+          'SR_STRATEGY': calculateSRStrategy(quotes)
+        };
         
         snapshot[baseSymbol] = {
           quotes: quotes.slice(-500), // Keep 2 years for accurate trigger dates & SMA
           quote: {
-            marketCap: quote.marketCap,
+            marketCap,
             regularMarketPrice: quote.regularMarketPrice,
             fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh,
             pe: summary?.summaryDetail?.trailingPE || summary?.defaultKeyStatistics?.trailingPE || 0,
@@ -224,7 +230,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
             debtToEquity: summary?.financialData?.debtToEquity || 0
           },
           screener: screenerData,
-          strategy,
+          strategies, // Store all pre-calculated results
           lastUpdated: new Date().toISOString()
         };
       } catch (e) {
