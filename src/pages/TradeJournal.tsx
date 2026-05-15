@@ -11,20 +11,12 @@ import {
   ArrowUpRight, 
   X,
   PlusCircle,
-  Clock,
-  ArrowRight,
-  Filter,
-  Activity,
-  ChevronDown,
-  Upload,
   FileSpreadsheet,
-  AlertCircle,
-  Download,
-  Target as TargetIcon,
-  ShieldAlert,
+  Upload,
   ArrowUpDown,
+  Square,
   CheckSquare,
-  Square
+  ShieldCheck
 } from 'lucide-react';
 import Papa from 'papaparse';
 import { BASKETS, STRATEGIES } from '../data/stocks';
@@ -86,16 +78,12 @@ const TradeJournalPage: React.FC = () => {
       });
       if (res.ok) {
         const data = await res.json();
+        console.log(`[LEDGER] Fetched ${data.length} trades`);
         setTrades(data);
         const symbolsToFetch = Array.from(new Set(data.filter((t:any) => t.status === 'OPEN').map((t:any) => t.symbol)));
         if (symbolsToFetch.length > 0) fetchLivePrices(symbolsToFetch as string[]);
-      } else {
-        alert("Failed to fetch trades. Backend might be offline.");
       }
-    } catch (e) { 
-      console.error(e);
-      alert("Network Error: Could not connect to backend.");
-    }
+    } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
 
@@ -144,7 +132,6 @@ const TradeJournalPage: React.FC = () => {
       const targetVal = t.target_price || (t.entry_price * 1.25);
       const gap = ((targetVal - cmp) / (cmp || 1)) * 100;
       
-      // Calculate holding days
       const d1 = new Date(t.entry_date).getTime();
       const d2 = t.exit_date ? new Date(t.exit_date).getTime() : new Date().getTime();
       const days = Math.max(1, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)));
@@ -165,15 +152,6 @@ const TradeJournalPage: React.FC = () => {
     return tradeData;
   }, [trades, activeSegment, livePrices, sortConfig]);
 
-  const toggleSelect = (id: number) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.length === processedTrades.length) setSelectedIds([]);
-    else setSelectedIds(processedTrades.map(t => t.id));
-  };
-
   const handleBulkDelete = async () => {
     if (!window.confirm(`Delete ${selectedIds.length} selected records?`)) return;
     const token = localStorage.getItem('mb_token');
@@ -190,35 +168,22 @@ const TradeJournalPage: React.FC = () => {
     } catch (e) { console.error(e); }
   };
 
-  const downloadCSVTemplate = () => {
-    const csvContent = "Symbol,Entry Date,Quantity,Entry Price,Target Price,Level,Strategy,Notes\nRELIANCE,2024-05-01,10,2950,3600,A,Envelope Long,Sample Entry";
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.body.appendChild(document.createElement("a"));
-    link.href = URL.createObjectURL(blob);
-    link.download = "MarketBeacon_Import_Template.csv";
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsImporting(true);
     Papa.parse(file, {
-      header: false, // Use false to manually find the header row
+      header: false,
       skipEmptyLines: 'greedy',
       complete: async (results) => {
         const token = localStorage.getItem('mb_token');
         try {
           const rawRows = results.data as string[][];
-          // 1. Find the header row (the one containing 'Stock' or 'Symbol')
-          const headerIdx = rawRows.findIndex(r => 
-            r.some(c => ['stock', 'symbol', 'instrument', 'scrip'].includes(String(c).toLowerCase().trim()))
-          );
+          const headerIdx = rawRows.findIndex(r => r.some(c => ['stock', 'symbol', 'instrument'].includes(String(c).toLowerCase().trim())));
 
           if (headerIdx === -1) {
-            alert("No valid trade header found. Ensure your CSV has a 'Stock' or 'Symbol' column.");
+            alert("No valid trade header found (Needs 'Stock' or 'Symbol' column).");
             setIsImporting(false);
             return;
           }
@@ -232,25 +197,16 @@ const TradeJournalPage: React.FC = () => {
               return colIdx !== -1 ? row[colIdx] : null;
             };
 
-            const symbol = findVal(['symbol', 'stock', 'instrument', 'ticker', 'scrip']);
-            const buyPrice = findVal(['buyprice', 'buyrate', 'avg', 'cost', 'entryprice']);
-            const qty = findVal(['qty', 'quantity', 'units', 'shares', 'holding']);
-            const rawBuyDate = findVal(['buydate', 'entrydate', 'date', 'time']);
-            
+            const symbol = findVal(['symbol', 'stock', 'instrument']);
+            const buyPrice = findVal(['buyprice', 'buyrate', 'avg', 'cost']);
+            const qty = findVal(['qty', 'quantity', 'units']);
+            const rawBuyDate = findVal(['buydate', 'entrydate', 'date']);
             const sellPrice = findVal(['sellprice', 'exitprice', 'cmp']);
             const rawSellDate = findVal(['selldate', 'exitdate']);
             const status = findVal(['status', 'type', 'state']);
-            const strategy = findVal(['strategy', 'model', 'setup', 'strategyname']) || 'CSV Import';
-            const target = findVal(['target', 'goal', 'objective', 'targetprice']);
-            
-            if (!symbol || !buyPrice || !qty) return null;
-            if (String(symbol).toLowerCase().includes('total')) return null;
 
-            const entryPrice = parseFloat(String(buyPrice).replace(/[^0-9.]/g, ''));
-            const exitPrice = sellPrice ? parseFloat(String(sellPrice).replace(/[^0-9.]/g, '')) : null;
-            const targetPrice = target ? parseFloat(String(target).replace(/[^0-9.]/g, '')) : (entryPrice * 1.25);
+            if (!symbol || !buyPrice || !qty || String(symbol).toLowerCase().includes('total')) return null;
 
-            // Date Normalization (SQL Friendly)
             const formatDate = (raw: any) => {
               if (!raw) return new Date().toISOString().split('T')[0];
               const d = new Date(raw);
@@ -259,27 +215,25 @@ const TradeJournalPage: React.FC = () => {
 
             const buyDate = formatDate(rawBuyDate);
             const sellDate = rawSellDate ? formatDate(rawSellDate) : null;
-
-            // Determine status: If Sell Date exists or status contains 'Booked', it's CLOSED
             const tradeStatus = (sellDate || (status && String(status).toLowerCase().includes('booked'))) ? 'CLOSED' : 'OPEN';
 
             return {
               symbol: String(symbol).toUpperCase().trim(),
-              entry_price: entryPrice,
+              entry_price: parseFloat(String(buyPrice).replace(/[^0-9.]/g, '')),
               quantity: parseInt(String(qty).replace(/[^0-9]/g, '')),
-              target_price: targetPrice,
-              level: findVal(['level', 'phase', 'step']) || 'A',
+              target_price: parseFloat(String(findVal(['target']) || '0')) || 0,
+              level: findVal(['level']) || 'A',
               entry_date: buyDate,
               exit_date: sellDate,
-              exit_price: exitPrice,
+              exit_price: sellPrice ? parseFloat(String(sellPrice).replace(/[^0-9.]/g, '')) : null,
               status: tradeStatus,
-              strategy: strategy,
+              strategy: findVal(['strategy']) || 'CSV Import',
               notes: findVal(['notes', 'remark']) || ''
             };
-          }).filter((t: any) => t && t.symbol && t.entry_price > 0 && !isNaN(t.entry_price));
+          }).filter((t: any) => t && t.symbol && t.entry_price > 0);
 
           if (tradesToImport.length === 0) {
-            alert("No valid trades detected. Please check if your 'Stock', 'Buy Price', and 'Qty' columns are populated.");
+            alert("No valid data found in the remaining rows.");
             setIsImporting(false);
             return;
           }
@@ -295,10 +249,13 @@ const TradeJournalPage: React.FC = () => {
             const closedCount = tradesToImport.filter(t => t.status === 'CLOSED').length;
             alert(`Import Successful!\n- ${openCount} Open Trades\n- ${closedCount} Closed Trades`);
             fetchTrades();
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            alert(`Server Error: ${errData.error || 'Failed to save trades.'}`);
           }
         } catch (err) { 
-            console.error(err);
-            alert("Processing Error during CSV import."); 
+          console.error(err);
+          alert("Error processing file."); 
         } finally {
           setIsImporting(false);
           if (fileInputRef.current) fileInputRef.current.value = '';
@@ -309,86 +266,43 @@ const TradeJournalPage: React.FC = () => {
 
   const handleAddTrade = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTrade.symbol) {
-        alert("Symbol is required.");
-        return;
-    }
-
+    if (!newTrade.symbol) return;
     const token = localStorage.getItem('mb_token');
     const entryPrice = parseFloat(newTrade.entry_price);
-    const payload = {
-      ...newTrade,
-      entry_price: entryPrice,
-      quantity: parseInt(newTrade.quantity),
-      target_price: newTrade.target_price ? parseFloat(newTrade.target_price) : (entryPrice * 1.25)
-    };
-
+    const payload = { ...newTrade, entry_price: entryPrice, quantity: parseInt(newTrade.quantity), target_price: newTrade.target_price ? parseFloat(newTrade.target_price) : (entryPrice * 1.25) };
     try {
-      const res = await fetch(`${API_URL}/api/trades`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        setShowAddModal(false);
-        setNewTrade({
-          symbol: '', entry_price: '', quantity: '', target_price: '', level: 'A',
-          entry_date: new Date().toISOString().split('T')[0], strategy: STRATEGIES[0].name, notes: ''
-        });
-        setSymbolSearch('');
-        fetchTrades();
-      }
+      const res = await fetch(`${API_URL}/api/trades`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
+      if (res.ok) { setShowAddModal(false); setNewTrade({ symbol: '', entry_price: '', quantity: '', target_price: '', level: 'A', entry_date: new Date().toISOString().split('T')[0], strategy: STRATEGIES[0].name, notes: '' }); setSymbolSearch(''); fetchTrades(); }
     } catch (e) { console.error(e); }
   };
 
   const handleConfirmClose = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('mb_token');
-    const qtyToClose = parseInt(closeTradeData.quantity_to_close);
-    
-    if (qtyToClose > showCloseModal.quantity) {
-        alert("Cannot close more than open quantity.");
-        return;
-    }
-
     try {
       const res = await fetch(`${API_URL}/api/trades/${showCloseModal.id}/close`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ 
-          exit_price: parseFloat(closeTradeData.exit_price), 
-          exit_date: new Date().toISOString().split('T')[0],
-          quantity_to_close: qtyToClose,
-          notes: closeTradeData.notes
-        })
+        body: JSON.stringify({ exit_price: parseFloat(closeTradeData.exit_price), exit_date: new Date().toISOString().split('T')[0], quantity_to_close: parseInt(closeTradeData.quantity_to_close), notes: closeTradeData.notes })
       });
-      if (res.ok) {
-        setShowCloseModal(null);
-        fetchTrades();
-      }
+      if (res.ok) { setShowCloseModal(null); fetchTrades(); }
     } catch (e) { console.error(e); }
   };
 
   const handleReopenTrade = async (id: number) => {
-    if (!window.confirm('Re-open this trade?')) return;
+    if (!window.confirm('Re-open?')) return;
     const token = localStorage.getItem('mb_token');
     try {
-      const res = await fetch(`${API_URL}/api/trades/${id}/reopen`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await fetch(`${API_URL}/api/trades/${id}/reopen`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } });
       if (res.ok) fetchTrades();
     } catch (e) { console.error(e); }
   };
 
   const handleDeleteTrade = async (id: number) => {
-    if (!window.confirm('Delete record?')) return;
+    if (!window.confirm('Delete?')) return;
     const token = localStorage.getItem('mb_token');
     try {
-      const res = await fetch(`${API_URL}/api/trades/` + id, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await fetch(`${API_URL}/api/trades/` + id, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
       if (res.ok) fetchTrades();
     } catch (e) { console.error(e); }
   };
@@ -398,113 +312,64 @@ const TradeJournalPage: React.FC = () => {
     return <ArrowUpDown className={`h-2 w-2 ml-1 ${sortConfig.direction === 'asc' ? 'text-blue-600' : 'text-slate-400'}`} />;
   };
 
-  if (loading) return (
-    <div className="flex-1 flex items-center justify-center">
-       <div className="w-10 h-10 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin" />
-    </div>
-  );
-
-  const openTrades = trades.filter(t => t.status === 'OPEN');
-  const closedTrades = trades.filter(t => t.status === 'CLOSED');
+  if (loading) return <div className="flex-1 flex items-center justify-center"><div className="w-10 h-10 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin" /></div>;
 
   return (
     <div className="flex-1 flex flex-col min-h-0 py-6 px-10 space-y-6 overflow-hidden font-sans bg-[#f8fafc]">
-      
-      {/* 1. Header & Quick Stats */}
       <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-100 pb-6 gap-6 shrink-0">
         <div className="space-y-1">
-          <div className="flex items-center space-x-2 px-3 py-1 bg-blue-500/10 w-fit rounded-lg border border-blue-500/20 mb-3">
-             <BookOpen className="h-3 w-3 text-blue-600" />
-             <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">Journal</span>
-          </div>
+          <div className="flex items-center space-x-2 px-3 py-1 bg-blue-500/10 w-fit rounded-lg border border-blue-500/20 mb-3"><BookOpen className="h-3 w-3 text-blue-600" /><span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">Journal</span></div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">Trade Ledger</h1>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Institutional Order Execution Audit</p>
         </div>
-
         <div className="flex items-center space-x-3">
-           <div className="flex flex-col items-end px-4 border-r border-slate-100 text-right">
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Realized</span>
-              <h3 className={`text-xl font-black ${stats.totalRealized >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                 ₹{Math.abs(stats.totalRealized).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </h3>
-           </div>
-           <div className="flex flex-col items-end px-4 text-right">
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Unrealized</span>
-              <h3 className={`text-xl font-black ${stats.totalUnrealized >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                 ₹{Math.abs(stats.totalUnrealized).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </h3>
-           </div>
-           
+           <div className="flex flex-col items-end px-4 border-r border-slate-100 text-right"><span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Realized</span><h3 className={`text-xl font-black ${stats.totalRealized >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>₹{Math.abs(stats.totalRealized).toLocaleString()}</h3></div>
+           <div className="flex flex-col items-end px-4 text-right"><span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Unrealized</span><h3 className={`text-xl font-black ${stats.totalUnrealized >= 0 ? 'text-blue-600' : 'text-red-600'}`}>₹{Math.abs(stats.totalUnrealized).toLocaleString()}</h3></div>
            <div className="flex items-center space-x-2 ml-4">
-              <button onClick={downloadCSVTemplate} className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl shadow-sm hover:text-blue-600 transition-all" title="Download Template">
-                 <FileSpreadsheet className="h-4 w-4" />
-              </button>
               <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleCSVUpload} />
-              <button onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl shadow-sm hover:bg-slate-50 transition-all flex items-center space-x-2">
-                 <Upload className={`h-4 w-4 ${isImporting ? 'animate-bounce' : ''}`} />
-                 <span className="text-[10px] font-black uppercase tracking-widest">Import</span>
-              </button>
-              <button onClick={() => setShowAddModal(true)} className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-all flex items-center space-x-2">
-                 <Plus className="h-4 w-4" />
-                 <span>Record</span>
-              </button>
+              <button onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl shadow-sm hover:bg-slate-50 flex items-center space-x-2"><Upload className={`h-4 w-4 ${isImporting ? 'animate-bounce' : ''}`} /><span className="text-[10px] font-black uppercase tracking-widest">Import</span></button>
+              <button onClick={() => setShowAddModal(true)} className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg flex items-center space-x-2"><Plus className="h-4 w-4" /><span>Record</span></button>
            </div>
         </div>
       </div>
 
-      {/* 2. Segments & Bulk Action */}
       <div className="flex items-center justify-between shrink-0">
          <div className="flex items-center space-x-4">
             <button onClick={() => { setActiveSegment('OPEN'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSegment === 'OPEN' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' : 'text-slate-400 hover:text-slate-600'}`}>Open Positions</button>
             <button onClick={() => { setActiveSegment('CLOSED'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSegment === 'CLOSED' ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}>Closed History</button>
          </div>
-
-         {selectedIds.length > 0 && (
-            <button 
-              onClick={handleBulkDelete}
-              className="flex items-center space-x-2 px-6 py-3 bg-red-50 text-red-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 hover:bg-red-600 hover:text-white transition-all animate-in slide-in-from-right duration-300"
-            >
-               <Trash2 className="h-3 w-3" />
-               <span>Delete ({selectedIds.length})</span>
-            </button>
-         )}
+         {selectedIds.length > 0 && <button onClick={handleBulkDelete} className="flex items-center space-x-2 px-6 py-3 bg-red-50 text-red-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3 w-3" /><span>Delete ({selectedIds.length})</span></button>}
       </div>
 
-      {/* 3. Table */}
-      <div className="flex-1 flex flex-col min-h-0 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden relative text-right">
+      <div className="flex-1 flex flex-col min-h-0 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden relative">
          <div className="flex-1 overflow-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
                <thead>
                   <tr className="bg-slate-50 text-[8px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 sticky top-0 z-10">
-                     <th className="px-6 py-4 text-left w-10">
-                        <button onClick={toggleSelectAll} className="text-slate-300 hover:text-blue-600">
-                           {selectedIds.length === processedTrades.length && processedTrades.length > 0 ? <CheckSquare className="h-4 w-4 text-blue-600" /> : <Square className="h-4 w-4" />}
-                        </button>
-                     </th>
-                     <th className="px-4 py-4 text-left cursor-pointer" onClick={() => handleSort('symbol')}>Instrument {SortIcon('symbol')}</th>
-                     
+                     <th className="px-6 py-4 w-10"><button onClick={() => { if (selectedIds.length === processedTrades.length) setSelectedIds([]); else setSelectedIds(processedTrades.map(t => t.id)); }} className="text-slate-300">{selectedIds.length === processedTrades.length && processedTrades.length > 0 ? <CheckSquare className="h-4 w-4 text-blue-600" /> : <Square className="h-4 w-4" />}</button></th>
+                     <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('symbol')}>Instrument {SortIcon('symbol')}</th>
                      {activeSegment === 'OPEN' ? (
                        <>
                          <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('entry_date')}>Entry {SortIcon('entry_date')}</th>
                          <th className="px-4 py-4 text-center">Qty</th>
                          <th className="px-4 py-4 text-center cursor-pointer" onClick={() => handleSort('level')}>Level {SortIcon('level')}</th>
-                         <th className="px-4 py-4">Avg Price</th>
-                         <th className="px-4 py-4 text-blue-600">CMP</th>
-                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('pnl')}>P&L Amt {SortIcon('pnl')}</th>
-                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('pnlPer')}>ROI % {SortIcon('pnlPer')}</th>
-                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('gap')}>Target/Gap {SortIcon('gap')}</th>
+                         <th className="px-4 py-4 text-right">Avg Price</th>
+                         <th className="px-4 py-4 text-right text-blue-600">CMP</th>
+                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnl')}>P&L Amt {SortIcon('pnl')}</th>
+                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnlPer')}>ROI % {SortIcon('pnlPer')}</th>
+                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('gap')}>Target/Gap {SortIcon('gap')}</th>
                        </>
                      ) : (
                        <>
                          <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('entry_date')}>Buy Date {SortIcon('entry_date')}</th>
                          <th className="px-4 py-4 text-center">Qty</th>
-                         <th className="px-4 py-4">Buy Price</th>
-                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('exit_date')}>Sell Date {SortIcon('exit_date')}</th>
-                         <th className="px-4 py-4">Sell Price</th>
-                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('pnl')}>Gain {SortIcon('pnl')}</th>
+                         <th className="px-4 py-4 text-right">Buy Price</th>
+                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('exit_date')}>Sell Date {SortIcon('exit_date')}</th>
+                         <th className="px-4 py-4 text-right">Sell Price</th>
+                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnl')}>Gain {SortIcon('pnl')}</th>
                          <th className="px-4 py-4 text-center cursor-pointer" onClick={() => handleSort('days')}>Days {SortIcon('days')}</th>
-                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('pnlPer')}>% Gain {SortIcon('pnlPer')}</th>
-                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('annualGain')}>% Annual {SortIcon('annualGain')}</th>
+                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnlPer')}>% Gain {SortIcon('pnlPer')}</th>
+                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('annualGain')}>% Annual {SortIcon('annualGain')}</th>
                        </>
                      )}
                      <th className="px-6 py-4 text-center">Action</th>
@@ -513,65 +378,33 @@ const TradeJournalPage: React.FC = () => {
                <tbody className="divide-y divide-slate-50 text-[10px] font-black">
                   {processedTrades.map((t) => (
                       <tr key={t.id} className={`hover:bg-slate-50 transition-colors group ${selectedIds.includes(t.id) ? 'bg-blue-50/50' : ''}`}>
-                         <td className="px-6 py-3 text-left">
-                            <button onClick={() => toggleSelect(t.id)} className={`${selectedIds.includes(t.id) ? 'text-blue-600' : 'text-slate-200'} hover:text-blue-400`}>
-                               {selectedIds.includes(t.id) ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
-                            </button>
-                         </td>
-                         <td className="px-4 py-3 text-left">
-                            <div className="flex flex-col uppercase tracking-tighter">
-                               <span className="text-slate-900">{t.symbol}</span>
-                               <span className="text-[7px] text-slate-400">{t.strategy}</span>
-                            </div>
-                         </td>
-
+                         <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])} className={selectedIds.includes(t.id) ? 'text-blue-600' : 'text-slate-200'}>{selectedIds.includes(t.id) ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}</button></td>
+                         <td className="px-4 py-3"><div className="flex flex-col uppercase tracking-tighter"><span className="text-slate-900">{t.symbol}</span><span className="text-[7px] text-slate-400">{t.strategy}</span></div></td>
                          {activeSegment === 'OPEN' ? (
                            <>
                              <td className="px-4 py-3 text-slate-400 font-bold">{t.entry_date}</td>
                              <td className="px-4 py-3 text-center text-slate-900">{t.quantity}</td>
-                             <td className="px-4 py-3 text-center">
-                                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${
-                                   t.level === 'A' ? 'bg-blue-600 text-white border-blue-700' : 
-                                   t.level === 'B' ? 'bg-amber-500 text-white border-amber-600' :
-                                   t.level === 'C' ? 'bg-indigo-600 text-white border-indigo-700' :
-                                   'bg-slate-900 text-white border-slate-950'
-                                }`}>{t.level}</span>
-                             </td>
-                             <td className="px-4 py-3 text-slate-600">₹{t.entry_price.toLocaleString()}</td>
-                             <td className="px-4 py-3 font-black text-blue-600">₹{t.cmp.toLocaleString()}</td>
-                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3`}>₹{Math.abs(t.pnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
-                             <td className="px-4 py-3">
-                                <div className="flex flex-col items-end text-right">
-                                   <span className="text-slate-400">₹{t.targetVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                   <span className={`${t.gap > 0 ? 'text-orange-500' : 'text-green-500'} text-[8px]`}>{t.gap > 0 ? `${t.gap.toFixed(1)}% Gap` : 'TARGET HIT'}</span>
-                                </div>
-                             </td>
+                             <td className="px-4 py-3 text-center"><span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${t.level === 'A' ? 'bg-blue-600 text-white' : t.level === 'B' ? 'bg-amber-500 text-white' : t.level === 'C' ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}>{t.level}</span></td>
+                             <td className="px-4 py-3 text-right text-slate-600">₹{t.entry_price.toLocaleString()}</td>
+                             <td className="px-4 py-3 text-right font-black text-blue-600">₹{t.cmp.toLocaleString()}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 text-right`}>₹{Math.abs(t.pnl).toLocaleString()}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 text-right`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
+                             <td className="px-4 py-3 text-right"><div className="flex flex-col items-end"><span className="text-slate-400">₹{t.targetVal.toLocaleString()}</span><span className={`${t.gap > 0 ? 'text-orange-500' : 'text-green-500'} text-[8px]`}>{t.gap > 0 ? `${t.gap.toFixed(1)}% Gap` : 'TARGET HIT'}</span></div></td>
                            </>
                          ) : (
                            <>
                              <td className="px-4 py-3 text-slate-400 font-bold">{t.entry_date}</td>
                              <td className="px-4 py-3 text-center text-slate-900">{t.quantity}</td>
-                             <td className="px-4 py-3 text-slate-600">₹{t.entry_price.toLocaleString()}</td>
-                             <td className="px-4 py-3 text-slate-400 font-bold">{t.exit_date}</td>
-                             <td className="px-4 py-3 text-slate-900">₹{t.exit_price?.toLocaleString() || '-'}</td>
-                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 font-black`}>₹{Math.abs(t.pnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                             <td className="px-4 py-3 text-right text-slate-600">₹{t.entry_price.toLocaleString()}</td>
+                             <td className="px-4 py-3 text-right text-slate-400 font-bold">{t.exit_date}</td>
+                             <td className="px-4 py-3 text-right text-slate-900">₹{t.exit_price?.toLocaleString() || '-'}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 text-right font-black`}>₹{Math.abs(t.pnl).toLocaleString()}</td>
                              <td className="px-4 py-3 text-center text-slate-500">{t.days}</td>
-                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
-                             <td className={`${t.annualGain >= 0 ? 'text-blue-600' : 'text-red-600'} px-4 py-3`}>{t.annualGain >= 0 ? '+' : ''}{t.annualGain.toFixed(0)}%</td>
+                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 text-right`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
+                             <td className={`${t.annualGain >= 0 ? 'text-blue-600' : 'text-red-600'} px-4 py-3 text-right`}>{t.annualGain >= 0 ? '+' : ''}{t.annualGain.toFixed(0)}%</td>
                            </>
                          )}
-
-                         <td className="px-6 py-3 text-center">
-                            <div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                               {activeSegment === 'OPEN' ? (
-                                 <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-50 text-emerald-600 rounded hover:bg-emerald-600 hover:text-white transition-all shadow-sm"><CheckCircle2 className="h-3.5 w-3.5" /></button>
-                               ) : (
-                                 <button onClick={() => handleReopenTrade(t.id)} className="p-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Re-open Trade"><RotateCcw className="h-3.5 w-3.5" /></button>
-                               )}
-                               <button onClick={() => handleDeleteTrade(t.id)} className="p-1 bg-slate-50 text-slate-400 rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button>
-                            </div>
-                         </td>
+                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-50 text-emerald-600 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => handleReopenTrade(t.id)} className="p-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => handleDeleteTrade(t.id)} className="p-1 bg-slate-50 text-slate-400 rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
                       </tr>
                   ))}
                </tbody>
@@ -579,105 +412,11 @@ const TradeJournalPage: React.FC = () => {
          </div>
       </div>
 
-      {/* 4. Add Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
-           <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-                 <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">New Trade Entry</h3>
-                 <button onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:text-slate-600"><X className="h-6 w-6" /></button>
-              </div>
-              <form onSubmit={handleAddTrade} className="p-8 space-y-6 text-left">
-                 <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                    <div className="col-span-2 relative">
-                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Instrument (Smart Search)</label>
-                       <input 
-                         type="text" required placeholder="Type name (e.g. RELIANCE)..." 
-                         value={symbolSearch} 
-                         onChange={(e) => {
-                             const val = e.target.value.toUpperCase();
-                             setSymbolSearch(val);
-                             setNewTrade(prev => ({...prev, symbol: val}));
-                         }} 
-                         className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" 
-                       />
-                       {filteredSearchSymbols.length > 0 && symbolSearch !== filteredSearchSymbols[0] && (
-                          <div className="absolute top-full left-0 w-full mt-1 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 z-[210]">
-                             {filteredSearchSymbols.map(s => (
-                               <button key={s} type="button" onClick={() => { setNewTrade(prev => ({...prev, symbol: s})); setSymbolSearch(s); }} className="flex items-center justify-between w-full px-4 py-3 rounded-xl hover:bg-blue-50 text-xs font-black uppercase tracking-widest">
-                                  <span>{s}</span> <Plus className="h-3 w-3 text-blue-600" />
-                               </button>
-                             ))}
-                          </div>
-                       )}
-                    </div>
-                    <div>
-                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Entry Price</label>
-                       <input type="number" step="0.05" required value={newTrade.entry_price} onChange={(e) => setNewTrade({...newTrade, entry_price: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" />
-                    </div>
-                    <div>
-                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity</label>
-                       <input type="number" required value={newTrade.quantity} onChange={(e) => setNewTrade({...newTrade, quantity: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" />
-                    </div>
-                    <div>
-                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Level (ABCD)</label>
-                       <select value={newTrade.level} onChange={(e) => setNewTrade({...newTrade, level: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black appearance-none focus:ring-1 focus:ring-blue-500/20">
-                          <option>A</option><option>B</option><option>C</option><option>D</option>
-                       </select>
-                    </div>
-                    <div>
-                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Strategy</label>
-                       <select value={newTrade.strategy} onChange={(e) => setNewTrade({...newTrade, strategy: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black appearance-none focus:ring-1 focus:ring-blue-500/20">
-                          {STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                       </select>
-                    </div>
-                    <div className="col-span-2">
-                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Price</label>
-                       <input type="number" step="0.05" placeholder="Auto 25%" value={newTrade.target_price} onChange={(e) => setNewTrade({...newTrade, target_price: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" />
-                    </div>
-                 </div>
-                 <button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-3xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all mt-4 text-center">Confirm Trade Record</button>
-              </form>
-           </div>
-        </div>
-      )}
+      {showAddModal && <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"><div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300"><div className="p-8 border-b border-slate-100 flex items-center justify-between"><h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">New Trade Entry</h3><button onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:text-slate-600"><X className="h-6 w-6" /></button></div><form onSubmit={handleAddTrade} className="p-8 space-y-6 text-left"><div className="grid grid-cols-2 gap-x-6 gap-y-4"><div className="col-span-2 relative"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Instrument</label><input type="text" required value={symbolSearch} onChange={(e) => { const val = e.target.value.toUpperCase(); setSymbolSearch(val); setNewTrade(prev => ({...prev, symbol: val})); }} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Entry Price</label><input type="number" step="0.05" required value={newTrade.entry_price} onChange={(e) => setNewTrade({...newTrade, entry_price: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity</label><input type="number" required value={newTrade.quantity} onChange={(e) => setNewTrade({...newTrade, quantity: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Strategy</label><select value={newTrade.strategy} onChange={(e) => setNewTrade({...newTrade, strategy: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black appearance-none"><{STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}></select></div></div><button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-3xl text-xs font-black uppercase tracking-widest mt-4 text-center">Confirm Trade Record</button></form></div></div>}
 
-      {/* 5. Close Trade Modal (Partial/Full) */}
-      {showCloseModal && (
-         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
-            <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in duration-300">
-               <h3 className="text-xl font-black text-slate-900 uppercase italic mb-6">Realize Profit: {showCloseModal.symbol}</h3>
-               <form onSubmit={handleConfirmClose} className="space-y-6 text-left">
-                  <div>
-                     <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Exit Price</label>
-                     <input type="number" step="0.05" required value={closeTradeData.exit_price} onChange={(e) => setCloseTradeData({...closeTradeData, exit_price: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-emerald-500/20" />
-                  </div>
-                  <div>
-                     <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Quantity to Book (Total: {showCloseModal.quantity})</label>
-                     <input type="number" required value={closeTradeData.quantity_to_close} onChange={(e) => setCloseTradeData({...closeTradeData, quantity_to_close: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-emerald-500/20" />
-                  </div>
-                  <div>
-                     <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Close Reason</label>
-                     <select value={closeTradeData.notes} onChange={(e) => setCloseTradeData({...closeTradeData, notes: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black appearance-none focus:ring-1 focus:ring-emerald-500/20">
-                        <option>Target Hit</option><option>Partial Profit</option><option>Manual Exit</option>
-                     </select>
-                  </div>
-                  <div className="flex space-x-3 mt-8">
-                     <button type="button" onClick={() => setShowCloseModal(null)} className="flex-1 py-4 bg-slate-100 text-slate-400 rounded-2xl text-xs font-black uppercase">Cancel</button>
-                     <button type="submit" className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase shadow-lg hover:bg-emerald-700">Confirm Booking</button>
-                  </div>
-               </form>
-            </div>
-         </div>
-      )}
+      {showCloseModal && <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"><div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in duration-300"><h3 className="text-xl font-black text-slate-900 uppercase italic mb-6">Realize Profit: {showCloseModal.symbol}</h3><form onSubmit={handleConfirmClose} className="space-y-6 text-left"><div><label className="text-[9px] font-black text-slate-400 uppercase ml-1">Exit Price</label><input type="number" step="0.05" required value={closeTradeData.exit_price} onChange={(e) => setCloseTradeData({...closeTradeData, exit_price: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-emerald-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase ml-1">Quantity to Book</label><input type="number" required value={closeTradeData.quantity_to_close} onChange={(e) => setCloseTradeData({...closeTradeData, quantity_to_close: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-emerald-500/20" /></div><div className="flex space-x-3 mt-8"><button type="button" onClick={() => setShowCloseModal(null)} className="flex-1 py-4 bg-slate-100 text-slate-400 rounded-2xl text-xs font-black uppercase">Cancel</button><button type="submit" className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase shadow-lg">Confirm Booking</button></div></form></div></div>}
 
-      {/* 6. Overlays */}
-      {isImporting && (
-        <div className="fixed inset-0 z-[300] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center flex-col space-y-4">
-           <div className="w-12 h-12 border-4 border-white/10 border-t-blue-500 rounded-full animate-spin" />
-           <p className="text-white text-xs font-black uppercase tracking-[0.3em]">Auditing Spreadsheet Chunks...</p>
-        </div>
-      )}
+      {isImporting && <div className="fixed inset-0 z-[300] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center flex-col space-y-4"><div className="w-12 h-12 border-4 border-white/10 border-t-blue-500 rounded-full animate-spin" /><p className="text-white text-xs font-black uppercase tracking-[0.3em]">Auditing Spreadsheet Chunks...</p></div>}
     </div>
   );
 };
