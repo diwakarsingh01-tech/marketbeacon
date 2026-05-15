@@ -200,16 +200,30 @@ const TradeJournalPage: React.FC = () => {
 
     setIsImporting(true);
     Papa.parse(file, {
-      header: true,
+      header: false, // Use false to manually find the header row
       skipEmptyLines: 'greedy',
       complete: async (results) => {
         const token = localStorage.getItem('mb_token');
         try {
-          const tradesToImport = results.data.map((row: any) => {
+          const rawRows = results.data as string[][];
+          // 1. Find the header row (the one containing 'Stock' or 'Symbol')
+          const headerIdx = rawRows.findIndex(r => 
+            r.some(c => ['stock', 'symbol', 'instrument', 'scrip'].includes(String(c).toLowerCase().trim()))
+          );
+
+          if (headerIdx === -1) {
+            alert("No valid trade header found. Ensure your CSV has a 'Stock' or 'Symbol' column.");
+            setIsImporting(false);
+            return;
+          }
+
+          const headerRow = rawRows[headerIdx].map(h => String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
+          const dataRows = rawRows.slice(headerIdx + 1);
+
+          const tradesToImport = dataRows.map((row) => {
             const findVal = (keywords: string[]) => {
-              const keys = Object.keys(row);
-              const foundKey = keys.find(k => keywords.some(kw => k.toLowerCase().replace(/[^a-z0-9]/g, '').includes(kw)));
-              return foundKey ? row[foundKey] : null;
+              const colIdx = headerRow.findIndex(h => keywords.some(kw => h.includes(kw)));
+              return colIdx !== -1 ? row[colIdx] : null;
             };
 
             const symbol = findVal(['symbol', 'stock', 'instrument', 'ticker', 'scrip']);
@@ -224,12 +238,13 @@ const TradeJournalPage: React.FC = () => {
             const target = findVal(['target', 'goal', 'objective', 'targetprice']);
             
             if (!symbol || !buyPrice || !qty) return null;
+            if (String(symbol).toLowerCase().includes('total')) return null;
 
             const entryPrice = parseFloat(String(buyPrice).replace(/[^0-9.]/g, ''));
             const exitPrice = sellPrice ? parseFloat(String(sellPrice).replace(/[^0-9.]/g, '')) : null;
             const targetPrice = target ? parseFloat(String(target).replace(/[^0-9.]/g, '')) : (entryPrice * 1.25);
 
-            // Determine status: If Sell Date/Price exists, it's CLOSED
+            // Determine status: If Sell Date exists or status contains 'Booked', it's CLOSED
             const tradeStatus = (sellDate || (status && String(status).toLowerCase().includes('booked'))) ? 'CLOSED' : 'OPEN';
 
             return {
@@ -248,7 +263,7 @@ const TradeJournalPage: React.FC = () => {
           }).filter((t: any) => t && t.symbol && t.entry_price > 0 && !isNaN(t.entry_price));
 
           if (tradesToImport.length === 0) {
-            alert("No valid trades detected. Check column headers.");
+            alert("No valid trades detected. Please check if your 'Stock', 'Buy Price', and 'Qty' columns are populated.");
             setIsImporting(false);
             return;
           }
@@ -263,8 +278,10 @@ const TradeJournalPage: React.FC = () => {
             alert(`Import Successful: ${tradesToImport.length} trades added.`);
             fetchTrades();
           }
-        } catch (err) { alert("Processing Error."); }
-        finally {
+        } catch (err) { 
+            console.error(err);
+            alert("Processing Error during CSV import."); 
+        } finally {
           setIsImporting(false);
           if (fileInputRef.current) fileInputRef.current.value = '';
         }
