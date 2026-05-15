@@ -29,7 +29,7 @@ import {
 import Papa from 'papaparse';
 import { BASKETS, STRATEGIES } from '../data/stocks';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || (window.location.protocol === 'https:' ? 'https://' + window.location.host : 'http://localhost:3001');
 
 const TradeJournalPage: React.FC = () => {
   const [trades, setTrades] = useState<any[]>([]);
@@ -80,6 +80,7 @@ const TradeJournalPage: React.FC = () => {
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     try {
+      console.log(`[LEDGER] Fetching from ${API_URL}/api/trades`);
       const res = await fetch(`${API_URL}/api/trades`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -88,8 +89,13 @@ const TradeJournalPage: React.FC = () => {
         setTrades(data);
         const symbolsToFetch = Array.from(new Set(data.filter((t:any) => t.status === 'OPEN').map((t:any) => t.symbol)));
         if (symbolsToFetch.length > 0) fetchLivePrices(symbolsToFetch as string[]);
+      } else {
+        alert("Failed to fetch trades. Backend might be offline.");
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+      alert("Network Error: Could not connect to backend.");
+    }
     finally { setLoading(false); }
   }, []);
 
@@ -130,9 +136,9 @@ const TradeJournalPage: React.FC = () => {
   const processedTrades = useMemo(() => {
     const tradeData = trades.filter(t => t.status === activeSegment).map(t => {
       const cmp = livePrices[t.symbol] || t.entry_price;
-      const price = activeSegment === 'OPEN' ? cmp : (t.exit_price || cmp);
-      const invested = (t.quantity || 0) * (t.entry_price || 0);
-      const currentVal = (t.quantity || 0) * (price || 0);
+      const price = activeSegment === 'OPEN' ? cmp : (t.exit_price || t.entry_price);
+      const invested = (Number(t.quantity) || 0) * (Number(t.entry_price) || 0);
+      const currentVal = (Number(t.quantity) || 0) * (Number(price) || 0);
       const pnl = currentVal - invested;
       const pnlPer = invested > 0 ? (pnl / invested) * 100 : 0;
       const targetVal = t.target_price || (t.entry_price * 1.25);
@@ -144,7 +150,7 @@ const TradeJournalPage: React.FC = () => {
       const days = Math.max(1, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)));
       const annualGain = days > 0 ? (pnlPer / days * 365) : 0;
 
-      return { ...t, cmp, invested, currentVal, pnl, pnlPer, targetVal, gap, days, annualGain };
+      return { ...t, cmp, price, invested, currentVal, pnl, pnlPer, targetVal, gap, days, annualGain };
     });
 
     if (sortConfig) {

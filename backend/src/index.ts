@@ -983,18 +983,20 @@ app.post('/api/trades/batch', authenticateToken, async (req: any, res) => {
   try {
     const { trades } = req.body;
     const db = getDB();
-    console.log(`[BATCH IMPORT] Received ${trades?.length} trades for user ${req.user.id}`);
+    console.log(`[BATCH] Starting transaction for ${trades?.length} trades`);
     
-    for (const t of trades) {
-      await db.run(
-        'INSERT INTO trades (user_id, symbol, status, entry_date, entry_price, quantity, target_price, level, strategy, notes, exit_date, exit_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [req.user.id, t.symbol, t.status || 'OPEN', t.entry_date, t.entry_price, t.quantity, t.target_price, t.level || 'A', t.strategy, t.notes, t.exit_date || null, t.exit_price || null]
-      );
-    }
-    console.log(`[BATCH IMPORT] Successfully processed all trades`);
-    res.json({ success: true });
+    // Efficient Batch Execution for Turso
+    const queries = trades.map((t: any) => ({
+      sql: 'INSERT INTO trades (user_id, symbol, status, entry_date, entry_price, quantity, target_price, level, strategy, notes, exit_date, exit_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [req.user.id, t.symbol, t.status || 'OPEN', t.entry_date, t.entry_price, t.quantity, t.target_price, t.level || 'A', t.strategy, t.notes, t.exit_date || null, t.exit_price || null]
+    }));
+
+    await db.batch(queries);
+    
+    console.log(`[BATCH] Transaction successful`);
+    res.json({ success: true, count: trades.length });
   } catch (e: any) { 
-    console.error(`[BATCH IMPORT ERROR]: ${e.message}`);
+    console.error(`[BATCH ERROR]: ${e.message}`);
     res.status(500).json({ error: e.message }); 
   }
 });

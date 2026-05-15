@@ -118,6 +118,9 @@ export async function initDB() {
     },
     exec: async (sql: string) => {
       return await tursoClient!.execute(sql);
+    },
+    batch: async (queries: any[]) => {
+      return await tursoClient!.batch(queries);
     }
   };
   console.log('✅ Connected to Turso!');
