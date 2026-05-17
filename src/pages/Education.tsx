@@ -57,21 +57,21 @@ const StrategyEducation: React.FC = () => {
       }
     },
     {
-      id: 'abcd',
-      title: 'Structural Averaging',
-      icon: Layers,
-      color: 'text-amber-600',
+      id: 'bollinger',
+      title: 'Volatility Channel',
+      icon: BarChart3,
+      color: 'text-emerald-600',
       content: {
-        logic: 'The "No Stop-Loss" methodology using algorithmic position building.',
-        spacing: 'Tranche gaps set by Market Cap (10/15/20%).',
-        exit: 'Sequential exit system: D exits at C, C exits at B, B exits at A.',
-        risk: 'Risk is managed through strictly capped position sizes (Tranche A = 1% total capital).'
+        logic: 'Mean-reversion model based on statistical volatility boundaries.',
+        entry: 'Price reaches the lower volatility research band.',
+        exit: 'Model Objective is the upper volatility benchmark.',
+        risk: 'Risk is managed by verifying a narrow low-volatility squeeze before entry.'
       }
     },
     {
-      id: 'sma_stack',
+      id: 'quantum',
       title: 'Quantum Stacking',
-      icon: BarChart3,
+      icon: Layers,
       color: 'text-purple-600',
       content: {
         logic: 'Identifies extreme exhaustion zones through moving average convergence.',
@@ -81,7 +81,7 @@ const StrategyEducation: React.FC = () => {
       }
     },
     {
-      id: '52w_high_low',
+      id: 'annual',
       title: 'Annual Range Matrix',
       icon: Calendar,
       color: 'text-rose-600',
@@ -93,19 +93,31 @@ const StrategyEducation: React.FC = () => {
       }
     },
     {
-      id: 'rhs',
-      title: 'Dynamic Reversal',
-      icon: TrendingUp,
-      color: 'text-cyan-600',
+      id: 'recovery',
+      title: 'Deep Recovery Audit',
+      icon: ShieldCheck,
+      color: 'text-amber-600',
       content: {
-        logic: 'Geometric identification of trend exhaustion and reversal.',
-        structure: 'Multi-pivot structure (Shoulder-Head-Shoulder sequence).',
-        accuracy: 'Structural symmetry must be > 95% for model qualification.',
-        abcd_rule: 'Uses retrace averaging if direct breakout objective is < 30%.'
+        logic: 'Capitalizes on the proprietary 67% All-Time High reset cycle.',
+        entry: 'Drawdown >= 66% with improving fundamental financials.',
+        exit: 'Model Objective is the return to the previous peak.',
+        audit: 'Requires institutional ownership matrix > 75%.'
       }
     },
     {
-      id: 'cup_handle',
+      id: 'velocity',
+      title: 'Velocity Retest',
+      icon: Zap,
+      color: 'text-blue-500',
+      content: {
+        logic: 'Identifies high-momentum bursts and enters on the origin retest.',
+        entry: 'Retest of the Rally Start Low within 1 year of the rally.',
+        exit: 'Model Objective is the previous rally peak price.',
+        risk: 'Entry valid only if the rally started below the 200 DMA safety line.'
+      }
+    },
+    {
+      id: 'pivot',
       title: 'Structural Pivot',
       icon: Target,
       color: 'text-orange-600',
@@ -117,7 +129,19 @@ const StrategyEducation: React.FC = () => {
       }
     },
     {
-      id: 'sr_strategy',
+      id: 'reversal',
+      title: 'Dynamic Reversal',
+      icon: TrendingUp,
+      color: 'text-cyan-600',
+      content: {
+        logic: 'Geometric identification of trend exhaustion and reversal.',
+        structure: 'Multi-pivot structure (Shoulder-Head-Shoulder sequence).',
+        accuracy: 'Structural symmetry must be > 95% for model qualification.',
+        abcd_rule: 'Uses retrace averaging if direct breakout objective is < 30%.'
+      }
+    },
+    {
+      id: 'supply',
       title: 'Supply-Demand Core',
       icon: Layers,
       color: 'text-teal-600',
