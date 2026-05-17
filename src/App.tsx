@@ -12,6 +12,7 @@ import ProfilePage from './pages/Profile';
 import MarketplacePage from './pages/Marketplace';
 import EducationPage from './pages/Education';
 import PricingPage from './pages/Pricing';
+import AdminPanel from './pages/AdminPanel';
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
             <Route path="/marketplace" element={<MarketplacePage />} />
             <Route path="/stock/:symbol" element={<StockFundamentalsPage />} />
             <Route path="/education" element={<EducationPage />} />
+            <Route path="/admin" element={<AdminPanel />} />
           </Route>
 
           {/* Legacy & Redirects */}

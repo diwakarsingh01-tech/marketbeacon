@@ -105,6 +105,10 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 </div>
                 <div className="flex flex-col items-start hidden sm:flex">
                    <span className="text-[10px] font-black text-white uppercase tracking-widest leading-none">{user?.name}</span>
+                   <div className="flex items-center space-x-1 mt-1">
+                      <div className={`w-1.5 h-1.5 rounded-full ${(user as any)?.tier === 'alpha' ? 'bg-indigo-400' : (user as any)?.tier === 'pro' ? 'bg-blue-400' : 'bg-slate-400'}`} />
+                      <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{(user as any)?.tier || 'Free'}</span>
+                   </div>
                 </div>
               </button>
 

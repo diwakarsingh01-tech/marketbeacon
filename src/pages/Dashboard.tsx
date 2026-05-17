@@ -3,8 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import TradeTable from '../components/tables/TradeTable';
 import StrategyGuide from '../components/StrategyGuide';
 import { BASKETS, STRATEGIES } from '../data/stocks';
-import { ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet, BookOpen, X } from 'lucide-react';
+import { ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet, BookOpen, X, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import UpgradeModal from '../components/modals/UpgradeModal';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -26,7 +27,35 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const [activeBasket, setActiveBasket] = useState<string>(currentStrategy.baskets[0]);
   const [activeTab, setActiveTab] = useState<'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral'>(defaultTab);
   const [showGuide, setShowGuide] = useState(false);
-  
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [requiredTier, setRequiredTier] = useState<'pro' | 'alpha'>('pro');
+
+  const checkStrategyAccess = (id: string) => {
+    const strategy = STRATEGIES.find(s => s.id === id);
+    if (!strategy) return true;
+    if (strategy.tier === 'free') return true;
+    
+    const userTier = (user as any)?.tier || 'free';
+    
+    if (strategy.tier === 'alpha' && userTier !== 'alpha') {
+      setRequiredTier('alpha');
+      setShowUpgradeModal(true);
+      return false;
+    }
+    if (strategy.tier === 'pro' && userTier === 'free') {
+      setRequiredTier('pro');
+      setShowUpgradeModal(true);
+      return false;
+    }
+    return true;
+  };
+
+  const handleStrategyChange = (id: string) => {
+    if (checkStrategyAccess(id)) {
+      navigate(`?strategy=${id}`);
+    }
+  };
+
   const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
   const [stockATHs, setStockATHs] = useState<Record<string, number>>({});
   const [stockCaps, setStockCaps] = useState<Record<string, number>>({});
@@ -287,12 +316,18 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                 <div className="relative group flex-1 lg:flex-none">
                   <select 
                     value={strategyId}
-                    onChange={(e) => navigate(`?strategy=${e.target.value}`)}
+                    onChange={(e) => handleStrategyChange(e.target.value)}
                     className="appearance-none bg-white border border-slate-100 rounded-2xl pl-5 pr-12 py-3.5 text-[10px] font-black uppercase tracking-[0.1em] focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer w-full lg:min-w-[280px]"
                   >
-                    {STRATEGIES.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} {s.isLive ? '🟢' : '⏳'}</option>
-                    ))}
+                    {STRATEGIES.map(s => {
+                      const userTier = (user as any)?.tier || 'free';
+                      const isLocked = (s.tier === 'alpha' && userTier !== 'alpha') || (s.tier === 'pro' && userTier === 'free');
+                      return (
+                        <option key={s.id} value={s.id}>
+                          {isLocked ? '🔒 ' : '🟢 '}{s.name}
+                        </option>
+                      );
+                    })}
                   </select>
                   <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 rotate-90" />
                 </div>
@@ -618,6 +653,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           </div>
         </div>
       </footer>
+
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)} 
+        requiredTier={requiredTier}
+        userEmail={user?.email}
+      />
     </div>
   );
 };

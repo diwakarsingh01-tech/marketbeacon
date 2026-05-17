@@ -124,7 +124,7 @@ const HomePage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                {[
-                 { title: 'Algorithmic Scanning', desc: '9+ Live strategies including Cup & Handle, SMA Support, and 67 ka Funda.', icon: Zap, color: 'text-amber-500 bg-amber-50' },
+                 { title: 'Algorithmic Scanning', desc: '10+ Live strategies including Structural Pivot, Dynamic Reversal, and Deep Recovery Audit.', icon: Zap, color: 'text-amber-500 bg-amber-50' },
                  { title: 'Fundamental DNA', desc: 'Strict institutional filters (D/E < 0.2, ROE > 15%) aligned with PDF standards.', icon: Target, color: 'text-blue-500 bg-blue-50' },
                  { title: 'Universe Buckets', desc: 'Automated classification into Super 45, Good 45, and Good 200 lists.', icon: Trophy, color: 'text-emerald-500 bg-emerald-50' },
                  { title: 'Live Price Sync', desc: 'Real-time synchronization with NSE/BSE via professional institutional nodes.', icon: Globe, color: 'text-indigo-500 bg-indigo-50' }

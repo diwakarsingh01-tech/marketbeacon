@@ -1,14 +1,14 @@
 export const STRATEGIES = [
-  { id: 'ENVELOPE_LONG', name: 'Institutional Floor', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'ENVELOPE_SHORT', name: 'Momentum Ceiling', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'BOLLINGER', name: 'Volatility Channel', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'SMA_ABCD', name: 'Quantum Stacking', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: '52W_HIGH_LOW', name: 'Annual Range Matrix', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'SIXTY_SEVEN_FUNDA', name: 'Deep Recovery Audit', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'CUP_HANDLE_ABCD', name: 'Structural Pivot', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'RHS_ABCD', name: 'Dynamic Reversal', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'SR_STRATEGY', name: 'Supply-Demand Core', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'ENVELOPE_LONG', name: 'Institutional Floor', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'free' },
+  { id: 'ENVELOPE_SHORT', name: 'Momentum Ceiling', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'free' },
+  { id: 'BOLLINGER', name: 'Volatility Channel', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'free' },
+  { id: 'CUP_HANDLE_ABCD', name: 'Structural Pivot', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'pro' },
+  { id: 'RHS_ABCD', name: 'Dynamic Reversal', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'pro' },
+  { id: '52W_HIGH_LOW', name: 'Annual Range Matrix', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'pro' },
+  { id: 'SMA_ABCD', name: 'Quantum Stacking', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'pro' },
+  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'alpha' },
+  { id: 'SIXTY_SEVEN_FUNDA', name: 'Deep Recovery Audit', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'alpha' },
+  { id: 'SR_STRATEGY', name: 'Supply-Demand Core', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'alpha' },
 ];
 
 export const BASKETS: Record<string, string[]> = {
