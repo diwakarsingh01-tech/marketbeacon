@@ -236,7 +236,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
 
                <div className="flex flex-col md:flex-row items-center gap-8 p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
                   <div className="w-44 h-44 bg-white p-3 rounded-2xl shadow-inner flex items-center justify-center border border-slate-200 relative group">
-                     <QrCode className="h-24 w-24 text-slate-900" />
+                     <img src="/qr-code.png" className="w-full h-full object-contain" alt="Payment QR" />
                      <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
                         <span className="text-[10px] font-black text-slate-900 uppercase text-center px-4">Admin Verification Required</span>
                      </div>
