@@ -21,7 +21,7 @@ const AdminPanel: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'users' | 'requests'>('requests');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users'>('pending');
   const [search, setSearch] = useState('');
 
   const fetchData = async () => {
@@ -54,7 +54,10 @@ const AdminPanel: React.FC = () => {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) fetchData();
+      if (res.ok) {
+        fetchData();
+        setActiveTab('approved'); // Move to approved history automatically
+      }
     } catch (e) { alert("Approval failed"); }
   };
 
@@ -72,6 +75,20 @@ const AdminPanel: React.FC = () => {
       if (res.ok) fetchData();
     } catch (e) { alert("Tier update failed"); }
   };
+
+  const filteredRequests = requests.filter(r => {
+    const isTabMatch = activeTab === 'pending' ? r.status === 'pending' : r.status === 'approved';
+    const searchLower = search.toLowerCase();
+    const isSearchMatch = (r.email || '').toLowerCase().includes(searchLower) || 
+                          (r.name || '').toLowerCase().includes(searchLower) || 
+                          (r.transaction_id || '').includes(search);
+    return isTabMatch && isSearchMatch;
+  });
+
+  const filteredUsers = users.filter(u => 
+    (u.email || '').toLowerCase().includes(search.toLowerCase()) || 
+    (u.name || '').toLowerCase().includes(search.toLowerCase())
+  );
 
   if ((user as any)?.role !== 'admin') {
     return (
@@ -111,11 +128,18 @@ const AdminPanel: React.FC = () => {
       {/* Tabs */}
       <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 w-fit">
          <button 
-           onClick={() => setActiveTab('requests')}
-           className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 ${activeTab === 'requests' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+           onClick={() => setActiveTab('pending')}
+           className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 ${activeTab === 'pending' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
          >
            <Clock className="h-4 w-4" />
-           <span>Upgrade Requests ({requests.filter(r => r.status === 'pending').length})</span>
+           <span>Pending ({requests.filter(r => r.status === 'pending').length})</span>
+         </button>
+         <button 
+           onClick={() => setActiveTab('approved')}
+           className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 ${activeTab === 'approved' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+         >
+           <CheckCircle2 className="h-4 w-4" />
+           <span>Approved ({requests.filter(r => r.status === 'approved').length})</span>
          </button>
          <button 
            onClick={() => setActiveTab('users')}
@@ -128,7 +152,7 @@ const AdminPanel: React.FC = () => {
 
       {/* Table Section */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden">
-        {activeTab === 'requests' ? (
+        {activeTab !== 'users' ? (
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-50 bg-slate-50/30">
@@ -140,9 +164,9 @@ const AdminPanel: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {requests.length === 0 ? (
-                <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-300 font-bold uppercase tracking-widest italic text-xs">No pending requests</td></tr>
-              ) : requests.map((req) => (
+              {filteredRequests.length === 0 ? (
+                <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-300 font-bold uppercase tracking-widest italic text-xs">No {activeTab} requests</td></tr>
+              ) : filteredRequests.map((req) => (
                 <tr key={req.id} className="border-b border-slate-50 group hover:bg-slate-50/50 transition-colors">
                   <td className="px-8 py-6">
                     <div className="flex justify-center">
@@ -200,7 +224,7 @@ const AdminPanel: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {filteredUsers.map((u) => (
                 <tr key={u.id} className="border-b border-slate-50 group hover:bg-slate-50/50 transition-colors">
                   <td className="px-8 py-6 text-[10px] font-bold text-slate-300">#{u.id}</td>
                   <td className="px-8 py-6">

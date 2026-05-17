@@ -285,7 +285,11 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
     const { id } = req.params;
     const db = getDB();
     const request = await db.get('SELECT * FROM upgrade_requests WHERE id = ?', [id]);
-    if (!request) return res.status(404).json({ error: 'Request not found' });
+    
+    if (!request) {
+      console.log(`[ADMIN] Approval failed: Request ID ${id} not found.`);
+      return res.status(404).json({ error: 'Request not found' });
+    }
 
     // Set expiry based on true Calendar Month / Year
     const expiry = new Date();
@@ -296,12 +300,25 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
     }
     const expiryStr = expiry.toISOString();
 
+    console.log(`[ADMIN] Approving ${request.requested_tier} for user ${request.user_id}. Expiry: ${expiryStr}`);
+
     await db.batch([
-      { sql: 'UPDATE users SET tier = ?, subscription_expiry = ? WHERE id = ?', args: [request.requested_tier, expiryStr, request.user_id] },
-      { sql: 'UPDATE upgrade_requests SET status = "approved" WHERE id = ?', args: [id] }
+      { 
+        sql: 'UPDATE users SET tier = ?, subscription_expiry = ? WHERE id = ?', 
+        args: [request.requested_tier, expiryStr, request.user_id] 
+      },
+      { 
+        sql: 'UPDATE upgrade_requests SET status = "approved" WHERE id = ?', 
+        args: [id] 
+      }
     ]);
+
+    console.log(`[ADMIN] SUCCESS: Request ${id} approved.`);
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+  } catch (e: any) { 
+    console.error(`[ADMIN ERROR] Approval failed for request ${req.params.id}:`, e.message);
+    res.status(500).json({ error: e.message }); 
+  }
 });
 
 // --- USER UPGRADE ROUTE ---
