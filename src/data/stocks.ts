@@ -1,14 +1,14 @@
 export const STRATEGIES = [
-  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'ENVELOPE_SHORT', name: 'Short Envelope', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'SMA_ABCD', name: 'SMA ABCD', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'SIXTY_SEVEN_FUNDA', name: '67 ka Funda', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'TWENTY_RALLY_RETEST', name: '20% ki rally', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'RHS_ABCD', name: 'Reverse Head & Shoulder', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
-  { id: 'SR_STRATEGY', name: 'Support & Resistance (S&R)', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'ENVELOPE_LONG', name: 'Institutional Floor', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'ENVELOPE_SHORT', name: 'Momentum Ceiling', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'BOLLINGER', name: 'Volatility Channel', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'SMA_ABCD', name: 'Quantum Stacking', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: '52W_HIGH_LOW', name: 'Annual Range Matrix', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'SIXTY_SEVEN_FUNDA', name: 'Deep Recovery Audit', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'CUP_HANDLE_ABCD', name: 'Structural Pivot', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'RHS_ABCD', name: 'Dynamic Reversal', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
+  { id: 'SR_STRATEGY', name: 'Supply-Demand Core', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true },
 ];
 
 export const BASKETS: Record<string, string[]> = {
