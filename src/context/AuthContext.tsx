@@ -1,8 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 interface User {
+  id: number;
   email: string;
   name: string;
+  role: 'user' | 'admin';
+  tier: 'free' | 'pro' | 'alpha';
+  daysRemaining: number | null;
 }
 
 interface AuthContextType {
@@ -11,6 +15,7 @@ interface AuthContextType {
   googleLogin: (token: string) => Promise<void>;
   register: (email: string, pass: string, name: string) => Promise<void>;
   logout: () => void;
+  refreshAuth: () => Promise<void>;
   loading: boolean;
 }
 
@@ -22,36 +27,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem('mb_token');
-      const savedUser = localStorage.getItem('mb_user');
-      
-      if (token && savedUser) {
-        try {
-          // Verify token with backend
-          const response = await fetch(`${API_URL}/api/auth/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          if (response.ok) {
-            const { user: verifiedUser } = await response.json();
-            setUser(verifiedUser);
-          } else {
-            // Token expired or invalid
-            logout();
-          }
-        } catch (e) {
-          console.error('Auth verification failed:', e);
-          // Fallback to local storage if server is down to prevent logout during outages
-          setUser(JSON.parse(savedUser));
-        }
-      }
+  const refreshAuth = useCallback(async () => {
+    const token = localStorage.getItem('mb_token');
+    if (!token) {
+      setUser(null);
       setLoading(false);
-    };
+      return;
+    }
 
-    initAuth();
+    try {
+      const response = await fetch(`${API_URL}/api/auth/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const { user: verifiedUser } = await response.json();
+        setUser(verifiedUser);
+        localStorage.setItem('mb_user', JSON.stringify(verifiedUser));
+      } else {
+        logout();
+      }
+    } catch (e) {
+      console.error('Auth refresh failed:', e);
+      const savedUser = localStorage.getItem('mb_user');
+      if (savedUser) setUser(JSON.parse(savedUser));
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshAuth();
+  }, [refreshAuth]);
 
   const login = async (email: string, pass: string) => {
     const response = await fetch(`${API_URL}/api/auth/login`, {
@@ -114,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, googleLogin, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, googleLogin, logout, refreshAuth, loading }}>
       {children}
     </AuthContext.Provider>
   );

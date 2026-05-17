@@ -308,7 +308,20 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
 app.post('/api/user/upgrade-request', authenticateToken, async (req: any, res) => {
   try {
     const { requested_tier, billing_cycle, transaction_id } = req.body;
+    
+    // UTR Validation: Must be 12-digit numeric string (Standard UPI)
+    if (!/^\d{12}$/.test(transaction_id)) {
+      return res.status(400).json({ error: 'Invalid UTR format. Please provide the 12-digit transaction ID.' });
+    }
+
     const db = getDB();
+
+    // Check for duplicate transaction ID
+    const existing = await db.get('SELECT id FROM upgrade_requests WHERE transaction_id = ?', [transaction_id]);
+    if (existing) {
+      return res.status(400).json({ error: 'This Transaction ID has already been submitted for verification.' });
+    }
+
     await db.run(
       'INSERT INTO upgrade_requests (user_id, requested_tier, billing_cycle, transaction_id) VALUES (?, ?, ?, ?)',
       [req.user.id, requested_tier, billing_cycle || 'monthly', transaction_id]

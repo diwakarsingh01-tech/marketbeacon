@@ -65,6 +65,12 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
   const handleSubmitTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!transactionId) return;
+
+    // Client-side Validation: Must be 12 digits
+    if (!/^\d{12}$/.test(transactionId)) {
+      alert("Invalid Transaction ID. Please enter the 12-digit UTR number provided by your UPI app.");
+      return;
+    }
     
     setIsSubmitting(true);
     try {
@@ -84,9 +90,12 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
 
       if (response.ok) {
         setIsSuccess(true);
+      } else {
+        const err = await response.json();
+        alert(err.error || "Submission failed.");
       }
     } catch (err) {
-      alert("Submission failed. Please try again or contact WhatsApp support.");
+      alert("Network Error. Please try again or contact support.");
     } finally {
       setIsSubmitting(false);
     }
@@ -128,13 +137,9 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
           <div className="relative z-10 pt-8">
             <div className="flex items-baseline space-x-2">
               <span className="text-6xl font-black tracking-tighter">{currentPrice}</span>
-              <span className="text-white/40 font-bold text-sm">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+              <span className="text-white/40 font-bold text-sm">/{billingCycle === 'monthly' ? 'cycle' : 'yr'}</span>
             </div>
-            {billingCycle === 'yearly' && (
-               <div className="mt-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 w-fit rounded-lg">
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Saved 33% with Annual Plan</span>
-               </div>
-            )}
+            <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-2 italic">Calendar Month Billing Cycle Active</p>
           </div>
         </div>
 

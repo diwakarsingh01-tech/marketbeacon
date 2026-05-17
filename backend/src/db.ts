@@ -42,7 +42,7 @@ export async function initDB() {
       user_id INTEGER NOT NULL,
       requested_tier TEXT NOT NULL,
       billing_cycle TEXT DEFAULT 'monthly',
-      transaction_id TEXT NOT NULL,
+      transaction_id TEXT UNIQUE NOT NULL,
       status TEXT DEFAULT 'pending',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id)
