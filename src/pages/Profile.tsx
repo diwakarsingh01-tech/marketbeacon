@@ -27,7 +27,11 @@ const ProfilePage: React.FC = () => {
 
   const fetchProfile = useCallback(async () => {
     const token = localStorage.getItem('mb_token');
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       const res = await fetch(`${API_URL}/api/user/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -35,9 +39,11 @@ const ProfilePage: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setProfileData(data);
+      } else {
+        console.error('Profile fetch failed with status:', res.status);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Profile fetch error:', e);
     } finally {
       setLoading(false);
     }
@@ -47,9 +53,18 @@ const ProfilePage: React.FC = () => {
     fetchProfile();
   }, [fetchProfile]);
 
-  if (loading || !profileData) return (
-    <div className="flex-1 flex items-center justify-center">
+  if (loading) return (
+    <div className="flex-1 flex items-center justify-center min-h-screen">
        <div className="w-12 h-12 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!profileData) return (
+    <div className="flex-1 flex flex-col items-center justify-center min-h-screen space-y-4">
+       <ShieldCheck className="h-12 w-12 text-slate-200" />
+       <h2 className="text-xl font-black text-slate-900 uppercase italic">Profile Unavailable</h2>
+       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Please try logging in again</p>
+       <button onClick={logout} className="px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Logout</button>
     </div>
   );
 
