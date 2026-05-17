@@ -1,15 +1,15 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// import { GoogleOAuthProvider } from '@react-oauth/google'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
 import App from './App.tsx'
 
-// const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "1036063683163-5v5m7v7vVv6Evvpth207mo4DO2Px4eZf.apps.googleusercontent.com"; 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "1036063683163-5v5m7v7vVv6Evvpth207mo4DO2Px4eZf.apps.googleusercontent.com"; 
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {/* <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}> */}
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <App />
-    {/* </GoogleOAuthProvider> */}
+    </GoogleOAuthProvider>
   </StrictMode>,
 )
