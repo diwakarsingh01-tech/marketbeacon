@@ -141,11 +141,11 @@ const ProfilePage: React.FC = () => {
             </p>
          </div>
 
-         <div className="bg-blue-600 rounded-[2rem] p-6 md:p-8 text-white shadow-lg shadow-blue-500/30 relative">
-            <Trophy className="absolute right-6 top-6 h-5 w-5 md:h-6 md:w-6 opacity-20" />
-            <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest mb-1">Success Matrix</p>
-            <h3 className="text-2xl md:text-3xl font-black">100%</h3>
-            <p className="text-[9px] font-bold uppercase mt-2 italic opacity-80">Mathematical Realization</p>
+         <div className="bg-slate-900 rounded-[2rem] p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
+            <Trophy className="absolute right-6 top-6 h-6 w-6 opacity-20" />
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Research Accuracy</p>
+            <h3 className="text-2xl md:text-3xl font-black text-indigo-400">68.4%</h3>
+            <p className="text-[9px] font-bold uppercase mt-2 italic opacity-50">Institutional Model Metric</p>
          </div>
       </div>
 
