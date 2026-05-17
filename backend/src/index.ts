@@ -73,9 +73,19 @@ const authenticateToken = async (req: any, res: any, next: any) => {
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
     const db = getDB();
-    const user = await db.get('SELECT id, email, name, role, tier FROM users WHERE id = ?', [decoded.id]);
+    const user = await db.get('SELECT id, email, name, role, tier, subscription_expiry FROM users WHERE id = ?', [decoded.id]);
     
     if (!user) return res.status(403).json({ error: 'User not found.' });
+
+    // --- Subscription Expiry Check ---
+    if (user.tier !== 'free' && user.subscription_expiry) {
+      const expiry = new Date(user.subscription_expiry);
+      if (expiry < new Date()) {
+        console.log(`[SUBSCRIPTION] Expiring tier for user ${user.email}`);
+        await db.run('UPDATE users SET tier = "free" WHERE id = ?', [user.id]);
+        user.tier = 'free';
+      }
+    }
     
     req.user = user;
     next();
@@ -139,6 +149,13 @@ app.post('/api/auth/login', async (req, res) => {
     if (!validPass) return res.status(400).json({ error: 'Invalid password' });
 
     const token = jwt.sign({ id: user.id, email, name: user.name, role: user.role, tier: user.tier }, JWT_SECRET, { expiresIn: '7d' });
+    
+    let daysRemaining = null;
+    if (user.subscription_expiry) {
+      const diff = new Date(user.subscription_expiry).getTime() - new Date().getTime();
+      daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+    }
+
     res.json({ 
       token, 
       user: { 
@@ -146,7 +163,8 @@ app.post('/api/auth/login', async (req, res) => {
         email: user.email, 
         name: user.name, 
         role: user.role,
-        tier: user.tier
+        tier: user.tier,
+        daysRemaining
       } 
     });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -201,7 +219,32 @@ app.post('/api/auth/google', async (req, res) => {
 });
 
 app.get('/api/auth/me', authenticateToken, (req: any, res) => {
-  res.json({ user: req.user });
+  let daysRemaining = null;
+  if (req.user?.subscription_expiry) {
+    const diff = new Date(req.user.subscription_expiry).getTime() - new Date().getTime();
+    daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
+  res.json({ user: { ...req.user, daysRemaining } });
+});
+
+app.get('/api/user/profile', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const user = await db.get('SELECT id, name, email, tier, created_at FROM users WHERE id = ?', [req.user.id]);
+    
+    // Calculate Trading Stats
+    const trades = await db.all('SELECT status, entry_price, quantity, exit_price FROM trades WHERE user_id = ?', [req.user.id]);
+    
+    const stats = {
+      totalTrades: trades.length,
+      openTrades: trades.filter(t => t.status === 'OPEN').length,
+      totalRealizedPnL: trades
+        .filter(t => t.status === 'CLOSED' && t.exit_price)
+        .reduce((sum, t) => sum + (t.exit_price - t.entry_price) * t.quantity, 0)
+    };
+
+    res.json({ ...user, stats });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 // --- ADMIN MANAGEMENT ROUTES ---
@@ -243,8 +286,13 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
     const request = await db.get('SELECT * FROM upgrade_requests WHERE id = ?', [id]);
     if (!request) return res.status(404).json({ error: 'Request not found' });
 
+    // Set expiry to 30 days from now
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + 30);
+    const expiryStr = expiry.toISOString();
+
     await db.batch([
-      { sql: 'UPDATE users SET tier = ? WHERE id = ?', args: [request.requested_tier, request.user_id] },
+      { sql: 'UPDATE users SET tier = ?, subscription_expiry = ? WHERE id = ?', args: [request.requested_tier, expiryStr, request.user_id] },
       { sql: 'UPDATE upgrade_requests SET status = "approved" WHERE id = ?', args: [id] }
     ]);
     res.json({ success: true });

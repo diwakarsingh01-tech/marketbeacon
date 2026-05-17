@@ -108,6 +108,14 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                    <div className="flex items-center space-x-1 mt-1">
                       <div className={`w-1.5 h-1.5 rounded-full ${(user as any)?.tier === 'alpha' ? 'bg-indigo-400' : (user as any)?.tier === 'pro' ? 'bg-blue-400' : 'bg-slate-400'}`} />
                       <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{(user as any)?.tier || 'Free'}</span>
+                      {(user as any)?.tier !== 'free' && (user as any)?.daysRemaining !== null && (
+                        <>
+                           <span className="text-[7px] text-slate-700 mx-1">•</span>
+                           <span className={`text-[7px] font-black uppercase tracking-widest ${(user as any)?.daysRemaining <= 7 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                              {(user as any)?.daysRemaining} Days Left
+                           </span>
+                        </>
+                      )}
                    </div>
                 </div>
               </button>
