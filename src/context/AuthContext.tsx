@@ -13,6 +13,8 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, pass: string) => Promise<void>;
   googleLogin: (token: string) => Promise<void>;
+  sendMobileOtp: (mobile: string) => Promise<void>;
+  mobileVerify: (mobile: string, otp: string) => Promise<void>;
   register: (email: string, pass: string, name: string) => Promise<void>;
   logout: () => void;
   refreshAuth: () => Promise<void>;
@@ -96,6 +98,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('mb_token', token);
   };
 
+  const sendMobileOtp = async (mobile: string) => {
+    const res = await fetch(`${API_URL}/api/auth/mobile-send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mobile })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to send OTP');
+    }
+  };
+
+  const mobileVerify = async (mobile: string, otp: string) => {
+    const res = await fetch(`${API_URL}/api/auth/mobile-verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mobile, otp })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'OTP verification failed');
+    }
+    const { token, user: userData } = await res.json();
+    setUser(userData);
+    localStorage.setItem('mb_user', JSON.stringify(userData));
+    localStorage.setItem('mb_token', token);
+  };
+
   const register = async (email: string, pass: string, name: string) => {
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
@@ -121,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, googleLogin, logout, refreshAuth, loading }}>
+    <AuthContext.Provider value={{ user, login, register, googleLogin, sendMobileOtp, mobileVerify, logout, refreshAuth, loading }}>
       {children}
     </AuthContext.Provider>
   );

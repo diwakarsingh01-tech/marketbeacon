@@ -107,6 +107,50 @@ const WHITELISTED_EMAILS = [
 ];
 
 // --- AUTH ROUTES ---
+app.post('/api/auth/mobile-send-otp', async (req, res) => {
+  try {
+    const { mobile } = req.body;
+    if (!mobile || !/^\d{10}$/.test(mobile)) {
+      return res.status(400).json({ error: 'Invalid 10-digit mobile number' });
+    }
+    console.log(`[AUTH] Sending OTP to ${mobile}: 123456`);
+    res.json({ success: true, message: 'OTP sent (Simulated: 123456)' });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/auth/mobile-verify-otp', async (req, res) => {
+  try {
+    const { mobile, otp } = req.body;
+    if (otp !== '123456') {
+      return res.status(401).json({ error: 'Invalid OTP' });
+    }
+
+    const db = getDB();
+    const email = `${mobile}@mbeacon.user`; // Virtual email for mobile users
+    let user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+
+    if (!user) {
+      // Auto-register mobile user
+      const id = await db.run(
+        'INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)',
+        [`Mobile User ${mobile}`, email, 'MOBILE_AUTH', 'user', 'free']
+      );
+      user = await db.get('SELECT * FROM users WHERE id = ?', [id.lastID]);
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    
+    // Ensure dates are serialized
+    const safeUser = {
+      ...user,
+      subscription_expiry: user.subscription_expiry ? user.subscription_expiry : null,
+      daysRemaining: user.subscription_expiry ? Math.max(0, Math.ceil((new Date(user.subscription_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null
+    };
+
+    res.json({ token, user: safeUser });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password, referralCode } = req.body;
