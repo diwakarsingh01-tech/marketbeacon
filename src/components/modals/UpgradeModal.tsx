@@ -102,8 +102,8 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
   };
 
   const openWhatsApp = () => {
-    const text = `Hi Admin, I have paid ${currentPrice} for MarketBeacon ${currentTier.name} (${billingCycle}). My Email: ${userEmail}. Transaction ID: ${transactionId || 'Pending'}`;
-    window.open(`https://wa.me/91XXXXXXXXXX?text=${encodeURIComponent(text)}`, '_blank');
+    const text = `Hi Admin, I have paid ${currentPrice} for MarketBeacon ${currentTier.name} (${billingCycle}). My Email: ${userEmail}. Transaction ID: ${transactionId || 'Pending Verification'}`;
+    window.open(`https://wa.me/917056633633?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (
