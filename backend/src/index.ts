@@ -287,12 +287,12 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
     const request = await db.get('SELECT * FROM upgrade_requests WHERE id = ?', [id]);
     if (!request) return res.status(404).json({ error: 'Request not found' });
 
-    // Set expiry based on billing cycle (30 days or 365 days)
+    // Set expiry based on true Calendar Month / Year
     const expiry = new Date();
     if (request.billing_cycle === 'yearly') {
-      expiry.setDate(expiry.getDate() + 365);
+      expiry.setFullYear(expiry.getFullYear() + 1);
     } else {
-      expiry.setDate(expiry.getDate() + 30);
+      expiry.setMonth(expiry.getMonth() + 1);
     }
     const expiryStr = expiry.toISOString();
 
