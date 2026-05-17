@@ -30,22 +30,28 @@ export async function initDB() {
       name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
-      role TEXT DEFAULT 'USER',
-      is_beta_tester BOOLEAN DEFAULT 0,
-      subscription_status TEXT DEFAULT 'FREE',
-      subscription_expiry DATETIME,
-      referral_code TEXT UNIQUE,
-      referred_by TEXT,
+      role TEXT DEFAULT 'user',
+      tier TEXT DEFAULT 'free',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS upgrade_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      requested_tier TEXT NOT NULL,
+      transaction_id TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
 
   // Ensure new columns exist for existing databases
   const alterColumns = [
-    'ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT "FREE"',
-    'ALTER TABLE users ADD COLUMN subscription_expiry DATETIME',
-    'ALTER TABLE users ADD COLUMN referral_code TEXT UNIQUE',
-    'ALTER TABLE users ADD COLUMN referred_by TEXT'
+    'ALTER TABLE users ADD COLUMN role TEXT DEFAULT "user"',
+    'ALTER TABLE users ADD COLUMN tier TEXT DEFAULT "free"'
   ];
 
   for (const sql of alterColumns) {
