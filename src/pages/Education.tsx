@@ -34,98 +34,98 @@ const StrategyEducation: React.FC = () => {
     },
     {
       id: 'envelope',
-      title: 'Long Envelope (200 SMA)',
+      title: 'Institutional Floor',
       icon: Target,
       color: 'text-blue-600',
       content: {
-        logic: 'Buy when price touches 200-day SMA lower envelope (14% band).',
-        entry: 'Touch or close below lower band.',
-        exit: 'Target is upper band or 30% profit, whichever is higher.',
-        tranches: 'Tranche A at Lower Band, Tranche B/C/D via ABCD Ladder.'
+        logic: 'Identifies institutional demand zones based on statistical deviation benchmarks.',
+        entry: 'Price touches or closes near the lower research boundary.',
+        exit: 'Model Objective is the mathematical recovery to the upper benchmark.',
+        tranches: 'Accumulation starts at Tranche A, with B/C/D laddering if price falls further.'
       }
     },
     {
       id: 'short_envelope',
-      title: 'Short Envelope (200 EMA)',
+      title: 'Momentum Ceiling',
       icon: TrendingUp,
       color: 'text-indigo-600',
       content: {
-        logic: 'Lighter-allocation strategy for uptrend participation.',
-        entry: 'Buy Tranche B1 at 200 EMA (Middle line).',
-        exit: 'B1 exits at 14% target.',
-        notes: 'Intended for stocks that do not revisit deep lower bands often.'
+        logic: 'Participation model for stocks in strong primary uptrends.',
+        entry: 'Research entry at the secondary regression line (EMA 200).',
+        exit: 'Model Objective is a +14% recovery move.',
+        notes: 'Focused on high-momentum names that rarely revisit deep discount zones.'
       }
     },
     {
       id: 'abcd',
-      title: 'ABCD Laddering',
+      title: 'Structural Averaging',
       icon: Layers,
       color: 'text-amber-600',
       content: {
-        logic: 'Staged accumulation to avoid stop-losses.',
-        spacing: 'Large (10%), Mid (15%), Small (20%).',
-        exit: 'D exits at C, C exits at B, B exits at A, A exits at A-Tilde.',
-        risk: 'Sizing is the real risk control. Use conservative (20/25/25/30) or convex (10/20/30/40) sizing.'
+        logic: 'The "No Stop-Loss" methodology using algorithmic position building.',
+        spacing: 'Tranche gaps set by Market Cap (10/15/20%).',
+        exit: 'Sequential exit system: D exits at C, C exits at B, B exits at A.',
+        risk: 'Risk is managed through strictly capped position sizes (Tranche A = 1% total capital).'
       }
     },
     {
       id: 'sma_stack',
-      title: 'SMA 20/50/200 Stacking',
+      title: 'Quantum Stacking',
       icon: BarChart3,
       color: 'text-purple-600',
       content: {
-        logic: 'Deep depressed zone / bulk buying zone.',
-        buy: 'Close < SMA 20 < SMA 50 < SMA 200 (Bearish Stacking).',
-        sell: 'Full structure reversal: Close > SMA 20 > SMA 50 > SMA 200.',
-        caveat: 'Only for low-volatility quality stocks.'
+        logic: 'Identifies extreme exhaustion zones through moving average convergence.',
+        buy: 'Bearish Stacking (Price < SMA 20 < SMA 50 < SMA 200).',
+        sell: 'Full Structural Reversal (Model Objective reached).',
+        caveat: 'Requires 100-point fundamental confirmation to avoid value traps.'
       }
     },
     {
       id: '52w_high_low',
-      title: '52-Week Range Strategy',
+      title: 'Annual Range Matrix',
       icon: Calendar,
       color: 'text-rose-600',
       content: {
-        logic: 'Accumulation at 52-week lows for quality names.',
-        buy: 'Price near rolling 252-day low (within small tolerance).',
-        sell: 'Price near rolling 252-day high.',
-        intent: 'Revisits to 52-week lows in bluechips are high-conviction zones.'
+        logic: 'Mean reversion system based on annual price extremes.',
+        buy: 'Accumulation at the 52-week statistical low.',
+        sell: 'Research objective at the 52-week statistical high.',
+        intent: 'Elite bluechips frequently rebound from annual support levels.'
       }
     },
     {
       id: 'rhs',
-      title: 'Reverse Head & Shoulders',
+      title: 'Dynamic Reversal',
       icon: TrendingUp,
       color: 'text-cyan-600',
       content: {
-        logic: 'Bullish reversal pattern with strict geometric symmetry.',
-        structure: 'Left Shoulder, Head (Lowest), and Right Shoulder.',
-        accuracy: 'Shoulders must be within 5% height of each other for institutional validity.',
-        abcd_rule: 'If target < 30%, direct entry at neckline is rejected. Wait for ABCD retracement.'
+        logic: 'Geometric identification of trend exhaustion and reversal.',
+        structure: 'Multi-pivot structure (Shoulder-Head-Shoulder sequence).',
+        accuracy: 'Structural symmetry must be > 95% for model qualification.',
+        abcd_rule: 'Uses retrace averaging if direct breakout objective is < 30%.'
       }
     },
     {
       id: 'cup_handle',
-      title: 'Cup & Handle',
+      title: 'Structural Pivot',
       icon: Target,
       color: 'text-orange-600',
       content: {
-        logic: 'Rounding bottom (Cup) followed by minor consolidation (Handle).',
-        structure: 'Cup depth > 15%. Handle retrace < 50% of cup depth.',
-        accuracy: 'Lips must be within 5% symmetry. Messy structures are ignored.',
-        abcd_rule: 'Breakout level serves as Anchor A. Preferred entry is at B/C/D levels unless target is massive.'
+        logic: 'Rounded accumulation phase followed by breakout confirmation.',
+        structure: 'U-shaped base (Cup) and low-volatility handle formation.',
+        accuracy: 'Lips must be perfectly aligned within 5% price variance.',
+        abcd_rule: 'Algorithmic entry preferred at B/C/D levels for optimal risk-reward.'
       }
     },
     {
       id: 'sr_strategy',
-      title: 'Support & Resistance',
+      title: 'Supply-Demand Core',
       icon: Layers,
       color: 'text-teal-600',
       content: {
-        logic: 'Identifying accumulation zones through pivot clustering.',
-        rebound_rule: 'Requires at least 2 historical rebounds from the support zone.',
-        upside_rule: 'Target resistance must be at least 30% above support.',
-        fundamental_check: 'Current profits must be stable or improving compared to previous visits to this support zone.'
+        logic: 'Direct identification of historical institutional buy/sell clusters.',
+        rebound_rule: 'Requires multi-touch historical validation of the demand zone.',
+        upside_rule: 'Mathematical objective must be > 30% above the demand floor.',
+        fundamental_check: 'Ensures net-margin stability during retest phase.'
       }
     }
   ];

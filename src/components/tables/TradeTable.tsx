@@ -304,7 +304,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
           {visibleColumns.cmp && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('price')}><div className="flex items-center justify-end">CMP <SortIcon column="price" /></div></th>}
           {visibleColumns.dfh && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div></th>}
           {visibleColumns.objective && (
-            <th className="px-4 py-3 text-right text-blue-600">
+            <th className="px-4 py-3 text-right text-indigo-600">
               <div className="flex items-center justify-end">
                 Model Obj.
                 <Link to="/education" className="ml-1 opacity-20 hover:opacity-100 transition-opacity">
