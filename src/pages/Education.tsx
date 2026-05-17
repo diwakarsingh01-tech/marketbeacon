@@ -9,7 +9,8 @@ import {
   Layers,
   BarChart3,
   Calendar,
-  AlertTriangle
+  AlertTriangle,
+  Zap
 } from 'lucide-react';
 
 const StrategyEducation: React.FC = () => {
