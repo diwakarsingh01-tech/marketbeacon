@@ -3,7 +3,7 @@ import {
   calculateSixtySevenFunda,
   calculateABCDLevels,
   Quote
-} from '../strategies';
+} from '../strategies.js';
 
 /**
  * MarketBeacon GTM Test Suite (Senior Developer Edition)
