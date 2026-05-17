@@ -215,6 +215,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/google', async (req, res) => {
   try {
     const { token } = req.body;
+    console.log(`[AUTH-GOOGLE] Verifying token (len: ${token?.length})...`);
     
     // Standard JWT ID Token Verification
     const ticket = await googleClient.verifyIdToken({
@@ -223,9 +224,13 @@ app.post('/api/auth/google', async (req, res) => {
     });
     
     const payload = ticket.getPayload();
-    if (!payload) throw new Error('Invalid token payload');
+    if (!payload) {
+      console.error('[AUTH-GOOGLE] Verification failed: Empty payload');
+      throw new Error('Invalid token payload');
+    }
 
     const { email, name, sub: googleId } = payload;
+    console.log(`[AUTH-GOOGLE] Payload verified for: ${email}`);
     if (!email) throw new Error('Email not provided in Google token');
 
     const db = getDB();
