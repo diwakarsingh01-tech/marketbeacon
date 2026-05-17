@@ -17,7 +17,7 @@ dotenv.config();
 
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'marketbeacon-super-secret-key-2026';
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '1036063683163-5v5m7v7vVv6Evvpth207mo4DO2Px4eZf.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '500460562927-5b1mt1r0vcke4u3mm5hhj1a4cmilsgao.apps.googleusercontent.com';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 app.use(cors());
