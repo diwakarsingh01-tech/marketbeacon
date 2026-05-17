@@ -238,17 +238,16 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                   <div className="w-44 h-44 bg-white p-3 rounded-2xl shadow-inner flex items-center justify-center border border-slate-200 relative group">
                      <img src="/qr-code.png" className="w-full h-full object-contain" alt="Payment QR" />
                      <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
-                        <span className="text-[10px] font-black text-slate-900 uppercase text-center px-4">Admin Verification Required</span>
+                        <span className="text-[10px] font-black text-slate-900 uppercase text-center px-4">Scan QR to Pay</span>
                      </div>
                   </div>
                   <div className="space-y-4 flex-1">
                      <div className="space-y-1">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Recipient UPI ID</span>
-                        <p className="text-sm font-black text-slate-900 bg-white px-3 py-1.5 rounded-lg border border-slate-100 select-all">mbeacon.pay@okaxis</p>
-                     </div>
-                     <div className="space-y-1">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Amount Payable ({billingCycle})</span>
-                        <p className="text-3xl font-black text-blue-600">{currentPrice}</p>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Fixed Plan Amount ({billingCycle})</span>
+                        <div className="bg-white px-5 py-3 rounded-2xl border-2 border-blue-100 w-fit">
+                           <p className="text-4xl font-black text-blue-600 tracking-tighter">{currentPrice}</p>
+                        </div>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase mt-2 tracking-widest italic">Non-Negotiable Institutional Rate</p>
                      </div>
                   </div>
                </div>
