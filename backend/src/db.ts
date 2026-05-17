@@ -83,6 +83,17 @@ export async function initDB() {
   `);
 
   await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS analyst_reviews (
+      symbol TEXT PRIMARY KEY,
+      reason_bucket TEXT DEFAULT 'unknown',
+      reason_text TEXT,
+      reason_still_active BOOLEAN DEFAULT 1,
+      future_growth_prospect BOOLEAN DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await tursoClient.execute(`
     CREATE TABLE IF NOT EXISTS trades (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,

@@ -52,6 +52,7 @@ export function calculateABCDLevels(anchorPrice: number, marketCap: number, bask
 
 export interface Quote {
   date: Date | string;
+  open: number;
   close: number;
   adjClose?: number;
   adjclose?: number;
@@ -134,6 +135,106 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
 /**
  * Calculates Exponential Moving Average (EMA)
  */
+/**
+ * 20% Green Rally Retest Strategy
+ * Logic: 
+ * 1. Find consecutive green candles where gain >= 20%
+ * 2. Entire rally must be below 200 EMA
+ * 3. Entry triggers when price returns to 'Rally Start Low'
+ * 4. Validity: Entry must happen within 1 year (251 bars) of rally completion.
+ */
+export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
+  if (!quotes || quotes.length < 250) return null;
+
+  const closePrices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const ema200 = calculateEMA(closePrices, 200);
+  
+  // 1. Identify all valid 20% rallies in history
+  const rallies = [];
+  let currentRally: any = null;
+
+  for (let i = 1; i < quotes.length; i++) {
+    const q = quotes[i];
+    const isGreen = q.close > q.open; 
+    const currentEMA = ema200[i];
+
+    if (isGreen) {
+      if (!currentRally) {
+        currentRally = {
+          startIdx: i,
+          startLow: q.low,
+          high: q.high,
+          isBelowEMA: currentEMA ? q.low < currentEMA : false,
+          startDate: q.date
+        };
+      } else {
+        currentRally.high = Math.max(currentRally.high, q.high);
+      }
+    } else {
+      if (currentRally) {
+        const gain = ((currentRally.high - currentRally.startLow) / currentRally.startLow) * 100;
+        if (gain >= 20 && currentRally.isBelowEMA) {
+          rallies.push({ ...currentRally, endIdx: i - 1, gain });
+        }
+      }
+      currentRally = null;
+    }
+  }
+
+  if (rallies.length === 0) return null;
+  
+  // 2. Find the FIRST retest event for each rally and pick the most recent valid one
+  for (let r = rallies.length - 1; r >= 0; r--) {
+    const rally = rallies[r];
+    const base = rally.startLow;
+    
+    // Search history AFTER the rally completion for a retest
+    for (let i = rally.endIdx + 1; i < quotes.length; i++) {
+      const q = quotes[i];
+      const low = q.low;
+      const high = q.high;
+      
+      const isRetest = low <= base * 1.015 && high >= base * 0.985;
+      
+      if (isRetest) {
+        const retestDate = q.date;
+        const currentPrice = closePrices[quotes.length - 1];
+
+        const barsRallyToRetest = i - rally.endIdx;
+        if (barsRallyToRetest > 251) continue; 
+
+        const isCurrentlyTradable = currentPrice <= base * 1.15 && currentPrice >= base * 0.80;
+
+        const formattedRetestDate = typeof retestDate === 'string' 
+          ? retestDate.split('T')[0] 
+          : (retestDate as Date).toISOString().split('T')[0];
+
+        return {
+          isBuyZone: isCurrentlyTradable,
+          entryPrice: base,
+          target: rally.high,
+          rallyGain: rally.gain,
+          triggerDate: formattedRetestDate,
+          verdict: isCurrentlyTradable ? 'QUALIFIED' : 'WATCHLIST',
+          rallyStartDate: typeof rally.startDate === 'string' ? rally.startDate.split('T')[0] : (rally.startDate as Date).toISOString().split('T')[0]
+        };
+      }
+    }
+  }
+
+  // 3. If no retest has happened yet, show in Watchlist (Observation)
+  const latestRally = rallies[rallies.length - 1];
+  return {
+    isBuyZone: false,
+    entryPrice: latestRally.startLow,
+    target: latestRally.high,
+    rallyGain: latestRally.gain,
+    triggerDate: '-',
+    verdict: 'WATCHLIST',
+    rallyStartDate: latestRally.startDate
+  };
+}
+
 export function calculateEMA(prices: number[], length: number): number[] {
   const ema: number[] = [];
   const k = 2 / (length + 1);
@@ -675,6 +776,134 @@ export function calculateSRStrategy(quotes: Quote[]) {
 }
 
 
+
+/**
+ * Calculates Simple Moving Average (SMA)
+ */
+export function calculateSMA(prices: number[], length: number): number[] {
+  const sma: number[] = [];
+  for (let i = 0; i < prices.length; i++) {
+    if (i < length - 1) {
+      sma[i] = 0;
+      continue;
+    }
+    const window = prices.slice(i - length + 1, i + 1);
+    sma[i] = window.reduce((a, b) => a + b, 0) / length;
+  }
+  return sma;
+}
+
+/**
+ * SMA Stacking Strategy (20/50/200)
+ * Logic: We look for stocks where Price is near or below SMA 200
+ * AND MAs are in a Bearish Stacking (20 < 50 < 200) indicating deep value/oversold.
+ */
+export function calculateSMAStacking(quotes: Quote[]) {
+  if (!quotes || quotes.length < 200) return null;
+
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const sma20Arr = calculateSMA(prices, 20);
+  const sma50Arr = calculateSMA(prices, 50);
+  const sma200Arr = calculateSMA(prices, 200);
+
+  const latestIdx = quotes.length - 1;
+  const sma20 = sma20Arr[latestIdx];
+  const sma50 = sma50Arr[latestIdx];
+  const sma200 = sma200Arr[latestIdx];
+  const currentPrice = prices[latestIdx];
+
+  // Buy Zone: Price is at or below SMA 200 AND Bearish Stacked (Value Entry)
+  const isBuyZone = currentPrice <= sma200 && sma20 < sma50 && sma50 < sma200;
+
+  let triggerDate: string | undefined = undefined;
+  if (isBuyZone) {
+    const d = quotes[latestIdx].date;
+    triggerDate = typeof d === 'string' ? d.split('T')[0] : (d as Date).toISOString().split('T')[0];
+  }
+
+  return {
+    sma20, sma50, sma200,
+    isBuyZone,
+    triggerDate,
+    entryPrice: sma200, // Entering at SMA 200
+    currentPrice,
+    target: sma200 * 1.15 // Target 15% recovery
+  };
+}
+
+/**
+ * 67 Ka Funda Strategy (RE-ENGINEERED)
+ * Rule 1: Drawdown from ATH >= 67%
+ * Rule 2: Upside to ATH >= 100%
+ * Rule 3: Improving Quarterly Numbers (Sales or Profit)
+ */
+export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any, config: any = {}, manualATH?: number) {
+  if (!quotes || quotes.length < 20) return null;
+
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const currentPrice = prices[prices.length - 1];
+  
+  // High Accuracy ATH: Search all history + Yahoo Proxy
+  const localHigh = Math.max(...quotes.map(q => q.high));
+  const ath = Math.max(localHigh, manualATH || 0);
+  
+  const drawdown = ath > 0 ? ((ath - currentPrice) / ath) * 100 : 0;
+  const upside = currentPrice > 0 ? ((ath - currentPrice) / currentPrice) * 100 : 0;
+
+  const minDrawdown = config.min_drawdown_pct || 66; // Changed from 67 to 66 for 1% tolerance
+  const minUpside = config.min_upside_pct || 100;
+
+  // Quarterly Improvement check (Prioritize Quarterly data)
+  // Support fallback for Yahoo Finance quarterly data
+  const qProfits = screenerData?.quarterlyNetProfits || screenerData?.quarterlyNetIncome || [];
+  const qSales = screenerData?.quarterlySales || [];
+  const aProfits = screenerData?.historicalNetProfits || [];
+  const aSales = screenerData?.historicalSales || [];
+  
+  const isImproving = (series: number[]) => {
+    if (!series || series.length < 2) return false;
+    const recent = series.slice(-3); // Check last 3 periods
+    if (recent.length === 3) return recent[2] > recent[1] || recent[1] > recent[0];
+    return recent[1] > recent[0];
+  };
+
+  const profitImproving = isImproving(qProfits) || isImproving(aProfits);
+  const salesImproving = isImproving(qSales) || isImproving(aSales);
+
+  const checks = {
+    drawdown_rule: drawdown >= minDrawdown,
+    upside_rule: upside >= minUpside,
+    profit_improving: profitImproving,
+    sales_improving: salesImproving,
+    quarterly_rule: profitImproving || salesImproving
+  };
+
+  // Verdict Logic: 
+  // WATCHLIST = Hit the drawdown/upside targets.
+  // QUALIFIED = Hit targets + Financials improving.
+  let verdict = "REJECT";
+  let score = 0;
+
+  if (checks.drawdown_rule && checks.upside_rule) {
+    verdict = "WATCHLIST";
+    score = 50;
+    if (checks.quarterly_rule) {
+      verdict = "QUALIFIED";
+      score = 80;
+    }
+  }
+
+  return {
+    drawdown,
+    upside,
+    ath,
+    checks,
+    score,
+    verdict,
+    currentPrice,
+    isBuyZone: verdict === "QUALIFIED" // This triggers 'Open' tab
+  };
+  }
 
   /**
   * Cup & Handle + ABCD Strategy

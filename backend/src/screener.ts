@@ -6,20 +6,45 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { fileURLToPath } from 'url';
 import { NIFTY_500 } from './universe.js';
-import { calculateEnvelope, processShortEnvelope, calculateEMAStacking, calculateBollingerBand, calculate52WeekStrategy, calculateCupHandle, calculateRHS, calculateSRStrategy } from './strategies.js';
+import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest } from './strategies.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DYNAMIC_BASKET_PATH = path.join(__dirname, '../dynamic_basket.json');
 const MARKET_SNAPSHOT_PATH = path.join(__dirname, '../market_snapshot.json');
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
+// --- In-Memory Cache for Market Snapshot ---
+let snapshotCache: Record<string, any> = {};
+let isSnapshotLoading = false;
+
+/**
+ * Initializes the snapshot cache from disk
+ */
+export function initSnapshotCache() {
+  try {
+    if (fs.existsSync(MARKET_SNAPSHOT_PATH)) {
+      console.log('📦 Loading Market Snapshot into memory cache...');
+      const data = fs.readFileSync(MARKET_SNAPSHOT_PATH, 'utf-8');
+      snapshotCache = JSON.parse(data);
+      console.log(`✅ Snapshot cache loaded (${(data.length / (1024 * 1024)).toFixed(1)} MB)`);
+    } else {
+      console.log('⚠️ No market_snapshot.json found on disk.');
+    }
+  } catch (e: any) {
+    console.error('❌ Failed to load snapshot cache:', e.message);
+    snapshotCache = {};
+  }
+}
+
 // --- Screener.in Data Connector ---
 export async function fetchScreenerData(symbol: string) {
   try {
     const cleanSymbol = symbol.split('.')[0]; 
     const url = `https://www.screener.in/company/${cleanSymbol}/consolidated/`;
-    console.log(`[SCRAPER] Fetching: ${url}`);
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+    
+    // Throttle: Sequential processing with random delay to avoid 429
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+    
     const { data } = await axios.get(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
       timeout: 10000
@@ -37,17 +62,28 @@ export async function fetchScreenerData(symbol: string) {
       const el = $(`#top-ratios li`).filter(function() {
         const label = $(this).find('.name').text().toLowerCase();
         return label.includes(name.toLowerCase());
-      }).find('.number');
+      }).find('.value');
       
-      const val = el.text().trim().replace(/,/g, '');
-      return val ? parseFloat(val) : 0;
+      const rawText = el.text().trim();
+      const val = rawText.replace(/,/g, '').replace(/[₹%]/g, '');
+      const parsed = parseFloat(val);
+      return isNaN(parsed) ? 0 : parsed;
     };
 
     const getAnnualTableData = (tableName: string, rowName: string) => {
-      const table = $(`section#${tableName} table`);
-      const row = table.find(`tr:contains("${rowName}")`);
-      const values = row.find('td').map((i, el) => $(el).text().trim().replace(/,/g, '')).get();
-      return values.slice(1).map(v => parseFloat(v)); // Skip label, return numbers
+      const section = $(`section#${tableName}`);
+      const row = section.find(`table.data-table tr`).filter(function() {
+        const firstCol = $(this).find('td:first-child').text().trim().toLowerCase();
+        return firstCol === rowName.toLowerCase();
+      });
+      
+      if (row.length === 0) {
+        return [];
+      }
+
+      const values = row.find('td').map((i, el) => $(el).text().trim().replace(/,/g, '').replace(/[₹%]/g, '')).get();
+      const parsed = values.slice(1).map(v => parseFloat(v)).filter(v => !isNaN(v));
+      return parsed;
     };
 
     const currentPrice = getRatio('Current Price');
@@ -55,11 +91,33 @@ export async function fetchScreenerData(symbol: string) {
     const marketCap = getRatio('Market Cap') * 10000000;
     const peRatio = getRatio('Stock P/E') || getRatio('P/E');
 
+    // Shareholding Extraction from Table
+    const getShareholding = (label: string) => {
+      const row = $(`section#shareholding tr`).filter(function() {
+        return $(this).text().includes(label);
+      }).first();
+      const val = row.find('td').last().text().trim().replace(/%/g, '');
+      return val ? parseFloat(val) : 0;
+    };
+
+    const shareholding = {
+      promoter: getRatio('Promoter holding') || getShareholding('Promoters'),
+      fii: getRatio('FII holding') || getShareholding('FIIs'),
+      dii: getRatio('DII holding') || getShareholding('DIIs'),
+      public: getRatio('Public holding') || getShareholding('Public'),
+      pledged: getRatio('Pledged percentage')
+    };
+
     // Fetch Table Data
     const netProfits = getAnnualTableData('profit-loss', 'Net Profit');
     const sales = getAnnualTableData('profit-loss', 'Sales');
     const opm = getAnnualTableData('profit-loss', 'OPM %');
     const eps = getAnnualTableData('profit-loss', 'EPS in Rs');
+    
+    // Fetch Quarterly Data for more responsive strategy checks
+    const quarterlyNetProfits = getAnnualTableData('quarters', 'Net Profit');
+    const quarterlySales = getAnnualTableData('quarters', 'Sales');
+
     const interest = getAnnualTableData('profit-loss', 'Interest');
     const pbt = getAnnualTableData('profit-loss', 'Profit before tax');
     
@@ -116,6 +174,8 @@ export async function fetchScreenerData(symbol: string) {
       profitGrowth3Y: 0,
       historicalNetProfits: netProfits,
       historicalSales: sales,
+      quarterlyNetProfits,
+      quarterlySales,
       historicalOPM: opm,
       historicalEPS: eps,
       ebitda: (latestPBT + latestInterest) || 0,
@@ -124,7 +184,8 @@ export async function fetchScreenerData(symbol: string) {
       yearsListed: sales.length,
       cashFlowFromOps: latestCFO,
       capex: latestCapex,
-      dividendPayout: 0
+      dividendPayout: 0,
+      shareholding
     };
   } catch (e: any) {
     console.error(`[SCRAPER ERROR] ${symbol}: ${e.message}`);
@@ -183,10 +244,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
   console.log(`📡 [SNAPSHOT] Downloading history for ${symbols.length} symbols...`);
   const snapshot: Record<string, any> = {};
   
-  // Bluechip list to apply Envelope Strategy
-  const bluechipList = ['WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 'WIPRO', 'INFY', 'NAM-INDIA', 'HCLTECH', 'ICICIGI', 'PIDILITIND', 'HDFCAMC', 'ASIANPAINT', 'BERGEPAINT', 'ULTRACEMCO', 'BAJFINANCE', 'NESTLEIND', 'ICICIBANK', 'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 'NIFTYBEES', 'BANKBEES'];
-
-  const batchSize = 10;
+  const batchSize = 3; // Reduced from 10 to avoid rate-limiting
   for (let i = 0; i < symbols.length; i += batchSize) {
     const batch = symbols.slice(i, i + batchSize);
     console.log(`Snapshotting batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(symbols.length / batchSize)}...`);
@@ -195,13 +253,13 @@ export async function updateMarketSnapshot(symbols: string[]) {
       try {
         const symbol = baseSymbol.includes('.') ? baseSymbol : `${baseSymbol}.NS`;
         const period1 = new Date();
-        period1.setFullYear(period1.getFullYear() - 3);
+        period1.setFullYear(period1.getFullYear() - 5);
 
         // High Accuracy: Fetching adjusted OHLCV
         const [history, quote, summary, screenerData]: [any, any, any, any] = await Promise.all([
           yahooFinance.chart(symbol, { period1: period1.toISOString().split('T')[0], interval: '1d' as any }),
           yahooFinance.quote(symbol),
-          yahooFinance.quoteSummary(symbol, { modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail'] }).catch(() => null),
+          yahooFinance.quoteSummary(symbol, { modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail', 'incomeStatementHistoryQuarterly'] }).catch(() => null),
           fetchScreenerData(baseSymbol)
         ]);
 
@@ -216,18 +274,22 @@ export async function updateMarketSnapshot(symbols: string[]) {
           '52W_HIGH_LOW': calculate52WeekStrategy(quotes),
           'CUP_HANDLE_ABCD': calculateCupHandle(quotes),
           'RHS_ABCD': calculateRHS(quotes),
-          'SR_STRATEGY': calculateSRStrategy(quotes)
+          'SR_STRATEGY': calculateSRStrategy(quotes),
+          'SIXTY_SEVEN_FUNDA': calculateSixtySevenFunda(quotes, screenerData, {}, quote.fiftyTwoWeekHigh),
+          'TWENTY_RALLY_RETEST': calculateTwentyRallyRetest(quotes)
         };
         
         snapshot[baseSymbol] = {
-          quotes: quotes.slice(-500), // Keep 2 years for accurate trigger dates & SMA
+          quotes: quotes.slice(-1300), // Keep 5 years for accurate trigger dates & ATH
           quote: {
             marketCap,
             regularMarketPrice: quote.regularMarketPrice,
             fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh,
             pe: summary?.summaryDetail?.trailingPE || summary?.defaultKeyStatistics?.trailingPE || 0,
             roe: (summary?.defaultKeyStatistics?.returnOnEquity || 0) * 100,
-            debtToEquity: summary?.financialData?.debtToEquity || 0
+            debtToEquity: summary?.financialData?.debtToEquity || 0,
+            quarterlyNetIncome: summary?.incomeStatementHistoryQuarterly?.incomeStatementHistory?.map((i: any) => i.netIncome).reverse() || [],
+            shareholding: screenerData?.shareholding || null
           },
           screener: screenerData,
           strategies, // Store all pre-calculated results
@@ -237,11 +299,30 @@ export async function updateMarketSnapshot(symbols: string[]) {
         console.error(`Snapshot failed for ${baseSymbol}`);
       }
     }));
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Increased delay between batches to respect rate limits
+    await new Promise(resolve => setTimeout(resolve, 3000));
+  }
+
+  // --- Finalize Snapshot with Indices Fallback ---
+  try {
+    const indexSymbols = ['^NSEI', '^NSEBANK', '^BSESN'];
+    const indexResults = await Promise.all(indexSymbols.map(s => yahooFinance.quote(s).catch(() => null)));
+    snapshot['METADATA'] = {
+      lastUpdated: new Date().toISOString(),
+      indices: indexResults.map((q, i) => ({
+        name: indexSymbols[i] === '^NSEI' ? 'NIFTY 50' : (indexSymbols[i] === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'),
+        price: q?.regularMarketPrice || 0,
+        change: q?.regularMarketChangePercent || 0,
+        ath: q?.fiftyTwoWeekHigh || 0
+      }))
+    };
+  } catch (e) {
+    console.error('[SNAPSHOT] Failed to save indices metadata');
   }
 
   fs.writeFileSync(MARKET_SNAPSHOT_PATH, JSON.stringify(snapshot, null, 2));
-  console.log(`💎 [SNAPSHOT] Success! Market data cached in market_snapshot.json`);
+  snapshotCache = snapshot; // Update in-memory cache
+  console.log(`💎 [SNAPSHOT] Success! Market data cached and updated in memory.`);
 }
 
 export function initScreenerCron() {
@@ -267,10 +348,7 @@ export function initScreenerCron() {
 }
 
 export function getMarketSnapshot(): Record<string, any> {
-  if (fs.existsSync(MARKET_SNAPSHOT_PATH)) {
-    return JSON.parse(fs.readFileSync(MARKET_SNAPSHOT_PATH, 'utf-8'));
-  }
-  return {};
+  return snapshotCache;
 }
 
 export function getDynamicBasket(): string[] {

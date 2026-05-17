@@ -7,25 +7,29 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot, fetchScreenerData } from './screener.js';
+import { OAuth2Client } from 'google-auth-library';
+import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot, fetchScreenerData, initSnapshotCache } from './screener.js';
 import { initDB, getDB } from './db.js';
-import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle, calculateSRStrategy } from './strategies.js';
+import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest } from './strategies.js';
 
 const yahooFinance = new YahooFinance();
 dotenv.config();
 
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'marketbeacon-super-secret-key-2026';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '1036063683163-5v5m7v7vVv6Evvpth207mo4DO2Px4eZf.apps.googleusercontent.com';
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '100mb' })); // Increased limit for large payloads
 
 // --- Manual Snapshot Trigger ---
 app.post('/api/admin/update-snapshot', async (req, res) => {
   try {
     const allSymbols = [...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']];
-    await updateMarketSnapshot(allSymbols);
-    res.json({ success: true, message: 'Market Snapshot Updated with Batch 9 Strategy Logic' });
+    // Run in background to avoid timeout
+    updateMarketSnapshot(allSymbols).catch(e => console.error('Background Snapshot Error:', e));
+    res.json({ success: true, message: 'Market Snapshot Update started in background.' });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -75,7 +79,8 @@ const authenticateToken = (req: any, res: any, next: any) => {
 
 const WHITELISTED_EMAILS = [
   'diwakar@marketbeacon.com',
-  'test@example.com' // Add user's known emails here
+  'test@example.com',
+  'diwakar.singh01@gmail.com'
 ];
 
 // --- AUTH ROUTES ---
@@ -134,8 +139,77 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    const { token } = req.body;
+    // Verify the access token by calling Google's userinfo endpoint
+    // This is safer for client-side implicit flow tokens
+    const googleResponse = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const { email, name, sub: googleId } = googleResponse.data;
+
+    // Beta Testing Restriction (Same as register)
+    const isWhitelisted = WHITELISTED_EMAILS.some(e => e.toLowerCase() === email.toLowerCase()) || email.endsWith('@marketbeacon.com');
+    if (!isWhitelisted) {
+      return res.status(403).json({ error: 'MarketBeacon Terminal is currently in Private Beta.' });
+    }
+
+    const db = getDB();
+    let user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+
+    if (!user) {
+      const userReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      // For Google users, we set a dummy password or leave it null if DB allows
+      const dummyPassword = await bcrypt.hash(Math.random().toString(36), 10);
+      const result = await db.run(
+        'INSERT INTO users (name, email, password, referral_code) VALUES (?, ?, ?, ?)',
+        [name, email, dummyPassword, userReferralCode]
+      );
+      user = { id: result.lastID, email, name, referral_code: userReferralCode };
+    }
+
+    const jwtToken = jwt.sign({ id: user.id, email, name }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ 
+      token: jwtToken, 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name, 
+        referral_code: user.referral_code,
+        subscription_status: user.subscription_status
+      } 
+    });
+  } catch (e: any) { 
+    console.error('Google Auth Error:', e.response?.data || e.message);
+    res.status(500).json({ error: 'Google authentication failed' }); 
+  }
+});
+
 app.get('/api/auth/me', authenticateToken, (req: any, res) => {
   res.json({ user: req.user });
+});
+
+// --- ANALYST REVIEW ROUTES ---
+app.get('/api/admin/reviews', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const reviews = await db.all('SELECT * FROM analyst_reviews');
+    res.json(reviews);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/reviews', authenticateToken, async (req: any, res) => {
+  try {
+    const { symbol, reason_bucket, reason_text, reason_still_active, future_growth_prospect } = req.body;
+    const db = getDB();
+    await db.run(
+      'INSERT INTO analyst_reviews (symbol, reason_bucket, reason_text, reason_still_active, future_growth_prospect, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(symbol) DO UPDATE SET reason_bucket=excluded.reason_bucket, reason_text=excluded.reason_text, reason_still_active=excluded.reason_still_active, future_growth_prospect=excluded.future_growth_prospect, updated_at=CURRENT_TIMESTAMP',
+      [symbol.toUpperCase(), reason_bucket, reason_text, reason_still_active ? 1 : 0, future_growth_prospect ? 1 : 0]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 // --- WATCHLIST ROUTES ---
@@ -208,12 +282,22 @@ app.get('/api/market-indices', async (req, res) => {
   try {
     const symbols = ['^NSEI', '^NSEBANK', '^BSESN'];
     const status = getMarketStatus();
+    const snapshot = getMarketSnapshot();
+    
     const results = await Promise.all(
       symbols.map(async (symbol) => {
         try {
           const quote: any = await yahooFinance.quote(symbol);
           
-          // CRITICAL ACCURACY FIX: Manual calculation to avoid NaN%
+          if (!quote || !quote.regularMarketPrice || quote.regularMarketPrice === 0) {
+            // --- Fallback to Snapshot ---
+            const meta = snapshot['METADATA']?.indices?.find((i: any) => 
+              i.name === (symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'))
+            );
+            if (meta) return meta;
+            return { name: symbol, price: 0, change: 0 };
+          }
+
           const current = quote.regularMarketPrice || 0;
           const prevClose = quote.regularMarketPreviousClose || current;
           let change = 0;
@@ -228,7 +312,13 @@ app.get('/api/market-indices', async (req, res) => {
             ath: quote.fiftyTwoWeekHigh || current,
             change: change
           };
-        } catch (e) { return { name: symbol, price: 0, change: 0 }; }
+        } catch (e: any) { 
+          const meta = snapshot['METADATA']?.indices?.find((i: any) => 
+            i.name === (symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'))
+          );
+          if (meta) return meta;
+          return { name: symbol, price: 0, change: 0 }; 
+        }
       })
     );
     res.json({ status, results });
@@ -237,7 +327,7 @@ app.get('/api/market-indices', async (req, res) => {
 
 const BASKETS: Record<string, string[]> = {
   'BLUECHIP': ['WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 'WIPRO', 'INFY', 'NAM-INDIA', 'HCLTECH', 'ICICIGI', 'PIDILITIND', 'HDFCAMC', 'ASIANPAINT', 'BERGEPAINT', 'ULTRACEMCO', 'BAJFINANCE', 'NESTLEIND', 'ICICIBANK', 'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 'NIFTYBEES', 'BANKBEES'],
-  'HIGH_BETA': ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'],
+  'HIGH_BETA': ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KANSAINER', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'],
   'PROFIT': [] // Populated dynamically
 };
 
@@ -308,7 +398,7 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
     ]
   };
 
-  // --- SEGMENT 2: PROFITABILITY QUALITY (Weight: 20) ---
+  // --- SEGMENT 2: PROFITABILITY QUALITY (Weight: 15) ---
   const profits = screener?.historicalNetProfits || [];
   const profitableYears5Y = profits.slice(-5).filter((p: number) => p > 0).length;
   const opmHistory = screener?.historicalOPM || [];
@@ -317,14 +407,14 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
   const isMarginStable = latestOPM >= avgOPM * 0.95;
 
   let profitQualityScore = 0;
-  if (annualProfit >= 200) profitQualityScore += 7;
-  if (profitableYears5Y >= 4) profitQualityScore += 7;
-  if (isMarginStable) profitQualityScore += 6;
+  if (annualProfit >= 200) profitQualityScore += 5;
+  if (profitableYears5Y >= 4) profitQualityScore += 5;
+  if (isMarginStable) profitQualityScore += 5;
   score += profitQualityScore;
 
   const profitabilityQuality = {
     score: profitQualityScore,
-    max: 20,
+    max: 15,
     checks: [
       { label: 'Net Profit > 200 Cr', pass: annualProfit >= 200, value: `₹ ${annualProfit.toFixed(0)} Cr` },
       { label: '5Y Profit Consistency', pass: profitableYears5Y >= 4, value: `${profitableYears5Y}/5 Years` },
@@ -333,7 +423,7 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
     ]
   };
 
-  // --- SEGMENT 3: BALANCE SHEET SAFETY (Weight: 25) ---
+  // --- SEGMENT 3: BALANCE SHEET SAFETY (Weight: 20) ---
   const interestCoverage = screener?.interestCoverage || 100;
   const currentRatio = screener?.currentRatio || 2;
   const totalDebt = screener?.totalDebt || 0;
@@ -344,7 +434,7 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
   const bsChecks = [];
 
   if (isBankingOrNBFC) {
-    balanceSheetScore = 25; 
+    balanceSheetScore = 20; 
     if (roe < 12) balanceSheetScore -= 10;
     bsChecks.push(
       { label: 'Sector Template: Financials', pass: true, value: 'Applied' },
@@ -356,8 +446,8 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
     const passCurrRatio = currentRatio > 1.25;
     const passCFODebt = cfoToDebt > 0.20;
 
-    if (passNDtoE) balanceSheetScore += 12;
-    if (passIntCov) balanceSheetScore += 5;
+    if (passNDtoE) balanceSheetScore += 8;
+    if (passIntCov) balanceSheetScore += 4;
     if (passCurrRatio) balanceSheetScore += 4;
     if (passCFODebt) balanceSheetScore += 4;
 
@@ -372,11 +462,11 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
 
   const balanceSheetSafety = {
     score: balanceSheetScore,
-    max: 25,
+    max: 20,
     checks: bsChecks
   };
 
-  // --- SEGMENT 4: GROWTH QUALITY (Weight: 20) ---
+  // --- SEGMENT 4: GROWTH QUALITY (Weight: 15) ---
   const salesHistory = screener?.historicalSales || [];
   const epsHistory = screener?.historicalEPS || [];
 
@@ -399,14 +489,14 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
   }
 
   let growthScore = 0;
-  if (salesCAGR3 > 12) growthScore += 7;
-  if (epsCAGR3 > 15) growthScore += 7;
-  if (growthConsistencyPass) growthScore += 6;
+  if (salesCAGR3 > 12) growthScore += 5;
+  if (epsCAGR3 > 15) growthScore += 5;
+  if (growthConsistencyPass) growthScore += 5;
   score += growthScore;
 
   const growthQuality = {
     score: growthScore,
-    max: 20,
+    max: 15,
     checks: [
       { label: 'Sales CAGR (3Y) > 12%', pass: salesCAGR3 > 12, value: `${salesCAGR3.toFixed(1)}%` },
       { label: 'EPS CAGR (3Y) > 15%', pass: epsCAGR3 > 15, value: `${epsCAGR3.toFixed(1)}%` },
@@ -498,18 +588,18 @@ async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boo
     ]
   };
 
-  // --- SEGMENT 9: HISTORICAL CONSISTENCY (Weight: 10) ---
+  // --- SEGMENT 9: HISTORICAL CONSISTENCY (Weight: 5) ---
   const salesConsistent = salesHistory.slice(-5).every((s: number) => s > 0);
   const profitConsistent = profits.slice(-5).every((p: number) => p > 0);
   
   let consistencyScore = 0;
-  if (salesConsistent) consistencyScore += 5;
-  if (profitConsistent) consistencyScore += 5;
+  if (salesConsistent) consistencyScore += 2;
+  if (profitConsistent) consistencyScore += 3;
   score += consistencyScore;
 
   const historicalConsistency = {
     score: consistencyScore,
-    max: 10,
+    max: 5,
     checks: [
       { label: '5Y Revenue Positive', pass: salesConsistent, value: 'YES' },
       { label: '5Y Profit Positive', pass: profitConsistent, value: 'YES' },
@@ -561,6 +651,10 @@ app.get('/api/backtest/envelope', async (req, res) => {
     let symbols = BASKETS[basketId] || BASKETS['BLUECHIP'];
 
     const snapshot = getMarketSnapshot();
+    const db = getDB();
+    const analystReviews = await db.all('SELECT * FROM analyst_reviews');
+    const reviewsMap = new Map(analystReviews.map((r: any) => [r.symbol, r]));
+
     const openTrades: any[] = [];
     const holdTrades: any[] = [];
     const rejectedStocks: any[] = [];
@@ -570,6 +664,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
     const isSnapshotMode = Object.keys(snapshot).length > 0;
 
     const processBatch = async (batch: string[]) => {
+      console.log(`Processing batch of ${batch.length} symbols: ${batch.join(', ')}`);
       await Promise.all(batch.map(async (baseSymbol) => {
         try {
           const symbol = `${baseSymbol}.NS`;
@@ -580,21 +675,29 @@ app.get('/api/backtest/envelope', async (req, res) => {
             history = { quotes: data.quotes };
             quotes = data.quotes;
             summary = {
-              summaryDetail: { marketCap: data.quote.marketCap, trailingPE: data.quote.pe },
+              summaryDetail: { marketCap: data.quote.marketCap, trailingPE: data.quote.pe, fiftyTwoWeekHigh: data.quote.fiftyTwoWeekHigh },
               defaultKeyStatistics: { returnOnEquity: (data.quote.roe || 15) / 100 },
               financialData: { debtToEquity: data.quote.debtToEquity || 0 },
               screener: data.screener
             };
             
             // --- High-Performance: Use Pre-Calculated Results ---
-            if (data.strategies && data.strategies[strategyId]) {
+            // --- High-Performance: Use Pre-Calculated Results ---
+            if (data.strategies && data.strategies[strategyId] && strategyId !== 'SIXTY_SEVEN_FUNDA' && strategyId !== 'TWENTY_RALLY_RETEST') {
               strategyData = data.strategies[strategyId];
+            } else if (strategyId === 'SIXTY_SEVEN_FUNDA') {
+              const athProxy = isSnapshotMode ? (snapshot[baseSymbol]?.quote?.fiftyTwoWeekHigh || 0) : (summary?.summaryDetail?.fiftyTwoWeekHigh || 0);
+              const screener = isSnapshotMode ? snapshot[baseSymbol]?.screener : summary?.screener;
+              const quarterlyNetIncome = isSnapshotMode ? (snapshot[baseSymbol]?.quote?.quarterlyNetIncome || []) : [];
+              strategyData = calculateSixtySevenFunda(quotes, { ...screener, quarterlyNetIncome }, {}, athProxy);
+            } else if (strategyId === 'TWENTY_RALLY_RETEST') {
+              strategyData = calculateTwentyRallyRetest(quotes, baseSymbol);
             } else if (strategyId === 'ENVELOPE_SHORT') {
               strategyData = processShortEnvelope(quotes, data.quote.marketCap);
             } else if (strategyId === 'BOLLINGER') {
               strategyData = calculateBollingerBand(quotes);
             } else if (strategyId === 'SMA_ABCD') {
-              strategyData = calculateEMAStacking(quotes);
+              strategyData = calculateSMAStacking(quotes);
             } else if (strategyId === '52W_HIGH_LOW') {
               strategyData = calculate52WeekStrategy(quotes);
             } else if (strategyId === 'CUP_HANDLE_ABCD') {
@@ -603,67 +706,25 @@ app.get('/api/backtest/envelope', async (req, res) => {
               strategyData = calculateRHS(quotes);
             } else if (strategyId === 'SR_STRATEGY') {
               strategyData = calculateSRStrategy(quotes);
-            } else {
-              strategyData = calculateEnvelope(quotes);
-            }
-
-            // Accuracy Fix: Recalculate Short Envelope distance even if cached
-            if (strategyId === 'ENVELOPE_SHORT' && strategyData) {
-              strategyData.isBuyZone = !!strategyData.isBuyZone;
-              const lastQ = quotes[quotes.length - 1];
-              const lastPrice = lastQ ? (lastQ.adjclose || lastQ.adjClose || lastQ.close) : 0;
-              strategyData.distanceFromEMA = strategyData.ema > 0 ? ((lastPrice - strategyData.ema) / strategyData.ema * 100) : 0;
-            }
-          } else {
-            [history, summary] = await Promise.all([
-              yahooFinance.chart(symbol, { period1: '2024-01-01', interval: '1d' as any }).catch(() => null),
-              yahooFinance.quoteSummary(symbol, { 
-                modules: ["summaryDetail", "defaultKeyStatistics", "financialData"] 
-              }).catch(() => null)
-            ]);
-            quotes = history?.quotes.filter((q:any) => q.close && q.low && q.high) || [];
-            
-            if (strategyId === 'ENVELOPE_SHORT') {
-              strategyData = processShortEnvelope(quotes, summary?.summaryDetail?.marketCap || 0);
-              if (strategyData) {
-                strategyData.isBuyZone = !!strategyData.isBuyZone;
-                const lastQ = quotes[quotes.length - 1];
-                const lastPrice = lastQ ? (lastQ.adjclose || lastQ.adjClose || lastQ.close) : 0;
-                strategyData.distanceFromEMA = strategyData.ema > 0 ? ((lastPrice - strategyData.ema) / strategyData.ema * 100) : 0;
-              }
-            } else if (strategyId === 'BOLLINGER') {
-              strategyData = calculateBollingerBand(quotes);
-            } else if (strategyId === 'SMA_ABCD') {
-              strategyData = calculateEMAStacking(quotes);
-            } else if (strategyId === '52W_HIGH_LOW') {
-              strategyData = calculate52WeekStrategy(quotes);
-            } else if (strategyId === 'CUP_HANDLE_ABCD') {
-              strategyData = calculateCupHandle(quotes);
-            } else if (strategyId === 'RHS_ABCD') {
-              strategyData = calculateRHS(quotes);
-            } else if (strategyId === 'SR_STRATEGY') {
-              strategyData = calculateSRStrategy(quotes);
+            } else if (strategyId === 'TWENTY_RALLY_RETEST') {
+              strategyData = calculateTwentyRallyRetest(quotes, baseSymbol);
             } else {
               strategyData = calculateEnvelope(quotes);
             }
           }
 
-          if (!history || !summary) return;
-
-          // Ensure strategyData is never null to prevent skipping stocks
-          if (!strategyData) {
-            strategyData = { 
-              isBuyZone: false, 
-              distanceFromLower: 100,
-              triggerDate: '-',
-              anchorA: 0,
-              target: 0
-            };
+          if (!history || !summary) {
+            console.log(`[BACKTEST] Missing data for ${baseSymbol}`);
+            return;
           }
 
           const lastQuote = quotes[quotes.length - 1];
-          if (!lastQuote) return;
+          if (!lastQuote) {
+            console.log(`[BACKTEST] No quotes for ${baseSymbol}`);
+            return;
+          }
 
+          const currentPrice = lastQuote.adjclose || lastQuote.adjClose || lastQuote.close || 0;
           const audit = await validateBatch9(baseSymbol, summary, isSnapshotMode);
           const sector = await getAccurateSector(symbol, summary);
 
@@ -674,6 +735,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
           const isCupHandle = strategyId === 'CUP_HANDLE_ABCD';
           const isRHS = strategyId === 'RHS_ABCD';
           const isSR = strategyId === 'SR_STRATEGY';
+          const isSixtySeven = strategyId === 'SIXTY_SEVEN_FUNDA';
+          const isTwentyRally = strategyId === 'TWENTY_RALLY_RETEST';
 
           let entryPrice = strategyData.lowerBand || strategyData.entryPrice || strategyData.anchorA || 0;
           let target = strategyData.upperBand || strategyData.target || 0;
@@ -689,6 +752,12 @@ app.get('/api/backtest/envelope', async (req, res) => {
           } else if (isCupHandle || isRHS || isSR) {
             entryPrice = strategyData.anchorA || 0;
             target = strategyData.target || 0;
+          } else if (isSixtySeven) {
+            entryPrice = currentPrice;
+            target = strategyData.ath || 0;
+          } else if (isTwentyRally) {
+            entryPrice = strategyData.entryPrice || 0;
+            target = strategyData.target || 0;
           } else if (!isBollinger) {
             // Default Envelope Long logic
             target = Math.max(strategyData.upperBand || 0, (lastQuote.adjclose || lastQuote.adjClose || lastQuote.close || 0) * 1.30);
@@ -700,8 +769,11 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
           const abcd = calculateABCDLevels(entryPrice, audit.metrics.marketCap || 0, basketId);
 
-          const currentPrice = lastQuote.adjclose || lastQuote.adjClose || lastQuote.close || 0;
           const calculatedDist = entryPrice > 0 ? ((currentPrice - entryPrice) / entryPrice * 100) : 100;
+          
+          const review = reviewsMap.get(baseSymbol);
+
+          const ath = isSixtySeven ? strategyData.ath : (isSnapshotMode ? (snapshot[baseSymbol]?.quote?.fiftyTwoWeekHigh || 0) : (summary?.summaryDetail?.fiftyTwoWeekHigh || 0));
 
           const position = {
             symbol: baseSymbol,
@@ -709,27 +781,38 @@ app.get('/api/backtest/envelope', async (req, res) => {
             actualEntryPrice: currentPrice,
             target,
             currentPrice,
+            ath,
             marketCap: audit.metrics.marketCap || 0,
             sector,
             entryTime: strategyData.triggerDate || '-', 
-            isPass: audit.isPass,
-            rejectionReason: audit.reason,
+            isPass: (isSixtySeven || isTwentyRally)
+              ? (strategyData.verdict !== 'REJECT' && (review ? review.reason_still_active === 0 : true))
+              : audit.isPass,
+            rejectionReason: (isSixtySeven || isTwentyRally)
+              ? (review?.reason_still_active === 1 ? 'Reason still active' : (strategyData.verdict === 'REJECT' ? 'Drawdown/Retest criteria not met' : audit.reason))
+              : audit.reason,
             distanceFromLower: isShort ? (strategyData.distanceFromEMA || 0) : (strategyData.distanceFromLower || calculatedDist),
-            isBuyZone: (isCupHandle || isRHS) 
-              ? (isDirectAllowed ? !!strategyData.isBuyZone : false) 
-              : !!strategyData.isBuyZone,
+            isBuyZone: (isSixtySeven || isTwentyRally)
+              ? (strategyData.verdict === 'QUALIFIED' && (review ? review.reason_still_active === 0 : true))
+              : ((isCupHandle || isRHS) ? (isDirectAllowed ? !!strategyData.isBuyZone : false) : !!strategyData.isBuyZone),
             tranche: isShort ? 'B1 (Mid)' : 'A',
             isDirectAllowed,
             targetPct,
-            abcd
+            abcd,
+            review: {
+              reason_bucket: review?.reason_bucket || 'unknown',
+              reason_text: review?.reason_text || '',
+              reason_resolved: review?.reason_still_active === 0,
+              future_growth: review?.future_growth_prospect === 1
+            }
           };
 
           allScannedStocks.push(position);
 
-          if (!audit.isPass) {
+          if (!position.isPass) {
             rejectedStocks.push(position);
           } 
-          else if (strategyData.isBuyZone) {
+          else if (position.isBuyZone) {
             openTrades.push(position);
           } 
           else if (position.distanceFromLower <= 10) {
@@ -742,13 +825,10 @@ app.get('/api/backtest/envelope', async (req, res) => {
       }));
     };
 
-    if (isSnapshotMode) {
-      await processBatch(symbols);
-    } else {
-      const batchSize = 10;
-      for (let i = 0; i < symbols.length; i += batchSize) {
-        await processBatch(symbols.slice(i, i + batchSize));
-      }
+    const batchSize = 10;
+    for (let i = 0; i < symbols.length; i += batchSize) {
+      const batch = symbols.slice(i, i + batchSize);
+      await processBatch(batch);
     }
 
     res.json({
@@ -878,6 +958,9 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     const profile = yahooSummary?.summaryProfile;
     const priceModule = yahooSummary?.price;
 
+    const shareholding = screenerData?.shareholding || yahooSummary?.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0 };
+    const smartMoneyTotal = (shareholding.promoter || 0) + (shareholding.fii || 0) + (shareholding.dii || 0);
+
     const result = {
       symbol: cleanSymbol,
       name: priceModule?.longName || cleanSymbol,
@@ -902,7 +985,11 @@ app.get('/api/stock-fundamentals', async (req, res) => {
         sales: screenerData?.salesGrowth3Y || 0, 
         eps: audit?.growthQuality?.checks?.find((c: any) => c.label.includes('EPS'))?.value || '0%'
       },
-      shareholding: { promoter: 54.2, fii: 16.8, dii: 11.5, public: 17.5, pledged: 0.5 },
+      shareholding: {
+        ...shareholding,
+        smartMoneyTotal,
+        publicAndOthers: (100 - smartMoneyTotal).toFixed(2)
+      },
       forwardPE: stats?.forwardPE || 0,
       industryPe: screenerData ? (screenerData.peRatio * 0.9).toFixed(1) : 25.0
     };
@@ -1032,6 +1119,7 @@ const PORT = process.env.PORT || 3001;
 async function startServer() {
   try {
     await initDB();
+    initSnapshotCache();
     app.listen(PORT, () => console.log(`SuperTracker Backend running on port ${PORT}`));
   } catch (e) { 
     console.error('SERVER STARTUP ERROR:', e);

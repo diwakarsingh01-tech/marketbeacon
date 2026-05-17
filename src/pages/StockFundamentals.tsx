@@ -244,8 +244,8 @@ const StockFundamentalsPage: React.FC = () => {
                   { label: 'ROCE', value: `${data?.roce}%`, trend: 'Capital Efficient' },
                   { label: 'ROE 3Yr Avg', value: `${data?.growth3Yr?.roe || 'N/A'}%`, trend: 'Consistency' },
                   { label: 'Sales Growth 3Y', value: `${data?.growth3Yr?.sales || '0'}%`, trend: 'Expansion' },
-                  { label: 'Net Debt / Eq', value: data?.netDebtToEquity?.toFixed(4), trend: 'Financial Safety' },
-                  { label: 'Forward PE', value: data?.forwardPE?.toFixed(1), trend: 'Expected Valuation' },
+                  { label: 'Net Debt / Eq', value: Number(data?.netDebtToEquity)?.toFixed(4), trend: 'Financial Safety' },
+                  { label: 'Forward PE', value: Number(data?.forwardPE)?.toFixed(1), trend: 'Expected Valuation' },
                   { label: 'Industry PE', value: data?.industryPe, trend: 'Peer Context' },
                   { label: 'Face Value', value: `₹${data?.faceValue}`, trend: 'Equity Base' }
                 ].map((item, i) => (
@@ -282,7 +282,7 @@ const StockFundamentalsPage: React.FC = () => {
                    { label: 'Promoters', value: data?.shareholding?.promoter, color: 'bg-slate-900' },
                    { label: 'FII Holding', value: data?.shareholding?.fii, color: 'bg-blue-600' },
                    { label: 'DII Holding', value: data?.shareholding?.dii, color: 'bg-indigo-400' },
-                   { label: 'Public & Others', value: data?.shareholding?.public, color: 'bg-slate-100' }
+                   { label: 'Public & Others', value: data?.shareholding?.public || data?.shareholding?.publicAndOthers, color: 'bg-slate-100' }
                  ].map((holder, idx) => (
                    <div key={idx} className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -294,13 +294,36 @@ const StockFundamentalsPage: React.FC = () => {
                       </div>
                    </div>
                  ))}
+                 
+                 {/* Smart Money vs Public Ownership Matrix */}
+                 <div className="mt-10 pt-6 border-t border-slate-100 space-y-4">
+                    <div className="flex flex-col space-y-1">
+                       <span className="text-[11px] font-black text-slate-900 uppercase tracking-[0.1em]">Smart Money Ownership</span>
+                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Promoters + FII + DII</p>
+                    </div>
+                    <div className="flex items-end justify-between">
+                       <span className="text-4xl font-black text-blue-600 tracking-tighter">
+                          {(Number(data?.shareholding?.smartMoneyTotal) || 0).toFixed(2)}%
+                       </span>
+                       <div className="text-right">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Public Float</span>
+                          <span className="text-lg font-black text-slate-900 tracking-tight">
+                             {data?.shareholding?.publicAndOthers || (100 - (Number(data?.shareholding?.smartMoneyTotal) || 0)).toFixed(2)}%
+                          </span>
+                       </div>
+                    </div>
+                    <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
+                       <div className="h-full bg-blue-600 rounded-l-full" style={{ width: `${data?.shareholding?.smartMoneyTotal || 0}%` }} />
+                       <div className="h-full bg-slate-300 rounded-r-full" style={{ width: `${100 - (data?.shareholding?.smartMoneyTotal || 0)}%` }} />
+                    </div>
+                 </div>
               </div>
               <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-3">
                  <div className="flex items-center space-x-2 text-red-600">
                     <ShieldCheck className="h-4 w-4" />
                     <span className="text-[9px] font-black uppercase tracking-widest">Pledged Status</span>
                  </div>
-                 <p className="text-2xl font-black text-slate-900">{data?.shareholding?.pledged}%</p>
+                 <p className="text-2xl font-black text-slate-900">{(Number(data?.shareholding?.pledged) || 0).toFixed(2)}%</p>
                  <p className="text-[8px] font-medium text-slate-400 uppercase leading-relaxed">Percentage of promoter holding used as collateral for debt.</p>
               </div>
            </div>

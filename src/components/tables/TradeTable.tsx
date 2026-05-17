@@ -27,8 +27,10 @@ interface TradeTableProps {
   isWatchlist?: boolean;
   activeTab?: string;
   userWatchlist?: string[];
+  strategyId?: string;
   onToggleWatchlist?: (symbol: string) => void;
   onUpdateHolding?: (symbol: string, quantity: number, buyPrice: number) => void;
+  onUpdateReview?: () => void;
 }
 
 const getMarketCapTag = (cap: number, symbol: string) => {
@@ -46,10 +48,13 @@ const getMarketCapTag = (cap: number, symbol: string) => {
 };
 
 const TradeTable: React.FC<TradeTableProps> = ({ 
-  trades, livePrices, athData, capData, sectorData, isWatchlist, activeTab, userWatchlist, onToggleWatchlist, onUpdateHolding 
+  trades, livePrices, athData, capData, sectorData, isWatchlist, activeTab, userWatchlist, strategyId, onToggleWatchlist, onUpdateHolding, onUpdateReview 
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [selectedStockForReview, setSelectedStockForReview] = useState<any | null>(null);
+  
+  const isSixtySevenStrategy = strategyId === 'SIXTY_SEVEN_FUNDA';
   
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     observation: true,
@@ -71,14 +76,14 @@ const TradeTable: React.FC<TradeTableProps> = ({
     const isWatchlistTab = activeTab === 'watchlist' || activeTab === 'portfolio';
     setVisibleColumns(prev => ({
       ...prev,
-      abcd: !isWatchlistTab,
+      abcd: !isWatchlistTab && !isSixtySevenStrategy,
       observation: !isWatchlistTab,
       basePrice: !isWatchlistTab,
       objective: !isWatchlistTab,
       roi: !isWatchlistTab,
       pending: !isWatchlistTab
     }));
-  }, [activeTab]);
+  }, [activeTab, isSixtySevenStrategy]);
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ 
     key: 'entryTime', 
@@ -99,6 +104,34 @@ const TradeTable: React.FC<TradeTableProps> = ({
     if (onToggleWatchlist) onToggleWatchlist(symbol);
   };
 
+  const handleUpdateReview = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const payload = {
+      symbol: selectedStockForReview.symbol,
+      reason_bucket: formData.get('reason_bucket'),
+      reason_text: formData.get('reason_text'),
+      reason_still_active: formData.get('reason_still_active') === 'true',
+      future_growth_prospect: formData.get('future_growth_prospect') === 'true'
+    };
+
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/admin/reviews`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        setSelectedStockForReview(null);
+        if (onUpdateReview) onUpdateReview();
+      }
+    } catch (e) { console.error('Review Update Error:', e); }
+  };
+
   const filteredAndSortedTrades = useMemo(() => {
     let result = trades.map(t => {
       const livePrice = livePrices?.[t.symbol] || t.currentPrice;
@@ -116,7 +149,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
       }
 
       const targetGap = (livePrice && t.target) ? ((t.target - livePrice) / livePrice) * 100 : 0;
-      const dfh = (livePrice && ath) ? ((livePrice / ath) - 1) * 100 : 0;
+      const dfh = (livePrice && ath && ath > 0) ? ((livePrice / ath) - 1) * 100 : 0;
 
       return {
         ...t,
@@ -163,9 +196,21 @@ const TradeTable: React.FC<TradeTableProps> = ({
   const handleExportCSV = () => {
     const headers = isWatchlist 
       ? ['Symbol', 'Quantity', 'Buy Price', 'CMP', 'Invested', 'Current Value', 'PnL %']
-      : Object.entries(visibleColumns)
-          .filter(([_, visible]) => visible)
-          .map(([key]) => key.toUpperCase());
+      : [
+          ...(visibleColumns.observation ? ['OBSERVATION'] : []),
+          ...(visibleColumns.symbol ? ['SYMBOL'] : []),
+          ...(visibleColumns.sector ? ['SECTOR'] : []),
+          ...(visibleColumns.marketCap ? ['MARKET CAP'] : []),
+          ...(isSixtySevenStrategy ? ['REASON', 'STATUS'] : []),
+          ...(visibleColumns.abcd ? ['ABCD LADDER'] : []),
+          ...(visibleColumns.basePrice ? ['BASE PRICE'] : []),
+          ...(visibleColumns.cmp ? ['CMP'] : []),
+          ...(visibleColumns.dfh ? ['DFH %'] : []),
+          ...(visibleColumns.objective ? ['TARGET'] : []),
+          ...(visibleColumns.roi ? ['ROI %'] : []),
+          ...(visibleColumns.pending ? ['GAP %'] : []),
+          ...(visibleColumns.fundamentals ? ['AUDIT'] : [])
+        ];
 
     const rows = filteredAndSortedTrades.map(t => {
       if (isWatchlist) {
@@ -180,6 +225,10 @@ const TradeTable: React.FC<TradeTableProps> = ({
       if (visibleColumns.symbol) row.push(t.symbol);
       if (visibleColumns.sector) row.push(t.sector);
       if (visibleColumns.marketCap) row.push(t.marketCap);
+      if (isSixtySevenStrategy) {
+        row.push(t.review?.reason_text || '-');
+        row.push(t.review?.reason_resolved ? 'RESOLVED' : 'ACTIVE');
+      }
       if (visibleColumns.abcd) {
         const a = t.abcd?.a?.toFixed(0) || '-';
         const b = t.abcd?.b?.toFixed(0) || '-';
@@ -235,6 +284,12 @@ const TradeTable: React.FC<TradeTableProps> = ({
           {visibleColumns.symbol && <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('symbol')}><div className="flex items-center">Symbol <SortIcon column="symbol" /></div></th>}
           {visibleColumns.sector && <th className="px-4 py-3">Sector</th>}
           {visibleColumns.marketCap && <th className="px-4 py-3 cursor-pointer" onClick={() => handleSort('marketCap')}><div className="flex items-center">Cap <SortIcon column="marketCap" /></div></th>}
+          {isSixtySevenStrategy && (
+            <>
+              <th className="px-4 py-3 text-right">Reason</th>
+              <th className="px-4 py-3 text-center">Status</th>
+            </>
+          )}
           {visibleColumns.abcd && (
             <th className="px-4 py-3 text-center">
               <div className="flex items-center justify-center">
@@ -389,6 +444,26 @@ const TradeTable: React.FC<TradeTableProps> = ({
                     )}
                     {visibleColumns.sector && <td className="px-4 py-2.5 text-[8px] font-black uppercase text-slate-400 truncate max-w-[80px]">{trade.sector || 'N/A'}</td>}
                     {visibleColumns.marketCap && <td className="px-4 py-2.5">{capTag && <span className={`px-2 py-0.5 rounded text-[7px] font-black border ${capTag.class}`}>{capTag.label}</span>}</td>}
+                    
+                    {isSixtySevenStrategy && (
+                      <>
+                        <td className="px-4 py-2.5">
+                          <div className="flex flex-col text-right">
+                            <span className="text-[8px] font-black uppercase text-slate-400">{trade.review?.reason_bucket || 'unknown'}</span>
+                            <span className="text-[9px] font-bold text-slate-600 truncate max-w-[120px]">{trade.review?.reason_text || 'No review'}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <button 
+                            onClick={() => setSelectedStockForReview(trade)}
+                            className={`px-2 py-0.5 rounded text-[7px] font-black border ${trade.review?.reason_resolved ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-red-600 bg-red-50 border-red-100'}`}
+                          >
+                            {trade.review?.reason_resolved ? 'RESOLVED' : 'ACTIVE'}
+                          </button>
+                        </td>
+                      </>
+                    )}
+
                     {visibleColumns.abcd && (
                       <td className="px-4 py-2.5">
                         <div className="flex items-center justify-center space-x-1">
@@ -456,6 +531,59 @@ const TradeTable: React.FC<TradeTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Review Modal */}
+      {selectedStockForReview && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-300">
+             <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 uppercase italic">Analyst Review</h2>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{selectedStockForReview.symbol}</p>
+                </div>
+                <button onClick={() => setSelectedStockForReview(null)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors"><XIcon className="h-5 w-5 text-slate-400" /></button>
+             </div>
+
+             <form onSubmit={handleUpdateReview} className="space-y-6">
+                <div className="space-y-4">
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Reason Bucket</label>
+                      <select name="reason_bucket" defaultValue={selectedStockForReview.review?.reason_bucket} className="w-full bg-slate-50 border-transparent rounded-2xl px-4 py-3.5 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all">
+                         <option value="sentiment">Sentiment / Sector Panic</option>
+                         <option value="business">Business Deterioration</option>
+                         <option value="fundamentals">Fundamental / Profit Drop</option>
+                         <option value="unknown">Unknown / Research Needed</option>
+                      </select>
+                   </div>
+
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Reason Description</label>
+                      <textarea name="reason_text" defaultValue={selectedStockForReview.review?.reason_text} className="w-full bg-slate-50 border-transparent rounded-2xl px-4 py-3.5 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all min-h-[100px]" placeholder="Explain why the stock fell..." />
+                   </div>
+
+                   <div className="flex gap-4">
+                      <div className="flex-1 space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Reason Resolved?</label>
+                        <select name="reason_still_active" defaultValue={selectedStockForReview.review?.reason_resolved ? 'false' : 'true'} className="w-full bg-slate-50 border-transparent rounded-2xl px-4 py-3.5 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all">
+                           <option value="true">Still Active (Wait)</option>
+                           <option value="false">Resolved (Buy Zone)</option>
+                        </select>
+                      </div>
+                      <div className="flex-1 space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Future Growth?</label>
+                        <select name="future_growth_prospect" defaultValue={selectedStockForReview.review?.future_growth ? 'true' : 'false'} className="w-full bg-slate-50 border-transparent rounded-2xl px-4 py-3.5 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all">
+                           <option value="true">Positive Prospect</option>
+                           <option value="false">Negative / Stagnant</option>
+                        </select>
+                      </div>
+                   </div>
+                </div>
+
+                <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95">Save Analysis</button>
+             </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

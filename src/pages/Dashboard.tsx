@@ -382,8 +382,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                   userWatchlist={userWatchlist.map(w => w.symbol)}
                   onToggleWatchlist={handleToggleWatchlist}
                   onUpdateHolding={handleUpdateHolding}
+                  onUpdateReview={() => fetchData(true)}
                   isWatchlist={activeTab === 'portfolio'}
                   activeTab={activeTab}
+                  strategyId={strategyId}
                 />
              </div>
           </div>

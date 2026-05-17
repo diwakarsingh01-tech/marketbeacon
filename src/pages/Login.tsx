@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+// import { useGoogleLogin } from '@react-oauth/google';
 import { Activity, Mail, Lock, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
@@ -9,7 +10,7 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/dashboard";
@@ -27,6 +28,28 @@ const LoginPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  /*
+  const handleGoogleLoginSuccess = async (response: any) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Note: useGoogleLogin with 'code' or 'token' flow. 
+      // Default is token (implicit flow).
+      await googleLogin(response.access_token);
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const googleLoginTrigger = useGoogleLogin({
+    onSuccess: handleGoogleLoginSuccess,
+    onError: () => setError('Google Login Failed'),
+  });
+  */
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-6 font-sans">
@@ -110,9 +133,13 @@ const LoginPage: React.FC = () => {
            </div>
 
            <div className="grid grid-cols-1 gap-4">
-              <button className="flex items-center justify-center space-x-3 w-full py-4 bg-white border border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+              <button 
+                // onClick={() => googleLoginTrigger()}
+                disabled={loading}
+                className="flex items-center justify-center space-x-3 w-full py-4 bg-white border border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50"
+              >
                  <img src="https://www.svgrepo.com/show/355037/google.svg" className="h-4 w-4" alt="Google" />
-                 <span>Continue with Google</span>
+                 <span>{loading ? 'Authenticating...' : 'Continue with Google'}</span>
               </button>
            </div>
         </div>
