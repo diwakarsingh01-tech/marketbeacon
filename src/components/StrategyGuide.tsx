@@ -232,7 +232,7 @@ const StrategyGuide: React.FC<StrategyGuideProps> = ({ strategyId }) => {
           <div className="p-5 bg-red-50 rounded-3xl border border-red-100 space-y-2">
             <div className="flex items-center space-x-2 text-red-600">
               <ShieldAlert className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Stop Loss</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">Risk Baseline</span>
             </div>
             <p className="text-xs font-black text-red-900 leading-normal">{guide.stopLoss}</p>
           </div>
@@ -240,7 +240,7 @@ const StrategyGuide: React.FC<StrategyGuideProps> = ({ strategyId }) => {
           <div className="p-5 bg-green-50 rounded-3xl border border-green-100 space-y-2">
             <div className="flex items-center space-x-2 text-green-600">
               <Target className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Target</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">Model Obj.</span>
             </div>
             <p className="text-xs font-black text-green-900 leading-normal">{guide.target}</p>
           </div>

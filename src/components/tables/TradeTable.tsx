@@ -306,7 +306,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
           {visibleColumns.objective && (
             <th className="px-4 py-3 text-right text-blue-600">
               <div className="flex items-center justify-end">
-                Target
+                Model Obj.
                 <Link to="/education" className="ml-1 opacity-20 hover:opacity-100 transition-opacity">
                   <InfoIcon className="h-2.5 w-2.5" />
                 </Link>
