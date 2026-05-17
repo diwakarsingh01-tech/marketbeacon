@@ -217,16 +217,24 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/google', async (req, res) => {
   try {
     const { token } = req.body;
-    // Verify the access token by calling Google's userinfo endpoint
-    // This is safer for client-side implicit flow tokens
-    const googleResponse = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo`, {
-      headers: { Authorization: `Bearer ${token}` }
+    
+    // Standard JWT ID Token Verification
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: GOOGLE_CLIENT_ID,
     });
+    
+    const payload = ticket.getPayload();
+    if (!payload) throw new Error('Invalid token payload');
 
-    const { email, name, sub: googleId } = googleResponse.data;
+    const { email, name, sub: googleId } = payload;
+    if (!email) throw new Error('Email not provided in Google token');
 
     // Beta Testing Restriction (Same as register)
-    const isWhitelisted = WHITELISTED_EMAILS.some(e => e.toLowerCase() === email.toLowerCase()) || email.endsWith('@marketbeacon.com');
+    const isWhitelisted = WHITELISTED_EMAILS.some(e => e.toLowerCase() === email.toLowerCase()) || 
+                          email.endsWith('@marketbeacon.com') ||
+                          email === 'diwakar.singh01@gmail.com';
+
     if (!isWhitelisted) {
       return res.status(403).json({ error: 'MarketBeacon Terminal is currently in Private Beta.' });
     }
@@ -235,29 +243,31 @@ app.post('/api/auth/google', async (req, res) => {
     let user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
 
     if (!user) {
-      const userReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      // For Google users, we set a dummy password or leave it null if DB allows
+      // Auto-register Gmail user if not found
       const dummyPassword = await bcrypt.hash(Math.random().toString(36), 10);
-      const result = await db.run(
-        'INSERT INTO users (name, email, password, referral_code) VALUES (?, ?, ?, ?)',
-        [name, email, dummyPassword, userReferralCode]
+      await db.run(
+        'INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)',
+        [name || 'Gmail User', email, dummyPassword, 'user', 'free']
       );
-      user = { id: result.lastID, email, name, referral_code: userReferralCode };
+      user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
     }
 
-    const jwtToken = jwt.sign({ id: user.id, email, name }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ 
-      token: jwtToken, 
-      user: { 
-        id: user.id, 
-        email: user.email, 
-        name: user.name, 
-        referral_code: user.referral_code,
-        subscription_status: user.subscription_status
-      } 
-    });
+    const jwtToken = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    
+    // Ensure data is serialized correctly
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      tier: user.tier || 'free',
+      subscription_expiry: user.subscription_expiry || null,
+      daysRemaining: user.subscription_expiry ? Math.max(0, Math.ceil((new Date(user.subscription_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null
+    };
+
+    res.json({ token: jwtToken, user: safeUser });
   } catch (e: any) { 
-    console.error('Google Auth Error:', e.response?.data || e.message);
+    console.error('Google Auth Error:', e.message);
     res.status(500).json({ error: 'Google authentication failed' }); 
   }
 });
