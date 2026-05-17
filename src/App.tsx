@@ -13,6 +13,7 @@ import MarketplacePage from './pages/Marketplace';
 import EducationPage from './pages/Education';
 import PricingPage from './pages/Pricing';
 import AdminPanel from './pages/AdminPanel';
+import MembershipPage from './pages/Marketplace';
 
 function App() {
   return (
@@ -39,12 +40,11 @@ function App() {
             <Route path="/portfolio" element={<DashboardPage key="portfolio" defaultTab="portfolio" />} />
             <Route path="/journal" element={<TradeJournalPage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/marketplace" element={<MarketplacePage />} />
+            <Route path="/membership" element={<MembershipPage />} />
             <Route path="/stock/:symbol" element={<StockFundamentalsPage />} />
             <Route path="/education" element={<EducationPage />} />
             <Route path="/admin" element={<AdminPanel />} />
           </Route>
-
           {/* Legacy & Redirects */}
           <Route path="/dashboard" element={<Navigate to="/screener" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -86,7 +86,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
       {/* User Actions */}
       <div className="flex items-center space-x-3 md:space-x-6 shrink-0">
-        <Link to="/marketplace" className="flex items-center space-x-2 bg-indigo-600/10 px-3 md:px-4 py-2 rounded-2xl border border-indigo-600/20 group hover:bg-indigo-600 transition-all">
+        <Link to="/membership" className="flex items-center space-x-2 bg-indigo-600/10 px-3 md:px-4 py-2 rounded-2xl border border-indigo-600/20 group hover:bg-indigo-600 transition-all">
            <Store className="h-3 w-3 text-indigo-600 group-hover:text-white transition-colors" />
            <span className="text-[9px] font-black text-indigo-600 group-hover:text-white uppercase tracking-widest transition-colors hidden sm:inline">Membership</span>
         </Link>
