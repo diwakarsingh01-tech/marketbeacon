@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Target,
   LogOut,
-  RefreshCw
+  RefreshCw,
+  Phone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
