@@ -497,6 +497,71 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                    <p className="text-[8px] font-black text-blue-600 uppercase tracking-[0.3em]">{loadingMessages[loadingMessageIndex]}</p>
                 </div>
              )}
+
+             {/* Integrated Portfolio Risk Analyzer */}
+             {activeTab === 'portfolio' && portfolioSummary.totalInvested > 0 && (
+               <div className="p-8 border-b border-slate-100 bg-slate-50/20 shrink-0">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                     {/* Market Cap Matrix */}
+                     <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                           <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest italic">Cap Allocation Matrix</h3>
+                           <span className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em]">Institutional Diversification</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                           {[
+                              { label: 'Large Cap', target: 50, current: portfolioSummary.capBreakdown.large, color: 'bg-slate-900' },
+                              { label: 'Mid Cap', target: 30, current: portfolioSummary.capBreakdown.mid, color: 'bg-blue-600' },
+                              { label: 'Small Cap', target: 15, current: portfolioSummary.capBreakdown.small, color: 'bg-indigo-400' },
+                              { label: 'Micro Cap', target: 5, current: portfolioSummary.capBreakdown.micro, color: 'bg-rose-500' }
+                           ].map((cap, i) => (
+                              <div key={i} className="p-3 bg-white rounded-2xl border border-slate-100 space-y-2 shadow-sm">
+                                 <div className="flex justify-between items-center">
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-tight">{cap.label}</span>
+                                    <span className={`text-[10px] font-black ${Math.abs(cap.current - cap.target) > 10 ? 'text-red-600' : 'text-slate-900'}`}>{cap.current.toFixed(1)}%</span>
+                                 </div>
+                                 <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden relative">
+                                    <div className={`h-full ${cap.color} rounded-full transition-all duration-1000`} style={{ width: `${cap.current}%` }} />
+                                    <div className="absolute top-0 bottom-0 border-l border-slate-400 z-10" style={{ left: `${cap.target}%` }} />
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+
+                     {/* Sector Contribution */}
+                     <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                           <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest italic">Sector Contribution</h3>
+                           <div className="flex items-center space-x-2">
+                              <div className={`h-1.5 w-1.5 rounded-full ${Object.values(portfolioSummary.sectorBreakdown).some(data => (data.amount / portfolioSummary.totalInvested) * 100 > 20) ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
+                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em]">Safety Cap: 20%</span>
+                           </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 overflow-y-auto max-h-[160px] pr-2 custom-scrollbar">
+                           {Object.entries(portfolioSummary.sectorBreakdown)
+                              .sort(([, a], [, b]) => b.amount - a.amount)
+                              .map(([sector, data], i) => {
+                                 const pct = (data.amount / portfolioSummary.totalInvested) * 100;
+                                 const isOverexposed = pct > 20;
+                                 return (
+                                    <div key={i} className="space-y-1 group">
+                                       <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tight">
+                                          <span className={isOverexposed ? 'text-red-600' : 'text-slate-600'}>{sector}</span>
+                                          <span className={isOverexposed ? 'text-red-600' : 'text-slate-900'}>{pct.toFixed(1)}%</span>
+                                       </div>
+                                       <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                                          <div className={`h-full transition-all duration-1000 rounded-full ${isOverexposed ? 'bg-red-500' : 'bg-blue-600/60'}`} style={{ width: `${pct}%` }} />
+                                       </div>
+                                    </div>
+                                 );
+                              })}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+             )}
+
              <div className="flex-1 overflow-auto custom-scrollbar">
                 <TradeTable 
                   trades={getTradesForTab()} 

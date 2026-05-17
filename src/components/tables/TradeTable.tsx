@@ -304,8 +304,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
           {visibleColumns.cmp && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('price')}><div className="flex items-center justify-end">CMP <SortIcon column="price" /></div></th>}
           {visibleColumns.dfh && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div></th>}
           {visibleColumns.objective && (
-            <th className="px-4 py-3 text-right text-indigo-600">
-              <div className="flex items-center justify-end">
+            <th className="px-4 py-3 text-right text-fuchsia-600 font-black">
+              <div className="flex items-center justify-end uppercase tracking-widest text-[10px]">
                 Model Obj.
                 <Link to="/education" className="ml-1 opacity-20 hover:opacity-100 transition-opacity">
                   <InfoIcon className="h-2.5 w-2.5" />
@@ -502,7 +502,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         </span>
                       </td>
                     )}
-                    {visibleColumns.objective && <td className="px-4 py-2.5 text-[10px] font-bold text-blue-600 text-right">₹{trade.target?.toLocaleString(undefined, {maximumFractionDigits:0})}</td>}
+                    {visibleColumns.objective && <td className="px-4 py-2.5 text-[10px] font-bold text-fuchsia-600 text-right">₹{trade.target?.toLocaleString(undefined, {maximumFractionDigits:0})}</td>}
                     {visibleColumns.roi && (
                       <td className="px-4 py-2.5 text-right">
                         <div className="flex flex-col items-end">
