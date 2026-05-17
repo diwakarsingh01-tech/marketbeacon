@@ -217,13 +217,24 @@ const ProfilePage: React.FC = () => {
                </div>
                
                <div className="space-y-6">
-                  <div className="space-y-1">
-                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">Verified Email</p>
-                     <p className="text-sm font-bold text-blue-100 flex items-center space-x-2">
-                        <Mail className="h-3.5 w-3.5" />
-                        <span>{profileData.email}</span>
-                     </p>
-                  </div>
+                  {profileData.email && (
+                    <div className="space-y-1">
+                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">Verified Email</p>
+                       <p className="text-sm font-bold text-blue-100 flex items-center space-x-2">
+                          <Mail className="h-3.5 w-3.5" />
+                          <span>{profileData.email}</span>
+                       </p>
+                    </div>
+                  )}
+                  {profileData.mobile && (
+                    <div className="space-y-1">
+                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">Verified Mobile</p>
+                       <p className="text-sm font-bold text-blue-100 flex items-center space-x-2">
+                          <Phone className="h-3.5 w-3.5" />
+                          <span>+91 {profileData.mobile}</span>
+                       </p>
+                    </div>
+                  )}
                   <div className="space-y-1">
                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">Account UID</p>
                      <p className="text-sm font-mono font-bold text-slate-300">MB-TERM-{profileData.id.toString().padStart(4, '0')}</p>

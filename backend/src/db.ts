@@ -28,7 +28,8 @@ export async function initDB() {
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
+      email TEXT UNIQUE,
+      mobile TEXT UNIQUE,
       password TEXT NOT NULL,
       role TEXT DEFAULT 'user',
       tier TEXT DEFAULT 'free',
@@ -54,6 +55,7 @@ export async function initDB() {
   const alterColumns = [
     'ALTER TABLE users ADD COLUMN role TEXT DEFAULT "user"',
     'ALTER TABLE users ADD COLUMN tier TEXT DEFAULT "free"',
+    'ALTER TABLE users ADD COLUMN mobile TEXT UNIQUE',
     'ALTER TABLE users ADD COLUMN subscription_expiry DATETIME',
     'ALTER TABLE upgrade_requests ADD COLUMN billing_cycle TEXT DEFAULT "monthly"'
   ];

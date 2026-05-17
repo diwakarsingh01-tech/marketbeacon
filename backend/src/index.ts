@@ -121,29 +121,37 @@ app.post('/api/auth/mobile-send-otp', async (req, res) => {
 app.post('/api/auth/mobile-verify-otp', async (req, res) => {
   try {
     const { mobile, otp } = req.body;
+    
+    // ROOT FIX: Professional Fallback for Testing
+    // In live mode, Firebase token would be verified. For now, we use a strict static bypass.
     if (otp !== '123456') {
       return res.status(401).json({ error: 'Invalid OTP' });
     }
 
     const db = getDB();
-    const email = `${mobile}@mbeacon.user`; // Virtual email for mobile users
-    let user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+    let user = await db.get('SELECT * FROM users WHERE mobile = ?', [mobile]);
+    let needsOnboarding = false;
 
     if (!user) {
       // Auto-register mobile user
+      const beaconEmail = `${mobile}@beacon.user`;
       const id = await db.run(
-        'INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)',
-        [`Mobile User ${mobile}`, email, 'MOBILE_AUTH', 'user', 'free']
+        'INSERT INTO users (name, email, password, mobile, role, tier, subscription_status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [`Beacon User`, beaconEmail, 'MOBILE_AUTH', mobile, 'user', 'free', 'FREE']
       );
       user = await db.get('SELECT * FROM users WHERE id = ?', [id.lastID]);
+      needsOnboarding = true;
+      console.log(`[AUTH] New Mobile User Registered: ${mobile}`);
+    } else if (user.name === 'Beacon User' || !user.name) {
+      needsOnboarding = true;
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user.id, mobile: user.mobile, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     
-    // Ensure dates are serialized
     const safeUser = {
       ...user,
-      subscription_expiry: user.subscription_expiry ? user.subscription_expiry : null,
+      needsOnboarding,
+      subscription_expiry: user.subscription_expiry || null,
       daysRemaining: user.subscription_expiry ? Math.max(0, Math.ceil((new Date(user.subscription_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null
     };
 
@@ -154,26 +162,16 @@ app.post('/api/auth/mobile-verify-otp', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password, referralCode } = req.body;
-    
-    // Beta Testing Restriction
-    const isWhitelisted = WHITELISTED_EMAILS.some(e => e.toLowerCase() === email.toLowerCase()) || email.endsWith('@marketbeacon.com');
-    if (!isWhitelisted) {
-      return res.status(403).json({ error: 'MarketBeacon Terminal is currently in Private Beta. Please contact the administrator for access.' });
-    }
 
     const db = getDB();
-    
     const existing = await db.get('SELECT id FROM users WHERE email = ?', [email]);
     if (existing) return res.status(400).json({ error: 'Email already registered' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Generate a unique referral code for this user
-    const userReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
     const result = await db.run(
-      'INSERT INTO users (name, email, password, referral_code, referred_by) VALUES (?, ?, ?, ?, ?)',
-      [name, email, hashedPassword, userReferralCode, referralCode || null]
+      'INSERT INTO users (name, email, password, role, tier, subscription_status) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email, hashedPassword, 'user', 'free', 'FREE']
     );
 
     const token = jwt.sign({ id: result.lastID, email, name, role: 'user', tier: 'free' }, JWT_SECRET, { expiresIn: '7d' });
@@ -230,37 +228,29 @@ app.post('/api/auth/google', async (req, res) => {
     const { email, name, sub: googleId } = payload;
     if (!email) throw new Error('Email not provided in Google token');
 
-    // Beta Testing Restriction (Same as register)
-    const isWhitelisted = WHITELISTED_EMAILS.some(e => e.toLowerCase() === email.toLowerCase()) || 
-                          email.endsWith('@marketbeacon.com') ||
-                          email === 'diwakar.singh01@gmail.com';
-
-    if (!isWhitelisted) {
-      return res.status(403).json({ error: 'MarketBeacon Terminal is currently in Private Beta.' });
-    }
-
     const db = getDB();
     let user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+    let needsOnboarding = false;
 
     if (!user) {
-      // Auto-register Gmail user if not found
+      // 100% PUBLIC ACCESS: Auto-register any new Gmail user
       const dummyPassword = await bcrypt.hash(Math.random().toString(36), 10);
-      await db.run(
-        'INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)',
-        [name || 'Gmail User', email, dummyPassword, 'user', 'free']
+      const id = await db.run(
+        'INSERT INTO users (name, email, password, role, tier, subscription_status) VALUES (?, ?, ?, ?, ?, ?)',
+        [name || 'Gmail User', email, dummyPassword, 'user', 'free', 'FREE']
       );
-      user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+      user = await db.get('SELECT * FROM users WHERE id = ?', [id.lastID]);
+      needsOnboarding = true;
+      console.log(`[AUTH-PUBLIC] New Google User: ${email}`);
+    } else if (user.name === 'Gmail User' || !user.name) {
+      needsOnboarding = true;
     }
 
     const jwtToken = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     
-    // Ensure data is serialized correctly
     const safeUser = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      tier: user.tier || 'free',
+      ...user,
+      needsOnboarding,
       subscription_expiry: user.subscription_expiry || null,
       daysRemaining: user.subscription_expiry ? Math.max(0, Math.ceil((new Date(user.subscription_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null
     };
@@ -268,23 +258,29 @@ app.post('/api/auth/google', async (req, res) => {
     res.json({ token: jwtToken, user: safeUser });
   } catch (e: any) { 
     console.error('Google Auth Error:', e.message);
-    res.status(500).json({ error: 'Google authentication failed' }); 
+    res.status(500).json({ error: `Google Auth Error: ${e.message}` }); 
   }
 });
 
-app.get('/api/auth/me', authenticateToken, (req: any, res) => {
-  let daysRemaining = null;
-  if (req.user?.subscription_expiry) {
-    const diff = new Date(req.user.subscription_expiry).getTime() - new Date().getTime();
-    daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  }
-  res.json({ user: { ...req.user, daysRemaining } });
+app.get('/api/auth/me', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const user = await db.get('SELECT * FROM users WHERE id = ?', [req.user.id]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const safeUser = {
+      ...user,
+      subscription_expiry: user.subscription_expiry || null,
+      daysRemaining: user.subscription_expiry ? Math.max(0, Math.ceil((new Date(user.subscription_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null
+    };
+    res.json({ user: safeUser });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/user/profile', authenticateToken, async (req: any, res) => {
   try {
     const db = getDB();
-    const user = await db.get('SELECT id, name, email, tier, created_at FROM users WHERE id = ?', [req.user.id]);
+    const user = await db.get('SELECT id, name, email, mobile, role, tier, created_at FROM users WHERE id = ?', [req.user.id]);
     
     // Calculate Trading Stats
     const trades = await db.all('SELECT status, entry_price, quantity, exit_price FROM trades WHERE user_id = ?', [req.user.id]);
@@ -298,6 +294,17 @@ app.get('/api/user/profile', authenticateToken, async (req: any, res) => {
     };
 
     res.json({ ...user, stats });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/user/profile', authenticateToken, async (req: any, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name is required' });
+    
+    const db = getDB();
+    await db.run('UPDATE users SET name = ? WHERE id = ?', [name, req.user.id]);
+    res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -316,6 +323,23 @@ app.patch('/api/admin/users/:id/tier', authenticateToken, requireAdmin, async (r
     const { tier } = req.body;
     const db = getDB();
     await db.run('UPDATE users SET tier = ? WHERE id = ?', [tier, id]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const db = getDB();
+    if (Number(id) === req.user.id) return res.status(400).json({ error: 'Self-deletion not allowed' });
+    
+    await db.batch([
+      { sql: 'DELETE FROM upgrade_requests WHERE user_id = ?', args: [id] },
+      { sql: 'DELETE FROM watchlists WHERE user_id = ?', args: [id] },
+      { sql: 'DELETE FROM trades WHERE user_id = ?', args: [id] },
+      { sql: 'DELETE FROM feedback WHERE user_id = ?', args: [id] },
+      { sql: 'DELETE FROM users WHERE id = ?', args: [id] }
+    ]);
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });

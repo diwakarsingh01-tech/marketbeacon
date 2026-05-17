@@ -10,7 +10,8 @@ import {
   RefreshCw,
   Search,
   Filter,
-  MoreVertical
+  MoreVertical,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -55,10 +56,16 @@ const AdminPanel: React.FC = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        fetchData();
-        setActiveTab('approved'); // Move to approved history automatically
+        // SUCCESS: Reload everything to ensure sync
+        await fetchData();
+        setActiveTab('approved'); // Move to historical view
+      } else {
+        const err = await res.json();
+        alert("Server Rejected Approval: " + (err.error || "Unknown Error"));
       }
-    } catch (e) { alert("Approval failed"); }
+    } catch (e) { 
+      alert("Approval Logic Failed. Check console logs."); 
+    }
   };
 
   const handleUpdateTier = async (userId: number, tier: string) => {
@@ -76,8 +83,26 @@ const AdminPanel: React.FC = () => {
     } catch (e) { alert("Tier update failed"); }
   };
 
+  const handleDeleteUser = async (userId: number) => {
+    if (!window.confirm("DANGER: This will permanently delete this user and ALL their data (trades, watchlist, requests). Continue?")) return;
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        fetchData();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Deletion failed");
+      }
+    } catch (e) { alert("Network error"); }
+  };
+
   const filteredRequests = requests.filter(r => {
-    const isTabMatch = activeTab === 'pending' ? r.status === 'pending' : r.status === 'approved';
+    const status = (r.status || 'pending').toLowerCase();
+    const isTabMatch = activeTab === 'pending' ? status === 'pending' : status === 'approved';
     const searchLower = search.toLowerCase();
     const isSearchMatch = (r.email || '').toLowerCase().includes(searchLower) || 
                           (r.name || '').toLowerCase().includes(searchLower) || 
@@ -165,7 +190,7 @@ const AdminPanel: React.FC = () => {
             </thead>
             <tbody>
               {filteredRequests.length === 0 ? (
-                <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-300 font-bold uppercase tracking-widest italic text-xs">No {activeTab} requests</td></tr>
+                <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-300 font-bold uppercase tracking-widest italic text-xs">No {activeTab} requests found</td></tr>
               ) : filteredRequests.map((req) => (
                 <tr key={req.id} className="border-b border-slate-50 group hover:bg-slate-50/50 transition-colors">
                   <td className="px-8 py-6">
@@ -178,7 +203,7 @@ const AdminPanel: React.FC = () => {
                   <td className="px-8 py-6">
                     <div className="flex flex-col">
                        <span className="text-[13px] font-black text-slate-900 leading-none">{req.name}</span>
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{req.email}</span>
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{req.email || req.mobile || 'Unknown User'}</span>
                     </div>
                   </td>
                   <td className="px-8 py-6">
@@ -230,7 +255,7 @@ const AdminPanel: React.FC = () => {
                   <td className="px-8 py-6">
                     <div className="flex flex-col">
                        <span className="text-[13px] font-black text-slate-900 leading-none">{u.name}</span>
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{u.email}</span>
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{u.email || u.mobile || 'No Contact'}</span>
                     </div>
                   </td>
                   <td className="px-8 py-6">
@@ -254,8 +279,12 @@ const AdminPanel: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <button className="p-2 text-slate-300 hover:text-slate-900 transition-colors">
-                       <MoreVertical className="h-4 w-4" />
+                    <button 
+                      onClick={() => handleDeleteUser(u.id)}
+                      className="p-2 text-slate-300 hover:text-rose-600 transition-colors"
+                      title="Delete User"
+                    >
+                       <Trash2 className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
