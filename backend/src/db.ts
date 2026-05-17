@@ -41,6 +41,7 @@ export async function initDB() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
       requested_tier TEXT NOT NULL,
+      billing_cycle TEXT DEFAULT 'monthly',
       transaction_id TEXT NOT NULL,
       status TEXT DEFAULT 'pending',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -51,7 +52,8 @@ export async function initDB() {
   // Ensure new columns exist for existing databases
   const alterColumns = [
     'ALTER TABLE users ADD COLUMN role TEXT DEFAULT "user"',
-    'ALTER TABLE users ADD COLUMN tier TEXT DEFAULT "free"'
+    'ALTER TABLE users ADD COLUMN tier TEXT DEFAULT "free"',
+    'ALTER TABLE upgrade_requests ADD COLUMN billing_cycle TEXT DEFAULT "monthly"'
   ];
 
   for (const sql of alterColumns) {

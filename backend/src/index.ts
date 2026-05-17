@@ -279,6 +279,7 @@ app.get('/api/admin/upgrade-requests', authenticateToken, requireAdmin, async (r
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// --- ADMIN UPGRADE APPROVAL ---
 app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
     const { id } = req.params;
@@ -286,9 +287,13 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
     const request = await db.get('SELECT * FROM upgrade_requests WHERE id = ?', [id]);
     if (!request) return res.status(404).json({ error: 'Request not found' });
 
-    // Set expiry to 30 days from now
+    // Set expiry based on billing cycle (30 days or 365 days)
     const expiry = new Date();
-    expiry.setDate(expiry.getDate() + 30);
+    if (request.billing_cycle === 'yearly') {
+      expiry.setDate(expiry.getDate() + 365);
+    } else {
+      expiry.setDate(expiry.getDate() + 30);
+    }
     const expiryStr = expiry.toISOString();
 
     await db.batch([
@@ -302,11 +307,11 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
 // --- USER UPGRADE ROUTE ---
 app.post('/api/user/upgrade-request', authenticateToken, async (req: any, res) => {
   try {
-    const { requested_tier, transaction_id } = req.body;
+    const { requested_tier, billing_cycle, transaction_id } = req.body;
     const db = getDB();
     await db.run(
-      'INSERT INTO upgrade_requests (user_id, requested_tier, transaction_id) VALUES (?, ?, ?)',
-      [req.user.id, requested_tier, transaction_id]
+      'INSERT INTO upgrade_requests (user_id, requested_tier, billing_cycle, transaction_id) VALUES (?, ?, ?, ?)',
+      [req.user.id, requested_tier, billing_cycle || 'monthly', transaction_id]
     );
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -1231,8 +1236,30 @@ app.delete('/api/trades/:id', authenticateToken, async (req: any, res) => {
 
 app.get('/api/marketplace', async (req, res) => {
   res.json([
-    { id: 'batch9_core', type: 'STRATEGY', name: 'Batch 9 Core Elite', desc: 'Institutional mean-reversion algorithm.', cagr: '28.4%', winRate: '100%', risk: 'Medium-Low', price: '₹4,999/mo', isUnlocked: true },
-    { id: 'momentum_alpha', type: 'STRATEGY', name: 'Momentum Alpha', desc: 'Breakout detection.', cagr: '34.2%', winRate: '72%', risk: 'Medium-High', price: '₹2,499/mo', isUnlocked: false }
+    { 
+      id: 'pro_yearly', 
+      type: 'MEMBERSHIP', 
+      name: 'PRO Institutional (Yearly)', 
+      desc: '12-month access to Structural Patterns, Quantum Stacking, and Full Portfolio Risk Analytics.', 
+      cagr: '28.4%', 
+      winRate: '68%', 
+      risk: 'Medium-Low', 
+      price: '₹799/yr', 
+      isUnlocked: false,
+      tier: 'pro'
+    },
+    { 
+      id: 'alpha_yearly', 
+      type: 'MEMBERSHIP', 
+      name: 'ALPHA Institutional (Yearly)', 
+      desc: 'Complete 1-year license for Velocity Retest, Deep Recovery Audit, and Supply-Demand Core Engine.', 
+      cagr: '42.2%', 
+      winRate: '74%', 
+      risk: 'Medium', 
+      price: '₹1599/yr', 
+      isUnlocked: false,
+      tier: 'alpha'
+    }
   ]);
 });
 

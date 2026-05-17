@@ -158,9 +158,14 @@ const AdminPanel: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="flex items-center space-x-2">
-                       {req.requested_tier === 'alpha' ? <ShieldCheck className="h-4 w-4 text-slate-900" /> : <Zap className="h-4 w-4 text-blue-600" />}
-                       <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{req.requested_tier}</span>
+                    <div className="flex flex-col space-y-1">
+                       <div className="flex items-center space-x-2">
+                          {req.requested_tier === 'alpha' ? <ShieldCheck className="h-4 w-4 text-slate-900" /> : <Zap className="h-4 w-4 text-blue-600" />}
+                          <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{req.requested_tier}</span>
+                       </div>
+                       <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded w-fit ${req.billing_cycle === 'yearly' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {req.billing_cycle || 'monthly'}
+                       </span>
                     </div>
                   </td>
                   <td className="px-8 py-6">
