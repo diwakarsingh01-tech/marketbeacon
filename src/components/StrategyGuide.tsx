@@ -1,12 +1,14 @@
 import React from 'react';
 import { 
-  Info, 
-  Target, 
   ShieldAlert, 
-  TrendingUp, 
-  HelpCircle,
-  BookOpen,
-  ArrowRightCircle
+  Target, 
+  Zap, 
+  Info,
+  TrendingUp,
+  BarChart3,
+  Calendar,
+  Layers,
+  ChevronRight
 } from 'lucide-react';
 
 interface StrategyGuideProps {
@@ -23,226 +25,202 @@ const STRATEGY_DETAILS: Record<string, {
   proTip: string;
 }> = {
   'ENVELOPE_LONG': {
-    title: 'Envelope Long (ABCD)',
-    description: 'A mean-reversion strategy that identifies stocks trading at deep discounts to their moving averages.',
+    title: 'Institutional Floor',
+    description: 'A mean-reversion strategy that identifies institutional demand zones based on statistical deviation benchmarks.',
     setup: [
-      'Price drops below the lower boundary of the 20-period Envelope.',
-      'RSI is typically oversold (< 30).',
-      'Look for bullish divergence on 15m or 1h timeframe.'
+      'Price drops to the lower research boundary (SMA 20 - 10%).',
+      'RSI is typically near oversold territory (< 30).',
+      'Look for bullish divergence on institutional timeframes.'
     ],
-    entry: 'Enter when price crosses back above the lower envelope or forms a bullish engulfing candle.',
-    stopLoss: 'Recent swing low or 2% below the lower envelope.',
-    target: '20-period SMA (Median line) or 5-7% profit.',
-    proTip: 'Use ABCD averaging if the stock drops further to a secondary support level.'
+    entry: 'Mathematical entry triggered at the lower research band.',
+    stopLoss: 'Risk managed via algorithmic ABCD laddering.',
+    target: 'Model Objective is the mathematical recovery to the SMA Basis or Upper Band.',
+    proTip: 'Ideal for Bluechip stocks during a market correction.'
   },
   'ENVELOPE_SHORT': {
-    title: 'Short Envelope',
-    description: 'A mean-reversion strategy for over-extended stocks ripe for a pullback.',
+    title: 'Momentum Ceiling',
+    description: 'A research model for stocks in strong primary uptrends participating in secondary regressions.',
     setup: [
-      'Price surges above the upper boundary of the 20-period Envelope.',
-      'RSI is extremely overbought (> 70).',
-      'Bearish divergence on lower timeframes.'
+      'Price surges above the primary regression midline.',
+      'Secondary participation zone identified at EMA 200.',
+      'High-momentum environment confirmed by volume.'
     ],
-    entry: 'Enter short when price crosses back below the upper envelope or forms a bearish reversal candle.',
-    stopLoss: 'Recent swing high or 2% above the upper envelope.',
-    target: '20-period SMA (Median line).',
-    proTip: 'Wait for volume confirmation on the downward move before committing full size.'
-  },
-  'SMA': {
-    title: 'SMA Support',
-    description: 'Trend following strategy focusing on institutional support levels.',
-    setup: [
-      'Stock is in a clear uptrend (Price > 200 SMA).',
-      'Price pulls back to the 50 or 100 period SMA.',
-      'Volume decreases during the pullback.'
-    ],
-    entry: 'Bullish reversal candle at the SMA level.',
-    stopLoss: 'Closing basis below the SMA level.',
-    target: 'Recent swing high or 2:1 Reward-to-Risk ratio.',
-    proTip: 'Stronger signals occur when multiple SMAs converge at the same price point.'
+    entry: 'Research entry at the secondary regression line (EMA 200).',
+    stopLoss: 'Risk managed via strictly capped position sizing.',
+    target: 'Model Objective is a calculated +14% momentum move.',
+    proTip: 'Focused on high-momentum names that rarely revisit deep discount zones.'
   },
   'BOLLINGER': {
-    title: 'Bollinger Band Squeeze',
-    description: 'Volatility expansion strategy targeting explosive moves after consolidation.',
+    title: 'Volatility Channel',
+    description: 'Volatility expansion research model targeting mean-reversion moves.',
     setup: [
-      'Bollinger Bands contract tightly (Squeeze).',
-      'Stock price consolidates in a narrow range.',
-      'Volume dries up significantly.'
+      'Channel contracts tightly during low-volatility phases.',
+      'Price stabilizes in a narrow research range.',
+      'Volume dries up significantly before the next wave.'
     ],
-    entry: 'Buy the breakout above the upper band with expanding volume.',
-    stopLoss: 'Below the median band (20 SMA) or bottom of the squeeze range.',
-    target: 'Ride the upper band until momentum wanes or trailing stop hits.',
-    proTip: 'A squeeze that lasts longer typically leads to a more explosive breakout.'
+    entry: 'Mathematical objective triggered at the lower volatility boundary.',
+    stopLoss: 'Risk baseline set at the 20-period median line.',
+    target: 'Model Objective is the upper volatility boundary.',
+    proTip: 'A narrower channel typically leads to a more reliable mean-reversion move.'
   },
   '52W_HIGH_LOW': {
-    title: '52 Week High Breakout',
-    description: 'Momentum strategy that capitalizes on stocks breaking into uncharted territory.',
+    title: 'Annual Range Matrix',
+    description: 'Mean reversion research system based on annual price extremes.',
     setup: [
-      'Stock approaches its 52-week high.',
-      'Base forms just below the high for several weeks.',
-      'Sector is showing relative strength.'
+      'Stock stabilizes near its 52-week statistical low.',
+      'Base forms just above the annual support zone.',
+      'Bluechip fundamentals remain strong despite the correction.'
     ],
-    entry: 'Enter on a high-volume breakout above the 52-week high.',
-    stopLoss: 'Below the breakout pivot or 5% below entry.',
-    target: 'Trail stop using a 10-day EMA to capture the maximum trend.',
-    proTip: 'Avoid buying extended breakouts; aim for the initial thrust from a solid base.'
+    entry: 'Research accumulation triggered at the 52-week statistical low.',
+    stopLoss: 'Requires strict debt-to-equity < 0.2 confirmation baseline.',
+    target: 'Model Objective is the 52-week statistical high.',
+    proTip: 'Elite bluechips frequently rebound from annual support levels.'
   },
   'SMA_ABCD': {
-    title: 'SMA ABCD Ladder',
-    description: 'A risk-managed entry strategy using multiple buy levels near moving averages.',
+    title: 'Quantum Stacking',
+    description: 'A risk-managed research model using convergence levels near moving averages.',
     setup: [
-      'Identify a high-quality stock (Bluechip).',
-      'Mark 4 levels: A (Current Support), B (-2%), C (-5%), D (-10%).'
+      'Identify BEARISH stacking: Price < SMA 20 < SMA 50 < SMA 200.',
+      'Extreme exhaustion zones identified across institutional averages.',
+      '100-point fundamental confirmation to avoid value traps.'
     ],
-    entry: 'Layer buy orders across all 4 levels (A-D) to get a better average price.',
-    stopLoss: '1% below level D.',
-    target: '5% above the final average price.',
-    proTip: 'Allocate 10%, 20%, 30%, 40% of position size across levels A to D respectively.'
+    entry: 'Bearish Stacking (Price < SMA 20 < SMA 50 < SMA 200).',
+    stopLoss: 'Risk managed via algorithmic staggered accumulation.',
+    target: 'Model Objective is a full structural reversal back above SMA 200.',
+    proTip: 'Avoid cyclical sectors in deep bearish stacking.'
   },
-  '67_FUNDA': {
-    title: '67 ka Funda',
-    description: 'A proprietary momentum and volume acceleration setup.',
+  'SIXTY_SEVEN_FUNDA': {
+    title: 'Deep Recovery Audit',
+    description: 'Proprietary research model based on the 67% ATH reset cycle.',
     setup: [
-      'Price consolidates for a minimum of 6 weeks.',
-      'Volume spikes by at least 7x the average daily volume.',
-      'Strong bullish candle closes near its high.'
+      'Drawdown from All-Time High hits the 66-67% benchmark.',
+      'Improving quarterly financials (Sales/Profit) during the fall.',
+      'Institutional ownership matrix remains > 75%.'
     ],
-    entry: 'Enter on the close of the high-volume expansion day or next day open.',
-    stopLoss: 'Below the low of the breakout candle.',
-    target: 'Measure the consolidation depth and project upward (measured move).',
-    proTip: 'True momentum ignores broad market weakness. Look for relative strength.'
+    entry: 'Research qualification at drawdown >= 66% with improving PAT.',
+    stopLoss: 'No stop-loss; requires high-conviction 100-point audit.',
+    target: 'Model Objective is a return to the previous All-Time High.',
+    proTip: 'Look for companies with >15% ROE during the accumulation phase.'
   },
-  '20_RALLY': {
-    title: '20% Ki Rally',
-    description: 'Short-term swing strategy targeting a fast 20% upside move.',
+  'TWENTY_RALLY_RETEST': {
+    title: 'Velocity Retest',
+    description: 'Identifies high-momentum bursts and enters on the return to the origin.',
     setup: [
-      'Stock has corrected 30%+ from recent highs.',
-      'Forms a double bottom or clear accumulation pattern.',
-      'MACD crossover in deeply oversold territory.'
+      'Consecutive green candle rally of 20% or more (Velocity Burst).',
+      'Rally must START below the 200 DMA safety line.',
+      'Price stabilizes and returns to the Rally Start Low (Demand Base).'
     ],
-    entry: 'Buy on the break of the interim lower high.',
-    stopLoss: 'Below the absolute bottom of the pattern.',
-    target: 'Exactly 20% from the breakout point. Auto-exit.',
-    proTip: 'Take 50% profits at 10% gain and move the stop loss to break-even for a risk-free trade.'
+    entry: 'First retest of the Rally Start Low within 1 year of the rally.',
+    stopLoss: 'Risk managed via Structural Tranche Averaging.',
+    target: 'Model Objective is the previous rally peak price.',
+    proTip: 'Strongest when the initial velocity move completes in < 15 days.'
   },
   'CUP_HANDLE_ABCD': {
-    title: 'Cup with Handle (ABCD)',
-    description: 'Classic CANSLIM pattern integrated with ABCD risk management.',
+    title: 'Structural Pivot',
+    description: 'Rounded accumulation phase followed by breakout confirmation.',
     setup: [
-      'Stock forms a "U" shape cup over 7+ weeks.',
-      'Forms a downward drifting handle on light volume.',
-      'Handle stays in the upper half of the cup.'
+      'U-shaped base (Cup) formation over several months.',
+      'Handle formation on light volume below the lip.',
+      'Symmetry check: Lips perfectly aligned within 5% variance.'
     ],
-    entry: 'Buy the breakout above the handle\'s pivot point.',
-    stopLoss: 'Below the low of the handle.',
-    target: 'Depth of the cup added to the breakout pivot.',
-    proTip: 'Use ABCD logic if the breakout fails but the cup bottom holds.'
+    entry: 'Mathematical entry at the Structural Pivot (Neckline) breakout.',
+    stopLoss: 'Risk baseline set at the handle support level.',
+    target: 'Model Objective is the Cup Depth (+H) projection.',
+    proTip: 'Cups deeper than 30% have higher win rates in Large Caps.'
   },
   'RHS_ABCD': {
-    title: 'Reverse Head & Shoulder',
-    description: 'Bottom reversal pattern signaling a major trend change.',
+    title: 'Dynamic Reversal',
+    description: 'Geometric identification of trend exhaustion and structural reversal.',
     setup: [
       'Three distinct troughs: Left Shoulder, deeper Head, Right Shoulder.',
-      'Right shoulder forms on lighter volume.',
-      'Neckline acts as the primary resistance.'
+      'Structural symmetry must be > 95% for model qualification.',
+      'Knoxville Divergence typically appears on the Head trough.'
     ],
-    entry: 'Enter when price breaks and closes above the neckline with heavy volume.',
-    stopLoss: 'Below the Right Shoulder low.',
-    target: 'Distance from Head to Neckline projected upwards.',
-    proTip: 'A sloping neckline (upwards) increases the probability of a successful breakout.'
+    entry: 'Completion of a symmetrical inverted H&S formation.',
+    stopLoss: 'Risk baseline set at the right shoulder support low.',
+    target: 'Model Objective is the Neckline Height (+H) projection.',
+    proTip: 'Sloping necklines (upwards) increase the probability of reversal.'
   },
   'SR_STRATEGY': {
-    title: 'Support & Resistance (S&R)',
-    description: 'Core price action strategy trading between established zones.',
+    title: 'Supply-Demand Core',
+    description: 'Direct identification of historical institutional buy/sell clusters.',
     setup: [
       'Identify major historical Support and Resistance zones.',
-      'Price approaches the Support zone.',
-      'Look for candlestick rejection (Hammer, Doji) at the zone.'
+      'Multi-touch historical validation (Min 2 taps) of the demand floor.',
+      'Net-margin stability during the retest of support.'
     ],
-    entry: 'Buy the bounce off support. Sell short the rejection at resistance.',
-    stopLoss: 'Just outside the established S&R zone.',
-    target: 'The opposite boundary (Target Resistance if bought at Support).',
-    proTip: 'The more times a zone is tested, the weaker it becomes.'
+    entry: 'Touch of a clustered support pivot zone.',
+    stopLoss: 'Risk managed via algorithmic position building.',
+    target: 'Model Objective is the next major resistance cluster.',
+    proTip: 'Only trade if the gap to resistance is > 30%.'
   }
 };
 
 const StrategyGuide: React.FC<StrategyGuideProps> = ({ strategyId }) => {
   const guide = STRATEGY_DETAILS[strategyId] || {
-    title: 'Strategy Overview',
-    description: 'Detailed guidelines for this strategy are currently being updated by the institutional team.',
-    setup: ['Analyze the overall market trend.', 'Verify stock fundamentals.', 'Wait for clear price action confirmation.'],
-    entry: 'Enter on confirmed breakout or support bounce.',
-    stopLoss: 'Below recent structural support.',
-    target: 'Next major resistance level.',
-    proTip: 'Always maintain a positive Risk-Reward ratio.'
+    title: 'Institutional Research Model',
+    description: 'Proprietary institutional scanning logic.',
+    setup: ['Baseline stabilization', 'Fundamental Audit', 'Institutional Demand Check'],
+    entry: 'Calculated Tranche A Entry point.',
+    stopLoss: 'Managed via ABCD laddering.',
+    target: 'Mathematical research objective.',
+    proTip: 'Patience is key in institutional entries.'
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <BookOpen className="h-6 w-6 text-blue-400" />
-          <h2 className="text-xl font-black uppercase tracking-tight italic">{guide.title}</h2>
-        </div>
-        <div className="px-3 py-1 bg-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">
-          Institutional Guide
+    <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+      <div className="p-8 border-b border-slate-50 bg-slate-50/30">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="p-2 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-200">
+            <Zap className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase italic">{guide.title}</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Logic: {guide.description}</p>
+          </div>
         </div>
       </div>
 
       <div className="p-8 space-y-8">
-        {/* Description */}
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2 text-slate-400">
-            <HelpCircle className="h-4 w-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Logic Overview</span>
-          </div>
-          <p className="text-slate-600 font-medium leading-relaxed">
-            {guide.description}
-          </p>
-        </div>
-
         {/* Setup Steps */}
         <div className="space-y-4">
-          <div className="flex items-center space-x-2 text-slate-400">
-            <TrendingUp className="h-4 w-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Setup Requirements</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {guide.setup.map((step, idx) => (
-              <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-start space-x-3">
-                <div className="h-6 w-6 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-400 flex-shrink-0">
-                  {idx + 1}
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block">Setup Requirements</span>
+          <div className="grid gap-3">
+            {guide.setup.map((step, i) => (
+              <div key={i} className="flex items-start space-x-3 group">
+                <div className="h-5 w-5 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
+                  {i + 1}
                 </div>
-                <p className="text-xs font-bold text-slate-700">{step}</p>
+                <p className="text-xs font-bold text-slate-600 leading-relaxed">{step}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Execution Params */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Entry/Exit Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-5 bg-blue-50 rounded-3xl border border-blue-100 space-y-2">
             <div className="flex items-center space-x-2 text-blue-600">
-              <ArrowRightCircle className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Entry Rule</span>
+              <ChevronRight className="h-4 w-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Entry</span>
             </div>
             <p className="text-xs font-black text-blue-900 leading-normal">{guide.entry}</p>
           </div>
 
-          <div className="p-5 bg-red-50 rounded-3xl border border-red-100 space-y-2">
-            <div className="flex items-center space-x-2 text-red-600">
-              <ShieldAlert className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Risk Baseline</span>
-            </div>
-            <p className="text-xs font-black text-red-900 leading-normal">{guide.stopLoss}</p>
-          </div>
-
-          <div className="p-5 bg-green-50 rounded-3xl border border-green-100 space-y-2">
-            <div className="flex items-center space-x-2 text-green-600">
+          <div className="p-5 bg-indigo-50 rounded-3xl border border-indigo-100 space-y-2">
+            <div className="flex items-center space-x-2 text-indigo-600">
               <Target className="h-4 w-4" />
               <span className="text-[10px] font-black uppercase tracking-widest">Model Obj.</span>
             </div>
-            <p className="text-xs font-black text-green-900 leading-normal">{guide.target}</p>
+            <p className="text-xs font-black text-indigo-900 leading-normal">{guide.target}</p>
+          </div>
+
+          <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-2">
+            <div className="flex items-center space-x-2 text-slate-600">
+              <ShieldAlert className="h-4 w-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Risk Baseline</span>
+            </div>
+            <p className="text-xs font-black text-slate-900 leading-normal">{guide.stopLoss}</p>
           </div>
         </div>
 
