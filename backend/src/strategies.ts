@@ -30,13 +30,14 @@ export function calculateABCDLevels(anchorPrice: number, marketCap: number, bask
   let gapPct = 0.10; // Default Large Cap 10%
   
   const mCapCr = marketCap / 10000000; // Convert to Crores
+  // console.log(`[DEBUG ABCD] mCapCr: ${mCapCr}, basket: ${basket}`);
   
   if (basket === 'HIGH_BETA' || basket === 'HIGH_BITA' || basket === 'PROFIT') {
     gapPct = 0.15;
-  } else if (mCapCr > 100000) {
-    gapPct = 0.10; // Large Cap
-  } else if (mCapCr > 33000) {
-    gapPct = 0.15; // Mid Cap
+  } else if (mCapCr > 20000) {
+    gapPct = 0.10; // Large Cap > 20k Cr
+  } else if (mCapCr > 5000) {
+    gapPct = 0.15; // Mid Cap > 5k Cr
   } else {
     gapPct = 0.15; // Small Cap
   }
@@ -222,17 +223,23 @@ export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
     }
   }
 
-  // 3. If no retest has happened yet, show in Watchlist (Observation)
+  // 3. If no retest has happened yet, show in Watchlist if rally is still fresh (< 1 year)
   const latestRally = rallies[rallies.length - 1];
-  return {
-    isBuyZone: false,
-    entryPrice: latestRally.startLow,
-    target: latestRally.high,
-    rallyGain: latestRally.gain,
-    triggerDate: '-',
-    verdict: 'WATCHLIST',
-    rallyStartDate: latestRally.startDate
-  };
+  const barsSinceRallyEnd = quotes.length - 1 - latestRally.endIdx;
+  
+  if (barsSinceRallyEnd <= 251) {
+    return {
+      isBuyZone: false,
+      entryPrice: latestRally.startLow,
+      target: latestRally.high,
+      rallyGain: latestRally.gain,
+      triggerDate: '-',
+      verdict: 'WATCHLIST',
+      rallyStartDate: typeof latestRally.startDate === 'string' ? latestRally.startDate.split('T')[0] : (latestRally.startDate as Date).toISOString().split('T')[0]
+    };
+  }
+
+  return null;
 }
 
 export function calculateEMA(prices: number[], length: number): number[] {
