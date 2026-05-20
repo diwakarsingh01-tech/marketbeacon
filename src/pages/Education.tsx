@@ -14,14 +14,38 @@ import {
 } from 'lucide-react';
 
 const StrategyEducation: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('fundamentals');
+  const [activeTab, setActiveTab] = useState('market_reading');
 
-  const strategies = [
+  const lessons = [
+    {
+      id: 'market_reading',
+      title: 'Market Reading: Foundation',
+      icon: BookOpen,
+      color: 'text-blue-600',
+      category: 'Foundation',
+      content: {
+        headline: 'Build conviction before you take a trade.',
+        logic: 'In this lesson, users understand why rule-based swing investing on selected quality stocks is more reliable than emotional tips or market noise.',
+        outcomes: [
+          'Understand that the Envelope strategy is applied only on selected Super 45 universe.',
+          'Read backtest info (Win Rate, CAGR) before building conviction.',
+          'Verify trade validity via entry/current price rules.',
+          'Accept that some open trades can be negative temporarily (Transparency).',
+          'MarketBeacon tracks behavior; execution happens in your Demat account.'
+        ],
+        video: {
+          title: 'Trade Tracker | Class 1',
+          url: 'https://www.youtube.com/watch?v=ZgFiPkuHrAw',
+          timestamp: 'Start: 5m 43s'
+        }
+      }
+    },
     {
       id: 'fundamentals',
       title: 'Batch 9 Fundamentals',
       icon: ShieldCheck,
       color: 'text-emerald-600',
+      category: 'Selection',
       content: {
         logic: 'Quality filter applied before technical scanning.',
         checks: [
@@ -38,6 +62,7 @@ const StrategyEducation: React.FC = () => {
       title: 'Institutional Floor',
       icon: Target,
       color: 'text-blue-600',
+      category: 'Strategy',
       content: {
         logic: 'Identifies institutional demand zones based on statistical deviation benchmarks.',
         entry: 'Price touches or closes near the lower research boundary.',
@@ -50,6 +75,7 @@ const StrategyEducation: React.FC = () => {
       title: 'Momentum Ceiling',
       icon: TrendingUp,
       color: 'text-indigo-600',
+      category: 'Strategy',
       content: {
         logic: 'Participation model for stocks in strong primary uptrends.',
         entry: 'Research entry at the secondary regression line (EMA 200).',
@@ -62,8 +88,9 @@ const StrategyEducation: React.FC = () => {
       title: 'Volatility Channel',
       icon: BarChart3,
       color: 'text-emerald-600',
+      category: 'Strategy',
       content: {
-        logic: 'Mean-reversion model based on statistical volatility boundaries.',
+        logic: 'Mean reversion model based on statistical volatility boundaries.',
         entry: 'Price reaches the lower volatility research band.',
         exit: 'Model Objective is the upper volatility benchmark.',
         risk: 'Risk is managed by verifying a narrow low-volatility squeeze before entry.'
@@ -74,6 +101,7 @@ const StrategyEducation: React.FC = () => {
       title: 'Quantum Stacking',
       icon: Layers,
       color: 'text-purple-600',
+      category: 'Strategy',
       content: {
         logic: 'Identifies extreme exhaustion zones through moving average convergence.',
         buy: 'Bearish Stacking (Price < SMA 20 < SMA 50 < SMA 200).',
@@ -86,6 +114,7 @@ const StrategyEducation: React.FC = () => {
       title: 'Annual Range Matrix',
       icon: Calendar,
       color: 'text-rose-600',
+      category: 'Strategy',
       content: {
         logic: 'Mean reversion system based on annual price extremes.',
         buy: 'Accumulation at the 52-week statistical low.',
@@ -98,6 +127,7 @@ const StrategyEducation: React.FC = () => {
       title: 'Deep Recovery Audit',
       icon: ShieldCheck,
       color: 'text-amber-600',
+      category: 'Strategy',
       content: {
         logic: 'Capitalizes on the proprietary 67% All-Time High reset cycle.',
         entry: 'Drawdown >= 66% with improving fundamental financials.',
@@ -109,7 +139,8 @@ const StrategyEducation: React.FC = () => {
       id: 'velocity',
       title: 'Velocity Retest',
       icon: Zap,
-      color: 'text-blue-500',
+      color: 'text-blue-50',
+      category: 'Strategy',
       content: {
         logic: 'Identifies high-momentum bursts and enters on the origin retest.',
         entry: 'Retest of the Rally Start Low within 1 year of the rally.',
@@ -122,6 +153,7 @@ const StrategyEducation: React.FC = () => {
       title: 'Structural Pivot',
       icon: Target,
       color: 'text-orange-600',
+      category: 'Strategy',
       content: {
         logic: 'Rounded accumulation phase followed by breakout confirmation.',
         structure: 'U-shaped base (Cup) and low-volatility handle formation.',
@@ -134,6 +166,7 @@ const StrategyEducation: React.FC = () => {
       title: 'Dynamic Reversal',
       icon: TrendingUp,
       color: 'text-cyan-600',
+      category: 'Strategy',
       content: {
         logic: 'Geometric identification of trend exhaustion and reversal.',
         structure: 'Multi-pivot structure (Shoulder-Head-Shoulder sequence).',
@@ -146,6 +179,7 @@ const StrategyEducation: React.FC = () => {
       title: 'Supply-Demand Core',
       icon: Layers,
       color: 'text-teal-600',
+      category: 'Strategy',
       content: {
         logic: 'Direct identification of historical institutional buy/sell clusters.',
         rebound_rule: 'Requires multi-touch historical validation of the demand zone.',
@@ -164,21 +198,21 @@ const StrategyEducation: React.FC = () => {
           </div>
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase italic">Education Center</h1>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">Strategy Engineering & Logic Guides</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">Institutional Knowledge & Logic Guides</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Navigation */}
-        <div className="lg:col-span-4 space-y-2">
-          {strategies.map((strat) => {
-            const Icon = strat.icon;
-            const isActive = activeTab === strat.id;
+        <div className="lg:col-span-4 space-y-3">
+          {lessons.map((lesson) => {
+            const Icon = lesson.icon;
+            const isActive = activeTab === lesson.id;
             return (
               <button
-                key={strat.id}
-                onClick={() => setActiveTab(strat.id)}
+                key={lesson.id}
+                onClick={() => setActiveTab(lesson.id)}
                 className={`w-full flex items-center justify-between p-5 rounded-3xl border transition-all ${
                   isActive 
                     ? 'bg-white border-blue-600 shadow-xl shadow-blue-100 scale-[1.02] z-10' 
@@ -189,9 +223,12 @@ const StrategyEducation: React.FC = () => {
                   <div className={`p-3 rounded-2xl ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>
                     <Icon className="h-5 w-5" />
                   </div>
-                  <span className={`text-[13px] font-black uppercase tracking-tight ${isActive ? 'text-slate-900' : ''}`}>
-                    {strat.title}
-                  </span>
+                  <div className="flex flex-col items-start">
+                    <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">{lesson.category}</span>
+                    <span className={`text-[13px] font-black uppercase tracking-tight ${isActive ? 'text-slate-900' : ''}`}>
+                      {lesson.title}
+                    </span>
+                  </div>
                 </div>
                 <ChevronRight className={`h-4 w-4 transition-transform ${isActive ? 'translate-x-1 text-blue-600' : 'opacity-0'}`} />
               </button>
@@ -200,32 +237,39 @@ const StrategyEducation: React.FC = () => {
         </div>
 
         {/* Content Area */}
-        <div className="lg:col-span-8 bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          {strategies.filter(s => s.id === activeTab).map((strat) => (
-            <div key={strat.id} className="p-8 md:p-12 animate-in fade-in slide-in-from-right-4 duration-500">
-              <div className="flex items-center space-x-3 mb-8">
-                <strat.icon className={`h-8 w-8 ${strat.color}`} />
-                <h2 className="text-3xl font-black text-slate-900 tracking-tight">{strat.title}</h2>
+        <div className="lg:col-span-8 bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden min-h-[600px]">
+          {lessons.filter(s => s.id === activeTab).map((lesson) => (
+            <div key={lesson.id} className="p-8 md:p-12 animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col h-full">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center space-x-3">
+                  <lesson.icon className={`h-8 w-8 ${lesson.color}`} />
+                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">{lesson.title}</h2>
+                </div>
+                <span className="px-4 py-1.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-full">{lesson.category}</span>
               </div>
 
-              <div className="space-y-10">
+              <div className="space-y-10 flex-1">
+                {lesson.content.headline && (
+                  <h3 className="text-2xl font-black text-slate-900 leading-tight italic">"{lesson.content.headline}"</h3>
+                )}
+
                 <section>
                   <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center">
-                    <Info className="h-3 w-3 mr-2" /> Core Strategy Logic
+                    <Info className="h-3 w-3 mr-2" /> Essential Concept
                   </h3>
-                  <p className="text-xl font-bold text-slate-700 leading-relaxed italic border-l-4 border-slate-100 pl-6">
-                    "{strat.content.logic}"
+                  <p className="text-lg font-bold text-slate-700 leading-relaxed italic border-l-4 border-slate-100 pl-6">
+                    "{lesson.content.logic}"
                   </p>
                 </section>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {Object.entries(strat.content).map(([key, value]) => {
-                    if (key === 'logic') return null;
+                  {Object.entries(lesson.content).map(([key, value]) => {
+                    if (['logic', 'headline', 'video'].includes(key)) return null;
                     return (
                       <div key={key} className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 capitalize">{key.replace('_', ' ')}</h4>
                         {Array.isArray(value) ? (
-                          <ul className="space-y-2">
+                          <ul className="space-y-3">
                             {value.map((v, i) => (
                               <li key={i} className="flex items-start text-[13px] font-bold text-slate-700">
                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 mr-2 flex-shrink-0" />
@@ -233,20 +277,45 @@ const StrategyEducation: React.FC = () => {
                               </li>
                             ))}
                           </ul>
-                        ) : (
+                        ) : typeof value === 'string' ? (
                           <p className="text-[13px] font-bold text-slate-700">{value}</p>
-                        )}
+                        ) : null}
                       </div>
                     );
                   })}
                 </div>
+
+                {lesson.content.video && (
+                  <div className="bg-blue-600 rounded-[2rem] p-8 text-white relative overflow-hidden group">
+                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl -mr-16 -mt-16 group-hover:bg-white/20 transition-all" />
+                     <div className="relative z-10 space-y-4">
+                        <div className="flex items-center space-x-2">
+                           <Zap className="h-4 w-4 fill-current" />
+                           <span className="text-[10px] font-black uppercase tracking-widest">Masterclass Fragment</span>
+                        </div>
+                        <h4 className="text-xl font-black italic">{lesson.content.video.title}</h4>
+                        <div className="flex items-center justify-between pt-2">
+                           <span className="text-[10px] font-black uppercase bg-white/20 px-3 py-1 rounded-lg">{lesson.content.video.timestamp}</span>
+                           <a 
+                             href={lesson.content.video.url} 
+                             target="_blank" 
+                             rel="noopener noreferrer"
+                             className="flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-xl active:scale-95"
+                           >
+                              <span>Watch Foundation Video</span>
+                              <ChevronRight className="h-4 w-4" />
+                           </a>
+                        </div>
+                     </div>
+                  </div>
+                )}
 
                 <div className="bg-amber-50 rounded-3xl p-6 border border-amber-100 flex items-start space-x-4">
                   <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
                   <div>
                     <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Institutional Guardrail</h4>
                     <p className="text-[12px] font-bold text-amber-800 leading-relaxed">
-                      Always ensure the symbol is Batch 9 compliant before executing. Do not chase breakouts; wait for the calculated entry zones.
+                      Build confidence with rule-based investing. MarketBeacon shows strategy entries; your execution discipline creates the alpha.
                     </p>
                   </div>
                 </div>
