@@ -25,3 +25,9 @@ export interface StrategyStats {
   recoveryFactor: number;
   sharpeRatio: number;
 }
+
+declare global {
+  interface Window {
+    recaptchaVerifier: any;
+  }
+}
