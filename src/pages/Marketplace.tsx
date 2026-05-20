@@ -12,7 +12,8 @@ import {
   Check,
   Calendar,
   Clock,
-  Shield
+  Shield,
+  Gift
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
@@ -25,6 +26,9 @@ const MembershipPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [selectedTier, setSelectedTier] = useState<'pro' | 'alpha'>('pro');
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'quarterly'>('monthly');
+  const [voucherCode, setVoucherCode] = useState('');
+  const [redeeming, setRedeemning] = useState(false);
 
   useEffect(() => {
     const fetchMembership = async () => {
@@ -43,6 +47,35 @@ const MembershipPage: React.FC = () => {
     fetchMembership();
   }, []);
 
+  const handleRedeemVoucher = async () => {
+    if (!voucherCode) return;
+    setRedeemning(true);
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/redeem-voucher`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ code: voucherCode })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        alert(`Voucher Applied! Access Level: ${data.tier.toUpperCase()} for 7 Days.`);
+        window.location.reload(); 
+      } else {
+        const err = await res.json();
+        alert(err.error || "Voucher code not recognized");
+      }
+    } catch (e) {
+      alert("Network timeout.");
+    } finally {
+      setRedeemning(false);
+    }
+  };
+
   const handleUnlock = (tier: 'pro' | 'alpha') => {
     setSelectedTier(tier);
     setShowUpgrade(true);
@@ -55,187 +88,169 @@ const MembershipPage: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-10 space-y-6 md:space-y-8 overflow-y-auto font-sans bg-[#f8fafc] no-scrollbar">
+    <div className="flex-1 flex flex-col min-h-0 py-6 md:py-10 px-4 md:px-10 space-y-8 md:space-y-12 overflow-y-auto font-sans bg-[#f8fafc] pb-24">
       
-      {/* 1. Membership Hero with Marketing Gimmicks */}
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-8 border-b border-slate-200 pb-10">
-        <div className="space-y-2 text-center lg:text-left">
-           <div className="flex items-center space-x-2 px-3 py-1 bg-indigo-600/10 w-fit rounded-lg border border-indigo-600/20 mb-3 mx-auto lg:mx-0">
+      {/* 1. Header with Toggle */}
+      <div className="flex flex-col items-center justify-center text-center space-y-6 border-b border-slate-200 pb-10">
+        <div className="space-y-2">
+           <div className="flex items-center space-x-2 px-3 py-1 bg-indigo-600/10 w-fit rounded-lg border border-indigo-600/20 mb-3 mx-auto">
               <Sparkles className="h-3 w-3 text-indigo-600 animate-pulse" />
               <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none">Institutional Membership Hub</span>
            </div>
-           <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Upgrade Your Edge</h1>
-           <p className="text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-widest">Join the top 1% of quantitative researchers. Limited licenses available.</p>
+           <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Access Licenses</h1>
+           <p className="text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-widest">Select your algorithmic environment</p>
         </div>
 
-        <div className="flex items-center space-x-4 bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-sm w-full lg:w-auto justify-center">
-           <div className="flex flex-col items-center px-4 md:px-6 border-r border-slate-100">
-              <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center italic text-blue-600">Institutional Demand</span>
-              <span className="text-[10px] md:text-xs font-black text-rose-500 uppercase tracking-tighter flex items-center">
-                 <div className="w-1.5 h-1.5 bg-rose-500 rounded-full mr-2 animate-ping" />
-                 High (94%)
-              </span>
-           </div>
-           <div className="flex flex-col items-center px-4 md:px-6">
-              <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Your Status</span>
-              <span className="text-[10px] md:text-xs font-black text-slate-900 uppercase tracking-tighter italic">
-                 {(user as any)?.tier || 'Free Restricted'}
-              </span>
+        {/* Pricing Toggle */}
+        <div className="flex items-center justify-center space-x-4">
+           <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'monthly' ? 'text-slate-900' : 'text-slate-400'}`}>Monthly</span>
+           <button 
+             onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'quarterly' : 'monthly')}
+             className="w-14 h-7 bg-white rounded-full relative p-1 transition-all border border-slate-200 shadow-inner"
+           >
+              <div className={`h-5 w-5 bg-blue-600 rounded-full transition-all shadow-md ${billingPeriod === 'quarterly' ? 'translate-x-7' : 'translate-x-0'}`} />
+           </button>
+           <div className="flex items-center space-x-2">
+              <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'quarterly' ? 'text-blue-600' : 'text-slate-400'}`}>Quarterly</span>
+              <span className="bg-emerald-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter animate-pulse">Save 20%</span>
            </div>
         </div>
       </div>
 
       {/* 2. Membership Catalog */}
-      <div className="space-y-6">
-         <div className="flex items-center justify-between">
-            <h2 className="text-xs font-black text-slate-900 uppercase tracking-[0.3em] flex items-center space-x-2">
-               <Calendar className="h-4 w-4 text-blue-600" />
-               <span>Annual Quant Research Licenses</span>
-            </h2>
-            <div className="flex items-center space-x-2 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-full shadow-sm">
-               <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-               <span className="text-[9px] font-black text-amber-700 uppercase tracking-widest">Early Bird: 33% Lifetime Savings</span>
-            </div>
-         </div>
-         
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {items.map((item) => {
-              const isUserTierActive = (user as any)?.tier === item.tier || (user as any)?.tier === 'alpha';
-              const isAlpha = item.tier === 'alpha';
-              return (
-                <div key={item.id} className={`bg-white rounded-[2.5rem] border-2 shadow-sm hover:shadow-2xl transition-all duration-500 group overflow-hidden flex flex-col relative ${isAlpha ? 'border-slate-900 scale-[1.02] shadow-indigo-100' : 'border-slate-100'}`}>
-                   {isAlpha && (
-                      <div className="absolute top-0 right-10 transform -translate-y-1/2 bg-slate-900 text-white px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest z-10 border-4 border-white shadow-xl">
-                         Institutional Choice
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-6xl mx-auto w-full">
+         {items.map((item) => {
+           const isUserTierActive = (user as any)?.tier === item.tier || (user as any)?.tier === 'alpha';
+           const isAlpha = item.tier === 'alpha';
+           const displayPrice = billingPeriod === 'monthly' ? item.price : (item.tier === 'pro' ? '₹799' : '₹3,999');
+           
+           return (
+             <div key={item.id} className={`bg-white rounded-[2.5rem] border-2 shadow-sm transition-all duration-500 flex flex-col relative ${isAlpha ? 'border-slate-900' : 'border-slate-100'}`}>
+                {isAlpha && (
+                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest z-10 border-4 border-white shadow-xl">
+                      Most Popular
+                   </div>
+                )}
+                
+                <div className="p-6 md:p-10 space-y-6 md:space-y-8 flex-1">
+                   <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                         <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-lg ${isAlpha ? 'bg-slate-900 text-white' : 'bg-blue-600 text-white'}`}>
+                            {item.tier} Environment
+                         </span>
+                         <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase italic mt-3 leading-none">{item.name}</h3>
                       </div>
-                   )}
-                   
-                   <div className="p-8 md:p-10 space-y-8 flex-1">
-                      <div className="flex items-start justify-between">
-                         <div className="space-y-1">
-                            <div className="flex items-center space-x-2">
-                               <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-lg ${isAlpha ? 'bg-slate-900 text-white shadow-lg' : 'bg-blue-600 text-white shadow-lg'}`}>
-                                  {item.tier} Access
-                               </span>
-                            </div>
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic mt-4">{item.name}</h3>
-                         </div>
-                         <div className={`p-4 rounded-2xl shadow-inner ${isUserTierActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-300'}`}>
-                            {isUserTierActive ? <Unlock className="h-6 w-6" /> : <Lock className="h-6 w-6" />}
-                         </div>
-                      </div>
-
-                      <p className="text-sm text-slate-500 leading-relaxed font-bold italic border-l-4 border-slate-100 pl-4">
-                         "{item.desc}"
-                      </p>
-
-                      <div className="space-y-4">
-                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pl-1">Advanced Logic Included</span>
-                         <div className="grid grid-cols-1 gap-3">
-                            {(isAlpha ? [
-                               'Velocity Retest Strategy (Deep Demand)',
-                               '67% Deep Recovery Audit (Value Cycle)',
-                               'Supply-Demand Core Resistance Logic',
-                               'Alpha Pulse Real-Time Notifications',
-                               'Priority Institutional Data Streams'
-                            ] : [
-                               'Structural Pivot Patterns (Breakouts)',
-                               'Dynamic Reversal Matrix (Trend Change)',
-                               'Annual Range Statistical Matrix',
-                               'Quantum Stacking Moving Averages',
-                               'Standard Portfolio Allocation Audit'
-                            ]).map((feature, idx) => (
-                               <div key={idx} className="flex items-center space-x-3 group/item">
-                                  <div className={`h-5 w-5 rounded-full flex items-center justify-center transition-colors ${isUserTierActive ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-50 text-blue-600 group-hover/item:bg-blue-600 group-hover/item:text-white'}`}>
-                                     <Check className="h-3 w-3" />
-                                  </div>
-                                  <span className="text-xs font-black text-slate-700 tracking-tight">{feature}</span>
-                               </div>
-                            ))}
-                         </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2 py-6 px-4 bg-slate-50 rounded-3xl text-center shadow-inner">
-                         <div className="flex flex-col">
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Algorithmic CAGR</span>
-                            <span className="text-sm font-black text-slate-900">{item.cagr}</span>
-                         </div>
-                         <div className="flex flex-col border-x border-slate-200">
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Success Rate</span>
-                            <span className="text-sm font-black text-emerald-600">{item.winRate}</span>
-                         </div>
-                         <div className="flex flex-col">
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Risk Profile</span>
-                            <span className="text-sm font-black text-slate-900">{item.risk}</span>
-                         </div>
+                      <div className={`p-3 md:p-4 rounded-2xl shadow-inner ${isUserTierActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-300'}`}>
+                         {isUserTierActive ? <Unlock className="h-5 w-5 md:h-6 md:w-6" /> : <Lock className="h-5 w-5 md:h-6 md:w-6" />}
                       </div>
                    </div>
 
-                   <div className={`p-8 flex flex-col space-y-4 transition-all duration-500 ${isUserTierActive ? 'bg-emerald-600' : 'bg-slate-50 group-hover:bg-slate-900'}`}>
-                      <div className="flex items-center justify-between">
-                         <div className="flex flex-col">
-                            <span className={`text-[8px] font-black uppercase ${isUserTierActive ? 'text-emerald-100' : 'text-slate-400 group-hover:text-slate-500'}`}>Full 12-Month Research License</span>
-                            <div className="flex items-baseline space-x-2">
-                               <span className={`text-3xl font-black transition-colors ${isUserTierActive ? 'text-white' : 'text-slate-900 group-hover:text-white'}`}>{item.price}</span>
-                               <span className={`text-xs font-bold line-through ${isUserTierActive ? 'text-emerald-300' : 'text-slate-400 group-hover:text-slate-600'}`}>₹{isAlpha ? '2388' : '1188'}</span>
-                            </div>
-                         </div>
-                         
-                         {isUserTierActive ? (
-                            <div className="flex flex-col items-end">
-                               <div className="px-5 py-2.5 bg-white/20 backdrop-blur-md text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center space-x-2 border border-white/20 shadow-xl">
-                                  <ShieldCheck className="h-3 w-3" />
-                                  <span>Active Access</span>
+                   <div className="space-y-4">
+                      <div className="grid grid-cols-1 gap-3">
+                         {(isAlpha ? [
+                            'Velocity Retest (Deep Demand)',
+                            '67% Deep Recovery Audit',
+                            'Supply-Demand Resistance Logic',
+                            'Real-Time Alpha Notifications',
+                            'Priority Institutional Nodes'
+                         ] : [
+                            'Structural Pivot (Breakouts)',
+                            'Dynamic Reversal Matrix',
+                            'Annual Range Statistics',
+                            'Quantum Stacking Averages',
+                            'Standard Portfolio Mix Audit'
+                         ]).map((feature, idx) => (
+                            <div key={idx} className="flex items-center space-x-3">
+                               <div className={`h-4 w-4 md:h-5 md:w-5 rounded-full flex items-center justify-center ${isUserTierActive ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                                  <Check className="h-2.5 w-2.5 md:h-3 md:w-3" />
                                </div>
-                               <span className="text-[8px] font-bold text-white/60 mt-1 uppercase">Valid for {(user as any).daysRemaining || 365} Days</span>
+                               <span className="text-[11px] md:text-xs font-black text-slate-700 tracking-tight">{feature}</span>
                             </div>
-                         ) : (
-                            <button 
-                              onClick={() => handleUnlock(item.tier)}
-                              className={`px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center space-x-3 ${isAlpha ? 'bg-white text-slate-900 shadow-indigo-500/20' : 'bg-blue-600 text-white shadow-blue-500/20'}`}
-                            >
-                               <span>Deploy Now</span>
-                               <ChevronRight className="h-4 w-4" />
-                            </button>
-                         )}
+                         ))}
                       </div>
-                      {!isUserTierActive && (
-                         <div className="flex items-center justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Clock className="h-3 w-3 text-slate-500" />
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Price increases in 4h 12m</span>
-                         </div>
-                      )}
+                   </div>
+
+                   <div className="grid grid-cols-3 gap-1 md:gap-2 py-4 md:py-6 px-3 md:px-4 bg-slate-50 rounded-3xl text-center shadow-inner">
+                      <div className="flex flex-col">
+                         <span className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">CAGR</span>
+                         <span className="text-xs md:text-sm font-black text-slate-900">{item.cagr}</span>
+                      </div>
+                      <div className="flex flex-col border-x border-slate-200">
+                         <span className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Win Rate</span>
+                         <span className="text-xs md:text-sm font-black text-emerald-600">{item.winRate}</span>
+                      </div>
+                      <div className="flex flex-col">
+                         <span className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Risk</span>
+                         <span className="text-xs md:text-sm font-black text-slate-900">{item.risk}</span>
+                      </div>
                    </div>
                 </div>
-              );
-            })}
-         </div>
+
+                <div className={`p-6 md:p-8 flex flex-col space-y-4 rounded-b-[2.5rem] transition-all duration-500 ${isUserTierActive ? 'bg-emerald-600' : 'bg-slate-50 group-hover:bg-slate-100'}`}>
+                   <div className="flex items-center justify-between gap-4">
+                      <div className="flex flex-col min-w-0">
+                         <span className={`text-[8px] font-black uppercase truncate ${isUserTierActive ? 'text-emerald-100' : 'text-slate-400'}`}>12-Month License</span>
+                         <div className="flex items-baseline space-x-2">
+                            <span className={`text-2xl md:text-3xl font-black ${isUserTierActive ? 'text-white' : 'text-slate-900'}`}>{displayPrice}</span>
+                            <span className={`text-[10px] font-bold line-through ${isUserTierActive ? 'text-emerald-300' : 'text-slate-400'}`}>₹{isAlpha ? '2388' : '1188'}</span>
+                         </div>
+                      </div>
+                      
+                      {isUserTierActive ? (
+                         <div className="px-4 py-2 bg-white/20 backdrop-blur-md text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center space-x-2 border border-white/20 shadow-xl">
+                            <ShieldCheck className="h-3 w-3" />
+                            <span>Active</span>
+                         </div>
+                      ) : (
+                         <button 
+                           onClick={() => handleUnlock(item.tier)}
+                           className={`px-6 md:px-10 py-3.5 md:py-4 rounded-2xl text-[10px] md:text-[11px] font-black uppercase tracking-widest shadow-2xl transition-all active:scale-95 flex items-center space-x-2 shrink-0 ${isAlpha ? 'bg-slate-900 text-white shadow-slate-900/20' : 'bg-blue-600 text-white shadow-blue-500/20'}`}
+                         >
+                            <span>Deploy</span>
+                            <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                         </button>
+                      )}
+                   </div>
+                   
+                   {!isUserTierActive && item.tier !== 'free' && (
+                     <div className="flex items-center space-x-2 bg-white/50 p-1 rounded-xl border border-slate-200">
+                        <Gift className="h-3.5 w-3.5 text-slate-400 ml-2" />
+                        <input 
+                           type="text" 
+                           placeholder="Voucher"
+                           value={voucherCode}
+                           onChange={(e) => setVoucherCode(e.target.value)}
+                           className="flex-1 bg-transparent text-[10px] font-black uppercase outline-none px-2"
+                        />
+                        <button onClick={handleRedeemVoucher} disabled={redeeming} className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all disabled:opacity-50">
+                           {redeeming ? '...' : 'Redeem'}
+                        </button>
+                     </div>
+                   )}
+                </div>
+             </div>
+           );
+         })}
       </div>
 
       {/* 3. Promotional Banner */}
-      <div className="bg-slate-900 rounded-[3rem] p-12 text-white relative overflow-hidden shadow-2xl border border-slate-800">
+      <div className="bg-slate-900 rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl border border-slate-800 max-w-6xl mx-auto w-full">
          <div className="absolute right-0 top-0 w-96 h-96 bg-blue-600/10 blur-[100px] -mr-48 -mt-48" />
-         <Activity className="absolute right-[-20px] bottom-[-20px] h-64 w-64 opacity-5" />
-         <div className="max-w-2xl space-y-6 relative z-10">
+         <div className="max-w-2xl space-y-4 md:space-y-6 relative z-10">
             <div className="flex items-center space-x-2 text-blue-500">
-               <Shield className="h-5 w-5" />
+               <Shield className="h-4 w-4 md:h-5 md:w-5" />
                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Enterprise Hub</span>
             </div>
-            <h3 className="text-4xl font-black tracking-tighter uppercase italic leading-tight">Corporate Research License</h3>
-            <p className="text-slate-400 font-medium text-lg leading-relaxed">
-               Deploy MarketBeacon locally on your corporate network or request proprietary backtesting for your specific quants. High-precision logic, zero-latency execution.
+            <h3 className="text-2xl md:text-4xl font-black tracking-tighter uppercase italic leading-tight">Corporate Research</h3>
+            <p className="text-xs md:text-lg text-slate-400 font-medium leading-relaxed">
+               Zero-latency institutional nodes for proprietary research.
             </p>
-            <button className="px-10 py-5 bg-blue-600 text-white rounded-3xl text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all flex items-center space-x-3">
-               <span>Contact Admin Support</span>
+            <button className="px-8 md:px-10 py-4 md:py-5 bg-blue-600 text-white rounded-2xl md:rounded-3xl text-[10px] md:text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all flex items-center space-x-3">
+               <span>Contact Support</span>
                <ArrowUpRight className="h-4 w-4" />
             </button>
          </div>
       </div>
-
-      <footer className="py-8 border-t border-slate-200 opacity-40 flex items-center justify-between shrink-0">
-         <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">MarketBeacon Terminal v4.8 • Institutional Membership Hub</p>
-         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Alpha Node Encryption: AES-256-LICENSE</p>
-      </footer>
 
       <UpgradeModal 
         isOpen={showUpgrade} 
