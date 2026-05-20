@@ -14,7 +14,9 @@ import {
   Star as StarIcon,
   Download as DownloadIcon,
   ShieldCheck,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Share2,
+  ExternalLink
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -96,6 +98,19 @@ const TradeTable: React.FC<TradeTableProps> = ({
       direction = 'desc';
     }
     setSortConfig({ key, direction });
+  };
+
+  const handleShareSignal = (trade: any) => {
+    const text = `🚨 *MarketBeacon Signal: ${trade.symbol}*
+⚡️ Strategy: ${trade.strategy || 'Institutional Matrix'}
+🎯 Objective: ₹${trade.targetPrice || trade.target || '-'}
+📊 Current ROI: ${trade.roi?.toFixed(1) || '0'}%
+🔗 Analysis: https://marketbeacon.vercel.app/stock/${trade.symbol}
+
+#MarketBeacon #Batch9 #TradingSignals`;
+    
+    navigator.clipboard.writeText(text);
+    alert(`Signal for ${trade.symbol} copied to clipboard! Ready to paste into Telegram.`);
   };
 
   const handleToggleWatchlist = (e: React.MouseEvent, symbol: string) => {
@@ -406,6 +421,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                       <td className="px-4 py-2.5 text-left flex items-center space-x-2">
                         <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-amber-400"><StarIcon className="h-3.5 w-3.5 fill-current" /></button>
                         <span className="text-[11px] font-black text-slate-900">{trade.symbol}</span>
+                        <button onClick={() => handleShareSignal(trade)} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-slate-100 rounded text-slate-400" title="Share Performance"><Share2 className="h-3 w-3" /></button>
                       </td>
                       <td className="px-4 py-2.5 text-center">
                         <input type="number" defaultValue={trade.quantity || 0} onBlur={(e) => onUpdateHolding?.(trade.symbol, parseInt(e.target.value) || 0, trade.buy_price || 0)} className="w-12 bg-slate-50 rounded text-center text-[10px] font-black p-0.5" />
@@ -436,9 +452,13 @@ const TradeTable: React.FC<TradeTableProps> = ({
                     )}
                     {visibleColumns.symbol && (
                       <td className="px-4 py-2.5">
-                        <div className="flex items-center space-x-1">
-                          <span className="text-[11px] font-black text-slate-900">{trade.symbol}</span>
-                          {isTopFive && <ZapIcon className="h-2.5 w-2.5 text-amber-500 fill-amber-500" />}
+                        <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-1">
+                            <span className="text-[11px] font-black text-slate-900">{trade.symbol}</span>
+                            {isTopFive && <ZapIcon className="h-2.5 w-2.5 text-amber-500 fill-amber-500" />}
+                          </div>
+                          <button onClick={() => handleShareSignal(trade)} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-slate-100 rounded text-slate-400" title="Share Signal"><Share2 className="h-3 w-3" /></button>
+                          <Link to={`/stock/${trade.symbol}`} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-blue-50 rounded text-blue-500" title="Full Analysis"><ExternalLink className="h-3 w-3" /></Link>
                         </div>
                       </td>
                     )}

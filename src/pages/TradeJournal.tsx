@@ -14,7 +14,8 @@ import {
   Upload,
   ArrowUpDown,
   Square,
-  CheckSquare
+  CheckSquare,
+  Share2
 } from 'lucide-react';
 import Papa from 'papaparse';
 import { BASKETS, STRATEGIES } from '../data/stocks';
@@ -218,6 +219,26 @@ const TradeJournalPage: React.FC = () => {
     link.setAttribute('href', url);
     link.setAttribute('download', `MarketBeacon_Export_${new Date().toISOString().split('T')[0]}.csv`);
     link.click();
+  };
+
+  const handleShareTrade = (trade: any) => {
+    const isClosed = trade.status === 'CLOSED';
+    const text = isClosed 
+      ? `✅ *Trade Booked: ${trade.symbol}*
+📈 Profit: ${trade.pnlPer.toFixed(2)}% (+₹${Math.abs(trade.pnl).toLocaleString()})
+⚡️ Strategy: ${trade.strategy}
+📅 Duration: ${trade.days} Days
+
+#MarketBeacon #ProfitableTrader #InstitutionalMatrix`
+      : `🔥 *New Position: ${trade.symbol}*
+⚡️ Strategy: ${trade.strategy}
+🎯 Target: ₹${trade.target_price || '-'}
+📊 Running ROI: ${trade.pnlPer.toFixed(2)}%
+
+#MarketBeacon #LiveTrade #TradingTerminal`;
+
+    navigator.clipboard.writeText(text);
+    alert(`${trade.symbol} details copied! Share it on Telegram.`);
   };
 
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -474,7 +495,15 @@ const TradeJournalPage: React.FC = () => {
                   {processedTrades.map((t) => (
                       <tr key={t.id} className={`hover:bg-slate-50 transition-colors group ${selectedIds.includes(t.id) ? 'bg-blue-50/50' : ''}`}>
                          <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])} className={selectedIds.includes(t.id) ? 'text-blue-600' : 'text-slate-200'}>{selectedIds.includes(t.id) ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}</button></td>
-                         <td className="px-4 py-3"><div className="flex flex-col uppercase tracking-tighter"><span className="text-slate-900">{t.symbol}</span><span className="text-[7px] text-slate-400">{t.strategy}</span></div></td>
+                         <td className="px-4 py-3">
+                            <div className="flex flex-col uppercase tracking-tighter relative group/item">
+                               <div className="flex items-center space-x-2">
+                                  <span className="text-slate-900 font-black">{t.symbol}</span>
+                                  <button onClick={() => handleShareTrade(t)} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-slate-100 rounded text-slate-400" title="Share Trade"><Share2 className="h-2.5 w-2.5" /></button>
+                               </div>
+                               <span className="text-[7px] text-slate-400">{t.strategy}</span>
+                            </div>
+                         </td>
                          {activeSegment === 'OPEN' ? (
                            <>
                              <td className="px-4 py-3 text-slate-400 font-bold">{t.entry_date}</td>
