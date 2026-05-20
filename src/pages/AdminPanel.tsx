@@ -27,26 +27,30 @@ const AdminPanel: React.FC = () => {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
+  const [vouchers, setVouchers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users' | 'vouchers'>('pending');
   const [search, setSearch] = useState('');
   
   // Modals
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isAddVoucherModalOpen, setIsAddVoucherModalOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     const token = localStorage.getItem('mb_token');
     try {
-      const [uRes, rRes] = await Promise.all([
+      const [uRes, rRes, vRes] = await Promise.all([
         fetch(`${API_URL}/api/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/admin/upgrade-requests`, { headers: { 'Authorization': `Bearer ${token}` } })
+        fetch(`${API_URL}/api/admin/upgrade-requests`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/api/admin/vouchers`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
 
       if (uRes.ok) setUsers(await uRes.json());
       if (rRes.ok) setRequests(await rRes.json());
+      if (vRes.ok) setVouchers(await vRes.json());
     } catch (e) {
       console.error("Admin fetch failed:", e);
     } finally {
@@ -157,9 +161,13 @@ const AdminPanel: React.FC = () => {
                 className="bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-3 text-[11px] font-black uppercase tracking-widest focus:bg-white transition-all w-64 shadow-inner"
               />
            </div>
-           <button onClick={() => setIsAddUserModalOpen(true)} className="p-3.5 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-lg flex items-center space-x-2">
-              <UserPlus className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">Onboard</span>
+           <button onClick={() => setIsAddUserModalOpen(true)} className="p-3.5 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm flex items-center space-x-2">
+              <UserPlus className="h-4 w-4 text-slate-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden md:block text-slate-500">Member</span>
+           </button>
+           <button onClick={() => setIsAddVoucherModalOpen(true)} className="p-3.5 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-lg flex items-center space-x-2">
+              <Gift className="h-4 w-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">Voucher</span>
            </button>
            <button onClick={fetchData} className="p-3.5 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
               <RefreshCw className={`h-4 w-4 text-slate-400 ${isLoading ? 'animate-spin' : ''}`} />
@@ -191,8 +199,14 @@ const AdminPanel: React.FC = () => {
               <Users className="h-4 w-4" />
               <span>User Directory ({users.length})</span>
             </button>
-         </div>
-         
+            <button 
+              onClick={() => setActiveTab('vouchers')}
+              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'vouchers' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+            >
+              <Gift className="h-4 w-4" />
+              <span>Vouchers ({vouchers.length})</span>
+            </button>
+            </div>         
          <div className="flex items-center space-x-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
             <div className="flex items-center space-x-2">
                <div className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -329,13 +343,38 @@ const AdminPanel: React.FC = () => {
                   </td>
                 </tr>
                ))
-             )}
-           </tbody>
-        </table>
-      </div>
-
-      {/* 4. Manage User Modal */}
-      {isManageModalOpen && selectedUser && (
+             ) : activeTab === 'vouchers' ? (
+               vouchers.map(v => (
+                 <tr key={v.id} className="group hover:bg-slate-50/50 transition-colors">
+                   <td className="px-8 py-6">
+                      <span className="text-[13px] font-black text-slate-900 font-mono select-all">{v.code}</span>
+                   </td>
+                   <td className="px-8 py-6 text-center">
+                      <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${v.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                         {v.is_active ? 'Live' : 'Disabled'}
+                      </span>
+                   </td>
+                   <td className="px-8 py-6">
+                      <div className="flex flex-col items-center">
+                         <span className="text-[10px] font-black text-slate-900 uppercase">{v.tier}</span>
+                         <span className="text-[8px] font-bold text-slate-400 uppercase">{v.duration_days} Days</span>
+                      </div>
+                   </td>
+                   <td className="px-8 py-6">
+                      <div className="flex flex-col">
+                         <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-600" style={{ width: `${(v.current_uses / v.max_uses) * 100}%` }} />
+                         </div>
+                         <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase">{v.current_uses} / {v.max_uses} Redemptions</span>
+                      </div>
+                   </td>
+                   <td className="px-8 py-6 text-right">
+                      {/* Add Toggle/Delete for Vouchers if needed */}
+                   </td>
+                 </tr>
+               ))
+             ) : (
+               filteredUsers.map(u => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
            <div className="bg-white rounded-[3.5rem] p-10 max-w-lg w-full shadow-2xl border border-slate-100 space-y-8 animate-in zoom-in-95 duration-500">
               <div className="flex justify-between items-start">
@@ -459,6 +498,78 @@ const AdminPanel: React.FC = () => {
 
                  <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-xl active:scale-95 flex items-center justify-center space-x-2">
                     <span>Onboard Now</span>
+                    <ArrowRight className="h-4 w-4" />
+                 </button>
+              </form>
+           </div>
+        </div>
+      )}
+
+      {/* 6. Add Voucher Modal */}
+      {isAddVoucherModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+           <div className="bg-white rounded-[3.5rem] p-10 max-w-lg w-full shadow-2xl border border-slate-100 space-y-8 animate-in zoom-in-95 duration-500">
+              <div className="flex justify-between items-start">
+                 <div className="space-y-1">
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Create Voucher</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trial Pass Generation</p>
+                 </div>
+                 <button onClick={() => setIsAddVoucherModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
+                    <XCircle className="h-6 w-6 text-slate-300" />
+                 </button>
+              </div>
+
+              <form className="space-y-6" onSubmit={async (e) => {
+                 e.preventDefault();
+                 const fd = new FormData(e.currentTarget);
+                 const token = localStorage.getItem('mb_token');
+                 try {
+                    const res = await fetch(`${API_URL}/api/admin/vouchers`, {
+                       method: 'POST',
+                       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                       body: JSON.stringify({
+                          code: fd.get('code'),
+                          tier: fd.get('tier'),
+                          duration_days: parseInt(fd.get('days') as string),
+                          max_uses: parseInt(fd.get('uses') as string)
+                       })
+                    });
+                    if (res.ok) {
+                       fetchData();
+                       setIsAddVoucherModalOpen(false);
+                    } else { alert("Failed to create voucher"); }
+                 } catch (e) { alert("Voucher creation failed"); }
+              }}>
+                 <div className="space-y-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Voucher Code</label>
+                       <input type="text" name="code" required placeholder="e.g. ALPHA7DAY" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all shadow-inner" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Reward Tier</label>
+                          <select name="tier" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all">
+                             <option value="alpha">Alpha Access</option>
+                             <option value="pro">Pro Access</option>
+                          </select>
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Duration</label>
+                          <select name="days" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all">
+                             <option value="7">7 Days (Standard)</option>
+                             <option value="3">3 Days (Quick)</option>
+                             <option value="30">30 Days (VIP)</option>
+                          </select>
+                       </div>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Max Redemptions</label>
+                       <input type="number" name="uses" defaultValue="100" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none focus:bg-white transition-all shadow-inner" />
+                    </div>
+                 </div>
+
+                 <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95 flex items-center justify-center space-x-2">
+                    <span>Generate Voucher</span>
                     <ArrowRight className="h-4 w-4" />
                  </button>
               </form>

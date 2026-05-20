@@ -319,6 +319,55 @@ app.patch('/api/user/profile', authenticateToken, async (req: any, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// --- VOUCHER SYSTEM ---
+app.get('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const vouchers = await db.all('SELECT * FROM vouchers ORDER BY created_at DESC');
+    res.json(vouchers);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const { code, tier, duration_days, max_uses } = req.body;
+    const db = getDB();
+    await db.run(
+      'INSERT INTO vouchers (code, tier, duration_days, max_uses) VALUES (?, ?, ?, ?)',
+      [code.toUpperCase(), tier || 'alpha', duration_days || 7, max_uses || 100]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/user/redeem-voucher', authenticateToken, async (req: any, res) => {
+  try {
+    const { code } = req.body;
+    const db = getDB();
+    const voucher = await db.get('SELECT * FROM vouchers WHERE code = ? AND is_active = 1', [code.toUpperCase()]);
+    
+    if (!voucher) return res.status(404).json({ error: 'Invalid or expired voucher code' });
+    if (voucher.current_uses >= voucher.max_uses) return res.status(400).json({ error: 'Voucher limit reached' });
+
+    // Check if user already used this specific voucher
+    const alreadyRedeemed = await db.get('SELECT id FROM voucher_redemptions WHERE voucher_id = ? AND user_id = ?', [voucher.id, req.user.id]);
+    if (alreadyRedeemed) return res.status(400).json({ error: 'You have already redeemed this voucher' });
+
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + voucher.duration_days);
+    const expiryStr = expiry.toISOString();
+    const startStr = new Date().toISOString();
+
+    await db.batch([
+      { sql: 'UPDATE users SET tier = ?, subscription_start = ?, subscription_expiry = ?, is_active = 1 WHERE id = ?', args: [voucher.tier, startStr, expiryStr, req.user.id] },
+      { sql: 'UPDATE vouchers SET current_uses = current_uses + 1 WHERE id = ?', args: [voucher.id] },
+      { sql: 'INSERT INTO voucher_redemptions (voucher_id, user_id) VALUES (?, ?)', args: [voucher.id, req.user.id] }
+    ]);
+
+    res.json({ success: true, tier: voucher.tier, expiry: expiryStr });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 // --- ADMIN MANAGEMENT ROUTES ---
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: any, res) => {
   try {

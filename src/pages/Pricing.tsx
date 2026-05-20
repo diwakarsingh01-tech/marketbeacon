@@ -10,7 +10,37 @@ import {
 } from 'lucide-react';
 
 const PricingPage: React.FC = () => {
-  const [referralCode, setReferralCode] = useState('');
+  const [voucherCode, setVoucherCode] = useState('');
+  const [redeeming, setRedeemning] = useState(false);
+
+  const handleRedeemVoucher = async () => {
+    if (!voucherCode) return;
+    setRedeemning(true);
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/redeem-voucher`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ code: voucherCode })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        alert(`Success! You have been upgraded to ${data.tier.toUpperCase()} tier for 7 days.`);
+        window.location.href = '/screener'; // Refresh to apply access
+      } else {
+        const err = await res.json();
+        alert(err.error || "Invalid voucher code");
+      }
+    } catch (e) {
+      alert("Network error. Please try again.");
+    } finally {
+      setRedeemning(false);
+    }
+  };
 
   const tiers = [
     {
@@ -115,15 +145,24 @@ const PricingPage: React.FC = () => {
 
               <div className="space-y-4">
                 {tier.name !== 'Free' && (
-                  <div className="relative">
-                    <Gift className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Referral Code"
-                      value={referralCode}
-                      onChange={(e) => setReferralCode(e.target.value)}
-                      className="w-full bg-slate-50 border-none rounded-2xl pl-12 pr-4 py-3 text-[11px] font-bold placeholder:text-slate-300 focus:bg-white transition-all shadow-inner"
-                    />
+                  <div className="flex items-center space-x-2">
+                    <div className="relative flex-1">
+                      <Gift className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <input 
+                        type="text" 
+                        placeholder="Trial Voucher"
+                        value={voucherCode}
+                        onChange={(e) => setVoucherCode(e.target.value)}
+                        className="w-full bg-slate-50 border-none rounded-2xl pl-12 pr-4 py-3 text-[11px] font-bold placeholder:text-slate-300 focus:bg-white transition-all shadow-inner"
+                      />
+                    </div>
+                    <button 
+                      onClick={handleRedeemVoucher}
+                      disabled={redeeming}
+                      className="px-4 py-3 bg-slate-900 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                    >
+                      {redeeming ? '...' : 'Redeem'}
+                    </button>
                   </div>
                 )}
                 

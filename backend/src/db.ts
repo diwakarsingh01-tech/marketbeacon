@@ -61,7 +61,26 @@ export async function initDB() {
     'ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1',
     'ALTER TABLE upgrade_requests ADD COLUMN billing_cycle TEXT DEFAULT "monthly"',
     'ALTER TABLE trades ADD COLUMN target_price REAL',
-    'ALTER TABLE trades ADD COLUMN stop_loss REAL'
+    'ALTER TABLE trades ADD COLUMN stop_loss REAL',
+    `CREATE TABLE IF NOT EXISTS vouchers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT UNIQUE NOT NULL,
+      tier TEXT DEFAULT "alpha",
+      duration_days INTEGER DEFAULT 7,
+      max_uses INTEGER DEFAULT 100,
+      current_uses INTEGER DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS voucher_redemptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      voucher_id INTEGER,
+      user_id INTEGER,
+      redeemed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (voucher_id) REFERENCES vouchers (id),
+      FOREIGN KEY (user_id) REFERENCES users (id),
+      UNIQUE(voucher_id, user_id)
+    )`
   ];
 
   for (const sql of alterColumns) {
