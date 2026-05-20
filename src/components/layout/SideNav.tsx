@@ -105,8 +105,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
             </NavLink>
             <div className="flex flex-col items-end">
                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Version</span>
-               <span className="text-[10px] font-bold text-slate-300">3.5.0-PRO</span>
-            </div>
+               <span className="text-[10px] font-bold text-slate-300">3.5.1-PRO</span>            </div>
          </div>
       </div>
     </aside>
