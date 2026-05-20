@@ -38,7 +38,8 @@ function App() {
             <Route path="/screener" element={<DashboardPage key="screener" defaultTab="open" />} />
             <Route path="/market" element={<DashboardPage key="market" defaultTab="watchlist" />} />
             <Route path="/portfolio" element={<DashboardPage key="portfolio" defaultTab="portfolio" />} />
-            <Route path="/journal" element={<TradeJournalPage />} />
+            <Route path="/journal" element={<Navigate to="/trades" replace />} />
+            <Route path="/trades" element={<TradeJournalPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/membership" element={<MembershipPage />} />
             <Route path="/stock/:symbol" element={<StockFundamentalsPage />} />

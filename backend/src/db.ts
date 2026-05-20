@@ -57,7 +57,9 @@ export async function initDB() {
     'ALTER TABLE users ADD COLUMN tier TEXT DEFAULT "free"',
     'ALTER TABLE users ADD COLUMN mobile TEXT UNIQUE',
     'ALTER TABLE users ADD COLUMN subscription_expiry DATETIME',
-    'ALTER TABLE upgrade_requests ADD COLUMN billing_cycle TEXT DEFAULT "monthly"'
+    'ALTER TABLE upgrade_requests ADD COLUMN billing_cycle TEXT DEFAULT "monthly"',
+    'ALTER TABLE trades ADD COLUMN target_price REAL',
+    'ALTER TABLE trades ADD COLUMN stop_loss REAL'
   ];
 
   for (const sql of alterColumns) {

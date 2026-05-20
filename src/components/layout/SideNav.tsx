@@ -28,7 +28,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
     { icon: Zap, label: 'Screener', path: '/screener', desc: 'Signal Discovery' },
     { icon: Briefcase, label: 'My Portfolio', path: '/portfolio', desc: 'Wealth Manager' },
     { icon: ShieldCheck, label: 'Education', path: '/education', desc: 'Strategy Guides' },
-    { icon: BookOpen, label: 'Trade Journal', path: '/journal', desc: 'Order Ledger' },
+    { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Order Ledger' },
   ];
 
   if (isAdmin) {

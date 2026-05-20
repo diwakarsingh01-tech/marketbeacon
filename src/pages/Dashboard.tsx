@@ -61,6 +61,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const [stockCaps, setStockCaps] = useState<Record<string, number>>({});
   const [stockSectors, setStockSectors] = useState<Record<string, string>>({});
   const [userWatchlist, setUserWatchlist] = useState<any[]>([]);
+  const [trades, setTrades] = useState<any[]>([]);
 
   useEffect(() => {
     setActiveTab(defaultTab);
@@ -73,6 +74,20 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   }, [strategyId, currentStrategy]);
 
   // --- Portfolio Persistence Logic ---
+  const fetchTrades = useCallback(async () => {
+    const token = localStorage.getItem('mb_token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_URL}/api/trades`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTrades(data);
+      }
+    } catch (e) { console.error('Fetch Trades Error:', e); }
+  }, []);
+
   const fetchWatchlist = useCallback(async () => {
     const token = localStorage.getItem('mb_token');
     if (!token) return;
@@ -131,7 +146,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   useEffect(() => {
     fetchWatchlist();
-  }, [fetchWatchlist]);
+    fetchTrades();
+  }, [fetchWatchlist, fetchTrades]);
 
   const fetchStockPrices = async (symbols: string[]) => {
     if (symbols.length === 0) return;
@@ -214,12 +230,31 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     if (!data || !data.allStocks) return [];
     
     if (activeTab === 'portfolio') {
+      const combinedPortfolioMap: Record<string, { quantity: number, buy_price: number }> = {};
+      
+      // Add Watchlist items
+      userWatchlist.forEach(w => {
+        combinedPortfolioMap[w.symbol] = { quantity: w.quantity || 0, buy_price: w.buy_price || 0 };
+      });
+
+      // Merge Open Trades from Journal
+      trades.filter(t => t.status === 'OPEN').forEach(t => {
+        if (combinedPortfolioMap[t.symbol]) {
+          const existing = combinedPortfolioMap[t.symbol];
+          const newQty = existing.quantity + (t.quantity || 0);
+          if (newQty > 0) {
+            existing.buy_price = ((existing.buy_price * existing.quantity) + (t.entry_price * t.quantity)) / newQty;
+            existing.quantity = newQty;
+          }
+        } else {
+          combinedPortfolioMap[t.symbol] = { quantity: t.quantity || 0, buy_price: t.entry_price || 0 };
+        }
+      });
+
       return data.allStocks
-        .filter((s: any) => userWatchlist.find(w => w.symbol === s.symbol))
-        .map((s: any) => {
-          const holding = userWatchlist.find(w => w.symbol === s.symbol);
-          return { ...s, ...holding };
-        });
+        .filter((s: any) => combinedPortfolioMap[s.symbol])
+        .map((s: any) => ({ ...s, ...combinedPortfolioMap[s.symbol] }))
+        .filter((s: any) => s.quantity > 0);
     }
 
     if (activeTab === 'watchlist') {
@@ -235,14 +270,36 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const portfolioSummary = useMemo(() => {
     if (!data || !data.allStocks) return { 
-      totalInvested: 0, totalCurrent: 0, totalPnL: 0, pnlPercent: 0,
+      totalInvested: 0, totalCurrent: 0, totalPnL: 0, pnlPercent: 0, realizedGain: 0, unrealizedGain: 0, combinedPnL: 0, combinedPnlPercent: 0,
       capBreakdown: { large: 0, mid: 0, small: 0, micro: 0 },
       sectorBreakdown: {} as Record<string, { amount: number, stocks: string[] }>
     };
 
+    const combinedMap: Record<string, { quantity: number, buy_price: number }> = {};
+    
+    // 1. Load Watchlist (Active Holdings)
+    userWatchlist.forEach(w => {
+      combinedMap[w.symbol] = { quantity: w.quantity || 0, buy_price: w.buy_price || 0 };
+    });
+
+    // 2. Merge Open Trades from Journal
+    trades.filter(t => t.status === 'OPEN').forEach(t => {
+      if (combinedMap[t.symbol]) {
+        const existing = combinedMap[t.symbol];
+        const newQty = existing.quantity + (t.quantity || 0);
+        if (newQty > 0) {
+          existing.buy_price = ((existing.buy_price * existing.quantity) + (t.entry_price * t.quantity)) / newQty;
+          existing.quantity = newQty;
+        }
+      } else {
+        combinedMap[t.symbol] = { quantity: t.quantity || 0, buy_price: t.entry_price || 0 };
+      }
+    });
+
+    // 3. Map to Stocks Data for Market Cap and Sector
     const portfolioTrades = data.allStocks
-      .filter((s: any) => userWatchlist.find(w => w.symbol === s.symbol))
-      .map((s: any) => ({ ...s, ...userWatchlist.find(w => w.symbol === s.symbol) }));
+      .filter((s: any) => combinedMap[s.symbol])
+      .map((s: any) => ({ ...s, ...combinedMap[s.symbol] }));
 
     let totalInvested = 0;
     let totalCurrent = 0;
@@ -259,15 +316,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         totalInvested += investedAmount;
         totalCurrent += t.quantity * livePrice;
 
-        // Market Cap Bifurcation (4-Tier Institutional Model)
+        // Market Cap Bifurcation (50-30-20 Model)
         if (mktCap >= 200000000000) { 
           capInvested.large += investedAmount;
         } else if (mktCap >= 50000000000) { 
           capInvested.mid += investedAmount;
-        } else if (mktCap >= 10000000000) { // Small Cap 1,000 - 5,000 Cr
+        } else { // Small + Micro = 20%
           capInvested.small += investedAmount;
-        } else { // Micro Cap < 1,000 Cr
-          capInvested.micro += investedAmount;
         }
 
         // Sector Bifurcation
@@ -280,17 +335,28 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const totalPnL = totalCurrent - totalInvested;
     const pnlPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
 
+    // 4. Realized Metrics (Booked from Journal)
+    const realizedGain = trades
+      .filter(t => t.status === 'CLOSED')
+      .reduce((acc, t) => acc + (((t.exit_price || 0) - (t.entry_price || 0)) * (t.quantity || 0)), 0);
+
+    // 5. Total Mathematical Performance
+    const combinedPnL = totalPnL + realizedGain;
+    const combinedPnlPercent = totalInvested > 0 ? (combinedPnL / totalInvested) * 100 : 0;
+
     return { 
-      totalInvested, totalCurrent, totalPnL, pnlPercent,
+      totalInvested, totalCurrent, totalPnL, pnlPercent, realizedGain, 
+      unrealizedGain: totalPnL, // In this unified model, totalPnL is the active unrealized gain
+      combinedPnL, combinedPnlPercent,
       capBreakdown: {
         large: totalInvested > 0 ? (capInvested.large / totalInvested) * 100 : 0,
         mid: totalInvested > 0 ? (capInvested.mid / totalInvested) * 100 : 0,
         small: totalInvested > 0 ? (capInvested.small / totalInvested) * 100 : 0,
-        micro: totalInvested > 0 ? (capInvested.micro / totalInvested) * 100 : 0,
+        micro: 0 // Consolidated into Small for the 50-30-20 model
       },
       sectorBreakdown: sectorInvested
     };
-  }, [data, userWatchlist, stockPrices]);
+  }, [data, userWatchlist, stockPrices, trades]);
 
   // Dynamic Headings based on page type
   const pageInfo = {
@@ -386,35 +452,51 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       )}
 
       {/* 2. Portfolio Summary Cards (Conditional) */}
-      {activeTab === 'portfolio' && portfolioSummary.totalInvested > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 shrink-0 animate-in fade-in slide-in-from-top duration-500">
+      {activeTab === 'portfolio' && (portfolioSummary.totalInvested > 0 || portfolioSummary.realizedGain !== 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6 shrink-0 animate-in fade-in slide-in-from-top duration-500">
            <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden border border-slate-800">
               <Wallet className="absolute right-[-10px] bottom-[-10px] h-24 w-24 opacity-10" />
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Invested</p>
-              <h3 className="text-2xl font-black">₹{portfolioSummary.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+              <h3 className="text-xl font-black">₹{portfolioSummary.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
            </div>
+           
            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Value</p>
-              <h3 className="text-2xl font-black text-slate-900">₹{portfolioSummary.totalCurrent.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+              <h3 className="text-xl font-black text-slate-900">₹{portfolioSummary.totalCurrent.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
            </div>
+
            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Net P&L</p>
-              <div className="flex items-center space-x-2">
-                 <h3 className={`text-2xl font-black ${portfolioSummary.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ₹{Math.abs(portfolioSummary.totalPnL).toLocaleString()}
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Realized (Booked)</p>
+              <h3 className={`text-xl font-black ${(portfolioSummary.realizedGain || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                 ₹{Math.abs(portfolioSummary.realizedGain || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </h3>
+           </div>
+
+           <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Unrealized (Paper)</p>
+              <h3 className={`text-xl font-black ${(portfolioSummary.unrealizedGain || 0) >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                 ₹{Math.abs(portfolioSummary.unrealizedGain || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </h3>
+           </div>
+
+           <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Absolute P&L (Total)</p>
+              <div className="flex flex-col">
+                 <h3 className={`text-xl font-black ${(portfolioSummary.combinedPnL || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ₹{Math.abs(portfolioSummary.combinedPnL || 0).toLocaleString()}
                  </h3>
-                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${portfolioSummary.totalPnL >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                    {portfolioSummary.pnlPercent.toFixed(2)}%
+                 <span className={`text-[10px] font-black w-fit mt-1 px-2 py-0.5 rounded-lg ${(portfolioSummary.combinedPnL || 0) >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                    {(portfolioSummary.combinedPnlPercent || 0).toFixed(2)}%
                  </span>
               </div>
            </div>
+
            <div className="bg-blue-600 rounded-3xl p-6 text-white shadow-lg shadow-blue-500/30">
               <div className="flex justify-between items-start">
                  <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest leading-none">Security Grade</p>
                  <TrendingUp className="h-4 w-4" />
               </div>
-              <h3 className="text-2xl font-black mt-2 leading-none uppercase italic hidden md:block">Institutional</h3>
-              <h3 className="text-xl font-black mt-2 leading-none uppercase italic md:hidden">Insti.</h3>
+              <h3 className="text-xl font-black mt-2 leading-none uppercase italic">Institutional</h3>
            </div>
         </div>
       )}
@@ -422,6 +504,59 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       {/* 3. Portfolio Risk Analyzer (Integrated Analytics) */}
       {activeTab === 'portfolio' && portfolioSummary.totalInvested > 0 && (
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 shrink-0 animate-in fade-in slide-in-from-bottom duration-700">
+           {/* Strategy Distribution (12-Strategy Matrix Mix) */}
+           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+              <div className="flex items-center justify-between">
+                 <div className="space-y-1">
+                    <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase italic">Strategy Mix Matrix</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Journaled Alpha Sources</p>
+                 </div>
+                 <div className="px-3 py-1.5 bg-indigo-50 rounded-xl">
+                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Active Models</span>
+                 </div>
+              </div>
+
+              <div className="space-y-4">
+                 {(() => {
+                    const strategyStats: Record<string, number> = {};
+                    trades.filter(t => t.status === 'OPEN').forEach(t => {
+                       const amount = (t.quantity || 0) * (stockPrices[t.symbol] || t.entry_price || 0);
+                       strategyStats[t.strategy] = (strategyStats[t.strategy] || 0) + amount;
+                    });
+                    
+                    const totalJournalValue = Object.values(strategyStats).reduce((a, b) => a + b, 0);
+                    
+                    return Object.entries(strategyStats)
+                       .sort((a, b) => b[1] - a[1])
+                       .map(([strategy, amount]) => {
+                          const pct = (amount / totalJournalValue) * 100;
+                          return (
+                             <div key={strategy} className="group cursor-default">
+                                <div className="flex justify-between items-end mb-2">
+                                   <div className="flex flex-col">
+                                      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">{strategy}</span>
+                                      <span className="text-[9px] font-bold text-slate-400 uppercase">Current Exposure: ₹{amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                   </div>
+                                   <span className="text-xs font-black text-slate-900">{pct.toFixed(1)}%</span>
+                                </div>
+                                <div className="w-full h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                                   <div 
+                                      className="h-full bg-indigo-500 rounded-full transition-all duration-1000 group-hover:bg-indigo-600"
+                                      style={{ width: `${pct}%` }}
+                                   />
+                                </div>
+                             </div>
+                          );
+                       });
+                 })()}
+                 {trades.filter(t => t.status === 'OPEN').length === 0 && (
+                    <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
+                       <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">No Active Journaled Trades</p>
+                    </div>
+                 )}
+              </div>
+           </div>
+
            {/* Market Cap Distribution (4-Tier Bifurcation) */}
            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
               <div className="flex items-center justify-between">
@@ -430,7 +565,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Institutional 4-Tier Diversification</p>
                  </div>
                  <div className="px-3 py-1.5 bg-blue-50 rounded-xl">
-                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Model: 50-30-15-5</span>
+                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Model: 50-30-20</span>
                  </div>
               </div>
 
@@ -438,8 +573,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                  {[
                     { label: 'Large Cap', target: 50, current: portfolioSummary.capBreakdown.large, color: 'bg-slate-900', desc: '> 20k Cr' },
                     { label: 'Mid Cap', target: 30, current: portfolioSummary.capBreakdown.mid, color: 'bg-blue-600', desc: '5k - 20k Cr' },
-                    { label: 'Small Cap', target: 15, current: portfolioSummary.capBreakdown.small, color: 'bg-indigo-400', desc: '1k - 5k Cr' },
-                    { label: 'Micro Cap', target: 5, current: portfolioSummary.capBreakdown.micro, color: 'bg-rose-500', desc: '< 1k Cr' }
+                    { label: 'Small Cap', target: 20, current: portfolioSummary.capBreakdown.small + portfolioSummary.capBreakdown.micro, color: 'bg-indigo-400', desc: '< 5k Cr' }
                  ].map((cap, i) => (
                     <div key={i} className="p-4 bg-slate-50/50 rounded-3xl border border-slate-100 space-y-3">
                        <div className="flex justify-between items-start">
@@ -550,70 +684,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                    <div className="w-8 h-8 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin" />
                    <p className="text-[8px] font-black text-blue-600 uppercase tracking-[0.3em]">{loadingMessages[loadingMessageIndex]}</p>
                 </div>
-             )}
-
-             {/* Integrated Portfolio Risk Analyzer */}
-             {activeTab === 'portfolio' && portfolioSummary.totalInvested > 0 && (
-               <div className="p-8 border-b border-slate-100 bg-slate-50/20 shrink-0">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                     {/* Market Cap Matrix */}
-                     <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                           <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest italic">Cap Allocation Matrix</h3>
-                           <span className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em]">Institutional Diversification</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                           {[
-                              { label: 'Large Cap', target: 50, current: portfolioSummary.capBreakdown.large, color: 'bg-slate-900' },
-                              { label: 'Mid Cap', target: 30, current: portfolioSummary.capBreakdown.mid, color: 'bg-blue-600' },
-                              { label: 'Small Cap', target: 15, current: portfolioSummary.capBreakdown.small, color: 'bg-indigo-400' },
-                              { label: 'Micro Cap', target: 5, current: portfolioSummary.capBreakdown.micro, color: 'bg-rose-500' }
-                           ].map((cap, i) => (
-                              <div key={i} className="p-3 bg-white rounded-2xl border border-slate-100 space-y-2 shadow-sm">
-                                 <div className="flex justify-between items-center">
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-tight">{cap.label}</span>
-                                    <span className={`text-[10px] font-black ${Math.abs(cap.current - cap.target) > 10 ? 'text-red-600' : 'text-slate-900'}`}>{cap.current.toFixed(1)}%</span>
-                                 </div>
-                                 <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden relative">
-                                    <div className={`h-full ${cap.color} rounded-full transition-all duration-1000`} style={{ width: `${cap.current}%` }} />
-                                    <div className="absolute top-0 bottom-0 border-l border-slate-400 z-10" style={{ left: `${cap.target}%` }} />
-                                 </div>
-                              </div>
-                           ))}
-                        </div>
-                     </div>
-
-                     {/* Sector Contribution */}
-                     <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                           <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest italic">Sector Contribution</h3>
-                           <div className="flex items-center space-x-2">
-                              <div className={`h-1.5 w-1.5 rounded-full ${Object.values(portfolioSummary.sectorBreakdown).some(data => (data.amount / portfolioSummary.totalInvested) * 100 > 20) ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
-                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em]">Safety Cap: 20%</span>
-                           </div>
-                        </div>
-                        <div className="grid grid-cols-1 gap-3 overflow-y-auto max-h-[160px] pr-2 custom-scrollbar">
-                           {Object.entries(portfolioSummary.sectorBreakdown)
-                              .sort(([, a], [, b]) => b.amount - a.amount)
-                              .map(([sector, data], i) => {
-                                 const pct = (data.amount / portfolioSummary.totalInvested) * 100;
-                                 const isOverexposed = pct > 20;
-                                 return (
-                                    <div key={i} className="space-y-1 group">
-                                       <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tight">
-                                          <span className={isOverexposed ? 'text-red-600' : 'text-slate-600'}>{sector}</span>
-                                          <span className={isOverexposed ? 'text-red-600' : 'text-slate-900'}>{pct.toFixed(1)}%</span>
-                                       </div>
-                                       <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                                          <div className={`h-full transition-all duration-1000 rounded-full ${isOverexposed ? 'bg-red-500' : 'bg-blue-600/60'}`} style={{ width: `${pct}%` }} />
-                                       </div>
-                                    </div>
-                                 );
-                              })}
-                        </div>
-                     </div>
-                  </div>
-               </div>
              )}
 
              <div className="flex-1 overflow-auto custom-scrollbar">

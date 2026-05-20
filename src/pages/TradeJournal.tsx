@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   BookOpen, 
+  Clock,
+  Wallet,
+  TrendingUp,
+  Activity,
+  Download,
   Plus, 
   Trash2, 
   CheckCircle2, 
@@ -48,14 +53,16 @@ const TradeJournalPage: React.FC = () => {
 
   const fetchLivePrices = async (symbols: string[]) => {
     try {
-      const res = await fetch(`${API_URL}/api/stocks?symbols=${symbols.join(',')}`);
+      const res = await fetch(`${API_URL}/api/stock-prices?symbols=${symbols.join(',')}`);
       if (res.ok) {
         const data = await res.json();
         const prices: any = {};
-        data.forEach((s: any) => prices[s.symbol] = s.price);
+        data.forEach((s: any) => {
+          if (s.price) prices[s.symbol] = s.price;
+        });
         setLivePrices(prices);
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Price fetch failed:', e); }
   };
 
   const fetchTrades = useCallback(async () => {
@@ -68,14 +75,27 @@ const TradeJournalPage: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setTrades(data);
-        const symbolsToFetch = Array.from(new Set(data.filter((t:any) => t.status === 'OPEN').map((t:any) => t.symbol)));
-        if (symbolsToFetch.length > 0) fetchLivePrices(symbolsToFetch as string[]);
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Trades fetch failed:', e); }
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchTrades(); }, [fetchTrades]);
+  useEffect(() => { 
+    fetchTrades(); 
+  }, [fetchTrades]);
+
+  // Polling for Live Prices
+  useEffect(() => {
+    const openSymbols = Array.from(new Set(
+      trades.filter(t => t.status === 'OPEN').map(t => t.symbol)
+    ));
+
+    if (openSymbols.length === 0) return;
+
+    fetchLivePrices(openSymbols);
+    const interval = setInterval(() => fetchLivePrices(openSymbols), 30000); // 30s poll
+    return () => clearInterval(interval);
+  }, [trades]);
 
   const stats = useMemo(() => {
     const openTrades = trades.filter(t => t.status === 'OPEN');
@@ -96,18 +116,26 @@ const TradeJournalPage: React.FC = () => {
 
   const processedTrades = useMemo(() => {
     const tradeData = trades.filter(t => t.status === activeSegment).map(t => {
-      const cmp = livePrices[t.symbol] || t.entry_price;
-      const price = activeSegment === 'OPEN' ? cmp : (t.exit_price || t.entry_price);
-      const invested = (Number(t.quantity) || 0) * (Number(t.entry_price) || 0);
-      const currentVal = (Number(t.quantity) || 0) * (Number(price) || 0);
+      const entryPrice = Number(t.entry_price) || 0;
+      const quantity = Number(t.quantity) || 0;
+      const cmp = Number(livePrices[t.symbol]) || entryPrice;
+      const price = activeSegment === 'OPEN' ? cmp : (Number(t.exit_price) || entryPrice);
+      
+      const invested = quantity * entryPrice;
+      const currentVal = quantity * price;
       const pnl = currentVal - invested;
       const pnlPer = invested > 0 ? (pnl / invested) * 100 : 0;
-      const targetVal = t.target_price || (t.entry_price * 1.25);
-      const gap = ((targetVal - cmp) / (cmp || 1)) * 100;
-      const d1 = new Date(t.entry_date).getTime();
-      const d2 = t.exit_date ? new Date(t.exit_date).getTime() : new Date().getTime();
-      const days = Math.max(1, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)));
+      
+      const targetPrice = Number(t.target_price) || (entryPrice * 1.25);
+      const targetVal = targetPrice; // Backward compatibility with JSX
+      const gap = ((targetPrice - cmp) / (cmp || 1)) * 100;
+      
+      const d1 = t.entry_date ? new Date(t.entry_date).getTime() : Date.now();
+      const d2 = (t.exit_date && activeSegment === 'CLOSED') ? new Date(t.exit_date).getTime() : Date.now();
+      const diff = d2 - d1;
+      const days = isNaN(diff) ? 1 : Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
       const annualGain = days > 0 ? (pnlPer / days * 365) : 0;
+      
       return { ...t, cmp, price, invested, currentVal, pnl, pnlPer, targetVal, gap, days, annualGain };
     });
     if (sortConfig) {
@@ -122,6 +150,18 @@ const TradeJournalPage: React.FC = () => {
     return tradeData;
   }, [trades, activeSegment, livePrices, sortConfig]);
 
+  const summaryStats = useMemo(() => {
+    const totalBuyValue = processedTrades.reduce((acc, t) => acc + (t.invested || 0), 0);
+    const totalPnl = processedTrades.reduce((acc, t) => acc + (t.pnl || 0), 0);
+    const totalPnlPer = totalBuyValue > 0 ? (totalPnl / totalBuyValue) * 100 : 0;
+    
+    const totalDays = processedTrades.reduce((acc, t) => acc + (t.days || 0), 0);
+    const avgDays = processedTrades.length > 0 ? totalDays / processedTrades.length : 0;
+    const avgAnnualGain = avgDays > 0 ? (totalPnlPer / avgDays * 365) : 0;
+
+    return { totalBuyValue, totalPnl, totalPnlPer, avgDays, avgAnnualGain };
+  }, [processedTrades]);
+
   const handleBulkDelete = async () => {
     if (!window.confirm(`Delete ${selectedIds.length} records?`)) return;
     const token = localStorage.getItem('mb_token');
@@ -135,10 +175,57 @@ const TradeJournalPage: React.FC = () => {
     } catch (e) { console.error(e); }
   };
 
+  const handleDownloadTemplate = (type: 'OPEN' | 'CLOSED') => {
+    let headers: string[];
+    let sampleData: string[][];
+    let fileName: string;
+
+    if (type === 'OPEN') {
+      headers = ['Symbol', 'Quantity', 'Buy Price', 'Buy Date', 'Target Price', 'Level', 'Strategy', 'Notes'];
+      sampleData = [
+        ['RELIANCE', '10', '2500.50', new Date().toISOString().split('T')[0], '3000', 'A', 'Institutional Floor', 'Long term hold'],
+        ['HDFCBANK', '25', '1450.00', new Date().toISOString().split('T')[0], '1800', 'B', 'Momentum Ceiling', 'Accumulating at support']
+      ];
+      fileName = 'MarketBeacon_Open_Trades_Template.csv';
+    } else {
+      headers = ['Symbol', 'Quantity', 'Buy Price', 'Buy Date', 'Sell Price', 'Sell Date', 'Strategy', 'Notes'];
+      sampleData = [
+        ['TCS', '5', '3800.00', '2026-05-10', '4150.00', '2026-05-18', 'Institutional Floor', 'Target hit'],
+        ['INFY', '15', '1600.00', '2026-04-20', '1750.00', '2026-05-15', 'Velocity Retest', 'Profit booked']
+      ];
+      fileName = 'MarketBeacon_Closed_History_Template.csv';
+    }
+    
+    const csvContent = [headers.join(','), ...sampleData.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.click();
+  };
+
+  const handleExportTrades = () => {
+    const headers = ['Symbol', 'Quantity', 'Buy Price', 'Buy Date', 'Target Price', 'Level', 'Sell Price', 'Sell Date', 'Strategy', 'Status', 'Notes'];
+    const rows = trades.map(t => [
+      t.symbol, t.quantity, t.entry_price, t.entry_date, t.target_price, t.level, t.exit_price || '', t.exit_date || '', t.strategy, t.status, t.notes || ''
+    ]);
+    
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `MarketBeacon_Export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.click();
+  };
+
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsImporting(true);
+    console.log('[CSV] Starting parse for:', file.name);
+
     Papa.parse(file, {
       header: false,
       skipEmptyLines: 'greedy',
@@ -146,11 +233,21 @@ const TradeJournalPage: React.FC = () => {
         const token = localStorage.getItem('mb_token');
         try {
           const rawRows = results.data as string[][];
+          console.log('[CSV] Total raw rows:', rawRows.length);
+
           const headerIdx = rawRows.findIndex(r => r.some(c => ['stock', 'symbol', 'instrument'].includes(String(c).toLowerCase().trim())));
-          if (headerIdx === -1) { alert("No valid header found."); setIsImporting(false); return; }
+          if (headerIdx === -1) { 
+            console.error('[CSV] No valid header found in:', rawRows[0]);
+            alert("No valid header found. Ensure your CSV has a column named 'Symbol' or 'Stock'."); 
+            setIsImporting(false); 
+            return; 
+          }
+          
           const headerRow = rawRows[headerIdx].map(h => String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
+          console.log('[CSV] Found header at index', headerIdx, ':', headerRow);
+
           const dataRows = rawRows.slice(headerIdx + 1);
-          const tradesToImport = dataRows.map((row) => {
+          const tradesToImport = dataRows.map((row, idx) => {
             const findVal = (keywords: string[]) => {
               const colIdx = headerRow.findIndex(h => keywords.some(kw => h.includes(kw)));
               return colIdx !== -1 ? row[colIdx] : null;
@@ -162,15 +259,22 @@ const TradeJournalPage: React.FC = () => {
             const sellPrice = findVal(['sellprice', 'exitprice', 'cmp']);
             const rawSellDate = findVal(['selldate', 'exitdate']);
             const status = findVal(['status', 'type', 'state']);
-            if (!symbol || !buyPrice || !qty || String(symbol).toLowerCase().includes('total')) return null;
+
+            if (!symbol || !buyPrice || !qty || String(symbol).toLowerCase().includes('total')) {
+              if (symbol) console.log(`[CSV] Skipping row ${idx} due to missing data:`, { symbol, buyPrice, qty });
+              return null;
+            }
+
             const formatDate = (raw: any) => {
               if (!raw) return new Date().toISOString().split('T')[0];
               const d = new Date(raw);
               return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
             };
+
             const buyDate = formatDate(rawBuyDate);
             const sellDate = rawSellDate ? formatDate(rawSellDate) : null;
             const tradeStatus = (sellDate || (status && String(status).toLowerCase().includes('booked'))) ? 'CLOSED' : 'OPEN';
+
             return {
               symbol: String(symbol).toUpperCase().trim(),
               entry_price: parseFloat(String(buyPrice).replace(/[^0-9.]/g, '')),
@@ -185,20 +289,38 @@ const TradeJournalPage: React.FC = () => {
               notes: findVal(['notes', 'remark']) || ''
             };
           }).filter((t: any) => t && t.symbol && t.entry_price > 0);
-          if (tradesToImport.length === 0) { alert("No valid trades detected."); setIsImporting(false); return; }
+
+          console.log('[CSV] Successfully parsed trades:', tradesToImport.length);
+
+          if (tradesToImport.length === 0) { 
+            alert("No valid trades detected. Check column names like 'Symbol', 'Buy Price', and 'Qty'."); 
+            setIsImporting(false); 
+            return; 
+          }
+
           const res = await fetch(`${API_URL}/api/trades/batch`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ trades: tradesToImport })
           });
+
           if (res.ok) {
             const openCount = tradesToImport.filter(t => t.status === 'OPEN').length;
             const closedCount = tradesToImport.filter(t => t.status === 'CLOSED').length;
-            alert(`Import Successful!\n- ${openCount} Open\n- ${closedCount} Closed`);
+            alert(`Import Successful!\n- ${openCount} Open Trades\n- ${closedCount} Closed Trades`);
             fetchTrades();
-          } else { alert("Server Error saving trades."); }
-        } catch (err) { alert("Processing Error."); }
-        finally { setIsImporting(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
+          } else { 
+            const errorData = await res.json().catch(() => ({}));
+            console.error('[CSV] Server Error:', errorData);
+            alert("Server Error: " + (errorData.error || "Failed to save trades.")); 
+          }
+        } catch (err: any) { 
+          console.error('[CSV] Processing Error:', err);
+          alert("Processing Error: " + err.message); 
+        } finally { 
+          setIsImporting(false); 
+          if (fileInputRef.current) fileInputRef.current.value = ''; 
+        }
       }
     });
   };
@@ -244,14 +366,66 @@ const TradeJournalPage: React.FC = () => {
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Institutional Order Execution Audit</p>
         </div>
         <div className="flex items-center space-x-3">
-           <div className="flex flex-col items-end px-4 border-r border-slate-100 text-right"><span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Realized</span><h3 className={`text-xl font-black ${stats.totalRealized >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>₹{Math.abs(stats.totalRealized).toLocaleString()}</h3></div>
-           <div className="flex flex-col items-end px-4 text-right"><span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Unrealized</span><h3 className={`text-xl font-black ${stats.totalUnrealized >= 0 ? 'text-blue-600' : 'text-red-600'}`}>₹{Math.abs(stats.totalUnrealized).toLocaleString()}</h3></div>
            <div className="flex items-center space-x-2 ml-4">
+              <button onClick={() => handleDownloadTemplate('OPEN')} className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl shadow-sm hover:bg-blue-50 hover:text-blue-600 transition-all flex items-center space-x-2" title="Download Template for Open Trades"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Tpl (Open)</span></button>
+              <button onClick={() => handleDownloadTemplate('CLOSED')} className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl shadow-sm hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center space-x-2" title="Download Template for Closed History"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Tpl (Closed)</span></button>
+              <button onClick={handleExportTrades} className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl shadow-sm hover:bg-emerald-50 hover:text-emerald-600 transition-all flex items-center space-x-2" title="Export Your Trades"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Export</span></button>
               <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleCSVUpload} />
               <button onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl shadow-sm hover:bg-slate-50 flex items-center space-x-2"><Upload className={`h-4 w-4 ${isImporting ? 'animate-bounce' : ''}`} /><span className="text-[10px] font-black uppercase tracking-widest">Import</span></button>
               <button onClick={() => setShowAddModal(true)} className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg flex items-center space-x-2"><Plus className="h-4 w-4" /><span>Record</span></button>
            </div>
         </div>
+      </div>
+
+      {/* 2. Institutional Performance Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 shrink-0 animate-in fade-in slide-in-from-top-4 duration-500">
+         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-2xl -mr-8 -mt-8" />
+            <div className="flex items-center justify-between mb-3">
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Total Exposure</span>
+               <Wallet className="h-3.5 w-3.5 text-blue-600" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900">₹{summaryStats.totalBuyValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Capital in Play</p>
+         </div>
+
+         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between mb-3">
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                  {activeSegment === 'OPEN' ? 'Running ROI (Live)' : 'Net Segment ROI'}
+               </span>
+               <TrendingUp className={`h-3.5 w-3.5 ${summaryStats.totalPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`} />
+            </div>
+            <div className="flex items-end space-x-2">
+               <h3 className={`text-2xl font-black ${summaryStats.totalPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {summaryStats.totalPnl >= 0 ? '+' : '-'}{summaryStats.totalPnlPer.toFixed(2)}%
+               </h3>
+               <span className={`text-[10px] font-black uppercase mb-1 ${summaryStats.totalPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {summaryStats.totalPnl >= 0 ? '+' : '-'}₹{Math.abs(summaryStats.totalPnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+               </span>
+            </div>
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+               {summaryStats.totalPnl >= 0 ? 'Profit' : 'Loss'}: ₹{Math.abs(summaryStats.totalPnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </p>
+         </div>
+
+         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm group hover:shadow-md transition-all">
+            <div className="flex items-center justify-between mb-3">
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Avg. Velocity</span>
+               <Clock className="h-3.5 w-3.5 text-indigo-500" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900">{summaryStats.avgDays.toFixed(1)} Days</h3>
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Holding Duration</p>
+         </div>
+
+         <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl shadow-slate-200 group hover:scale-[1.02] transition-all">
+            <div className="flex items-center justify-between mb-3">
+               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Annual Projection</span>
+               <Activity className="h-3.5 w-3.5 text-blue-400" />
+            </div>
+            <h3 className="text-2xl font-black text-white">{summaryStats.avgAnnualGain.toFixed(0)}%</h3>
+            <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mt-1">12-Strategy Alpha</p>
+         </div>
       </div>
 
       <div className="flex items-center justify-between shrink-0">
