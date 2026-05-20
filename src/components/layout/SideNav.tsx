@@ -11,7 +11,8 @@ import {
   ShieldCheck,
   History as HistoryIcon,
   Activity,
-  Terminal
+  Terminal,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -29,6 +30,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
     { icon: Briefcase, label: 'My Portfolio', path: '/portfolio', desc: 'Wealth Manager' },
     { icon: ShieldCheck, label: 'Education', path: '/education', desc: 'Strategy Guides' },
     { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Order Ledger' },
+    { icon: CreditCard, label: 'Membership', path: '/pricing', desc: 'Billing & Access' },
   ];
 
   if (isAdmin) {

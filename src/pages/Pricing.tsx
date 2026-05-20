@@ -132,7 +132,7 @@ const PricingPage: React.FC = () => {
                 <p className="text-[9px] md:text-[11px] font-bold text-slate-400 mt-1 md:mt-2 leading-relaxed uppercase">{tier.desc}</p>
               </div>
 
-              <div className="space-y-3 md:space-y-4 mb-8 md:mb-10 flex-1">
+              <div className="space-y-4 mb-6 md:mb-10 flex-grow overflow-visible">
                 {tier.features.map((feature) => (
                   <div key={feature} className="flex items-start space-x-3">
                     <div className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 rounded-full bg-emerald-50 flex items-center justify-center mt-0.5">
@@ -143,7 +143,7 @@ const PricingPage: React.FC = () => {
                 ))}
               </div>
 
-              <div className="space-y-3 md:space-y-4">
+              <div className="space-y-4 mt-auto">
                 {tier.name !== 'Free' && (
                   <div className="flex items-center space-x-2">
                     <div className="relative flex-1">
@@ -168,7 +168,7 @@ const PricingPage: React.FC = () => {
                 
                 <button 
                   onClick={() => handleCheckout(tier.name)}
-                  className={`w-full py-4 md:py-5 rounded-2xl md:rounded-[2rem] font-black text-[10px] md:text-[12px] uppercase tracking-widest flex items-center justify-center space-x-2 transition-all active:scale-95 ${tier.color}`}
+                  className={`w-full py-4 md:py-5 rounded-2xl md:rounded-[2rem] font-black text-[10px] md:text-[12px] uppercase tracking-widest flex items-center justify-center space-x-2 transition-all active:scale-95 shadow-xl ${tier.color}`}
                 >
                   <span>{tier.button}</span>
                   <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />

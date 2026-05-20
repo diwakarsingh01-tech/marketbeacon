@@ -9,7 +9,6 @@ import HomePage from './pages/Home';
 import LoginPage from './pages/Login';
 
 // Lazy Loaded Professional Modules
-const RegisterPage = lazy(() => import('./pages/Register'));
 const DashboardPage = lazy(() => import('./pages/Dashboard'));
 const StockFundamentalsPage = lazy(() => import('./pages/StockFundamentals'));
 const TradeJournalPage = lazy(() => import('./pages/TradeJournal'));
@@ -44,7 +43,6 @@ function App() {
             {/* Public Marketing Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
             <Route path="/pricing" element={<PricingPage />} />
 
             {/* Authenticated SaaS Platform */}

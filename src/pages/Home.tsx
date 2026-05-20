@@ -27,12 +27,10 @@ const HomePage: React.FC = () => {
         <div className="hidden md:flex items-center space-x-8">
            <a href="#features" className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 transition-colors">Features</a>
            <a href="#pricing" className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 transition-colors">Pricing</a>
-           <Link to="/login" className="text-xs font-black uppercase tracking-widest text-slate-900 hover:text-blue-600 transition-colors">Login</Link>
-           <Link to="/register" className="px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-all">Start Free Trial</Link>
+           <Link to="/login" className="px-6 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all">Launch Terminal</Link>
         </div>
         <div className="flex md:hidden items-center space-x-4">
-           <Link to="/login" className="text-[10px] font-black uppercase tracking-widest text-slate-900">Login</Link>
-           <Link to="/register" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">Join</Link>
+           <Link to="/login" className="px-4 py-2 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">Login</Link>
         </div>
       </nav>
 
@@ -50,8 +48,8 @@ const HomePage: React.FC = () => {
                Advanced algorithmic screening, professional fundamentals, and Batch-9 engineering filters. Built for high-conviction retail investors.
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-6 sm:space-x-6">
-               <Link to="/register" className="w-full sm:w-auto px-10 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest flex items-center justify-center space-x-3 hover:bg-black transition-all group text-center text-center">
-                  <span>Get Started Now</span>
+               <Link to="/login" className="w-full sm:w-auto px-10 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest flex items-center justify-center space-x-3 hover:bg-black transition-all group text-center">
+                  <span>Enter Terminal Now</span>
                   <ArrowRight className="h-5 w-5 group-hover:translate-x-2 transition-transform" />
                </Link>
                <div className="flex -space-x-3">
@@ -71,7 +69,7 @@ const HomePage: React.FC = () => {
          <div className="relative group perspective-1000 animate-in fade-in slide-in-from-right duration-1000">
             <div className="absolute -inset-4 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-[3rem] blur-3xl opacity-20 group-hover:opacity-30 transition-opacity" />
             <div className="relative glass-card rounded-[3rem] p-4 bg-white/50 backdrop-blur-xl border border-white/20 shadow-2xl rotate-3 group-hover:rotate-0 transition-all duration-700 overflow-hidden">
-               {/* Dashboard Mockup UI - Replaced with a real-style preview */}
+               {/* Dashboard Mockup UI */}
                <div className="bg-slate-900 rounded-[2.5rem] h-[550px] w-full p-2 flex flex-col overflow-hidden shadow-inner border border-slate-800">
                   <div className="bg-slate-800/50 p-4 flex items-center space-x-2 border-b border-slate-700/50">
                     <div className="flex space-x-1.5">
@@ -100,7 +98,6 @@ const HomePage: React.FC = () => {
                         <div className="h-2 w-20 bg-slate-700 rounded-full" />
                       </div>
                       <div className="h-40 w-full relative">
-                         {/* Fake Chart Lines */}
                          <div className="absolute inset-0 flex items-end space-x-1 opacity-50">
                             {[40, 70, 45, 90, 65, 80, 55, 95, 75, 85, 60, 100].map((h, i) => (
                               <div key={i} style={{ height: `${h}%` }} className="flex-1 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-sm" />
@@ -145,33 +142,12 @@ const HomePage: React.FC = () => {
       <section className="py-40 px-10 text-center">
          <div className="max-w-4xl mx-auto space-y-10">
             <h2 className="text-6xl font-black tracking-tighter">Ready to trade with <br/><span className="text-blue-600 italic underline underline-offset-8">Data, not Luck?</span></h2>
-            <p className="text-lg font-bold text-slate-400 uppercase tracking-widest">No credit card required. Instant access to the terminal.</p>
+            <p className="text-lg font-bold text-slate-400 uppercase tracking-widest">Institutional accuracy. Personal freedom.</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-               <Link to="/register" className="w-full sm:w-auto px-12 py-6 bg-blue-600 text-white rounded-3xl font-black uppercase tracking-widest shadow-2xl shadow-blue-500/40 hover:scale-105 transition-all">Start Your Free Journey</Link>
-               <Link to="/login" className="w-full sm:w-auto px-12 py-6 bg-white text-slate-900 border-2 border-slate-100 rounded-3xl font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Member Login</Link>
+               <Link to="/login" className="w-full sm:w-auto px-12 py-6 bg-blue-600 text-white rounded-3xl font-black uppercase tracking-widest shadow-2xl shadow-blue-500/40 hover:scale-105 transition-all">Start Your Alpha Journey</Link>
             </div>
          </div>
       </section>
-
-      {/* Simple Footer */}
-      <footer className="bg-white border-t border-slate-100 py-20 px-10">
-         <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
-            <div className="space-y-4">
-               <div className="flex items-center space-x-2">
-                  <div className="bg-slate-900 p-1.5 rounded-lg text-white">
-                     <Activity className="h-4 w-4" />
-                  </div>
-                  <span className="text-lg font-black tracking-tighter uppercase italic">MarketBeacon</span>
-               </div>
-               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">© 2026 Analytical Research Lab. All rights reserved.</p>
-            </div>
-            <div className="flex items-center space-x-10">
-               <a href="#" className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900">Privacy</a>
-               <a href="#" className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900">Terms</a>
-               <a href="#" className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900">Contact</a>
-            </div>
-         </div>
-      </footer>
     </div>
   );
 };
