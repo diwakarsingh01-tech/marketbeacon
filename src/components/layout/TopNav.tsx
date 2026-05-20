@@ -137,7 +137,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           ) : (
             <div className="flex items-center space-x-3">
                <Link to="/login" className="text-[10px] font-black uppercase text-slate-500 hover:text-slate-900 transition-colors">Login</Link>
-               <Link to="/register" className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20">Join</Link>
+               <Link to="/login" className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20">Join Free</Link>
             </div>
           )}
         </div>

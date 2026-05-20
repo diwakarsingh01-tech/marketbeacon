@@ -43,6 +43,7 @@ function App() {
             {/* Public Marketing Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<Navigate to="/login" replace />} />
             <Route path="/pricing" element={<PricingPage />} />
 
             {/* Authenticated SaaS Platform */}
