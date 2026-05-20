@@ -94,7 +94,7 @@ const PricingPage: React.FC = () => {
   ];
 
   const handleCheckout = (tierName: string) => {
-    console.log(`Checking out for ${tierName} with referral ${referralCode}`);
+    console.log(`Checking out for ${tierName} with voucher ${voucherCode}`);
     // Here we would integrate Stripe/Razorpay
     alert(`Checkout initiated for ${tierName} Tier. Integration with Payment Gateway pending configuration.`);
   };

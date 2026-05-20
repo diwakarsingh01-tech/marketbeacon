@@ -17,7 +17,8 @@ import {
   UserPlus,
   ArrowRight,
   Settings2,
-  Power
+  Power,
+  Gift
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -161,16 +162,16 @@ const AdminPanel: React.FC = () => {
                 className="bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-3 text-[11px] font-black uppercase tracking-widest focus:bg-white transition-all w-64 shadow-inner"
               />
            </div>
-           <button onClick={() => setIsAddUserModalOpen(true)} className="p-3.5 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm flex items-center space-x-2">
-              <UserPlus className="h-4 w-4 text-slate-400" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden md:block text-slate-500">Member</span>
+           <button onClick={() => setIsAddUserModalOpen(true)} className="p-3.5 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm flex items-center space-x-2 text-slate-400">
+              <UserPlus className="h-4 w-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">Member</span>
            </button>
            <button onClick={() => setIsAddVoucherModalOpen(true)} className="p-3.5 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-lg flex items-center space-x-2">
               <Gift className="h-4 w-4" />
               <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">Voucher</span>
            </button>
-           <button onClick={fetchData} className="p-3.5 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
-              <RefreshCw className={`h-4 w-4 text-slate-400 ${isLoading ? 'animate-spin' : ''}`} />
+           <button onClick={fetchData} className="p-3.5 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm text-slate-400">
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
            </button>
         </div>
       </div>
@@ -206,7 +207,8 @@ const AdminPanel: React.FC = () => {
               <Gift className="h-4 w-4" />
               <span>Vouchers ({vouchers.length})</span>
             </button>
-            </div>         
+         </div>
+         
          <div className="flex items-center space-x-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
             <div className="flex items-center space-x-2">
                <div className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -225,18 +227,48 @@ const AdminPanel: React.FC = () => {
            <thead>
              <tr className="border-b border-slate-50 bg-slate-50/30">
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  {activeTab === 'users' ? 'Member Profile' : 'Approval Request'}
+                  {activeTab === 'users' ? 'Member Profile' : activeTab === 'vouchers' ? 'Voucher Code' : 'Approval Request'}
                 </th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Plan Tier</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  {activeTab === 'users' ? 'Membership Validity' : 'Transaction ID'}
+                  {activeTab === 'users' ? 'Membership Validity' : activeTab === 'vouchers' ? 'Usage Matrix' : 'Transaction ID'}
                 </th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
              </tr>
            </thead>
            <tbody className="divide-y divide-slate-50">
-             {activeTab === 'users' ? (
+             {activeTab === 'vouchers' ? (
+               vouchers.map(v => (
+                 <tr key={v.id} className="group hover:bg-slate-50/50 transition-colors">
+                   <td className="px-8 py-6 font-mono font-black text-slate-900 text-xs select-all">{v.code}</td>
+                   <td className="px-8 py-6">
+                      <div className="flex justify-center">
+                        <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${v.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                           {v.is_active ? 'Live' : 'Disabled'}
+                        </span>
+                      </div>
+                   </td>
+                   <td className="px-8 py-6">
+                      <div className="flex flex-col items-center">
+                         <span className="text-[10px] font-black text-slate-900 uppercase">{v.tier}</span>
+                         <span className="text-[8px] font-bold text-slate-400 uppercase">{v.duration_days} Days Access</span>
+                      </div>
+                   </td>
+                   <td className="px-8 py-6">
+                      <div className="flex flex-col">
+                         <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-600" style={{ width: `${(v.current_uses / v.max_uses) * 100}%` }} />
+                         </div>
+                         <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase">{v.current_uses} / {v.max_uses} Redemptions</span>
+                      </div>
+                   </td>
+                   <td className="px-8 py-6 text-right">
+                      {/* Controls can be added here */}
+                   </td>
+                 </tr>
+               ))
+             ) : activeTab === 'users' ? (
                filteredUsers.map(u => {
                  const days = getDaysRemaining(u.subscription_expiry);
                  return (
@@ -343,38 +375,13 @@ const AdminPanel: React.FC = () => {
                   </td>
                 </tr>
                ))
-             ) : activeTab === 'vouchers' ? (
-               vouchers.map(v => (
-                 <tr key={v.id} className="group hover:bg-slate-50/50 transition-colors">
-                   <td className="px-8 py-6">
-                      <span className="text-[13px] font-black text-slate-900 font-mono select-all">{v.code}</span>
-                   </td>
-                   <td className="px-8 py-6 text-center">
-                      <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${v.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                         {v.is_active ? 'Live' : 'Disabled'}
-                      </span>
-                   </td>
-                   <td className="px-8 py-6">
-                      <div className="flex flex-col items-center">
-                         <span className="text-[10px] font-black text-slate-900 uppercase">{v.tier}</span>
-                         <span className="text-[8px] font-bold text-slate-400 uppercase">{v.duration_days} Days</span>
-                      </div>
-                   </td>
-                   <td className="px-8 py-6">
-                      <div className="flex flex-col">
-                         <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-600" style={{ width: `${(v.current_uses / v.max_uses) * 100}%` }} />
-                         </div>
-                         <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase">{v.current_uses} / {v.max_uses} Redemptions</span>
-                      </div>
-                   </td>
-                   <td className="px-8 py-6 text-right">
-                      {/* Add Toggle/Delete for Vouchers if needed */}
-                   </td>
-                 </tr>
-               ))
-             ) : (
-               filteredUsers.map(u => {
+             )}
+           </tbody>
+        </table>
+      </div>
+
+      {/* 4. Manage User Modal */}
+      {isManageModalOpen && selectedUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
            <div className="bg-white rounded-[3.5rem] p-10 max-w-lg w-full shadow-2xl border border-slate-100 space-y-8 animate-in zoom-in-95 duration-500">
               <div className="flex justify-between items-start">
@@ -382,8 +389,8 @@ const AdminPanel: React.FC = () => {
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Modify Access</h2>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Editing profile for {selectedUser.name}</p>
                  </div>
-                 <button onClick={() => setIsManageModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
-                    <XCircle className="h-6 w-6 text-slate-300" />
+                 <button onClick={() => setIsManageModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all text-slate-300">
+                    <XCircle className="h-6 w-6" />
                  </button>
               </div>
 
@@ -446,15 +453,14 @@ const AdminPanel: React.FC = () => {
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Onboard Member</h2>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Manual Database Injection</p>
                  </div>
-                 <button onClick={() => setIsAddUserModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
-                    <XCircle className="h-6 w-6 text-slate-300" />
+                 <button onClick={() => setIsAddUserModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all text-slate-300">
+                    <XCircle className="h-6 w-6" />
                  </button>
               </div>
 
               <form className="space-y-6" onSubmit={async (e) => {
                  e.preventDefault();
                  const fd = new FormData(e.currentTarget);
-                 const token = localStorage.getItem('mb_token');
                  try {
                     const res = await fetch(`${API_URL}/api/auth/register`, {
                        method: 'POST',
@@ -462,14 +468,14 @@ const AdminPanel: React.FC = () => {
                        body: JSON.stringify({
                           name: fd.get('name'),
                           email: fd.get('email'),
-                          password: fd.get('password') || 'MarketBeacon2026', // Standard temp pass
+                          password: fd.get('password') || 'MarketBeacon2026',
                           role: fd.get('role')
                        })
                     });
                     if (res.ok) {
                        fetchData();
                        setIsAddUserModalOpen(false);
-                    } else { alert("Failed to onboard user. Check if email/mobile exists."); }
+                    } else { alert("Failed to onboard user."); }
                  } catch (e) { alert("Registration endpoint failed"); }
               }}>
                  <div className="space-y-4">
@@ -490,7 +496,7 @@ const AdminPanel: React.FC = () => {
                           </select>
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Temp Password</label>
+                          <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1 text-slate-400">Temp Password</label>
                           <input type="text" name="password" placeholder="Auto-generated" className="w-full bg-slate-100 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none cursor-not-allowed" disabled value="MarketBeacon2026" />
                        </div>
                     </div>
@@ -514,8 +520,8 @@ const AdminPanel: React.FC = () => {
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Create Voucher</h2>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trial Pass Generation</p>
                  </div>
-                 <button onClick={() => setIsAddVoucherModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
-                    <XCircle className="h-6 w-6 text-slate-300" />
+                 <button onClick={() => setIsAddVoucherModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all text-slate-300">
+                    <XCircle className="h-6 w-6" />
                  </button>
               </div>
 
