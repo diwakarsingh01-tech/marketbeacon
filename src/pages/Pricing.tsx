@@ -12,6 +12,7 @@ import {
 const PricingPage: React.FC = () => {
   const [voucherCode, setVoucherCode] = useState('');
   const [redeeming, setRedeemning] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'quarterly'>('monthly');
 
   const handleRedeemVoucher = async () => {
     if (!voucherCode) return;
@@ -29,14 +30,14 @@ const PricingPage: React.FC = () => {
       
       if (res.ok) {
         const data = await res.json();
-        alert(`Success! You have been upgraded to ${data.tier.toUpperCase()} tier for 7 days.`);
-        window.location.href = '/screener'; // Refresh to apply access
+        alert(`Voucher Applied! Access Level: ${data.tier.toUpperCase()} for 7 Days.`);
+        window.location.href = '/screener'; 
       } else {
         const err = await res.json();
-        alert(err.error || "Invalid voucher code");
+        alert(err.error || "Voucher code not recognized");
       }
     } catch (e) {
-      alert("Network error. Please try again.");
+      alert("Network timeout. Check your connection.");
     } finally {
       setRedeemning(false);
     }
@@ -45,47 +46,47 @@ const PricingPage: React.FC = () => {
   const tiers = [
     {
       name: 'Free',
-      price: '₹0',
+      price: { monthly: '₹0', quarterly: '₹0' },
       period: 'forever',
-      desc: 'Basic portfolio tracking for retail investors.',
+      desc: 'Institutional baseline for all students.',
       features: [
         'Real-time Watchlist',
         'Basic Fundamentals',
         '3 Active Trades Journal',
-        'Community Support'
+        'Community Access'
       ],
-      button: 'Start for Free',
+      button: 'Continue Free',
       color: 'bg-slate-100 text-slate-900',
       icon: Zap
     },
     {
       name: 'Pro',
-      price: '₹999',
-      period: 'per month',
-      desc: 'Professional grade screening & strategy tools.',
+      price: { monthly: '₹999', quarterly: '₹799' },
+      period: billingPeriod === 'monthly' ? 'per month' : 'per month*',
+      desc: 'The complete Batch 9 auditing suite.',
       features: [
         'Everything in Free',
-        'Institutional Screener Access',
-        'Full Backtest Engine',
-        'Unlimited Trade Journal',
-        'ABCD Ladder Calculator'
+        '12-Strategy Matrix Access',
+        'Unified Portfolio Mix',
+        'Unlimited Ledger Records',
+        'ABCD Ladder Tool'
       ],
-      button: 'Upgrade to Pro',
+      button: billingPeriod === 'monthly' ? 'Upgrade to Pro' : 'Billed Quarterly',
       color: 'bg-blue-600 text-white shadow-xl shadow-blue-200',
       icon: ShieldCheck,
       featured: true
     },
     {
       name: 'Institutional',
-      price: '₹4,999',
-      period: 'per month',
-      desc: 'Custom alphabets & deep historical audits.',
+      price: { monthly: '₹4,999', quarterly: '₹3,999' },
+      period: billingPeriod === 'monthly' ? 'per month' : 'per month*',
+      desc: 'Deep historical data & priority nodes.',
       features: [
         'Everything in Pro',
         'Custom Universe Baskets',
-        'Advanced Sector Overrides',
-        'Priority API Support',
-        'Dual Deployment Assistance'
+        'Priority Technical Support',
+        'Alpha Strategy Overrides',
+        'Multi-Device Sync'
       ],
       button: 'Get Institutional',
       color: 'bg-slate-900 text-white',
@@ -94,21 +95,38 @@ const PricingPage: React.FC = () => {
   ];
 
   const handleCheckout = (tierName: string) => {
-    console.log(`Checking out for ${tierName} with voucher ${voucherCode}`);
-    // Here we would integrate Stripe/Razorpay
-    alert(`Checkout initiated for ${tierName} Tier. Integration with Payment Gateway pending configuration.`);
+    console.log(`Checking out for ${tierName} - ${billingPeriod}`);
+    alert(`Institutional Checkout: ${tierName} (${billingPeriod}) initiated. Payment portal connecting...`);
   };
 
   return (
-    <div className="p-4 md:p-10 lg:p-16 max-w-7xl mx-auto space-y-8 md:space-y-16 pb-24 md:pb-16">
-      <div className="text-center space-y-2 md:space-y-4">
-        <h1 className="text-2xl md:text-5xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Choose Your Access</h1>
-        <p className="text-slate-500 font-bold uppercase tracking-widest text-[8px] md:text-xs">Batch 9 Compliant Institutional Trading Terminals</p>
+    <div className="p-4 md:p-10 lg:p-16 max-w-7xl mx-auto space-y-8 md:space-y-12 pb-24 md:pb-16 font-sans">
+      <div className="text-center space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Access Tiers</h1>
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-[8px] md:text-xs">Select your institutional environment</p>
+        </div>
+
+        {/* Pricing Toggle */}
+        <div className="flex items-center justify-center space-x-4">
+           <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'monthly' ? 'text-slate-900' : 'text-slate-400'}`}>Monthly</span>
+           <button 
+             onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'quarterly' : 'monthly')}
+             className="w-14 h-7 bg-slate-100 rounded-full relative p-1 transition-all border border-slate-200"
+           >
+              <div className={`h-5 w-5 bg-blue-600 rounded-full transition-all shadow-md ${billingPeriod === 'quarterly' ? 'translate-x-7' : 'translate-x-0'}`} />
+           </button>
+           <div className="flex items-center space-x-2">
+              <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'quarterly' ? 'text-blue-600' : 'text-slate-400'}`}>Quarterly</span>
+              <span className="bg-emerald-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter animate-pulse">Save 20%</span>
+           </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
         {tiers.map((tier) => {
           const Icon = tier.icon;
+          const currentPrice = billingPeriod === 'monthly' ? tier.price.monthly : tier.price.quarterly;
           return (
             <div key={tier.name} className={`relative rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-8 flex flex-col transition-all md:hover:scale-[1.02] ${tier.featured ? 'bg-white border-2 border-blue-600 shadow-2xl z-10' : 'bg-white border border-slate-100'}`}>
               {tier.featured && (
@@ -126,7 +144,7 @@ const PricingPage: React.FC = () => {
 
               <div className="mb-4 md:mb-6">
                 <div className="flex items-baseline space-x-1">
-                  <span className="text-3xl md:text-4xl font-black text-slate-900">{tier.price}</span>
+                  <span className="text-3xl md:text-4xl font-black text-slate-900">{currentPrice}</span>
                   <span className="text-slate-400 font-bold text-xs md:text-sm">/{tier.period}</span>
                 </div>
                 <p className="text-[9px] md:text-[11px] font-bold text-slate-400 mt-1 md:mt-2 leading-relaxed uppercase">{tier.desc}</p>
@@ -145,7 +163,7 @@ const PricingPage: React.FC = () => {
 
               <div className="space-y-4 mt-auto">
                 {tier.name !== 'Free' && (
-                  <div className="flex items-center space-x-2 bg-slate-50 p-1 rounded-2xl border border-slate-100">
+                  <div className="flex items-center space-x-2 bg-slate-50 p-1 rounded-2xl border border-slate-100 group focus-within:border-blue-600 transition-all">
                     <div className="relative flex-1">
                       <Gift className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 md:h-4 md:w-4 text-slate-400" />
                       <input 
@@ -178,6 +196,10 @@ const PricingPage: React.FC = () => {
           );
         })}
       </div>
+
+      {billingPeriod === 'quarterly' && (
+        <p className="text-[8px] md:text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">* Quarterly plans are billed every 90 days. Average price shown.</p>
+      )}
 
       <div className="bg-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 overflow-hidden relative">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] -mr-32 -mt-32" />
