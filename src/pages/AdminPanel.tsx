@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Users, 
   ShieldCheck, 
@@ -11,21 +11,32 @@ import {
   Search,
   Filter,
   MoreVertical,
-  Trash2
+  Trash2,
+  Calendar,
+  ShieldAlert,
+  UserPlus,
+  ArrowRight,
+  Settings2,
+  Power
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const AdminPanel: React.FC = () => {
-  const { user } = useAuth();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users'>('pending');
   const [search, setSearch] = useState('');
+  
+  // Modals
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     const token = localStorage.getItem('mb_token');
     try {
@@ -41,11 +52,11 @@ const AdminPanel: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    if ((user as any)?.role === 'admin') fetchData();
-  }, [user]);
+    if ((currentUser as any)?.role === 'admin') fetchData();
+  }, [currentUser, fetchData]);
 
   const handleApprove = async (requestId: number) => {
     if (!window.confirm("Approve this payment and upgrade user?")) return;
@@ -56,47 +67,42 @@ const AdminPanel: React.FC = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        // SUCCESS: Reload everything to ensure sync
         await fetchData();
-        setActiveTab('approved'); // Move to historical view
+        setActiveTab('approved');
       } else {
         const err = await res.json();
-        alert("Server Rejected Approval: " + (err.error || "Unknown Error"));
+        alert("Error: " + (err.error || "Failed to approve"));
       }
-    } catch (e) { 
-      alert("Approval Logic Failed. Check console logs."); 
-    }
+    } catch (e) { alert("Approval Logic Failed."); }
   };
 
-  const handleUpdateTier = async (userId: number, tier: string) => {
+  const handleUpdateUser = async (userId: number, data: any) => {
     const token = localStorage.getItem('mb_token');
     try {
-      const res = await fetch(`${API_URL}/api/admin/users/${userId}/tier`, {
+      const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify({ tier })
+        body: JSON.stringify(data)
       });
-      if (res.ok) fetchData();
-    } catch (e) { alert("Tier update failed"); }
+      if (res.ok) {
+        fetchData();
+        setIsManageModalOpen(false);
+      }
+    } catch (e) { alert("Update failed"); }
   };
 
   const handleDeleteUser = async (userId: number) => {
-    if (!window.confirm("DANGER: This will permanently delete this user and ALL their data (trades, watchlist, requests). Continue?")) return;
+    if (!window.confirm("DANGER: Permanently delete user and all data?")) return;
     const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) {
-        fetchData();
-      } else {
-        const err = await res.json();
-        alert(err.error || "Deletion failed");
-      }
+      if (res.ok) fetchData();
     } catch (e) { alert("Network error"); }
   };
 
@@ -104,10 +110,7 @@ const AdminPanel: React.FC = () => {
     const status = (r.status || 'pending').toLowerCase();
     const isTabMatch = activeTab === 'pending' ? status === 'pending' : status === 'approved';
     const searchLower = search.toLowerCase();
-    const isSearchMatch = (r.email || '').toLowerCase().includes(searchLower) || 
-                          (r.name || '').toLowerCase().includes(searchLower) || 
-                          (r.transaction_id || '').includes(search);
-    return isTabMatch && isSearchMatch;
+    return isTabMatch && ((r.email || '').toLowerCase().includes(searchLower) || (r.name || '').toLowerCase().includes(searchLower));
   });
 
   const filteredUsers = users.filter(u => 
@@ -115,24 +118,34 @@ const AdminPanel: React.FC = () => {
     (u.name || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  if ((user as any)?.role !== 'admin') {
+  const getDaysRemaining = (expiry: string) => {
+    if (!expiry) return null;
+    const days = Math.ceil((new Date(expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return Math.max(0, days);
+  };
+
+  if ((currentUser as any)?.role !== 'admin') {
     return (
       <div className="flex flex-col items-center justify-center h-screen space-y-4">
         <ShieldCheck className="h-12 w-12 text-red-500" />
         <h2 className="text-xl font-black uppercase tracking-widest">Unauthorized Access</h2>
-        <p className="text-slate-400 font-bold text-xs uppercase">Admin Privileges Required</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-10">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
+    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-10 min-h-screen">
+      {/* 1. Header with Stats */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-1">
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase italic">Command Center</h1>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">Access Management & User Audit</p>
+          <div className="flex items-center space-x-2 text-blue-600">
+             <ShieldCheck className="h-4 w-4" />
+             <span className="text-[10px] font-black uppercase tracking-widest leading-none">Security Level: Admin</span>
+          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Command Center</h1>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">Institutional Membership Control</p>
         </div>
+
         <div className="flex items-center space-x-3">
            <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
@@ -144,55 +157,144 @@ const AdminPanel: React.FC = () => {
                 className="bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-3 text-[11px] font-black uppercase tracking-widest focus:bg-white transition-all w-64 shadow-inner"
               />
            </div>
+           <button onClick={() => setIsAddUserModalOpen(true)} className="p-3.5 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-lg flex items-center space-x-2">
+              <UserPlus className="h-4 w-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">Onboard</span>
+           </button>
            <button onClick={fetchData} className="p-3.5 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
               <RefreshCw className={`h-4 w-4 text-slate-400 ${isLoading ? 'animate-spin' : ''}`} />
            </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 w-fit">
-         <button 
-           onClick={() => setActiveTab('pending')}
-           className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 ${activeTab === 'pending' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
-         >
-           <Clock className="h-4 w-4" />
-           <span>Pending ({requests.filter(r => r.status === 'pending').length})</span>
-         </button>
-         <button 
-           onClick={() => setActiveTab('approved')}
-           className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 ${activeTab === 'approved' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
-         >
-           <CheckCircle2 className="h-4 w-4" />
-           <span>Approved ({requests.filter(r => r.status === 'approved').length})</span>
-         </button>
-         <button 
-           onClick={() => setActiveTab('users')}
-           className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 ${activeTab === 'users' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
-         >
-           <Users className="h-4 w-4" />
-           <span>User Directory ({users.length})</span>
-         </button>
+      {/* 2. Controls & Tabs */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+         <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 w-fit overflow-x-auto no-scrollbar">
+            <button 
+              onClick={() => setActiveTab('pending')}
+              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'pending' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+            >
+              <Clock className="h-4 w-4" />
+              <span>Pending ({requests.filter(r => r.status === 'pending').length})</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab('approved')}
+              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'approved' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              <span>History ({requests.filter(r => r.status === 'approved').length})</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab('users')}
+              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'users' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
+            >
+              <Users className="h-4 w-4" />
+              <span>User Directory ({users.length})</span>
+            </button>
+         </div>
+         
+         <div className="flex items-center space-x-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <div className="flex items-center space-x-2">
+               <div className="h-2 w-2 rounded-full bg-emerald-500" />
+               <span>{users.filter(u => getDaysRemaining(u.subscription_expiry) !== null && getDaysRemaining(u.subscription_expiry)! > 0).length} Active</span>
+            </div>
+            <div className="flex items-center space-x-2">
+               <div className="h-2 w-2 rounded-full bg-red-500" />
+               <span>{users.filter(u => getDaysRemaining(u.subscription_expiry) === 0).length} Expired</span>
+            </div>
+         </div>
       </div>
 
-      {/* Table Section */}
+      {/* 3. Main Table */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden">
-        {activeTab !== 'users' ? (
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-slate-50 bg-slate-50/30">
+        <table className="w-full text-left">
+           <thead>
+             <tr className="border-b border-slate-50 bg-slate-50/30">
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  {activeTab === 'users' ? 'Member Profile' : 'Approval Request'}
+                </th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">User Profile</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Requested Tier</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction UTR</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Plan Tier</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  {activeTab === 'users' ? 'Membership Validity' : 'Transaction ID'}
+                </th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRequests.length === 0 ? (
-                <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-300 font-bold uppercase tracking-widest italic text-xs">No {activeTab} requests found</td></tr>
-              ) : filteredRequests.map((req) => (
-                <tr key={req.id} className="border-b border-slate-50 group hover:bg-slate-50/50 transition-colors">
+             </tr>
+           </thead>
+           <tbody className="divide-y divide-slate-50">
+             {activeTab === 'users' ? (
+               filteredUsers.map(u => {
+                 const days = getDaysRemaining(u.subscription_expiry);
+                 return (
+                  <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors">
+                    <td className="px-8 py-6">
+                       <div className="flex items-center space-x-4">
+                          <div className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xs uppercase italic">
+                             {u.name?.substring(0,2)}
+                          </div>
+                          <div className="flex flex-col">
+                             <span className="text-[13px] font-black text-slate-900 leading-none">{u.name}</span>
+                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{u.email || u.mobile || 'No Contact'}</span>
+                          </div>
+                       </div>
+                    </td>
+                    <td className="px-8 py-6">
+                       <div className="flex justify-center">
+                          <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.1em] ${u.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                             {u.is_active ? 'Active' : 'Deactivated'}
+                          </span>
+                       </div>
+                    </td>
+                    <td className="px-8 py-6">
+                       <div className="flex justify-center">
+                          <div className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border ${u.tier === 'alpha' ? 'bg-slate-900 text-white border-slate-900 shadow-lg' : u.tier === 'pro' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                             {u.tier === 'alpha' ? <ShieldCheck className="h-3 w-3" /> : u.tier === 'pro' ? <Zap className="h-3 w-3" /> : null}
+                             <span className="text-[9px] font-black uppercase">{u.tier}</span>
+                          </div>
+                       </div>
+                    </td>
+                    <td className="px-8 py-6">
+                       <div className="flex flex-col space-y-1">
+                          <div className="flex items-center space-x-2 text-slate-700">
+                             <Calendar className="h-3.5 w-3.5 text-slate-300" />
+                             <span className="text-[11px] font-bold font-mono">{u.subscription_expiry ? new Date(u.subscription_expiry).toLocaleDateString() : 'Unlimited'}</span>
+                          </div>
+                          {days !== null && (
+                             <span className={`text-[8px] font-black uppercase ${days <= 3 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                                {days === 0 ? 'Expired' : `${days} Days Remaining`}
+                             </span>
+                          )}
+                       </div>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                       <div className="flex items-center justify-end space-x-2">
+                          <button 
+                            onClick={() => { setSelectedUser(u); setIsManageModalOpen(true); }}
+                            className="p-2 text-slate-400 hover:text-blue-600 transition-colors bg-white border border-slate-100 rounded-xl shadow-sm"
+                            title="Manage Access"
+                          >
+                             <Settings2 className="h-4 w-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteUser(u.id)}
+                            className="p-2 text-slate-300 hover:text-rose-600 transition-colors"
+                          >
+                             <Trash2 className="h-4 w-4" />
+                          </button>
+                       </div>
+                    </td>
+                  </tr>
+                 );
+               })
+             ) : (
+               filteredRequests.map(req => (
+                <tr key={req.id} className="group hover:bg-slate-50/50 transition-colors">
+                  <td className="px-8 py-6">
+                    <div className="flex flex-col">
+                       <span className="text-[13px] font-black text-slate-900 leading-none">{req.name}</span>
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{req.email || req.mobile}</span>
+                    </div>
+                  </td>
                   <td className="px-8 py-6">
                     <div className="flex justify-center">
                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
@@ -201,20 +303,12 @@ const AdminPanel: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="flex flex-col">
-                       <span className="text-[13px] font-black text-slate-900 leading-none">{req.name}</span>
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{req.email || req.mobile || 'Unknown User'}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex flex-col space-y-1">
-                       <div className="flex items-center space-x-2">
-                          {req.requested_tier === 'alpha' ? <ShieldCheck className="h-4 w-4 text-slate-900" /> : <Zap className="h-4 w-4 text-blue-600" />}
-                          <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{req.requested_tier}</span>
+                    <div className="flex flex-col items-center space-y-1">
+                       <div className="flex items-center space-x-2 text-blue-600">
+                          <Zap className="h-3 w-3" />
+                          <span className="text-[11px] font-black uppercase">{req.requested_tier}</span>
                        </div>
-                       <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded w-fit ${req.billing_cycle === 'yearly' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {req.billing_cycle || 'monthly'}
-                       </span>
+                       <span className="text-[8px] font-black uppercase text-slate-400">{req.billing_cycle}</span>
                     </div>
                   </td>
                   <td className="px-8 py-6">
@@ -227,85 +321,150 @@ const AdminPanel: React.FC = () => {
                     {req.status === 'pending' && (
                       <button 
                         onClick={() => handleApprove(req.id)}
-                        className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all active:scale-95"
+                        className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md active:scale-95"
                       >
                         Approve Upgrade
                       </button>
                     )}
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-slate-50 bg-slate-50/30">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">User Details</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Role</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Active Tier</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Quick Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((u) => (
-                <tr key={u.id} className="border-b border-slate-50 group hover:bg-slate-50/50 transition-colors">
-                  <td className="px-8 py-6 text-[10px] font-bold text-slate-300">#{u.id}</td>
-                  <td className="px-8 py-6">
-                    <div className="flex flex-col">
-                       <span className="text-[13px] font-black text-slate-900 leading-none">{u.name}</span>
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{u.email || u.mobile || 'No Contact'}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex justify-center">
-                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${u.role === 'admin' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}>
-                          {u.role}
-                       </span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex justify-center">
-                       <select 
-                         value={u.tier}
-                         onChange={(e) => handleUpdateTier(u.id, e.target.value)}
-                         className="appearance-none bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-[9px] font-black uppercase tracking-widest focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-                       >
-                         <option value="free">Free</option>
-                         <option value="pro">Pro (₹99)</option>
-                         <option value="alpha">Alpha (₹199)</option>
-                       </select>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <button 
-                      onClick={() => handleDeleteUser(u.id)}
-                      className="p-2 text-slate-300 hover:text-rose-600 transition-colors"
-                      title="Delete User"
-                    >
-                       <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+               ))
+             )}
+           </tbody>
+        </table>
       </div>
 
-      <div className="bg-slate-900 rounded-[3rem] p-10 text-white flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden relative border border-slate-800">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px] -mr-32 -mt-32" />
-        <div className="z-10 space-y-2 text-center md:text-left">
-          <h2 className="text-2xl font-black tracking-tight uppercase italic">Admin Risk Notice</h2>
-          <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] max-w-xl">
-            Upgrading users grants access to high-conviction research modules. Always verify Transaction IDs manually before approval.
-          </p>
+      {/* 4. Manage User Modal */}
+      {isManageModalOpen && selectedUser && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+           <div className="bg-white rounded-[3.5rem] p-10 max-w-lg w-full shadow-2xl border border-slate-100 space-y-8 animate-in zoom-in-95 duration-500">
+              <div className="flex justify-between items-start">
+                 <div className="space-y-1">
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Modify Access</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Editing profile for {selectedUser.name}</p>
+                 </div>
+                 <button onClick={() => setIsManageModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
+                    <XCircle className="h-6 w-6 text-slate-300" />
+                 </button>
+              </div>
+
+              <form className="space-y-6" onSubmit={(e) => {
+                 e.preventDefault();
+                 const fd = new FormData(e.currentTarget);
+                 handleUpdateUser(selectedUser.id, {
+                    tier: fd.get('tier'),
+                    subscription_start: fd.get('start'),
+                    subscription_expiry: fd.get('expiry'),
+                    is_active: fd.get('active') === 'true' ? 1 : 0
+                 });
+              }}>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Plan Tier</label>
+                       <select name="tier" defaultValue={selectedUser.tier} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all">
+                          <option value="free">Free</option>
+                          <option value="pro">Pro (₹99)</option>
+                          <option value="alpha">Alpha (₹199)</option>
+                       </select>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Account Status</label>
+                       <select name="active" defaultValue={String(!!selectedUser.is_active)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all">
+                          <option value="true">Active (Verified)</option>
+                          <option value="false">Suspended / Deactivated</option>
+                       </select>
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1 text-blue-600">Start Date</label>
+                       <input type="date" name="start" defaultValue={selectedUser.subscription_start?.split('T')[0]} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none focus:bg-white transition-all" />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1 text-rose-600">Expiry Date</label>
+                       <input type="date" name="expiry" defaultValue={selectedUser.subscription_expiry?.split('T')[0]} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none focus:bg-white transition-all" />
+                    </div>
+                 </div>
+
+                 <div className="bg-amber-50 rounded-2xl p-4 flex items-start space-x-3 border border-amber-100">
+                    <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                    <p className="text-[9px] font-bold text-amber-700 leading-relaxed uppercase">Manual overrides bypass payment verification. Ensure date consistency to avoid user access issues.</p>
+                 </div>
+
+                 <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95">Commit Changes</button>
+              </form>
+           </div>
         </div>
-        <div className="z-10 flex items-center space-x-4">
-           <ShieldCheck className="h-10 w-10 text-blue-500" />
+      )}
+
+      {/* 5. Add User Modal */}
+      {isAddUserModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+           <div className="bg-white rounded-[3.5rem] p-10 max-w-lg w-full shadow-2xl border border-slate-100 space-y-8 animate-in zoom-in-95 duration-500">
+              <div className="flex justify-between items-start">
+                 <div className="space-y-1">
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Onboard Member</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Manual Database Injection</p>
+                 </div>
+                 <button onClick={() => setIsAddUserModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all">
+                    <XCircle className="h-6 w-6 text-slate-300" />
+                 </button>
+              </div>
+
+              <form className="space-y-6" onSubmit={async (e) => {
+                 e.preventDefault();
+                 const fd = new FormData(e.currentTarget);
+                 const token = localStorage.getItem('mb_token');
+                 try {
+                    const res = await fetch(`${API_URL}/api/auth/register`, {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({
+                          name: fd.get('name'),
+                          email: fd.get('email'),
+                          password: fd.get('password') || 'MarketBeacon2026', // Standard temp pass
+                          role: fd.get('role')
+                       })
+                    });
+                    if (res.ok) {
+                       fetchData();
+                       setIsAddUserModalOpen(false);
+                    } else { alert("Failed to onboard user. Check if email/mobile exists."); }
+                 } catch (e) { alert("Registration endpoint failed"); }
+              }}>
+                 <div className="space-y-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Full Name</label>
+                       <input type="text" name="name" required placeholder="Institutional Identity" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none focus:bg-white transition-all shadow-inner" />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Email or Mobile</label>
+                       <input type="text" name="email" required placeholder="contact@marketbeacon.com" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none focus:bg-white transition-all shadow-inner" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Initial Role</label>
+                          <select name="role" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all">
+                             <option value="user">Retail User</option>
+                             <option value="admin">System Admin</option>
+                          </select>
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Temp Password</label>
+                          <input type="text" name="password" placeholder="Auto-generated" className="w-full bg-slate-100 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none cursor-not-allowed" disabled value="MarketBeacon2026" />
+                       </div>
+                    </div>
+                 </div>
+
+                 <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-xl active:scale-95 flex items-center justify-center space-x-2">
+                    <span>Onboard Now</span>
+                    <ArrowRight className="h-4 w-4" />
+                 </button>
+              </form>
+           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

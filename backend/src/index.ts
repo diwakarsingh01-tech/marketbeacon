@@ -279,7 +279,9 @@ app.get('/api/auth/me', authenticateToken, async (req: any, res) => {
 
     const safeUser = {
       ...user,
+      subscription_start: user.subscription_start || null,
       subscription_expiry: user.subscription_expiry || null,
+      is_active: !!user.is_active,
       daysRemaining: user.subscription_expiry ? Math.max(0, Math.ceil((new Date(user.subscription_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null
     };
     res.json({ user: safeUser });
@@ -321,7 +323,7 @@ app.patch('/api/user/profile', authenticateToken, async (req: any, res) => {
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
     const db = getDB();
-    const users = await db.all('SELECT id, name, email, role, tier, created_at FROM users');
+    const users = await db.all('SELECT id, name, email, role, tier, created_at, subscription_start, subscription_expiry, is_active FROM users');
     res.json(users);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -378,21 +380,23 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
       return res.status(404).json({ error: 'Request not found' });
     }
 
-    // Set expiry based on true Calendar Month / Year
-    const expiry = new Date();
+    // Set start and expiry based on true Calendar Month / Year
+    const now = new Date();
+    const expiry = new Date(now);
     if (request.billing_cycle === 'yearly') {
       expiry.setFullYear(expiry.getFullYear() + 1);
     } else {
       expiry.setMonth(expiry.getMonth() + 1);
     }
+    const startStr = now.toISOString();
     const expiryStr = expiry.toISOString();
 
-    console.log(`[ADMIN] Approving ${request.requested_tier} for user ${request.user_id}. Expiry: ${expiryStr}`);
+    console.log(`[ADMIN] Approving ${request.requested_tier} for user ${request.user_id}. Start: ${startStr}, Expiry: ${expiryStr}`);
 
     await db.batch([
       { 
-        sql: 'UPDATE users SET tier = ?, subscription_expiry = ? WHERE id = ?', 
-        args: [request.requested_tier, expiryStr, request.user_id] 
+        sql: 'UPDATE users SET tier = ?, subscription_start = ?, subscription_expiry = ?, is_active = 1 WHERE id = ?', 
+        args: [request.requested_tier, startStr, expiryStr, request.user_id] 
       },
       { 
         sql: 'UPDATE upgrade_requests SET status = "approved" WHERE id = ?', 
@@ -406,6 +410,29 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
     console.error(`[ADMIN ERROR] Approval failed for request ${req.params.id}:`, e.message);
     res.status(500).json({ error: e.message }); 
   }
+});
+
+// Manual User Update (The "Full Control" Endpoint)
+app.patch('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, tier, subscription_start, subscription_expiry, is_active } = req.body;
+    const db = getDB();
+    
+    await db.run(
+      `UPDATE users SET 
+        name = COALESCE(?, name), 
+        email = COALESCE(?, email), 
+        tier = COALESCE(?, tier), 
+        subscription_start = COALESCE(?, subscription_start), 
+        subscription_expiry = COALESCE(?, subscription_expiry),
+        is_active = COALESCE(?, is_active)
+      WHERE id = ?`,
+      [name, email, tier, subscription_start, subscription_expiry, is_active, id]
+    );
+    
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 // --- USER UPGRADE ROUTE ---
