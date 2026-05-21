@@ -11,6 +11,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 
+const API_URL = import.meta.env.VITE_API_URL || (window.location.protocol === 'https:' ? 'https://' + window.location.host : 'http://localhost:3001');
+
 const PricingPage: React.FC = () => {
   const { user } = useAuth();
   const [voucherCode, setVoucherCode] = useState('');
@@ -24,7 +26,7 @@ const PricingPage: React.FC = () => {
     setRedeemning(true);
     const token = localStorage.getItem('mb_token');
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/redeem-voucher`, {
+      const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

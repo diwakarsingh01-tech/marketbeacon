@@ -20,6 +20,8 @@ interface UpgradeModalProps {
   userEmail?: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || (window.location.protocol === 'https:' ? 'https://' + window.location.host : 'http://localhost:3001');
+
 const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTier, userEmail }) => {
   const [step, setStep] = useState<'plan' | 'payment'>('plan');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
@@ -75,7 +77,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('mb_token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/upgrade-request`, {
+      const response = await fetch(`${API_URL}/api/user/upgrade-request`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

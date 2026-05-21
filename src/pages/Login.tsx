@@ -6,6 +6,8 @@ import { Activity, ShieldCheck, AlertCircle, ArrowRight, Smartphone, UserPlus, L
 import { auth } from '../lib/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 
+const API_URL = import.meta.env.VITE_API_URL || (window.location.protocol === 'https:' ? 'https://' + window.location.host : 'http://localhost:3001');
+
 const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -168,7 +170,7 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('mb_token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/profile`, {
+      const res = await fetch(`${API_URL}/api/user/profile`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
