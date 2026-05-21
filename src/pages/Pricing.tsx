@@ -212,6 +212,28 @@ const PricingPage: React.FC = () => {
         <p className="text-[8px] md:text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">* Yearly plans are billed annually. Savings calculated against monthly rate.</p>
       )}
 
+      {/* Corporate Promotional Banner */}
+      <div className="bg-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 text-white relative overflow-hidden shadow-2xl border border-slate-800 w-full">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-blue-600/10 blur-[100px] -mr-48 -mt-48" />
+        <div className="max-w-2xl space-y-3 md:space-y-6 relative z-10 text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start space-x-2 text-blue-500">
+              <ShieldCheck className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="text-[9px] font-black uppercase tracking-[0.4em]">Enterprise Hub</span>
+            </div>
+            <h3 className="text-xl md:text-4xl font-black tracking-tighter uppercase italic leading-tight text-white">Corporate Research</h3>
+            <p className="text-[10px] md:text-lg text-slate-400 font-medium leading-relaxed">
+              Zero-latency institutional nodes. Request a custom deployment for your fund.
+            </p>
+            <button 
+              onClick={() => window.open('https://wa.me/917056633633?text=Hi%20Admin,%20I%20am%20interested%20in%20a%20Corporate%20Deployment%20for%20my%20fund.', '_blank')}
+              className="px-6 md:px-10 py-3 md:py-5 bg-blue-600 text-white rounded-xl md:rounded-3xl text-[10px] md:text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all flex items-center space-x-2 mx-auto md:mx-0"
+            >
+              <span>Contact Admin Support</span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
+        </div>
+      </div>
+
       <div className="bg-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 overflow-hidden relative">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] -mr-32 -mt-32" />
         <div className="z-10 space-y-1 md:space-y-2 text-center md:text-left">
