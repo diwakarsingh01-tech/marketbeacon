@@ -8,11 +8,16 @@ import {
   ChevronRight,
   Gift
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import UpgradeModal from '../components/modals/UpgradeModal';
 
 const PricingPage: React.FC = () => {
+  const { user } = useAuth();
   const [voucherCode, setVoucherCode] = useState('');
   const [redeeming, setRedeemning] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<'pro' | 'alpha'>('pro');
 
   const handleRedeemVoucher = async () => {
     if (!voucherCode) return;
@@ -95,8 +100,12 @@ const PricingPage: React.FC = () => {
   ];
 
   const handleCheckout = (tierName: string) => {
-    console.log(`Checking out for ${tierName} - ${billingPeriod}`);
-    alert(`Institutional Checkout: ${tierName} (${billingPeriod}) initiated. Payment portal connecting...`);
+    if (tierName === 'Free') {
+       window.location.href = '/screener';
+       return;
+    }
+    setSelectedTier(tierName.toLowerCase() as any);
+    setShowUpgrade(true);
   };
 
   return (
@@ -213,6 +222,13 @@ const PricingPage: React.FC = () => {
            <div className="h-5 md:h-8 w-16 md:w-24 bg-white/10 rounded-lg" />
         </div>
       </div>
+
+      <UpgradeModal 
+        isOpen={showUpgrade} 
+        onClose={() => setShowUpgrade(false)} 
+        requiredTier={selectedTier}
+        userEmail={user?.email}
+      />
     </div>
   );
 };
