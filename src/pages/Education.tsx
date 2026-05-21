@@ -14,32 +14,9 @@ import {
 } from 'lucide-react';
 
 const StrategyEducation: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('market_reading');
+  const [activeTab, setActiveTab] = useState('fundamentals');
 
   const lessons = [
-    {
-      id: 'market_reading',
-      title: 'Market Reading: Foundation',
-      icon: BookOpen,
-      color: 'text-blue-600',
-      category: 'Foundation',
-      content: {
-        headline: 'Build conviction before you take a trade.',
-        logic: 'In this lesson, users understand why rule-based swing investing on selected quality stocks is more reliable than emotional tips or market noise.',
-        outcomes: [
-          'Understand that the Envelope strategy is applied only on selected Super 45 universe.',
-          'Read backtest info (Win Rate, CAGR) before building conviction.',
-          'Verify trade validity via entry/current price rules.',
-          'Accept that some open trades can be negative temporarily (Transparency).',
-          'MarketBeacon tracks behavior; execution happens in your Demat account.'
-        ],
-        video: {
-          title: 'Trade Tracker | Class 1',
-          url: 'https://www.youtube.com/watch?v=ZgFiPkuHrAw',
-          timestamp: 'Start: 5m 43s'
-        }
-      }
-    },
     {
       id: 'fundamentals',
       title: 'Batch 9 Fundamentals',
@@ -249,10 +226,6 @@ const StrategyEducation: React.FC = () => {
               </div>
 
               <div className="space-y-10 flex-1">
-                {lesson.content.headline && (
-                  <h3 className="text-2xl font-black text-slate-900 leading-tight italic">"{lesson.content.headline}"</h3>
-                )}
-
                 <section>
                   <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center">
                     <Info className="h-3 w-3 mr-2" /> Essential Concept
@@ -284,31 +257,6 @@ const StrategyEducation: React.FC = () => {
                     );
                   })}
                 </div>
-
-                {lesson.content.video && (
-                  <div className="bg-blue-600 rounded-[2rem] p-8 text-white relative overflow-hidden group">
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl -mr-16 -mt-16 group-hover:bg-white/20 transition-all" />
-                     <div className="relative z-10 space-y-4">
-                        <div className="flex items-center space-x-2">
-                           <Zap className="h-4 w-4 fill-current" />
-                           <span className="text-[10px] font-black uppercase tracking-widest">Masterclass Fragment</span>
-                        </div>
-                        <h4 className="text-xl font-black italic">{lesson.content.video.title}</h4>
-                        <div className="flex items-center justify-between pt-2">
-                           <span className="text-[10px] font-black uppercase bg-white/20 px-3 py-1 rounded-lg">{lesson.content.video.timestamp}</span>
-                           <a 
-                             href={lesson.content.video.url} 
-                             target="_blank" 
-                             rel="noopener noreferrer"
-                             className="flex items-center space-x-2 bg-white text-blue-600 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-xl active:scale-95"
-                           >
-                              <span>Watch Foundation Video</span>
-                              <ChevronRight className="h-4 w-4" />
-                           </a>
-                        </div>
-                     </div>
-                  </div>
-                )}
 
                 <div className="bg-amber-50 rounded-3xl p-6 border border-amber-100 flex items-start space-x-4">
                   <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
