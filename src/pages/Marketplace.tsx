@@ -26,7 +26,7 @@ const MembershipPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [selectedTier, setSelectedTier] = useState<'pro' | 'alpha'>('pro');
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'quarterly'>('monthly');
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [voucherCode, setVoucherCode] = useState('');
   const [redeeming, setRedeemning] = useState(false);
 
@@ -88,7 +88,7 @@ const MembershipPage: React.FC = () => {
   );
 
   return (
-    <div className="bg-[#f8fafc] font-sans min-h-full pb-20">
+    <div className="bg-[#f8fafc] font-sans min-h-screen pb-32 md:pb-20 overflow-y-auto">
       <div className="px-4 md:px-10 py-6 md:py-10 space-y-8 md:space-y-12">
         
         {/* 1. Header with Toggle */}
@@ -106,14 +106,14 @@ const MembershipPage: React.FC = () => {
           <div className="flex items-center justify-center space-x-4">
             <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'monthly' ? 'text-slate-900' : 'text-slate-400'}`}>Monthly</span>
             <button 
-              onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'quarterly' : 'monthly')}
+              onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
               className="w-12 h-6 bg-white rounded-full relative p-1 transition-all border border-slate-200 shadow-inner"
             >
-                <div className={`h-4 w-4 bg-blue-600 rounded-full transition-all shadow-md ${billingPeriod === 'quarterly' ? 'translate-x-6' : 'translate-x-0'}`} />
+                <div className={`h-4 w-4 bg-blue-600 rounded-full transition-all shadow-md ${billingPeriod === 'yearly' ? 'translate-x-6' : 'translate-x-0'}`} />
             </button>
             <div className="flex items-center space-x-2">
-                <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'quarterly' ? 'text-blue-600' : 'text-slate-400'}`}>Quarterly</span>
-                <span className="bg-emerald-500 text-white text-[6px] font-black px-1 py-0.5 rounded uppercase tracking-tighter">Save 20%</span>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'yearly' ? 'text-blue-600' : 'text-slate-400'}`}>Yearly</span>
+                <span className="bg-emerald-500 text-white text-[6px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">Save ~33%</span>
             </div>
           </div>
         </div>
@@ -125,8 +125,8 @@ const MembershipPage: React.FC = () => {
             const isAlpha = item.tier === 'alpha';
             
             // Fixed Price Logic
-            let displayPrice = item.price;
-            if (billingPeriod === 'quarterly') {
+            let displayPrice = item.tier === 'pro' ? '₹99' : '₹199';
+            if (billingPeriod === 'yearly') {
                displayPrice = item.tier === 'pro' ? '₹799' : '₹1,599';
             }
             
@@ -196,11 +196,11 @@ const MembershipPage: React.FC = () => {
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex flex-col min-w-0">
                           <span className={`text-[7px] font-black uppercase truncate ${isUserTierActive ? 'text-emerald-100' : 'text-slate-400'}`}>
-                             {billingPeriod === 'monthly' ? 'Monthly Access' : 'Quarterly Access'}
+                             {billingPeriod === 'monthly' ? 'Monthly Access' : 'Yearly Access'}
                           </span>
                           <div className="flex items-baseline space-x-1">
                               <span className={`text-xl md:text-3xl font-black ${isUserTierActive ? 'text-white' : 'text-slate-900'}`}>{displayPrice}</span>
-                              <span className={`text-[9px] font-bold ${isUserTierActive ? 'text-emerald-200' : 'text-slate-400'}`}>/mo*</span>
+                              <span className={`text-[9px] font-bold ${isUserTierActive ? 'text-emerald-200' : 'text-slate-400'}`}>/{billingPeriod === 'monthly' ? 'mo' : 'yr'}*</span>
                           </div>
                         </div>
                         

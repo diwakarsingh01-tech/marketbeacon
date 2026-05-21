@@ -12,7 +12,7 @@ import {
 const PricingPage: React.FC = () => {
   const [voucherCode, setVoucherCode] = useState('');
   const [redeeming, setRedeemning] = useState(false);
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'quarterly'>('monthly');
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   const handleRedeemVoucher = async () => {
     if (!voucherCode) return;
@@ -46,7 +46,7 @@ const PricingPage: React.FC = () => {
   const tiers = [
     {
       name: 'Free',
-      price: { monthly: '₹0', quarterly: '₹0' },
+      price: { monthly: '₹0', yearly: '₹0' },
       period: 'forever',
       desc: 'Institutional baseline for all students.',
       features: [
@@ -61,8 +61,8 @@ const PricingPage: React.FC = () => {
     },
     {
       name: 'Pro',
-      price: { monthly: '₹999', quarterly: '₹799' },
-      period: billingPeriod === 'monthly' ? 'per month' : 'per month*',
+      price: { monthly: '₹99', yearly: '₹799' },
+      period: billingPeriod === 'monthly' ? 'per month' : 'per year',
       desc: 'The complete Batch 9 auditing suite.',
       features: [
         'Everything in Free',
@@ -71,15 +71,15 @@ const PricingPage: React.FC = () => {
         'Unlimited Ledger Records',
         'ABCD Ladder Tool'
       ],
-      button: billingPeriod === 'monthly' ? 'Upgrade to Pro' : 'Billed Quarterly',
+      button: billingPeriod === 'monthly' ? 'Upgrade to Pro' : 'Billed Yearly',
       color: 'bg-blue-600 text-white shadow-xl shadow-blue-200',
       icon: ShieldCheck,
       featured: true
     },
     {
-      name: 'Institutional',
-      price: { monthly: '₹4,999', quarterly: '₹3,999' },
-      period: billingPeriod === 'monthly' ? 'per month' : 'per month*',
+      name: 'Alpha',
+      price: { monthly: '₹199', yearly: '₹1599' },
+      period: billingPeriod === 'monthly' ? 'per month' : 'per year',
       desc: 'Deep historical data & priority nodes.',
       features: [
         'Everything in Pro',
@@ -88,7 +88,7 @@ const PricingPage: React.FC = () => {
         'Alpha Strategy Overrides',
         'Multi-Device Sync'
       ],
-      button: 'Get Institutional',
+      button: 'Get Alpha Access',
       color: 'bg-slate-900 text-white',
       icon: Crown
     }
@@ -100,7 +100,7 @@ const PricingPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-10 lg:p-16 max-w-7xl mx-auto space-y-8 md:space-y-12 pb-24 md:pb-16 font-sans">
+    <div className="p-4 md:p-10 lg:p-16 max-w-7xl mx-auto space-y-8 md:space-y-12 pb-32 md:pb-16 font-sans min-h-screen overflow-y-auto">
       <div className="text-center space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Access Tiers</h1>
@@ -111,14 +111,14 @@ const PricingPage: React.FC = () => {
         <div className="flex items-center justify-center space-x-4">
            <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'monthly' ? 'text-slate-900' : 'text-slate-400'}`}>Monthly</span>
            <button 
-             onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'quarterly' : 'monthly')}
+             onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
              className="w-14 h-7 bg-slate-100 rounded-full relative p-1 transition-all border border-slate-200"
            >
-              <div className={`h-5 w-5 bg-blue-600 rounded-full transition-all shadow-md ${billingPeriod === 'quarterly' ? 'translate-x-7' : 'translate-x-0'}`} />
+              <div className={`h-5 w-5 bg-blue-600 rounded-full transition-all shadow-md ${billingPeriod === 'yearly' ? 'translate-x-7' : 'translate-x-0'}`} />
            </button>
            <div className="flex items-center space-x-2">
-              <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'quarterly' ? 'text-blue-600' : 'text-slate-400'}`}>Quarterly</span>
-              <span className="bg-emerald-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter animate-pulse">Save 20%</span>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'yearly' ? 'text-blue-600' : 'text-slate-400'}`}>Yearly</span>
+              <span className="bg-emerald-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter animate-pulse">Save ~33%</span>
            </div>
         </div>
       </div>
@@ -126,7 +126,7 @@ const PricingPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
         {tiers.map((tier) => {
           const Icon = tier.icon;
-          const currentPrice = billingPeriod === 'monthly' ? tier.price.monthly : tier.price.quarterly;
+          const currentPrice = billingPeriod === 'monthly' ? tier.price.monthly : tier.price.yearly;
           return (
             <div key={tier.name} className={`relative rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-8 flex flex-col transition-all md:hover:scale-[1.02] ${tier.featured ? 'bg-white border-2 border-blue-600 shadow-2xl z-10' : 'bg-white border border-slate-100'}`}>
               {tier.featured && (
@@ -197,8 +197,8 @@ const PricingPage: React.FC = () => {
         })}
       </div>
 
-      {billingPeriod === 'quarterly' && (
-        <p className="text-[8px] md:text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">* Quarterly plans are billed every 90 days. Average price shown.</p>
+      {billingPeriod === 'yearly' && (
+        <p className="text-[8px] md:text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">* Yearly plans are billed annually. Savings calculated against monthly rate.</p>
       )}
 
       <div className="bg-slate-900 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 overflow-hidden relative">

@@ -34,16 +34,15 @@ const AppLayout: React.FC = () => {
       </div>
 
       {/* Global Feedback Trigger (Floating Action Button) */}
-      <button 
+      <button
         onClick={() => setIsFeedbackOpen(true)}
-        className="fixed bottom-8 right-8 z-[150] w-14 h-14 bg-slate-900 text-white rounded-2xl shadow-2xl hover:bg-blue-600 hover:scale-110 transition-all flex items-center justify-center group"
+        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-[150] w-12 h-12 md:w-14 md:h-14 bg-slate-900 text-white rounded-2xl shadow-2xl hover:bg-blue-600 hover:scale-110 transition-all flex items-center justify-center group"
       >
-        <MessageSquarePlus className="h-6 w-6" />
-        <span className="absolute right-full mr-4 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
+        <MessageSquarePlus className="h-5 w-5 md:h-6 md:w-6" />
+        <span className="absolute right-full mr-4 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl hidden md:block">
           Institutional Feedback
         </span>
       </button>
-
       <FeedbackModal 
         isOpen={isFeedbackOpen} 
         onClose={() => setIsFeedbackOpen(false)} 
