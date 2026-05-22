@@ -11,7 +11,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 
-const API_URL = import.meta.env.VITE_API_URL || (window.location.protocol === 'https:' ? 'https://' + window.location.host : 'http://localhost:3001');
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const PricingPage: React.FC = () => {
   const { user } = useAuth();

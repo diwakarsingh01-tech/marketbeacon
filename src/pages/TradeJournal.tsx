@@ -20,7 +20,7 @@ import {
 import Papa from 'papaparse';
 import { BASKETS, STRATEGIES } from '../data/stocks';
 
-const API_URL = import.meta.env.VITE_API_URL || (window.location.protocol === 'https:' ? 'https://' + window.location.host : 'http://localhost:3001');
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const TradeJournalPage: React.FC = () => {
   const [trades, setTrades] = useState<any[]>([]);

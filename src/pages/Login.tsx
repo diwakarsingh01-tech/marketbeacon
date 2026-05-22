@@ -6,7 +6,7 @@ import { Activity, ShieldCheck, AlertCircle, ArrowRight, Smartphone, UserPlus, L
 import { auth } from '../lib/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 
-const API_URL = import.meta.env.VITE_API_URL || (window.location.protocol === 'https:' ? 'https://' + window.location.host : 'http://localhost:3001');
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
