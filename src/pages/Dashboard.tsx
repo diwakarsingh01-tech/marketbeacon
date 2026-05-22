@@ -7,6 +7,7 @@ import { ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet, BookO
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import BrokerHub from '../components/modals/BrokerHub';
+import LegalModal from '../components/modals/LegalModal';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -30,6 +31,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const [showGuide, setShowGuide] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showBrokerHub, setShowBrokerHub] = useState(false);
+  const [legalModal, setLegalModal] = useState<{ open: boolean, type: 'policy' | 'risk' }>({ open: false, type: 'policy' });
   const [requiredTier, setRequiredTier] = useState<'pro' | 'alpha'>('pro');
 
   const checkStrategyAccess = (id: string) => {
@@ -878,28 +880,33 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">© 2026 MarketBeacon Terminal</p>
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Institutional Proprietary Software</p>
               <div className="pt-4 flex md:justify-end space-x-4 text-[9px] font-black text-blue-600 uppercase tracking-widest">
-                <a href="#" className="hover:underline">Legal Policy</a>
-                <a href="#" className="hover:underline">Risk Disclosure</a>
+                <button onClick={() => setLegalModal({ open: true, type: 'policy' })} className="hover:underline">Legal Policy</button>
+                <button onClick={() => setLegalModal({ open: true, type: 'risk' })} className="hover:underline">Risk Disclosure</button>
               </div>
-            </div>
-          </div>
-        </div>
-      </footer>
+              </div>
+              </div>
+              </div>
+              </footer>
 
-      <UpgradeModal 
-        isOpen={showUpgradeModal} 
-        onClose={() => setShowUpgradeModal(false)} 
-        requiredTier={requiredTier}
-        userEmail={user?.email}
-      />
+              <UpgradeModal 
+              isOpen={showUpgradeModal} 
+              onClose={() => setShowUpgradeModal(false)} 
+              requiredTier={requiredTier}
+              userEmail={user?.email}
+              />
 
-      <BrokerHub 
-        isOpen={showBrokerHub}
-        onClose={() => setShowBrokerHub(false)}
-        onImportComplete={handleImportHoldings}
-      />
-    </div>
-  );
-};
+              <BrokerHub 
+              isOpen={showBrokerHub}
+              onClose={() => setShowBrokerHub(false)}
+              onImportComplete={handleImportHoldings}
+              />
 
+              <LegalModal
+              isOpen={legalModal.open}
+              onClose={() => setLegalModal({ ...legalModal, open: false })}
+              type={legalModal.type}
+              />
+              </div>
+              );
+              };
 export default DashboardPage;
