@@ -216,14 +216,26 @@ const AlphaHubPage: React.FC = () => {
                       </div>
                    </div>
 
-                   <div className="bg-slate-50/80 p-5 rounded-3xl border border-slate-100 space-y-4">
+                 <div className="bg-slate-50/80 p-5 rounded-3xl border border-slate-100 space-y-4">
                       <div className="flex justify-between items-center">
                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Action Qty</span>
                          <span className={`text-[14px] font-black ${qty === 0 ? 'text-red-500' : 'text-blue-600'}`}>{qty.toLocaleString()} <span className="text-[8px]">Units</span></span>
                       </div>
-                      <div className="flex justify-between items-center border-t border-slate-100 pt-3">
-                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Allocation</span>
-                         <span className="text-[11px] font-black text-slate-900">₹{allocation.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                      
+                      {/* TRACEABILITY TAGS */}
+                      <div className="flex flex-col space-y-2 border-t border-slate-100 pt-3">
+                         <div className="flex justify-between items-center">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Source</span>
+                            <span className="text-[8px] font-black px-2 py-0.5 bg-slate-200 text-slate-600 rounded-md uppercase">{stock.basketSource}</span>
+                         </div>
+                         <div className="flex justify-between items-center">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strategy</span>
+                            <span className="text-[8px] font-black px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md uppercase">{stock.strategy}</span>
+                         </div>
+                         <div className="flex justify-between items-center">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Allocation</span>
+                            <span className="text-[11px] font-black text-slate-900">₹{allocation.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                         </div>
                       </div>
                    </div>
                    

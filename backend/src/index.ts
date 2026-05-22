@@ -207,13 +207,24 @@ app.get('/api/backtest/envelope', async (req, res) => {
 app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
   try {
     const snapshot = getMarketSnapshot();
+    
+    // Explicitly track sources for transparency
+    const getSource = (sym: string) => {
+       if (BASKETS['BLUECHIP'].includes(sym)) return 'BLUECHIP';
+       if (BASKETS['HIGH_BETA'].includes(sym)) return 'HIGH BETA';
+       return 'PROFIT';
+    };
+
     const allSymbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']]));
     const qualifiedStocks: any[] = [];
+    
     for (const baseSymbol of allSymbols) {
       const snap = snapshot[baseSymbol];
       if (!snap) continue;
+      
       const audit = await validateBatch9(baseSymbol, { screener: snap.screener, ...snap.quote });
       if (!audit.isPass) continue;
+
       for (const strat of STRATEGIES) {
         const stratData = snap.strategies?.[strat.id] || (strat.id === 'ENVELOPE_LONG' ? calculateEnvelope(snap.quotes) : null);
         if (stratData?.isBuyZone) {
@@ -221,6 +232,7 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
           qualifiedStocks.push({
             symbol: baseSymbol,
             strategy: strat.name,
+            basketSource: getSource(baseSymbol), // TRACEABILITY FIX
             marketCap: snap.quote.marketCap,
             sector: snap.screener?.industry || 'General',
             currentPrice,
@@ -233,11 +245,26 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
         }
       }
     }
-    const large = qualifiedStocks.filter(s => s.marketCap / 10000000 >= 65000).sort((a,b) => b.roi - a.roi).slice(0, 20);
-    const mid = qualifiedStocks.filter(s => s.marketCap / 10000000 < 65000 && s.marketCap / 10000000 >= 20000).sort((a,b) => b.roi - a.roi).slice(0, 12);
-    const small = qualifiedStocks.filter(s => s.marketCap / 10000000 < 20000).sort((a,b) => b.roi - a.roi).slice(0, 8);
-    const final = [...large, ...mid, ...small];
-    res.json({ stocks: final, summary: { total: final.length, large: large.length, mid: mid.length, small: small.length, avgRoi: final.reduce((a,b) => a + b.roi, 0) / (final.length || 1) } });
+
+    // SORTING & SELECTION Logic for 40+ stocks
+    const large = qualifiedStocks.filter(s => s.marketCap / 10000000 >= 65000).sort((a,b) => b.roi - a.roi);
+    const mid = qualifiedStocks.filter(s => s.marketCap / 10000000 < 65000 && s.marketCap / 10000000 >= 20000).sort((a,b) => b.roi - a.roi);
+    const small = qualifiedStocks.filter(s => s.marketCap / 10000000 < 20000).sort((a,b) => b.roi - a.roi);
+
+    // Dynamic Fill: Try to meet 20-12-8, but fill from other tiers if specific tier is short
+    const final = [...large.slice(0, 20), ...mid.slice(0, 12), ...small.slice(0, 8)];
+    
+    res.json({ 
+      stocks: final, 
+      summary: { 
+        total: final.length, 
+        large: final.filter(s => s.marketCap / 10000000 >= 65000).length,
+        mid: final.filter(s => s.marketCap / 10000000 < 65000 && s.marketCap / 10000000 >= 20000).length,
+        small: final.filter(s => s.marketCap / 10000000 < 20000).length,
+        avgRoi: final.reduce((a,b) => a + b.roi, 0) / (final.length || 1),
+        totalQualified: qualifiedStocks.length
+      } 
+    });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
