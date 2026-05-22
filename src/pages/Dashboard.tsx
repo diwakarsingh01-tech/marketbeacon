@@ -3,9 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import TradeTable from '../components/tables/TradeTable';
 import StrategyGuide from '../components/StrategyGuide';
 import { BASKETS, STRATEGIES } from '../data/stocks';
-import { ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet, BookOpen, X, Lock, ShieldAlert, Check, Zap } from 'lucide-react';
+import { ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet, BookOpen, X, Lock, ShieldAlert, Check, Zap, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
+import BrokerHub from '../components/modals/BrokerHub';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -28,6 +29,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const [activeTab, setActiveTab] = useState<'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral'>(defaultTab);
   const [showGuide, setShowGuide] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showBrokerHub, setShowBrokerHub] = useState(false);
   const [requiredTier, setRequiredTier] = useState<'pro' | 'alpha'>('pro');
 
   const checkStrategyAccess = (id: string) => {
@@ -142,6 +144,42 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         ));
       }
     } catch (e) { console.error('Update Error:', e); }
+  };
+
+  const handleImportHoldings = async (holdings: any[]) => {
+    const token = localStorage.getItem('mb_token');
+    if (!token) return;
+
+    setIsRefreshing(true);
+    try {
+      // Process sequential imports to avoid DB lock/race conditions
+      for (const item of holdings) {
+        await fetch(`${API_URL}/api/watchlist`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+          },
+          body: JSON.stringify({ symbol: item.symbol })
+        });
+        
+        await fetch(`${API_URL}/api/watchlist/${item.symbol}`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+          },
+          body: JSON.stringify({ quantity: item.quantity, buy_price: item.buyPrice })
+        });
+      }
+      
+      alert(`Successfully imported ${holdings.length} holdings into Portfolio Manager.`);
+      fetchWatchlist();
+    } catch (e) {
+      alert("Error importing holdings. Some items may have failed.");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   useEffect(() => {
@@ -441,6 +479,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         </div>
 
         <div className="flex items-center lg:items-end space-x-3">
+          {activeTab === 'portfolio' && (
+            <button 
+              onClick={() => setShowBrokerHub(true)}
+              className="px-6 py-3.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center space-x-2 shadow-xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>Connect Broker</span>
+            </button>
+          )}
+
           <div className="flex-1 lg:flex-none flex flex-col space-y-2 items-start lg:items-end">
             {/* Strategy Select - Only visible on Screener/Market tabs */}
             {activeTab !== 'portfolio' && (
@@ -843,6 +891,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         onClose={() => setShowUpgradeModal(false)} 
         requiredTier={requiredTier}
         userEmail={user?.email}
+      />
+
+      <BrokerHub 
+        isOpen={showBrokerHub}
+        onClose={() => setShowBrokerHub(false)}
+        onImportComplete={handleImportHoldings}
       />
     </div>
   );
