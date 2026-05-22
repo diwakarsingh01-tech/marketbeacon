@@ -967,7 +967,17 @@ app.get('/api/backtest/envelope', async (req, res) => {
     const basketId = (req.query.basket as string) || 'BLUECHIP';
     const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
 
-    let symbols = BASKETS[basketId] || BASKETS['BLUECHIP'];
+    // --- PRO FIX: Universe Inheritance (Cumulative Baskets) ---
+    let symbols: string[] = [];
+    if (basketId === 'BLUECHIP') {
+      symbols = BASKETS['BLUECHIP'];
+    } else if (basketId === 'HIGH_BETA') {
+      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']]));
+    } else if (basketId === 'PROFIT') {
+      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']]));
+    } else {
+      symbols = BASKETS['BLUECHIP'];
+    }
 
     const snapshot = getMarketSnapshot();
     const db = getDB();
