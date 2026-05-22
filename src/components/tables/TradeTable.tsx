@@ -96,17 +96,25 @@ const TradeTable: React.FC<TradeTableProps> = ({
     setSortConfig({ key, direction });
   };
 
-  const handleShareSignal = (trade: any) => {
-    const text = `🚨 *MarketBeacon Signal: ${trade.symbol}*
-⚡️ Strategy: ${trade.strategy || 'Institutional Matrix'}
-🎯 Objective: ₹${trade.targetPrice || trade.target || '-'}
-📊 Current ROI: ${trade.roi?.toFixed(1) || '0'}%
-🔗 Analysis: https://marketbeacon.vercel.app/stock/${trade.symbol}
+  const handleShareSignal = (trade: any, method: 'copy' | 'telegram' = 'copy') => {
+    const text = `🚨 *MarketBeacon Research: ${trade.symbol}*
 
-#MarketBeacon #Batch9 #TradingSignals`;
+⚡️ *Strategy:* ${trade.strategy || 'Institutional Matrix'}
+💰 *Price:* ₹${(livePrices?.[trade.symbol] || trade.currentPrice || 0).toLocaleString()}
+🎯 *Objective:* ₹${(trade.targetPrice || trade.target || 0).toLocaleString()}
+📊 *Audit:* ${trade.isPass ? '✅ Qualified' : '🔍 Observation'}
+
+🔗 *Full Terminal:* https://marketbeacon.vercel.app/stock/${trade.symbol}
+
+#MarketBeacon #InstitutionalResearch #Batch9`;
     
-    navigator.clipboard.writeText(text);
-    alert(`Signal for ${trade.symbol} copied to clipboard! Ready to paste into Telegram.`);
+    if (method === 'copy') {
+      navigator.clipboard.writeText(text);
+      alert(`Signal for ${trade.symbol} copied to clipboard! Ready to paste.`);
+    } else {
+      const url = `https://t.me/share/url?url=https://marketbeacon.vercel.app&text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
   };
 
   const handleToggleWatchlist = (e: React.MouseEvent, symbol: string) => {
@@ -414,10 +422,19 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
                   return (
                     <tr key={trade.symbol} className={`${highlightClass} group transition-all text-right`}>
-                      <td className="px-4 py-2.5 text-left flex items-center space-x-2">
+                      <td className="px-4 py-2.5 text-left flex items-center space-x-2 relative">
                         <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-amber-400"><StarIcon className="h-3.5 w-3.5 fill-current" /></button>
                         <span className="text-[11px] font-black text-slate-900">{trade.symbol}</span>
-                        <button onClick={() => handleShareSignal(trade)} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-slate-100 rounded text-slate-400" title="Share Performance"><Share2 className="h-3 w-3" /></button>
+                        
+                        <div className="relative group/share inline-block">
+                           <button className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-slate-100 rounded text-slate-400" title="Share Options">
+                              <Share2 className="h-3 w-3" />
+                           </button>
+                           <div className="absolute left-0 bottom-full mb-2 hidden group-hover/share:flex bg-slate-900 rounded-xl shadow-2xl p-1.5 space-x-1 z-[100] animate-in slide-in-from-bottom-2">
+                              <button onClick={() => handleShareSignal(trade, 'copy')} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Copy</button>
+                              <button onClick={() => handleShareSignal(trade, 'telegram')} className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Telegram</button>
+                           </div>
+                        </div>
                       </td>
                       <td className="px-4 py-2.5 text-center">
                         <input type="number" defaultValue={trade.quantity || 0} onBlur={(e) => onUpdateHolding?.(trade.symbol, parseInt(e.target.value) || 0, trade.buy_price || 0)} className="w-12 bg-slate-50 rounded text-center text-[10px] font-black p-0.5" />
@@ -448,12 +465,22 @@ const TradeTable: React.FC<TradeTableProps> = ({
                     )}
                     {visibleColumns.symbol && (
                       <td className="px-4 py-2.5">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 relative">
                           <div className="flex items-center space-x-1">
                             <span className="text-[11px] font-black text-slate-900">{trade.symbol}</span>
                             {isTopFive && <ZapIcon className="h-2.5 w-2.5 text-amber-500 fill-amber-500" />}
                           </div>
-                          <button onClick={() => handleShareSignal(trade)} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-slate-100 rounded text-slate-400" title="Share Signal"><Share2 className="h-3 w-3" /></button>
+                          
+                          <div className="relative group/share inline-block">
+                             <button className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-slate-100 rounded text-slate-400" title="Share Options">
+                                <Share2 className="h-3 w-3" />
+                             </button>
+                             <div className="absolute left-0 bottom-full mb-2 hidden group-hover/share:flex bg-slate-900 rounded-xl shadow-2xl p-1.5 space-x-1 z-[100] animate-in slide-in-from-bottom-2">
+                                <button onClick={() => handleShareSignal(trade, 'copy')} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Copy</button>
+                                <button onClick={() => handleShareSignal(trade, 'telegram')} className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Telegram</button>
+                             </div>
+                          </div>
+
                           <Link to={`/stock/${trade.symbol}`} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-blue-50 rounded text-blue-500" title="Full Analysis"><ExternalLink className="h-3 w-3" /></Link>
                         </div>
                       </td>
