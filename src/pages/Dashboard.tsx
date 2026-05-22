@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import TradeTable from '../components/tables/TradeTable';
 import StrategyGuide from '../components/StrategyGuide';
 import { BASKETS, STRATEGIES } from '../data/stocks';
-import { ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet, BookOpen, X, Lock, ShieldAlert } from 'lucide-react';
+import { ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet, BookOpen, X, Lock, ShieldAlert, Check, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 
@@ -303,8 +303,26 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
     let totalInvested = 0;
     let totalCurrent = 0;
-    const capInvested = { large: 0, mid: 0, small: 0, micro: 0 };
+    const capInvested = { large: 0, mid: 0, small: 0 };
     const sectorInvested: Record<string, { amount: number, stocks: string[] }> = {};
+    const strategyStats: Record<string, number> = {};
+
+    // Strategy Name Mapping (to ID)
+    const STRATEGY_NAME_MAP: Record<string, string> = {
+      'Institutional Floor': 'ENVELOPE_LONG',
+      'Momentum Ceiling': 'ENVELOPE_SHORT',
+      'Volatility Channel': 'BOLLINGER',
+      'Structural Pivot': 'CUP_HANDLE_ABCD',
+      'Dynamic Reversal': 'RHS_ABCD',
+      'Annual Range Matrix': '52W_HIGH_LOW',
+      'Quantum Stacking': 'SMA_ABCD',
+      'Velocity Retest': 'TWENTY_RALLY_RETEST',
+      'Deep Recovery Audit': 'SIXTY_SEVEN_FUNDA',
+      'Supply-Demand Core': 'SR_STRATEGY',
+      'Envelope Long': 'ENVELOPE_LONG',
+      'Envelope Short': 'ENVELOPE_SHORT',
+      'SMA ABCD': 'SMA_ABCD'
+    };
     
     portfolioTrades.forEach((t: any) => {
       const livePrice = stockPrices[t.symbol] || t.currentPrice || 0;
@@ -316,12 +334,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         totalInvested += investedAmount;
         totalCurrent += t.quantity * livePrice;
 
-        // Market Cap Bifurcation (50-30-20 Model)
-        if (mktCap >= 200000000000) { 
+        // Standard Institutional Market Cap Bifurcation
+        const capInCr = mktCap / 10000000;
+        if (capInCr >= 65000) { // Large Cap (Top 100)
           capInvested.large += investedAmount;
-        } else if (mktCap >= 50000000000) { 
+        } else if (capInCr >= 20000) { // Mid Cap (101-250)
           capInvested.mid += investedAmount;
-        } else { // Small + Micro = 20%
+        } else { // Small Cap (< 20k Cr)
           capInvested.small += investedAmount;
         }
 
@@ -329,6 +348,17 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         if (!sectorInvested[sector]) sectorInvested[sector] = { amount: 0, stocks: [] };
         sectorInvested[sector].amount += investedAmount;
         sectorInvested[sector].stocks.push(t.symbol);
+
+        // Strategy Breakdown (Active from Journal)
+        // Find matching trade in journal to get its strategy
+        const journalTrade = trades.find(jt => jt.symbol === t.symbol && jt.status === 'OPEN');
+        if (journalTrade) {
+          const rawStrat = journalTrade.strategy;
+          const stratKey = STRATEGY_NAME_MAP[rawStrat] || rawStrat || 'MANUAL';
+          strategyStats[stratKey] = (strategyStats[stratKey] || 0) + investedAmount;
+        } else {
+          strategyStats['WATCHLIST'] = (strategyStats['WATCHLIST'] || 0) + investedAmount;
+        }
       }
     });
 
@@ -346,15 +376,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
     return { 
       totalInvested, totalCurrent, totalPnL, pnlPercent, realizedGain, 
-      unrealizedGain: totalPnL, // In this unified model, totalPnL is the active unrealized gain
+      unrealizedGain: totalPnL, 
       combinedPnL, combinedPnlPercent,
       capBreakdown: {
         large: totalInvested > 0 ? (capInvested.large / totalInvested) * 100 : 0,
         mid: totalInvested > 0 ? (capInvested.mid / totalInvested) * 100 : 0,
-        small: totalInvested > 0 ? (capInvested.small / totalInvested) * 100 : 0,
-        micro: 0 // Consolidated into Small for the 50-30-20 model
+        small: totalInvested > 0 ? (capInvested.small / totalInvested) * 100 : 0
       },
-      sectorBreakdown: sectorInvested
+      sectorBreakdown: sectorInvested,
+      strategyStats
     };
   }, [data, userWatchlist, stockPrices, trades]);
 
@@ -453,93 +483,127 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
       {/* 2. Portfolio Summary Cards (Conditional) */}
       {activeTab === 'portfolio' && (portfolioSummary.totalInvested > 0 || portfolioSummary.realizedGain !== 0) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6 shrink-0 animate-in fade-in slide-in-from-top duration-500">
-           <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden border border-slate-800">
-              <Wallet className="absolute right-[-10px] bottom-[-10px] h-24 w-24 opacity-10" />
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Invested</p>
-              <h3 className="text-xl font-black">₹{portfolioSummary.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-5 shrink-0 animate-in fade-in slide-in-from-top duration-500">
+           {/* Total Invested */}
+           <div className="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden group border border-slate-800">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-3xl -mr-16 -mt-16 group-hover:bg-white/10 transition-all" />
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                 <div className="flex items-center justify-between mb-4">
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Principal</span>
+                    <Wallet className="h-3.5 w-3.5 text-slate-600" />
+                 </div>
+                 <div className="space-y-1">
+                    <h3 className="text-2xl font-black tracking-tighter">₹{portfolioSummary.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Active Deployment</p>
+                 </div>
+              </div>
            </div>
            
-           <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Value</p>
-              <h3 className="text-xl font-black text-slate-900">₹{portfolioSummary.totalCurrent.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+           {/* Current Value */}
+           <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm group hover:border-blue-200 transition-all">
+              <div className="flex items-center justify-between mb-4">
+                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Market Value</span>
+                 <RefreshCw className={`h-3.5 w-3.5 text-slate-300 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </div>
+              <div className="space-y-1">
+                 <h3 className="text-2xl font-black text-slate-900 tracking-tighter">₹{portfolioSummary.totalCurrent.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Real-time Valuation</p>
+              </div>
            </div>
 
-           <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Realized (Booked)</p>
-              <h3 className={`text-xl font-black ${(portfolioSummary.realizedGain || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                 ₹{Math.abs(portfolioSummary.realizedGain || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </h3>
-           </div>
-
-           <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Unrealized (Paper)</p>
-              <h3 className={`text-xl font-black ${(portfolioSummary.unrealizedGain || 0) >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
-                 ₹{Math.abs(portfolioSummary.unrealizedGain || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </h3>
-           </div>
-
-           <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Absolute P&L (Total)</p>
-              <div className="flex flex-col">
-                 <h3 className={`text-xl font-black ${(portfolioSummary.combinedPnL || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ₹{Math.abs(portfolioSummary.combinedPnL || 0).toLocaleString()}
+           {/* Realized (Booked) */}
+           <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm group hover:border-emerald-200 transition-all">
+              <div className="flex items-center justify-between mb-4">
+                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Realized Alpha</span>
+                 <Check className="h-3.5 w-3.5 text-emerald-400" />
+              </div>
+              <div className="space-y-1">
+                 <h3 className={`text-2xl font-black tracking-tighter ${(portfolioSummary.realizedGain || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    ₹{Math.abs(portfolioSummary.realizedGain || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                  </h3>
-                 <span className={`text-[10px] font-black w-fit mt-1 px-2 py-0.5 rounded-lg ${(portfolioSummary.combinedPnL || 0) >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                    {(portfolioSummary.combinedPnlPercent || 0).toFixed(2)}%
-                 </span>
+                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Booked P&L</p>
               </div>
            </div>
 
-           <div className="bg-blue-600 rounded-3xl p-6 text-white shadow-lg shadow-blue-500/30">
-              <div className="flex justify-between items-start">
-                 <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest leading-none">Security Grade</p>
-                 <TrendingUp className="h-4 w-4" />
+           {/* Unrealized (Paper) */}
+           <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm group hover:border-blue-200 transition-all">
+              <div className="flex items-center justify-between mb-4">
+                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Unrealized</span>
+                 <TrendingUp className="h-3.5 w-3.5 text-blue-400" />
               </div>
-              <h3 className="text-xl font-black mt-2 leading-none uppercase italic">Institutional</h3>
+              <div className="space-y-1">
+                 <h3 className={`text-2xl font-black tracking-tighter ${(portfolioSummary.unrealizedGain || 0) >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                    ₹{Math.abs(portfolioSummary.unrealizedGain || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                 </h3>
+                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Current Floating</p>
+              </div>
+           </div>
+
+           {/* Combined P&L */}
+           <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm relative overflow-hidden group hover:border-slate-300 transition-all">
+              <div className="flex items-center justify-between mb-4">
+                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Net Score</span>
+                 <Target className="h-3.5 w-3.5 text-slate-300" />
+              </div>
+              <div className="space-y-1">
+                 <div className="flex items-baseline space-x-2">
+                    <h3 className={`text-2xl font-black tracking-tighter ${(portfolioSummary.combinedPnL || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                       ₹{Math.abs(portfolioSummary.combinedPnL || 0).toLocaleString()}
+                    </h3>
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-lg ${(portfolioSummary.combinedPnL || 0) >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                       {(portfolioSummary.combinedPnlPercent || 0).toFixed(1)}%
+                    </span>
+                 </div>
+                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Aggregate Returns</p>
+              </div>
+           </div>
+
+           {/* Institutional Grade Card */}
+           <div className="bg-blue-600 rounded-[2rem] p-6 text-white shadow-2xl shadow-blue-500/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-full h-full bg-linear-to-br from-white/10 to-transparent pointer-events-none" />
+              <div className="relative z-10 h-full flex flex-col justify-between">
+                 <div className="flex justify-between items-start">
+                    <span className="text-[9px] font-black text-blue-100 uppercase tracking-[0.2em] leading-none">Security Grade</span>
+                    <ShieldCheck className="h-4 w-4 text-blue-200" />
+                 </div>
+                 <h3 className="text-xl font-black leading-none uppercase italic tracking-tighter">Institutional</h3>
+              </div>
            </div>
         </div>
       )}
 
       {/* 3. Portfolio Risk Analyzer (Integrated Analytics) */}
       {activeTab === 'portfolio' && portfolioSummary.totalInvested > 0 && (
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 shrink-0 animate-in fade-in slide-in-from-bottom duration-700">
-           {/* Strategy Distribution (12-Strategy Matrix Mix) */}
-           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 shrink-0 animate-in fade-in slide-in-from-bottom duration-700">
+           {/* Strategy Distribution */}
+           <div className="lg:col-span-4 bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-8">
               <div className="flex items-center justify-between">
                  <div className="space-y-1">
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase italic">Strategy Mix Matrix</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Journaled Alpha Sources</p>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">Strategy Matrix</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Alpha Model Exposure</p>
                  </div>
-                 <div className="px-3 py-1.5 bg-indigo-50 rounded-xl">
-                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Active Models</span>
-                 </div>
+                 <BookOpen className="h-5 w-5 text-indigo-500 opacity-50" />
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-5 overflow-y-auto max-h-[350px] pr-2 custom-scrollbar">
                  {(() => {
-                    const strategyStats: Record<string, number> = {};
-                    trades.filter(t => t.status === 'OPEN').forEach(t => {
-                       const amount = (t.quantity || 0) * (stockPrices[t.symbol] || t.entry_price || 0);
-                       strategyStats[t.strategy] = (strategyStats[t.strategy] || 0) + amount;
-                    });
-                    
-                    const totalJournalValue = Object.values(strategyStats).reduce((a, b) => a + b, 0);
+                    const strategyStats = portfolioSummary.strategyStats || {};
+                    const totalValue = Object.values(strategyStats).reduce((a, b) => a + (b as number), 0) as number;
                     
                     return Object.entries(strategyStats)
-                       .sort((a, b) => b[1] - a[1])
+                       .sort(([, a], [, b]) => (b as number) - (a as number))
                        .map(([strategy, amount]) => {
-                          const pct = (amount / totalJournalValue) * 100;
+                          const pct = (amount as number / totalValue) * 100;
                           return (
                              <div key={strategy} className="group cursor-default">
                                 <div className="flex justify-between items-end mb-2">
                                    <div className="flex flex-col">
-                                      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">{strategy}</span>
-                                      <span className="text-[9px] font-bold text-slate-400 uppercase">Current Exposure: ₹{amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">{strategy.replace('_', ' ')}</span>
+                                      <span className="text-[9px] font-bold text-slate-400 uppercase">Allocation: ₹{(amount as number).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                                    </div>
-                                   <span className="text-xs font-black text-slate-900">{pct.toFixed(1)}%</span>
+                                   <span className="text-[11px] font-black text-slate-900">{pct.toFixed(1)}%</span>
                                 </div>
-                                <div className="w-full h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                                <div className="w-full h-1.5 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                                    <div 
                                       className="h-full bg-indigo-500 rounded-full transition-all duration-1000 group-hover:bg-indigo-600"
                                       style={{ width: `${pct}%` }}
@@ -549,95 +613,99 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                           );
                        });
                  })()}
-                 {trades.filter(t => t.status === 'OPEN').length === 0 && (
-                    <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
-                       <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">No Active Journaled Trades</p>
-                    </div>
-                 )}
               </div>
            </div>
 
-           {/* Market Cap Distribution (4-Tier Bifurcation) */}
-           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+           {/* Market Cap Distribution */}
+           <div className="lg:col-span-5 bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-8">
               <div className="flex items-center justify-between">
                  <div className="space-y-1">
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase italic">Cap Allocation Matrix</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Institutional 4-Tier Diversification</p>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">Cap Allocation</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">50-30-20 Institutional Rule</p>
                  </div>
-                 <div className="px-3 py-1.5 bg-blue-50 rounded-xl">
-                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Model: 50-30-20</span>
+                 <div className="px-3 py-1.5 bg-blue-50 rounded-xl border border-blue-100">
+                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Live Audit</span>
                  </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-5">
                  {[
-                    { label: 'Large Cap', target: 50, current: portfolioSummary.capBreakdown.large, color: 'bg-slate-900', desc: '> 20k Cr' },
-                    { label: 'Mid Cap', target: 30, current: portfolioSummary.capBreakdown.mid, color: 'bg-blue-600', desc: '5k - 20k Cr' },
-                    { label: 'Small Cap', target: 20, current: portfolioSummary.capBreakdown.small + portfolioSummary.capBreakdown.micro, color: 'bg-indigo-400', desc: '< 5k Cr' }
-                 ].map((cap, i) => (
-                    <div key={i} className="p-4 bg-slate-50/50 rounded-3xl border border-slate-100 space-y-3">
-                       <div className="flex justify-between items-start">
-                          <div>
-                             <span className="text-[9px] font-black text-slate-900 uppercase tracking-widest block">{cap.label}</span>
-                             <span className="text-[8px] font-bold text-slate-400 uppercase">{cap.desc}</span>
+                    { label: 'Large Cap', target: 50, current: portfolioSummary.capBreakdown.large, color: 'bg-slate-900', desc: '> 65k Cr', icon: ShieldCheck },
+                    { label: 'Mid Cap', target: 30, current: portfolioSummary.capBreakdown.mid, color: 'bg-blue-600', desc: '20k - 65k Cr', icon: Target },
+                    { label: 'Small Cap', target: 20, current: portfolioSummary.capBreakdown.small, color: 'bg-indigo-500', desc: '< 20k Cr', icon: Zap }
+                 ].map((cap, i) => {
+                    const diff = cap.current - cap.target;
+                    const isAlert = Math.abs(diff) > 10;
+                    return (
+                       <div key={i} className={`p-5 rounded-[2rem] border transition-all ${isAlert ? 'bg-red-50/30 border-red-100' : 'bg-slate-50/50 border-slate-100'}`}>
+                          <div className="flex justify-between items-start mb-4">
+                             <div className="flex items-center space-x-3">
+                                <div className={`p-2 rounded-xl ${cap.color} text-white`}>
+                                   <cap.icon className="h-3.5 w-3.5" />
+                                </div>
+                                <div>
+                                   <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight block leading-none mb-1">{cap.label}</span>
+                                   <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{cap.desc}</span>
+                                </div>
+                             </div>
+                             <div className="text-right">
+                                <span className={`text-sm font-black block leading-none ${isAlert ? 'text-red-600' : 'text-slate-900'}`}>
+                                   {cap.current.toFixed(1)}%
+                                </span>
+                                <span className={`text-[8px] font-black uppercase ${diff > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                   {diff > 0 ? '+' : ''}{diff.toFixed(1)}% Variance
+                                </span>
+                             </div>
                           </div>
-                          <span className={`text-xs font-black ${Math.abs(cap.current - cap.target) > 10 ? 'text-red-600' : 'text-slate-900'}`}>
-                             {cap.current.toFixed(1)}%
-                          </span>
+                          <div className="w-full h-2 bg-white rounded-full overflow-hidden relative border border-slate-100">
+                             <div className={`h-full ${cap.color} rounded-full transition-all duration-1000 shadow-sm`} style={{ width: `${cap.current}%` }} />
+                             <div className="absolute top-0 bottom-0 border-l-2 border-slate-400/30 z-10" style={{ left: `${cap.target}%` }} />
+                          </div>
+                          <div className="flex justify-between items-center mt-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                             <span>Market Exposure</span>
+                             <span>Target {cap.target}%</span>
+                          </div>
                        </div>
-                       <div className="w-full h-1.5 bg-slate-200/50 rounded-full overflow-hidden relative">
-                          <div className={`h-full ${cap.color} rounded-full transition-all duration-1000`} style={{ width: `${cap.current}%` }} />
-                          <div className="absolute top-0 bottom-0 border-l border-slate-400 z-10" style={{ left: `${cap.target}%` }} />
-                       </div>
-                       <div className="flex justify-between items-center text-[8px] font-bold text-slate-400 uppercase">
-                          <span>Progress</span>
-                          <span>Target {cap.target}%</span>
-                       </div>
-                    </div>
-                 ))}
+                    );
+                 })}
               </div>
            </div>
 
-           {/* Sector Exposure (20% Safety Cap) */}
-           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+           {/* Sector Exposure */}
+           <div className="lg:col-span-3 bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-8 flex flex-col">
               <div className="flex items-center justify-between">
                  <div className="space-y-1">
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase italic">Sector Contribution</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Diversification Health (20% Threshold)</p>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">Sectors</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">20% Safety Limit</p>
                  </div>
-                 <ShieldCheck className="h-5 w-5 text-emerald-500" />
+                 <div className="p-2 bg-emerald-50 rounded-xl">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[250px] pr-2 custom-scrollbar">
+              <div className="space-y-4 overflow-y-auto flex-1 max-h-[350px] pr-2 custom-scrollbar">
                  {Object.entries(portfolioSummary.sectorBreakdown)
                     .sort(([, a], [, b]) => b.amount - a.amount)
                     .map(([sector, data], i) => {
                        const pct = (data.amount / portfolioSummary.totalInvested) * 100;
                        const isOverexposed = pct > 20;
                        return (
-                          <div key={i} className="p-4 rounded-3xl border border-slate-50 bg-slate-50/30 space-y-2 group hover:border-blue-100 hover:bg-blue-50/20 transition-all">
-                             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-tight">
-                                <div className="flex items-center space-x-2">
-                                   <span className={isOverexposed ? 'text-red-600' : 'text-slate-700'}>{sector}</span>
-                                   {isOverexposed && <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded-md text-[8px]">OVEREXPOSED</span>}
-                                </div>
-                                <span className={isOverexposed ? 'text-red-600' : 'text-slate-900'}>{pct.toFixed(1)}%</span>
+                          <div key={i} className={`p-4 rounded-2xl border transition-all ${isOverexposed ? 'bg-rose-50/50 border-rose-100' : 'bg-slate-50/50 border-slate-50 hover:bg-white hover:border-slate-200 shadow-xs'}`}>
+                             <div className="flex justify-between items-center mb-2">
+                                <span className={`text-[10px] font-black uppercase tracking-tight truncate max-w-[120px] ${isOverexposed ? 'text-rose-600' : 'text-slate-700'}`}>{sector}</span>
+                                <span className={`text-[11px] font-black ${isOverexposed ? 'text-rose-600' : 'text-slate-900'}`}>{pct.toFixed(1)}%</span>
                              </div>
-                             <div className="w-full h-1.5 bg-slate-200/50 rounded-full overflow-hidden">
+                             <div className="w-full h-1 bg-slate-200/50 rounded-full overflow-hidden">
                                 <div 
-                                   className={`h-full transition-all duration-1000 rounded-full ${isOverexposed ? 'bg-red-500 shadow-lg shadow-red-200' : 'bg-blue-500 group-hover:bg-blue-600'}`} 
+                                   className={`h-full transition-all duration-1000 rounded-full ${isOverexposed ? 'bg-rose-500 shadow-lg shadow-rose-200' : 'bg-slate-900'}`} 
                                    style={{ width: `${pct}%` }} 
                                 />
-                             </div>
-                             <div className="flex flex-wrap gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                {data.stocks.map((s, idx) => (
-                                   <span key={idx} className="px-1.5 py-0.5 bg-white border border-slate-100 text-[8px] font-black text-slate-400 rounded-md">{s}</span>
-                                ))}
                              </div>
                           </div>
                        );
                     })}
               </div>
+              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center pt-4 italic">Auto-audited for sector risk</p>
            </div>
         </section>
       )}

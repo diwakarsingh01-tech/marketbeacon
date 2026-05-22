@@ -39,14 +39,10 @@ const getMarketCapTag = (cap: number, symbol: string) => {
   if (['NIFTYBEES', 'BANKBEES'].includes(symbol)) {
     return { label: 'ETF', class: 'text-indigo-600 bg-indigo-50 border-indigo-100' };
   }
-  if (symbol === 'AKZOINDIA') {
-    return { label: 'Small Cap', class: 'text-amber-600 bg-amber-50 border-amber-100' };
-  }
   const capInCr = cap / 10000000;
-  if (capInCr > 100000) return { label: 'Large Cap', class: 'text-blue-600 bg-blue-50 border-blue-100' };
-  if (capInCr > 33000) return { label: 'Mid Cap', class: 'text-purple-600 bg-purple-50 border-purple-100' };
-  if (capInCr > 15000) return { label: 'Small Cap', class: 'text-amber-600 bg-amber-50 border-amber-100' };
-  return { label: 'Micro Cap', class: 'text-slate-500 bg-slate-50 border-slate-100' };
+  if (capInCr >= 65000) return { label: 'Large Cap', class: 'text-slate-900 bg-slate-100 border-slate-200' };
+  if (capInCr >= 20000) return { label: 'Mid Cap', class: 'text-blue-600 bg-blue-50 border-blue-100' };
+  return { label: 'Small Cap', class: 'text-indigo-500 bg-indigo-50/50 border-indigo-100' };
 };
 
 const TradeTable: React.FC<TradeTableProps> = ({ 
