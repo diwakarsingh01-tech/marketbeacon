@@ -93,69 +93,46 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white w-full max-w-4xl rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 duration-500 max-h-[90vh]">
+      <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500 max-h-[90vh]">
         
-        {/* Left: Brand Side */}
-        <div className="md:w-5/12 bg-slate-900 p-8 md:p-12 text-white flex flex-col justify-between relative overflow-hidden shrink-0">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] -mr-32 -mt-32" />
-           <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-600/10 blur-[80px] -ml-24 -mb-24" />
-           
-           <div className="relative z-10 space-y-6">
-              <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/10">
-                 <Globe className="h-7 w-7 text-blue-400" />
-              </div>
-              <div className="space-y-2">
-                 <h2 className="text-2xl md:text-3xl font-black tracking-tight uppercase italic leading-none">Broker Hub</h2>
-                 <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em]">Institutional Data Import</p>
-              </div>
-
-              <div className="space-y-4 pt-6 border-t border-white/10">
-                 <div className="flex items-center space-x-3">
-                    <Check className="h-4 w-4 text-emerald-400" />
-                    <span className="text-xs font-bold text-slate-300">Automatic Symbol Mapping</span>
+        {/* Header: Unified Brand Side */}
+        <div className="bg-slate-900 p-6 md:p-8 text-white relative overflow-hidden shrink-0">
+           <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/20 blur-[80px] -mr-24 -mt-24" />
+           <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                 <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-xl border border-white/10">
+                    <Globe className="h-5 w-5 text-blue-400" />
                  </div>
-                 <div className="flex items-center space-x-3">
-                    <Check className="h-4 w-4 text-emerald-400" />
-                    <span className="text-xs font-bold text-slate-300">Multi-Broker CSV Support</span>
-                 </div>
-                 <div className="flex items-center space-x-3">
-                    <Check className="h-4 w-4 text-emerald-400" />
-                    <span className="text-xs font-bold text-slate-300">Real-time Portfolio Audit</span>
+                 <div>
+                    <h2 className="text-xl font-black tracking-tight uppercase italic leading-none">Broker Hub</h2>
+                    <p className="text-slate-400 text-[8px] font-black uppercase tracking-[0.3em] mt-1">Institutional Import</p>
                  </div>
               </div>
-           </div>
-
-           <div className="relative z-10 pt-10">
-              <div className="flex items-center space-x-3 text-blue-400">
-                 <ShieldCheck className="h-5 w-5" />
-                 <span className="text-[10px] font-black uppercase tracking-widest">Bank-Grade Privacy</span>
-              </div>
-              <p className="text-[8px] text-slate-500 mt-2 leading-relaxed">Your broker data is parsed locally in your browser. MarketBeacon never stores your sensitive login credentials.</p>
-           </div>
-        </div>
-
-        {/* Right: Interaction Side */}
-        <div className="md:w-7/12 bg-white p-6 md:p-10 flex flex-col overflow-y-auto">
-           <div className="flex justify-between items-center mb-8">
-              <button 
-                onClick={() => setStep('selection')}
-                className={`text-[9px] font-black uppercase tracking-widest transition-all ${step === 'upload' ? 'text-blue-600 flex items-center' : 'opacity-0 pointer-events-none'}`}
-              >
-                <ChevronRight className="h-3 w-3 rotate-180 mr-1" /> Back
-              </button>
-              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+              <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white">
                  <X className="h-5 w-5" />
               </button>
            </div>
+        </div>
+
+        {/* Content Side */}
+        <div className="bg-white p-6 md:p-8 flex flex-col overflow-y-auto">
+           {step === 'upload' && (
+              <button 
+                onClick={() => setStep('selection')}
+                className="text-[9px] font-black uppercase tracking-widest text-blue-600 flex items-center mb-6 hover:translate-x-[-4px] transition-transform"
+              >
+                <ChevronRight className="h-3 w-3 rotate-180 mr-1" /> Back to Selection
+              </button>
+           )}
 
            {step === 'selection' ? (
-              <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-right duration-500">
-                 <div className="mb-8">
-                    <h3 className="text-xl md:text-2xl font-black text-slate-900 uppercase italic leading-none">Select Broker</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Import holdings to start audit</p>
+              <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+                 <div className="mb-6">
+                    <h3 className="text-lg font-black text-slate-900 uppercase italic leading-none">Select Broker</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Choose your environment to import holdings</p>
                  </div>
 
-                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 overflow-y-auto pr-2 custom-scrollbar pb-6">
+                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-1 custom-scrollbar pb-2">
                     {BROKERS.map(broker => (
                        <button 
                          key={broker.id}
@@ -163,44 +140,44 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                            setSelectedBroker(broker.id);
                            setStep('upload');
                          }}
-                         className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-100 bg-white hover:border-blue-600 hover:shadow-2xl hover:shadow-blue-50 transition-all group aspect-square space-y-4 relative overflow-hidden"
+                         className="flex flex-col items-center justify-center p-4 rounded-3xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-600 hover:shadow-xl hover:shadow-blue-50 transition-all group aspect-square space-y-3 relative overflow-hidden"
                        >
-                          <div className="w-full h-12 flex items-center justify-center transition-transform group-hover:scale-110">
+                          <div className="w-full h-10 flex items-center justify-center transition-transform group-hover:scale-110">
                              {broker.logo ? (
                                <img 
                                  src={broker.logo} 
                                  alt={broker.name} 
-                                 className="max-w-[80%] max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                                 className="max-w-[75%] max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
                                  onError={(e) => {
                                    (e.target as any).style.display = 'none';
                                    const fallback = document.createElement('div');
-                                   fallback.className = `w-12 h-12 rounded-2xl ${broker.color} flex items-center justify-center font-black text-slate-400 uppercase`;
+                                   fallback.className = `w-10 h-10 rounded-xl ${broker.color} flex items-center justify-center font-black text-slate-400 uppercase text-xs`;
                                    fallback.innerText = broker.name[0];
                                    (e.target as any).parentElement.appendChild(fallback);
                                  }}
                                />
                              ) : (
-                               <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                 <Database className="h-6 w-6" />
+                               <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                 <Database className="h-5 w-5" />
                                </div>
                              )}
                           </div>
-                          <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight text-center">{broker.name}</span>
-                          {broker.id === 'other' && <div className="absolute top-2 right-2 px-2 py-0.5 bg-blue-100 text-blue-600 text-[6px] font-black rounded-full uppercase">Universal</div>}
+                          <span className="text-[9px] font-black text-slate-900 uppercase tracking-tight text-center">{broker.name}</span>
+                          {broker.id === 'other' && <div className="absolute top-2 right-2 px-2 py-0.5 bg-blue-100 text-blue-600 text-[5px] font-black rounded-full uppercase">Universal</div>}
                        </button>
                     ))}
                  </div>
               </div>
            ) : (
-              <div className="flex-1 flex flex-col justify-center items-center text-center animate-in fade-in slide-in-from-right duration-500">
-                 <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mb-6">
-                    <FileText className="h-10 w-10" />
+              <div className="flex-1 flex flex-col justify-center items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-500 py-4">
+                 <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-[1.5rem] flex items-center justify-center mb-5">
+                    <FileText className="h-8 w-8" />
                  </div>
                  
-                 <div className="space-y-2 mb-8">
-                    <h3 className="text-2xl font-black text-slate-900 uppercase italic">Upload CSV</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest max-w-xs mx-auto">
-                       Download your holdings CSV from {BROKERS.find(b => b.id === selectedBroker)?.name} and drop it here.
+                 <div className="space-y-2 mb-6">
+                    <h3 className="text-xl font-black text-slate-900 uppercase italic">{BROKERS.find(b => b.id === selectedBroker)?.name}</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-[240px] mx-auto leading-relaxed">
+                       Drop your holdings CSV file here to start institutional audit.
                     </p>
                  </div>
 
@@ -212,28 +189,27 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                          onChange={handleFileUpload}
                          className="hidden"
                        />
-                       <div className="py-8 border-2 border-dashed border-slate-200 rounded-[2rem] group-hover:border-blue-400 group-hover:bg-blue-50/30 transition-all flex flex-col items-center space-y-3">
-                          <Upload className={`h-8 w-8 ${isParsing ? 'animate-bounce text-blue-600' : 'text-slate-300'}`} />
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                             {isParsing ? 'Reading Holdings...' : 'Choose CSV File'}
+                       <div className="py-6 border-2 border-dashed border-slate-200 rounded-[2rem] group-hover:border-blue-400 group-hover:bg-blue-50/30 transition-all flex flex-col items-center space-y-2">
+                          <Upload className={`h-6 w-6 ${isParsing ? 'animate-bounce text-blue-600' : 'text-slate-300'}`} />
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                             {isParsing ? 'Processing...' : 'Select CSV'}
                           </span>
                        </div>
                     </label>
 
                     {error && (
-                       <div className="p-4 bg-red-50 rounded-2xl flex items-start space-x-3 text-left">
-                          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
-                          <p className="text-[10px] font-bold text-red-600 uppercase leading-relaxed">{error}</p>
+                       <div className="p-3 bg-red-50 rounded-2xl flex items-start space-x-2 text-left border border-red-100">
+                          <AlertCircle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
+                          <p className="text-[9px] font-bold text-red-600 uppercase leading-relaxed">{error}</p>
                        </div>
                     )}
                  </div>
 
-                 <div className="mt-10 flex flex-col items-center space-y-2 text-slate-400">
+                 <div className="mt-8 flex flex-col items-center space-y-1 text-slate-300">
                     <div className="flex items-center space-x-2">
-                       <RefreshCw className="h-3 w-3" />
-                       <span className="text-[9px] font-black uppercase tracking-widest">Local Engine v1.0</span>
+                       <ShieldCheck className="h-3 w-3" />
+                       <span className="text-[8px] font-black uppercase tracking-widest">Local-Only Secure Parsing</span>
                     </div>
-                    <p className="text-[8px] font-bold uppercase tracking-tighter">Mapped Columns: Instrument, Qty, Avg Cost</p>
                  </div>
               </div>
            )}
