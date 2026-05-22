@@ -382,6 +382,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const realizedGain = trades
       .filter(t => t.status === 'CLOSED')
       .reduce((acc, t) => acc + (((t.exit_price || 0) - (t.entry_price || 0)) * (t.quantity || 0)), 0);
+    
+    const realizedPnlPercent = totalInvested > 0 ? (realizedGain / totalInvested) * 100 : 0;
+    const unrealizedPnlPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
 
     const combinedPnL = totalPnL + realizedGain;
     const combinedPnlPercent = totalInvested > 0 ? (combinedPnL / totalInvested) * 100 : 0;
@@ -389,6 +392,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     return { 
       totalInvested, totalCurrent, totalPnL, pnlPercent, realizedGain, 
       unrealizedGain: totalPnL, 
+      realizedPnlPercent,
+      unrealizedPnlPercent,
       combinedPnL, combinedPnlPercent,
       capBreakdown: {
         large: totalInvested > 0 ? (capInvested.large / totalInvested) * 100 : 0,
@@ -530,9 +535,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                  <Check className="h-3.5 w-3.5 text-emerald-400" />
               </div>
               <div className="space-y-1">
-                 <h3 className={`text-2xl font-black tracking-tighter ${(portfolioSummary.realizedGain || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    ₹{Math.abs(portfolioSummary.realizedGain || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                 </h3>
+                 <div className="flex items-baseline space-x-2">
+                    <h3 className={`text-2xl font-black tracking-tighter ${(portfolioSummary.realizedGain || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                       ₹{Math.abs(portfolioSummary.realizedGain || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </h3>
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-lg ${(portfolioSummary.realizedGain || 0) >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                       {(portfolioSummary.realizedPnlPercent || 0).toFixed(1)}%
+                    </span>
+                 </div>
                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Booked P&L</p>
               </div>
            </div>
@@ -544,9 +554,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                  <TrendingUp className="h-3.5 w-3.5 text-blue-400" />
               </div>
               <div className="space-y-1">
-                 <h3 className={`text-2xl font-black tracking-tighter ${(portfolioSummary.unrealizedGain || 0) >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
-                    ₹{Math.abs(portfolioSummary.unrealizedGain || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                 </h3>
+                 <div className="flex items-baseline space-x-2">
+                    <h3 className={`text-2xl font-black tracking-tighter ${(portfolioSummary.unrealizedGain || 0) >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                       ₹{Math.abs(portfolioSummary.unrealizedGain || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </h3>
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-lg ${(portfolioSummary.unrealizedGain || 0) >= 0 ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>
+                       {(portfolioSummary.unrealizedPnlPercent || 0).toFixed(1)}%
+                    </span>
+                 </div>
                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Current Floating</p>
               </div>
            </div>
