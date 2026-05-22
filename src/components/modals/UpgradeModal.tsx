@@ -20,7 +20,7 @@ interface UpgradeModalProps {
   userEmail?: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || (window.location.protocol === 'https:' ? 'https://' + window.location.host : 'http://localhost:3001');
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTier, userEmail }) => {
   const [step, setStep] = useState<'plan' | 'payment'>('plan');
