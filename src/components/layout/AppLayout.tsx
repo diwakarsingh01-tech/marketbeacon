@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import SideNav from './SideNav';
 import TopNav from './TopNav';
+import GlobalFooter from './Footer';
 
 import FeedbackModal from '../ui/FeedbackModal';
 import { MessageSquarePlus } from 'lucide-react';
@@ -28,8 +29,11 @@ const AppLayout: React.FC = () => {
         <TopNav onMenuClick={() => setIsSidebarOpen(true)} />
         
         {/* Page Content - Independent Scroll */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden relative">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto overflow-x-hidden relative flex flex-col">
+          <div className="flex-1">
+            <Outlet />
+          </div>
+          <GlobalFooter />
         </main>
       </div>
 
