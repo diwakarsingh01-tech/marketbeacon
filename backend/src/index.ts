@@ -1027,9 +1027,10 @@ app.get('/api/backtest/envelope', async (req, res) => {
               screener: data.screener
             };
             
-            // --- High-Performance: Use Pre-Calculated Results ---
-            // --- High-Performance: Use Pre-Calculated Results ---
-            if (data.strategies && data.strategies[strategyId] && strategyId !== 'SIXTY_SEVEN_FUNDA' && strategyId !== 'TWENTY_RALLY_RETEST') {
+            // --- PRO FIX: For ENVELOPE_LONG, always re-calculate to ensure live accuracy ---
+            if (strategyId === 'ENVELOPE_LONG') {
+               strategyData = calculateEnvelope(quotes);
+            } else if (data.strategies && data.strategies[strategyId] && strategyId !== 'SIXTY_SEVEN_FUNDA' && strategyId !== 'TWENTY_RALLY_RETEST') {
               strategyData = data.strategies[strategyId];
             } else if (strategyId === 'SIXTY_SEVEN_FUNDA') {
               const athProxy = isSnapshotMode ? (snapshot[baseSymbol]?.quote?.fiftyTwoWeekHigh || 0) : (summary?.summaryDetail?.fiftyTwoWeekHigh || 0);
