@@ -25,7 +25,7 @@ const DISPOSITIONS = [
   { id: 'OTHER', label: 'General Feedback', icon: HelpCircle },
 ];
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || (window.location.protocol === 'https:' ? 'https://' + window.location.host : 'http://localhost:3001');
 
 const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
   const [rating, setRating] = useState(0);

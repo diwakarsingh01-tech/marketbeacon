@@ -16,7 +16,7 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || (window.location.protocol === 'https:' ? 'https://' + window.location.host : 'http://localhost:3001');
 
 const StockFundamentalsPage: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();

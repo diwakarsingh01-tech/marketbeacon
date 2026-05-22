@@ -9,7 +9,7 @@ import UpgradeModal from '../components/modals/UpgradeModal';
 import BrokerHub from '../components/modals/BrokerHub';
 import LegalModal from '../components/modals/LegalModal';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || (window.location.protocol === 'https:' ? 'https://' + window.location.host : 'http://localhost:3001');
 
 interface DashboardPageProps {
   defaultTab?: 'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral';

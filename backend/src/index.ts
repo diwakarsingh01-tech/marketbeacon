@@ -468,20 +468,25 @@ app.patch('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: a
     const { name, email, tier, subscription_start, subscription_expiry, is_active } = req.body;
     const db = getDB();
     
+    console.log(`[ADMIN] Updating User ${id}:`, { name, email, tier, subscription_start, subscription_expiry, is_active });
+
     await db.run(
       `UPDATE users SET 
-        name = COALESCE(?, name), 
-        email = COALESCE(?, email), 
-        tier = COALESCE(?, tier), 
-        subscription_start = COALESCE(?, subscription_start), 
-        subscription_expiry = COALESCE(?, subscription_expiry),
-        is_active = COALESCE(?, is_active)
+        name = CASE WHEN ? IS NOT NULL THEN ? ELSE name END, 
+        email = CASE WHEN ? IS NOT NULL THEN ? ELSE email END, 
+        tier = CASE WHEN ? IS NOT NULL THEN ? ELSE tier END, 
+        subscription_start = CASE WHEN ? IS NOT NULL THEN ? ELSE subscription_start END, 
+        subscription_expiry = CASE WHEN ? IS NOT NULL THEN ? ELSE subscription_expiry END,
+        is_active = CASE WHEN ? IS NOT NULL THEN ? ELSE is_active END
       WHERE id = ?`,
-      [name, email, tier, subscription_start, subscription_expiry, is_active, id]
+      [name, name, email, email, tier, tier, subscription_start, subscription_start, subscription_expiry, subscription_expiry, is_active, is_active, id]
     );
     
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+  } catch (e: any) { 
+    console.error(`[ADMIN] Update User ${req.params.id} failed:`, e.message);
+    res.status(500).json({ error: e.message }); 
+  }
 });
 
 // --- USER UPGRADE ROUTE ---
