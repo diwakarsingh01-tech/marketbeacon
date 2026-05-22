@@ -63,6 +63,18 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     }
   };
 
+  const handleBasketChange = (basketId: string) => {
+    setActiveBasket(basketId);
+    // Ensure current strategy is valid for this basket
+    if (!currentStrategy.baskets.includes(basketId as any)) {
+      // Find the first strategy that supports this basket
+      const validStrategy = STRATEGIES.find(s => s.baskets.includes(basketId as any));
+      if (validStrategy) {
+        navigate(`?strategy=${validStrategy.id}`);
+      }
+    }
+  };
+
   const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
   const [stockATHs, setStockATHs] = useState<Record<string, number>>({});
   const [stockCaps, setStockCaps] = useState<Record<string, number>>({});
@@ -504,14 +516,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                     onChange={(e) => handleStrategyChange(e.target.value)}
                     className="appearance-none bg-white border border-slate-100 rounded-2xl pl-5 pr-12 py-3.5 text-[10px] font-black uppercase tracking-[0.1em] focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer w-full lg:min-w-[280px]"
                   >
-                    {STRATEGIES.map(s => {
-                      const userTier = (user as any)?.tier || 'free';
-                      const isLocked = (s.tier === 'alpha' && userTier !== 'alpha') || (s.tier === 'pro' && userTier === 'free');
-                      return (
-                        <option key={s.id} value={s.id}>
-                          {isLocked ? '🔒 ' : '🟢 '}{s.name}
-                        </option>
-                      );
+                    {STRATEGIES
+                      .filter(s => s.baskets.includes(activeBasket as any)) // SHORT BY BASKET WISE
+                      .map(s => {
+                        const userTier = (user as any)?.tier || 'free';
+                        const isLocked = (s.tier === 'alpha' && userTier !== 'alpha') || (s.tier === 'pro' && userTier === 'free');
+                        return (
+                          <option key={s.id} value={s.id}>
+                            {isLocked ? '🔒 ' : '🟢 '}{s.name}
+                          </option>
+                        );
                     })}
                   </select>
                   <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 rotate-90" />
@@ -797,7 +811,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
             {currentStrategy.baskets.length > 1 ? currentStrategy.baskets.map((basketKey) => (
               <button
                 key={basketKey}
-                onClick={() => setActiveBasket(basketKey)}
+                onClick={() => handleBasketChange(basketKey)}
                 className={`px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                   activeBasket === basketKey ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-900'
                 }`}
