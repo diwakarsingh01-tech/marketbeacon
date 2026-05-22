@@ -430,9 +430,12 @@ const TradeTable: React.FC<TradeTableProps> = ({
                            <button className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-slate-100 rounded text-slate-400" title="Share Options">
                               <Share2 className="h-3 w-3" />
                            </button>
-                           <div className="absolute left-0 bottom-full mb-2 hidden group-hover/share:flex bg-slate-900 rounded-xl shadow-2xl p-1.5 space-x-1 z-[100] animate-in slide-in-from-bottom-2">
-                              <button onClick={() => handleShareSignal(trade, 'copy')} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Copy</button>
-                              <button onClick={() => handleShareSignal(trade, 'telegram')} className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Telegram</button>
+                           {/* PRO FIX: Added pb-3 and changed bottom-full to bottom-[80%] to create a hover bridge */}
+                           <div className="absolute left-0 bottom-[80%] pb-3 hidden group-hover/share:flex flex-col z-[100] animate-in slide-in-from-bottom-1">
+                              <div className="bg-slate-900 rounded-xl shadow-2xl p-1.5 flex space-x-1">
+                                <button onClick={() => handleShareSignal(trade, 'copy')} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Copy</button>
+                                <button onClick={() => handleShareSignal(trade, 'telegram')} className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Telegram</button>
+                              </div>
                            </div>
                         </div>
                       </td>
@@ -475,9 +478,12 @@ const TradeTable: React.FC<TradeTableProps> = ({
                              <button className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-slate-100 rounded text-slate-400" title="Share Options">
                                 <Share2 className="h-3 w-3" />
                              </button>
-                             <div className="absolute left-0 bottom-full mb-2 hidden group-hover/share:flex bg-slate-900 rounded-xl shadow-2xl p-1.5 space-x-1 z-[100] animate-in slide-in-from-bottom-2">
-                                <button onClick={() => handleShareSignal(trade, 'copy')} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Copy</button>
-                                <button onClick={() => handleShareSignal(trade, 'telegram')} className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Telegram</button>
+                             {/* PRO FIX: Added pb-3 and changed bottom-full to bottom-[80%] to create a hover bridge */}
+                             <div className="absolute left-0 bottom-[80%] pb-3 hidden group-hover/share:flex flex-col z-[100] animate-in slide-in-from-bottom-1">
+                                <div className="bg-slate-900 rounded-xl shadow-2xl p-1.5 flex space-x-1">
+                                   <button onClick={() => handleShareSignal(trade, 'copy')} className="px-3 py-1.5 hover:bg-white/10 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Copy</button>
+                                   <button onClick={() => handleShareSignal(trade, 'telegram')} className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 rounded-lg text-[8px] font-black text-white uppercase whitespace-nowrap">Telegram</button>
+                                </div>
                              </div>
                           </div>
 
