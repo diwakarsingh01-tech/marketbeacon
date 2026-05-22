@@ -17,6 +17,7 @@ const EducationPage = lazy(() => import('./pages/Education'));
 const PricingPage = lazy(() => import('./pages/Pricing'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const MembershipPage = lazy(() => import('./pages/Marketplace'));
+const AlphaHubPage = lazy(() => import('./pages/AlphaHub'));
 
 // Institutional Loading Component
 const PageLoader = () => (
@@ -58,6 +59,7 @@ function App() {
               <Route path="/screener" element={<DashboardPage key="screener" defaultTab="open" />} />
               <Route path="/market" element={<DashboardPage key="market" defaultTab="watchlist" />} />
               <Route path="/portfolio" element={<DashboardPage key="portfolio" defaultTab="portfolio" />} />
+              <Route path="/alpha-hub" element={<AlphaHubPage />} />
               <Route path="/journal" element={<Navigate to="/trades" replace />} />
               <Route path="/trades" element={<TradeJournalPage />} />
               <Route path="/profile" element={<ProfilePage />} />

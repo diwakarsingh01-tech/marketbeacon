@@ -12,7 +12,8 @@ import {
   History as HistoryIcon,
   Activity,
   Terminal,
-  CreditCard
+  CreditCard,
+  LayoutGrid
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -27,10 +28,11 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
 
   const navItems = [
     { icon: Zap, label: 'Screener', path: '/screener', desc: 'Signal Discovery' },
+    { icon: LayoutGrid, label: 'Alpha-40 Hub', path: '/alpha-hub', desc: 'Institutional Basket' },
     { icon: Briefcase, label: 'My Portfolio', path: '/portfolio', desc: 'Wealth Manager' },
     { icon: ShieldCheck, label: 'Education', path: '/education', desc: 'Strategy Guides' },
     { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Order Ledger' },
-    { icon: CreditCard, label: 'Membership', path: '/pricing', desc: 'Billing & Access' },
+    { icon: CreditCard, label: 'Membership', path: '/membership', desc: 'Billing & Access' },
   ];
 
   if (isAdmin) {

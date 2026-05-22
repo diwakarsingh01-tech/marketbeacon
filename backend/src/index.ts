@@ -1499,6 +1499,111 @@ app.get('/api/marketplace', async (req, res) => {
   ]);
 });
 
+app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
+  try {
+    const snapshot = getMarketSnapshot();
+    const db = getDB();
+    const allSymbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']]));
+    
+    const qualifiedStocks: any[] = [];
+    const strategyList = STRATEGIES.map(s => s.id);
+
+    // 1. Scan everything across all strategies
+    for (const baseSymbol of allSymbols) {
+      const snap = snapshot[baseSymbol];
+      if (!snap) continue;
+
+      const quotes = snap.quotes;
+      const summary = {
+        summaryDetail: { marketCap: snap.quote.marketCap, trailingPE: snap.quote.pe },
+        defaultKeyStatistics: { returnOnEquity: (snap.quote.roe || 15) / 100 },
+        financialData: { debtToEquity: snap.quote.debtToEquity || 0 },
+        screener: snap.screener
+      };
+
+      const audit = await validateBatch9(baseSymbol, summary, true);
+      if (!audit.isPass) continue;
+
+      // Check all strategies to see if ANY trigger
+      for (const stratId of strategyList) {
+        let stratData;
+        if (stratId === 'ENVELOPE_LONG') stratData = calculateEnvelope(quotes);
+        else if (stratId === 'SMA_ABCD') stratData = calculateSMAStacking(quotes);
+        else if (snap.strategies && snap.strategies[stratId]) stratData = snap.strategies[stratId];
+        else continue;
+
+        if (stratData && stratData.isBuyZone) {
+          const currentPrice = quotes[quotes.length - 1].close;
+          const entryPrice = stratData.lowerBand || stratData.entryPrice || stratData.anchorA || currentPrice;
+          const target = stratData.upperBand || stratData.target || (currentPrice * 1.3);
+          const roi = ((target - currentPrice) / currentPrice) * 100;
+          const sector = MANUAL_SECTOR_MAP[baseSymbol] || snap.screener?.industry || 'General';
+          
+          qualifiedStocks.push({
+            symbol: baseSymbol,
+            strategy: STRATEGIES.find(s => s.id === stratId)?.name,
+            marketCap: snap.quote.marketCap,
+            sector,
+            currentPrice,
+            entryPrice,
+            target,
+            roi,
+            score: audit.score
+          });
+          break; // Stop after first matching strategy for this stock
+        }
+      }
+    }
+
+    // 2. Apply 50-30-20 and Sector Cap (20%)
+    const large: any[] = [], mid: any[] = [], small: any[] = [];
+    qualifiedStocks.forEach(s => {
+      const capCr = s.marketCap / 10000000;
+      if (capCr >= 65000) large.push(s);
+      else if (capCr >= 20000) mid.push(s);
+      else small.push(s);
+    });
+
+    // Sort by Score + ROI
+    const sorter = (a: any, b: any) => (b.score + b.roi) - (a.score + a.roi);
+    large.sort(sorter); mid.sort(sorter); small.sort(sorter);
+
+    const finalAlpha40: any[] = [];
+    const sectorCounts: Record<string, number> = {};
+    const maxPerSector = 8; // 20% of 40
+
+    const pick = (list: any[], limit: number) => {
+      let count = 0;
+      for (const stock of list) {
+        if (count >= limit) break;
+        const sCount = sectorCounts[stock.sector] || 0;
+        if (sCount < maxPerSector) {
+          finalAlpha40.push(stock);
+          sectorCounts[stock.sector] = sCount + 1;
+          count++;
+        }
+      }
+    };
+
+    pick(large, 20); // 50%
+    pick(mid, 12);   // 30%
+    pick(small, 8);  // 20%
+
+    res.json({
+      name: 'Alpha-40 Hub',
+      description: 'Top 40 Risk-Weighted Institutional Opportunities',
+      stocks: finalAlpha40,
+      summary: {
+        total: finalAlpha40.length,
+        large: finalAlpha40.filter(s => s.marketCap / 10000000 >= 65000).length,
+        mid: finalAlpha40.filter(s => s.marketCap / 10000000 < 65000 && s.marketCap / 10000000 >= 20000).length,
+        small: finalAlpha40.filter(s => s.marketCap / 10000000 < 20000).length,
+        avgRoi: finalAlpha40.reduce((a, b) => a + b.roi, 0) / (finalAlpha40.length || 1)
+      }
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 const PORT = process.env.PORT || 3001;
 async function startServer() {
   try {
