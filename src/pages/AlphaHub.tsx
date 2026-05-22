@@ -20,6 +20,7 @@ const AlphaHubPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalCapital, setTotalCapital] = useState<number>(200000); // Minimum 2 Lakh
 
   const fetchAlphaHub = async () => {
     setLoading(true);
@@ -47,13 +48,31 @@ const AlphaHubPage: React.FC = () => {
     fetchAlphaHub();
   }, []);
 
+  // --- Pro Allocation Logic: 50-30-20 Weighted ---
+  const calculateQuantity = (stock: any) => {
+    if (!totalCapital || totalCapital < 200000) return 0;
+    
+    const capCr = stock.marketCap / 10000000;
+    let perStockBudget = 0;
+    
+    // Distribute total capital based on 50-30-20
+    if (capCr >= 65000) perStockBudget = (totalCapital * 0.50) / 20; // 50% split among 20 Large Caps
+    else if (capCr >= 20000) perStockBudget = (totalCapital * 0.30) / 12; // 30% split among 12 Mid Caps
+    else perStockBudget = (totalCapital * 0.20) / 8; // 20% split among 8 Small Caps
+
+    // Minimum Allocation Rule: ₹5,000
+    if (perStockBudget < 5000) return 0;
+    
+    return Math.floor(perStockBudget / stock.entryPrice);
+  };
+
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-6">
+      <div className="flex flex-col items-center justify-center min-h-screen space-y-6 text-center px-4">
         <div className="w-16 h-16 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin" />
-        <div className="text-center space-y-2">
-           <h2 className="text-xl font-black uppercase italic tracking-tighter text-slate-900">Alpha-40 Syncing</h2>
-           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em]">Auditing 500+ Stocks across 10 Strategies</p>
+        <div className="space-y-2">
+           <h2 className="text-xl font-black uppercase italic tracking-tighter text-slate-900">Alpha-40 Core Initializing</h2>
+           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em]">Auditing 500+ Stocks across 10-Strategy Matrix</p>
         </div>
       </div>
     );
@@ -61,40 +80,58 @@ const AlphaHubPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="p-10 text-center space-y-6">
+      <div className="p-10 text-center space-y-6 flex flex-col items-center justify-center min-h-screen">
          <div className="bg-red-50 p-8 rounded-[3rem] inline-block border border-red-100 max-w-md">
             <h2 className="text-red-600 font-black uppercase tracking-widest text-sm mb-2">Alpha Hub Offline</h2>
             <p className="text-red-500 text-xs font-bold leading-relaxed">{error}</p>
          </div>
-         <button onClick={fetchAlphaHub} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest block mx-auto">Retry Deployment</button>
+         <button onClick={fetchAlphaHub} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all">Retry Deployment</button>
       </div>
     );
   }
 
   return (
     <div className="p-6 md:p-10 lg:p-16 max-w-7xl mx-auto space-y-12 pb-32">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-slate-100 pb-12">
+      {/* Header with Capital Simulator */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 border-b border-slate-100 pb-12">
         <div className="space-y-4">
            <div className="flex items-center space-x-3 text-blue-600">
               <div className="w-10 h-10 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
                  <LayoutGrid className="h-5 w-5" />
               </div>
-              <span className="text-[11px] font-black uppercase tracking-[0.4em]">Multi-Strategy Hub</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.4em]">Strategic Hub</span>
            </div>
-           <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Alpha-40 Segment</h1>
-           <p className="text-sm md:text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">
-             A risk-weighted collection of the top 40 institutional opportunities, dynamically rebalanced using the 50-30-20 rule and 10-Strategy Matrix.
+           <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Alpha-40</h1>
+           <p className="text-sm md:text-lg text-slate-500 font-medium max-w-xl leading-relaxed">
+             Top 40 institutional picks mapped to the 50-30-20 rule. Minimum ₹2L capital required for deployment.
            </p>
         </div>
-        <div className="flex items-center space-x-4">
-           <div className="bg-emerald-50 px-6 py-4 rounded-3xl border border-emerald-100 text-center">
-              <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Target ROI</p>
-              <h4 className="text-2xl font-black text-emerald-700 tracking-tight leading-none">25-30%</h4>
+        
+        {/* Capital Simulator Input */}
+        <div className="bg-slate-900 p-8 rounded-[3rem] border border-slate-800 shadow-2xl space-y-5 min-w-[340px] relative overflow-hidden group">
+           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-16 -mt-16 group-hover:bg-blue-600/20 transition-all" />
+           <div className="flex justify-between items-center text-slate-500 relative z-10">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Investment Simulator</span>
+              <Target className="h-4 w-4" />
            </div>
-           <button onClick={fetchAlphaHub} className="p-4 bg-white border border-slate-100 rounded-3xl shadow-sm hover:scale-105 transition-all text-slate-400 hover:text-blue-600">
-              <RefreshCw className="h-5 w-5" />
-           </button>
+           <div className="space-y-3 relative z-10">
+              <div className="relative">
+                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xl">₹</span>
+                 <input 
+                   type="number" 
+                   value={totalCapital}
+                   step={10000}
+                   onChange={(e) => setTotalCapital(Number(e.target.value))}
+                   onBlur={() => setTotalCapital(Math.max(200000, totalCapital))}
+                   className="w-full bg-slate-800/50 border-2 border-slate-700/50 rounded-2xl pl-10 pr-6 py-5 text-2xl font-black text-white focus:border-blue-500 transition-all outline-none"
+                   placeholder="Capital (Min 2L)"
+                 />
+              </div>
+              <div className="flex justify-between px-2">
+                 <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Min Entry: ₹2,00,000</p>
+                 <p className="text-[8px] font-bold text-blue-400 uppercase tracking-widest italic">50-30-20 Weightage Active</p>
+              </div>
+           </div>
         </div>
       </div>
 
@@ -124,12 +161,12 @@ const AlphaHubPage: React.FC = () => {
                   <span className="text-[10px] font-black text-slate-900 uppercase">Large-Mid-Small</span>
                   <span className="text-xs font-black text-slate-900">{data.summary.large}-{data.summary.mid}-{data.summary.small}</span>
                </div>
-               <div className="h-2 w-full flex rounded-full overflow-hidden">
+               <div className="h-2 w-full flex rounded-full overflow-hidden bg-slate-50">
                   <div className="h-full bg-slate-900" style={{ width: `${(data.summary.large/data.summary.total)*100}%` }} />
                   <div className="h-full bg-blue-600" style={{ width: `${(data.summary.mid/data.summary.total)*100}%` }} />
                   <div className="h-full bg-indigo-400" style={{ width: `${(data.summary.small/data.summary.total)*100}%` }} />
                </div>
-               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center">Institutional 50-30-20 Rule</p>
+               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center">Standard Institutional Rule</p>
             </div>
          </div>
 
@@ -140,80 +177,96 @@ const AlphaHubPage: React.FC = () => {
             </div>
             <div className="space-y-1">
                <h3 className="text-3xl font-black text-slate-900 tracking-tighter">Verified</h3>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">&lt; 20% Single Exposure</p>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">&lt; 20% Exposure / Sector</p>
             </div>
          </div>
 
-         <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
+         <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6 text-emerald-600">
             <div className="flex justify-between items-center text-slate-400">
-               <span className="text-[9px] font-black uppercase tracking-widest">Exp. Yield</span>
+               <span className="text-[9px] font-black uppercase tracking-widest">Target ROI</span>
                <Activity className="h-4 w-4" />
             </div>
             <div className="space-y-1">
-               <div className="flex items-baseline space-x-1">
-                  <h3 className="text-3xl font-black text-blue-600 tracking-tighter">+{data.summary.avgRoi.toFixed(1)}%</h3>
-                  <span className="text-[8px] font-black text-slate-400 uppercase">Avg</span>
-               </div>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Potential Portfolio Lift</p>
+               <h3 className="text-3xl font-black tracking-tighter text-emerald-600">25-30%</h3>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Yearly Performance Band</p>
             </div>
          </div>
       </div>
 
       {/* Stock Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-         {data.stocks.map((stock: any, i: number) => (
-           <div key={stock.symbol} className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:border-blue-200 transition-all group relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-all">
-                 <Link to={`/stock/${stock.symbol}`} className="text-blue-600"><ArrowUpRight className="h-5 w-5" /></Link>
-              </div>
-              
-              <div className="space-y-6">
-                 <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-xs">
-                       {i + 1}
-                    </div>
-                    <div>
-                       <h4 className="text-lg font-black text-slate-900 leading-none tracking-tight">{stock.symbol}</h4>
-                       <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">{stock.sector}</p>
-                    </div>
-                 </div>
+         {data.stocks.map((stock: any, i: number) => {
+           const qty = calculateQuantity(stock);
+           const allocation = qty * stock.currentPrice;
 
-                 <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 space-y-3">
-                    <div className="flex justify-between items-center">
-                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strategy</span>
-                       <span className="text-[10px] font-black text-slate-900 uppercase italic tracking-tight">{stock.strategy}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Batch 9 Score</span>
-                       <span className="text-[10px] font-black text-blue-600">{stock.score}/100</span>
-                    </div>
-                 </div>
+           return (
+             <div key={stock.symbol} className="bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm hover:border-blue-200 transition-all group relative overflow-hidden flex flex-col justify-between">
+                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-all z-10">
+                   <Link to={`/stock/${stock.symbol}`} className="text-blue-600"><ArrowUpRight className="h-5 w-5" /></Link>
+                </div>
+                
+                <div className="space-y-6">
+                   <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-xs shadow-lg shadow-slate-200">
+                         {i + 1}
+                      </div>
+                      <div>
+                         <h4 className="text-lg font-black text-slate-900 leading-none tracking-tight">{stock.symbol}</h4>
+                         <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">{stock.sector}</p>
+                      </div>
+                   </div>
 
-                 <div className="flex justify-between items-end pt-2">
-                    <div>
-                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Buy Zone</p>
-                       <p className="text-sm font-black text-slate-900 italic">₹{stock.entryPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                    </div>
-                    <div className="text-right">
-                       <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Target ROI</p>
-                       <p className="text-sm font-black text-emerald-700">+{stock.roi.toFixed(1)}%</p>
-                    </div>
-                 </div>
-              </div>
-           </div>
-         ))}
+                   <div className="bg-slate-50/80 p-5 rounded-3xl border border-slate-100 space-y-4">
+                      <div className="flex justify-between items-center">
+                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Action Qty</span>
+                         <span className={`text-[14px] font-black ${qty === 0 ? 'text-red-500' : 'text-blue-600'}`}>{qty.toLocaleString()} <span className="text-[8px]">Units</span></span>
+                      </div>
+                      <div className="flex justify-between items-center border-t border-slate-100 pt-3">
+                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Allocation</span>
+                         <span className="text-[11px] font-black text-slate-900">₹{allocation.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                      </div>
+                   </div>
+                   
+                   {qty === 0 && (
+                      <div className="bg-red-50 p-2 rounded-lg text-center border border-red-100">
+                         <p className="text-[8px] font-black text-red-600 uppercase tracking-widest">Below ₹5,000 Barrier</p>
+                      </div>
+                   )}
+                </div>
+
+                <div className="flex justify-between items-end pt-6 border-t border-slate-50 mt-6">
+                   <div>
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Buy Zone</p>
+                      <p className="text-sm font-black text-slate-900 italic">₹{stock.entryPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                   </div>
+                   <div className="text-right">
+                      <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Target ROI</p>
+                      <p className="text-sm font-black text-emerald-700">+{stock.roi.toFixed(1)}%</p>
+                   </div>
+                </div>
+             </div>
+           );
+         })}
       </div>
 
-      {/* Disclaimer */}
-      <div className="bg-amber-50 rounded-3xl p-8 border border-amber-100 flex items-start space-x-6">
-         <ShieldCheck className="h-8 w-8 text-amber-600 shrink-0" />
-         <div className="space-y-2">
-            <h4 className="text-[10px] font-black text-amber-900 uppercase tracking-[0.2em]">Alpha Hub Governance</h4>
-            <p className="text-xs text-amber-800/80 font-bold leading-relaxed uppercase tracking-tight">
-              THE ALPHA-40 SEGMENT IS AUTOMATICALLY REBALANCED BASED ON LIVE MARKET SNAPSHOTS. 
-              REBALANCING FREQUENCY IS SET TO MONTHLY. THE 50-30-20 RULE IS MANDATORY AND CANNOT BE OVERRIDDEN.
-              ALL RESEARCH IS FOR EDUCATIONAL PURPOSES ONLY.
-            </p>
+      {/* Analytics Matrix Summary */}
+      <div className="bg-blue-600 rounded-[3rem] p-10 md:p-16 text-white relative overflow-hidden shadow-2xl shadow-blue-500/20">
+         <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 blur-[120px] -mr-32 -mt-32" />
+         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
+            <div className="space-y-6 text-center md:text-left">
+               <div className="flex items-center justify-center md:justify-start space-x-3 text-blue-200">
+                  <ShieldCheck className="h-6 w-6" />
+                  <span className="text-[11px] font-black uppercase tracking-[0.4em]">Institutional Governance</span>
+               </div>
+               <h3 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic leading-tight">Total Portfolio Commitment</h3>
+               <p className="text-lg text-blue-100 font-medium max-w-xl leading-relaxed">
+                  Calculated using the Multi-Strategy Hub across 40 nodes. Auto-rebalancing ensures the 50-30-20 rule is maintained at ₹{totalCapital.toLocaleString()} capital.
+               </p>
+            </div>
+            <div className="shrink-0 flex flex-col items-center md:items-end space-y-2">
+               <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest">Total Capital Active</p>
+               <h4 className="text-5xl md:text-7xl font-black tracking-tighter italic">₹{(totalCapital/100000).toFixed(1)}L</h4>
+            </div>
          </div>
       </div>
     </div>
