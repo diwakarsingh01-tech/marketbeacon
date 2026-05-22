@@ -209,7 +209,17 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       if (response.ok) {
         const result = await response.json();
         setData(result);
-        const symbolsToFetch = result.allStocks?.map((s: any) => s.symbol) || [];
+        
+        // --- PRO FIX: Fetch prices for ALL stocks in the universe + portfolio ---
+        const portfolioSymbols = [
+          ...userWatchlist.map(w => w.symbol),
+          ...trades.map(t => t.symbol)
+        ];
+        const symbolsToFetch = Array.from(new Set([
+          ...(result.allStocks?.map((s: any) => s.symbol) || []),
+          ...portfolioSymbols
+        ]));
+        
         fetchStockPrices(symbolsToFetch);
       } else {
         const errData = await response.json().catch(() => ({ error: 'Unknown API Error' }));
@@ -220,7 +230,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     } finally {
       setTimeout(() => setIsRefreshing(false), 300);
     }
-  }, [activeBasket, strategyId]);
+  }, [activeBasket, strategyId, userWatchlist, trades]);
 
   useEffect(() => {
     fetchData();
@@ -251,10 +261,18 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         }
       });
 
-      return data.allStocks
-        .filter((s: any) => combinedPortfolioMap[s.symbol])
-        .map((s: any) => ({ ...s, ...combinedPortfolioMap[s.symbol] }))
-        .filter((s: any) => s.quantity > 0);
+      // --- PRO FIX: Filter from entire stock price map, not just data.allStocks ---
+      const symbols = Object.keys(combinedPortfolioMap);
+      return symbols.map(symbol => {
+        const baseData = data.allStocks.find((s: any) => s.symbol === symbol) || {
+          symbol,
+          stockName: symbol,
+          marketCap: stockCaps[symbol] || 0,
+          sector: stockSectors[symbol] || 'Manual Entry',
+          currentPrice: stockPrices[symbol] || 0
+        };
+        return { ...baseData, ...combinedPortfolioMap[symbol] };
+      }).filter(s => s.quantity > 0);
     }
 
     if (activeTab === 'watchlist') {
@@ -266,13 +284,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     }
 
     return data[activeTab] || [];
-  }, [data, userWatchlist, activeTab]);
+  }, [data, userWatchlist, activeTab, trades, stockPrices, stockCaps, stockSectors]);
 
   const portfolioSummary = useMemo(() => {
-    if (!data || !data.allStocks) return { 
+    // Initial state check should not strictly depend on data.allStocks
+    if (!userWatchlist.length && !trades.length) return { 
       totalInvested: 0, totalCurrent: 0, totalPnL: 0, pnlPercent: 0, realizedGain: 0, unrealizedGain: 0, combinedPnL: 0, combinedPnlPercent: 0,
-      capBreakdown: { large: 0, mid: 0, small: 0, micro: 0 },
-      sectorBreakdown: {} as Record<string, { amount: number, stocks: string[] }>
+      capBreakdown: { large: 0, mid: 0, small: 0 },
+      sectorBreakdown: {} as Record<string, { amount: number, stocks: string[] }>,
+      strategyStats: {} as Record<string, number>
     };
 
     const combinedMap: Record<string, { quantity: number, buy_price: number }> = {};
@@ -296,18 +316,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       }
     });
 
-    // 3. Map to Stocks Data for Market Cap and Sector
-    const portfolioTrades = data.allStocks
-      .filter((s: any) => combinedMap[s.symbol])
-      .map((s: any) => ({ ...s, ...combinedMap[s.symbol] }));
-
+    // 3. Process the entire combined map (Global Scope)
     let totalInvested = 0;
     let totalCurrent = 0;
     const capInvested = { large: 0, mid: 0, small: 0 };
     const sectorInvested: Record<string, { amount: number, stocks: string[] }> = {};
     const strategyStats: Record<string, number> = {};
 
-    // Strategy Name Mapping (to ID)
     const STRATEGY_NAME_MAP: Record<string, string> = {
       'Institutional Floor': 'ENVELOPE_LONG',
       'Momentum Ceiling': 'ENVELOPE_SHORT',
@@ -324,34 +339,33 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       'SMA ABCD': 'SMA_ABCD'
     };
     
-    portfolioTrades.forEach((t: any) => {
-      const livePrice = stockPrices[t.symbol] || t.currentPrice || 0;
-      const mktCap = t.marketCap || 0;
-      const sector = t.sector || 'General';
-      const investedAmount = t.quantity * t.buy_price;
+    Object.entries(combinedMap).forEach(([symbol, holding]) => {
+      const livePrice = stockPrices[symbol] || 0;
+      const mktCap = stockCaps[symbol] || 0;
+      const sector = stockSectors[symbol] || 'Manual Entry';
+      const investedAmount = holding.quantity * holding.buy_price;
 
-      if (t.quantity > 0 && t.buy_price > 0) {
+      if (holding.quantity > 0 && holding.buy_price > 0) {
         totalInvested += investedAmount;
-        totalCurrent += t.quantity * livePrice;
+        totalCurrent += holding.quantity * livePrice;
 
         // Standard Institutional Market Cap Bifurcation
         const capInCr = mktCap / 10000000;
-        if (capInCr >= 65000) { // Large Cap (Top 100)
+        if (capInCr >= 65000) { 
           capInvested.large += investedAmount;
-        } else if (capInCr >= 20000) { // Mid Cap (101-250)
+        } else if (capInCr >= 20000) { 
           capInvested.mid += investedAmount;
-        } else { // Small Cap (< 20k Cr)
+        } else { 
           capInvested.small += investedAmount;
         }
 
         // Sector Bifurcation
         if (!sectorInvested[sector]) sectorInvested[sector] = { amount: 0, stocks: [] };
         sectorInvested[sector].amount += investedAmount;
-        sectorInvested[sector].stocks.push(t.symbol);
+        sectorInvested[sector].stocks.push(symbol);
 
-        // Strategy Breakdown (Active from Journal)
-        // Find matching trade in journal to get its strategy
-        const journalTrade = trades.find(jt => jt.symbol === t.symbol && jt.status === 'OPEN');
+        // Strategy Breakdown
+        const journalTrade = trades.find(jt => jt.symbol === symbol && jt.status === 'OPEN');
         if (journalTrade) {
           const rawStrat = journalTrade.strategy;
           const stratKey = STRATEGY_NAME_MAP[rawStrat] || rawStrat || 'MANUAL';
@@ -365,12 +379,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const totalPnL = totalCurrent - totalInvested;
     const pnlPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
 
-    // 4. Realized Metrics (Booked from Journal)
     const realizedGain = trades
       .filter(t => t.status === 'CLOSED')
       .reduce((acc, t) => acc + (((t.exit_price || 0) - (t.entry_price || 0)) * (t.quantity || 0)), 0);
 
-    // 5. Total Mathematical Performance
     const combinedPnL = totalPnL + realizedGain;
     const combinedPnlPercent = totalInvested > 0 ? (combinedPnL / totalInvested) * 100 : 0;
 
@@ -386,7 +398,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       sectorBreakdown: sectorInvested,
       strategyStats
     };
-  }, [data, userWatchlist, stockPrices, trades]);
+  }, [userWatchlist, trades, stockPrices, stockCaps, stockSectors]);
 
   // Dynamic Headings based on page type
   const pageInfo = {
