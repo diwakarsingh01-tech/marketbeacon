@@ -1499,6 +1499,19 @@ app.get('/api/marketplace', async (req, res) => {
   ]);
 });
 
+const STRATEGIES_BACKEND = [
+  { id: 'ENVELOPE_LONG', name: 'Institutional Floor' },
+  { id: 'ENVELOPE_SHORT', name: 'Momentum Ceiling' },
+  { id: 'BOLLINGER', name: 'Volatility Channel' },
+  { id: 'CUP_HANDLE_ABCD', name: 'Structural Pivot' },
+  { id: 'RHS_ABCD', name: 'Dynamic Reversal' },
+  { id: 'SMA_ABCD', name: 'SMA-ABCD' },
+  { id: '52W_HIGH_LOW', name: '52W High/Low' },
+  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest' },
+  { id: 'SIXTY_SEVEN_FUNDA', name: 'Deep Recovery Audit' },
+  { id: 'SR_STRATEGY', name: 'Supply-Demand Core' }
+];
+
 app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
   try {
     const snapshot = getMarketSnapshot();
@@ -1506,7 +1519,7 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     const allSymbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']]));
     
     const qualifiedStocks: any[] = [];
-    const strategyList = STRATEGIES.map(s => s.id);
+    const strategyList = STRATEGIES_BACKEND.map(s => s.id);
 
     // 1. Scan everything across all strategies
     for (const baseSymbol of allSymbols) {
@@ -1541,7 +1554,7 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
           
           qualifiedStocks.push({
             symbol: baseSymbol,
-            strategy: STRATEGIES.find(s => s.id === stratId)?.name,
+            strategy: STRATEGIES_BACKEND.find(s => s.id === stratId)?.name,
             marketCap: snap.quote.marketCap,
             sector,
             currentPrice,
