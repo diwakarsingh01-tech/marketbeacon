@@ -20,17 +20,18 @@ interface BrokerHubProps {
 }
 
 const BROKERS = [
-  { id: 'zerodha', name: 'Zerodha', color: 'bg-orange-500' },
-  { id: 'angelone', name: 'Angel One', color: 'bg-blue-600' },
-  { id: 'upstox', name: 'Upstox', color: 'bg-purple-600' },
-  { id: 'dhan', name: 'Dhan', color: 'bg-emerald-500' },
-  { id: 'paytm', name: 'Paytm Money', color: 'bg-sky-500' },
-  { id: 'hdfc', name: 'HDFC SKY', color: 'bg-slate-900' },
-  { id: '5paisa', name: '5paisa', color: 'bg-red-500' },
-  { id: 'motilal', name: 'Motilal Oswal', color: 'bg-amber-600' },
-  { id: 'iifl', name: 'IIFL Capital', color: 'bg-blue-900' },
-  { id: 'fisdom', name: 'Fisdom', color: 'bg-cyan-600' },
-  { id: 'trustline', name: 'Trustline', color: 'bg-indigo-600' }
+  { id: 'zerodha', name: 'Zerodha', color: 'bg-orange-50', logo: 'https://v1.zerodha.com/static/images/logo.svg' },
+  { id: 'angelone', name: 'Angel One', color: 'bg-blue-50', logo: 'https://www.angelone.in/static/images/logo.svg' },
+  { id: 'upstox', name: 'Upstox', color: 'bg-purple-50', logo: 'https://upstox.com/static/images/logo.svg' },
+  { id: 'dhan', name: 'Dhan', color: 'bg-emerald-50', logo: 'https://dhan.co/wp-content/uploads/2021/08/dhan-logo.svg' },
+  { id: 'paytm', name: 'Paytm Money', color: 'bg-sky-50', logo: 'https://www.paytmmoney.com/static/images/pm-logo.svg' },
+  { id: 'hdfc', name: 'HDFC SKY', color: 'bg-slate-50', logo: 'https://www.hdfcsky.com/static/images/logo.svg' },
+  { id: '5paisa', name: '5paisa', color: 'bg-red-50', logo: 'https://www.5paisa.com/static/images/logo.svg' },
+  { id: 'motilal', name: 'Motilal Oswal', color: 'bg-amber-50', logo: 'https://www.motilaloswal.com/static/images/logo.svg' },
+  { id: 'iifl', name: 'IIFL Capital', color: 'bg-blue-50', logo: 'https://www.iifl.com/static/images/logo.svg' },
+  { id: 'fisdom', name: 'Fisdom', color: 'bg-cyan-50', logo: 'https://www.fisdom.com/static/images/logo.svg' },
+  { id: 'trustline', name: 'Trustline', color: 'bg-indigo-50', logo: 'https://www.trustline.in/static/images/logo.svg' },
+  { id: 'other', name: 'Other / CSV', color: 'bg-slate-100', logo: '' }
 ];
 
 const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete }) => {
@@ -55,21 +56,15 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
         try {
           const rawData = results.data as any[];
           
-          // Universal Mapper: Attempt to find Symbol, Qty, and Price regardless of broker format
           const mappedHoldings = rawData.map(row => {
             const keys = Object.keys(row);
-            
-            // Normalize Symbol
             const symbolKey = keys.find(k => /symbol|instrument|ticker|tradingsymbol/i.test(k));
             let symbol = symbolKey ? row[symbolKey].toString().split(':')[1] || row[symbolKey].toString() : '';
-            // Clean symbol (remove .NS, .BO, etc)
             symbol = symbol.replace(/\.NS|\.BO/g, '').trim().toUpperCase();
 
-            // Normalize Quantity
             const qtyKey = keys.find(k => /qty|quantity|holdings|net qty/i.test(k));
             const quantity = qtyKey ? parseFloat(row[qtyKey].toString().replace(/,/g, '')) : 0;
 
-            // Normalize Avg Price
             const priceKey = keys.find(k => /avg|average|cost|buy price/i.test(k));
             const buyPrice = priceKey ? parseFloat(row[priceKey].toString().replace(/,/g, '')) : 0;
 
@@ -160,7 +155,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Import holdings to start audit</p>
                  </div>
 
-                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-2 custom-scrollbar">
+                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 overflow-y-auto pr-2 custom-scrollbar pb-6">
                     {BROKERS.map(broker => (
                        <button 
                          key={broker.id}
@@ -168,12 +163,30 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                            setSelectedBroker(broker.id);
                            setStep('upload');
                          }}
-                         className="flex flex-col items-center justify-center p-4 rounded-3xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50 transition-all group aspect-square space-y-3"
+                         className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-100 bg-white hover:border-blue-600 hover:shadow-2xl hover:shadow-blue-50 transition-all group aspect-square space-y-4 relative overflow-hidden"
                        >
-                          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl ${broker.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform`}>
-                             <Database className="h-5 w-5 md:h-6 md:w-6" />
+                          <div className="w-full h-12 flex items-center justify-center transition-transform group-hover:scale-110">
+                             {broker.logo ? (
+                               <img 
+                                 src={broker.logo} 
+                                 alt={broker.name} 
+                                 className="max-w-[80%] max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                                 onError={(e) => {
+                                   (e.target as any).style.display = 'none';
+                                   const fallback = document.createElement('div');
+                                   fallback.className = `w-12 h-12 rounded-2xl ${broker.color} flex items-center justify-center font-black text-slate-400 uppercase`;
+                                   fallback.innerText = broker.name[0];
+                                   (e.target as any).parentElement.appendChild(fallback);
+                                 }}
+                               />
+                             ) : (
+                               <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                 <Database className="h-6 w-6" />
+                               </div>
+                             )}
                           </div>
                           <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight text-center">{broker.name}</span>
+                          {broker.id === 'other' && <div className="absolute top-2 right-2 px-2 py-0.5 bg-blue-100 text-blue-600 text-[6px] font-black rounded-full uppercase">Universal</div>}
                        </button>
                     ))}
                  </div>
