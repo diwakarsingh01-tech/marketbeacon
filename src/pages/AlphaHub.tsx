@@ -13,16 +13,21 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const AlphaHubPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [totalCapital, setTotalCapital] = useState<number>(200000); // Minimum 2 Lakh
+  const [totalCapital, setTotalCapital] = useState<number>(200000);
 
   const fetchAlphaHub = async () => {
+    console.log("[DEBUG] AlphaHub Fetching from:", API_URL);
+    if (!API_URL || API_URL === '/' || !API_URL.startsWith('http')) {
+       setError("System Configuration Error: VITE_API_URL is missing or invalid in Vercel settings.");
+       setLoading(false);
+       return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -30,12 +35,18 @@ const AlphaHubPage: React.FC = () => {
       const res = await fetch(`${API_URL}/api/backtest/alpha-40`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) {
-        const result = await res.json();
-        setData(result);
-      } else {
-        const err = await res.json();
-        setError(err.error || 'Failed to sync Alpha Hub');
+
+      const text = await res.text();
+      try {
+        const result = JSON.parse(text);
+        if (res.ok) {
+          setData(result);
+        } else {
+          setError(result.error || 'Failed to sync Alpha Hub');
+        }
+      } catch (jsonErr) {
+        console.error("[DEBUG] Invalid JSON Response:", text.substring(0, 100));
+        setError("Production Error: Backend returned an invalid response (HTML instead of Data). Please check VITE_API_URL.");
       }
     } catch (e) {
       setError('Connection failed. Please ensure backend is reachable.');

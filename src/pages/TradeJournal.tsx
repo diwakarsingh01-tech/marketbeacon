@@ -69,13 +69,21 @@ const TradeJournalPage: React.FC = () => {
   const fetchTrades = useCallback(async () => {
     const token = localStorage.getItem('mb_token');
     if (!token) return;
+    setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/trades`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) {
-        const data = await res.json();
-        setTrades(data);
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        if (res.ok) {
+          setTrades(data);
+        } else {
+          console.error('Fetch Error:', data.error);
+        }
+      } catch (jsonErr) {
+        console.error("[DEBUG] Invalid Journal JSON Response:", text.substring(0, 100));
       }
     } catch (e) { console.error('Trades fetch failed:', e); }
     finally { setLoading(false); }

@@ -261,24 +261,28 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     setError(null);
     try {
       const response = await fetch(`${API_URL}/api/backtest/envelope?basket=${activeBasket}&strategy=${strategyId}`);
-      if (response.ok) {
-        const result = await response.json();
-        setData(result);
-        
-        // --- PRO FIX: Fetch prices for ALL stocks in the universe + portfolio ---
-        const portfolioSymbols = [
-          ...userWatchlist.map(w => w.symbol),
-          ...trades.map(t => t.symbol)
-        ];
-        const symbolsToFetch = Array.from(new Set([
-          ...(result.allStocks?.map((s: any) => s.symbol) || []),
-          ...portfolioSymbols
-        ]));
-        
-        fetchStockPrices(symbolsToFetch);
-      } else {
-        const errData = await response.json().catch(() => ({ error: 'Unknown API Error' }));
-        setError(`Data Sync Failed: ${errData.error || response.statusText}`);
+      const text = await response.text();
+      
+      try {
+        const result = JSON.parse(text);
+        if (response.ok) {
+          setData(result);
+          // ... rest of logic
+          const portfolioSymbols = [
+            ...userWatchlist.map(w => w.symbol),
+            ...trades.map(t => t.symbol)
+          ];
+          const symbolsToFetch = Array.from(new Set([
+            ...(result.allStocks?.map((s: any) => s.symbol) || []),
+            ...portfolioSymbols
+          ]));
+          fetchStockPrices(symbolsToFetch);
+        } else {
+          setError(`Data Sync Failed: ${result.error || response.statusText}`);
+        }
+      } catch (jsonErr) {
+        console.error("[DEBUG] Invalid Scanner JSON:", text.substring(0, 100));
+        setError("Production Sync Error: Terminal received HTML instead of Market Data. Please verify VITE_API_URL settings.");
       }
     } catch (e) {
       setError('Connection Error: Backend server unreachable or timed out.');

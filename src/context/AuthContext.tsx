@@ -41,12 +41,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await fetch(`${API_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
-      if (response.ok) {
-        const { user: verifiedUser } = await response.json();
-        setUser(verifiedUser);
-        localStorage.setItem('mb_user', JSON.stringify(verifiedUser));
-      } else {
+      const text = await response.text();
+      try {
+        const result = JSON.parse(text);
+        if (response.ok) {
+          const verifiedUser = result.user || result;
+          setUser(verifiedUser);
+          localStorage.setItem('mb_user', JSON.stringify(verifiedUser));
+        } else {
+          logout();
+        }
+      } catch (jsonErr) {
+        console.error("[DEBUG] Invalid Auth JSON Response:", text.substring(0, 100));
         logout();
       }
     } catch (e) {
