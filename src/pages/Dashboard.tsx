@@ -55,6 +55,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const handleStrategyChange = (id: string) => {
     if (checkStrategyAccess(id)) {
+      const newStrategy = STRATEGIES.find(s => s.id === id);
+      if (newStrategy && !newStrategy.baskets.includes(activeBasket as any)) {
+        setActiveBasket(newStrategy.baskets[0]);
+      }
       navigate(`?strategy=${id}`);
     }
   };
@@ -790,7 +794,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       {activeTab !== 'portfolio' && (
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 shrink-0 overflow-hidden">
           <div className="flex bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar">
-            {currentStrategy.baskets.map((basketKey) => (
+            {currentStrategy.baskets.length > 1 ? currentStrategy.baskets.map((basketKey) => (
               <button
                 key={basketKey}
                 onClick={() => setActiveBasket(basketKey)}
@@ -800,7 +804,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               >
                 {basketKey.replace('_', ' ')}
               </button>
-            ))}
+            )) : (
+              <div className="px-6 md:px-8 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md">
+                 {currentStrategy.baskets[0].replace('_', ' ')} Optimized
+              </div>
+            )}
           </div>
           
           <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 overflow-x-auto no-scrollbar">
