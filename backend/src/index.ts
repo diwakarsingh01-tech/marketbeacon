@@ -468,7 +468,17 @@ app.patch('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: a
     const { name, email, tier, subscription_start, subscription_expiry, is_active } = req.body;
     const db = getDB();
     
-    console.log(`[ADMIN] Updating User ${id}:`, { name, email, tier, subscription_start, subscription_expiry, is_active });
+    // Explicitly handle undefined as null for SQLite driver consistency
+    const p = {
+      name: name ?? null,
+      email: email ?? null,
+      tier: tier ?? null,
+      start: (subscription_start && subscription_start !== '') ? subscription_start : null,
+      expiry: (subscription_expiry && subscription_expiry !== '') ? subscription_expiry : null,
+      active: is_active ?? null
+    };
+
+    console.log(`[ADMIN] Explicit Update for User ${id}:`, p);
 
     await db.run(
       `UPDATE users SET 
@@ -479,7 +489,7 @@ app.patch('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: a
         subscription_expiry = CASE WHEN ? IS NOT NULL THEN ? ELSE subscription_expiry END,
         is_active = CASE WHEN ? IS NOT NULL THEN ? ELSE is_active END
       WHERE id = ?`,
-      [name, name, email, email, tier, tier, subscription_start, subscription_start, subscription_expiry, subscription_expiry, is_active, is_active, id]
+      [p.name, p.name, p.email, p.email, p.tier, p.tier, p.start, p.start, p.expiry, p.expiry, p.active, p.active, id]
     );
     
     res.json({ success: true });

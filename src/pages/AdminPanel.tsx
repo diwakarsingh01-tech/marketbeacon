@@ -93,10 +93,14 @@ const AdminPanel: React.FC = () => {
         body: JSON.stringify(data)
       });
       if (res.ok) {
+        alert("User Access Updated Successfully!");
         fetchData();
         setIsManageModalOpen(false);
+      } else {
+        const err = await res.json();
+        alert(`Update Failed: ${err.error || 'Server Error'}`);
       }
-    } catch (e) { alert("Update failed"); }
+    } catch (e: any) { alert(`Update failed: ${e.message}`); }
   };
 
   const handleDeleteUser = async (userId: number) => {
