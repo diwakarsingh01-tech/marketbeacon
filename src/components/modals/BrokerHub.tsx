@@ -58,18 +58,27 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
           
           const mappedHoldings = rawData.map(row => {
             const keys = Object.keys(row);
-            const symbolKey = keys.find(k => /symbol|instrument|ticker|tradingsymbol/i.test(k));
-            let symbol = symbolKey ? row[symbolKey].toString().split(':')[1] || row[symbolKey].toString() : '';
+            
+            // Normalize Symbol (Look for Name, Script Name, Symbol, Instrument)
+            const symbolKey = keys.find(k => /name|script name|symbol|instrument|ticker|tradingsymbol/i.test(k.trim()));
+            let symbol = symbolKey ? (row[symbolKey] || '').toString() : '';
+            
+            symbol = symbol.split(':')[1] || symbol; // Handle "NSE:SYMBOL"
             symbol = symbol.replace(/\.NS|\.BO/g, '').trim().toUpperCase();
+            
+            // If it's a full name with spaces, take the first word as symbol
+            if (symbol.includes(' ')) symbol = symbol.split(' ')[0];
 
-            const qtyKey = keys.find(k => /qty|quantity|holdings|net qty/i.test(k));
-            const quantity = qtyKey ? parseFloat(row[qtyKey].toString().replace(/,/g, '')) : 0;
+            // Normalize Quantity
+            const qtyKey = keys.find(k => /qty|quantity|holdings|net qty/i.test(k.trim()));
+            const quantity = qtyKey ? parseFloat((row[qtyKey] || '0').toString().replace(/,/g, '')) : 0;
 
-            const priceKey = keys.find(k => /avg|average|cost|buy price/i.test(k));
-            const buyPrice = priceKey ? parseFloat(row[priceKey].toString().replace(/,/g, '')) : 0;
+            // Normalize Avg Price
+            const priceKey = keys.find(k => /avg\. price|avg|average|cost|buy price|avg unit cost/i.test(k.trim()));
+            const buyPrice = priceKey ? parseFloat((row[priceKey] || '0').toString().replace(/,/g, '')) : 0;
 
             return { symbol, quantity, buyPrice };
-          }).filter(h => h.symbol && h.quantity > 0);
+          }).filter(h => h.symbol && h.quantity > 0 && !['EQUITY'].includes(h.symbol));
 
           if (mappedHoldings.length === 0) {
             throw new Error("Could not detect holdings data. Please ensure the CSV has Symbol and Quantity columns.");
