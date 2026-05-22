@@ -825,12 +825,29 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
             )}
           </div>
           
-          <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 overflow-x-auto no-scrollbar">
-             <button onClick={() => setActiveTab('open')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'open' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>Qualified</button>
-             <button onClick={() => setActiveTab('hold')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'hold' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>Observation</button>
-             <button onClick={() => setActiveTab('neutral')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'neutral' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}>Neutral</button>
-             <button onClick={() => setActiveTab('watchlist')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'watchlist' ? 'bg-white text-amber-500 shadow-sm' : 'text-slate-400'}`}>Watchlist</button>
-             <button onClick={() => setActiveTab('rejected')} className={`px-5 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'rejected' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400'}`}>Rejected</button>
+          <div className="flex bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 backdrop-blur-sm overflow-x-auto no-scrollbar shadow-inner">
+             {[
+               { id: 'open', label: 'Qualified', color: 'blue', activeClass: 'bg-emerald-600 text-white shadow-emerald-200', count: data?.open?.length || 0 },
+               { id: 'hold', label: 'Observation', color: 'indigo', activeClass: 'bg-blue-600 text-white shadow-blue-200', count: data?.hold?.length || 0 },
+               { id: 'neutral', label: 'Neutral', color: 'slate', activeClass: 'bg-slate-900 text-white shadow-slate-200', count: data?.neutral?.length || 0 },
+               { id: 'watchlist', label: 'Watchlist', color: 'amber', activeClass: 'bg-amber-500 text-white shadow-amber-200', count: userWatchlist?.length || 0 },
+               { id: 'rejected', label: 'Rejected', color: 'red', activeClass: 'bg-rose-600 text-white shadow-rose-200', count: data?.rejected?.length || 0 }
+             ].map((tab) => (
+               <button 
+                 key={tab.id}
+                 onClick={() => setActiveTab(tab.id as any)} 
+                 className={`px-5 md:px-7 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap flex items-center space-x-2 relative group ${
+                   activeTab === tab.id ? tab.activeClass + ' shadow-lg scale-[1.02]' : 'text-slate-500 hover:text-slate-900'
+                 }`}
+               >
+                 <span>{tab.label}</span>
+                 <span className={`text-[8px] px-1.5 py-0.5 rounded-md font-bold transition-colors ${
+                   activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-500 group-hover:bg-slate-300'
+                 }`}>
+                   {tab.count}
+                 </span>
+               </button>
+             ))}
           </div>
 
         </div>
