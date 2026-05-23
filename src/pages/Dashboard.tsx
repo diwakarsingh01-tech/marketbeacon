@@ -857,9 +857,18 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       {/* 4. Main Data Terminal */}
       <section className="flex-1 min-h-0 overflow-hidden relative">
         {error ? (
-          <div className="bg-white rounded-[2.5rem] h-full border border-slate-100 flex flex-col items-center justify-center space-y-4 p-10 text-center">
-            <p className="text-sm font-bold text-red-500 uppercase tracking-widest">{error}</p>
-            <button onClick={() => fetchData(true)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">Retry Terminal</button>
+          <div className="bg-white rounded-[2.5rem] h-full border border-slate-100 flex flex-col items-center justify-center space-y-6 p-10 text-center">
+            <div className="bg-red-50 p-8 rounded-[3rem] border border-red-100 max-w-xl shadow-xl space-y-4 text-left">
+               <h2 className="text-red-600 font-black uppercase tracking-widest text-sm">Terminal Sync Error</h2>
+               <p className="text-red-500 text-xs font-bold leading-relaxed">{error}</p>
+               <div className="bg-white/50 p-4 rounded-2xl border border-red-100 font-mono text-[9px] text-slate-600 break-all">
+                  <p className="mb-1 font-black uppercase text-slate-400">Diagnostic Info:</p>
+                  <p>Target API: {API_URL}</p>
+                  <p>Client Host: {window.location.host}</p>
+                  <p>Origin: {window.location.origin}</p>
+               </div>
+            </div>
+            <button onClick={() => fetchData(true)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg hover:bg-black">Retry Connection</button>
           </div>
         ) : data ? (
           <div className={`bg-white rounded-[2.5rem] h-full border border-slate-100 shadow-sm flex flex-col overflow-hidden relative transition-all duration-500 ${isRefreshing ? 'opacity-40 blur-[2px] scale-[0.99]' : 'opacity-100 blur-0 scale-100 animate-in fade-in zoom-in-95'}`}>

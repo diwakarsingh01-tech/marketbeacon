@@ -93,8 +93,8 @@ const AlphaHubPage: React.FC = () => {
                <div className="bg-white/50 p-4 rounded-2xl border border-red-100 font-mono text-[9px] text-slate-600 break-all">
                   <p className="mb-1 font-black uppercase text-slate-400">Diagnostic Info:</p>
                   <p>Target API: {API_URL}</p>
-                  <p>Environment: {import.meta.env.MODE}</p>
                   <p>Client Host: {window.location.host}</p>
+                  <p>Origin: {window.location.origin}</p>
                </div>
             </div>
          </div>
