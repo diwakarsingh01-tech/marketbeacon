@@ -380,18 +380,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         <td className="px-8 py-5 text-right">
                           <Link 
                             to={`/stock/${trade.symbol}`} 
-                            className={`group/audit relative flex items-center justify-end space-x-3 p-2 rounded-xl transition-all ${trade.score >= 60 ? 'hover:bg-emerald-50' : 'hover:bg-rose-50'}`}
+                            className={`text-[11px] font-black transition-colors ${trade.score >= 60 ? 'text-emerald-600 hover:text-emerald-500' : 'text-rose-600 hover:text-rose-500'}`}
                           >
-                             <div className="flex flex-col items-end">
-                                <span className={`text-[10px] font-black ${trade.score >= 60 ? 'text-emerald-600' : 'text-rose-600'}`}>{(trade.score || 0).toFixed(0)}/100</span>
-                                <span className="text-[7px] text-slate-400 uppercase font-black tracking-tighter">Audit Score</span>
-                             </div>
-                             <ShieldCheck className={`h-4 w-4 ${trade.score >= 60 ? 'text-emerald-500' : 'text-rose-400'}`} />
-                             
-                             {/* Audit Remark Tooltip */}
-                             <div className="absolute right-full mr-4 z-[110] hidden group-hover/audit:block bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest p-3 rounded-lg shadow-2xl min-w-[200px] text-center border border-slate-800 animate-in fade-in slide-in-from-right-1">
-                                {trade.reason || 'Institutional Audit Active'}
-                             </div>
+                             {(trade.score || 0).toFixed(0)}/100
                           </Link>
                         </td>
                       )}

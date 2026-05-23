@@ -48,7 +48,7 @@ export function calculateSMA(prices: number[], length: number): number[] {
 /**
  * STRATEGY 1: Institutional Floor (Long Envelope)
  * Rule: 14% below 200 EMA
- * Target: 30% above entry OR Upper Band (+14%)
+ * Target: Primary regression midline (200 EMA)
  */
 export function calculateEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
   if (!quotes || quotes.length < length) return null;
@@ -92,7 +92,8 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
     distanceFromLower,
     triggerDate,
     currentPrice,
-    target: Math.max(upperBand, lowerBand * 1.30)
+    entryPrice: lowerBand, // Explicitly set Entry A as the lower band
+    target: currentEMA // Target is mean reversion to the EMA line
   };
 }
 

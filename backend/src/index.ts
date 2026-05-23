@@ -235,14 +235,19 @@ async function validateBatch9(symbol: string, snap: any) {
   const screener = snap?.screener || {};
   const shareholding = screener.shareholding || quote.shareholding || { promoter: 0, fii: 0, dii: 0, pledged: 0 };
   
-  // Normalize Metrics (Handle 0/null safety)
-  const pe = parseFloat(String(screener.peRatio || quote.pe || 0));
-  const debtToEquity = parseFloat(String(screener.netDebtToEquity || (quote.debtToEquity / 100) || 0));
-  const roe = parseFloat(String(screener.returnOnEquity || quote.roe || 0));
-  const pledged = parseFloat(String(shareholding.pledged || 0));
-  const fii = parseFloat(String(shareholding.fii || 0));
-  const dii = parseFloat(String(shareholding.dii || 0));
-  const promoter = parseFloat(String(shareholding.promoter || 0));
+  // Normalize Metrics (Handle 0/null/NaN safety rigorously)
+  const safeParse = (val: any, fallback: number = 0) => {
+    const parsed = parseFloat(String(val));
+    return isNaN(parsed) ? fallback : parsed;
+  };
+
+  const pe = safeParse(screener.peRatio) || safeParse(quote.pe) || 25; 
+  const debtToEquity = safeParse(screener.netDebtToEquity) || (safeParse(quote.debtToEquity) / 100) || 0;
+  const roe = safeParse(screener.returnOnEquity) || safeParse(quote.roe) || 15;
+  const pledged = safeParse(shareholding.pledged);
+  const fii = safeParse(shareholding.fii);
+  const dii = safeParse(shareholding.dii);
+  const promoter = safeParse(shareholding.promoter);
   const totalInst = fii + dii;
 
   let score = 100;

@@ -275,7 +275,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
           'CUP_HANDLE_ABCD': calculateCupHandle(quotes),
           'RHS_ABCD': calculateRHS(quotes),
           'SR_STRATEGY': calculateSRStrategy(quotes),
-          'SIXTY_SEVEN_FUNDA': calculateSixtySevenFunda(quotes, screenerData, {}, quote.fiftyTwoWeekHigh),
+          'SIXTY_SEVEN_FUNDA': calculateSixtySevenFunda(quotes, screenerData),
           'TWENTY_RALLY_RETEST': calculateTwentyRallyRetest(quotes)
         };
         
