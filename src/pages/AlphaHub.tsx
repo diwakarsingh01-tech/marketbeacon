@@ -57,7 +57,7 @@ const AlphaHubPage: React.FC = () => {
   const calculateQuantity = (stock: any) => {
     if (!totalCapital || totalCapital < 200000) return 0;
     
-    const capCr = stock.marketCap / 10000000;
+    const capCr = (stock.marketCap || 0) / 10000000;
     let perStockBudget = 0;
     
     // Distribute total capital based on 50-30-20
@@ -68,13 +68,13 @@ const AlphaHubPage: React.FC = () => {
     // Minimum Allocation Rule: ₹5,000
     if (perStockBudget < 5000) return 0;
     
-    return Math.floor(perStockBudget / stock.entryPrice);
+    return Math.floor(perStockBudget / (stock.entryPrice || stock.currentPrice || 1));
   };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen space-y-6 text-center px-4">
-        <div className="w-16 h-16 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin" />
+        <div className="w-16 h-16 border-4 border-slate-100 border-t-slate-900 rounded-full animate-spin" />
         <div className="space-y-2">
            <h2 className="text-xl font-black uppercase italic tracking-tighter text-slate-900">Alpha-40 Core Initializing</h2>
            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em]">Auditing 500+ Stocks across 10-Strategy Matrix</p>
@@ -108,7 +108,7 @@ const AlphaHubPage: React.FC = () => {
                   window.location.reload();
                 }
               }}
-              className="px-6 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-blue-600 transition-all shadow-sm"
+              className="px-6 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900 transition-all shadow-sm"
             >
               Fix Connectivity
             </button>
@@ -122,8 +122,8 @@ const AlphaHubPage: React.FC = () => {
       {/* Header with Capital Simulator */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 border-b border-slate-100 pb-12">
         <div className="space-y-4">
-           <div className="flex items-center space-x-3 text-blue-600">
-              <div className="w-10 h-10 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
+           <div className="flex items-center space-x-3 text-slate-900">
+              <div className="w-10 h-10 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-slate-200">
                  <LayoutGrid className="h-5 w-5" />
               </div>
               <span className="text-[11px] font-black uppercase tracking-[0.4em]">Strategic Hub</span>
@@ -136,7 +136,7 @@ const AlphaHubPage: React.FC = () => {
         
         {/* Capital Simulator Input */}
         <div className="bg-slate-900 p-8 rounded-[3rem] border border-slate-800 shadow-2xl space-y-5 min-w-[340px] relative overflow-hidden group">
-           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-16 -mt-16 group-hover:bg-blue-600/20 transition-all" />
+           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-3xl -mr-16 -mt-16 group-hover:bg-white/10 transition-all" />
            <div className="flex justify-between items-center text-slate-500 relative z-10">
               <span className="text-[9px] font-black uppercase tracking-[0.2em]">Investment Simulator</span>
               <Target className="h-4 w-4" />
@@ -150,13 +150,13 @@ const AlphaHubPage: React.FC = () => {
                    step={10000}
                    onChange={(e) => setTotalCapital(Number(e.target.value))}
                    onBlur={() => setTotalCapital(Math.max(200000, totalCapital))}
-                   className="w-full bg-slate-800/50 border-2 border-slate-700/50 rounded-2xl pl-10 pr-6 py-5 text-2xl font-black text-white focus:border-blue-500 transition-all outline-none"
+                   className="w-full bg-slate-800/50 border-2 border-slate-700/50 rounded-2xl pl-10 pr-6 py-5 text-2xl font-black text-white focus:border-white transition-all outline-none"
                    placeholder="Capital (Min 2L)"
                  />
               </div>
               <div className="flex justify-between px-2">
                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Min Entry: ₹2,00,000</p>
-                 <p className="text-[8px] font-bold text-blue-400 uppercase tracking-widest italic">50-30-20 Weightage Active</p>
+                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">50-30-20 Weightage Active</p>
               </div>
            </div>
         </div>
@@ -172,7 +172,7 @@ const AlphaHubPage: React.FC = () => {
                   <Database className="h-4 w-4 text-slate-600" />
                </div>
                <div className="space-y-1">
-                  <h3 className="text-4xl font-black tracking-tighter">{data.summary.total}</h3>
+                  <h3 className="text-4xl font-black tracking-tighter">{data?.summary?.total || 0}</h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Qualified Stocks</p>
                </div>
             </div>
@@ -186,14 +186,14 @@ const AlphaHubPage: React.FC = () => {
             <div className="space-y-3">
                <div className="flex justify-between items-end">
                   <span className="text-[10px] font-black text-slate-900 uppercase">Large-Mid-Small</span>
-                  <span className="text-xs font-black text-slate-900">{data.summary.large}-{data.summary.mid}-{data.summary.small}</span>
+                  <span className="text-xs font-black text-slate-900">{data?.summary?.large || 0}-{data?.summary?.mid || 0}-{data?.summary?.small || 0}</span>
                </div>
                <div className="h-2 w-full flex rounded-full overflow-hidden bg-slate-50">
-                  <div className="h-full bg-slate-900" style={{ width: `${(data.summary.large/data.summary.total)*100}%` }} />
-                  <div className="h-full bg-blue-600" style={{ width: `${(data.summary.mid/data.summary.total)*100}%` }} />
-                  <div className="h-full bg-indigo-400" style={{ width: `${(data.summary.small/data.summary.total)*100}%` }} />
+                  <div className="h-full bg-slate-900 transition-all duration-1000" style={{ width: `${((data?.summary?.large || 0) / (data?.summary?.total || 1)) * 100}%` }} />
+                  <div className="h-full bg-slate-600 transition-all duration-1000" style={{ width: `${((data?.summary?.mid || 0) / (data?.summary?.total || 1)) * 100}%` }} />
+                  <div className="h-full bg-slate-400 transition-all duration-1000" style={{ width: `${((data?.summary?.small || 0) / (data?.summary?.total || 1)) * 100}%` }} />
                </div>
-               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center">Standard Institutional Rule</p>
+               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center">Institutional 50-30-20 Model</p>
             </div>
          </div>
 
@@ -222,13 +222,13 @@ const AlphaHubPage: React.FC = () => {
 
       {/* Stock Grid: Grouped by Basket Tier */}
       {['BLUECHIP', 'HIGH_BETA', 'PROFIT'].map(basket => {
-        const basketStocks = data.stocks.filter((s: any) => s.basketSource === basket);
+        const basketStocks = (data?.stocks || []).filter((s: any) => s.basketSource === basket);
         if (basketStocks.length === 0) return null;
 
         return (
           <div key={basket} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
              <div className="flex items-center space-x-4">
-                <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">{basket} Tier</h2>
+                <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">{basket.replace('_', ' ')} Tier</h2>
                 <div className="h-px flex-1 bg-slate-100" />
                 <span className="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase">{basketStocks.length} Assets</span>
              </div>
@@ -236,12 +236,12 @@ const AlphaHubPage: React.FC = () => {
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {basketStocks.map((stock: any, i: number) => {
                   const qty = calculateQuantity(stock);
-                  const allocation = qty * stock.currentPrice;
+                  const allocation = qty * (stock.currentPrice || 0);
 
                   return (
-                    <div key={stock.symbol} className="bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm hover:border-blue-200 transition-all group relative overflow-hidden flex flex-col justify-between">
+                    <div key={stock.symbol} className="bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm hover:border-slate-300 transition-all group relative overflow-hidden flex flex-col justify-between">
                        <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-all z-10">
-                          <Link to={`/stock/${stock.symbol}`} className="text-blue-600"><ArrowUpRight className="h-5 w-5" /></Link>
+                          <Link to={`/stock/${stock.symbol}`} className="text-slate-900"><ArrowUpRight className="h-5 w-5" /></Link>
                        </div>
 
                        <div className="space-y-6">
@@ -249,59 +249,42 @@ const AlphaHubPage: React.FC = () => {
                              <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-xs shadow-lg shadow-slate-200">
                                 {i + 1}
                              </div>
-                             <div>
-                                <h4 className="text-lg font-black text-slate-900 leading-none tracking-tight">{stock.symbol}</h4>
-                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">{stock.sector}</p>
+                             <div className="flex flex-col min-w-0">
+                                <span className="text-sm font-black text-slate-900 uppercase tracking-tight truncate">{stock.symbol}</span>
+                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest truncate">{stock.sector || 'Strategic Asset'}</span>
                              </div>
                           </div>
 
-                          {/* FUNDAMENTAL METRICS */}
-                          <div className="grid grid-cols-3 gap-2 py-3 border-y border-slate-50">
-                             <div className="text-center">
-                                <p className="text-[7px] font-black text-slate-400 uppercase mb-1">PE</p>
-                                <p className="text-[10px] font-bold text-slate-900">{stock.metrics?.pe?.toFixed(1) || 'N/A'}</p>
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-1">
+                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Entry Level</span>
+                                <p className="text-sm font-black text-slate-800">₹{stock.entryPrice?.toLocaleString() || '-'}</p>
                              </div>
-                             <div className="text-center">
-                                <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Debt</p>
-                                <p className="text-[10px] font-bold text-slate-900">{stock.metrics?.debtToEquity?.toFixed(2) || '0.0'}</p>
-                             </div>
-                             <div className="text-center">
-                                <p className="text-[7px] font-black text-slate-400 uppercase mb-1">ROE</p>
-                                <p className="text-[10px] font-bold text-slate-900">{stock.metrics?.roe?.toFixed(1) || '15'}%</p>
+                             <div className="space-y-1">
+                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Quantity</span>
+                                <p className="text-sm font-black text-slate-900">{qty}</p>
                              </div>
                           </div>
 
-                          <div className="bg-slate-50/80 p-5 rounded-3xl border border-slate-100 space-y-4">
-                             <div className="flex justify-between items-center">
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Action Qty</span>
-                                <span className={`text-[14px] font-black ${qty === 0 ? 'text-red-500' : 'text-blue-600'}`}>{qty.toLocaleString()} <span className="text-[8px]">Units</span></span>
+                          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                             <div className="flex justify-between items-center mb-1">
+                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Deployment</span>
+                                <span className="text-[10px] font-black text-slate-900">₹{allocation.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                              </div>
-
-                             <div className="flex flex-col space-y-2 border-t border-slate-100 pt-3">
-                                <div className="flex justify-between items-center">
-                                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strategy</span>
-                                   <span className="text-[8px] font-black px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md uppercase">{stock.strategy}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Batch 9 Score</span>
-                                   <span className="text-[10px] font-black text-blue-600">{stock.score}/100</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Allocation</span>
-                                   <span className="text-[11px] font-black text-slate-900">₹{allocation.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                </div>
+                             <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                                <div className="h-full bg-slate-900 rounded-full" style={{ width: `${Math.min(100, (allocation/totalCapital)*400)}%` }} />
                              </div>
                           </div>
                        </div>
 
-                       <div className="flex justify-between items-end pt-6 border-t border-slate-50 mt-6">
-                          <div>
-                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Value Zone</p>
-                             <p className="text-sm font-black text-slate-900 italic">₹{stock.entryPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                       <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
+                          <div className="flex flex-col">
+                             <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Expected ROI</span>
+                             <span className="text-[11px] font-black text-emerald-600">+{stock.roi?.toFixed(1)}%</span>
                           </div>
-                          <div className="text-right">
-                             <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Exp. Yield</p>
-                             <p className="text-sm font-black text-emerald-700">+{stock.roi.toFixed(1)}%</p>
+                          <div className="flex flex-col items-end">
+                             <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Matrix Rank</span>
+                             <span className="text-[11px] font-black text-slate-900 italic">R{stock.rank || '-'}</span>
                           </div>
                        </div>
                     </div>
@@ -311,22 +294,17 @@ const AlphaHubPage: React.FC = () => {
           </div>
         );
       })}
-      {/* Analytics Matrix Summary */}
-      <div className="bg-blue-600 rounded-[3rem] p-10 md:p-16 text-white relative overflow-hidden shadow-2xl shadow-blue-500/20">
-         <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 blur-[120px] -mr-32 -mt-32" />
-         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
-            <div className="space-y-6 text-center md:text-left">
-               <div className="flex items-center justify-center md:justify-start space-x-3 text-blue-200">
-                  <ShieldCheck className="h-6 w-6" />
-                  <span className="text-[11px] font-black uppercase tracking-[0.4em]">Institutional Governance</span>
-               </div>
-               <h3 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic leading-tight">Total Portfolio Commitment</h3>
-               <p className="text-lg text-blue-100 font-medium max-w-xl leading-relaxed">
-                  Calculated using the Multi-Strategy Hub across 40 nodes. Auto-rebalancing ensures the 50-30-20 rule is maintained at ₹{totalCapital.toLocaleString()} capital.
-               </p>
+
+      {/* Institutional Capital Summary Footer */}
+      <div className="bg-slate-900 rounded-[3rem] p-10 md:p-12 text-white relative overflow-hidden shadow-2xl border border-slate-800 mt-12">
+         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 blur-3xl -mr-32 -mt-32" />
+         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="space-y-2 text-center md:text-left">
+               <h3 className="text-xl font-black uppercase tracking-widest italic text-white/40 leading-none">Aggregate Exposure</h3>
+               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em]">Cumulative Deployment Objective</p>
             </div>
-            <div className="shrink-0 flex flex-col items-center md:items-end space-y-2">
-               <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest">Total Capital Active</p>
+            <div className="text-center md:text-right">
+               <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 italic">Total Model Objective</p>
                <h4 className="text-5xl md:text-7xl font-black tracking-tighter italic">₹{(totalCapital/100000).toFixed(1)}L</h4>
             </div>
          </div>
