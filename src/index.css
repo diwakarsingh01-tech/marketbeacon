@@ -2,8 +2,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 @theme {
-  --color-glass-bg: rgba(13, 18, 30, 0.85);
-  --color-glass-border: rgba(255, 255, 255, 0.05);
+  --color-glass-bg: rgba(255, 255, 255, 0.85);
+  --color-glass-border: rgba(226, 232, 240, 0.5);
 }
 
 @layer base {
@@ -12,138 +12,46 @@
   }
 
   body {
-    background-color: #030712 !important;
-    color: #f1f5f9 !important;
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(29, 78, 216, 0.12) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.08) 0px, transparent 50%) !important;
-    background-attachment: fixed !important;
+    background-color: #f8fafc;
+    color: #0f172a;
+    background-image: none;
   }
 
-  /* Universal Premium Dark Theme Overrides */
+  /* Universal Institutional Theme (Slate-based) */
 
-  /* Panels, Cards, Navs */
   .bg-white {
-    background-color: #0d121f !important;
-    color: #f1f5f9 !important;
-  }
-
-  .bg-\[\#f8fafc\] {
-    background-color: #030712 !important;
+    background-color: #ffffff;
   }
 
   .bg-slate-50 {
-    background-color: #131929 !important;
-    color: #e2e8f0 !important;
+    background-color: #f8fafc;
   }
 
-  .bg-slate-50\/50 {
-    background-color: rgba(19, 25, 41, 0.5) !important;
-  }
-
-  .bg-white\/50 {
-    background-color: rgba(13, 18, 31, 0.5) !important;
-    color: #f1f5f9 !important;
-  }
-
-  .bg-white\/70 {
-    background-color: rgba(13, 18, 31, 0.75) !important;
-    color: #f1f5f9 !important;
-  }
-
-  .bg-white\/80 {
-    background-color: rgba(13, 18, 31, 0.85) !important;
-    backdrop-filter: blur(16px) !important;
-  }
-
-  .bg-slate-100 {
-    background-color: #1e293b !important;
-    color: #f1f5f9 !important;
-  }
-
-  /* Borders & Dividers */
-  .border-slate-100, .border-gray-200 {
-    border-color: #1e293b !important;
-  }
-
-  .border-slate-200 {
-    border-color: #334155 !important;
-  }
-
-  .divide-slate-50 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #1e293b !important;
-  }
-
-  /* Text Contrast Enhancements */
-  .text-slate-900, .text-gray-900 {
-    color: #ffffff !important;
-  }
-
-  .text-slate-600, .text-gray-600 {
-    color: #cbd5e1 !important;
-  }
-
-  .text-slate-500, .text-gray-500 {
-    color: #94a3b8 !important;
-  }
-
-  .text-slate-400, .text-gray-400 {
-    color: #8892b0 !important;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    color: #ffffff !important;
+  .bg-slate-900 {
+    background-color: #0f172a;
   }
 
   /* Form Elements */
   input, select, textarea {
-    background-color: #131929 !important;
-    color: #ffffff !important;
-    border: 1px solid #334155 !important;
-    border-radius: 0.75rem !important;
+    background-color: #f1f5f9;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
   }
 
   input:focus, select:focus, textarea:focus {
-    border-color: #3b82f6 !important;
-    background-color: #0d121f !important;
-    outline: none !important;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+    border-color: #0f172a;
+    background-color: #ffffff;
+    outline: none;
   }
 
   /* Interactive Elements */
-  .hover\:bg-slate-50\/50:hover {
-    background-color: rgba(30, 41, 59, 0.4) !important;
-  }
-
-  .bg-amber-50\/20 {
-    background-color: rgba(245, 158, 11, 0.12) !important;
-    border-left: 3px solid #f59e0b !important;
-  }
-
-  .bg-blue-50 {
-    background-color: rgba(37, 99, 235, 0.12) !important;
-    color: #60a5fa !important;
-    border-color: rgba(37, 99, 235, 0.2) !important;
-  }
-
   .text-blue-600 {
-    color: #60a5fa !important;
-  }
-  
-  .text-blue-700 {
-    color: #93c5fd !important;
+    color: #2563eb;
   }
 
-  .text-green-600, .text-emerald-600 {
-    color: #4ade80 !important;
-  }
-
-  .text-red-600 {
-    color: #f87171 !important;
-  }
-
-  .bg-emerald-500\/10 {
-    background-color: rgba(16, 185, 129, 0.08) !important;
+  .text-slate-900 {
+    color: #0f172a;
   }
 
   /* Scrollbars */
@@ -152,42 +60,27 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #030712;
+    background: #f8fafc;
   }
   ::-webkit-scrollbar-thumb {
-    background: #1e293b;
+    background: #e2e8f0;
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+    background: #cbd5e1;
   }
 }
 
 @layer components {
   .glass-card {
-    background-color: rgba(13, 18, 31, 0.8) !important;
-    backdrop-filter: blur(20px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
-    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3) !important;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(226, 232, 240, 0.5);
   }
   
   .glass-nav {
-    background-color: rgba(13, 18, 31, 0.85) !important;
-    backdrop-filter: blur(16px) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-  }
-
-  .glass-input {
-    background-color: rgba(19, 25, 41, 0.6) !important;
-    backdrop-filter: blur(8px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    transition: all 0.3s ease;
-  }
-  .glass-input:focus {
-    background-color: rgba(19, 25, 41, 0.95) !important;
-    border-color: #3b82f6 !important;
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid #e2e8f0;
   }
 }
