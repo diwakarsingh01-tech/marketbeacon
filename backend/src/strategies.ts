@@ -114,66 +114,80 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
  * Buy 2: Lower Blue (EMA 200 - 14%)
  */
 export function processShortEnvelope(quotes: Quote[], marketCap: number) {
-  if (!quotes || quotes.length < 200) return null;
+  if (!quotes || quotes.length < 250) return null;
 
   const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
   const ema200 = calculateEMA(prices, 200);
   const latestIdx = quotes.length - 1;
-  const currentEMA = ema200[latestIdx];
-  const currentPrice = prices[latestIdx];
-  const latestQuote = quotes[latestIdx];
-  
-  const lowerBand = currentEMA * 0.86;
-  const upperBand = currentEMA * 1.14;
 
-  // Institutional Logic: Find the FIRST day of the current continuous trigger
-  let b1_trigger_idx = -1;
-  let b2_trigger_idx = -1;
+  let b1_open = false;
+  let b1_entry = 0;
+  let b1_date = '';
+  let b1_target = 0;
 
-  for (let i = latestIdx; i >= 200; i--) {
+  let b2_open = false;
+  let b2_entry = 0;
+  let b2_date = '';
+  let b2_target = 0;
+
+  // State Machine Simulation from the beginning (index 200)
+  for (let i = 200; i < quotes.length; i++) {
     const q = quotes[i];
     const cEMA = ema200[i];
     const cLower = cEMA * 0.86;
+    const cUpper = cEMA * 1.14;
+    const cPrice = q.adjclose || q.adjClose || q.close;
+    const dateStr = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
+
+    // B1 Entry Logic: Price crosses down to Orange line (EMA 200)
+    // We check if previous price was above EMA to catch the "falls from above" rule
+    const prevPrice = prices[i-1];
+    if (prevPrice > ema200[i-1] && q.low <= cEMA && !b1_open) {
+      b1_open = true;
+      b1_entry = cEMA;
+      b1_date = dateStr;
+      b1_target = cEMA * 1.14; 
+    }
+
+    // B2 Entry Logic: Price hits Lower Blue line
+    if (q.low <= cLower && !b2_open) {
+      b2_open = true;
+      b2_entry = cLower;
+      b2_date = dateStr;
+      b2_target = cEMA; // B2 target is regression midline
+    }
+
+    // Exit Logic
+    if (b2_open && q.high >= b2_target) {
+      b2_open = false;
+    }
     
-    if (q.low <= cEMA) {
-      b1_trigger_idx = i;
-      if (q.low <= cLower) b2_trigger_idx = i;
-    } else break; // Sequence broken
+    // For B1, target is upper band. We use the target set at entry as per Video Spec.
+    if (b1_open && q.high >= b1_target) {
+      b1_open = false;
+    }
   }
 
-  const isBuyZone = b1_trigger_idx !== -1;
+  // Determine current active state
+  const isBuyZone = b1_open || b2_open;
+  const currentPrice = prices[latestIdx];
   
-  // Rule: B1 bought at orange (EMA), sold at upper blue.
-  // Rule: B2 bought at lower blue, sold at orange (EMA).
-  
-  // ALWAYS calculate these for baseline rendering
-  const entryPriceB1 = ema200[latestIdx];
-  const entryPriceB2 = ema200[latestIdx] * 0.86;
-  const targetB1 = ema200[latestIdx] * 1.14;
-  const targetB2 = ema200[latestIdx];
-
+  // If no trade is open, return baseline (Watchlist)
   if (!isBuyZone) {
     return { 
       isBuyZone: false, 
       tranche: 'WATCHLIST', 
       currentPrice, 
-      entryPrice: entryPriceB1, // Baseline is Orange line
-      target: targetB1 
+      entryPrice: ema200[latestIdx], 
+      target: ema200[latestIdx] * 1.14 
     };
   }
 
-  // Determine Tranche based on current continuous sequences
-  const tranche = b2_trigger_idx !== -1 ? 'B2' : 'B1';
-  
-  let entryPrice = ema200[b1_trigger_idx];
-  let target = ema200[b1_trigger_idx] * 1.14;
-  let triggerDate = (typeof quotes[b1_trigger_idx].date === 'string' ? quotes[b1_trigger_idx].date : (quotes[b1_trigger_idx].date as Date).toISOString()).split('T')[0];
-
-  if (tranche === 'B2') {
-    entryPrice = ema200[b2_trigger_idx] * 0.86;
-    target = ema200[b2_trigger_idx];
-    triggerDate = (typeof quotes[b2_trigger_idx].date === 'string' ? quotes[b2_trigger_idx].date : (quotes[b2_trigger_idx].date as Date).toISOString()).split('T')[0];
-  }
+  // Prioritize B2 if both are open (as it's the deeper entry)
+  const tranche = b2_open ? 'B2' : 'B1';
+  const entryPrice = b2_open ? b2_entry : b1_entry;
+  const target = b2_open ? b2_target : b1_target;
+  const triggerDate = b2_open ? b2_date : b1_date;
 
   return {
     isBuyZone: true,
