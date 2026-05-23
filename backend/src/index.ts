@@ -344,6 +344,9 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
         bluechip: final.filter(s => s.basketSource === 'BLUECHIP').length,
         highBeta: final.filter(s => s.basketSource === 'HIGH_BETA').length,
         profit: final.filter(s => s.basketSource === 'PROFIT').length,
+        large: final.filter(s => (s.marketCap || 0) / 10000000 >= 65000).length,
+        mid: final.filter(s => (s.marketCap || 0) / 10000000 < 65000 && (s.marketCap || 0) / 10000000 >= 20000).length,
+        small: final.filter(s => (s.marketCap || 0) / 10000000 < 20000).length,
         avgRoi: final.reduce((a,b) => a + b.roi, 0) / (final.length || 1)
       } 
     });
