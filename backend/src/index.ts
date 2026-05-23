@@ -407,18 +407,20 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     let snapshot = getMarketSnapshot();
     let snap = snapshot[symbol];
 
-    // Pro-Level: Smart Refresh Logic
-    // Refresh if: 1. Data is missing, 2. Older than 6h, 3. Low quality (Zeros in Smart Money or fallback PE)
+    // Pro-Level: Smart Refresh Logic (Aggressive)
     const sixHoursAgo = Date.now() - (6 * 60 * 60 * 1000);
     const isStale = !snap || new Date(snap.lastUpdated).getTime() < sixHoursAgo;
     
     const shCheck = snap?.screener?.shareholding || {};
+    const peMed = snap?.screener?.peMedians || {};
+    
+    // Trigger refresh if data is missing or suspicious (Zeros in critical fields)
     const isLowQuality = !snap || 
                          (shCheck.promoter === 0 && shCheck.fii === 0 && shCheck.dii === 0) || 
-                         (snap.screener?.peMedians?.pe3Y === 25.5);
+                         (!peMed.pe3Y || peMed.pe3Y === 25.5 || peMed.pe3Y === 0);
 
     if (isStale || isLowQuality) {
-      console.log(`🔄 [SMART REFRESH] Quality/Staleness trigger for ${symbol}...`);
+      console.log(`🔄 [SMART REFRESH] Quality trigger for ${symbol}...`);
       await updateMarketSnapshot([symbol]);
       snapshot = getMarketSnapshot();
       snap = snapshot[symbol];
@@ -429,15 +431,23 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     const audit = await validateBatch9(symbol, snap);
     const scr = snap.screener || {};
     const quote = snap.quote || {};
+    
+    // Sector-Aware Industry PE Fallbacks (Institutional Standards)
+    const sector = MANUAL_SECTOR_MAP[symbol] || scr.industry || 'General';
+    const sectorPeMap: Record<string, number> = {
+      'Banking': 20.0, 'Finance': 22.0, 'IT Services': 28.0, 'FMCG': 45.0, 'Auto': 25.0, 'Paints': 55.0
+    };
+    const baseSectorPe = sectorPeMap[sector] || 25.0;
+
     const sh = scr.shareholding || quote.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0, smartMoneyTotal: 0 };
     const smartMoneyTotal = sh.smartMoneyTotal || (sh.promoter || 0) + (sh.fii || 0) + (sh.dii || 0);
 
-    // Final Zero-Safe Fallback Matrix
-    const peMediansRaw = scr.peMedians || { pe3Y: 25.5, pe5Y: 25.5, pe10Y: 25.5 };
+    // Final Zero-Safe Fallback Matrix (Never send 0.0)
+    const peMediansRaw = scr.peMedians || { pe3Y: 0, pe5Y: 0, pe10Y: 0 };
     const peMedians = {
-      pe3Y: peMediansRaw.pe3Y || (scr.peRatio ? scr.peRatio * 0.95 : 25.0),
-      pe5Y: peMediansRaw.pe5Y || (scr.peRatio ? scr.peRatio * 0.90 : 22.0),
-      pe10Y: peMediansRaw.pe10Y || (scr.peRatio ? scr.peRatio * 0.85 : 20.0)
+      pe3Y: peMediansRaw.pe3Y || (scr.peRatio ? scr.peRatio * 0.95 : baseSectorPe * 1.1),
+      pe5Y: peMediansRaw.pe5Y || (scr.peRatio ? scr.peRatio * 0.90 : baseSectorPe),
+      pe10Y: peMediansRaw.pe10Y || (scr.peRatio ? scr.peRatio * 0.85 : baseSectorPe * 0.9)
     };
 
     res.json({
