@@ -19,19 +19,21 @@ export async function safeJsonParse(response: Response) {
 }
 
 export const getApiUrl = () => {
-  // Use environment variable if provided (Standard for Vercel/Production)
+  // 1. Priority: Explicit environment variable
   const envUrl = import.meta.env.VITE_API_URL;
-  
   if (envUrl && envUrl !== '/' && envUrl !== 'undefined') {
     return envUrl;
   }
 
-  // Fallback for Local Development
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return "http://localhost:3001";
+  // 2. Dev Fallback: If on local machine or local network
+  const h = window.location.hostname;
+  const isLocal = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.startsWith('10.') || h.endsWith('.local');
+  
+  if (isLocal) {
+    // Return the same host but port 3001 for backend
+    return `${window.location.protocol}//${window.location.hostname}:3001`;
   }
 
-  // CRITICAL: In production, if VITE_API_URL is missing, we must return a dummy absolute URL
-  // to prevent relative fetch loops that return Vercel HTML 404 pages.
-  return "https://api-missing-configuration.marketbeacon";
+  // 3. Production Safety: Force a non-existent absolute URL to prevent relative loops
+  return "https://api-missing-configuration.marketbeacon.io";
 };
