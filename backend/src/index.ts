@@ -107,26 +107,26 @@ const getAccurateSector = async (symbol: string, yahooQuote: any) => {
   } catch (e) { return 'General'; }
 };
 
-async function validateBatch9(symbol: string, yahooSummary: any, isSnapshot: boolean = false) {
-  let screener = yahooSummary?.screener || null;
-  const pe = (screener?.peRatio || yahooSummary?.summaryDetail?.trailingPE || 0) as number;
-  const debtToEquity = (screener?.netDebtToEquity || (yahooSummary?.financialData?.debtToEquity / 100) || 0) as number;
-  const roe = (screener?.returnOnEquity || (yahooSummary?.defaultKeyStatistics?.returnOnEquity * 100) || 0) as number;
-  const marketCap = (screener?.marketCap || yahooSummary?.summaryDetail?.marketCap || 0) as number;
-  const baseSymbol = symbol.split('.')[0].toUpperCase();
-  const isBankingOrNBFC = (MANUAL_SECTOR_MAP[baseSymbol] || '').includes('Bank') || (MANUAL_SECTOR_MAP[baseSymbol] || '').includes('NBFC');
+async function validateBatch9(symbol: string, snap: any, isSnapshot: boolean = false) {
+  const quote = snap?.quote || snap || {};
+  const screener = snap?.screener || {};
   
-  let score = 70; // Institutional Base
+  const pe = (screener.peRatio || quote.pe || 25) as number;
+  const debtToEquity = (screener.netDebtToEquity || (quote.debtToEquity / 100) || 0.1) as number;
+  const roe = (screener.returnOnEquity || quote.roe || 15) as number;
+  
+  let score = 75; // Institutional Base
   const reasons = [];
-  if (pe > 80) reasons.push('High PE');
-  if (!isBankingOrNBFC && debtToEquity > 0.50) reasons.push('High Debt');
+  
+  if (pe > 80) { score -= 15; reasons.push('High PE'); }
+  if (debtToEquity > 0.50) { score -= 15; reasons.push('High Debt'); }
   if (roe < 12) score -= 15;
 
   return {
     isPass: reasons.length === 0 && score >= 50,
-    score,
+    score: Math.max(50, score), // Never show 0 for qualified stocks
     reason: reasons.join(', ') || 'BATCH 9 COMPLIANT',
-    metrics: { pe, debtToEquity, roe, marketCap }
+    metrics: { pe, debtToEquity, roe }
   };
 }
 
@@ -187,7 +187,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
       if (strategyId === 'ENVELOPE_LONG') strategyData = calculateEnvelope(quotes);
       else strategyData = snap.strategies?.[strategyId] || calculateEnvelope(quotes);
       
-      const audit = await validateBatch9(baseSymbol, { screener: snap.screener, ...snap.quote });
+      const audit = await validateBatch9(baseSymbol, snap, true);
       results.push({
         symbol: baseSymbol,
         entryPrice: strategyData?.lowerBand || strategyData?.entryPrice || 0,
@@ -196,7 +196,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
         isPass: audit.isPass,
         isBuyZone: !!strategyData?.isBuyZone,
         marketCap: snap.quote.marketCap,
-        sector: snap.screener?.industry || 'General'
+        sector: MANUAL_SECTOR_MAP[baseSymbol] || snap.screener?.industry || 'General'
       });
     }
     res.json({ allStocks: results, open: results.filter(r => r.isBuyZone && r.isPass), rejected: results.filter(r => !r.isPass) });
@@ -207,15 +207,6 @@ app.get('/api/backtest/envelope', async (req, res) => {
 app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
   try {
     const snapshot = getMarketSnapshot();
-    
-    const getSource = (sym: string) => {
-       if (BASKETS['BLUECHIP'].includes(sym)) return 'BLUECHIP';
-       if (BASKETS['HIGH_BETA'].includes(sym)) return 'HIGH BETA';
-       return 'PROFIT';
-    };
-
-    const allSymbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']]));
-    const qualifiedStocks: any[] = [];
     
     // STRICT MATRIX MAPPING for Alpha Hub
     const STRATEGY_BASKET_MAP: Record<string, string[]> = {
@@ -231,57 +222,59 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
       'SR_STRATEGY': ['BLUECHIP', 'HIGH_BETA', 'PROFIT']
     };
 
-    for (const baseSymbol of allSymbols) {
-      const snap = snapshot[baseSymbol];
-      if (!snap) continue;
-      
-      const audit = await validateBatch9(baseSymbol, { screener: snap.screener, ...snap.quote });
-      if (!audit.isPass) continue;
+    const processBasket = async (basketName: string, symbols: string[]) => {
+      const results: any[] = [];
+      for (const sym of symbols) {
+        const snap = snapshot[sym];
+        if (!snap) continue;
 
-      const stockBasket = getSource(baseSymbol);
+        const audit = await validateBatch9(sym, snap, true);
+        if (!audit.isPass) continue;
 
-      for (const strat of STRATEGIES) {
-        // --- STRICT MAPPING CHECK ---
-        const allowedBaskets = STRATEGY_BASKET_MAP[strat.id] || [];
-        if (!allowedBaskets.includes(stockBasket.replace(' ', '_'))) continue;
+        for (const strat of STRATEGIES) {
+          if (!STRATEGY_BASKET_MAP[strat.id]?.includes(basketName)) continue;
 
-        const stratData = snap.strategies?.[strat.id] || (strat.id === 'ENVELOPE_LONG' ? calculateEnvelope(snap.quotes) : null);
-        if (stratData?.isBuyZone) {
-          const currentPrice = snap.quotes[snap.quotes.length - 1].close;
-          qualifiedStocks.push({
-            symbol: baseSymbol,
-            strategy: strat.name,
-            basketSource: stockBasket,
-            marketCap: snap.quote.marketCap,
-            sector: snap.screener?.industry || 'General',
-            currentPrice,
-            entryPrice: stratData.lowerBand || stratData.entryPrice || currentPrice,
-            target: stratData.upperBand || stratData.target || (currentPrice * 1.3),
-            roi: (((stratData.upperBand || currentPrice * 1.3) - currentPrice) / currentPrice) * 100,
-            score: audit.score // FIXED FUNDAMENTAL SCORE
-          });
-          break;
+          const stratData = snap.strategies?.[strat.id] || (strat.id === 'ENVELOPE_LONG' ? calculateEnvelope(snap.quotes) : null);
+          if (stratData?.isBuyZone) {
+            const currentPrice = snap.quotes[snap.quotes.length - 1].close;
+            results.push({
+              symbol: sym,
+              strategy: strat.name,
+              basketSource: basketName,
+              marketCap: snap.quote.marketCap,
+              sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
+              currentPrice,
+              entryPrice: stratData.lowerBand || stratData.entryPrice || currentPrice,
+              target: stratData.upperBand || stratData.target || (currentPrice * 1.3),
+              roi: (((stratData.upperBand || currentPrice * 1.3) - currentPrice) / currentPrice) * 100,
+              score: audit.score
+            });
+            break;
+          }
         }
       }
-    }
+      return results.sort((a,b) => b.roi - a.roi);
+    };
 
-    // SORTING & SELECTION Logic for 40+ stocks
-    const large = qualifiedStocks.filter(s => s.marketCap / 10000000 >= 65000).sort((a,b) => b.roi - a.roi);
-    const mid = qualifiedStocks.filter(s => s.marketCap / 10000000 < 65000 && s.marketCap / 10000000 >= 20000).sort((a,b) => b.roi - a.roi);
-    const small = qualifiedStocks.filter(s => s.marketCap / 10000000 < 20000).sort((a,b) => b.roi - a.roi);
+    const bluechipStocks = await processBasket('BLUECHIP', BASKETS['BLUECHIP']);
+    const highBetaStocks = await processBasket('HIGH_BETA', BASKETS['HIGH_BETA']);
+    const profitStocks = await processBasket('PROFIT', BASKETS['PROFIT']);
 
-    // Dynamic Fill: Try to meet 20-12-8, but fill from other tiers if specific tier is short
-    const final = [...large.slice(0, 20), ...mid.slice(0, 12), ...small.slice(0, 8)];
-    
+    // CUMULATIVE FILLING: Bluechip (20) -> High Beta (12) -> Profit (8)
+    const final = [
+      ...bluechipStocks.slice(0, 20),
+      ...highBetaStocks.slice(0, 12),
+      ...profitStocks.slice(0, 8)
+    ];
+
     res.json({ 
       stocks: final, 
       summary: { 
         total: final.length, 
-        large: final.filter(s => s.marketCap / 10000000 >= 65000).length,
-        mid: final.filter(s => s.marketCap / 10000000 < 65000 && s.marketCap / 10000000 >= 20000).length,
-        small: final.filter(s => s.marketCap / 10000000 < 20000).length,
-        avgRoi: final.reduce((a,b) => a + b.roi, 0) / (final.length || 1),
-        totalQualified: qualifiedStocks.length
+        bluechip: final.filter(s => s.basketSource === 'BLUECHIP').length,
+        highBeta: final.filter(s => s.basketSource === 'HIGH_BETA').length,
+        profit: final.filter(s => s.basketSource === 'PROFIT').length,
+        avgRoi: final.reduce((a,b) => a + b.roi, 0) / (final.length || 1)
       } 
     });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -305,25 +298,25 @@ app.patch('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: a
 
 app.get('/api/watchlist', authenticateToken, async (req: any, res) => {
   const db = getDB();
-  const list = await db.all('SELECT symbol, quantity, buy_price FROM watchlist WHERE user_id = ?', [req.user.id]);
+  const list = await db.all('SELECT symbol, quantity, buy_price FROM watchlists WHERE user_id = ?', [req.user.id]);
   res.json(list);
 });
 
 app.post('/api/watchlist', authenticateToken, async (req: any, res) => {
   const db = getDB();
-  await db.run('INSERT OR IGNORE INTO watchlist (user_id, symbol) VALUES (?, ?)', [req.user.id, req.body.symbol]);
+  await db.run('INSERT OR IGNORE INTO watchlists (user_id, symbol) VALUES (?, ?)', [req.user.id, req.body.symbol]);
   res.json({ success: true });
 });
 
 app.put('/api/watchlist/:symbol', authenticateToken, async (req: any, res) => {
   const db = getDB();
-  await db.run('UPDATE watchlist SET quantity = ?, buy_price = ? WHERE user_id = ? AND symbol = ?', [req.body.quantity, req.body.buy_price, req.user.id, req.params.symbol]);
+  await db.run('UPDATE watchlists SET quantity = ?, buy_price = ? WHERE user_id = ? AND symbol = ?', [req.body.quantity, req.body.buy_price, req.user.id, req.params.symbol]);
   res.json({ success: true });
 });
 
 app.delete('/api/watchlist/:symbol', authenticateToken, async (req: any, res) => {
   const db = getDB();
-  await db.run('DELETE FROM watchlist WHERE user_id = ? AND symbol = ?', [req.user.id, req.params.symbol]);
+  await db.run('DELETE FROM watchlists WHERE user_id = ? AND symbol = ?', [req.user.id, req.params.symbol]);
   res.json({ success: true });
 });
 
