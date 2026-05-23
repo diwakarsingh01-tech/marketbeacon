@@ -2,7 +2,7 @@
 
 ## 🛡 Mandatory Pre-Change Audit (Checklist)
 Before any code modification, the following steps **must** be executed:
-1. **Context Check:** Read the current state of `MEMORY.md` and `GEMINI.md`.
+1. **Context Check:** Read the current state of `MEMORY.md`, `GEMINI.md`, and `PROJECT_CHECKLIST.md`.
 2. **Impact Analysis:** Identify which files/features will be affected. If a change impacts stable logic (Strategies/Auth), alert the user in Hinglish.
 3. **Snapshot:** Perform a `git commit` of the current working state before starting a new requirement.
 4. **Verification Strategy:** Define *how* the change will be tested before writing code.
