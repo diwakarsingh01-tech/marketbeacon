@@ -204,74 +204,97 @@ const AlphaHubPage: React.FC = () => {
          </div>
       </div>
 
-      {/* Stock Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-         {data.stocks.map((stock: any, i: number) => {
-           const qty = calculateQuantity(stock);
-           const allocation = qty * stock.currentPrice;
+      {/* Stock Grid: Grouped by Basket Tier */}
+      {['BLUECHIP', 'HIGH BETA', 'PROFIT'].map(basket => {
+        const basketStocks = data.stocks.filter((s: any) => s.basketSource === basket);
+        if (basketStocks.length === 0) return null;
 
-           return (
-             <div key={stock.symbol} className="bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm hover:border-blue-200 transition-all group relative overflow-hidden flex flex-col justify-between">
-                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-all z-10">
-                   <Link to={`/stock/${stock.symbol}`} className="text-blue-600"><ArrowUpRight className="h-5 w-5" /></Link>
-                </div>
-                
-                <div className="space-y-6">
-                   <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-xs shadow-lg shadow-slate-200">
-                         {i + 1}
-                      </div>
-                      <div>
-                         <h4 className="text-lg font-black text-slate-900 leading-none tracking-tight">{stock.symbol}</h4>
-                         <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">{stock.sector}</p>
-                      </div>
-                   </div>
-
-                 <div className="bg-slate-50/80 p-5 rounded-3xl border border-slate-100 space-y-4">
-                      <div className="flex justify-between items-center">
-                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Action Qty</span>
-                         <span className={`text-[14px] font-black ${qty === 0 ? 'text-red-500' : 'text-blue-600'}`}>{qty.toLocaleString()} <span className="text-[8px]">Units</span></span>
-                      </div>
-                      
-                      {/* TRACEABILITY TAGS */}
-                      <div className="flex flex-col space-y-2 border-t border-slate-100 pt-3">
-                         <div className="flex justify-between items-center">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Source</span>
-                            <span className="text-[8px] font-black px-2 py-0.5 bg-slate-200 text-slate-600 rounded-md uppercase">{stock.basketSource}</span>
-                         </div>
-                         <div className="flex justify-between items-center">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strategy</span>
-                            <span className="text-[8px] font-black px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md uppercase">{stock.strategy}</span>
-                         </div>
-                         <div className="flex justify-between items-center">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Allocation</span>
-                            <span className="text-[11px] font-black text-slate-900">₹{allocation.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                         </div>
-                      </div>
-                   </div>
-                   
-                   {qty === 0 && (
-                      <div className="bg-red-50 p-2 rounded-lg text-center border border-red-100">
-                         <p className="text-[8px] font-black text-red-600 uppercase tracking-widest">Below ₹5,000 Barrier</p>
-                      </div>
-                   )}
-                </div>
-
-                <div className="flex justify-between items-end pt-6 border-t border-slate-50 mt-6">
-                   <div>
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Value Zone</p>
-                      <p className="text-sm font-black text-slate-900 italic">₹{stock.entryPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                   </div>
-                   <div className="text-right">
-                      <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Exp. Yield</p>
-                      <p className="text-sm font-black text-emerald-700">+{stock.roi.toFixed(1)}%</p>
-                   </div>
-                </div>
+        return (
+          <div key={basket} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+             <div className="flex items-center space-x-4">
+                <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">{basket} Tier</h2>
+                <div className="h-px flex-1 bg-slate-100" />
+                <span className="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase">{basketStocks.length} Assets</span>
              </div>
-           );
-         })}
-      </div>
 
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {basketStocks.map((stock: any, i: number) => {
+                  const qty = calculateQuantity(stock);
+                  const allocation = qty * stock.currentPrice;
+
+                  return (
+                    <div key={stock.symbol} className="bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm hover:border-blue-200 transition-all group relative overflow-hidden flex flex-col justify-between">
+                       <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-all z-10">
+                          <Link to={`/stock/${stock.symbol}`} className="text-blue-600"><ArrowUpRight className="h-5 w-5" /></Link>
+                       </div>
+
+                       <div className="space-y-6">
+                          <div className="flex items-center space-x-3">
+                             <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-xs shadow-lg shadow-slate-200">
+                                {i + 1}
+                             </div>
+                             <div>
+                                <h4 className="text-lg font-black text-slate-900 leading-none tracking-tight">{stock.symbol}</h4>
+                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">{stock.sector}</p>
+                             </div>
+                          </div>
+
+                          {/* FUNDAMENTAL METRICS */}
+                          <div className="grid grid-cols-3 gap-2 py-3 border-y border-slate-50">
+                             <div className="text-center">
+                                <p className="text-[7px] font-black text-slate-400 uppercase mb-1">PE</p>
+                                <p className="text-[10px] font-bold text-slate-900">{stock.metrics?.pe?.toFixed(1) || 'N/A'}</p>
+                             </div>
+                             <div className="text-center">
+                                <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Debt</p>
+                                <p className="text-[10px] font-bold text-slate-900">{stock.metrics?.debtToEquity?.toFixed(2) || '0.0'}</p>
+                             </div>
+                             <div className="text-center">
+                                <p className="text-[7px] font-black text-slate-400 uppercase mb-1">ROE</p>
+                                <p className="text-[10px] font-bold text-slate-900">{stock.metrics?.roe?.toFixed(1) || '15'}%</p>
+                             </div>
+                          </div>
+
+                          <div className="bg-slate-50/80 p-5 rounded-3xl border border-slate-100 space-y-4">
+                             <div className="flex justify-between items-center">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Action Qty</span>
+                                <span className={`text-[14px] font-black ${qty === 0 ? 'text-red-500' : 'text-blue-600'}`}>{qty.toLocaleString()} <span className="text-[8px]">Units</span></span>
+                             </div>
+
+                             <div className="flex flex-col space-y-2 border-t border-slate-100 pt-3">
+                                <div className="flex justify-between items-center">
+                                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strategy</span>
+                                   <span className="text-[8px] font-black px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md uppercase">{stock.strategy}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Batch 9 Score</span>
+                                   <span className="text-[10px] font-black text-blue-600">{stock.score}/100</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Allocation</span>
+                                   <span className="text-[11px] font-black text-slate-900">₹{allocation.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                </div>
+                             </div>
+                          </div>
+                       </div>
+
+                       <div className="flex justify-between items-end pt-6 border-t border-slate-50 mt-6">
+                          <div>
+                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Value Zone</p>
+                             <p className="text-sm font-black text-slate-900 italic">₹{stock.entryPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Exp. Yield</p>
+                             <p className="text-sm font-black text-emerald-700">+{stock.roi.toFixed(1)}%</p>
+                          </div>
+                       </div>
+                    </div>
+                  );
+                })}
+             </div>
+          </div>
+        );
+      })}
       {/* Analytics Matrix Summary */}
       <div className="bg-blue-600 rounded-[3rem] p-10 md:p-16 text-white relative overflow-hidden shadow-2xl shadow-blue-500/20">
          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 blur-[120px] -mr-32 -mt-32" />

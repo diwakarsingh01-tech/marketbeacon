@@ -247,7 +247,8 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
               entryPrice: stratData.lowerBand || stratData.entryPrice || currentPrice,
               target: stratData.upperBand || stratData.target || (currentPrice * 1.3),
               roi: (((stratData.upperBand || currentPrice * 1.3) - currentPrice) / currentPrice) * 100,
-              score: audit.score
+              score: audit.score,
+              metrics: audit.metrics // ADDED METRICS
             });
             break;
           }
