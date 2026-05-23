@@ -208,7 +208,6 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
   try {
     const snapshot = getMarketSnapshot();
     
-    // Explicitly track sources for transparency
     const getSource = (sym: string) => {
        if (BASKETS['BLUECHIP'].includes(sym)) return 'BLUECHIP';
        if (BASKETS['HIGH_BETA'].includes(sym)) return 'HIGH BETA';
@@ -218,6 +217,20 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     const allSymbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']]));
     const qualifiedStocks: any[] = [];
     
+    // STRICT MATRIX MAPPING for Alpha Hub
+    const STRATEGY_BASKET_MAP: Record<string, string[]> = {
+      'ENVELOPE_LONG': ['BLUECHIP'],
+      'ENVELOPE_SHORT': ['BLUECHIP'],
+      'BOLLINGER': ['BLUECHIP'],
+      'CUP_HANDLE_ABCD': ['BLUECHIP', 'HIGH_BETA'],
+      'RHS_ABCD': ['BLUECHIP', 'HIGH_BETA'],
+      'SMA_ABCD': ['BLUECHIP', 'HIGH_BETA'],
+      '52W_HIGH_LOW': ['BLUECHIP', 'HIGH_BETA'],
+      'TWENTY_RALLY_RETEST': ['BLUECHIP', 'HIGH_BETA', 'PROFIT'],
+      'SIXTY_SEVEN_FUNDA': ['BLUECHIP', 'HIGH_BETA', 'PROFIT'],
+      'SR_STRATEGY': ['BLUECHIP', 'HIGH_BETA', 'PROFIT']
+    };
+
     for (const baseSymbol of allSymbols) {
       const snap = snapshot[baseSymbol];
       if (!snap) continue;
@@ -225,21 +238,27 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
       const audit = await validateBatch9(baseSymbol, { screener: snap.screener, ...snap.quote });
       if (!audit.isPass) continue;
 
+      const stockBasket = getSource(baseSymbol);
+
       for (const strat of STRATEGIES) {
+        // --- STRICT MAPPING CHECK ---
+        const allowedBaskets = STRATEGY_BASKET_MAP[strat.id] || [];
+        if (!allowedBaskets.includes(stockBasket.replace(' ', '_'))) continue;
+
         const stratData = snap.strategies?.[strat.id] || (strat.id === 'ENVELOPE_LONG' ? calculateEnvelope(snap.quotes) : null);
         if (stratData?.isBuyZone) {
           const currentPrice = snap.quotes[snap.quotes.length - 1].close;
           qualifiedStocks.push({
             symbol: baseSymbol,
             strategy: strat.name,
-            basketSource: getSource(baseSymbol), // TRACEABILITY FIX
+            basketSource: stockBasket,
             marketCap: snap.quote.marketCap,
             sector: snap.screener?.industry || 'General',
             currentPrice,
             entryPrice: stratData.lowerBand || stratData.entryPrice || currentPrice,
             target: stratData.upperBand || stratData.target || (currentPrice * 1.3),
             roi: (((stratData.upperBand || currentPrice * 1.3) - currentPrice) / currentPrice) * 100,
-            score: audit.score
+            score: audit.score // FIXED FUNDAMENTAL SCORE
           });
           break;
         }
