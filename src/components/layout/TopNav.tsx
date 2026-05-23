@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { Activity, LogOut, User, Store, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { safeJsonParse, getApiUrl } from '../../lib/api-utils';
+
+const API_URL = getApiUrl();
 
 interface TopNavProps {
   onMenuClick?: () => void;
@@ -18,8 +20,8 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   const fetchIndices = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/market-indices`);
-      if (res.ok) {
-        const data = await res.json();
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) {
         setIndices(data.results || []);
         setMarketStatus(data.status || 'CLOSED');
       }

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
 interface User {
   id: number;
@@ -7,12 +8,13 @@ interface User {
   role: 'user' | 'admin';
   tier: 'free' | 'pro' | 'alpha';
   daysRemaining: number | null;
+  needsOnboarding?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, pass: string) => Promise<void>;
-  googleLogin: (token: string) => Promise<void>;
+  googleLogin: (credential: string) => Promise<void>;
   sendMobileOtp: (mobile: string) => Promise<void>;
   mobileVerify: (mobile: string, otp: string) => Promise<void>;
   register: (email: string, pass: string, name: string) => Promise<void>;
@@ -23,11 +25,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = getApiUrl();
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const logout = useCallback(() => {
+    setUser(null);
+    localStorage.removeItem('mb_user');
+    localStorage.removeItem('mb_token');
+  }, []);
 
   const refreshAuth = useCallback(async () => {
     const token = localStorage.getItem('mb_token');
@@ -41,18 +49,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await fetch(`${API_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const text = await response.text();
-      try {
-        const result = JSON.parse(text);
-        if (response.ok) {
-          const verifiedUser = result.user || result;
-          setUser(verifiedUser);
-          localStorage.setItem('mb_user', JSON.stringify(verifiedUser));
-        } else {
-          logout();
-        }
-      } catch (jsonErr) {
-        console.error("[DEBUG] Invalid Auth JSON Response:", text.substring(0, 100));
+      
+      const data = await safeJsonParse(response);
+      if (response.ok && !data.error) {
+        const verifiedUser = data.user || data;
+        setUser(verifiedUser);
+        localStorage.setItem('mb_user', JSON.stringify(verifiedUser));
+      } else {
         logout();
       }
     } catch (e) {
@@ -62,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [logout]);
 
   useEffect(() => {
     refreshAuth();
@@ -75,12 +78,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       body: JSON.stringify({ email, password: pass })
     });
     
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Login failed');
+    const data = await safeJsonParse(response);
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Login failed');
     }
 
-    const { token, user: userData } = await response.json();
+    const { token, user: userData } = data;
     setUser(userData);
     localStorage.setItem('mb_user', JSON.stringify(userData));
     localStorage.setItem('mb_token', token);
@@ -93,12 +96,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       body: JSON.stringify({ token: credential })
     });
     
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Google Login failed');
+    const data = await safeJsonParse(response);
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Google Login failed');
     }
 
-    const { token, user: userData } = await response.json();
+    const { token, user: userData } = data;
     setUser(userData);
     localStorage.setItem('mb_user', JSON.stringify(userData));
     localStorage.setItem('mb_token', token);
@@ -110,9 +113,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mobile })
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to send OTP');
+    const data = await safeJsonParse(res);
+    if (!res.ok || data.error) {
+      throw new Error(data.error || 'Failed to send OTP');
     }
   };
 
@@ -122,11 +125,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mobile, otp })
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'OTP verification failed');
+    
+    const data = await safeJsonParse(res);
+    if (!res.ok || data.error) {
+      throw new Error(data.error || 'OTP verification failed');
     }
-    const { token, user: userData } = await res.json();
+    
+    const { token, user: userData } = data;
     setUser(userData);
     localStorage.setItem('mb_user', JSON.stringify(userData));
     localStorage.setItem('mb_token', token);
@@ -139,21 +144,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       body: JSON.stringify({ name, email, password: pass })
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Registration failed');
+    const data = await safeJsonParse(response);
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Registration failed');
     }
 
-    const { token, user: userData } = await response.json();
+    const { token, user: userData } = data;
     setUser(userData);
     localStorage.setItem('mb_user', JSON.stringify(userData));
     localStorage.setItem('mb_token', token);
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('mb_user');
-    localStorage.removeItem('mb_token');
   };
 
   return (

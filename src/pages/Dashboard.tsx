@@ -9,7 +9,9 @@ import UpgradeModal from '../components/modals/UpgradeModal';
 import BrokerHub from '../components/modals/BrokerHub';
 import LegalModal from '../components/modals/LegalModal';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+
+const API_URL = getApiUrl();
 
 interface DashboardPageProps {
   defaultTab?: 'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral';
@@ -261,28 +263,23 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     setError(null);
     try {
       const response = await fetch(`${API_URL}/api/backtest/envelope?basket=${activeBasket}&strategy=${strategyId}`);
-      const text = await response.text();
+      const data = await safeJsonParse(response);
       
-      try {
-        const result = JSON.parse(text);
-        if (response.ok) {
-          setData(result);
-          // ... rest of logic
+      if (response.ok && !data.error) {
+          setData(data);
+          
           const portfolioSymbols = [
             ...userWatchlist.map(w => w.symbol),
             ...trades.map(t => t.symbol)
           ];
           const symbolsToFetch = Array.from(new Set([
-            ...(result.allStocks?.map((s: any) => s.symbol) || []),
+            ...(data.allStocks?.map((s: any) => s.symbol) || []),
             ...portfolioSymbols
           ]));
+          
           fetchStockPrices(symbolsToFetch);
-        } else {
-          setError(`Data Sync Failed: ${result.error || response.statusText}`);
-        }
-      } catch (jsonErr) {
-        console.error("[DEBUG] Invalid Scanner JSON:", text.substring(0, 100));
-        setError("Production Sync Error: Terminal received HTML instead of Market Data. Please verify VITE_API_URL settings.");
+      } else {
+          setError(data.error || `Data Sync Failed: ${response.statusText}`);
       }
     } catch (e) {
       setError('Connection Error: Backend server unreachable or timed out.');
