@@ -70,10 +70,10 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
 
   let triggerDate: string | undefined = undefined;
   let upperBandAtEntry = currentUpperBand;
+  let lowerBandAtEntry = lowerBand;
 
   if (isBuyZone) {
-    // Find the very first date of the continuous trigger to get "Upper Band at Entry"
-    let triggerIdx = latestIdx;
+    // Find the very first date of the continuous trigger to lock entry stats
     for (let i = latestIdx; i >= length; i--) {
       const q = quotes[i];
       const cSMA = smaValues[i];
@@ -81,28 +81,29 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
       const cPrice = q.adjclose || q.adjClose || q.close;
       
       if (q.low <= cLower || cPrice <= cLower) {
-        triggerIdx = i;
         triggerDate = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
         upperBandAtEntry = cSMA * (1 + percentage / 100);
+        lowerBandAtEntry = cLower;
       } else break;
     }
   }
 
   // VIDEO SPEC REFINEMENT: Target must not drift lower than initial upper band or 30% gain
-  const minimumTarget = lowerBand * 1.30;
+  const minimumTarget = lowerBandAtEntry * 1.30;
   const finalTarget = Math.max(currentUpperBand, upperBandAtEntry, minimumTarget);
 
   return {
     sma: currentSMA,
-    lowerBand,
+    lowerBand: currentUpperBand, // This is just for UI basis
     upperBand: currentUpperBand,
     isBuyZone,
     distanceFromLower,
     triggerDate,
     currentPrice,
-    entryPrice: lowerBand, // Entry A
+    entryPrice: lowerBandAtEntry, // Locked to first trigger lower band
     target: finalTarget,
     upperBandAtEntry,
+    lowerBandAtEntry,
     minimumTarget
   };
 }

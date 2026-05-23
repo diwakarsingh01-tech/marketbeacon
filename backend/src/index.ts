@@ -409,7 +409,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
       if (strategyId === 'ENVELOPE_LONG') strategyData = calculateEnvelope(snap.quotes);
       else strategyData = snap.strategies?.[strategyId] || calculateEnvelope(snap.quotes);
       const audit = await validateBatch9(baseSymbol, snap);
-      const entryPrice = strategyData?.lowerBand || strategyData?.entryPrice || 0;
+      const entryPrice = strategyData?.entryPrice || 0;
       const currentStrat = STRATEGIES.find(s => s.id === strategyId);
 
       results.push({ 
@@ -458,7 +458,7 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
           const stratData = snap.strategies?.[strat.id] || (strat.id === 'ENVELOPE_LONG' ? calculateEnvelope(snap.quotes) : null);
           if (stratData?.isBuyZone) {
             const lastQuote = snap.quotes[snap.quotes.length - 1];
-            const entryPrice = stratData.lowerBand || stratData.entryPrice || lastQuote.close;
+            const entryPrice = stratData.entryPrice || lastQuote.close;
             results.push({ 
               symbol: sym, 
               entryTime: stratData?.triggerDate || (lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString()), 
