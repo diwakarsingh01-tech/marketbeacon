@@ -14,86 +14,35 @@
   body {
     background-color: #f8fafc;
     color: #0f172a;
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(15, 23, 42, 0.03) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(15, 23, 42, 0.03) 0px, transparent 50%);
-    background-attachment: fixed;
+    margin: 0;
+    padding: 0;
   }
 
-  /* Universal Institutional Theme (Slate-based) */
+  /* Institutional Light Theme */
+  .bg-white { background-color: #ffffff; }
+  .bg-slate-50 { background-color: #f8fafc; }
+  .bg-slate-900 { background-color: #0f172a; }
 
-  .bg-white {
-    background-color: #ffffff;
-  }
+  .text-slate-900 { color: #0f172a; }
+  .text-slate-600 { color: #475569; }
+  .text-slate-400 { color: #94a3b8; }
 
-  .bg-slate-50 {
-    background-color: #f8fafc;
-  }
-
-  .bg-slate-900 {
-    background-color: #0f172a;
-  }
-
-  .text-slate-900 {
-    color: #0f172a;
-  }
-
-  .text-slate-400 {
-    color: #94a3b8;
-  }
-
-  /* Form Elements */
-  input, select, textarea {
-    background-color: #ffffff;
-    color: #0f172a;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
-    transition: all 0.2s ease;
-  }
-
-  input:focus, select:focus, textarea:focus {
-    border-color: #0f172a;
-    background-color: #ffffff;
-    outline: none;
-    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.05);
-  }
-
-  /* Interactive Elements */
-  .text-blue-600 {
-    color: #2563eb;
-  }
+  /* Interactive Blue Accents */
+  .bg-blue-600 { background-color: #2563eb; }
+  .text-blue-600 { color: #2563eb; }
 
   /* Scrollbars */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #f8fafc;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #cbd5e1;
-  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 }
 
 @layer components {
   .glass-card {
-    background-color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(226, 232, 240, 0.5);
     box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
-  }
-  
-  .glass-nav {
-    background-color: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid #e2e8f0;
-    position: sticky;
-    top: 0;
-    z-index: 50;
   }
 }
