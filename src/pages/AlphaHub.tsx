@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { Download } from 'lucide-react';
 const API_URL = getApiUrl();
 
 const AlphaHubPage: React.FC = () => {
@@ -21,6 +22,27 @@ const AlphaHubPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCapital, setTotalCapital] = useState<number>(200000);
+
+  const handleExportAlpha = () => {
+    if (!data?.stocks?.length) return;
+    const headers = ['Symbol', 'Basket', 'Strategy', 'Entry Price', 'Target', 'ROI%', 'Allocation (Qty)'];
+    const rows = data.stocks.map((s: any) => [
+      s.symbol,
+      s.basketSource,
+      s.strategy,
+      s.entryPrice,
+      s.target,
+      Number(s.roi)?.toFixed(2),
+      calculateQuantity(s)
+    ]);
+    const csvContent = [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.body.appendChild(document.createElement('a'));
+    link.href = URL.createObjectURL(blob);
+    link.download = `Alpha40_Audit_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const fetchAlphaHub = async () => {
     if (!API_URL || API_URL.includes('missing-backend')) {
@@ -179,10 +201,19 @@ const AlphaHubPage: React.FC = () => {
 
          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
             <div className="flex justify-between items-center text-slate-400">
-               <span className="text-[9px] font-black uppercase tracking-widest">Sector Risk</span>
-               <ShieldCheck className="h-4 w-4" />
+               <span className="text-[9px] font-black uppercase tracking-widest">Global Audit</span>
+               <div className="flex items-center space-x-2">
+                 <button 
+                   onClick={handleExportAlpha}
+                   title="Export Strategic Audit"
+                   className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                 >
+                   <Download className="h-4 w-4" />
+                 </button>
+                 <button onClick={fetchAlphaHub} className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm"><RefreshCw className="h-4 w-4" /></button>
+               </div>
             </div>
-            <h3 className="text-3xl font-black text-slate-900 tracking-tighter">Verified</h3>
+            <h3 className="text-3xl font-black text-slate-900 tracking-tighter text-emerald-600">Verified</h3>
          </div>
 
          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">

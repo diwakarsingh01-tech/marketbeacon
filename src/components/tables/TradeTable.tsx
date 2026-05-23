@@ -102,6 +102,31 @@ const TradeTable: React.FC<TradeTableProps> = ({
     setSortConfig({ key, direction });
   };
 
+  const handleExportCSV = () => {
+    if (!filteredAndSortedTrades.length) return;
+    const headers = ['Symbol', 'Strategy', 'Sector', 'Market Cap', 'CMP', 'Target', 'ROI%', 'Entry Time'];
+    const rows = filteredAndSortedTrades.map(t => [
+      t.symbol,
+      t.strategy || 'Matrix Lens',
+      t.sector,
+      t.marketCap,
+      t.livePrice || t.currentPrice,
+      t.target,
+      t.targetGap?.toFixed(2),
+      t.entryTime
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `MarketBeacon_Audit_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleShareSignal = (trade: any, method: 'copy' | 'telegram' = 'copy') => {
     const livePrice = livePrices?.[trade.symbol] || trade.livePrice || trade.currentPrice || 0;
     const text = `🚨 *MarketBeacon Research: ${trade.symbol}*
@@ -206,6 +231,13 @@ const TradeTable: React.FC<TradeTableProps> = ({
         </div>
         
         <div className="flex items-center space-x-3">
+          <button 
+            onClick={handleExportCSV} 
+            title="Export to CSV"
+            className="p-3 rounded-xl border border-slate-100 bg-white text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+          >
+            <DownloadIcon className="h-4 w-4" />
+          </button>
           <button onClick={() => setShowColumnSettings(!showColumnSettings)} className={`p-3 rounded-xl border transition-all ${showColumnSettings ? 'bg-slate-900 text-white' : 'bg-white text-slate-400 border-slate-100'}`}><SettingsIcon className="h-4 w-4" /></button>
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
             {filteredAndSortedTrades.length} Assets
@@ -243,6 +275,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                 <tr className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100">
                   {visibleColumns.observation && <th className="px-8 py-6 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('entryTime')}><div className="flex items-center">Obs <SortIcon column="entryTime" /></div></th>}
                   {visibleColumns.symbol && <th className="px-8 py-6 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('symbol')}><div className="flex items-center">Symbol <SortIcon column="symbol" /></div></th>}
+                  {visibleColumns.strategy && <th className="px-8 py-6">Strategy</th>}
                   {visibleColumns.sector && <th className="px-8 py-6">Sector</th>}
                   {visibleColumns.marketCap && <th className="px-8 py-6 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('marketCap')}><div className="flex items-center">Cap <SortIcon column="marketCap" /></div></th>}
                   {visibleColumns.abcd && <th className="px-8 py-6 text-center">ABCD Ladder</th>}
@@ -316,6 +349,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                            </div>
                         </td>
                       )}
+                      {visibleColumns.strategy && <td className="px-8 py-5 text-[9px] text-slate-500 italic font-medium truncate max-w-[120px]">{trade.strategy || 'Matrix Lens'}</td>}
                       {visibleColumns.sector && <td className="px-8 py-5 text-[9px] text-slate-400 uppercase truncate max-w-[120px] font-bold">{trade.sector}</td>}
                       {visibleColumns.marketCap && (
                         <td className="px-8 py-5">

@@ -47,21 +47,21 @@ export function calculateSMA(prices: number[], length: number): number[] {
 
 /**
  * STRATEGY 1: Institutional Floor (Long Envelope)
- * Rule: 14% below 200 EMA
- * Target: Primary regression midline (200 EMA)
+ * Rule: 10% below 20 SMA (Institutional Standard)
+ * Target: Recovery to SMA 20 Midline
  */
-export function calculateEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
+export function calculateEnvelope(quotes: Quote[], percentage: number = 10, length: number = 20) {
   if (!quotes || quotes.length < length) return null;
 
   const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
-  const emaValues = calculateEMA(prices, length);
+  const smaValues = calculateSMA(prices, length);
   const latestIdx = quotes.length - 1;
-  const currentEMA = emaValues[latestIdx];
+  const currentSMA = smaValues[latestIdx];
   const latestQuote = quotes[latestIdx];
   const currentPrice = prices[latestIdx];
 
-  const lowerBand = currentEMA * (1 - percentage / 100);
-  const upperBand = currentEMA * (1 + percentage / 100);
+  const lowerBand = currentSMA * (1 - percentage / 100);
+  const upperBand = currentSMA * (1 + percentage / 100);
 
   // Buy Zone: Price is at or below lower band
   const isBuyZone = latestQuote.low <= lowerBand || currentPrice <= lowerBand;
@@ -75,8 +75,8 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
     // Find the first date of the continuous touch
     for (let i = latestIdx; i >= length; i--) {
       const q = quotes[i];
-      const cEMA = emaValues[i];
-      const cLower = cEMA * (1 - percentage / 100);
+      const cSMA = smaValues[i];
+      const cLower = cSMA * (1 - percentage / 100);
       const cPrice = q.adjclose || q.adjClose || q.close;
       if (q.low <= cLower || cPrice <= cLower) {
         triggerDate = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
@@ -85,15 +85,15 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
   }
 
   return {
-    sma: currentEMA, // We use EMA as the basis
+    sma: currentSMA,
     lowerBand,
     upperBand,
     isBuyZone,
     distanceFromLower,
     triggerDate,
     currentPrice,
-    entryPrice: lowerBand, // Explicitly set Entry A as the lower band
-    target: currentEMA // Target is mean reversion to the EMA line
+    entryPrice: lowerBand,
+    target: currentSMA // Recovery to the SMA 20 line
   };
 }
 

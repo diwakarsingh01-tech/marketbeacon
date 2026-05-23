@@ -365,10 +365,13 @@ app.get('/api/backtest/envelope', async (req, res) => {
       else strategyData = snap.strategies?.[strategyId] || calculateEnvelope(snap.quotes);
       const audit = await validateBatch9(baseSymbol, snap);
       const entryPrice = strategyData?.lowerBand || strategyData?.entryPrice || 0;
+      const currentStrat = STRATEGIES.find(s => s.id === strategyId);
+
       results.push({ 
         symbol: baseSymbol, 
         entryTime: lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString(), 
         entryPrice, 
+        strategy: currentStrat?.name || 'Institutional Matrix',
         target: strategyData?.upperBand || strategyData?.target || 0, 
         currentPrice: lastQuote.close, 
         isPass: audit.isPass, 

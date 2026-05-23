@@ -3,7 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import TradeTable from '../components/tables/TradeTable';
 import StrategyGuide from '../components/StrategyGuide';
 import { BASKETS, STRATEGIES } from '../data/stocks';
-import { ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet, BookOpen, X, Lock, ShieldAlert, Check, Zap, Globe, Activity, Database, PieChart, AlertCircle } from 'lucide-react';
+import { Download, ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet, BookOpen, X, Lock, ShieldAlert, Check, Zap, Globe, Activity, Database, PieChart, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import BrokerHub from '../components/modals/BrokerHub';
@@ -250,6 +250,36 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     };
   }, [userWatchlist, trades, stockPrices, stockCaps]);
 
+  const handleMasterExport = () => {
+    if (!data?.allStocks?.length) return;
+    const headers = ['Symbol', 'Sector', 'Market Cap', 'CMP', 'ATH', 'Base (Entry A)', 'Target', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
+    const rows = data.allStocks.map((t: any) => {
+      const ath = stockATHs[t.symbol] || t.ath || 0;
+      const gap = t.entryPrice > 0 ? (((t.currentPrice - t.entryPrice)/t.entryPrice) * 100).toFixed(2) : '0.00';
+      const roi = t.currentPrice > 0 ? (((t.target - t.currentPrice)/t.currentPrice) * 100).toFixed(2) : '0.00';
+      
+      return [
+        t.symbol,
+        t.sector,
+        t.marketCap,
+        t.currentPrice,
+        ath,
+        t.entryPrice,
+        t.target,
+        roi,
+        gap,
+        t.score,
+        t.reason
+      ];
+    });
+    const csvContent = [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `MarketBeacon_Master_Audit_${activeBasket}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
   return (
     <div className="flex-1 flex flex-col py-6 md:py-10 px-4 md:px-10 space-y-8 bg-[#f8fafc] overflow-y-auto">
       {/* Institutional Header */}
@@ -314,7 +344,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
             </div>
           </div>
 
-          <div className="flex items-end h-full pb-0.5 pt-4">
+          <div className="flex items-end h-full pb-0.5 pt-4 space-x-2">
+            <button 
+              onClick={handleMasterExport}
+              title="Download Master Audit"
+              className="p-3.5 rounded-2xl border border-slate-100 bg-white shadow-sm hover:bg-slate-900 hover:text-white text-slate-400 transition-all"
+            >
+              <Download className="h-4 w-4" />
+            </button>
             <button 
               onClick={() => fetchData(true)} 
               className={`p-3.5 rounded-2xl border border-slate-100 bg-white shadow-sm hover:bg-slate-50 transition-all ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
