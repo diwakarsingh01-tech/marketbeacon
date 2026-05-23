@@ -19,14 +19,19 @@ export async function safeJsonParse(response: Response) {
 }
 
 export const getApiUrl = () => {
+  // Use environment variable if provided (Standard for Vercel/Production)
   const envUrl = import.meta.env.VITE_API_URL;
-  // If envUrl is empty, /, or invalid, and we are in production, we MUST NOT use relative path
-  if (!envUrl || envUrl === '/' || envUrl === 'undefined') {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return "http://localhost:3001";
-    }
-    // Return a dummy URL to prevent relative fetch hijacking
-    return "https://marketbeacon-missing-backend.config";
+  
+  if (envUrl && envUrl !== '/' && envUrl !== 'undefined') {
+    return envUrl;
   }
-  return envUrl;
+
+  // Fallback for Local Development
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return "http://localhost:3001";
+  }
+
+  // CRITICAL: In production, if VITE_API_URL is missing, we must return a dummy absolute URL
+  // to prevent relative fetch loops that return Vercel HTML 404 pages.
+  return "https://api-missing-configuration.marketbeacon";
 };
