@@ -455,7 +455,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       price: quote.regularMarketPrice || (snap.quotes && snap.quotes.length > 0 ? snap.quotes[snap.quotes.length - 1].close : 0),
       change: quote.regularMarketChangePercent || 0,
       marketCap: quote.marketCap || 0,
-      industry: scr.industry || 'General Research',
+      industry: sector, // FIXED: Use mapped sector
       peRatio: scr.peRatio || quote.pe || 0,
       peMedians,
       dividendYield: scr.dividendYield || 0,

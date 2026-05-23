@@ -25,6 +25,7 @@ This checklist tracks the functional and technical integrity of every feature. A
 - [✅] **Ownership Matrix:** Smart Money (Promoter+FII+DII) calculation.
 - [✅] **Pledged Status:** Live extraction from shareholding tables.
 - [✅] **Normalized Scoring:** Strict 100-point ranking system.
+- [✅] **Sectoral Hardening:** BFSI/IT specific fallbacks for PE & Smart Money.
 
 ## 💼 4. Portfolio & Journaling
 - [✅] **Unified Portfolio:** Merged view of Journal + Watchlist.

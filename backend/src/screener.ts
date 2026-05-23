@@ -137,9 +137,9 @@ export async function fetchScreenerData(symbol: string) {
     const pe5YScraped = extractMedian(5);
     const pe10YScraped = extractMedian(10);
 
-    const pe3Y = pe3YScraped || (peRatio ? peRatio * 0.95 : 25.0);
-    const pe5Y = pe5YScraped || (peRatio ? peRatio * 0.90 : 22.0);
-    const pe10Y = pe10YScraped || (peRatio ? peRatio * 0.85 : 20.0);
+    let pe3Y = pe3YScraped || (peRatio ? peRatio * 0.95 : 25.0);
+    let pe5Y = pe5YScraped || (peRatio ? peRatio * 0.90 : 22.0);
+    let pe10Y = pe10YScraped || (peRatio ? peRatio * 0.85 : 20.0);
 
     const shareholding = {
       promoter: getShareholding('Promoter') || getShareholding('Promoters'),
@@ -148,8 +148,20 @@ export async function fetchScreenerData(symbol: string) {
       public: getShareholding('Public') || getShareholding('Others') || getShareholding('Public & Others'),
       pledged: getRatio('Pledged') || getRatio('Promoter holding pledged') || 0
     };
+    
+    // Aggressive Smart Money Calculation
     const smartMoneyTotal = (shareholding.promoter || 0) + (shareholding.fii || 0) + (shareholding.dii || 0);
     (shareholding as any).smartMoneyTotal = smartMoneyTotal;
+
+    // Hardened BFSI Detection for Median Fallbacks
+    const industry = $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'General Research';
+    const isBanking = industry.includes('Bank') || symbol.includes('BANK');
+    const isIT = industry.includes('IT') || industry.includes('Software');
+    
+    if (pe3Y === 25.0 && isBanking) { pe3Y = 18.0; pe5Y = 16.0; pe10Y = 14.0; }
+    if (pe3Y === 25.0 && isIT) { pe3Y = 30.0; pe5Y = 28.0; pe10Y = 25.0; }
+
+    const peMedians = { pe3Y, pe5Y, pe10Y };
 
     const netProfits = getAnnualTableData('profit-loss', 'Net Profit');
     const sales = getAnnualTableData('profit-loss', 'Sales');
