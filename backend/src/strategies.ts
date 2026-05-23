@@ -46,11 +46,12 @@ export function calculateSMA(prices: number[], length: number): number[] {
 }
 
 /**
- * STRATEGY 1: Institutional Floor (Long Envelope)
- * Rule: 10% below 20 SMA (Institutional Standard)
- * Target: Recovery to SMA 20 Midline
+ * STRATEGY 1: Institutional Floor (Long Envelope) - VIDEO SPEC
+ * Indicator: Envelope | Length: 200 | Percentage: 14% | Exponential: OFF (SMA)
+ * Entry: Price Low <= Lower Band
+ * Target: MAX(Current Upper Band, Entry-Time Upper Band, Entry Price * 1.30)
  */
-export function calculateEnvelope(quotes: Quote[], percentage: number = 10, length: number = 20) {
+export function calculateEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
   if (!quotes || quotes.length < length) return null;
 
   const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
@@ -61,39 +62,48 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 10, leng
   const currentPrice = prices[latestIdx];
 
   const lowerBand = currentSMA * (1 - percentage / 100);
-  const upperBand = currentSMA * (1 + percentage / 100);
+  const currentUpperBand = currentSMA * (1 + percentage / 100);
 
-  // Buy Zone: Price is at or below lower band
+  // Buy Zone: Price touched lower band (intra-day low or close)
   const isBuyZone = latestQuote.low <= lowerBand || currentPrice <= lowerBand;
   const distanceFromLower = ((currentPrice - lowerBand) / lowerBand) * 100;
 
   let triggerDate: string | undefined = undefined;
-  if (isBuyZone) {
-    const latestDate = typeof latestQuote.date === 'string' ? latestQuote.date : latestQuote.date.toISOString();
-    triggerDate = latestDate.split('T')[0];
+  let upperBandAtEntry = currentUpperBand;
 
-    // Find the first date of the continuous touch
+  if (isBuyZone) {
+    // Find the very first date of the continuous trigger to get "Upper Band at Entry"
+    let triggerIdx = latestIdx;
     for (let i = latestIdx; i >= length; i--) {
       const q = quotes[i];
       const cSMA = smaValues[i];
       const cLower = cSMA * (1 - percentage / 100);
       const cPrice = q.adjclose || q.adjClose || q.close;
+      
       if (q.low <= cLower || cPrice <= cLower) {
+        triggerIdx = i;
         triggerDate = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
+        upperBandAtEntry = cSMA * (1 + percentage / 100);
       } else break;
     }
   }
 
+  // VIDEO SPEC REFINEMENT: Target must not drift lower than initial upper band or 30% gain
+  const minimumTarget = lowerBand * 1.30;
+  const finalTarget = Math.max(currentUpperBand, upperBandAtEntry, minimumTarget);
+
   return {
     sma: currentSMA,
     lowerBand,
-    upperBand,
+    upperBand: currentUpperBand,
     isBuyZone,
     distanceFromLower,
     triggerDate,
     currentPrice,
-    entryPrice: lowerBand,
-    target: currentSMA // Recovery to the SMA 20 line
+    entryPrice: lowerBand, // Entry A
+    target: finalTarget,
+    upperBandAtEntry,
+    minimumTarget
   };
 }
 

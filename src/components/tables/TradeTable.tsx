@@ -233,10 +233,10 @@ const TradeTable: React.FC<TradeTableProps> = ({
         <div className="flex items-center space-x-3">
           <button 
             onClick={handleExportCSV} 
-            title="Export to CSV"
-            className="p-3 rounded-xl border border-slate-100 bg-white text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+            className="flex items-center space-x-2 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-slate-200 group"
           >
-            <DownloadIcon className="h-4 w-4" />
+            <DownloadIcon className="h-4 w-4 text-blue-400 group-hover:scale-110 transition-transform" />
+            <span>Export Audit</span>
           </button>
           <button onClick={() => setShowColumnSettings(!showColumnSettings)} className={`p-3 rounded-xl border transition-all ${showColumnSettings ? 'bg-slate-900 text-white' : 'bg-white text-slate-400 border-slate-100'}`}><SettingsIcon className="h-4 w-4" /></button>
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
