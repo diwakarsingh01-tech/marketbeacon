@@ -34,199 +34,6 @@ interface TradeTableProps {
 
 const getMarketCapTag = (cap: number, symbol: string) => {
   if (['NIFTYBEES', 'BANKBEES'].includes(symbol)) {
-    return { label: 'ETF', class: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' };
-  }
-  const capInCr = cap / 10000000;
-  if (capInCr >= 65000) return { label: 'LARGE CAP', class: 'text-white bg-slate-800 border-slate-700' };
-  if (capInCr >= 20000) return { label: 'MID CAP', class: 'text-blue-400 bg-blue-500/10 border-blue-500/20' };
-  return { label: 'SMALL CAP', class: 'text-amber-400 bg-amber-500/10 border-amber-500/20' };
-};
-
-const TradeTable: React.FC<TradeTableProps> = ({ 
-  trades, livePrices, athData, capData, sectorData, isWatchlist, activeTab, userWatchlist, strategyId, onToggleWatchlist, onUpdateHolding, onUpdateReview 
-}) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showColumnSettings, setShowColumnSettings] = useState(false);
-  
-  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
-    observation: true,
-    symbol: true,
-    sector: true,
-    marketCap: true,
-    abcd: true,
-    basePrice: true,
-    cmp: true,
-    dfh: true,
-    objective: true,
-    roi: true,
-    pending: true,
-    fundamentals: true
-  });
-
-  useEffect(() => {
-    const isWatchlistTab = activeTab === 'hold';
-    const isPortfolioTab = activeTab === 'portfolio';
-    const isSpecialStrat = strategyId === 'SIXTY_SEVEN_FUNDA';
-    
-    setVisibleColumns({
-      observation: !isWatchlistTab && !isPortfolioTab,
-      symbol: true,
-      sector: true,
-      marketCap: true,
-      abcd: !isWatchlistTab && !isPortfolioTab && !isSpecialStrat,
-      basePrice: !isWatchlistTab && !isPortfolioTab,
-      cmp: true,
-      dfh: true,
-      objective: !isWatchlistTab && !isPortfolioTab,
-      roi: !isWatchlistTab && !isPortfolioTab,
-      pending: !isWatchlistTab && !isPortfolioTab,
-      fundamentals: true
-    });
-  }, [activeTab, strategyId]);
-
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ 
-    key: 'entryTime', 
-    direction: 'desc' 
-  });
-
-  // Re-sync sort if tab changes to something with different primary keys
-  useEffect(() => {
-    if (activeTab === 'hold') setSortConfig({ key: 'dfh', direction: 'asc' });
-    else setSortConfig({ key: 'entryTime', direction: 'desc' });
-  }, [activeTab]);
-
-  const handleSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const handleShareSignal = (trade: any, method: 'copy' | 'telegram' = 'copy') => {
-    const livePrice = livePrices?.[trade.symbol] || trade.livePrice || trade.currentPrice || 0;
-    const text = `🚨 *MarketBeacon Research: ${trade.symbol}*
-
-⚡️ *Strategy:* ${trade.strategy || 'Institutional Matrix'}
-💰 *Price:* ₹${livePrice.toLocaleString()}
-🎯 *Objective:* ₹${(trade.target || trade.targetPrice || 0).toLocaleString()}
-📊 *Audit:* ${trade.isPass !== false ? '✅ Qualified' : '🔍 Observation'}
-
-🔗 *Full Terminal:* https://marketbeacon.vercel.app/stock/${trade.symbol}
-
-#MarketBeacon #InstitutionalResearch #Batch9`;
-    
-    if (method === 'copy') {
-      navigator.clipboard.writeText(text);
-      alert(`Signal for ${trade.symbol} copied to clipboard! Ready to paste.`);
-    } else {
-      const url = `https://t.me/share/url?url=https://marketbeacon.vercel.app&text=${encodeURIComponent(text)}`;
-      window.open(url, '_blank');
-    }
-  };
-
-  const handleToggleWatchlist = (e: React.MouseEvent, symbol: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (onToggleWatchlist) onToggleWatchlist(symbol);
-  };
-
-  const filteredAndSortedTrades = useMemo(() => {
-    let result = trades.map(t => {
-      const livePrice = livePrices?.[t.symbol] || t.livePrice || t.currentPrice;
-      const basePrice = t.entryPrice || t.actualEntryPrice;
-      const marketCap = capData?.[t.symbol] || t.marketCap || 0;
-      const sector = sectorData?.[t.symbol] || t.sector || 'General';
-      const ath = athData?.[t.symbol] || t.ath || 0;
-      
-      let calculatedRoi = 0;
-      if (livePrice && basePrice && basePrice > 0) {
-        calculatedRoi = ((livePrice - basePrice) / basePrice) * 100;
-      }
-
-      const targetGap = (livePrice && t.target) ? ((t.target - livePrice) / livePrice) * 100 : 0;
-      const dfh = (livePrice && ath && ath > 0) ? ((livePrice / ath) - 1) * 100 : 0;
-
-      return {
-        ...t,
-        livePrice,
-        calculatedRoi,
-        targetGap,
-        dfh,
-        marketCap,
-        sector,
-        entryTime: t.entryTime || t.entry_date || '-'
-      };
-    });
-
-    if (searchTerm) {
-      result = result.filter(t => t.symbol.toLowerCase().includes(searchTerm.toLowerCase()));
-    }
-
-    if (sortConfig) {
-      result.sort((a, b) => {
-        let valA, valB;
-        if (sortConfig.key === 'roi') { valA = a.calculatedRoi; valB = b.calculatedRoi; }
-        else if (sortConfig.key === 'pending') { valA = a.targetGap; valB = b.targetGap; }
-        else if (sortConfig.key === 'symbol') { valA = a.symbol; valB = b.symbol; }
-        else if (sortConfig.key === 'price') { valA = a.livePrice || 0; valB = b.livePrice || 0; }
-        else if (sortConfig.key === 'entryTime') {
-          valA = a.entryTime && a.entryTime !== '-' ? new Date(a.entryTime).getTime() : 0;
-          valB = b.entryTime && b.entryTime !== '-' ? new Date(b.entryTime).getTime() : 0;
-        } else {
-          valA = a[sortConfig.key];
-          valB = b[sortConfig.key];
-        }
-        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return result;
-  }, [trades, searchTerm, sortConfig, livePrices, athData, capData, sectorData]);
-
-  const SortIcon = ({ column }: { column: string }) => {
-    if (sortConfig?.key !== column) return <FilterIcon className="h-2.5 w-2.5 ml-1 opacity-20" />;
-    return sortConfig.direction === 'asc' ? <ChevronUpIcon className="h-2.5 w-2.5 ml-1 text-blue-600" /> : <ChevronDownIcon className="h-2.5 w-2.5 ml-1 text-blue-600" />;
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* Search and Settings Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between bg-white px-6 py-4 rounded-2xl border border-slate-100 gap-4 shadow-sm">
-        <div className="relative w-full max-w-sm">
-          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Search symbols..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 border-none rounded-xl pl-12 pr-4 py-3 text-xs font-black uppercase focus:bg-white transition-all shadow-inner"
-          />
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <button onClick={() => setShowColumnSettings(!showColumnSettings)} className={`p-3 rounded-xl border transition-all ${showColumnSettings ? 'bg-slate-900 text-white' : 'bg-white text-slate-400 border-slate-100'}`}><SettingsIcon className="h-4 w-4" /></button>
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
-            {filteredAndSortedTrades.length} Qualified Assets
-          </div>
-        </div>
-      </div>
-
-      {/* Column Settings Dropdown */}
-      {showColumnSettings && (
-        <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 animate-in slide-in-from-top-2">
-           {Object.entries(visibleColumns).map(([key, isVisible]) => (
-             <button key={key} onClick={() => setVisibleColumns(p => ({...p, [key]: !isVisible}))} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${isVisible ? 'bg-slate-900 text-white' : 'bg-white text-slate-400 border-slate-200'}`}>
-                {key}
-             </button>
-           ))}
-        </div>
-      )}
-
-const getMarketCapTag = (cap: number, symbol: string) => {
-  if (['NIFTYBEES', 'BANKBEES'].includes(symbol)) {
     return { label: 'ETF', class: 'text-indigo-600 bg-indigo-50 border-indigo-100' };
   }
   const capInCr = cap / 10000000;
@@ -236,7 +43,7 @@ const getMarketCapTag = (cap: number, symbol: string) => {
 };
 
 const TradeTable: React.FC<TradeTableProps> = ({ 
-  trades, livePrices, athData, capData, sectorData, isWatchlist, activeTab, userWatchlist, strategyId, onToggleWatchlist, onUpdateHolding, onUpdateReview 
+  trades, livePrices, athData, capData, sectorData, activeTab, userWatchlist, strategyId, onToggleWatchlist, onUpdateHolding 
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showColumnSettings, setShowColumnSettings] = useState(false);
@@ -282,7 +89,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
     direction: 'desc' 
   });
 
-  // Re-sync sort if tab changes
   useEffect(() => {
     if (activeTab === 'hold') setSortConfig({ key: 'dfh', direction: 'asc' });
     else setSortConfig({ key: 'entryTime', direction: 'desc' });
@@ -325,7 +131,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
   };
 
   const filteredAndSortedTrades = useMemo(() => {
-    let result = trades.map(t => {
+    let result = (trades || []).map(t => {
       const livePrice = livePrices?.[t.symbol] || t.livePrice || t.currentPrice;
       const basePrice = t.entryPrice || t.actualEntryPrice;
       const marketCap = capData?.[t.symbol] || t.marketCap || 0;
@@ -358,7 +164,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
     if (sortConfig) {
       result.sort((a, b) => {
-        let valA, valB;
+        let valA: any, valB: any;
         if (sortConfig.key === 'roi') { valA = a.calculatedRoi; valB = b.calculatedRoi; }
         else if (sortConfig.key === 'pending') { valA = a.targetGap; valB = b.targetGap; }
         else if (sortConfig.key === 'symbol') { valA = a.symbol; valB = b.symbol; }
@@ -367,8 +173,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
           valA = a.entryTime && a.entryTime !== '-' ? new Date(a.entryTime).getTime() : 0;
           valB = b.entryTime && b.entryTime !== '-' ? new Date(b.entryTime).getTime() : 0;
         } else {
-          valA = a[sortConfig.key];
-          valB = b[sortConfig.key];
+          valA = a[sortConfig.key as keyof typeof a];
+          valB = b[sortConfig.key as keyof typeof b];
         }
         if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
         if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -523,7 +329,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
                               const levelVal = trade.abcd?.[l] || 0;
                               const isActive = (trade.livePrice || 0) <= levelVal;
                               
-                              // Logic: 'A' is primary entry for Bluechips. B, C, D are averaging.
                               const levelColor = l === 'a' ? (isActive ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-400 border-blue-100') :
                                                (l === 'b' || l === 'c') ? (isActive ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-400 border-indigo-100') :
                                                (isActive ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-400 border-emerald-100');
@@ -535,7 +340,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
                               );
                             })}
                           </div>
-                          {/* Premium Hover Tooltip showing all ABCD prices */}
                           <div className="absolute z-[100] hidden group-hover/ladder:block bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 -translate-y-2 translate-x-4 animate-in fade-in zoom-in-95 duration-200 min-w-[180px]">
                              <div className="space-y-2">
                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 mb-2">Institutional Entry Ladder</p>
