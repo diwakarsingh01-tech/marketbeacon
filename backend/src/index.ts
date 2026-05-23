@@ -125,7 +125,82 @@ app.get('/api/auth/me', authenticateToken, (req: any, res) => {
   res.json(req.user);
 });
 
-// --- SCANNER LOGIC ---
+// --- ADMIN ENDPOINTS ---
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const users = await db.all('SELECT id, name, email, role, tier, subscription_expiry, is_active FROM users ORDER BY id DESC');
+    res.json(users);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/upgrade-requests', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const requests = await db.all('SELECT r.*, u.name, u.email FROM upgrade_requests r JOIN users u ON r.user_id = u.id ORDER BY r.id DESC');
+    res.json(requests);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const request = await db.get('SELECT * FROM upgrade_requests WHERE id = ?', [req.params.id]);
+    if (!request) return res.status(404).json({ error: 'Request not found' });
+
+    const expiry = new Date();
+    expiry.setFullYear(expiry.getFullYear() + 1); // Default 1 year for manual approval
+
+    await db.run('UPDATE users SET tier = ?, subscription_expiry = ?, is_active = 1 WHERE id = ?', [request.requested_tier, expiry.toISOString(), request.user_id]);
+    await db.run('UPDATE upgrade_requests SET status = "approved" WHERE id = ?', [req.params.id]);
+    
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const { tier, subscription_expiry, is_active, role } = req.body;
+    const db = getDB();
+    await db.run(
+      'UPDATE users SET tier = ?, subscription_expiry = ?, is_active = ?, role = ? WHERE id = ?',
+      [tier, subscription_expiry, is_active, role || 'user', req.params.id]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const vouchers = await db.all('SELECT * FROM vouchers ORDER BY id DESC');
+    res.json(vouchers);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const { code, tier, duration_days, max_uses } = req.body;
+    const db = getDB();
+    await db.run(
+      'INSERT INTO vouchers (code, tier, duration_days, max_uses, current_uses, is_active) VALUES (?, ?, ?, ?, 0, 1)',
+      [code, tier, duration_days, max_uses]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// --- MARKETPLACE / PLANS ---
+app.get('/api/marketplace', async (req, res) => {
+  const plans = [
+    { id: 1, name: 'Free Institutional', tier: 'free', cagr: '18%', winRate: '75%', risk: 'Low', features: ['Watchlist', 'Basic Signals'] },
+    { id: 2, name: 'Pro Execution', tier: 'pro', cagr: '28%', winRate: '82%', risk: 'Medium', features: ['Matrix Access', 'ABCD Ladder'] },
+    { id: 3, name: 'Alpha Priority', tier: 'alpha', cagr: '42%', winRate: '90%', risk: 'Institutional', features: ['All Strategies', 'Priority Nodes'] }
+  ];
+  res.json(plans);
+});
+
+// --- STOCK FUNDAMENTALS ---
 async function validateBatch9(symbol: string, snap: any, isSnapshot: boolean = false) {
   const quote = snap?.quote || snap || {};
   const screener = snap?.screener || {};
