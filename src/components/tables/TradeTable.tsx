@@ -64,23 +64,36 @@ const TradeTable: React.FC<TradeTableProps> = ({
   });
 
   useEffect(() => {
-    const isWatchlistTab = activeTab === 'hold' || activeTab === 'portfolio';
+    const isWatchlistTab = activeTab === 'hold';
+    const isPortfolioTab = activeTab === 'portfolio';
     const isSpecialStrat = strategyId === 'SIXTY_SEVEN_FUNDA';
-    setVisibleColumns(prev => ({
-      ...prev,
-      abcd: !isWatchlistTab && !isSpecialStrat,
-      observation: !isWatchlistTab,
-      basePrice: !isWatchlistTab,
-      objective: !isWatchlistTab,
-      roi: !isWatchlistTab,
-      pending: !isWatchlistTab
-    }));
+    
+    setVisibleColumns({
+      observation: !isWatchlistTab && !isPortfolioTab,
+      symbol: true,
+      sector: true,
+      marketCap: true,
+      abcd: !isWatchlistTab && !isPortfolioTab && !isSpecialStrat,
+      basePrice: !isWatchlistTab && !isPortfolioTab,
+      cmp: true,
+      dfh: true,
+      objective: !isWatchlistTab && !isPortfolioTab,
+      roi: !isWatchlistTab && !isPortfolioTab,
+      pending: !isWatchlistTab && !isPortfolioTab,
+      fundamentals: true
+    });
   }, [activeTab, strategyId]);
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ 
     key: 'entryTime', 
     direction: 'desc' 
   });
+
+  // Re-sync sort if tab changes to something with different primary keys
+  useEffect(() => {
+    if (activeTab === 'hold') setSortConfig({ key: 'dfh', direction: 'asc' });
+    else setSortConfig({ key: 'entryTime', direction: 'desc' });
+  }, [activeTab]);
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -216,7 +229,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
       <div className="hidden md:block overflow-hidden border border-slate-100 rounded-3xl bg-white shadow-xl">
         <table className="w-full text-left border-collapse">
           <thead>
-            {activeTab === 'portfolio' || activeTab === 'hold' ? (
+            {activeTab === 'portfolio' ? (
               <tr className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100">
                 <th className="px-6 py-5 text-left">Instrument</th>
                 <th className="px-6 py-5 text-center">Qty</th>
@@ -235,6 +248,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                 {visibleColumns.abcd && <th className="px-6 py-5 text-center">ABCD Ladder</th>}
                 {visibleColumns.basePrice && <th className="px-6 py-5 text-right">Base</th>}
                 {visibleColumns.cmp && <th className="px-6 py-5 text-right cursor-pointer" onClick={() => handleSort('price')}><div className="flex items-center justify-end text-blue-600">CMP <SortIcon column="price" /></div></th>}
+                {activeTab === 'hold' && <th className="px-6 py-5 text-right font-black text-slate-500">ATH</th>}
                 {visibleColumns.dfh && <th className="px-6 py-5 text-right cursor-pointer" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div></th>}
                 {visibleColumns.objective && <th className="px-6 py-5 text-right text-fuchsia-600 font-black">Objective</th>}
                 {visibleColumns.roi && <th className="px-6 py-5 text-right cursor-pointer" onClick={() => handleSort('roi')}><div className="flex items-center justify-end">ROI% <SortIcon column="roi" /></div></th>}
@@ -250,8 +264,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
               filteredAndSortedTrades.map((trade) => {
                 const capTag = getMarketCapTag(trade.marketCap, trade.symbol);
                 const isStarred = userWatchlist?.includes(trade.symbol);
+                const ath = athData?.[trade.symbol] || trade.ath || 0;
 
-                if (activeTab === 'portfolio' || activeTab === 'hold') {
+                if (activeTab === 'portfolio') {
                   const invested = (trade.quantity || 0) * (trade.buy_price || 0);
                   const currentVal = (trade.quantity || 0) * (trade.livePrice || 0);
                   const pnl = currentVal - invested;
@@ -320,6 +335,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                     )}
                     {visibleColumns.basePrice && <td className="px-6 py-4 text-right text-slate-400 font-bold">₹{trade.entryPrice?.toLocaleString()}</td>}
                     {visibleColumns.cmp && <td className="px-6 py-4 text-right text-blue-600 font-black">₹{trade.livePrice?.toLocaleString()}</td>}
+                    {activeTab === 'hold' && <td className="px-6 py-4 text-right text-slate-400 font-bold">₹{ath?.toLocaleString() || '-'}</td>}
                     {visibleColumns.dfh && <td className="px-6 py-4 text-right text-slate-400 font-medium">{trade.dfh?.toFixed(1)}%</td>}
                     {visibleColumns.objective && <td className="px-6 py-4 text-right text-fuchsia-600 font-black">₹{trade.target?.toLocaleString()}</td>}
                     {visibleColumns.roi && (

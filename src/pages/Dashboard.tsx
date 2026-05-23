@@ -179,12 +179,24 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const getTradesForTab = useCallback(() => {
     if (!data || !data.allStocks) return [];
-    if (activeTab === 'hold') return data.allStocks || []; // Master Watchlist (42 stocks)
-    if (activeTab === 'neutral') return data.neutral || []; // Observation Mode
-    if (activeTab === 'rejected') return data.rejected || []; // Audit Fails
-    if (activeTab === 'open') return data.open || []; // Qualified Signals
     
-    // Fallback for Portfolio tab if accessed directly via URL
+    // Bifurcation Logic:
+    // 1. Qualified (Open): isBuyZone && isPass
+    // 2. Rejected: !isPass
+    // 3. Neutral: !isBuyZone && isPass
+    // 4. Watchlist: allStocks
+    
+    const open = data.allStocks.filter((r: any) => r.isBuyZone && r.isPass);
+    const rejected = data.allStocks.filter((r: any) => !r.isPass);
+    const neutral = data.allStocks.filter((r: any) => !r.isBuyZone && r.isPass);
+    const watchlist = data.allStocks;
+
+    if (activeTab === 'hold') return watchlist;
+    if (activeTab === 'neutral') return neutral;
+    if (activeTab === 'rejected') return rejected;
+    if (activeTab === 'open') return open;
+    
+    // Portfolio tab handled separately
     if (activeTab === 'portfolio') {
       const combinedMap: Record<string, { quantity: number, buy_price: number }> = {};
       (userWatchlist || []).forEach(w => { combinedMap[w.symbol] = { quantity: w.quantity || 0, buy_price: w.buy_price || 0 }; });
@@ -357,9 +369,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       {/* Institutional Tab Controller */}
       <div className="flex bg-slate-100/50 p-1.5 rounded-[2rem] border border-slate-100 w-fit overflow-x-auto no-scrollbar shadow-inner">
          {[
-           { id: 'open', label: 'Qualified', count: data?.open?.length || 0 },
-           { id: 'neutral', label: 'Neutral', count: data?.neutral?.length || 0 },
-           { id: 'rejected', label: 'Rejected', count: data?.rejected?.length || 0 },
+           { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => r.isBuyZone && r.isPass).length || 0 },
+           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => !r.isBuyZone && r.isPass).length || 0 },
+           { id: 'rejected', label: 'Rejected', count: data?.allStocks?.filter((r: any) => !r.isPass).length || 0 },
            { id: 'hold', label: 'Watchlist', count: data?.allStocks?.length || 0 },
          ].map(tab => (
            <button 
