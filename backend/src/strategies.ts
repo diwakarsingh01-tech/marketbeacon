@@ -142,20 +142,36 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   }
 
   const isBuyZone = b1_trigger_idx !== -1;
-  if (!isBuyZone) return { isBuyZone: false, tranche: 'WATCHLIST', currentPrice, entryPrice: currentEMA, target: upperBand };
-
-  // Determine Tranche (B1 if only middle line hit, B2 if lower line hit)
-  const tranche = b2_trigger_idx !== -1 ? 'B2' : 'B1';
   
   // Rule: B1 bought at orange (EMA), sold at upper blue.
   // Rule: B2 bought at lower blue, sold at orange (EMA).
+  
+  // ALWAYS calculate these for baseline rendering
+  const entryPriceB1 = ema200[latestIdx];
+  const entryPriceB2 = ema200[latestIdx] * 0.86;
+  const targetB1 = ema200[latestIdx] * 1.14;
+  const targetB2 = ema200[latestIdx];
+
+  if (!isBuyZone) {
+    return { 
+      isBuyZone: false, 
+      tranche: 'WATCHLIST', 
+      currentPrice, 
+      entryPrice: entryPriceB1, // Baseline is Orange line
+      target: targetB1 
+    };
+  }
+
+  // Determine Tranche based on current continuous sequences
+  const tranche = b2_trigger_idx !== -1 ? 'B2' : 'B1';
+  
   let entryPrice = ema200[b1_trigger_idx];
-  let target = ema200[b1_trigger_idx] * 1.14; // Default B1 target
+  let target = ema200[b1_trigger_idx] * 1.14;
   let triggerDate = (typeof quotes[b1_trigger_idx].date === 'string' ? quotes[b1_trigger_idx].date : (quotes[b1_trigger_idx].date as Date).toISOString()).split('T')[0];
 
   if (tranche === 'B2') {
     entryPrice = ema200[b2_trigger_idx] * 0.86;
-    target = ema200[b2_trigger_idx]; // B2 sells at the orange line
+    target = ema200[b2_trigger_idx];
     triggerDate = (typeof quotes[b2_trigger_idx].date === 'string' ? quotes[b2_trigger_idx].date : (quotes[b2_trigger_idx].date as Date).toISOString()).split('T')[0];
   }
 

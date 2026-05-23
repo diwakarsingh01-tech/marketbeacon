@@ -502,6 +502,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
       const lastQuote = snap.quotes[snap.quotes.length - 1];
       let strategyData;
       if (strategyId === 'ENVELOPE_LONG') strategyData = calculateEnvelope(snap.quotes);
+      else if (strategyId === 'ENVELOPE_SHORT') strategyData = processShortEnvelope(snap.quotes, snap.quote.marketCap);
       else strategyData = snap.strategies?.[strategyId] || calculateEnvelope(snap.quotes);
       const audit = await validateBatch9(baseSymbol, snap);
       const entryPrice = strategyData?.entryPrice || 0;
