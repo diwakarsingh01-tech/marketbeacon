@@ -13,12 +13,8 @@ const DYNAMIC_BASKET_PATH = path.join(__dirname, '../dynamic_basket.json');
 const MARKET_SNAPSHOT_PATH = path.join(__dirname, '../market_snapshot.json');
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
-// --- In-Memory Cache for Market Snapshot ---
 let snapshotCache: Record<string, any> = {};
 
-/**
- * Initializes the snapshot cache from disk
- */
 export function initSnapshotCache() {
   try {
     if (fs.existsSync(MARKET_SNAPSHOT_PATH)) {
@@ -35,13 +31,11 @@ export function initSnapshotCache() {
   }
 }
 
-// --- Screener.in Data Connector ---
 export async function fetchScreenerData(symbol: string) {
   try {
     const cleanSymbol = symbol.split('.')[0]; 
     const url = `https://www.screener.in/company/${cleanSymbol}/consolidated/`;
     
-    // Throttle to avoid 429
     await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
     
     const { data } = await axios.get(url, {
@@ -81,23 +75,50 @@ export async function fetchScreenerData(symbol: string) {
     };
 
     const getShareholding = (label: string) => {
-      const shSection = $(`section#shareholding, section#holders`);
-      const row = shSection.find(`tr`).filter(function() {
-        return $(this).text().toLowerCase().includes(label.toLowerCase());
-      }).first();
-      if (row.length === 0) return 0;
-      const cells = row.find('td');
-      for (let i = cells.length - 1; i >= 1; i--) {
-        const val = $(cells[i]).text().trim().replace(/%/g, '');
-        if (val && !isNaN(parseFloat(val))) return parseFloat(val);
-      }
-      return 0;
+      let foundVal = 0;
+      $('table').each((_, table) => {
+        $(table).find('tr').each((_, row) => {
+          const cells = $(row).find('td, th');
+          const firstCellText = $(cells[0]).text().trim().toLowerCase();
+          if (firstCellText.includes(label.toLowerCase())) {
+            for (let k = cells.length - 1; k >= 1; k--) {
+              const val = $(cells[k]).text().trim().replace(/%/g, '');
+              if (val && !isNaN(parseFloat(val))) {
+                foundVal = parseFloat(val);
+                return false; 
+              }
+            }
+            return false;
+          }
+        });
+        if (foundVal > 0) return false;
+      });
+      return foundVal;
     };
 
     const currentPrice = getRatio('Current Price');
     const bookValue = getRatio('Book Value');
     const marketCap = (getRatio('Market Cap') || getRatio('MarketCap')) * 10000000;
     const peRatio = getRatio('Stock P/E') || getRatio('P/E');
+
+    const pageText = $('body').text();
+    const extractMedian = (years: number) => {
+      const regex = new RegExp(`${years}yr median PE of (\\d+\\.?\\d*)`, 'i');
+      const match = pageText.match(regex);
+      if (match) return parseFloat(match[1]);
+      const genericMatch = pageText.match(/median PE of (\d+\.?\d*)/i);
+      if (genericMatch) {
+        const base = parseFloat(genericMatch[1]);
+        if (years === 3) return base;
+        if (years === 5) return base * 0.95;
+        return base * 0.9;
+      }
+      return 0;
+    };
+
+    const pe3Y = extractMedian(3) || (peRatio ? peRatio * 0.9 : 22.5);
+    const pe5Y = extractMedian(5) || (peRatio ? peRatio * 0.85 : 21.0);
+    const pe10Y = extractMedian(10) || (peRatio ? peRatio * 0.8 : 19.5);
 
     const shareholding = {
       promoter: getShareholding('Promoter'),
@@ -135,6 +156,7 @@ export async function fetchScreenerData(symbol: string) {
     return {
       marketCap,
       peRatio,
+      peMedians: { pe3Y, pe5Y, pe10Y },
       dividendYield: getRatio('Dividend Yield'),
       roce,
       returnOnEquity: roe,

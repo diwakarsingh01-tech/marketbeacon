@@ -227,8 +227,57 @@ const StockFundamentalsPage: React.FC = () => {
         </div>
 
         <div className="lg:col-span-4 space-y-8">
-           <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 md:p-10 space-y-8">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center">
+           {/* PE Valuation Matrix */}
+           <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 space-y-8">
+              <div className="flex justify-between items-center">
+                 <div className="space-y-1">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center">
+                      <Target className="h-4 w-4 mr-2" /> Valuation Matrix
+                    </h3>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest pl-6">Institutional PE Audit</p>
+                 </div>
+              </div>
+
+              <div className="space-y-6">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100">
+                       <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Current PE</p>
+                       <p className="text-2xl font-black text-slate-900 leading-none">{Number(data?.peRatio || 0).toFixed(1)}</p>
+                    </div>
+                    <div className="bg-slate-900 p-5 rounded-[2rem] border border-slate-800 flex flex-col justify-center text-center">
+                       <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Avg Median</p>
+                       <p className="text-xl font-black text-white leading-none">
+                          {((Number(data?.peMedians?.pe3Y||0) + Number(data?.peMedians?.pe5Y||0) + Number(data?.peMedians?.pe10Y||0))/3).toFixed(1)}
+                       </p>
+                    </div>
+                 </div>
+
+                 <div className="bg-blue-50/30 p-4 rounded-2xl border border-blue-100/50 text-center">
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${Number(data?.peRatio) < ((Number(data?.peMedians?.pe3Y||0) + Number(data?.peMedians?.pe5Y||0) + Number(data?.peMedians?.pe10Y||0))/3) ? 'text-emerald-600' : 'text-orange-600'}`}>
+                       {Number(data?.peRatio) < ((Number(data?.peMedians?.pe3Y||0) + Number(data?.peMedians?.pe5Y||0) + Number(data?.peMedians?.pe10Y||0))/3) ? '▼ Trading Below Average' : '▲ Trading Above Average'}
+                    </p>
+                 </div>
+                 <div className="space-y-3 px-1">
+                    {[
+                      { label: '3-Yr Median', val: data?.peMedians?.pe3Y },
+                      { label: '5-Yr Median', val: data?.peMedians?.pe5Y },
+                      { label: '10-Yr Median', val: data?.peMedians?.pe10Y }
+                    ].map((row) => (
+                      <div key={row.label} className="flex items-center justify-between group">
+                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-slate-900 transition-colors">{row.label}</span>
+                         <div className="flex items-center space-x-3">
+                            <span className="text-[10px] font-black text-slate-900">{Number(row.val || 0).toFixed(1)}</span>
+                            <div className="w-20 h-1.5 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                               <div className="h-full bg-slate-900 transition-all duration-1000" style={{ width: `${Math.min(100, (Number(data?.peRatio)/(Number(row.val)||1))*50)}%` }} />
+                            </div>
+                         </div>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+           </div>
+
+           <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 md:p-10 space-y-8">              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center">
                  <PieIcon className="h-4 w-4 mr-2" /> Ownership Matrix
               </h3>
               <div className="space-y-6">

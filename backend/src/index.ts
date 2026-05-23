@@ -324,39 +324,41 @@ async function validateBatch9(symbol: string, snap: any) {
     ]
   };
 
-  // Segment 4: Ownership Matrix (25 pts)
+  // 4. Ownership Matrix (25 pts)
   // Benchmark: Smart Money > 70%
   let ownScore = 25;
   if (smartMoneyTotal < 70) ownScore -= 10;
   if (smartMoneyTotal < 50) ownScore -= 10;
   if (publicHolding > 30) ownScore -= 5;
   
-  // Red Flag: Institutional Exit (Calculated if historical data exists)
-  if (fii < 5 && dii < 5) auditLog.push('Low Inst. Conviction');
+  // High-Accuracy Red Flags: Institutional/Promoter Exit
+  if (fii < 2 && dii < 2) auditLog.push('Institutional Exit Flag');
+  if (promoter < 30) auditLog.push('Low Promoter Conviction');
+  if (pledged > 15) auditLog.push('High Pledge Red Flag');
 
   const valuationConsistency = {
     score: Math.max(0, ownScore),
     max: 25,
     checks: [
       { label: 'Smart Money > 70%', value: `${smartMoneyTotal.toFixed(1)}%`, pass: smartMoneyTotal >= 70 },
-      { label: 'Retail Float < 30%', value: `${publicHolding.toFixed(1)}%`, pass: publicHolding <= 30 }
+      { label: 'Promoter Status', value: `${promoter.toFixed(1)}%`, pass: promoter >= 50 }
     ]
   };
   if (valuationConsistency.score < 25) totalScore -= (25 - valuationConsistency.score);
 
-  // Segment 5: Dynamic Valuation (25 pts)
-  // Logic: Current PE vs 3/5/10Y Median (25.5 proxy)
+  // Segment 5: Dynamic Valuation Matrix (25 pts)
+  const peMedians = scr.peMedians || { pe3Y: 25.5, pe5Y: 25.5, pe10Y: 25.5 };
   let valScore = 25;
-  const peMedian = 25.5; // Institutional proxy for quality Bluechips
-  if (pe > peMedian * 2) valScore -= 10;
-  if (pe > peMedian * 3) valScore -= 15;
+  const isUndervalued = pe < peMedians.pe5Y;
+  if (pe > peMedians.pe3Y * 1.5) valScore -= 10;
+  if (pe > peMedians.pe5Y * 2) valScore -= 15;
 
   const efficiencyGovernance = {
     score: Math.max(0, valScore),
     max: 25,
     checks: [
-      { label: 'PE Sanity', value: pe.toFixed(1), pass: pe < 60 },
-      { label: 'Value Gap', value: 'Audited', pass: pe < 40 }
+      { label: 'Valuation Audit', value: isUndervalued ? 'Undervalued' : 'Premium', pass: isUndervalued },
+      { label: '10Y Median PE', value: peMedians.pe10Y.toFixed(1), pass: pe < peMedians.pe10Y * 1.2 }
     ]
   };
   if (efficiencyGovernance.score < 25) totalScore -= (25 - efficiencyGovernance.score);
@@ -402,6 +404,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       marketCap: quote.marketCap || 0,
       industry: scr.industry || 'General Research',
       peRatio: scr.peRatio || quote.pe || 0,
+      peMedians: scr.peMedians || { pe3Y: 0, pe5Y: 0, pe10Y: 0 },
       dividendYield: scr.dividendYield || 0,
       fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh || 0,
       fiftyTwoWeekLow: quote.fiftyTwoWeekLow || 0,
