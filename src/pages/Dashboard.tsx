@@ -179,6 +179,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const getTradesForTab = useCallback(() => {
     if (!data || !data.allStocks) return [];
+    if (activeTab === 'hold') return data.allStocks || []; // Master Watchlist (42 stocks)
+    if (activeTab === 'neutral') return data.neutral || []; // Observation Mode
+    if (activeTab === 'rejected') return data.rejected || []; // Audit Fails
+    if (activeTab === 'open') return data.open || []; // Qualified Signals
+    
+    // Fallback for Portfolio tab if accessed directly via URL
     if (activeTab === 'portfolio') {
       const combinedMap: Record<string, { quantity: number, buy_price: number }> = {};
       (userWatchlist || []).forEach(w => { combinedMap[w.symbol] = { quantity: w.quantity || 0, buy_price: w.buy_price || 0 }; });
@@ -194,9 +200,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         return { ...base, ...combinedMap[symbol] };
       }).filter(s => s.quantity > 0);
     }
-    if (activeTab === 'hold') return data.allStocks;
-    if (activeTab === 'rejected') return data.rejected || [];
-    return data[activeTab] || [];
+    return [];
   }, [data, userWatchlist, activeTab, trades, stockPrices, stockCaps, stockSectors]);
 
   const portfolioSummary = useMemo(() => {
@@ -354,9 +358,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       <div className="flex bg-slate-100/50 p-1.5 rounded-[2rem] border border-slate-100 w-fit overflow-x-auto no-scrollbar shadow-inner">
          {[
            { id: 'open', label: 'Qualified', count: data?.open?.length || 0 },
-           { id: 'hold', label: 'Watchlist', count: userWatchlist?.length || 0 },
-           { id: 'portfolio', label: 'Portfolio', count: getTradesForTab().length },
-           { id: 'rejected', label: 'Rejected', count: data?.rejected?.length || 0 }
+           { id: 'neutral', label: 'Neutral', count: data?.neutral?.length || 0 },
+           { id: 'rejected', label: 'Rejected', count: data?.rejected?.length || 0 },
+           { id: 'hold', label: 'Watchlist', count: data?.allStocks?.length || 0 },
          ].map(tab => (
            <button 
              key={tab.id} 
