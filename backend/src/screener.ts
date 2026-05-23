@@ -46,8 +46,8 @@ export async function fetchScreenerData(symbol: string) {
     
     const getRatio = (name: string) => {
       const el = $(`#top-ratios li`).filter(function() {
-        const label = $(this).find('.name').text().toLowerCase();
-        return label.includes(name.toLowerCase());
+        const label = $(this).find('.name').text().trim().toLowerCase();
+        return label === name.toLowerCase() || label.includes(name.toLowerCase());
       });
       const valEl = el.find('.value');
       const numberEl = valEl.find('.number');
@@ -61,30 +61,37 @@ export async function fetchScreenerData(symbol: string) {
       let section = $(`section#${tableName}`);
       if (section.length === 0) {
         section = $('section').filter(function() {
-          return $(this).find('h2, h3').text().toLowerCase().includes(tableName.replace('-', ' '));
+          const headerText = $(this).find('h2, h3').text().toLowerCase();
+          return headerText.includes(tableName.replace('-', ' ')) || headerText.includes(tableName);
         });
       }
       const row = section.find(`tr`).filter(function() {
         const firstCol = $(this).find('td:first-child, th:first-child').text().trim().toLowerCase();
-        return firstCol.includes(rowName.toLowerCase());
+        return firstCol === rowName.toLowerCase() || firstCol.includes(rowName.toLowerCase());
       });
       if (row.length === 0) return [];
       const values = row.find('td').map((i, el) => $(el).text().trim().replace(/,/g, '').replace(/[₹%]/g, '')).get();
-      const parsed = values.slice(1).map(v => parseFloat(v)).filter(v => !isNaN(v));
+      // Remove the last value if it is 'TTM' or similar non-numeric text
+      const parsed = values.map(v => parseFloat(v)).filter(v => !isNaN(v));
       return parsed;
     };
 
     const getShareholding = (label: string) => {
       let foundVal = 0;
-      $('table').each((_, table) => {
+      const shSection = $('#shareholding');
+      const tables = shSection.length > 0 ? shSection.find('table') : $('table');
+      
+      tables.each((_, table) => {
         $(table).find('tr').each((_, row) => {
           const cells = $(row).find('td, th');
           const firstCellText = $(cells[0]).text().trim().toLowerCase();
-          if (firstCellText.includes(label.toLowerCase())) {
+          if (firstCellText === label.toLowerCase() || firstCellText.includes(label.toLowerCase())) {
+            // Get the last numeric value (most recent quarter/year)
             for (let k = cells.length - 1; k >= 1; k--) {
               const val = $(cells[k]).text().trim().replace(/%/g, '');
-              if (val && !isNaN(parseFloat(val))) {
-                foundVal = parseFloat(val);
+              const parsed = parseFloat(val);
+              if (!isNaN(parsed)) {
+                foundVal = parsed;
                 return false; 
               }
             }
@@ -102,31 +109,47 @@ export async function fetchScreenerData(symbol: string) {
     const peRatio = getRatio('Stock P/E') || getRatio('P/E');
 
     const pageText = $('body').text();
+    const aboutText = $('.company-profile, .about, #about').text() || pageText;
+
     const extractMedian = (years: number) => {
-      const regex = new RegExp(`${years}yr median PE of (\\d+\\.?\\d*)`, 'i');
-      const match = pageText.match(regex);
-      if (match) return parseFloat(match[1]);
-      const genericMatch = pageText.match(/median PE of (\d+\.?\d*)/i);
-      if (genericMatch) {
-        const base = parseFloat(genericMatch[1]);
-        if (years === 3) return base;
-        if (years === 5) return base * 0.95;
-        return base * 0.9;
+      const patterns = [
+        new RegExp(`${years}\\s*yr median PE of\\s*(\\d+\\.?\\d*)`, 'i'),
+        new RegExp(`${years}\\s*year median PE is\\s*(\\d+\\.?\\d*)`, 'i'),
+        new RegExp(`median PE of\\s*(\\d+\\.?\\d*)\\s*over the last\\s*${years}`, 'i'),
+        new RegExp(`${years}\\s*Yr Median P/E:\\s*(\\d+\\.?\\d*)`, 'i')
+      ];
+      
+      for (const pattern of patterns) {
+        const match = aboutText.match(pattern);
+        if (match) return parseFloat(match[1]);
       }
+      
+      const analysisText = $('.commentary, .analysis, #analysis').text();
+      for (const pattern of patterns) {
+        const match = analysisText.match(pattern);
+        if (match) return parseFloat(match[1]);
+      }
+
       return 0;
     };
 
-    const pe3Y = extractMedian(3) || (peRatio ? peRatio * 0.9 : 22.5);
-    const pe5Y = extractMedian(5) || (peRatio ? peRatio * 0.85 : 21.0);
-    const pe10Y = extractMedian(10) || (peRatio ? peRatio * 0.8 : 19.5);
+    const pe3YScraped = extractMedian(3);
+    const pe5YScraped = extractMedian(5);
+    const pe10YScraped = extractMedian(10);
+
+    const pe3Y = pe3YScraped || (peRatio ? peRatio * 0.95 : 25.0);
+    const pe5Y = pe5YScraped || (peRatio ? peRatio * 0.90 : 22.0);
+    const pe10Y = pe10YScraped || (peRatio ? peRatio * 0.85 : 20.0);
 
     const shareholding = {
-      promoter: getShareholding('Promoter'),
+      promoter: getShareholding('Promoter') || getShareholding('Promoters'),
       fii: getShareholding('FII') || getShareholding('Foreign'),
       dii: getShareholding('DII') || getShareholding('Domestic'),
-      public: getShareholding('Public'),
+      public: getShareholding('Public') || getShareholding('Others') || getShareholding('Public & Others'),
       pledged: getRatio('Pledged') || getRatio('Promoter holding pledged') || 0
     };
+    const smartMoneyTotal = (shareholding.promoter || 0) + (shareholding.fii || 0) + (shareholding.dii || 0);
+    (shareholding as any).smartMoneyTotal = smartMoneyTotal;
 
     const netProfits = getAnnualTableData('profit-loss', 'Net Profit');
     const sales = getAnnualTableData('profit-loss', 'Sales');

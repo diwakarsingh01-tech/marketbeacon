@@ -370,11 +370,21 @@ async function validateBatch9(symbol: string, snap: any) {
   if (efficiencyGovernance.score < 25) totalScore -= (25 - efficiencyGovernance.score);
 
   const finalScore = Math.max(0, Math.min(100, totalScore));
+  
+  // Pro-Level Conclusion Logic
+  let conclusion = 'INSTITUTIONAL GRADE COMPLIANT';
+  if (finalScore < 60) conclusion = 'SPECULATIVE GRADE - HIGH RISK';
+  else if (finalScore < 75) conclusion = 'INVESTMENT GRADE - MODERATE';
+  else if (finalScore >= 85) conclusion = 'ELITE CORE - TOP 1% SELECTION';
+
+  if (auditLog.length > 0) {
+    conclusion = `${conclusion} (Caution: ${auditLog.join(', ')})`;
+  }
 
   return {
     isPass: finalScore >= 60,
     score: finalScore,
-    reason: auditLog.join(' | ') || 'INSTITUTIONAL GRADE COMPLIANT',
+    reason: conclusion,
     metrics: { pe, debtToEquity, roe, pledged, fii, dii, promoter, totalInst: smartMoneyTotal },
     profitabilityQuality,
     balanceSheetSafety,
@@ -393,19 +403,30 @@ app.get('/api/stock-fundamentals', async (req, res) => {
   try {
     const symbol = (req.query.symbol as string);
     if (!symbol) return res.status(400).json({ error: 'Symbol required' });
-    const snapshot = getMarketSnapshot();
-    const snap = snapshot[symbol];
-    if (!snap) return res.status(404).json({ error: 'Stock not found in snapshot' });
-    
+
+    let snapshot = getMarketSnapshot();
+    let snap = snapshot[symbol];
+
+    // Pro-Level: If snapshot is missing or older than 6 hours, fetch fresh data for this symbol
+    const sixHoursAgo = Date.now() - (6 * 60 * 60 * 1000);
+    if (!snap || new Date(snap.lastUpdated).getTime() < sixHoursAgo) {
+      console.log(`🔄 [REFRESH] Fetching real-time fundamentals for ${symbol}...`);
+      await updateMarketSnapshot([symbol]);
+      snapshot = getMarketSnapshot();
+      snap = snapshot[symbol];
+    }
+
+    if (!snap) return res.status(404).json({ error: 'Stock not found in universe' });
+
     const audit = await validateBatch9(symbol, snap);
     const scr = snap.screener || {};
     const quote = snap.quote || {};
-    const sh = quote.shareholding || scr.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0 };
-    const smartMoneyTotal = (sh.promoter || 0) + (sh.fii || 0) + (sh.dii || 0);
+    const sh = scr.shareholding || quote.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0, smartMoneyTotal: 0 };
+    const smartMoneyTotal = sh.smartMoneyTotal || (sh.promoter || 0) + (sh.fii || 0) + (sh.dii || 0);
 
     res.json({
       symbol,
-      price: quote.regularMarketPrice || snap.quotes[snap.quotes.length - 1].close,
+      price: quote.regularMarketPrice || (snap.quotes && snap.quotes.length > 0 ? snap.quotes[snap.quotes.length - 1].close : 0),
       change: quote.regularMarketChangePercent || 0,
       marketCap: quote.marketCap || 0,
       industry: scr.industry || 'General Research',
@@ -426,7 +447,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       industryPe: 25.5,
       faceValue: scr.faceValue || 1,
       growth3Yr: {
-        roe: 15,
+        roe: scr.returnOnEquity || 15,
         sales: scr.operatingMargin || 12
       },
       shareholding: {
@@ -440,7 +461,6 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
-
 // --- CORE SCANNER ---
 app.get('/api/backtest/envelope', async (req, res) => {
   try {
