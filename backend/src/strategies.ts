@@ -303,9 +303,131 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
 }
 
 export function calculateSRStrategy(quotes: Quote[]) {
-  // Sequence: B-T-B-T-B logic
-  return { isBuyZone: false, entryPrice: 0, target: 0, currentPrice: 0 }; // Placeholder for complex re-impl
+  if (!quotes || quotes.length < 500) return { isBuyZone: false, entryPrice: 0, target: 0, currentPrice: 0 };
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const currentPrice = prices[prices.length - 1];
+  
+  // Find local lows/highs (Swing points)
+  const windowSize = 10;
+  const lows: number[] = [];
+  const highs: number[] = [];
+  
+  for (let i = windowSize; i < quotes.length - windowSize; i++) {
+    const slice = prices.slice(i - windowSize, i + windowSize + 1);
+    const centerPrice = prices[i];
+    if (centerPrice === Math.min(...slice)) lows.push(centerPrice);
+    if (centerPrice === Math.max(...slice)) highs.push(centerPrice);
+  }
+  
+  // Cluster lows within 3% tolerance for Support
+  const tolerance = 0.03;
+  let supportLevel = 0;
+  let maxTouches = 0;
+
+  for (const low of lows) {
+    const touches = lows.filter(l => Math.abs(l - low) / low <= tolerance).length;
+    if (touches >= 3 && touches > maxTouches) {
+      if (Math.abs(currentPrice - low) / low <= tolerance) {
+        supportLevel = low;
+        maxTouches = touches;
+      }
+    }
+  }
+
+  if (supportLevel === 0) return { isBuyZone: false, entryPrice: 0, target: 0, currentPrice: 0 };
+  
+  // Find nearest major resistance (Top) with at least 2 touches
+  let target = currentPrice * 1.30; // Default 30% upside
+  const validResistances = highs.filter(h => h > currentPrice * 1.10).sort((a, b) => a - b);
+  
+  for (const res of validResistances) {
+     const touches = highs.filter(h => Math.abs(h - res) / res <= tolerance).length;
+     if (touches >= 2) {
+       target = res;
+       break;
+     }
+  }
+
+  return {
+    isBuyZone: true,
+    entryPrice: supportLevel,
+    target: target,
+    currentPrice: currentPrice,
+    score: 80,
+    touches: maxTouches
+  };
 }
 
-export function calculateRHS(quotes: Quote[]) { return { isBuyZone: false }; }
-export function calculateCupHandle(quotes: Quote[]) { return { isBuyZone: false }; }
+export function calculateRHS(quotes: Quote[]) { 
+  if (!quotes || quotes.length < 250) return { isBuyZone: false };
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const currentPrice = prices[prices.length - 1];
+  
+  // Simple heuristic for Inverted Head & Shoulders (RHS)
+  // Look for 3 local lows in the last 150 days
+  const window = 10;
+  const localLows: { price: number, idx: number }[] = [];
+  for (let i = quotes.length - 150; i < quotes.length - window; i++) {
+    const slice = prices.slice(i - window, i + window + 1);
+    if (prices[i] === Math.min(...slice)) localLows.push({ price: prices[i], idx: i });
+  }
+
+  if (localLows.length < 3) return { isBuyZone: false };
+  
+  // Take last 3 distinct lows
+  const l3 = localLows[localLows.length - 1]; // Right Shoulder
+  const l2 = localLows[localLows.length - 2]; // Head
+  const l1 = localLows[localLows.length - 3]; // Left Shoulder
+
+  const isHeadLower = l2.price < l1.price * 0.97 && l2.price < l3.price * 0.97;
+  const isSymmetryOk = Math.abs(l1.price - l3.price) / l1.price < 0.05;
+  
+  if (isHeadLower && isSymmetryOk) {
+    const neckline = Math.max(...prices.slice(l1.idx, l3.idx));
+    const h = neckline - l2.price;
+    const target = neckline + h;
+    
+    const isBuyZone = currentPrice >= neckline * 0.95 && currentPrice <= neckline * 1.05;
+    return {
+      isBuyZone,
+      entryPrice: neckline,
+      target,
+      currentPrice,
+      pattern: 'Inverted H&S',
+      score: 85
+    };
+  }
+
+  return { isBuyZone: false }; 
+}
+
+export function calculateCupHandle(quotes: Quote[]) { 
+  if (!quotes || quotes.length < 250) return { isBuyZone: false };
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const currentPrice = prices[prices.length - 1];
+
+  // Look for a multi-month "U" shape
+  const lookback = 200;
+  const recentHigh = Math.max(...prices.slice(-lookback, -20));
+  const recentLow = Math.min(...prices.slice(-lookback, -20));
+  
+  const cupDepth = (recentHigh - recentLow) / recentHigh;
+  const isCupDeepEnough = cupDepth > 0.15 && cupDepth < 0.50;
+  
+  // Handle: Price near high, slightly consolidated
+  const isNearHigh = currentPrice >= recentHigh * 0.90 && currentPrice <= recentHigh * 1.05;
+  
+  if (isCupDeepEnough && isNearHigh) {
+    const target = recentHigh + (recentHigh - recentLow);
+    return {
+      isBuyZone: true,
+      entryPrice: recentHigh,
+      target,
+      currentPrice,
+      pattern: 'Cup & Handle',
+      score: 80
+    };
+  }
+
+  return { isBuyZone: false }; 
+}

@@ -1,23 +1,27 @@
-# MarketBeacon Project Instructions
+# 🏁 MarketBeacon: Standard Operating Procedure (SOP)
 
-## Overview
-MarketBeacon is a trading dashboard and scanner for Indian stocks.
-- **Frontend:** React 19, TailwindCSS 4, Vite, Recharts, React Router 7.
-- **Backend:** Node.js (Express), Yahoo Finance API (`yahoo-finance2`).
-- **Logic:** Includes Knoxville Divergence scanner and stock baskets (Bluechip, High Beta, etc.).
+## 🛡 Mandatory Pre-Change Audit (Checklist)
+Before any code modification, the following steps **must** be executed:
+1. **Context Check:** Read the current state of `MEMORY.md` and `GEMINI.md`.
+2. **Impact Analysis:** Identify which files/features will be affected. If a change impacts stable logic (Strategies/Auth), alert the user in Hinglish.
+3. **Snapshot:** Perform a `git commit` of the current working state before starting a new requirement.
+4. **Verification Strategy:** Define *how* the change will be tested before writing code.
 
-## Development Workflow
-1. **Backend:** 
-   - Directory: `backend/`
-   - Run: `npm run dev`
-2. **Frontend:**
-   - Directory: `root`
-   - Run: `npm run dev`
+## 🔄 Version Control Workflow
+1. **Commits:** Every sub-task must be committed with a clear message: `feat: add RHS strategy` or `fix: login timeout`.
+2. **Rollback:** If a change fails verification, use `git restore .` or `git checkout HEAD` immediately.
+3. **Tags:** At the end of every successful day, create a tag (e.g., `v10-stable`) to lock the progress.
 
-## Conventions
-- Use TypeScript for both frontend and backend.
-- Follow existing component patterns in `src/components`.
-- Strategy analysis and performance metrics are tracked in `STRATEGY_ANALYSIS.md`.
+## 🏗 Modular Architecture Rules
+- **Strategies:** Keep `backend/src/strategies.ts` as the primary engine. For complex new logic, use a separate file.
+- **Baskets:** Frontend and Backend **must** stay in sync. Any change to `src/data/stocks.ts` must be mirrored in the backend.
+- **Fundamentals:** Never suppress type warnings in `StockFundamentals.tsx`.
 
-## Project History
-- **Day 1 (May 7, 2026):** Project initiation. Explored codebase and mapped architecture.
+## 🎓 Technical Standards
+- **Guidance Tone:** Senior Engineer / Mentor style (Hinglish).
+- **Data Source:** Always use `adjClose` for strategy math.
+- **Cleanup:** Run the self-cleaning routine (summarize and free RAM) every 3 major tasks.
+
+## 📅 Project History
+- **Day 1-9:** Initial setup, deployment, 10-strategy implementation, and mobile overhaul.
+- **Day 10 (May 23):** SOP Integration & Version Control enforcement.

@@ -52,7 +52,13 @@ const BASKETS: Record<string, string[]> = {
     'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 
     'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'
   ],
-  'PROFIT': [] 
+  'PROFIT': [
+    'CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 
+    'MTARTECH', 'MAHLOG', 'PRINCEPIPE', 'ANGELONE', 'MCX', 'KFINTECH', 'DATA PATTERNS', 
+    'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES', 'RAILTEL', 'BEL', 
+    'HAL', 'BEML', 'MAZDOCK', 'SOLARINDS', 'BDL', 'KPITTECH', 'COFORGE', 'PERSISTENT', 
+    'TATAELXSI', 'ZENTEC', 'NEWGEN', 'MAPMYINDIA', 'CEINFO', 'TANLA', 'ROUTE', 'LATENTVIEW'
+  ] 
 };
 
 // --- INSTITUTIONAL SECTOR MAPPING ---
@@ -293,9 +299,9 @@ async function validateBatch9(symbol: string, snap: any) {
   if (profitabilityQuality.score < 15) totalScore -= (15 - profitabilityQuality.score);
 
   // Segment 2: Balance Sheet Safety (20 pts)
-  // Finance stocks are allowed high D/E.
+  // Finance stocks are allowed higher leverage (8.0), but General stocks are benchmarked at 0.2.
   let safetyScore = 20;
-  const deLimit = isFinance ? 8.0 : 0.5; 
+  const deLimit = isFinance ? 8.0 : 0.2; // New 0.2 Institutional Standard
   if (debtToEquity > deLimit) safetyScore -= 10;
   if (debtToEquity > (deLimit * 1.5)) safetyScore -= 10;
   if (pledged > 5) safetyScore -= 10;
@@ -305,7 +311,7 @@ async function validateBatch9(symbol: string, snap: any) {
     score: Math.max(0, safetyScore),
     max: 20,
     checks: [
-      { label: isFinance ? 'Debt Management' : 'D/E < 0.5', value: debtToEquity.toFixed(2), pass: debtToEquity <= deLimit },
+      { label: isFinance ? 'Debt Management' : 'D/E < 0.2', value: debtToEquity.toFixed(2), pass: debtToEquity <= deLimit },
       { label: 'Zero Pledge', value: `${pledged}%`, pass: pledged === 0 }
     ]
   };
@@ -404,7 +410,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       marketCap: quote.marketCap || 0,
       industry: scr.industry || 'General Research',
       peRatio: scr.peRatio || quote.pe || 0,
-      peMedians: scr.peMedians || { pe3Y: 0, pe5Y: 0, pe10Y: 0 },
+      peMedians: scr.peMedians || { pe3Y: 25.5, pe5Y: 25.5, pe10Y: 25.5 },
       dividendYield: scr.dividendYield || 0,
       fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh || 0,
       fiftyTwoWeekLow: quote.fiftyTwoWeekLow || 0,
@@ -412,6 +418,10 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       returnOnEquity: scr.returnOnEquity || quote.roe || 0,
       roce: scr.roce || 0,
       netDebtToEquity: scr.netDebtToEquity || (quote.debtToEquity / 100) || 0,
+      athSales: scr.athSales || 0,
+      athNetProfit: scr.athNetProfit || 0,
+      currentSales: scr.currentSales || 0,
+      currentNetProfit: scr.currentNetProfit || 0,
       forwardPE: scr.peRatio || quote.pe || 0,
       industryPe: 25.5,
       faceValue: scr.faceValue || 1,

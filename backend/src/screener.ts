@@ -146,33 +146,43 @@ export async function fetchScreenerData(symbol: string) {
 
     const roe = getRatio('ROE') || (getAnnualTableData('ratios', 'ROE').slice(-1)[0]) || 0;
     const roce = getRatio('ROCE') || (getAnnualTableData('ratios', 'ROCE').slice(-1)[0]) || 0;
+    const interestCoverage = getRatio('Interest Coverage') || 0;
     const latestBorrowings = borrowings.slice(-1)[0] || 0;
     const latestEquity = (shareCapital.slice(-1)[0] || 0) + (reserves.slice(-1)[0] || 0);
     const debtToEquity = latestEquity > 0 ? (latestBorrowings / latestEquity) : 0;
     const latestSales = sales.slice(-1)[0] || 1;
     const latestCFO = cashFlowOps.slice(-1)[0] || 0;
     const latestCapex = Math.abs(fixedAssetsPurchased.slice(-1)[0] || 0);
+const athSales = Math.max(...sales, 0);
+const athNetProfit = Math.max(...netProfits, 0);
+const currentSales = sales.slice(-1)[0] || 0;
+const currentNetProfit = netProfits.slice(-1)[0] || 0;
 
-    return {
-      marketCap,
-      peRatio,
-      peMedians: { pe3Y, pe5Y, pe10Y },
-      dividendYield: getRatio('Dividend Yield'),
-      roce,
-      returnOnEquity: roe,
-      faceValue: getRatio('Face Value'),
-      netDebtToEquity: debtToEquity,
-      totalDebt: latestBorrowings,
-      shareholderEquity: latestEquity,
-      currentRatio: (latestOtherAssets / (latestOtherLiabilities || 1)) || 1.5,
-      bookValue,
-      priceToBook: bookValue > 0 ? (currentPrice / bookValue) : 0,
-      currentPrice,
-      industry: $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'General Research',
-      historicalNetProfits: netProfits,
-      historicalSales: sales,
-      quarterlyNetProfits,
-      quarterlySales,
+return {
+  marketCap,
+  peRatio,
+  peMedians: { pe3Y, pe5Y, pe10Y },
+  dividendYield: getRatio('Dividend Yield'),
+  roce,
+  returnOnEquity: roe,
+  faceValue: getRatio('Face Value'),
+  netDebtToEquity: debtToEquity,
+  totalDebt: latestBorrowings,
+  shareholderEquity: latestEquity,
+  interestCoverage,
+  currentRatio: (latestOtherAssets / (latestOtherLiabilities || 1)) || 1.5,
+  bookValue,
+  priceToBook: bookValue > 0 ? (currentPrice / bookValue) : 0,
+  currentPrice,
+  industry: $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'General Research',
+  historicalNetProfits: netProfits,
+  historicalSales: sales,
+  athSales,
+  athNetProfit,
+  currentSales,
+  currentNetProfit,
+  quarterlyNetProfits,
+  quarterlySales,
       historicalOPM: opm,
       historicalEPS: eps,
       operatingMargin: opm.slice(-1)[0] || 0,

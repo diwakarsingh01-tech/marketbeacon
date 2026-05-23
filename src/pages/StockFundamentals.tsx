@@ -28,7 +28,7 @@ const StockFundamentalsPage: React.FC = () => {
   useEffect(() => {
     const fetchFundamentals = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/stock-fundamentals?symbol=${symbol}`);
+        const response = await fetch(`${API_URL}/api/stock-fundamentals?symbol=${symbol}&t=${Date.now()}`);
         const result = await safeJsonParse(response);
         if (response.ok && !result.error) {
           setData(result);
@@ -207,19 +207,19 @@ const StockFundamentalsPage: React.FC = () => {
              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-10 border-b border-slate-100 pb-4">Financial Dashboard</h2>
              <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-8">
                 {[
-                  { label: 'ROE', value: `${data?.returnOnEquity}%`, trend: 'Institutional Grade' },
-                  { label: 'ROCE', value: `${data?.roce}%`, trend: 'Capital Efficient' },
-                  { label: 'ROE 3Yr Avg', value: `${data?.growth3Yr?.roe || 'N/A'}%`, trend: 'Consistency' },
-                  { label: 'Sales Growth 3Y', value: `${data?.growth3Yr?.sales || '0'}%`, trend: 'Expansion' },
-                  { label: 'Net Debt / Eq', value: Number(data?.netDebtToEquity)?.toFixed(2), trend: 'Financial Safety' },
-                  { label: 'Forward PE', value: Number(data?.forwardPE)?.toFixed(1), trend: 'Expected Valuation' },
-                  { label: 'Industry PE', value: data?.industryPe || '-', trend: 'Peer Context' },
-                  { label: 'Face Value', value: `₹${data?.faceValue || '-'}`, trend: 'Equity Base' }
+                  { label: 'ROE', value: data?.returnOnEquity ? `${Number(data.returnOnEquity).toFixed(1)}%` : '-', trend: 'Institutional Grade' },
+                  { label: 'ROCE', value: data?.roce ? `${Number(data.roce).toFixed(1)}%` : '-', trend: 'Capital Efficient' },
+                  { label: 'ATH Sales', value: data?.athSales ? `₹${Number(data.athSales).toLocaleString()} Cr` : '-', trend: 'Peak Performance' },
+                  { label: 'ATH Net Profit', value: data?.athNetProfit ? `₹${Number(data.athNetProfit).toLocaleString()} Cr` : '-', trend: 'Profitability High' },
+                  { label: 'Sales Growth 3Y', value: data?.growth3Yr?.sales ? `${data.growth3Yr.sales}%` : '0%', trend: 'Expansion' },
+                  { label: 'Net Debt / Eq', value: data?.netDebtToEquity !== undefined ? Number(data.netDebtToEquity).toFixed(2) : 'NaN', trend: 'Financial Safety' },
+                  { label: 'Forward PE', value: data?.forwardPE ? Number(data.forwardPE).toFixed(1) : 'NaN', trend: 'Expected Valuation' },
+                  { label: 'Audit Score', value: `${score}/100`, trend: 'Institutional Rank' }
                 ].map((item, i) => (
-                  <div key={i} className="flex flex-col space-y-1">
+                  <div key={i} className="flex flex-col space-y-2 group p-4 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
                      <span className="text-xl font-black text-slate-900 tracking-tight">{item.value || '-'}</span>
-                     <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter opacity-60">{item.trend}</span>
+                     <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter opacity-40 group-hover:opacity-100">{item.trend}</span>
                   </div>
                 ))}
              </div>
