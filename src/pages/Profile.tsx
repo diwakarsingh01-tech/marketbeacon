@@ -18,8 +18,9 @@ import {
   Phone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = getApiUrl();
 
 const ProfilePage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -37,11 +38,11 @@ const ProfilePage: React.FC = () => {
       const res = await fetch(`${API_URL}/api/user/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) {
         setProfileData(data);
       } else {
-        console.error('Profile fetch failed with status:', res.status);
+        console.error('Profile fetch failed:', data.error);
       }
     } catch (e) {
       console.error('Profile fetch error:', e);
@@ -172,8 +173,8 @@ const ProfilePage: React.FC = () => {
 
                   <div className="flex items-center justify-between py-4 border-b border-slate-50">
                      <div className="space-y-1">
-                        <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Default Target %</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Automatic profit objective for new signals</p>
+                        <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Default Objective %</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Automatic profit objective for new research</p>
                      </div>
                      <select className="bg-slate-50 border-none rounded-xl px-4 py-2 text-xs font-black focus:ring-1 focus:ring-blue-500/20 appearance-none">
                         <option>25.0%</option>

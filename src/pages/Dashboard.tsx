@@ -102,8 +102,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       const res = await fetch(`${API_URL}/api/trades`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) {
         setTrades(data);
       }
     } catch (e) { console.error('Fetch Trades Error:', e); }
@@ -116,9 +116,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       const response = await fetch(`${API_URL}/api/watchlist`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (response.ok) {
-        const list = await response.json();
-        setUserWatchlist(list);
+      const data = await safeJsonParse(response);
+      if (response.ok && !data.error) {
+        setUserWatchlist(data);
       }
     } catch (e) { console.error('Watchlist Error:', e); }
   }, []);
@@ -218,9 +218,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       const chunk = symbols.slice(i, i + chunkSize);
       try {
         const response = await fetch(`${API_URL}/api/stock-prices?symbols=${chunk.join(',')}`);
-        if (response.ok) {
-          const prices = await response.json();
-          prices.forEach((p: any) => { 
+        const data = await safeJsonParse(response);
+        if (response.ok && !data.error) {
+          data.forEach((p: any) => { 
             if (p.price) priceMap[p.symbol] = p.price; 
             if (p.ath) athMap[p.symbol] = p.ath;
             if (p.marketCap) capMap[p.symbol] = p.marketCap;

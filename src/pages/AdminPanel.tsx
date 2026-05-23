@@ -21,8 +21,9 @@ import {
   Gift
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = getApiUrl();
 
 const AdminPanel: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -49,9 +50,9 @@ const AdminPanel: React.FC = () => {
         fetch(`${API_URL}/api/admin/vouchers`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
 
-      if (uRes.ok) setUsers(await uRes.json());
-      if (rRes.ok) setRequests(await rRes.json());
-      if (vRes.ok) setVouchers(await vRes.json());
+      if (uRes.ok) setUsers(await safeJsonParse(uRes));
+      if (rRes.ok) setRequests(await safeJsonParse(rRes));
+      if (vRes.ok) setVouchers(await safeJsonParse(vRes));
     } catch (e) {
       console.error("Admin fetch failed:", e);
     } finally {
@@ -71,12 +72,12 @@ const AdminPanel: React.FC = () => {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) {
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) {
         await fetchData();
         setActiveTab('approved');
       } else {
-        const err = await res.json();
-        alert("Error: " + (err.error || "Failed to approve"));
+        alert("Error: " + (data.error || "Failed to approve"));
       }
     } catch (e) { alert("Approval Logic Failed."); }
   };
@@ -92,13 +93,13 @@ const AdminPanel: React.FC = () => {
         },
         body: JSON.stringify(data)
       });
-      if (res.ok) {
+      const result = await safeJsonParse(res);
+      if (res.ok && !result.error) {
         alert("User Access Updated Successfully!");
         fetchData();
         setIsManageModalOpen(false);
       } else {
-        const err = await res.json();
-        alert(`Update Failed: ${err.error || 'Server Error'}`);
+        alert(`Update Failed: ${result.error || 'Server Error'}`);
       }
     } catch (e: any) { alert(`Update failed: ${e.message}`); }
   };
@@ -111,7 +112,8 @@ const AdminPanel: React.FC = () => {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) fetchData();
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) fetchData();
     } catch (e) { alert("Network error"); }
   };
 
@@ -476,10 +478,11 @@ const AdminPanel: React.FC = () => {
                           role: fd.get('role')
                        })
                     });
-                    if (res.ok) {
+                    const data = await safeJsonParse(res);
+                    if (res.ok && !data.error) {
                        fetchData();
                        setIsAddUserModalOpen(false);
-                    } else { alert("Failed to onboard user."); }
+                    } else { alert(data.error || "Failed to onboard user."); }
                  } catch (e) { alert("Registration endpoint failed"); }
               }}>
                  <div className="space-y-4">
@@ -544,10 +547,11 @@ const AdminPanel: React.FC = () => {
                           max_uses: parseInt(fd.get('uses') as string)
                        })
                     });
-                    if (res.ok) {
+                    const data = await safeJsonParse(res);
+                    if (res.ok && !data.error) {
                        fetchData();
                        setIsAddVoucherModalOpen(false);
-                    } else { alert("Failed to create voucher"); }
+                    } else { alert(data.error || "Failed to create voucher"); }
                  } catch (e) { alert("Voucher creation failed"); }
               }}>
                  <div className="space-y-4">

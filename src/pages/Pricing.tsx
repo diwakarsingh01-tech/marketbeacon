@@ -10,8 +10,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
+import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = getApiUrl();
 
 const PricingPage: React.FC = () => {
   const { user } = useAuth();
@@ -35,13 +36,12 @@ const PricingPage: React.FC = () => {
         body: JSON.stringify({ code: voucherCode })
       });
       
-      if (res.ok) {
-        const data = await res.json();
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) {
         alert(`Voucher Applied! Access Level: ${data.tier.toUpperCase()} for 7 Days.`);
         window.location.href = '/screener'; 
       } else {
-        const err = await res.json();
-        alert(err.error || "Voucher code not recognized");
+        alert(data.error || "Voucher code not recognized");
       }
     } catch (e) {
       alert("Network timeout. Check your connection.");

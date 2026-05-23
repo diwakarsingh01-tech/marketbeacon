@@ -16,7 +16,9 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+
+const API_URL = getApiUrl();
 
 const StockFundamentalsPage: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -27,11 +29,14 @@ const StockFundamentalsPage: React.FC = () => {
     const fetchFundamentals = async () => {
       try {
         const response = await fetch(`${API_URL}/api/stock-fundamentals?symbol=${symbol}`);
-        if (!response.ok) throw new Error('Failed to fetch data');
-        const result = await response.json();
-        setData(result);
+        const result = await safeJsonParse(response);
+        if (response.ok && !result.error) {
+          setData(result);
+        } else {
+          console.error('Fetch Error:', result.error);
+        }
       } catch (e) {
-        console.error(e);
+        console.error('Failed to fetch fundamentals', e);
       } finally {
         setLoading(false);
       }

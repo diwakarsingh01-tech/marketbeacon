@@ -19,8 +19,9 @@ import {
 } from 'lucide-react';
 import Papa from 'papaparse';
 import { BASKETS, STRATEGIES } from '../data/stocks';
+import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = getApiUrl();
 
 const TradeJournalPage: React.FC = () => {
   const [trades, setTrades] = useState<any[]>([]);
@@ -52,11 +53,12 @@ const TradeJournalPage: React.FC = () => {
     notes: 'Target Hit'
   });
 
-  const fetchLivePrices = async (symbols: string[]) => {
+  const fetchLivePrices = useCallback(async (symbols: string[]) => {
+    if (symbols.length === 0) return;
     try {
       const res = await fetch(`${API_URL}/api/stock-prices?symbols=${symbols.join(',')}`);
-      if (res.ok) {
-        const data = await res.json();
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) {
         const prices: any = {};
         data.forEach((s: any) => {
           if (s.price) prices[s.symbol] = s.price;
@@ -64,30 +66,27 @@ const TradeJournalPage: React.FC = () => {
         setLivePrices(prices);
       }
     } catch (e) { console.error('Price fetch failed:', e); }
-  };
+  }, []);
 
   const fetchTrades = useCallback(async () => {
     const token = localStorage.getItem('mb_token');
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/trades`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const text = await res.text();
-      try {
-        const data = JSON.parse(text);
-        if (res.ok) {
-          setTrades(data);
-        } else {
-          console.error('Fetch Error:', data.error);
-        }
-      } catch (jsonErr) {
-        console.error("[DEBUG] Invalid Journal JSON Response:", text.substring(0, 100));
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) {
+        setTrades(data);
+        if (data.length > 0) fetchLivePrices(data.map((t: any) => t.symbol));
       }
     } catch (e) { console.error('Trades fetch failed:', e); }
     finally { setLoading(false); }
-  }, []);
+  }, [fetchLivePrices]);
 
   useEffect(() => { 
     fetchTrades(); 
@@ -104,7 +103,7 @@ const TradeJournalPage: React.FC = () => {
     fetchLivePrices(openSymbols);
     const interval = setInterval(() => fetchLivePrices(openSymbols), 30000); // 30s poll
     return () => clearInterval(interval);
-  }, [trades]);
+  }, [trades, fetchLivePrices]);
 
   const stats = useMemo(() => {
     const openTrades = trades.filter(t => t.status === 'OPEN');
@@ -136,7 +135,7 @@ const TradeJournalPage: React.FC = () => {
       const pnlPer = invested > 0 ? (pnl / invested) * 100 : 0;
       
       const targetPrice = Number(t.target_price) || (entryPrice * 1.25);
-      const targetVal = targetPrice; // Backward compatibility with JSX
+      const targetVal = targetPrice;
       const gap = ((targetPrice - cmp) / (cmp || 1)) * 100;
       
       const d1 = t.entry_date ? new Date(t.entry_date).getTime() : Date.now();
@@ -190,14 +189,14 @@ const TradeJournalPage: React.FC = () => {
     let fileName: string;
 
     if (type === 'OPEN') {
-      headers = ['Symbol', 'Quantity', 'Buy Price', 'Buy Date', 'Target Price', 'Level', 'Strategy', 'Notes'];
+      headers = ['Symbol', 'Quantity', 'Entry Price', 'Entry Date', 'Objective Price', 'Level', 'Strategy', 'Notes'];
       sampleData = [
         ['RELIANCE', '10', '2500.50', new Date().toISOString().split('T')[0], '3000', 'A', 'Institutional Floor', 'Long term hold'],
         ['HDFCBANK', '25', '1450.00', new Date().toISOString().split('T')[0], '1800', 'B', 'Momentum Ceiling', 'Accumulating at support']
       ];
       fileName = 'MarketBeacon_Open_Trades_Template.csv';
     } else {
-      headers = ['Symbol', 'Quantity', 'Buy Price', 'Buy Date', 'Sell Price', 'Sell Date', 'Strategy', 'Notes'];
+      headers = ['Symbol', 'Quantity', 'Entry Price', 'Entry Date', 'Exit Price', 'Exit Date', 'Strategy', 'Notes'];
       sampleData = [
         ['TCS', '5', '3800.00', '2026-05-10', '4150.00', '2026-05-18', 'Institutional Floor', 'Target hit'],
         ['INFY', '15', '1600.00', '2026-04-20', '1750.00', '2026-05-15', 'Velocity Retest', 'Profit booked']
@@ -215,7 +214,7 @@ const TradeJournalPage: React.FC = () => {
   };
 
   const handleExportTrades = () => {
-    const headers = ['Symbol', 'Quantity', 'Buy Price', 'Buy Date', 'Target Price', 'Level', 'Sell Price', 'Sell Date', 'Strategy', 'Status', 'Notes'];
+    const headers = ['Symbol', 'Quantity', 'Entry Price', 'Entry Date', 'Objective Price', 'Level', 'Exit Price', 'Exit Date', 'Strategy', 'Status', 'Notes'];
     const rows = trades.map(t => [
       t.symbol, t.quantity, t.entry_price, t.entry_date, t.target_price, t.level, t.exit_price || '', t.exit_date || '', t.strategy, t.status, t.notes || ''
     ]);
@@ -233,27 +232,26 @@ const TradeJournalPage: React.FC = () => {
     const isClosed = trade.status === 'CLOSED';
     const text = isClosed 
       ? `✅ *Trade Booked: ${trade.symbol}*
-📈 Profit: ${trade.pnlPer.toFixed(2)}% (+₹${Math.abs(trade.pnl).toLocaleString()})
+📈 Yield: ${trade.pnlPer.toFixed(2)}% (+₹${Math.abs(trade.pnl).toLocaleString()})
 ⚡️ Strategy: ${trade.strategy}
 📅 Duration: ${trade.days} Days
 
-#MarketBeacon #ProfitableTrader #InstitutionalMatrix`
-      : `🔥 *New Position: ${trade.symbol}*
+#MarketBeacon #ResearchSuccess #InstitutionalMatrix`
+      : `🔥 *Research Tracking: ${trade.symbol}*
 ⚡️ Strategy: ${trade.strategy}
-🎯 Target: ₹${trade.target_price || '-'}
-📊 Running ROI: ${trade.pnlPer.toFixed(2)}%
+🎯 Objective: ₹${trade.target_price || '-'}
+📊 Live ROI: ${trade.pnlPer.toFixed(2)}%
 
-#MarketBeacon #LiveTrade #TradingTerminal`;
+#MarketBeacon #LiveResearch #TradingTerminal`;
 
     navigator.clipboard.writeText(text);
-    alert(`${trade.symbol} details copied! Share it on Telegram.`);
+    alert(`${trade.symbol} details copied! Ready to post.`);
   };
 
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsImporting(true);
-    console.log('[CSV] Starting parse for:', file.name);
 
     Papa.parse(file, {
       header: false,
@@ -262,37 +260,29 @@ const TradeJournalPage: React.FC = () => {
         const token = localStorage.getItem('mb_token');
         try {
           const rawRows = results.data as string[][];
-          console.log('[CSV] Total raw rows:', rawRows.length);
-
           const headerIdx = rawRows.findIndex(r => r.some(c => ['stock', 'symbol', 'instrument'].includes(String(c).toLowerCase().trim())));
           if (headerIdx === -1) { 
-            console.error('[CSV] No valid header found in:', rawRows[0]);
             alert("No valid header found. Ensure your CSV has a column named 'Symbol' or 'Stock'."); 
             setIsImporting(false); 
             return; 
           }
           
           const headerRow = rawRows[headerIdx].map(h => String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
-          console.log('[CSV] Found header at index', headerIdx, ':', headerRow);
-
           const dataRows = rawRows.slice(headerIdx + 1);
-          const tradesToImport = dataRows.map((row, idx) => {
+          const tradesToImport = dataRows.map((row) => {
             const findVal = (keywords: string[]) => {
               const colIdx = headerRow.findIndex(h => keywords.some(kw => h.includes(kw)));
               return colIdx !== -1 ? row[colIdx] : null;
             };
             const symbol = findVal(['symbol', 'stock', 'instrument']);
-            const buyPrice = findVal(['buyprice', 'buyrate', 'avg', 'cost']);
+            const buyPrice = findVal(['buyprice', 'buyrate', 'avg', 'cost', 'entryprice']);
             const qty = findVal(['qty', 'quantity', 'units']);
             const rawBuyDate = findVal(['buydate', 'entrydate', 'date']);
             const sellPrice = findVal(['sellprice', 'exitprice', 'cmp']);
             const rawSellDate = findVal(['selldate', 'exitdate']);
             const status = findVal(['status', 'type', 'state']);
 
-            if (!symbol || !buyPrice || !qty || String(symbol).toLowerCase().includes('total')) {
-              if (symbol) console.log(`[CSV] Skipping row ${idx} due to missing data:`, { symbol, buyPrice, qty });
-              return null;
-            }
+            if (!symbol || !buyPrice || !qty || String(symbol).toLowerCase().includes('total')) return null;
 
             const formatDate = (raw: any) => {
               if (!raw) return new Date().toISOString().split('T')[0];
@@ -308,7 +298,7 @@ const TradeJournalPage: React.FC = () => {
               symbol: String(symbol).toUpperCase().trim(),
               entry_price: parseFloat(String(buyPrice).replace(/[^0-9.]/g, '')),
               quantity: parseInt(String(qty).replace(/[^0-9]/g, '')),
-              target_price: parseFloat(String(findVal(['target']) || '0')) || 0,
+              target_price: parseFloat(String(findVal(['target', 'objective']) || '0')) || 0,
               level: findVal(['level']) || 'A',
               entry_date: buyDate,
               exit_date: sellDate,
@@ -319,10 +309,8 @@ const TradeJournalPage: React.FC = () => {
             };
           }).filter((t: any) => t && t.symbol && t.entry_price > 0);
 
-          console.log('[CSV] Successfully parsed trades:', tradesToImport.length);
-
           if (tradesToImport.length === 0) { 
-            alert("No valid trades detected. Check column names like 'Symbol', 'Buy Price', and 'Qty'."); 
+            alert("No valid trades detected. Check column names like 'Symbol', 'Entry Price', and 'Qty'."); 
             setIsImporting(false); 
             return; 
           }
@@ -333,18 +321,14 @@ const TradeJournalPage: React.FC = () => {
             body: JSON.stringify({ trades: tradesToImport })
           });
 
-          if (res.ok) {
-            const openCount = tradesToImport.filter(t => t.status === 'OPEN').length;
-            const closedCount = tradesToImport.filter(t => t.status === 'CLOSED').length;
-            alert(`Import Successful!\n- ${openCount} Open Trades\n- ${closedCount} Closed Trades`);
+          const data = await safeJsonParse(res);
+          if (res.ok && !data.error) {
+            alert(`Import Successful!`);
             fetchTrades();
           } else { 
-            const errorData = await res.json().catch(() => ({}));
-            console.error('[CSV] Server Error:', errorData);
-            alert("Server Error: " + (errorData.error || "Failed to save trades.")); 
+            alert("Server Error: " + (data.error || "Failed to save trades.")); 
           }
         } catch (err: any) { 
-          console.error('[CSV] Processing Error:', err);
           alert("Processing Error: " + err.message); 
         } finally { 
           setIsImporting(false); 
@@ -362,7 +346,13 @@ const TradeJournalPage: React.FC = () => {
     const payload = { ...newTrade, entry_price: entryPrice, quantity: parseInt(newTrade.quantity), target_price: newTrade.target_price ? parseFloat(newTrade.target_price) : (entryPrice * 1.25) };
     try {
       const res = await fetch(`${API_URL}/api/trades`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
-      if (res.ok) { setShowAddModal(false); setNewTrade({ symbol: '', entry_price: '', quantity: '', target_price: '', level: 'A', entry_date: new Date().toISOString().split('T')[0], strategy: STRATEGIES[0].name, notes: '' }); setSymbolSearch(''); fetchTrades(); }
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) { 
+        setShowAddModal(false); 
+        setNewTrade({ symbol: '', entry_price: '', quantity: '', target_price: '', level: 'A', entry_date: new Date().toISOString().split('T')[0], strategy: STRATEGIES[0].name, notes: '' }); 
+        setSymbolSearch(''); 
+        fetchTrades(); 
+      }
     } catch (e) { console.error(e); }
   };
 
@@ -375,7 +365,8 @@ const TradeJournalPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ exit_price: parseFloat(closeTradeData.exit_price), exit_date: new Date().toISOString().split('T')[0], quantity_to_close: parseInt(closeTradeData.quantity_to_close), notes: closeTradeData.notes })
       });
-      if (res.ok) { setShowCloseModal(null); fetchTrades(); }
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) { setShowCloseModal(null); fetchTrades(); }
     } catch (e) { console.error(e); }
   };
 
@@ -421,7 +412,7 @@ const TradeJournalPage: React.FC = () => {
          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm group hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-3">
                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                  {activeSegment === 'OPEN' ? 'Running ROI (Live)' : 'Net Segment ROI'}
+                  {activeSegment === 'OPEN' ? 'Running Yield (Live)' : 'Net Segment Yield'}
                </span>
                <TrendingUp className={`h-3.5 w-3.5 ${summaryStats.totalPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`} />
             </div>
@@ -434,7 +425,7 @@ const TradeJournalPage: React.FC = () => {
                </span>
             </div>
             <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-               {summaryStats.totalPnl >= 0 ? 'Profit' : 'Loss'}: ₹{Math.abs(summaryStats.totalPnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+               {summaryStats.totalPnl >= 0 ? 'Net Gain' : 'Net Loss'}: ₹{Math.abs(summaryStats.totalPnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </p>
          </div>
 
@@ -479,18 +470,18 @@ const TradeJournalPage: React.FC = () => {
                          <th className="px-4 py-4 text-center cursor-pointer" onClick={() => handleSort('level')}>Level {SortIcon('level')}</th>
                          <th className="px-4 py-4 text-right">Avg Price</th>
                          <th className="px-4 py-4 text-right text-blue-600">CMP</th>
-                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnl')}>P&L Amt {SortIcon('pnl')}</th>
-                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnlPer')}>ROI % {SortIcon('pnlPer')}</th>
-                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('gap')}>Target/Gap {SortIcon('gap')}</th>
+                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnl')}>Gain Amt {SortIcon('pnl')}</th>
+                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnlPer')}>Yield % {SortIcon('pnlPer')}</th>
+                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('gap')}>Objective/Gap {SortIcon('gap')}</th>
                        </>
                      ) : (
                        <>
-                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('entry_date')}>Buy Date {SortIcon('entry_date')}</th>
+                         <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('entry_date')}>Entry Date {SortIcon('entry_date')}</th>
                          <th className="px-4 py-4 text-center">Qty</th>
-                         <th className="px-4 py-4 text-right">Buy Price</th>
+                         <th className="px-4 py-4 text-right">Entry Price</th>
                          <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('exit_date')}>Sell Date {SortIcon('exit_date')}</th>
                          <th className="px-4 py-4 text-right">Sell Price</th>
-                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnl')}>Gain {SortIcon('pnl')}</th>
+                         <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnl')}>Net Gain {SortIcon('pnl')}</th>
                          <th className="px-4 py-4 text-center cursor-pointer" onClick={() => handleSort('days')}>Days {SortIcon('days')}</th>
                          <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnlPer')}>% Gain {SortIcon('pnlPer')}</th>
                          <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('annualGain')}>% Annual {SortIcon('annualGain')}</th>
@@ -502,7 +493,7 @@ const TradeJournalPage: React.FC = () => {
                <tbody className="divide-y divide-slate-50 text-[10px] font-black">
                   {processedTrades.map((t) => (
                       <tr key={t.id} className={`hover:bg-slate-50 transition-colors group ${selectedIds.includes(t.id) ? 'bg-blue-50/50' : ''}`}>
-                         <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])} className={selectedIds.includes(t.id) ? 'text-blue-600' : 'text-slate-200'}>{selectedIds.includes(t.id) ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}</button></td>
+                         <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])} className={selectedIds.includes(t.id) ? 'text-blue-600' : 'text-slate-200'}>{selectedIds.includes(t.id) ? <CheckSquare className="h-4 w-4 text-blue-600" /> : <Square className="h-4 w-4" />}</button></td>
                          <td className="px-4 py-3">
                             <div className="flex flex-col uppercase tracking-tighter relative group/item">
                                <div className="flex items-center space-x-2">
@@ -521,7 +512,7 @@ const TradeJournalPage: React.FC = () => {
                              <td className="px-4 py-3 text-right font-black text-blue-600">₹{t.cmp.toLocaleString()}</td>
                              <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 text-right`}>₹{Math.abs(t.pnl).toLocaleString()}</td>
                              <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 text-right`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
-                             <td className="px-4 py-3 text-right"><div className="flex flex-col items-end"><span className="text-slate-400">₹{t.targetVal.toLocaleString()}</span><span className={`${t.gap > 0 ? 'text-orange-500' : 'text-green-500'} text-[8px]`}>{t.gap > 0 ? `${t.gap.toFixed(1)}% Gap` : 'TARGET HIT'}</span></div></td>
+                             <td className="px-4 py-3 text-right"><div className="flex flex-col items-end"><span className="text-slate-400">₹{t.targetVal.toLocaleString()}</span><span className={`${t.gap > 0 ? 'text-orange-500' : 'text-green-500'} text-[8px]`}>{t.gap > 0 ? `${t.gap.toFixed(1)}% Gap` : 'OBJ REACHED'}</span></div></td>
                            </>
                          ) : (
                            <>
@@ -544,11 +535,106 @@ const TradeJournalPage: React.FC = () => {
          </div>
       </div>
 
-      {showAddModal && <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"><div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300"><div className="p-8 border-b border-slate-100 flex items-center justify-between"><h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">New Trade Entry</h3><button onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:text-slate-600"><X className="h-6 w-6" /></button></div><form onSubmit={handleAddTrade} className="p-8 space-y-6 text-left"><div className="grid grid-cols-2 gap-x-6 gap-y-4"><div className="col-span-2 relative"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Instrument</label><input type="text" required value={symbolSearch} onChange={(e) => { const val = e.target.value.toUpperCase(); setSymbolSearch(val); setNewTrade(prev => ({...prev, symbol: val})); }} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Entry Price</label><input type="number" step="0.05" required value={newTrade.entry_price} onChange={(e) => setNewTrade({...newTrade, entry_price: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantity</label><input type="number" required value={newTrade.quantity} onChange={(e) => setNewTrade({...newTrade, quantity: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-blue-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Strategy</label><select value={newTrade.strategy} onChange={(e) => setNewTrade({...newTrade, strategy: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black appearance-none">{STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select></div></div><button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-3xl text-xs font-black uppercase tracking-widest mt-4 text-center">Confirm Trade Record</button></form></div></div>}
+      {showAddModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+             <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+                <div className="space-y-1">
+                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">New Research Entry</h3>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Add Position to Ledger</p>
+                </div>
+                <button onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"><X className="h-6 w-6" /></button>
+             </div>
+             
+             <form onSubmit={handleAddTrade} className="p-8 space-y-6 text-left">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+                   <div className="col-span-2 relative">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Instrument Symbol</label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder="e.g. RELIANCE"
+                        value={symbolSearch} 
+                        onChange={(e) => { 
+                          const val = e.target.value.toUpperCase(); 
+                          setSymbolSearch(val); 
+                          setNewTrade(prev => ({...prev, symbol: val})); 
+                        }} 
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" 
+                      />
+                   </div>
+                   
+                   <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Entry Price</label>
+                      <input 
+                        type="number" 
+                        step="0.05" 
+                        required 
+                        value={newTrade.entry_price} 
+                        onChange={(e) => setNewTrade({...newTrade, entry_price: e.target.value})} 
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" 
+                      />
+                   </div>
+                   
+                   <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
+                      <input 
+                        type="number" 
+                        required 
+                        value={newTrade.quantity} 
+                        onChange={(e) => setNewTrade({...newTrade, quantity: e.target.value})} 
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" 
+                      />
+                   </div>
+                   
+                   <div className="col-span-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Matrix Strategy</label>
+                      <select 
+                        value={newTrade.strategy} 
+                        onChange={(e) => setNewTrade({...newTrade, strategy: e.target.value})} 
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black appearance-none focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner"
+                      >
+                         {STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      </select>
+                   </div>
+                </div>
+                
+                <button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-black mt-4">
+                   Commit to Ledger
+                </button>
+             </form>
+          </div>
+        </div>
+      )}
 
-      {showCloseModal && <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md"><div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in duration-300"><h3 className="text-xl font-black text-slate-900 uppercase italic mb-6">Realize Profit: {showCloseModal.symbol}</h3><form onSubmit={handleConfirmClose} className="space-y-6 text-left"><div><label className="text-[9px] font-black text-slate-400 uppercase ml-1">Exit Price</label><input type="number" step="0.05" required value={closeTradeData.exit_price} onChange={(e) => setCloseTradeData({...closeTradeData, exit_price: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-emerald-500/20" /></div><div><label className="text-[9px] font-black text-slate-400 uppercase ml-1">Quantity to Book</label><input type="number" required value={closeTradeData.quantity_to_close} onChange={(e) => setCloseTradeData({...closeTradeData, quantity_to_close: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-black focus:ring-1 focus:ring-emerald-500/20" /></div><div className="flex space-x-3 mt-8"><button type="button" onClick={() => setShowCloseModal(null)} className="flex-1 py-4 bg-slate-100 text-slate-400 rounded-2xl text-xs font-black uppercase">Cancel</button><button type="submit" className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase shadow-lg">Confirm Booking</button></div></form></div></div>}
+      {showCloseModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300">
+              <h3 className="text-xl font-black text-slate-900 uppercase italic mb-6">Realize Research: {showCloseModal.symbol}</h3>
+              <form onSubmit={handleConfirmClose} className="space-y-6 text-left">
+                 <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1 mb-2 block">Exit Level</label>
+                    <input type="number" step="0.05" required value={closeTradeData.exit_price} onChange={(e) => setCloseTradeData({...closeTradeData, exit_price: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-emerald-600 focus:bg-white transition-all outline-none shadow-inner" />
+                 </div>
+                 <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1 mb-2 block">Quantity to Close</label>
+                    <input type="number" required value={closeTradeData.quantity_to_close} onChange={(e) => setCloseTradeData({...closeTradeData, quantity_to_close: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-emerald-600 focus:bg-white transition-all outline-none shadow-inner" />
+                 </div>
+                 <div className="flex space-x-3 mt-8">
+                    <button type="button" onClick={() => setShowCloseModal(null)} className="flex-1 py-4 bg-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase hover:bg-slate-200 transition-all">Cancel</button>
+                    <button type="submit" className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95">Verify & Close</button>
+                 </div>
+              </form>
+           </div>
+        </div>
+      )}
 
-      {isImporting && <div className="fixed inset-0 z-[300] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center flex-col space-y-4"><div className="w-12 h-12 border-4 border-white/10 border-t-blue-500 rounded-full animate-spin" /><p className="text-white text-xs font-black uppercase tracking-[0.3em]">Auditing Spreadsheet Chunks...</p></div>}
+      {isImporting && (
+        <div className="fixed inset-0 z-[300] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center flex-col space-y-4">
+           <div className="w-12 h-12 border-4 border-white/10 border-t-blue-500 rounded-full animate-spin" />
+           <p className="text-white text-[10px] font-black uppercase tracking-[0.4em] animate-pulse">Auditing Spreadsheet Integrity...</p>
+        </div>
+      )}
     </div>
   );
 };

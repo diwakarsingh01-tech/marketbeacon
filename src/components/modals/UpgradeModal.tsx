@@ -20,7 +20,9 @@ interface UpgradeModalProps {
   userEmail?: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { safeJsonParse, getApiUrl } from '../../lib/api-utils';
+
+const API_URL = getApiUrl();
 
 const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTier, userEmail }) => {
   const [step, setStep] = useState<'plan' | 'payment'>('plan');
@@ -90,11 +92,11 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
         })
       });
 
-      if (response.ok) {
+      const data = await safeJsonParse(response);
+      if (response.ok && !data.error) {
         setIsSuccess(true);
       } else {
-        const err = await response.json();
-        alert(err.error || "Submission failed.");
+        alert(data.error || "Submission failed.");
       }
     } catch (err) {
       alert("Network Error. Please try again or contact support.");
