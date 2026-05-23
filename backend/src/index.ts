@@ -407,10 +407,18 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     let snapshot = getMarketSnapshot();
     let snap = snapshot[symbol];
 
-    // Pro-Level: If snapshot is missing or older than 6 hours, fetch fresh data for this symbol
+    // Pro-Level: Smart Refresh Logic
+    // Refresh if: 1. Data is missing, 2. Older than 6h, 3. Low quality (Zeros in Smart Money or fallback PE)
     const sixHoursAgo = Date.now() - (6 * 60 * 60 * 1000);
-    if (!snap || new Date(snap.lastUpdated).getTime() < sixHoursAgo) {
-      console.log(`🔄 [REFRESH] Fetching real-time fundamentals for ${symbol}...`);
+    const isStale = !snap || new Date(snap.lastUpdated).getTime() < sixHoursAgo;
+    
+    const shCheck = snap?.screener?.shareholding || {};
+    const isLowQuality = !snap || 
+                         (shCheck.promoter === 0 && shCheck.fii === 0 && shCheck.dii === 0) || 
+                         (snap.screener?.peMedians?.pe3Y === 25.5);
+
+    if (isStale || isLowQuality) {
+      console.log(`🔄 [SMART REFRESH] Quality/Staleness trigger for ${symbol}...`);
       await updateMarketSnapshot([symbol]);
       snapshot = getMarketSnapshot();
       snap = snapshot[symbol];

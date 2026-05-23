@@ -155,6 +155,11 @@ const StockFundamentalsPage: React.FC = () => {
                 <div className="space-y-1">
                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest leading-none">Investment Audit</h2>
                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Batch 9 Core Engineering</p>
+                   {data?.audit?.reason && (
+                     <div className="mt-4 inline-block px-4 py-1.5 bg-slate-900 text-white rounded-lg">
+                        <p className="text-[10px] font-black uppercase tracking-widest">{data.audit.reason}</p>
+                     </div>
+                   )}
                 </div>
                 <div className="flex flex-col items-end">
                    <div className="text-5xl font-black tracking-tighter text-slate-900">{score.toFixed(0)}<span className="text-lg text-slate-300 ml-1">/100</span></div>
