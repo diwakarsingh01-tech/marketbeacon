@@ -19,21 +19,31 @@ export async function safeJsonParse(response: Response) {
 }
 
 export const getApiUrl = () => {
+  const h = window.location.hostname;
+  const p = window.location.protocol;
+  
   // 1. Priority: Explicit environment variable
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl && envUrl !== '/' && envUrl !== 'undefined') {
+  if (envUrl && envUrl !== '/' && envUrl !== 'undefined' && envUrl !== 'null') {
     return envUrl;
   }
 
-  // 2. Dev Fallback: If on local machine or local network
-  const h = window.location.hostname;
-  const isLocal = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.168.') || h.startsWith('10.') || h.endsWith('.local');
+  // 2. Dev/Antigravity Fallback: Comprehensive Private Network Detection
+  const isLocal = 
+    h === 'localhost' || 
+    h === '127.0.0.1' || 
+    h.startsWith('192.168.') || 
+    h.startsWith('10.') || 
+    h.startsWith('172.') || 
+    h.endsWith('.local') ||
+    h.includes('.internal');
   
   if (isLocal) {
-    // Return the same host but port 3001 for backend
-    return `${window.location.protocol}//${window.location.hostname}:3001`;
+    // Standardize to HTTP for local backend unless specifically on HTTPS localhost
+    const protocol = (h === 'localhost' && p === 'https:') ? 'https:' : 'http:';
+    return `${protocol}//${h}:3001`;
   }
 
-  // 3. Production Safety: Force a non-existent absolute URL to prevent relative loops
+  // 3. Production Safety: Explicitly block relative paths
   return "https://api-missing-configuration.marketbeacon.io";
 };

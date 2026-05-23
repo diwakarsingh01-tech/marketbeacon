@@ -86,11 +86,19 @@ const AlphaHubPage: React.FC = () => {
   if (error) {
     return (
       <div className="p-10 text-center space-y-6 flex flex-col items-center justify-center min-h-screen">
-         <div className="bg-red-50 p-8 rounded-[3rem] inline-block border border-red-100 max-w-md">
-            <h2 className="text-red-600 font-black uppercase tracking-widest text-sm mb-2">Alpha Hub Offline</h2>
-            <p className="text-red-500 text-xs font-bold leading-relaxed">{error}</p>
+         <div className="bg-red-50 p-8 rounded-[3.5rem] inline-block border border-red-100 max-w-xl shadow-xl">
+            <h2 className="text-red-600 font-black uppercase tracking-widest text-sm mb-4">Alpha Hub Connection Error</h2>
+            <div className="space-y-4 text-left">
+               <p className="text-red-500 text-xs font-bold leading-relaxed">{error}</p>
+               <div className="bg-white/50 p-4 rounded-2xl border border-red-100 font-mono text-[9px] text-slate-600 break-all">
+                  <p className="mb-1 font-black uppercase text-slate-400">Diagnostic Info:</p>
+                  <p>Target API: {API_URL}</p>
+                  <p>Environment: {import.meta.env.MODE}</p>
+                  <p>Client Host: {window.location.host}</p>
+               </div>
+            </div>
          </div>
-         <button onClick={fetchAlphaHub} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all">Retry Deployment</button>
+         <button onClick={fetchAlphaHub} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg hover:bg-black">Retry Deployment</button>
       </div>
     );
   }
