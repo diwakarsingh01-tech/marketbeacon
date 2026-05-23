@@ -121,24 +121,40 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   const latestIdx = quotes.length - 1;
   const currentEMA = ema200[latestIdx];
   const latestQuote = quotes[latestIdx];
+  const currentPrice = prices[latestIdx];
   
   const lowerBand = currentEMA * 0.86;
   const upperBand = currentEMA * 1.14;
 
-  const isBuyZone = latestQuote.low <= currentEMA; // Buy 1 at middle line
-  let tranche = 'B1';
+  const isB1 = latestQuote.low <= currentEMA;
+  const isB2 = latestQuote.low <= lowerBand;
+  const isBuyZone = isB1 || isB2;
+
+  let triggerDate: string | undefined = undefined;
   let entryPrice = currentEMA;
   let target = upperBand;
+  let tranche = 'B1';
 
-  if (latestQuote.low <= lowerBand) {
-    tranche = 'B2';
-    entryPrice = lowerBand;
-    target = currentEMA; // Target for B2 is the middle line
-  }
-
-  let triggerDate = undefined;
   if (isBuyZone) {
-    triggerDate = (typeof latestQuote.date === 'string' ? latestQuote.date : latestQuote.date.toISOString()).split('T')[0];
+    // Traverse back to find the first trigger in the current continuous sequence
+    for (let i = latestIdx; i >= 200; i--) {
+      const q = quotes[i];
+      const cEMA = ema200[i];
+      const cLower = cEMA * 0.86;
+      
+      if (q.low <= cEMA) {
+        triggerDate = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
+        if (q.low <= cLower) {
+          tranche = 'B2';
+          entryPrice = cLower;
+          target = cEMA; // Target for B2 is regression midline
+        } else {
+          tranche = 'B1';
+          entryPrice = cEMA;
+          target = cEMA * 1.14; // Target for B1 is upper momentum band
+        }
+      } else break;
+    }
   }
 
   return {
@@ -146,7 +162,7 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
     tranche,
     entryPrice,
     target,
-    currentPrice: prices[latestIdx],
+    currentPrice,
     triggerDate,
     abcd: calculateABCDLevels(entryPrice, marketCap)
   };
