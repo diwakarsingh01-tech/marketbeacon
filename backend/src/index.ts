@@ -452,6 +452,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
 
     res.json({
       symbol,
+      version: '10.6.1-PRO', // Institutional Version Signature
       price: quote.regularMarketPrice || (snap.quotes && snap.quotes.length > 0 ? snap.quotes[snap.quotes.length - 1].close : 0),
       change: quote.regularMarketChangePercent || 0,
       marketCap: quote.marketCap || 0,
