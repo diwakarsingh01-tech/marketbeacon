@@ -50,9 +50,9 @@ const AdminPanel: React.FC = () => {
         fetch(`${API_URL}/api/admin/vouchers`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
 
-      if (uRes.ok) setUsers(await safeJsonParse(uRes));
-      if (rRes.ok) setRequests(await safeJsonParse(rRes));
-      if (vRes.ok) setVouchers(await safeJsonParse(vRes));
+      if (uRes.ok) setUsers(await safeJsonParse(uRes) || []);
+      if (rRes.ok) setRequests(await safeJsonParse(rRes) || []);
+      if (vRes.ok) setVouchers(await safeJsonParse(vRes) || []);
     } catch (e) {
       console.error("Admin fetch failed:", e);
     } finally {
@@ -117,16 +117,17 @@ const AdminPanel: React.FC = () => {
     } catch (e) { alert("Network error"); }
   };
 
-  const filteredRequests = requests.filter(r => {
+  const filteredRequests = (requests || []).filter(r => {
+    if (!r) return false;
     const status = (r.status || 'pending').toLowerCase();
     const isTabMatch = activeTab === 'pending' ? status === 'pending' : status === 'approved';
     const searchLower = search.toLowerCase();
     return isTabMatch && ((r.email || '').toLowerCase().includes(searchLower) || (r.name || '').toLowerCase().includes(searchLower));
   });
 
-  const filteredUsers = users.filter(u => 
-    (u.email || '').toLowerCase().includes(search.toLowerCase()) || 
-    (u.name || '').toLowerCase().includes(search.toLowerCase())
+  const filteredUsers = (users || []).filter(u => 
+    u && ((u.email || '').toLowerCase().includes(search.toLowerCase()) || 
+    (u.name || '').toLowerCase().includes(search.toLowerCase()))
   );
 
   const getDaysRemaining = (expiry: string) => {
@@ -145,7 +146,7 @@ const AdminPanel: React.FC = () => {
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-10 min-h-screen">
+    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-10 min-h-screen bg-[#f8fafc]">
       {/* 1. Header with Stats */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-1">
@@ -245,7 +246,7 @@ const AdminPanel: React.FC = () => {
            </thead>
            <tbody className="divide-y divide-slate-50">
              {activeTab === 'vouchers' ? (
-               vouchers.map(v => (
+               (vouchers || []).map(v => (
                  <tr key={v.id} className="group hover:bg-slate-50/50 transition-colors">
                    <td className="px-8 py-6 font-mono font-black text-slate-900 text-xs select-all">{v.code}</td>
                    <td className="px-8 py-6">
@@ -509,7 +510,7 @@ const AdminPanel: React.FC = () => {
                     </div>
                  </div>
 
-                 <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-xl active:scale-95 flex items-center justify-center space-x-2">
+                 <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-xl active:scale-95 flex items-center justify-center space-x-2">
                     <span>Onboard Now</span>
                     <ArrowRight className="h-4 w-4" />
                  </button>
