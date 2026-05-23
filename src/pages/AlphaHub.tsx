@@ -205,7 +205,7 @@ const AlphaHubPage: React.FC = () => {
       </div>
 
       {/* Stock Grid: Grouped by Basket Tier */}
-      {['BLUECHIP', 'HIGH BETA', 'PROFIT'].map(basket => {
+      {['BLUECHIP', 'HIGH_BETA', 'PROFIT'].map(basket => {
         const basketStocks = data.stocks.filter((s: any) => s.basketSource === basket);
         if (basketStocks.length === 0) return null;
 
