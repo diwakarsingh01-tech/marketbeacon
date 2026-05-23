@@ -34,12 +34,12 @@ interface TradeTableProps {
 
 const getMarketCapTag = (cap: number, symbol: string) => {
   if (['NIFTYBEES', 'BANKBEES'].includes(symbol)) {
-    return { label: 'ETF', class: 'text-indigo-600 bg-indigo-50 border-indigo-100' };
+    return { label: 'ETF', class: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' };
   }
   const capInCr = cap / 10000000;
-  if (capInCr >= 65000) return { label: 'Large Cap', class: 'text-slate-900 bg-slate-100 border-slate-200' };
-  if (capInCr >= 20000) return { label: 'Mid Cap', class: 'text-blue-600 bg-blue-50 border-blue-100' };
-  return { label: 'Small Cap', class: 'text-indigo-500 bg-indigo-50/50 border-indigo-100' };
+  if (capInCr >= 65000) return { label: 'LARGE CAP', class: 'text-white bg-slate-800 border-slate-700' };
+  if (capInCr >= 20000) return { label: 'MID CAP', class: 'text-blue-400 bg-blue-500/10 border-blue-500/20' };
+  return { label: 'SMALL CAP', class: 'text-amber-400 bg-amber-500/10 border-amber-500/20' };
 };
 
 const TradeTable: React.FC<TradeTableProps> = ({ 
@@ -226,151 +226,157 @@ const TradeTable: React.FC<TradeTableProps> = ({
       )}
 
       {/* Desktop Table View */}
-      <div className="hidden md:block overflow-hidden border border-slate-100 rounded-3xl bg-white shadow-xl">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            {activeTab === 'portfolio' ? (
-              <tr className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100">
-                <th className="px-6 py-5 text-left">Instrument</th>
-                <th className="px-6 py-5 text-center">Qty</th>
-                <th className="px-6 py-5 text-right">Entry Price</th>
-                <th className="px-6 py-5 text-right">CMP</th>
-                <th className="px-6 py-5 text-right">Inv. Value</th>
-                <th className="px-6 py-5 text-right">Curr. Value</th>
-                <th className="px-6 py-5 text-right">P&L %</th>
-              </tr>
-            ) : (
-              <tr className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100">
-                {visibleColumns.observation && <th className="px-6 py-5 cursor-pointer" onClick={() => handleSort('entryTime')}><div className="flex items-center">Obs <SortIcon column="entryTime" /></div></th>}
-                {visibleColumns.symbol && <th className="px-6 py-5 cursor-pointer" onClick={() => handleSort('symbol')}><div className="flex items-center">Symbol <SortIcon column="symbol" /></div></th>}
-                {visibleColumns.sector && <th className="px-6 py-5">Sector</th>}
-                {visibleColumns.marketCap && <th className="px-6 py-5 cursor-pointer" onClick={() => handleSort('marketCap')}><div className="flex items-center">Cap <SortIcon column="marketCap" /></div></th>}
-                {visibleColumns.abcd && <th className="px-6 py-5 text-center">ABCD Ladder</th>}
-                {visibleColumns.basePrice && <th className="px-6 py-5 text-right">Base</th>}
-                {visibleColumns.cmp && <th className="px-6 py-5 text-right cursor-pointer" onClick={() => handleSort('price')}><div className="flex items-center justify-end text-blue-600">CMP <SortIcon column="price" /></div></th>}
-                {activeTab === 'hold' && <th className="px-6 py-5 text-right font-black text-slate-500">ATH</th>}
-                {visibleColumns.dfh && <th className="px-6 py-5 text-right cursor-pointer" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div></th>}
-                {visibleColumns.objective && <th className="px-6 py-5 text-right text-fuchsia-600 font-black">Objective</th>}
-                {visibleColumns.roi && <th className="px-6 py-5 text-right cursor-pointer" onClick={() => handleSort('roi')}><div className="flex items-center justify-end">ROI% <SortIcon column="roi" /></div></th>}
-                {visibleColumns.pending && <th className="px-6 py-5 text-right cursor-pointer" onClick={() => handleSort('pending')}><div className="flex items-center justify-end">Gap% <SortIcon column="pending" /></div></th>}
-                {visibleColumns.fundamentals && <th className="px-6 py-5 text-right">Audit</th>}
-              </tr>
-            )}
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {filteredAndSortedTrades.length === 0 ? (
-              <tr><td colSpan={15} className="px-8 py-20 text-center text-xs font-black text-slate-300 uppercase tracking-[0.4em]">No institutional signals detected</td></tr>
-            ) : (
-              filteredAndSortedTrades.map((trade) => {
-                const capTag = getMarketCapTag(trade.marketCap, trade.symbol);
-                const isStarred = userWatchlist?.includes(trade.symbol);
-                const ath = athData?.[trade.symbol] || trade.ath || 0;
+      <div className="hidden md:block border border-slate-800/50 rounded-[2rem] bg-[#0d121f] shadow-2xl overflow-hidden">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full text-left border-collapse min-w-[1000px]">
+            <thead>
+              {activeTab === 'portfolio' ? (
+                <tr className="bg-slate-900/50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-800">
+                  <th className="px-8 py-6 text-left">Instrument</th>
+                  <th className="px-8 py-6 text-center">Qty</th>
+                  <th className="px-8 py-6 text-right">Entry Price</th>
+                  <th className="px-8 py-6 text-right">CMP</th>
+                  <th className="px-8 py-6 text-right">Inv. Value</th>
+                  <th className="px-8 py-6 text-right">Curr. Value</th>
+                  <th className="px-8 py-6 text-right">P&L %</th>
+                </tr>
+              ) : (
+                <tr className="bg-slate-900/50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-800">
+                  {visibleColumns.observation && <th className="px-8 py-6 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('entryTime')}><div className="flex items-center">Obs <SortIcon column="entryTime" /></div></th>}
+                  {visibleColumns.symbol && <th className="px-8 py-6 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('symbol')}><div className="flex items-center">Symbol <SortIcon column="symbol" /></div></th>}
+                  {visibleColumns.sector && <th className="px-8 py-6">Sector</th>}
+                  {visibleColumns.marketCap && <th className="px-8 py-6 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('marketCap')}><div className="flex items-center">Cap <SortIcon column="marketCap" /></div></th>}
+                  {visibleColumns.abcd && <th className="px-8 py-6 text-center">ABCD Ladder</th>}
+                  {visibleColumns.basePrice && <th className="px-8 py-6 text-right">Base</th>}
+                  {visibleColumns.cmp && <th className="px-8 py-6 text-right cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('price')}><div className="flex items-center justify-end text-blue-400">CMP <SortIcon column="price" /></div></th>}
+                  {activeTab === 'hold' && <th className="px-8 py-6 text-right font-black text-slate-500">ATH</th>}
+                  {visibleColumns.dfh && <th className="px-8 py-6 text-right cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div></th>}
+                  {visibleColumns.objective && <th className="px-8 py-6 text-right text-fuchsia-400 font-black">Objective</th>}
+                  {visibleColumns.roi && <th className="px-8 py-6 text-right cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('roi')}><div className="flex items-center justify-end">ROI% <SortIcon column="roi" /></div></th>}
+                  {visibleColumns.pending && <th className="px-8 py-6 text-right cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('pending')}><div className="flex items-center justify-end">Gap% <SortIcon column="pending" /></div></th>}
+                  {visibleColumns.fundamentals && <th className="px-8 py-6 text-right">Audit</th>}
+                </tr>
+              )}
+            </thead>
+            <tbody className="divide-y divide-slate-800/30">
+              {filteredAndSortedTrades.length === 0 ? (
+                <tr><td colSpan={15} className="px-8 py-20 text-center text-xs font-black text-slate-500 uppercase tracking-[0.4em]">No institutional signals detected</td></tr>
+              ) : (
+                filteredAndSortedTrades.map((trade) => {
+                  const capTag = getMarketCapTag(trade.marketCap, trade.symbol);
+                  const isStarred = userWatchlist?.includes(trade.symbol);
+                  const ath = athData?.[trade.symbol] || trade.ath || 0;
 
-                if (activeTab === 'portfolio') {
-                  const invested = (trade.quantity || 0) * (trade.buy_price || 0);
-                  const currentVal = (trade.quantity || 0) * (trade.livePrice || 0);
-                  const pnl = currentVal - invested;
+                  if (activeTab === 'portfolio') {
+                    const invested = (trade.quantity || 0) * (trade.buy_price || 0);
+                    const currentVal = (trade.quantity || 0) * (trade.livePrice || 0);
+                    const pnl = currentVal - invested;
+                    return (
+                      <tr key={trade.symbol} className="hover:bg-slate-800/20 transition-all font-black text-[11px] group">
+                        <td className="px-8 py-5 text-left flex items-center space-x-3">
+                          <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-700 hover:text-amber-400 transition-colors"><StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current text-amber-400' : ''}`} /></button>
+                          <span className="text-white group-hover:text-blue-400 transition-colors">{trade.symbol}</span>
+                        </td>
+                        <td className="px-8 py-5 text-center">
+                          <input type="number" defaultValue={trade.quantity || 0} onBlur={(e) => onUpdateHolding?.(trade.symbol, parseInt(e.target.value) || 0, trade.buy_price || 0)} className="w-20 bg-slate-900 border border-slate-800 rounded-lg text-center font-black p-2 shadow-inner outline-none focus:border-blue-500 transition-all text-white" />
+                        </td>
+                        <td className="px-8 py-5 text-right">
+                          <input type="number" defaultValue={trade.buy_price || 0} onBlur={(e) => onUpdateHolding?.(trade.symbol, trade.quantity || 0, parseFloat(e.target.value) || 0)} className="w-24 bg-slate-900 border border-slate-800 rounded-lg text-right font-black p-2 shadow-inner outline-none focus:border-blue-500 transition-all text-white" />
+                        </td>
+                        <td className="px-8 py-5 text-right text-blue-400">₹{trade.livePrice?.toLocaleString()}</td>
+                        <td className="px-8 py-5 text-right text-slate-500 font-bold">₹{invested.toLocaleString()}</td>
+                        <td className="px-8 py-5 text-right text-white font-bold">₹{currentVal.toLocaleString()}</td>
+                        <td className="px-8 py-5 text-right">
+                          <span className={`px-3 py-1 rounded-lg text-[10px] font-black ${pnl >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                              {pnl >= 0 ? '+' : ''}{invested > 0 ? ((pnl/invested)*100).toFixed(1) : '0.0'}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  }
+
                   return (
-                    <tr key={trade.symbol} className="hover:bg-slate-50 transition-all font-black text-[11px]">
-                      <td className="px-6 py-4 text-left flex items-center space-x-3">
-                        <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-colors"><StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current text-amber-400' : ''}`} /></button>
-                        <span className="text-slate-900">{trade.symbol}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <input type="number" defaultValue={trade.quantity || 0} onBlur={(e) => onUpdateHolding?.(trade.symbol, parseInt(e.target.value) || 0, trade.buy_price || 0)} className="w-16 bg-slate-50 border-none rounded-lg text-center font-black p-1 shadow-inner outline-none focus:bg-white transition-all" />
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <input type="number" defaultValue={trade.buy_price || 0} onBlur={(e) => onUpdateHolding?.(trade.symbol, trade.quantity || 0, parseFloat(e.target.value) || 0)} className="w-20 bg-slate-50 border-none rounded-lg text-right font-black p-1 shadow-inner outline-none focus:bg-white transition-all" />
-                      </td>
-                      <td className="px-6 py-4 text-right text-blue-600">₹{trade.livePrice?.toLocaleString()}</td>
-                      <td className="px-6 py-4 text-right text-slate-500 font-bold">₹{invested.toLocaleString()}</td>
-                      <td className="px-6 py-4 text-right text-slate-900 font-bold">₹{currentVal.toLocaleString()}</td>
-                      <td className="px-6 py-4 text-right">
-                         <span className={`px-2 py-1 rounded-lg ${pnl >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                            {pnl >= 0 ? '+' : ''}{invested > 0 ? ((pnl/invested)*100).toFixed(1) : '0.0'}%
-                         </span>
-                      </td>
+                    <tr key={trade.symbol} className="hover:bg-slate-800/20 group transition-all font-black text-[11px]">
+                      {visibleColumns.observation && (
+                        <td className="px-8 py-5 text-[9px] text-slate-500 font-bold uppercase whitespace-nowrap">
+                          {trade.entryTime && trade.entryTime !== '-' ? (
+                            <div className="flex flex-col">
+                              <span className="text-slate-300">{new Date(trade.entryTime).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                              <span className="opacity-40">{new Date(trade.entryTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                            </div>
+                          ) : '-'}
+                        </td>
+                      )}
+                      {visibleColumns.symbol && (
+                        <td className="px-8 py-5 flex items-center space-x-3">
+                           <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-700 hover:text-amber-400 transition-colors"><StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current text-amber-400' : ''}`} /></button>
+                           <span className="text-white group-hover:text-blue-400 transition-colors">{trade.symbol}</span>
+                           <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-all">
+                              <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-1.5 text-blue-500 hover:scale-110 transition-transform"><Share2 className="h-3.5 w-3.5" /></button>
+                              <Link to={`/stock/${trade.symbol}`} className="p-1.5 text-slate-500 hover:text-white"><ExternalLink className="h-3.5 w-3.5" /></Link>
+                           </div>
+                        </td>
+                      )}
+                      {visibleColumns.sector && <td className="px-8 py-5 text-[9px] text-slate-500 uppercase truncate max-w-[150px] font-bold">{trade.sector}</td>}
+                      {visibleColumns.marketCap && (
+                        <td className="px-8 py-5">
+                          {capTag && <span className={`px-2.5 py-1 rounded-md text-[8px] font-black border tracking-tighter whitespace-nowrap ${capTag.class}`}>{capTag.label}</span>}
+                        </td>
+                      )}
+                      {visibleColumns.abcd && (
+                        <td className="px-8 py-5">
+                          <div className="flex items-center justify-center space-x-2">
+                            {['a', 'b', 'c', 'd'].map((l) => {
+                              const levelVal = trade.abcd?.[l] || 0;
+                              const isActive = (trade.livePrice || 0) <= levelVal;
+                              return (
+                                <div key={l} title={`Level ${l.toUpperCase()}: ₹${levelVal.toLocaleString()}`} className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black border transition-all ${isActive ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.4)] scale-110' : 'bg-slate-900 text-slate-600 border-slate-800 opacity-50'}`}>
+                                  {l.toUpperCase()}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      )}
+                      {visibleColumns.basePrice && <td className="px-8 py-5 text-right text-slate-500 font-bold">₹{trade.entryPrice?.toLocaleString()}</td>}
+                      {visibleColumns.cmp && <td className="px-8 py-5 text-right text-blue-400 font-black">₹{trade.livePrice?.toLocaleString()}</td>}
+                      {activeTab === 'hold' && <td className="px-8 py-5 text-right text-slate-500 font-bold">₹{ath?.toLocaleString() || '-'}</td>}
+                      {visibleColumns.dfh && <td className="px-8 py-5 text-right text-slate-500 font-medium">{trade.dfh?.toFixed(1)}%</td>}
+                      {visibleColumns.objective && <td className="px-8 py-5 text-right text-fuchsia-400 font-black">₹{trade.target?.toLocaleString()}</td>}
+                      {visibleColumns.roi && (
+                        <td className="px-8 py-5 text-right">
+                           <div className="flex flex-col items-end">
+                              <span className={`text-[11px] font-black ${trade.targetGap >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                 {trade.targetGap >= 0 ? '+' : ''}{trade.targetGap?.toFixed(1)}%
+                              </span>
+                              <span className="text-[7px] text-slate-500 uppercase font-black tracking-tighter opacity-60">Upside</span>
+                           </div>
+                        </td>
+                      )}
+                      {visibleColumns.pending && (
+                        <td className="px-8 py-5 text-right">
+                           <div className="flex flex-col items-end">
+                              <span className="text-[10px] font-black text-orange-400">
+                                 {trade.entryPrice > 0 ? (((trade.livePrice - trade.entryPrice)/trade.entryPrice) * 100).toFixed(1) : '0.0'}%
+                              </span>
+                              <span className="text-[7px] text-slate-500 uppercase font-black tracking-tighter opacity-60">Gap to Base</span>
+                           </div>
+                        </td>
+                      )}
+                      {visibleColumns.fundamentals && (
+                        <td className="px-8 py-5 text-right">
+                          <Link to={`/stock/${trade.symbol}`} className="p-2.5 bg-slate-900 border border-slate-800 hover:border-blue-500 hover:text-white rounded-xl text-slate-600 transition-all inline-block shadow-sm">
+                             <ShieldCheck className="h-4 w-4" />
+                          </Link>
+                        </td>
+                      )}
                     </tr>
                   );
-                }
-
-                return (
-                  <tr key={trade.symbol} className="hover:bg-slate-50 group transition-all font-black text-[11px]">
-                    {visibleColumns.observation && (
-                      <td className="px-6 py-4 text-[9px] text-slate-400 font-bold uppercase whitespace-nowrap">
-                        {trade.entryTime && trade.entryTime !== '-' ? (
-                          <div className="flex flex-col">
-                            <span>{new Date(trade.entryTime).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                            <span className="opacity-50">{new Date(trade.entryTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-                          </div>
-                        ) : '-'}
-                      </td>
-                    )}
-                    {visibleColumns.symbol && (
-                      <td className="px-6 py-4 flex items-center space-x-3">
-                         <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-colors"><StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current text-amber-400' : ''}`} /></button>
-                         <span className="text-slate-900">{trade.symbol}</span>
-                         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-all">
-                            <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-1 text-blue-500 hover:scale-110 transition-transform"><Share2 className="h-3.5 w-3.5" /></button>
-                            <Link to={`/stock/${trade.symbol}`} className="p-1 text-slate-400 hover:text-slate-900"><ExternalLink className="h-3.5 w-3.5" /></Link>
-                         </div>
-                      </td>
-                    )}
-                    {visibleColumns.sector && <td className="px-6 py-4 text-[9px] text-slate-400 uppercase truncate max-w-[120px]">{trade.sector}</td>}
-                    {visibleColumns.marketCap && <td className="px-6 py-4">{capTag && <span className={`px-2 py-0.5 rounded text-[8px] font-black border ${capTag.class}`}>{capTag.label}</span>}</td>}
-                    {visibleColumns.abcd && (
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-center space-x-1.5">
-                          {['a', 'b', 'c', 'd'].map((l) => {
-                            const levelVal = trade.abcd?.[l] || 0;
-                            const isActive = (trade.livePrice || 0) <= levelVal;
-                            return (
-                              <div key={l} title={`Level ${l.toUpperCase()}: ₹${levelVal.toLocaleString()}`} className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-black border transition-all ${isActive ? 'bg-slate-900 text-white border-slate-900 shadow-md scale-110' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
-                                {l.toUpperCase()}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </td>
-                    )}
-                    {visibleColumns.basePrice && <td className="px-6 py-4 text-right text-slate-400 font-bold">₹{trade.entryPrice?.toLocaleString()}</td>}
-                    {visibleColumns.cmp && <td className="px-6 py-4 text-right text-blue-600 font-black">₹{trade.livePrice?.toLocaleString()}</td>}
-                    {activeTab === 'hold' && <td className="px-6 py-4 text-right text-slate-400 font-bold">₹{ath?.toLocaleString() || '-'}</td>}
-                    {visibleColumns.dfh && <td className="px-6 py-4 text-right text-slate-400 font-medium">{trade.dfh?.toFixed(1)}%</td>}
-                    {visibleColumns.objective && <td className="px-6 py-4 text-right text-fuchsia-600 font-black">₹{trade.target?.toLocaleString()}</td>}
-                    {visibleColumns.roi && (
-                      <td className="px-6 py-4 text-right">
-                         <div className="flex flex-col items-end">
-                            <span className={`text-[11px] font-black ${trade.targetGap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                               {trade.targetGap >= 0 ? '+' : ''}{trade.targetGap?.toFixed(1)}%
-                            </span>
-                            <span className="text-[7px] text-slate-400 uppercase font-black tracking-tighter">Upside</span>
-                         </div>
-                      </td>
-                    )}
-                    {visibleColumns.pending && (
-                      <td className="px-6 py-4 text-right">
-                         <div className="flex flex-col items-end">
-                            <span className="text-[10px] font-black text-orange-500">
-                               {trade.entryPrice > 0 ? (((trade.livePrice - trade.entryPrice)/trade.entryPrice) * 100).toFixed(1) : '0.0'}%
-                            </span>
-                            <span className="text-[7px] text-slate-400 uppercase font-black tracking-tighter">Gap to Base</span>
-                         </div>
-                      </td>
-                    )}
-                    {visibleColumns.fundamentals && (
-                      <td className="px-6 py-4 text-right">
-                        <Link to={`/stock/${trade.symbol}`} className="p-2 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-xl text-slate-400 transition-all inline-block shadow-sm">
-                           <ShieldCheck className="h-4 w-4" />
-                        </Link>
-                      </td>
-                    )}
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Mobile Card View (Refined with Telegram Share) */}
