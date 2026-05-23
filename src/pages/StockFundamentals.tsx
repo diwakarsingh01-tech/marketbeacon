@@ -134,11 +134,11 @@ const StockFundamentalsPage: React.FC = () => {
                 </div>
              </div>
              {[
-               { label: 'P/E Ratio', value: data?.peRatio?.toFixed(1) },
-               { label: 'Dividend Yield', value: `${data?.dividendYield}%` },
-               { label: '52W High', value: `₹${data?.fiftTwoWeekHigh?.toLocaleString()}` },
-               { label: '52W Low', value: `₹${data?.fiftTwoWeekLow?.toLocaleString()}` },
-               { label: 'Beta', value: data?.beta?.toFixed(2) }
+               { label: 'P/E Ratio', value: data?.peRatio?.toFixed(1) || 'N/A' },
+               { label: 'Dividend Yield', value: `${data?.dividendYield || 0}%` },
+               { label: '52W High', value: `₹${data?.fiftyTwoWeekHigh?.toLocaleString() || '-'}` },
+               { label: '52W Low', value: `₹${data?.fiftyTwoWeekLow?.toLocaleString() || '-'}` },
+               { label: 'Beta', value: data?.beta?.toFixed(2) || '1.0' }
              ].map((m, i) => (
                <div key={i} className="flex flex-col shrink-0">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{m.label}</span>
