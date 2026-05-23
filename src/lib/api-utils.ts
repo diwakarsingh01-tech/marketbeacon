@@ -8,48 +8,34 @@ export async function safeJsonParse(response: Response) {
   try {
     return JSON.parse(text);
   } catch (e) {
-    console.error("[M-SEC] Invalid Institutional Data Received (HTML detected instead of JSON).");
-    console.error("[M-SEC] Sample response:", text.substring(0, 100));
+    const isHtml = text.trim().toLowerCase().startsWith('<!doctype') || text.includes('<html');
     return { 
-      error: "Protocol Mismatch: Backend returned HTML (404/Error) instead of Data. Check VITE_API_URL.",
-      isHtmlResponse: true,
-      raw: text.substring(0, 200)
+      error: isHtml 
+        ? "Protocol Mismatch: Your terminal is hitting a web server (HTML) instead of the Backend. Please enter your Backend IP using the 'Fix Connectivity' button." 
+        : "Institutional Data Corrupted: Backend returned invalid format.",
+      isHtmlResponse: isHtml,
+      status: response.status,
+      url: response.url
     };
   }
 }
 
 export const getApiUrl = () => {
-  // 1. Priority: Manual LocalStorage Override (Institutional Debugging)
-  const override = localStorage.getItem('mb_api_override');
-  if (override && override.startsWith('http')) {
-    return override;
-  }
-
   const h = window.location.hostname;
   const p = window.location.protocol;
-  
-  // 2. Priority: Explicit environment variable
+
+  // 1. Manual Overrides (Highest Priority)
+  const override = localStorage.getItem('mb_api_override');
+  if (override && override.length > 5) return override;
+
+  // 2. Local Network Detection (Antigravity/Home)
+  const isLocal = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.') || h.startsWith('10.') || h.startsWith('172.') || h.endsWith('.local');
+  if (isLocal) return `${p}//${h}:3001`;
+
+  // 3. Environment Config
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl && envUrl !== '/' && envUrl !== 'undefined' && envUrl !== 'null') {
-    return envUrl;
-  }
+  if (envUrl && envUrl !== '/' && envUrl !== 'undefined' && !envUrl.includes(h)) return envUrl;
 
-  // 3. Dev/Antigravity Fallback: Comprehensive Private Network Detection
-  const isLocal = 
-    h === 'localhost' || 
-    h === '127.0.0.1' || 
-    h.startsWith('192.168.') || 
-    h.startsWith('10.') || 
-    h.startsWith('172.') || 
-    h.endsWith('.local') ||
-    h.includes('.internal');
-  
-  if (isLocal) {
-    // Standardize to HTTP for local backend unless specifically on HTTPS localhost
-    const protocol = (h === 'localhost' && p === 'https:') ? 'https:' : 'http:';
-    return `${protocol}//${h}:3001`;
-  }
-
-  // 4. Production Safety: Explicitly block relative paths
-  return "https://api-missing-configuration.marketbeacon.io";
+  // 4. Default Fail-safe (Avoid relative path loop)
+  return "http://localhost:3001";
 };
