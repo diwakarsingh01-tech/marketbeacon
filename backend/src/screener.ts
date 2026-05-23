@@ -244,7 +244,15 @@ export async function runScreener() {
 
 export async function updateMarketSnapshot(symbols: string[]) {
   console.log(`📡 [SNAPSHOT] Updating ${symbols.length} symbols...`);
-  const snapshot: Record<string, any> = {};
+  
+  // MERGE LOGIC: Load existing snapshot first to avoid wipe-out
+  let snapshot: Record<string, any> = {};
+  try {
+    if (fs.existsSync(MARKET_SNAPSHOT_PATH)) {
+      snapshot = JSON.parse(fs.readFileSync(MARKET_SNAPSHOT_PATH, 'utf-8'));
+    }
+  } catch (e) { console.error('Failed to load existing snapshot for merge'); }
+
   const batchSize = 3;
   for (let i = 0; i < symbols.length; i += batchSize) {
     const batch = symbols.slice(i, i + batchSize);
@@ -253,14 +261,19 @@ export async function updateMarketSnapshot(symbols: string[]) {
         const symbol = baseSymbol.includes('.') ? baseSymbol : `${baseSymbol}.NS`;
         const period1 = new Date();
         period1.setFullYear(period1.getFullYear() - 5);
+        
         const [history, quote, summary, screenerData] = await Promise.all([
           yahooFinance.chart(symbol, { period1: period1.toISOString().split('T')[0], interval: '1d' as any }),
           yahooFinance.quote(symbol),
           yahooFinance.quoteSummary(symbol, { modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail', 'incomeStatementHistoryQuarterly'] }).catch(() => null),
           fetchScreenerData(baseSymbol)
         ]);
+
+        if (!history || !history.quotes) throw new Error('No price history');
+
         const quotes = (history.quotes || []).filter((q: any) => q.close && q.low && q.high);
-        const marketCap = quote.marketCap || 0;
+        const marketCap = quote.marketCap || screenerData?.marketCap || 0;
+        
         const strategies = {
           'ENVELOPE_LONG': calculateEnvelope(quotes),
           'ENVELOPE_SHORT': processShortEnvelope(quotes, marketCap),
@@ -273,28 +286,33 @@ export async function updateMarketSnapshot(symbols: string[]) {
           'SIXTY_SEVEN_FUNDA': calculateSixtySevenFunda(quotes, screenerData),
           'TWENTY_RALLY_RETEST': calculateTwentyRallyRetest(quotes)
         };
+
+        // Aggressive Data Hardening for individual stock refresh
         snapshot[baseSymbol] = {
           quotes: quotes.slice(-1300),
           quote: {
             marketCap,
-            regularMarketPrice: quote.regularMarketPrice,
-            fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh,
-            pe: summary?.summaryDetail?.trailingPE || summary?.defaultKeyStatistics?.trailingPE || 0,
-            roe: (summary?.defaultKeyStatistics?.returnOnEquity || 0) * 100,
-            debtToEquity: summary?.financialData?.debtToEquity || 0,
+            regularMarketPrice: quote.regularMarketPrice || (quotes.length > 0 ? quotes[quotes.length - 1].close : 0),
+            regularMarketChangePercent: quote.regularMarketChangePercent || 0,
+            fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh || Math.max(...quotes.slice(-252).map(q => q.high)),
+            fiftyTwoWeekLow: quote.fiftyTwoWeekLow || Math.min(...quotes.slice(-252).map(q => q.low)),
+            pe: summary?.summaryDetail?.trailingPE || summary?.defaultKeyStatistics?.trailingPE || screenerData?.peRatio || 0,
+            roe: (summary?.defaultKeyStatistics?.returnOnEquity || 0) * 100 || screenerData?.returnOnEquity || 0,
+            debtToEquity: summary?.financialData?.debtToEquity || screenerData?.netDebtToEquity || 0,
             shareholding: screenerData?.shareholding || null
           },
           screener: screenerData,
           strategies,
           lastUpdated: new Date().toISOString()
         };
-      } catch (e) { console.error(`Snapshot failed for ${baseSymbol}`); }
+      } catch (e: any) { console.error(`Snapshot failed for ${baseSymbol}: ${e.message}`); }
     }));
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
   }
+  
   fs.writeFileSync(MARKET_SNAPSHOT_PATH, JSON.stringify(snapshot, null, 2));
   snapshotCache = snapshot;
-  console.log(`💎 [SNAPSHOT] Success! Market data cached.`);
+  console.log(`💎 [SNAPSHOT] Success! Market data merged and cached.`);
 }
 
 export function initScreenerCron() {
