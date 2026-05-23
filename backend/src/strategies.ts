@@ -120,45 +120,47 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   const ema200 = calculateEMA(prices, 200);
   const latestIdx = quotes.length - 1;
   const currentEMA = ema200[latestIdx];
-  const latestQuote = quotes[latestIdx];
   const currentPrice = prices[latestIdx];
+  const latestQuote = quotes[latestIdx];
   
   const lowerBand = currentEMA * 0.86;
   const upperBand = currentEMA * 1.14;
 
-  const isB1 = latestQuote.low <= currentEMA;
-  const isB2 = latestQuote.low <= lowerBand;
-  const isBuyZone = isB1 || isB2;
+  // Institutional Logic: Find the FIRST day of the current continuous trigger
+  let b1_trigger_idx = -1;
+  let b2_trigger_idx = -1;
 
-  let triggerDate: string | undefined = undefined;
-  let entryPrice = currentEMA;
-  let target = upperBand;
-  let tranche = 'B1';
+  for (let i = latestIdx; i >= 200; i--) {
+    const q = quotes[i];
+    const cEMA = ema200[i];
+    const cLower = cEMA * 0.86;
+    
+    if (q.low <= cEMA) {
+      b1_trigger_idx = i;
+      if (q.low <= cLower) b2_trigger_idx = i;
+    } else break; // Sequence broken
+  }
 
-  if (isBuyZone) {
-    // Traverse back to find the first trigger in the current continuous sequence
-    for (let i = latestIdx; i >= 200; i--) {
-      const q = quotes[i];
-      const cEMA = ema200[i];
-      const cLower = cEMA * 0.86;
-      
-      if (q.low <= cEMA) {
-        triggerDate = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
-        if (q.low <= cLower) {
-          tranche = 'B2';
-          entryPrice = cLower;
-          target = cEMA; // Target for B2 is regression midline
-        } else {
-          tranche = 'B1';
-          entryPrice = cEMA;
-          target = cEMA * 1.14; // Target for B1 is upper momentum band
-        }
-      } else break;
-    }
+  const isBuyZone = b1_trigger_idx !== -1;
+  if (!isBuyZone) return { isBuyZone: false, tranche: 'WATCHLIST', currentPrice, entryPrice: currentEMA, target: upperBand };
+
+  // Determine Tranche (B1 if only middle line hit, B2 if lower line hit)
+  const tranche = b2_trigger_idx !== -1 ? 'B2' : 'B1';
+  
+  // Rule: B1 bought at orange (EMA), sold at upper blue.
+  // Rule: B2 bought at lower blue, sold at orange (EMA).
+  let entryPrice = ema200[b1_trigger_idx];
+  let target = ema200[b1_trigger_idx] * 1.14; // Default B1 target
+  let triggerDate = (typeof quotes[b1_trigger_idx].date === 'string' ? quotes[b1_trigger_idx].date : (quotes[b1_trigger_idx].date as Date).toISOString()).split('T')[0];
+
+  if (tranche === 'B2') {
+    entryPrice = ema200[b2_trigger_idx] * 0.86;
+    target = ema200[b2_trigger_idx]; // B2 sells at the orange line
+    triggerDate = (typeof quotes[b2_trigger_idx].date === 'string' ? quotes[b2_trigger_idx].date : (quotes[b2_trigger_idx].date as Date).toISOString()).split('T')[0];
   }
 
   return {
-    isBuyZone,
+    isBuyZone: true,
     tranche,
     entryPrice,
     target,
@@ -167,6 +169,7 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
     abcd: calculateABCDLevels(entryPrice, marketCap)
   };
 }
+
 
 /**
  * STRATEGY 8: Velocity Retest (20% Green Rally)
