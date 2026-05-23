@@ -123,6 +123,7 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   let b1_open = false;
   let b1_entry = 0;
   let b1_date = '';
+  let b1_ema_at_entry = 0;
   let b1_target = 0;
 
   let b2_open = false;
@@ -131,36 +132,34 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   let b2_target = 0;
 
   // State Machine Simulation
-  for (let i = 200; i < quotes.length; i++) {
+  for (let i = 201; i < quotes.length; i++) {
     const q = quotes[i];
     const cEMA = ema200[i];
     const cLower = cEMA * 0.86;
     const dateStr = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
 
-    // B1 Entry: Price crosses/touches Orange line (EMA 200) from above
-    const prevPrice = prices[i-1];
-    if (prevPrice > ema200[i-1] && q.low <= cEMA && !b1_open) {
+    // B1 Entry: Price crosses/touches EMA 200 from above
+    // Logic: Previous Close > EMA and Current Close <= EMA
+    const prevClose = prices[i-1];
+    if (prevClose > ema200[i-1] && q.close <= cEMA && !b1_open) {
       b1_open = true;
-      b1_entry = cEMA;
+      b1_entry = q.close; // ENTRY AT DAY CLOSE
       b1_date = dateStr;
-      b1_target = cEMA * 1.14; 
+      b1_ema_at_entry = cEMA;
+      b1_target = Math.round(cEMA * 1.14); // Target B1: EMA * 1.14
     }
 
     // B2 Entry: Price hits Lower Blue line (14% down from EMA)
     if (b1_open && q.low <= cLower && !b2_open) {
       b2_open = true;
-      b2_entry = cLower;
+      b2_entry = q.close; // ENTRY AT DAY CLOSE
       b2_date = dateStr;
-      b2_target = cEMA; // B2 target is the EMA line
+      b2_target = Math.round(cEMA); // Target B2: EMA at trigger
     }
 
-    // Exit Logic: Tranches close independently
-    if (b2_open && q.high >= b2_target) {
-      b2_open = false;
-    }
-    if (b1_open && q.high >= b1_target) {
-      b1_open = false;
-    }
+    // Exit Logic (Independent)
+    if (b2_open && q.high >= b2_target) b2_open = false;
+    if (b1_open && q.high >= b1_target) b1_open = false;
   }
 
   const isBuyZone = b1_open || b2_open;
@@ -168,20 +167,15 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   
   // Market Cap based ABCD Ladder Gap
   const capCr = marketCap / 10000000;
-  let gapPercent = 15; // Mid Cap default
+  let gapPercent = 15; // Mid Cap
   if (capCr >= 65000) gapPercent = 10; // Large Cap
   else if (capCr < 20000) gapPercent = 20; // Small Cap
 
-  // Primary Anchor: Entry A (B1/Orange)
+  // ALWAYS return B1 price as the "Base" for the table if active
   const finalEntryPrice = b1_open ? b1_entry : ema200[latestIdx];
   const finalTarget = b2_open ? b2_target : (b1_open ? b1_target : ema200[latestIdx] * 1.14);
   const finalTriggerDate = b1_open ? b1_date : undefined;
-  
-  // Tranche logic for UI
   const tranche = b2_open ? 'B2' : (b1_open ? 'B1' : 'WATCHLIST');
-
-  // ABCD Ladder anchored to B2 Entry (if open) or B1 Entry
-  const ladderAnchor = b2_open ? b2_entry : finalEntryPrice;
 
   return {
     isBuyZone,
