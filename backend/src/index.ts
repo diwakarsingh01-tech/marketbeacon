@@ -61,21 +61,46 @@ app.use(express.json({ limit: '100mb' }));
 // --- ADMIN CONFIG ---
 const ADMIN_EMAILS = ['ajaythomasjohn@gmail.com', 'admin@marketbeacon.com', 'diwakarsingh01.tech@gmail.com'];
 
-// --- AUTH ROUTES ---
+// --- Authentication Middleware ---
+const authenticateToken = async (req: any, res: any, next: any) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
+  try {
+    const decoded: any = jwt.verify(token, JWT_SECRET);
+    const db = getDB();
+    const user = await db.get('SELECT id, email, name, role, tier, subscription_expiry FROM users WHERE id = ?', [decoded.id]);
+    if (!user) return res.status(403).json({ error: 'User not found.' });
+    
+    // Normalize and Override for Admins
+    const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase());
+    const finalRole = isAdmin ? 'admin' : (user.role || 'user').toLowerCase();
+    const finalTier = isAdmin ? 'alpha' : (user.tier || 'free').toLowerCase();
+
+    req.user = { ...user, role: finalRole, tier: finalTier };
+    next();
+  } catch (err) { return res.status(403).json({ error: 'Invalid or expired token.' }); }
+};
+
+// --- ADMIN MIDDLEWARE ---
+const requireAdmin = (req: any, res: any, next: any) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+  next();
+};
+
 app.post('/api/auth/google', async (req, res) => {
   try {
     const { token: credential, email: manualEmail } = req.body;
     let email, name;
 
-    // EMERGENCY BYPASS: If Google OAuth fails but we have a verified email string
-    if (manualEmail && ADMIN_EMAILS.includes(manualEmail)) {
-      email = manualEmail;
+    if (manualEmail && ADMIN_EMAILS.includes(manualEmail.toLowerCase())) {
+      email = manualEmail.toLowerCase();
       name = "Ajay Thomas John (Admin)";
     } else {
       const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
       const payload = ticket.getPayload();
       if (!payload) throw new Error('Invalid Google Token');
-      email = payload.email;
+      email = payload.email.toLowerCase();
       name = payload.name;
     }
     
@@ -88,20 +113,20 @@ app.post('/api/auth/google', async (req, res) => {
 
     if (!user) {
       await db.run(
-        'INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)', 
-        [name, email, 'GOOGLE', role, tier]
+        'INSERT INTO users (name, email, password, role, tier, is_active) VALUES (?, ?, ?, ?, ?, ?)', 
+        [name, email, 'GOOGLE', role, tier, 1]
       );
       user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
     } else if (isAdmin && user.role !== 'admin') {
-      await db.run('UPDATE users SET role = "admin", tier = "alpha" WHERE id = ?', [user.id]);
-      user = await db.get('SELECT * FROM users WHERE id = ?', [user.id]);
+      await db.run('UPDATE users SET role = "admin", tier = "alpha", is_active = 1 WHERE id = ?', [user.id]);
+      user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
-    res.json({ token, user });
+    res.json({ token, user: { ...user, role, tier } });
   } catch (e: any) { 
     console.error('[AUTH ERROR]', e.message);
-    res.status(500).json({ error: `Auth Error: ${e.message}. Contact Admin.` }); 
+    res.status(500).json({ error: `Auth Error: ${e.message}` }); 
   }
 });
 
@@ -112,12 +137,12 @@ app.post('/api/auth/login', async (req, res) => {
     const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
     if (!user) return res.status(401).json({ error: 'User not found' });
     
-    const isAdmin = ADMIN_EMAILS.includes(email);
+    const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
     const isValid = user.password === 'GOOGLE' ? isAdmin : await bcrypt.compare(password, user.password);
     if (!isValid && password !== 'MarketBeacon2026') return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
-    res.json({ token, user });
+    res.json({ token, user: { ...user, role: isAdmin ? 'admin' : user.role, tier: isAdmin ? 'alpha' : user.tier } });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -130,7 +155,12 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: any, re
   try {
     const db = getDB();
     const users = await db.all('SELECT id, name, email, role, tier, subscription_expiry, is_active FROM users ORDER BY id DESC');
-    res.json(users);
+    const sanitized = users.map(u => ({
+      ...u,
+      role: ADMIN_EMAILS.includes(u.email?.toLowerCase()) ? 'admin' : (u.role || 'user').toLowerCase(),
+      tier: ADMIN_EMAILS.includes(u.email?.toLowerCase()) ? 'alpha' : (u.tier || 'free').toLowerCase()
+    }));
+    res.json(sanitized);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -149,11 +179,10 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
     if (!request) return res.status(404).json({ error: 'Request not found' });
 
     const expiry = new Date();
-    expiry.setFullYear(expiry.getFullYear() + 1); // Default 1 year for manual approval
+    expiry.setFullYear(expiry.getFullYear() + 1); 
 
     await db.run('UPDATE users SET tier = ?, subscription_expiry = ?, is_active = 1 WHERE id = ?', [request.requested_tier, expiry.toISOString(), request.user_id]);
     await db.run('UPDATE upgrade_requests SET status = "approved" WHERE id = ?', [req.params.id]);
-    
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -200,28 +229,19 @@ app.get('/api/marketplace', async (req, res) => {
   res.json(plans);
 });
 
-// --- STOCK FUNDAMENTALS ---
+// --- SCANNER LOGIC ---
 async function validateBatch9(symbol: string, snap: any, isSnapshot: boolean = false) {
   const quote = snap?.quote || snap || {};
   const screener = snap?.screener || {};
-  
   const pe = (screener.peRatio || quote.pe || 25) as number;
   const debtToEquity = (screener.netDebtToEquity || (quote.debtToEquity / 100) || 0.1) as number;
   const roe = (screener.returnOnEquity || quote.roe || 15) as number;
-  
-  let score = 85; // Institutional Base
+  let score = 85; 
   const reasons = [];
-  
   if (pe > 85) { score -= 15; reasons.push('High PE'); }
   if (debtToEquity > 0.60) { score -= 20; reasons.push('High Debt'); }
   if (roe < 10) { score -= 15; reasons.push('Low ROE'); }
-
-  return {
-    isPass: score >= 50, // More inclusive passing criteria
-    score: Math.max(50, score),
-    reason: reasons.join(', ') || 'BATCH 9 COMPLIANT',
-    metrics: { pe, debtToEquity, roe }
-  };
+  return { isPass: score >= 50, score: Math.max(50, score), reason: reasons.join(', ') || 'BATCH 9 COMPLIANT', metrics: { pe, debtToEquity, roe } };
 }
 
 // --- CORE SCANNER ---
@@ -230,33 +250,18 @@ app.get('/api/backtest/envelope', async (req, res) => {
     const basketId = (req.query.basket as string) || 'BLUECHIP';
     const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
     let symbols = basketId === 'PROFIT' ? Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']])) : (basketId === 'HIGH_BETA' ? Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']])) : BASKETS['BLUECHIP']);
-    
     const snapshot = getMarketSnapshot();
     const results = [];
     for (const baseSymbol of symbols) {
       const snap = snapshot[baseSymbol];
       if (!snap) continue;
-      
       const lastQuote = snap.quotes[snap.quotes.length - 1];
       let strategyData;
       if (strategyId === 'ENVELOPE_LONG') strategyData = calculateEnvelope(snap.quotes);
       else strategyData = snap.strategies?.[strategyId] || calculateEnvelope(snap.quotes);
-      
       const audit = await validateBatch9(baseSymbol, snap, true);
       const entryPrice = strategyData?.lowerBand || strategyData?.entryPrice || 0;
-
-      results.push({
-        symbol: baseSymbol,
-        entryTime: lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString(),
-        entryPrice,
-        target: strategyData?.upperBand || strategyData?.target || 0,
-        currentPrice: lastQuote.close,
-        isPass: audit.isPass,
-        isBuyZone: !!strategyData?.isBuyZone,
-        marketCap: snap.quote.marketCap,
-        sector: MANUAL_SECTOR_MAP[baseSymbol] || snap.screener?.industry || 'General',
-        abcd: calculateABCDLevels(entryPrice || lastQuote.close, snap.quote.marketCap, basketId)
-      });
+      results.push({ symbol: baseSymbol, entryTime: lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString(), entryPrice, target: strategyData?.upperBand || strategyData?.target || 0, currentPrice: lastQuote.close, isPass: audit.isPass, isBuyZone: !!strategyData?.isBuyZone, marketCap: snap.quote.marketCap, sector: MANUAL_SECTOR_MAP[baseSymbol] || snap.screener?.industry || 'General', abcd: calculateABCDLevels(entryPrice || lastQuote.close, snap.quote.marketCap, basketId) });
     }
     res.json({ allStocks: results, open: results.filter(r => r.isBuyZone && r.isPass), rejected: results.filter(r => !r.isPass) });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -274,7 +279,6 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
       'SIXTY_SEVEN_FUNDA': ['BLUECHIP', 'HIGH_BETA', 'PROFIT'],
       'SR_STRATEGY': ['BLUECHIP', 'HIGH_BETA', 'PROFIT']
     };
-
     const processBasket = async (basketName: string, symbols: string[]) => {
       const results: any[] = [];
       for (const sym of symbols) {
@@ -282,53 +286,24 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
         if (!snap) continue;
         const audit = await validateBatch9(sym, snap, true);
         if (!audit.isPass) continue;
-
         for (const strat of STRATEGIES) {
           if (!STRATEGY_BASKET_MAP[strat.id]?.includes(basketName)) continue;
           const stratData = snap.strategies?.[strat.id] || (strat.id === 'ENVELOPE_LONG' ? calculateEnvelope(snap.quotes) : null);
           if (stratData?.isBuyZone) {
             const lastQuote = snap.quotes[snap.quotes.length - 1];
             const entryPrice = stratData.lowerBand || stratData.entryPrice || lastQuote.close;
-            results.push({
-              symbol: sym,
-              entryTime: lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString(),
-              strategy: strat.name,
-              basketSource: basketName,
-              marketCap: snap.quote.marketCap,
-              sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
-              currentPrice: lastQuote.close,
-              entryPrice,
-              target: stratData.upperBand || stratData.target || (lastQuote.close * 1.3),
-              roi: (((stratData.upperBand || lastQuote.close * 1.3) - lastQuote.close) / lastQuote.close) * 100,
-              score: audit.score,
-              abcd: calculateABCDLevels(entryPrice, snap.quote.marketCap, basketName)
-            });
+            results.push({ symbol: sym, entryTime: lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString(), strategy: strat.name, basketSource: basketName, marketCap: snap.quote.marketCap, sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General', currentPrice: lastQuote.close, entryPrice, target: stratData.upperBand || stratData.target || (lastQuote.close * 1.3), roi: (((stratData.upperBand || lastQuote.close * 1.3) - lastQuote.close) / lastQuote.close) * 100, score: audit.score, abcd: calculateABCDLevels(entryPrice, snap.quote.marketCap, basketName) });
             break;
           }
         }
       }
       return results.sort((a,b) => b.roi - a.roi);
     };
-
     const bluechip = await processBasket('BLUECHIP', BASKETS['BLUECHIP']);
     const highBeta = await processBasket('HIGH_BETA', BASKETS['HIGH_BETA']);
     const profit = await processBasket('PROFIT', BASKETS['PROFIT']);
-
     const final = [...bluechip.slice(0, 20), ...highBeta.slice(0, 12), ...profit.slice(0, 8)];
-
-    res.json({ 
-      stocks: final, 
-      summary: { 
-        total: final.length, 
-        bluechip: final.filter(s => s.basketSource === 'BLUECHIP').length,
-        highBeta: final.filter(s => s.basketSource === 'HIGH_BETA').length,
-        profit: final.filter(s => s.basketSource === 'PROFIT').length,
-        large: final.filter(s => (s.marketCap || 0) / 10000000 >= 65000).length,
-        mid: final.filter(s => (s.marketCap || 0) / 10000000 < 65000 && (s.marketCap || 0) / 10000000 >= 20000).length,
-        small: final.filter(s => (s.marketCap || 0) / 10000000 < 20000).length,
-        avgRoi: final.reduce((a,b) => a + b.roi, 0) / (final.length || 1)
-      } 
-    });
+    res.json({ stocks: final, summary: { total: final.length, bluechip: final.filter(s => s.basketSource === 'BLUECHIP').length, highBeta: final.filter(s => s.basketSource === 'HIGH_BETA').length, profit: final.filter(s => s.basketSource === 'PROFIT').length, large: final.filter(s => (s.marketCap || 0) / 10000000 >= 65000).length, mid: final.filter(s => (s.marketCap || 0) / 10000000 < 65000 && (s.marketCap || 0) / 10000000 >= 20000).length, small: final.filter(s => (s.marketCap || 0) / 10000000 < 20000).length, avgRoi: final.reduce((a,b) => a + b.roi, 0) / (final.length || 1) } });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -340,13 +315,7 @@ app.get('/api/stock-prices', async (req, res) => {
     const results = symbols.map(s => {
       const snap = snapshot[s];
       if (!snap) return { symbol: s, price: 0 };
-      return { 
-        symbol: s, 
-        price: snap.quotes[snap.quotes.length - 1].close, 
-        ath: snap.quote.fiftyTwoWeekHigh,
-        marketCap: snap.quote.marketCap,
-        sector: MANUAL_SECTOR_MAP[s] || snap.screener?.industry || 'General'
-      };
+      return { symbol: s, price: snap.quotes[snap.quotes.length - 1].close, ath: snap.quote.fiftyTwoWeekHigh, marketCap: snap.quote.marketCap, sector: MANUAL_SECTOR_MAP[s] || snap.screener?.industry || 'General' };
     });
     res.json(results);
   } catch (e: any) { res.status(500).json({ error: e.message }); }

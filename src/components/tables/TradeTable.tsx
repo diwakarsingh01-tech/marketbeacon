@@ -64,7 +64,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
   });
 
   useEffect(() => {
-    const isWatchlistTab = activeTab === 'watchlist' || activeTab === 'portfolio';
+    const isWatchlistTab = activeTab === 'hold' || activeTab === 'portfolio';
     const isSpecialStrat = strategyId === 'SIXTY_SEVEN_FUNDA';
     setVisibleColumns(prev => ({
       ...prev,
@@ -91,12 +91,13 @@ const TradeTable: React.FC<TradeTableProps> = ({
   };
 
   const handleShareSignal = (trade: any, method: 'copy' | 'telegram' = 'copy') => {
+    const livePrice = livePrices?.[trade.symbol] || trade.livePrice || trade.currentPrice || 0;
     const text = `🚨 *MarketBeacon Research: ${trade.symbol}*
 
 ⚡️ *Strategy:* ${trade.strategy || 'Institutional Matrix'}
-💰 *Price:* ₹${(livePrices?.[trade.symbol] || trade.currentPrice || 0).toLocaleString()}
-🎯 *Objective:* ₹${(trade.targetPrice || trade.target || 0).toLocaleString()}
-📊 *Audit:* ${trade.isPass ? '✅ Qualified' : '🔍 Observation'}
+💰 *Price:* ₹${livePrice.toLocaleString()}
+🎯 *Objective:* ₹${(trade.target || trade.targetPrice || 0).toLocaleString()}
+📊 *Audit:* ${trade.isPass !== false ? '✅ Qualified' : '🔍 Observation'}
 
 🔗 *Full Terminal:* https://marketbeacon.vercel.app/stock/${trade.symbol}
 
@@ -119,7 +120,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
   const filteredAndSortedTrades = useMemo(() => {
     let result = trades.map(t => {
-      const livePrice = livePrices?.[t.symbol] || t.currentPrice;
+      const livePrice = livePrices?.[t.symbol] || t.livePrice || t.currentPrice;
       const basePrice = t.entryPrice || t.actualEntryPrice;
       const marketCap = capData?.[t.symbol] || t.marketCap || 0;
       const sector = sectorData?.[t.symbol] || t.sector || 'General';
@@ -141,7 +142,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
         dfh,
         marketCap,
         sector,
-        entryTime: t.entryTime || '-'
+        entryTime: t.entryTime || t.entry_date || '-'
       };
     });
 
@@ -215,7 +216,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
       <div className="hidden md:block overflow-hidden border border-slate-100 rounded-3xl bg-white shadow-xl">
         <table className="w-full text-left border-collapse">
           <thead>
-            {isWatchlist ? (
+            {activeTab === 'portfolio' || activeTab === 'hold' ? (
               <tr className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100">
                 <th className="px-6 py-5 text-left">Instrument</th>
                 <th className="px-6 py-5 text-center">Qty</th>
@@ -231,7 +232,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                 {visibleColumns.symbol && <th className="px-6 py-5 cursor-pointer" onClick={() => handleSort('symbol')}><div className="flex items-center">Symbol <SortIcon column="symbol" /></div></th>}
                 {visibleColumns.sector && <th className="px-6 py-5">Sector</th>}
                 {visibleColumns.marketCap && <th className="px-6 py-5 cursor-pointer" onClick={() => handleSort('marketCap')}><div className="flex items-center">Cap <SortIcon column="marketCap" /></div></th>}
-                {visibleColumns.abcd && <th className="px-6 py-5 text-center">ABCD</th>}
+                {visibleColumns.abcd && <th className="px-6 py-5 text-center">ABCD Ladder</th>}
                 {visibleColumns.basePrice && <th className="px-6 py-5 text-right">Base</th>}
                 {visibleColumns.cmp && <th className="px-6 py-5 text-right cursor-pointer" onClick={() => handleSort('price')}><div className="flex items-center justify-end text-blue-600">CMP <SortIcon column="price" /></div></th>}
                 {visibleColumns.dfh && <th className="px-6 py-5 text-right cursor-pointer" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div></th>}
@@ -250,26 +251,26 @@ const TradeTable: React.FC<TradeTableProps> = ({
                 const capTag = getMarketCapTag(trade.marketCap, trade.symbol);
                 const isStarred = userWatchlist?.includes(trade.symbol);
 
-                if (isWatchlist) {
+                if (activeTab === 'portfolio' || activeTab === 'hold') {
                   const invested = (trade.quantity || 0) * (trade.buy_price || 0);
                   const currentVal = (trade.quantity || 0) * (trade.livePrice || 0);
                   const pnl = currentVal - invested;
                   return (
-                    <tr key={trade.symbol} className="hover:bg-slate-50 transition-all text-right font-black text-[11px]">
+                    <tr key={trade.symbol} className="hover:bg-slate-50 transition-all font-black text-[11px]">
                       <td className="px-6 py-4 text-left flex items-center space-x-3">
-                        <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-amber-400"><StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current' : ''}`} /></button>
+                        <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-colors"><StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current text-amber-400' : ''}`} /></button>
                         <span className="text-slate-900">{trade.symbol}</span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <input type="number" defaultValue={trade.quantity || 0} onBlur={(e) => onUpdateHolding?.(trade.symbol, parseInt(e.target.value) || 0, trade.buy_price || 0)} className="w-16 bg-slate-50 border-none rounded-lg text-center font-black p-1 shadow-inner" />
+                        <input type="number" defaultValue={trade.quantity || 0} onBlur={(e) => onUpdateHolding?.(trade.symbol, parseInt(e.target.value) || 0, trade.buy_price || 0)} className="w-16 bg-slate-50 border-none rounded-lg text-center font-black p-1 shadow-inner outline-none focus:bg-white transition-all" />
                       </td>
-                      <td className="px-6 py-4">
-                        <input type="number" defaultValue={trade.buy_price || 0} onBlur={(e) => onUpdateHolding?.(trade.symbol, trade.quantity || 0, parseFloat(e.target.value) || 0)} className="w-20 bg-slate-50 border-none rounded-lg text-right font-black p-1 shadow-inner" />
+                      <td className="px-6 py-4 text-right">
+                        <input type="number" defaultValue={trade.buy_price || 0} onBlur={(e) => onUpdateHolding?.(trade.symbol, trade.quantity || 0, parseFloat(e.target.value) || 0)} className="w-20 bg-slate-50 border-none rounded-lg text-right font-black p-1 shadow-inner outline-none focus:bg-white transition-all" />
                       </td>
-                      <td className="px-6 py-4 text-blue-600">₹{trade.livePrice?.toLocaleString()}</td>
-                      <td className="px-6 py-4 text-slate-500">₹{invested.toLocaleString()}</td>
-                      <td className="px-6 py-4 text-slate-900">₹{currentVal.toLocaleString()}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 text-right text-blue-600">₹{trade.livePrice?.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-right text-slate-500 font-bold">₹{invested.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-right text-slate-900 font-bold">₹{currentVal.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-right">
                          <span className={`px-2 py-1 rounded-lg ${pnl >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                             {pnl >= 0 ? '+' : ''}{invested > 0 ? ((pnl/invested)*100).toFixed(1) : '0.0'}%
                          </span>
@@ -282,26 +283,34 @@ const TradeTable: React.FC<TradeTableProps> = ({
                   <tr key={trade.symbol} className="hover:bg-slate-50 group transition-all font-black text-[11px]">
                     {visibleColumns.observation && (
                       <td className="px-6 py-4 text-[9px] text-slate-400 font-bold uppercase whitespace-nowrap">
-                        {trade.entryTime ? new Date(trade.entryTime).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }) : '-'}
+                        {trade.entryTime && trade.entryTime !== '-' ? (
+                          <div className="flex flex-col">
+                            <span>{new Date(trade.entryTime).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            <span className="opacity-50">{new Date(trade.entryTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                          </div>
+                        ) : '-'}
                       </td>
                     )}
                     {visibleColumns.symbol && (
                       <td className="px-6 py-4 flex items-center space-x-3">
-                         <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400"><StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current text-amber-400' : ''}`} /></button>
+                         <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-colors"><StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current text-amber-400' : ''}`} /></button>
                          <span className="text-slate-900">{trade.symbol}</span>
-                         <button onClick={() => handleShareSignal(trade, 'telegram')} className="opacity-0 group-hover:opacity-100 transition-all p-1 text-blue-500"><Share2 className="h-3.5 w-3.5" /></button>
+                         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-all">
+                            <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-1 text-blue-500 hover:scale-110 transition-transform"><Share2 className="h-3.5 w-3.5" /></button>
+                            <Link to={`/stock/${trade.symbol}`} className="p-1 text-slate-400 hover:text-slate-900"><ExternalLink className="h-3.5 w-3.5" /></Link>
+                         </div>
                       </td>
                     )}
                     {visibleColumns.sector && <td className="px-6 py-4 text-[9px] text-slate-400 uppercase truncate max-w-[120px]">{trade.sector}</td>}
                     {visibleColumns.marketCap && <td className="px-6 py-4">{capTag && <span className={`px-2 py-0.5 rounded text-[8px] font-black border ${capTag.class}`}>{capTag.label}</span>}</td>}
                     {visibleColumns.abcd && (
                       <td className="px-6 py-4">
-                        <div className="flex items-center justify-center space-x-1">
+                        <div className="flex items-center justify-center space-x-1.5">
                           {['a', 'b', 'c', 'd'].map((l) => {
                             const levelVal = trade.abcd?.[l] || 0;
                             const isActive = (trade.livePrice || 0) <= levelVal;
                             return (
-                              <div key={l} title={`Level ${l.toUpperCase()}: ₹${levelVal.toLocaleString()}`} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black border ${isActive ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
+                              <div key={l} title={`Level ${l.toUpperCase()}: ₹${levelVal.toLocaleString()}`} className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-black border transition-all ${isActive ? 'bg-slate-900 text-white border-slate-900 shadow-md scale-110' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
                                 {l.toUpperCase()}
                               </div>
                             );
@@ -311,7 +320,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                     )}
                     {visibleColumns.basePrice && <td className="px-6 py-4 text-right text-slate-400 font-bold">₹{trade.entryPrice?.toLocaleString()}</td>}
                     {visibleColumns.cmp && <td className="px-6 py-4 text-right text-blue-600 font-black">₹{trade.livePrice?.toLocaleString()}</td>}
-                    {visibleColumns.dfh && <td className="px-6 py-4 text-right text-slate-400">{trade.dfh?.toFixed(1)}%</td>}
+                    {visibleColumns.dfh && <td className="px-6 py-4 text-right text-slate-400 font-medium">{trade.dfh?.toFixed(1)}%</td>}
                     {visibleColumns.objective && <td className="px-6 py-4 text-right text-fuchsia-600 font-black">₹{trade.target?.toLocaleString()}</td>}
                     {visibleColumns.roi && (
                       <td className="px-6 py-4 text-right">
@@ -319,7 +328,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                             <span className={`text-[11px] font-black ${trade.targetGap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                                {trade.targetGap >= 0 ? '+' : ''}{trade.targetGap?.toFixed(1)}%
                             </span>
-                            <span className="text-[7px] text-slate-400 uppercase">Upside</span>
+                            <span className="text-[7px] text-slate-400 uppercase font-black tracking-tighter">Upside</span>
                          </div>
                       </td>
                     )}
@@ -327,9 +336,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
                       <td className="px-6 py-4 text-right">
                          <div className="flex flex-col items-end">
                             <span className="text-[10px] font-black text-orange-500">
-                               {((trade.livePrice - trade.entryPrice)/trade.entryPrice * 100).toFixed(1)}%
+                               {trade.entryPrice > 0 ? (((trade.livePrice - trade.entryPrice)/trade.entryPrice) * 100).toFixed(1) : '0.0'}%
                             </span>
-                            <span className="text-[7px] text-slate-400 uppercase">Gap to Base</span>
+                            <span className="text-[7px] text-slate-400 uppercase font-black tracking-tighter">Gap to Base</span>
                          </div>
                       </td>
                     )}
@@ -348,25 +357,42 @@ const TradeTable: React.FC<TradeTableProps> = ({
         </table>
       </div>
 
-      {/* Mobile Card View (Already refined) */}
+      {/* Mobile Card View (Refined with Telegram Share) */}
       <div className="md:hidden space-y-4">
          {filteredAndSortedTrades.map((trade) => {
-           const capTag = getMarketCapTag(trade.marketCap, trade.symbol);
+           const isStarred = userWatchlist?.includes(trade.symbol);
            return (
-            <div key={trade.symbol} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm space-y-4">
+            <div key={trade.symbol} className="bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm space-y-4 relative overflow-hidden">
                <div className="flex justify-between items-start">
                   <div className="flex items-center space-x-3">
-                     <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-amber-400"><StarIcon className={`h-4 w-4 ${userWatchlist?.includes(trade.symbol) ? 'fill-current' : ''}`} /></button>
+                     <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-colors"><StarIcon className={`h-5 w-5 ${isStarred ? 'fill-current text-amber-400' : ''}`} /></button>
                      <div>
-                        <h3 className="text-sm font-black text-slate-900">{trade.symbol}</h3>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{trade.sector}</p>
+                        <h3 className="text-base font-black text-slate-900 leading-none">{trade.symbol}</h3>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</p>
                      </div>
                   </div>
-                  <Link to={`/stock/${trade.symbol}`} className="p-2 bg-slate-50 rounded-xl"><ExternalLink className="h-4 w-4 text-slate-400" /></Link>
+                  <div className="flex items-center space-x-2">
+                     <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-2.5 bg-blue-50 text-blue-600 rounded-xl"><Share2 className="h-4 w-4" /></button>
+                     <Link to={`/stock/${trade.symbol}`} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl"><ExternalLink className="h-4 w-4" /></Link>
+                  </div>
                </div>
                <div className="grid grid-cols-2 gap-4 border-t border-slate-50 pt-4">
-                  <div><p className="text-[8px] font-black text-slate-400 uppercase mb-1">Base vs CMP</p><p className="text-xs font-black text-slate-900">₹{trade.entryPrice?.toLocaleString()} → <span className="text-blue-600">₹{trade.livePrice?.toLocaleString()}</span></p></div>
-                  <div className="text-right"><p className="text-[8px] font-black text-slate-400 uppercase mb-1">Target</p><p className="text-xs font-black text-fuchsia-600">₹{trade.target?.toLocaleString()}</p></div>
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Base vs CMP</p>
+                    <p className="text-xs font-black text-slate-900">₹{trade.entryPrice?.toLocaleString()} → <span className="text-blue-600">₹{trade.livePrice?.toLocaleString()}</span></p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Upside Target</p>
+                    <p className="text-xs font-black text-fuchsia-600">₹{trade.target?.toLocaleString()} ({trade.targetGap?.toFixed(1)}%)</p>
+                  </div>
+               </div>
+               <div className="flex items-center justify-between pt-2">
+                  <span className={`text-[10px] font-black uppercase tracking-tighter ${trade.isPass !== false ? 'text-emerald-600' : 'text-orange-500'}`}>
+                    {trade.isPass !== false ? '✅ Qualified Signal' : '🔍 Observation Mode'}
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-300 uppercase italic">
+                    {trade.entryTime && trade.entryTime !== '-' ? new Date(trade.entryTime).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                  </span>
                </div>
             </div>
            );

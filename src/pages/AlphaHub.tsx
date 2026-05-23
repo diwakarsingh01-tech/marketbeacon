@@ -96,18 +96,12 @@ const AlphaHubPage: React.FC = () => {
          </div>
          <div className="flex items-center justify-center space-x-3">
             <button onClick={fetchAlphaHub} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg hover:bg-black">Retry Deployment</button>
-            <button 
-              onClick={() => {
-                const val = prompt("Enter your Backend URL (e.g. http://192.168.1.10:3001)", API_URL);
-                if (val) {
-                  localStorage.setItem('mb_api_override', val);
-                  window.location.reload();
-                }
-              }}
-              className="px-6 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900 transition-all shadow-sm"
+            <Link 
+              to="/connect"
+              className="px-6 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900 transition-all shadow-sm flex items-center"
             >
               Fix Connectivity
-            </button>
+            </Link>
          </div>
       </div>
     );

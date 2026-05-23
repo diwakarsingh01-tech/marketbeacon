@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
-import { Activity, ShieldCheck, AlertCircle, ArrowRight, Smartphone, UserPlus, LogIn, Key, Mail } from 'lucide-react';
+import { Activity, ShieldCheck, AlertCircle, ArrowRight, Smartphone, UserPlus, LogIn, Key, Mail, Globe } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
@@ -258,6 +258,13 @@ const LoginPage: React.FC = () => {
                 <button type="button" onClick={() => setLoginMethod('google')} className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest text-center mt-4">Return to Gmail SSO</button>
              </form>
            )}
+        </div>
+
+        <div className="pt-8 text-center relative z-10">
+           <Link to="/connect" className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] hover:text-blue-600 transition-colors flex items-center justify-center space-x-2">
+              <Globe className="h-3 w-3" />
+              <span>Institutional Connectivity Hub</span>
+           </Link>
         </div>
       </div>
     </div>
