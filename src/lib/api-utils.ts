@@ -19,16 +19,22 @@ export async function safeJsonParse(response: Response) {
 }
 
 export const getApiUrl = () => {
+  // 1. Priority: Manual LocalStorage Override (Institutional Debugging)
+  const override = localStorage.getItem('mb_api_override');
+  if (override && override.startsWith('http')) {
+    return override;
+  }
+
   const h = window.location.hostname;
   const p = window.location.protocol;
   
-  // 1. Priority: Explicit environment variable
+  // 2. Priority: Explicit environment variable
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl && envUrl !== '/' && envUrl !== 'undefined' && envUrl !== 'null') {
     return envUrl;
   }
 
-  // 2. Dev/Antigravity Fallback: Comprehensive Private Network Detection
+  // 3. Dev/Antigravity Fallback: Comprehensive Private Network Detection
   const isLocal = 
     h === 'localhost' || 
     h === '127.0.0.1' || 
@@ -44,6 +50,6 @@ export const getApiUrl = () => {
     return `${protocol}//${h}:3001`;
   }
 
-  // 3. Production Safety: Explicitly block relative paths
+  // 4. Production Safety: Explicitly block relative paths
   return "https://api-missing-configuration.marketbeacon.io";
 };

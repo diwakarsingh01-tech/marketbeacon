@@ -868,7 +868,21 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                   <p>Origin: {window.location.origin}</p>
                </div>
             </div>
-            <button onClick={() => fetchData(true)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg hover:bg-black">Retry Connection</button>
+            <div className="flex items-center justify-center space-x-3">
+               <button onClick={() => fetchData(true)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg hover:bg-black">Retry Connection</button>
+               <button 
+                 onClick={() => {
+                   const val = prompt("Enter your Backend URL (e.g. http://192.168.1.10:3001)", API_URL);
+                   if (val) {
+                     localStorage.setItem('mb_api_override', val);
+                     window.location.reload();
+                   }
+                 }}
+                 className="px-6 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-blue-600 transition-all shadow-sm"
+               >
+                 Fix Connectivity
+               </button>
+            </div>
           </div>
         ) : data ? (
           <div className={`bg-white rounded-[2.5rem] h-full border border-slate-100 shadow-sm flex flex-col overflow-hidden relative transition-all duration-500 ${isRefreshing ? 'opacity-40 blur-[2px] scale-[0.99]' : 'opacity-100 blur-0 scale-100 animate-in fade-in zoom-in-95'}`}>
