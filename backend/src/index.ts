@@ -310,22 +310,39 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     const snapshot = getMarketSnapshot();
     const snap = snapshot[symbol];
     if (!snap) return res.status(404).json({ error: 'Stock not found in snapshot' });
+    
     const audit = await validateBatch9(symbol, snap);
+    const screener = snap.screener || {};
+    const quote = snap.quote || {};
+    const shareholding = quote.shareholding || screener.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0 };
+    
+    const smartMoneyTotal = (shareholding.promoter || 0) + (shareholding.fii || 0) + (shareholding.dii || 0);
+
     res.json({
       symbol,
-      price: snap.quote.regularMarketPrice,
-      change: snap.quote.regularMarketChangePercent,
-      marketCap: snap.quote.marketCap,
-      industry: snap.screener?.industry || 'N/A',
-      peRatio: snap.quote.pe,
-      dividendYield: snap.screener?.dividendYield,
-      fiftyTwoWeekHigh: snap.quote.fiftyTwoWeekHigh,
-      fiftyTwoWeekLow: snap.quote.fiftyTwoWeekLow,
-      beta: 1.0, // Placeholder
-      returnOnEquity: snap.quote.roe,
-      roce: snap.screener?.roce,
-      netDebtToEquity: snap.screener?.netDebtToEquity,
-      shareholding: snap.quote.shareholding,
+      price: quote.regularMarketPrice || snap.quotes[snap.quotes.length - 1].close,
+      change: quote.regularMarketChangePercent || 0,
+      marketCap: quote.marketCap || 0,
+      industry: screener.industry || 'General Research',
+      peRatio: screener.peRatio || quote.pe || 0,
+      dividendYield: screener.dividendYield || 0,
+      fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh || 0,
+      fiftyTwoWeekLow: quote.fiftyTwoWeekLow || 0,
+      beta: quote.beta || 1.0,
+      returnOnEquity: screener.returnOnEquity || quote.roe || 0,
+      roce: screener.roce || 0,
+      netDebtToEquity: screener.netDebtToEquity || (quote.debtToEquity / 100) || 0,
+      forwardPE: screener.peRatio || quote.pe || 0,
+      industryPe: 25.5,
+      faceValue: screener.faceValue || 1,
+      growth3Yr: {
+        roe: 15, // Fallback placeholder
+        sales: 12
+      },
+      shareholding: {
+        ...shareholding,
+        smartMoneyTotal
+      },
       audit
     });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -429,6 +446,14 @@ async function startServer() {
     await initDB();
     await initSnapshotCache();
     initScreenerCron();
+
+    // Ephemeral Storage Fix: Trigger priority snapshot if empty
+    const cache = getMarketSnapshot();
+    if (Object.keys(cache).length <= 1) {
+      console.log('🚀 [STARTUP] Cache empty. Triggering priority Bluechip snapshot...');
+      updateMarketSnapshot(BASKETS['BLUECHIP']).catch(e => console.error('Startup Snapshot Failed:', e.message));
+    }
+
     app.listen(PORT, () => console.log(`MarketBeacon Backend running on port ${PORT}`));
   } catch (e) { console.error(e); process.exit(1); }
 }
