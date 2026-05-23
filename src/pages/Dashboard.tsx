@@ -347,10 +347,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           <div className="flex items-end h-full pb-0.5 pt-4 space-x-2">
             <button 
               onClick={handleMasterExport}
-              title="Download Master Audit"
-              className="p-3.5 rounded-2xl border border-slate-100 bg-white shadow-sm hover:bg-slate-900 hover:text-white text-slate-400 transition-all"
+              className="flex items-center space-x-2 px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 group"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-4 w-4 text-blue-400 group-hover:scale-110 transition-transform" />
+              <span>Export Master Audit</span>
             </button>
             <button 
               onClick={() => fetchData(true)} 

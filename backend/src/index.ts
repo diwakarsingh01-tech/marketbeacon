@@ -355,35 +355,34 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     if (!snap) return res.status(404).json({ error: 'Stock not found in snapshot' });
     
     const audit = await validateBatch9(symbol, snap);
-    const screener = snap.screener || {};
+    const scr = snap.screener || {};
     const quote = snap.quote || {};
-    const shareholding = quote.shareholding || screener.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0 };
-    
-    const smartMoneyTotal = (shareholding.promoter || 0) + (shareholding.fii || 0) + (shareholding.dii || 0);
+    const sh = quote.shareholding || scr.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0 };
+    const smartMoneyTotal = (sh.promoter || 0) + (sh.fii || 0) + (sh.dii || 0);
 
     res.json({
       symbol,
       price: quote.regularMarketPrice || snap.quotes[snap.quotes.length - 1].close,
       change: quote.regularMarketChangePercent || 0,
       marketCap: quote.marketCap || 0,
-      industry: screener.industry || 'General Research',
-      peRatio: screener.peRatio || quote.pe || 0,
-      dividendYield: screener.dividendYield || 0,
+      industry: scr.industry || 'General Research',
+      peRatio: scr.peRatio || quote.pe || 0,
+      dividendYield: scr.dividendYield || 0,
       fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh || 0,
       fiftyTwoWeekLow: quote.fiftyTwoWeekLow || 0,
       beta: quote.beta || 1.0,
-      returnOnEquity: screener.returnOnEquity || quote.roe || 0,
-      roce: screener.roce || 0,
-      netDebtToEquity: screener.netDebtToEquity || (quote.debtToEquity / 100) || 0,
-      forwardPE: screener.peRatio || quote.pe || 0,
+      returnOnEquity: scr.returnOnEquity || quote.roe || 0,
+      roce: scr.roce || 0,
+      netDebtToEquity: scr.netDebtToEquity || (quote.debtToEquity / 100) || 0,
+      forwardPE: scr.peRatio || quote.pe || 0,
       industryPe: 25.5,
-      faceValue: screener.faceValue || 1,
+      faceValue: scr.faceValue || 1,
       growth3Yr: {
         roe: 15,
-        sales: 12
+        sales: scr.operatingMargin || 12
       },
       shareholding: {
-        ...shareholding,
+        ...sh,
         smartMoneyTotal
       },
       audit: {
@@ -415,10 +414,11 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
       results.push({ 
         symbol: baseSymbol, 
-        entryTime: strategyData?.triggerDate || (lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString()), 
+        // Accurate Entry Time: ONLY use triggerDate if it's in the Buy Zone
+        entryTime: strategyData?.isBuyZone ? strategyData.triggerDate : null, 
         entryPrice, 
         strategy: currentStrat?.name || 'Institutional Matrix',
-        target: strategyData?.upperBand || strategyData?.target || 0, 
+        target: strategyData?.target || 0, 
         currentPrice: lastQuote.close, 
         isPass: audit.isPass, 
         score: audit.score,
