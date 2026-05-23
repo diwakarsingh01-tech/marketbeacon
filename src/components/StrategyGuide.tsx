@@ -143,7 +143,7 @@ const STRATEGY_DETAILS: Record<string, {
   },
   'SR_STRATEGY': {
     title: 'Supply-Demand Core',
-    description: 'Direct identification of historical institutional buy/sell clusters.',
+    description: 'Direct identification of historical institutional demand/supply clusters.',
     setup: [
       'Identify major historical Support and Resistance zones.',
       'Multi-touch historical validation (Min 2 taps) of the demand floor.',

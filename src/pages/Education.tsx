@@ -81,8 +81,8 @@ const StrategyEducation: React.FC = () => {
       category: 'Strategy',
       content: {
         logic: 'Identifies extreme exhaustion zones through moving average convergence.',
-        buy: 'Bearish Stacking (Price < SMA 20 < SMA 50 < SMA 200).',
-        sell: 'Full Structural Reversal (Model Objective reached).',
+        accumulation: 'Bearish Stacking (Price < SMA 20 < SMA 50 < SMA 200).',
+        objective: 'Full structural reversal (Model Objective reached).',
         caveat: 'Requires 100-point fundamental confirmation to avoid value traps.'
       }
     },
@@ -94,8 +94,8 @@ const StrategyEducation: React.FC = () => {
       category: 'Strategy',
       content: {
         logic: 'Mean reversion system based on annual price extremes.',
-        buy: 'Accumulation at the 52-week statistical low.',
-        sell: 'Research objective at the 52-week statistical high.',
+        accumulation: 'Accumulation at the 52-week statistical low.',
+        objective: 'Research objective at the 52-week statistical high.',
         intent: 'Elite bluechips frequently rebound from annual support levels.'
       }
     },
@@ -158,9 +158,9 @@ const StrategyEducation: React.FC = () => {
       color: 'text-teal-600',
       category: 'Strategy',
       content: {
-        logic: 'Direct identification of historical institutional buy/sell clusters.',
+        logic: 'Identification of historical institutional demand/supply clusters.',
         rebound_rule: 'Requires multi-touch historical validation of the demand zone.',
-        upside_rule: 'Mathematical objective must be > 30% above the demand floor.',
+        upside_rule: 'Model objective must be > 30% above the demand floor.',
         fundamental_check: 'Ensures net-margin stability during retest phase.'
       }
     }

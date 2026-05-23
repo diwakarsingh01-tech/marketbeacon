@@ -210,8 +210,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
   const handleExportCSV = () => {
     const headers = isWatchlist 
-      ? ['Symbol', 'Quantity', 'Buy Price', 'CMP', 'Invested', 'Current Value', 'PnL %']
-      : ['OBSERVATION', 'SYMBOL', 'SECTOR', 'MARKET CAP', 'BASE PRICE', 'CMP', 'TARGET', 'ROI %'];
+      ? ['Symbol', 'Quantity', 'Entry Price', 'CMP', 'Invested', 'Current Value', 'PnL %']
+      : ['OBSERVATION', 'SYMBOL', 'SECTOR', 'MARKET CAP', 'ENTRY PRICE', 'CMP', 'OBJECTIVE', 'ROI %'];
 
     const rows = filteredAndSortedTrades.map(t => {
       if (isWatchlist) {
@@ -245,7 +245,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
         <tr className="bg-slate-900/5 text-[9px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100">
           <th className="px-4 py-3 text-left">Instrument</th>
           <th className="px-4 py-3 text-center">Qty</th>
-          <th className="px-4 py-3 text-right">Buy Price</th>
+          <th className="px-4 py-3 text-right">Entry Price</th>
           <th className="px-4 py-3 text-right">CMP</th>
           <th className="px-4 py-3 text-right">Inv. Value</th>
           <th className="px-4 py-3 text-right">Curr. Value</th>
@@ -260,7 +260,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
           {visibleColumns.basePrice && <th className="px-4 py-3 text-right">Base</th>}
           {visibleColumns.cmp && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('price')}><div className="flex items-center justify-end">CMP <SortIcon column="price" /></div></th>}
           {visibleColumns.dfh && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end">DFH% <SortIcon column="dfh" /></div></th>}
-          {visibleColumns.objective && <th className="px-4 py-3 text-right text-fuchsia-600 font-black">Target</th>}
+          {visibleColumns.objective && <th className="px-4 py-3 text-right text-fuchsia-600 font-black">Objective</th>}
           {visibleColumns.roi && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('roi')}><div className="flex items-center justify-end">ROI% <SortIcon column="roi" /></div></th>}
           {visibleColumns.pending && <th className="px-4 py-3 text-right cursor-pointer" onClick={() => handleSort('pending')}><div className="flex items-center justify-end">Gap% <SortIcon column="pending" /></div></th>}
           {visibleColumns.fundamentals && <th className="px-4 py-3 text-right">Audit</th>}
@@ -497,7 +497,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Reason Resolved?</label>
                         <select name="reason_still_active" defaultValue={selectedStockForReview.review?.reason_resolved ? 'false' : 'true'} className="w-full bg-slate-50 border-transparent rounded-2xl px-4 py-3.5 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all">
                            <option value="true">Still Active (Wait)</option>
-                           <option value="false">Resolved (Buy Zone)</option>
+                           <option value="false">Resolved (Value Zone)</option>
                         </select>
                       </div>
                       <div className="flex-1 space-y-1.5">

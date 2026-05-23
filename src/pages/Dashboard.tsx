@@ -728,11 +728,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
               <div className="grid grid-cols-1 gap-5">
                  {[
-                    { label: 'Large Cap', target: 50, current: portfolioSummary.capBreakdown.large, color: 'bg-slate-900', desc: '> 65k Cr', icon: ShieldCheck },
-                    { label: 'Mid Cap', target: 30, current: portfolioSummary.capBreakdown.mid, color: 'bg-blue-600', desc: '20k - 65k Cr', icon: Target },
-                    { label: 'Small Cap', target: 20, current: portfolioSummary.capBreakdown.small, color: 'bg-indigo-500', desc: '< 20k Cr', icon: Zap }
+                    { label: 'Large Cap', allocation: 50, current: portfolioSummary.capBreakdown.large, color: 'bg-slate-900', desc: '> 65k Cr', icon: ShieldCheck },
+                    { label: 'Mid Cap', allocation: 30, current: portfolioSummary.capBreakdown.mid, color: 'bg-blue-600', desc: '20k - 65k Cr', icon: Target },
+                    { label: 'Small Cap', allocation: 20, current: portfolioSummary.capBreakdown.small, color: 'bg-indigo-500', desc: '< 20k Cr', icon: Zap }
                  ].map((cap, i) => {
-                    const diff = cap.current - cap.target;
+                    const diff = cap.current - cap.allocation;
                     const isAlert = Math.abs(diff) > 10;
                     return (
                        <div key={i} className={`p-5 rounded-[2rem] border transition-all ${isAlert ? 'bg-red-50/30 border-red-100' : 'bg-slate-50/50 border-slate-100'}`}>
@@ -757,11 +757,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                           </div>
                           <div className="w-full h-2 bg-white rounded-full overflow-hidden relative border border-slate-100">
                              <div className={`h-full ${cap.color} rounded-full transition-all duration-1000 shadow-sm`} style={{ width: `${cap.current}%` }} />
-                             <div className="absolute top-0 bottom-0 border-l-2 border-slate-400/30 z-10" style={{ left: `${cap.target}%` }} />
+                             <div className="absolute top-0 bottom-0 border-l-2 border-slate-400/30 z-10" style={{ left: `${cap.allocation}%` }} />
                           </div>
                           <div className="flex justify-between items-center mt-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">
                              <span>Market Exposure</span>
-                             <span>Target {cap.target}%</span>
+                             <span>Model Allocation {cap.allocation}%</span>
                           </div>
                        </div>
                     );

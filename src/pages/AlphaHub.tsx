@@ -194,7 +194,7 @@ const AlphaHubPage: React.FC = () => {
 
          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6 text-emerald-600">
             <div className="flex justify-between items-center text-slate-400">
-               <span className="text-[9px] font-black uppercase tracking-widest">Target ROI</span>
+               <span className="text-[9px] font-black uppercase tracking-widest">Exp. Yield</span>
                <Activity className="h-4 w-4" />
             </div>
             <div className="space-y-1">
@@ -259,11 +259,11 @@ const AlphaHubPage: React.FC = () => {
 
                 <div className="flex justify-between items-end pt-6 border-t border-slate-50 mt-6">
                    <div>
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Buy Zone</p>
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Value Zone</p>
                       <p className="text-sm font-black text-slate-900 italic">₹{stock.entryPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                    </div>
                    <div className="text-right">
-                      <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Target ROI</p>
+                      <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest mb-1">Exp. Yield</p>
                       <p className="text-sm font-black text-emerald-700">+{stock.roi.toFixed(1)}%</p>
                    </div>
                 </div>
