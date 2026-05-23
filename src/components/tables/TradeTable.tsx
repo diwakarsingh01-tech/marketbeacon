@@ -104,16 +104,21 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
   const handleExportCSV = () => {
     if (!filteredAndSortedTrades.length) return;
-    const headers = ['Symbol', 'Strategy', 'Sector', 'Market Cap', 'CMP', 'Target', 'ROI%', 'Entry Time'];
+    const headers = ['Symbol', 'Observation', 'Strategy', 'Sector', 'Market Cap', 'Entry A (Base)', 'CMP', 'ATH', 'Target (Objective)', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
     const rows = filteredAndSortedTrades.map(t => [
       t.symbol,
-      t.strategy || 'Matrix Lens',
+      t.entryTime || '-',
+      t.strategy || 'Institutional Matrix',
       t.sector,
       t.marketCap,
-      t.livePrice || t.currentPrice,
-      t.target,
-      t.targetGap?.toFixed(2),
-      t.entryTime
+      t.entryPrice?.toFixed(2),
+      t.livePrice?.toFixed(2) || t.currentPrice?.toFixed(2),
+      (athData?.[t.symbol] || t.ath || 0).toFixed(2),
+      t.target?.toFixed(2),
+      t.targetGap?.toFixed(2) + '%',
+      (t.entryPrice > 0 ? (((t.livePrice || t.currentPrice) - t.entryPrice)/t.entryPrice) * 100 : 0).toFixed(2) + '%',
+      t.score + '/100',
+      t.reason || 'Institutional Audit Active'
     ]);
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

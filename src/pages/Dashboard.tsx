@@ -252,7 +252,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const handleMasterExport = () => {
     if (!data?.allStocks?.length) return;
-    const headers = ['Symbol', 'Sector', 'Market Cap', 'CMP', 'ATH', 'Base (Entry A)', 'Target', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
+    const headers = ['Symbol', 'Observation', 'Strategy', 'Sector', 'Market Cap', 'Entry A (Base)', 'CMP', 'ATH', 'Target (Objective)', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
     const rows = data.allStocks.map((t: any) => {
       const ath = stockATHs[t.symbol] || t.ath || 0;
       const gap = t.entryPrice > 0 ? (((t.currentPrice - t.entryPrice)/t.entryPrice) * 100).toFixed(2) : '0.00';
@@ -260,16 +260,18 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       
       return [
         t.symbol,
+        t.entryTime || '-',
+        t.strategy || 'Institutional Matrix',
         t.sector,
         t.marketCap,
-        t.currentPrice,
-        ath,
-        t.entryPrice,
-        t.target,
-        roi,
-        gap,
-        t.score,
-        t.reason
+        t.entryPrice?.toFixed(2),
+        t.currentPrice?.toFixed(2),
+        ath?.toFixed(2),
+        t.target?.toFixed(2),
+        roi + '%',
+        gap + '%',
+        t.score + '/100',
+        t.reason || 'Institutional Audit Active'
       ];
     });
     const csvContent = [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n');
