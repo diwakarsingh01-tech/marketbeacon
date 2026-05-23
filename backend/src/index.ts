@@ -229,20 +229,88 @@ app.get('/api/marketplace', async (req, res) => {
   res.json(plans);
 });
 
-// --- SCANNER LOGIC ---
-async function validateBatch9(symbol: string, snap: any, isSnapshot: boolean = false) {
-  const quote = snap?.quote || snap || {};
+// --- BATCH 9 INSTITUTIONAL AUDIT ENGINE ---
+async function validateBatch9(symbol: string, snap: any) {
+  const quote = snap?.quote || {};
   const screener = snap?.screener || {};
-  const pe = (screener.peRatio || quote.pe || 25) as number;
-  const debtToEquity = (screener.netDebtToEquity || (quote.debtToEquity / 100) || 0.1) as number;
-  const roe = (screener.returnOnEquity || quote.roe || 15) as number;
-  let score = 85; 
-  const reasons = [];
-  if (pe > 85) { score -= 15; reasons.push('High PE'); }
-  if (debtToEquity > 0.60) { score -= 20; reasons.push('High Debt'); }
-  if (roe < 10) { score -= 15; reasons.push('Low ROE'); }
-  return { isPass: score >= 50, score: Math.max(50, score), reason: reasons.join(', ') || 'BATCH 9 COMPLIANT', metrics: { pe, debtToEquity, roe } };
+  const shareholding = screener.shareholding || quote.shareholding || { promoter: 0, fii: 0, dii: 0, pledged: 0 };
+  
+  // Normalize Metrics (Handle 0/null safety)
+  const pe = parseFloat(String(screener.peRatio || quote.pe || 0));
+  const debtToEquity = parseFloat(String(screener.netDebtToEquity || (quote.debtToEquity / 100) || 0));
+  const roe = parseFloat(String(screener.returnOnEquity || quote.roe || 0));
+  const pledged = parseFloat(String(shareholding.pledged || 0));
+  const fii = parseFloat(String(shareholding.fii || 0));
+  const dii = parseFloat(String(shareholding.dii || 0));
+  const promoter = parseFloat(String(shareholding.promoter || 0));
+  const totalInst = fii + dii;
+
+  let score = 100;
+  const auditLog = [];
+
+  // 1. Debt Audit
+  if (debtToEquity > 1.0) { score -= 50; auditLog.push('Critical Debt'); }
+  else if (debtToEquity > 0.5) { score -= 25; auditLog.push('High Leverage'); }
+  else if (debtToEquity > 0.2) { score -= 10; auditLog.push('Moderate Debt'); }
+
+  // 2. Pledge Audit
+  if (pledged > 20) { score -= 60; auditLog.push('Danger: High Pledge'); }
+  else if (pledged > 5) { score -= 25; auditLog.push('Pledge Concern'); }
+  else if (pledged > 0) { score -= 10; auditLog.push('Minor Pledge'); }
+
+  // 3. Profitability Audit
+  if (roe < 8) { score -= 40; auditLog.push('Critical ROE'); }
+  else if (roe < 12) { score -= 20; auditLog.push('Sub-par ROE'); }
+  else if (roe < 18) { score -= 5; auditLog.push('Healthy ROE'); }
+
+  // 4. Institutional Audit
+  if (totalInst < 5) { score -= 20; auditLog.push('No Inst. Backing'); }
+  else if (totalInst < 15) { score -= 10; auditLog.push('Low Inst. Interest'); }
+
+  // 5. Valuation Sanity
+  if (pe > 120) { score -= 20; auditLog.push('Hyper Valuation'); }
+  else if (pe > 70) { score -= 10; auditLog.push('Rich Valuation'); }
+
+  // Final Mathematical Hardening (Clamp 0-100)
+  const finalScore = Math.max(0, Math.min(100, score));
+  const isPass = finalScore >= 60;
+
+  return {
+    isPass,
+    score: finalScore,
+    reason: auditLog.join(' | ') || 'INSTITUTIONAL GRADE COMPLIANT',
+    metrics: { pe, debtToEquity, roe, pledged, fii, dii, promoter, totalInst }
+  };
 }
+
+// --- STOCK FUNDAMENTALS DATA ---
+app.get('/api/stock-fundamentals', async (req, res) => {
+  try {
+    const symbol = (req.query.symbol as string);
+    if (!symbol) return res.status(400).json({ error: 'Symbol required' });
+    const snapshot = getMarketSnapshot();
+    const snap = snapshot[symbol];
+    if (!snap) return res.status(404).json({ error: 'Stock not found in snapshot' });
+    const audit = await validateBatch9(symbol, snap);
+    res.json({
+      symbol,
+      price: snap.quote.regularMarketPrice,
+      change: snap.quote.regularMarketChangePercent,
+      marketCap: snap.quote.marketCap,
+      industry: snap.screener?.industry || 'N/A',
+      peRatio: snap.quote.pe,
+      dividendYield: snap.screener?.dividendYield,
+      fiftyTwoWeekHigh: snap.quote.fiftyTwoWeekHigh,
+      fiftyTwoWeekLow: snap.quote.fiftyTwoWeekLow,
+      beta: 1.0, // Placeholder
+      returnOnEquity: snap.quote.roe,
+      roce: snap.screener?.roce,
+      netDebtToEquity: snap.screener?.netDebtToEquity,
+      shareholding: snap.quote.shareholding,
+      audit
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
 
 // --- CORE SCANNER ---
 app.get('/api/backtest/envelope', async (req, res) => {
@@ -259,9 +327,23 @@ app.get('/api/backtest/envelope', async (req, res) => {
       let strategyData;
       if (strategyId === 'ENVELOPE_LONG') strategyData = calculateEnvelope(snap.quotes);
       else strategyData = snap.strategies?.[strategyId] || calculateEnvelope(snap.quotes);
-      const audit = await validateBatch9(baseSymbol, snap, true);
+      const audit = await validateBatch9(baseSymbol, snap);
       const entryPrice = strategyData?.lowerBand || strategyData?.entryPrice || 0;
-      results.push({ symbol: baseSymbol, entryTime: lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString(), entryPrice, target: strategyData?.upperBand || strategyData?.target || 0, currentPrice: lastQuote.close, isPass: audit.isPass, isBuyZone: !!strategyData?.isBuyZone, marketCap: snap.quote.marketCap, sector: MANUAL_SECTOR_MAP[baseSymbol] || snap.screener?.industry || 'General', abcd: calculateABCDLevels(entryPrice || lastQuote.close, snap.quote.marketCap, basketId) });
+      results.push({ 
+        symbol: baseSymbol, 
+        entryTime: lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString(), 
+        entryPrice, 
+        target: strategyData?.upperBand || strategyData?.target || 0, 
+        currentPrice: lastQuote.close, 
+        isPass: audit.isPass, 
+        score: audit.score,
+        reason: audit.reason,
+        auditMetrics: audit.metrics,
+        isBuyZone: !!strategyData?.isBuyZone, 
+        marketCap: snap.quote.marketCap, 
+        sector: MANUAL_SECTOR_MAP[baseSymbol] || snap.screener?.industry || 'General', 
+        abcd: calculateABCDLevels(entryPrice || lastQuote.close, snap.quote.marketCap, basketId) 
+      });
     }
     res.json({ allStocks: results, open: results.filter(r => r.isBuyZone && r.isPass), rejected: results.filter(r => !r.isPass) });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
