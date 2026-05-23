@@ -257,11 +257,13 @@ app.get('/api/backtest/envelope', async (req, res) => {
       else strategyData = snap.strategies?.[strategyId] || calculateEnvelope(quotes);
       
       const audit = await validateBatch9(baseSymbol, snap, true);
+      const lastQuote = quotes[quotes.length - 1];
       results.push({
         symbol: baseSymbol,
+        entryTime: lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString(),
         entryPrice: strategyData?.lowerBand || strategyData?.entryPrice || 0,
         target: strategyData?.upperBand || strategyData?.target || 0,
-        currentPrice: quotes[quotes.length - 1].close,
+        currentPrice: lastQuote.close,
         isPass: audit.isPass,
         isBuyZone: !!strategyData?.isBuyZone,
         marketCap: snap.quote.marketCap,
@@ -305,17 +307,18 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
 
           const stratData = snap.strategies?.[strat.id] || (strat.id === 'ENVELOPE_LONG' ? calculateEnvelope(snap.quotes) : null);
           if (stratData?.isBuyZone) {
-            const currentPrice = snap.quotes[snap.quotes.length - 1].close;
+            const lastQuote = snap.quotes[snap.quotes.length - 1];
             results.push({
               symbol: sym,
+              entryTime: lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString(),
               strategy: strat.name,
               basketSource: basketName,
               marketCap: snap.quote.marketCap,
               sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
-              currentPrice,
-              entryPrice: stratData.lowerBand || stratData.entryPrice || currentPrice,
-              target: stratData.upperBand || stratData.target || (currentPrice * 1.3),
-              roi: (((stratData.upperBand || currentPrice * 1.3) - currentPrice) / currentPrice) * 100,
+              currentPrice: lastQuote.close,
+              entryPrice: stratData.lowerBand || stratData.entryPrice || lastQuote.close,
+              target: stratData.upperBand || stratData.target || (lastQuote.close * 1.3),
+              roi: (((stratData.upperBand || lastQuote.close * 1.3) - lastQuote.close) / lastQuote.close) * 100,
               score: audit.score,
               metrics: audit.metrics // ADDED METRICS
             });
