@@ -116,7 +116,8 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
 export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   if (!quotes || quotes.length < 250) return null;
 
-  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  // INSTITUTIONAL CHANGE: Use RAW close for price levels to match TradingView benchmarks
+  const prices = quotes.map(q => q.close); 
   const ema200 = calculateEMA(prices, 200);
   const latestIdx = quotes.length - 1;
 
@@ -130,17 +131,14 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   let b2_date = '';
   let b2_target = 0;
 
-  // State Machine Simulation from the beginning (index 200)
+  // State Machine Simulation from the beginning
   for (let i = 200; i < quotes.length; i++) {
     const q = quotes[i];
     const cEMA = ema200[i];
     const cLower = cEMA * 0.86;
-    const cUpper = cEMA * 1.14;
-    const cPrice = q.adjclose || q.adjClose || q.close;
     const dateStr = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
 
-    // B1 Entry Logic: Price crosses down to Orange line (EMA 200)
-    // We check if previous price was above EMA to catch the "falls from above" rule
+    // B1 Entry: Price crosses down to Orange line (EMA 200)
     const prevPrice = prices[i-1];
     if (prevPrice > ema200[i-1] && q.low <= cEMA && !b1_open) {
       b1_open = true;
@@ -149,54 +147,40 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
       b1_target = cEMA * 1.14; 
     }
 
-    // B2 Entry Logic: Price hits Lower Blue line
+    // B2 Entry: Price hits Lower Blue line
     if (q.low <= cLower && !b2_open) {
       b2_open = true;
       b2_entry = cLower;
       b2_date = dateStr;
-      b2_target = cEMA; // B2 target is regression midline
+      b2_target = cEMA; 
     }
 
-    // Exit Logic
+    // Exit Logic (Tranche-specific)
     if (b2_open && q.high >= b2_target) {
       b2_open = false;
     }
-    
-    // For B1, target is upper band. We use the target set at entry as per Video Spec.
     if (b1_open && q.high >= b1_target) {
       b1_open = false;
     }
   }
 
-  // Determine current active state
   const isBuyZone = b1_open || b2_open;
   const currentPrice = prices[latestIdx];
   
-  // If no trade is open, return baseline (Watchlist)
-  if (!isBuyZone) {
-    return { 
-      isBuyZone: false, 
-      tranche: 'WATCHLIST', 
-      currentPrice, 
-      entryPrice: ema200[latestIdx], 
-      target: ema200[latestIdx] * 1.14 
-    };
-  }
-
-  // Prioritize B2 if both are open (as it's the deeper entry)
-  const tranche = b2_open ? 'B2' : 'B1';
-  const entryPrice = b2_open ? b2_entry : b1_entry;
-  const target = b2_open ? b2_target : b1_target;
-  const triggerDate = b2_open ? b2_date : b1_date;
+  // PRIMARY FIX: Always return B1 price as the "Baseline" Entry Price for the table
+  const finalEntryPrice = b1_open ? b1_entry : ema200[latestIdx];
+  const finalTarget = b2_open ? b2_target : (b1_open ? b1_target : ema200[latestIdx] * 1.14);
+  const finalTriggerDate = b2_open ? b2_date : (b1_open ? b1_date : undefined);
+  const tranche = b2_open ? 'B2' : (b1_open ? 'B1' : 'WATCHLIST');
 
   return {
-    isBuyZone: true,
+    isBuyZone,
     tranche,
-    entryPrice,
-    target,
+    entryPrice: finalEntryPrice, // Always show A entry as the Base
+    target: finalTarget,
     currentPrice,
-    triggerDate,
-    abcd: calculateABCDLevels(entryPrice, marketCap)
+    triggerDate: finalTriggerDate,
+    abcd: calculateABCDLevels(finalEntryPrice, marketCap)
   };
 }
 
