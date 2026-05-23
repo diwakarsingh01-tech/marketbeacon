@@ -281,7 +281,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                 return (
                   <tr key={trade.symbol} className="hover:bg-slate-50 group transition-all font-black text-[11px]">
                     {visibleColumns.observation && (
-                      <td className="px-6 py-4 text-[9px] text-slate-400 font-bold uppercase">
+                      <td className="px-6 py-4 text-[9px] text-slate-400 font-bold uppercase whitespace-nowrap">
                         {trade.entryTime ? new Date(trade.entryTime).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }) : '-'}
                       </td>
                     )}
@@ -301,7 +301,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                             const levelVal = trade.abcd?.[l] || 0;
                             const isActive = (trade.livePrice || 0) <= levelVal;
                             return (
-                              <div key={l} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black border ${isActive ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
+                              <div key={l} title={`Level ${l.toUpperCase()}: ₹${levelVal.toLocaleString()}`} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black border ${isActive ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
                                 {l.toUpperCase()}
                               </div>
                             );
@@ -312,18 +312,32 @@ const TradeTable: React.FC<TradeTableProps> = ({
                     {visibleColumns.basePrice && <td className="px-6 py-4 text-right text-slate-400 font-bold">₹{trade.entryPrice?.toLocaleString()}</td>}
                     {visibleColumns.cmp && <td className="px-6 py-4 text-right text-blue-600 font-black">₹{trade.livePrice?.toLocaleString()}</td>}
                     {visibleColumns.dfh && <td className="px-6 py-4 text-right text-slate-400">{trade.dfh?.toFixed(1)}%</td>}
-                    {visibleColumns.objective && <td className="px-6 py-4 text-right text-fuchsia-600">₹{trade.target?.toLocaleString()}</td>}
+                    {visibleColumns.objective && <td className="px-6 py-4 text-right text-fuchsia-600 font-black">₹{trade.target?.toLocaleString()}</td>}
                     {visibleColumns.roi && (
                       <td className="px-6 py-4 text-right">
-                         <span className={`px-2 py-1 rounded-lg ${trade.calculatedRoi >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                            {trade.calculatedRoi >= 0 ? '+' : ''}{trade.calculatedRoi?.toFixed(1)}%
-                         </span>
+                         <div className="flex flex-col items-end">
+                            <span className={`text-[11px] font-black ${trade.targetGap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                               {trade.targetGap >= 0 ? '+' : ''}{trade.targetGap?.toFixed(1)}%
+                            </span>
+                            <span className="text-[7px] text-slate-400 uppercase">Upside</span>
+                         </div>
                       </td>
                     )}
-                    {visibleColumns.pending && <td className="px-6 py-4 text-right text-orange-500">{trade.targetGap?.toFixed(1)}%</td>}
+                    {visibleColumns.pending && (
+                      <td className="px-6 py-4 text-right">
+                         <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-black text-orange-500">
+                               {((trade.livePrice - trade.entryPrice)/trade.entryPrice * 100).toFixed(1)}%
+                            </span>
+                            <span className="text-[7px] text-slate-400 uppercase">Gap to Base</span>
+                         </div>
+                      </td>
+                    )}
                     {visibleColumns.fundamentals && (
                       <td className="px-6 py-4 text-right">
-                        <Link to={`/stock/${trade.symbol}`} className="p-2 bg-slate-50 hover:bg-blue-600 hover:text-white rounded-xl text-slate-400 transition-all inline-block"><ExternalLink className="h-4 w-4" /></Link>
+                        <Link to={`/stock/${trade.symbol}`} className="p-2 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-xl text-slate-400 transition-all inline-block shadow-sm">
+                           <ShieldCheck className="h-4 w-4" />
+                        </Link>
                       </td>
                     )}
                   </tr>
