@@ -123,6 +123,7 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   let b1_open = false;
   let b1_entry_price = 0;
   let b1_date = '';
+  let b1_ema_at_trigger = 0;
   let b1_target = 0;
 
   let b2_open = false;
