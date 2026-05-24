@@ -260,14 +260,15 @@ async function validateBatch9(symbol: string, snap: any) {
     return isNaN(parsed) ? fallback : parsed;
   };
 
-  const pe = safeParse(scr.peRatio) || safeParse(quote.pe) || 25; 
-  const debtToEquity = safeParse(scr.netDebtToEquity) || (safeParse(quote.debtToEquity) / 100) || 0.1;
-  const roe = safeParse(scr.returnOnEquity) || safeParse(quote.roe) || 15;
-  const roce = safeParse(scr.roce) || 18;
-  const pledged = safeParse(sh.pledged);
-  const fii = safeParse(sh.fii);
-  const dii = safeParse(sh.dii);
-  const promoter = safeParse(sh.promoter);
+  // Institutional Fallbacks: Be conservative if data is missing
+  const pe = safeParse(scr.peRatio) || safeParse(quote.pe) || 45; // Default to neutral/high PE
+  const debtToEquity = safeParse(scr.netDebtToEquity) || (safeParse(quote.debtToEquity) / 100) || 0.5; // Default to moderate debt
+  const roe = safeParse(scr.returnOnEquity) || safeParse(quote.roe) || 10; // Default to below benchmark ROE
+  const roce = safeParse(scr.roce) || 10;
+  const pledged = safeParse(sh.pledged) || 0;
+  const fii = safeParse(sh.fii) || 0;
+  const dii = safeParse(sh.dii) || 0;
+  const promoter = safeParse(sh.promoter) || 0;
   
   // 1. Ownership Logic: Smart Money (Promoter + FII + DII)
   const smartMoneyTotal = promoter + fii + dii;
@@ -276,6 +277,7 @@ async function validateBatch9(symbol: string, snap: any) {
   // 2. Sector-Aware Intelligence (Banking/NBFC Adjustment)
   const sector = MANUAL_SECTOR_MAP[symbol] || scr.industry || 'General';
   const isFinance = ['Banking', 'Finance', 'Banking ETF'].includes(sector);
+  const isETF = ['Index ETF', 'Banking ETF'].includes(sector);
   
   let totalScore = 100;
   const auditLog = [];
@@ -333,21 +335,23 @@ async function validateBatch9(symbol: string, snap: any) {
   // 4. Ownership Matrix (25 pts)
   // Benchmark: Smart Money > 70%
   let ownScore = 25;
-  if (smartMoneyTotal < 70) ownScore -= 10;
-  if (smartMoneyTotal < 50) ownScore -= 10;
-  if (publicHolding > 30) ownScore -= 5;
-  
-  // High-Accuracy Red Flags: Institutional/Promoter Exit
-  if (fii < 2 && dii < 2) auditLog.push('Institutional Exit Flag');
-  if (promoter < 30) auditLog.push('Low Promoter Conviction');
-  if (pledged > 15) auditLog.push('High Pledge Red Flag');
+  if (!isETF) {
+    if (smartMoneyTotal < 70) ownScore -= 10;
+    if (smartMoneyTotal < 50) ownScore -= 10;
+    if (publicHolding > 30) ownScore -= 5;
+    
+    // High-Accuracy Red Flags: Institutional/Promoter Exit
+    if (fii < 2 && dii < 2) auditLog.push('Institutional Exit Flag');
+    if (promoter < 30) auditLog.push('Low Promoter Conviction');
+    if (pledged > 15) auditLog.push('High Pledge Red Flag');
+  }
 
   const valuationConsistency = {
     score: Math.max(0, ownScore),
     max: 25,
     checks: [
-      { label: 'Smart Money > 70%', value: `${smartMoneyTotal.toFixed(1)}%`, pass: smartMoneyTotal >= 70 },
-      { label: 'Promoter Status', value: `${promoter.toFixed(1)}%`, pass: promoter >= 50 }
+      { label: isETF ? 'ETF Pass' : 'Smart Money > 70%', value: isETF ? 'N/A' : `${smartMoneyTotal.toFixed(1)}%`, pass: isETF ? true : smartMoneyTotal >= 70 },
+      { label: isETF ? 'ETF Pass' : 'Promoter Status', value: isETF ? 'N/A' : `${promoter.toFixed(1)}%`, pass: isETF ? true : promoter >= 50 }
     ]
   };
   if (valuationConsistency.score < 25) totalScore -= (25 - valuationConsistency.score);
@@ -356,24 +360,34 @@ async function validateBatch9(symbol: string, snap: any) {
   const peMedians = scr.peMedians || { pe3Y: 25.5, pe5Y: 25.5, pe10Y: 25.5 };
   let valScore = 25;
   const isUndervalued = pe < peMedians.pe5Y;
-  if (pe > peMedians.pe3Y * 1.5) valScore -= 10;
-  if (pe > peMedians.pe5Y * 2) valScore -= 15;
+  if (!isETF) {
+    if (pe > peMedians.pe3Y * 1.5) valScore -= 10;
+    if (pe > peMedians.pe5Y * 2) valScore -= 15;
+  }
 
   const efficiencyGovernance = {
     score: Math.max(0, valScore),
     max: 25,
     checks: [
-      { label: 'Valuation Audit', value: isUndervalued ? 'Undervalued' : 'Premium', pass: isUndervalued },
-      { label: '10Y Median PE', value: peMedians.pe10Y.toFixed(1), pass: pe < peMedians.pe10Y * 1.2 }
+      { label: isETF ? 'ETF Pass' : 'Valuation Audit', value: isETF ? 'N/A' : (isUndervalued ? 'Undervalued' : 'Premium'), pass: isETF ? true : isUndervalued },
+      { label: isETF ? 'ETF Pass' : '10Y Median PE', value: isETF ? 'N/A' : peMedians.pe10Y.toFixed(1), pass: isETF ? true : pe < peMedians.pe10Y * 1.2 }
     ]
   };
   if (efficiencyGovernance.score < 25) totalScore -= (25 - efficiencyGovernance.score);
 
   const finalScore = Math.max(0, Math.min(100, totalScore));
   
+  // --- INSTITUTIONAL HARD REJECTION RULES ---
+  let isHardReject = false;
+  if (!isETF) {
+    if (!isFinance && debtToEquity > 1.0) { isHardReject = true; auditLog.push('Auto-Reject: Excessive Debt'); }
+    if (pledged > 15) { isHardReject = true; auditLog.push('Auto-Reject: High Pledging'); }
+    if (smartMoneyTotal < 30) { isHardReject = true; auditLog.push('Auto-Reject: Low Smart Money'); }
+  }
+
   // Pro-Level Conclusion Logic
   let conclusion = 'INSTITUTIONAL GRADE COMPLIANT';
-  if (finalScore < 60) conclusion = 'SPECULATIVE GRADE - HIGH RISK';
+  if (isHardReject || finalScore < 60) conclusion = 'SPECULATIVE GRADE - HIGH RISK';
   else if (finalScore < 75) conclusion = 'INVESTMENT GRADE - MODERATE';
   else if (finalScore >= 85) conclusion = 'ELITE CORE - TOP 1% SELECTION';
 
@@ -382,7 +396,7 @@ async function validateBatch9(symbol: string, snap: any) {
   }
 
   return {
-    isPass: finalScore >= 60,
+    isPass: (finalScore >= 60) && !isHardReject,
     score: finalScore,
     reason: conclusion,
     metrics: { pe, debtToEquity, roe, pledged, fii, dii, promoter, totalInst: smartMoneyTotal },
@@ -570,7 +584,7 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
       for (const sym of symbols) {
         const snap = snapshot[sym];
         if (!snap) continue;
-        const audit = await validateBatch9(sym, snap, true);
+        const audit = await validateBatch9(sym, snap);
         if (!audit.isPass) continue;
         for (const strat of STRATEGIES) {
           if (!STRATEGY_BASKET_MAP[strat.id]?.includes(basketName)) continue;
