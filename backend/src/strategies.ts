@@ -137,22 +137,24 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
     const cEMA = ema200[i];
     const dateStr = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
 
-    // TRANCHE A (B1): Cross down EMA 200
-    if (!b1_open && prices[i-1] >= ema200[i-1] && prices[i] < cEMA) {
+    // B1 Entry (Tranche A): Orange Line First Touch
+    // Institutional Trigger: First day Price Low hits or stays below EMA 200
+    if (!b1_open && q.low <= cEMA) {
       b1_open = true;
-      b1_entry_price = prices[i]; 
+      b1_entry_price = Math.round(cEMA); 
       b1_date = dateStr;
-      b1_ema_locked = cEMA; // LOCK THE ANCHOR
+      b1_ema_locked = cEMA; 
       b1_target = Math.round(cEMA * 1.14); 
     }
 
     if (b1_open) {
-      // TRANCHE B (B2): 14% below Locked EMA
+      // B2 Entry (Tranche B): Lower Blue First Touch
       const b2_line = b1_ema_locked * 0.86;
       if (!b2_open && q.low <= b2_line) {
         b2_open = true;
         b2_entry_price = Math.round(b2_line);
-        b2_target = Math.round(b1_ema_locked); // Target is Orange Line
+        b2_date = dateStr;
+        b2_target = Math.round(b1_ema_locked); 
       }
 
       // TRANCHE C: Gap from B
@@ -160,7 +162,7 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
       if (b2_open && !c_open && q.low <= c_line) {
         c_open = true;
         c_entry_price = Math.round(c_line);
-        c_target = Math.round(b2_line); // Target is B Entry point
+        c_target = Math.round(b2_line); 
       }
 
       // TRANCHE D: Gap from C
@@ -168,7 +170,7 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
       if (c_open && !d_open && q.low <= d_line) {
         d_open = true;
         d_entry_price = Math.round(d_line);
-        d_target = Math.round(c_line); // Target is C Entry point
+        d_target = Math.round(c_line); 
       }
     }
 
