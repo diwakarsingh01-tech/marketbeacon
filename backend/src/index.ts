@@ -452,7 +452,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
 
     res.json({
       symbol,
-      version: '10.6.1-PRO', // Institutional Version Signature
+      version: '10.7.0-PRO', // Institutional Version Signature
       price: quote.regularMarketPrice || (snap.quotes && snap.quotes.length > 0 ? snap.quotes[snap.quotes.length - 1].close : 0),
       change: quote.regularMarketChangePercent || 0,
       marketCap: quote.marketCap || 0,
@@ -500,17 +500,25 @@ app.get('/api/backtest/envelope', async (req, res) => {
       const snap = snapshot[baseSymbol];
       if (!snap) continue;
       const lastQuote = snap.quotes[snap.quotes.length - 1];
+      
+      // INSTITUTIONAL FIX: Always recalculate in real-time to bypass stale JSON cache
       let strategyData;
-      if (strategyId === 'ENVELOPE_LONG') strategyData = calculateEnvelope(snap.quotes);
-      else if (strategyId === 'ENVELOPE_SHORT') strategyData = processShortEnvelope(snap.quotes, snap.quote.marketCap);
-      else strategyData = snap.strategies?.[strategyId] || calculateEnvelope(snap.quotes);
+      if (strategyId === 'ENVELOPE_LONG') {
+        strategyData = calculateEnvelope(snap.quotes);
+      } else if (strategyId === 'ENVELOPE_SHORT') {
+        strategyData = processShortEnvelope(snap.quotes, snap.quote.marketCap);
+      } else {
+        // Fallback for other strategies, but prioritized real-time execution
+        strategyData = calculateEnvelope(snap.quotes);
+      }
+
       const audit = await validateBatch9(baseSymbol, snap);
       const entryPrice = strategyData?.entryPrice || 0;
       const currentStrat = STRATEGIES.find(s => s.id === strategyId);
 
       results.push({ 
         symbol: baseSymbol, 
-        // Accurate Entry Time: ONLY use triggerDate if it's in the Buy Zone
+        version: '10.7.0-PRO', // Updated Version Signature
         entryTime: strategyData?.isBuyZone ? strategyData.triggerDate : null, 
         entryPrice, 
         strategy: currentStrat?.name || 'Institutional Matrix',
