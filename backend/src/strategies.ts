@@ -127,9 +127,9 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   else if (capCr < 20000) gapPercent = 20; 
 
   let b1_open = false, b1_entry_price = 0, b1_date = '', b1_ema_locked = 0, b1_target = 0;
-  let b2_open = false, b2_entry_price = 0, b2_target = 0;
-  let c_open = false, c_entry_price = 0, c_target = 0;
-  let d_open = false, d_entry_price = 0, d_target = 0;
+  let b2_open = false, b2_entry_price = 0, b2_date = '', b2_target = 0;
+  let c_open = false, c_entry_price = 0, c_date = '', c_target = 0;
+  let d_open = false, d_entry_price = 0, d_date = '', d_target = 0;
 
   // State Machine Simulation
   for (let i = 201; i < quotes.length; i++) {
