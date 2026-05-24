@@ -407,9 +407,3 @@ export function calculateABCDLevels(anchorPrice: number, marketCap: number) {
   else if (capCr < 5000) gap = 0.20;
   return { a: anchorPrice, b: Math.round(anchorPrice * 0.86), c: Math.round(anchorPrice * 0.86 * (1 - gap)), d: Math.round(anchorPrice * 0.86 * (1 - 2 * gap)), gap: gap * 100 };
 }
-
-}
-ath.round(anchorPrice * 0.86 * (1 - 2 * gap)), gap: gap * 100 };
-}
-
-}
