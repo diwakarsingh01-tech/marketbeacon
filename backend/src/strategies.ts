@@ -56,9 +56,10 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
   const currentPrice = Math.round(prices[latestIdx]);
 
   const isBuyZone = quotes[latestIdx].low <= lowerBand;
+  const isActuallyInBuyRange = isBuyZone && currentPrice <= lowerBand * 1.05;
   
   return {
-    isBuyZone,
+    isBuyZone: isActuallyInBuyRange,
     entryPrice: lowerBand,
     target: upperBand,
     currentPrice,
