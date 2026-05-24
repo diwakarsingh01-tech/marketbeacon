@@ -474,8 +474,3 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   );
 };
 export default DashboardPage;
-te={handleImportHoldings} />
-    </div>
-  );
-};
-export default DashboardPage;
