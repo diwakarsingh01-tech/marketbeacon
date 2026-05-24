@@ -82,8 +82,8 @@ const AlphaHubPage: React.FC = () => {
     const capCr = (Number(stock.marketCap) || 0) / 10000000;
     let perStockBudget = 0;
     
-    if (capCr >= 65000) perStockBudget = (totalCapital * 0.50) / 20; 
-    else if (capCr >= 20000) perStockBudget = (totalCapital * 0.30) / 12; 
+    if (capCr >= 20000) perStockBudget = (totalCapital * 0.50) / 20; 
+    else if (capCr >= 5000) perStockBudget = (totalCapital * 0.30) / 12; 
     else perStockBudget = (totalCapital * 0.20) / 8; 
 
     if (perStockBudget < 5000) return 0;

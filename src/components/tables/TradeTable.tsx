@@ -37,8 +37,8 @@ const getMarketCapTag = (cap: number, symbol: string) => {
     return { label: 'ETF', class: 'text-indigo-600 bg-indigo-50 border-indigo-100' };
   }
   const capInCr = cap / 10000000;
-  if (capInCr >= 65000) return { label: 'LARGE CAP', class: 'text-slate-900 bg-slate-100 border-slate-200' };
-  if (capInCr >= 20000) return { label: 'MID CAP', class: 'text-blue-600 bg-blue-50 border-blue-100' };
+  if (capInCr >= 20000) return { label: 'LARGE CAP', class: 'text-slate-900 bg-slate-100 border-slate-200' };
+  if (capInCr >= 5000) return { label: 'MID CAP', class: 'text-blue-600 bg-blue-50 border-blue-100' };
   return { label: 'SMALL CAP', class: 'text-amber-600 bg-amber-50 border-amber-100' };
 };
 

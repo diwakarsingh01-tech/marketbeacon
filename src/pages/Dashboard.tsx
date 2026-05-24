@@ -234,8 +234,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         totalInv += inv;
         totalCur += h.quantity * (stockPrices[symbol] || h.buy_price);
         const capCr = (stockCaps[symbol] || 0) / 10000000;
-        if (capCr >= 65000) capInv.large += inv;
-        else if (capCr >= 20000) capInv.mid += inv;
+        if (capCr >= 20000) capInv.large += inv;
+        else if (capCr >= 5000) capInv.mid += inv;
         else capInv.small += inv;
       }
     });
