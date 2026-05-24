@@ -138,27 +138,27 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
     const cLower = cEMA * 0.86;
     const dateStr = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
 
-    // B1 Entry with Single-Day Confirmation
-    // Rule: Previous Close was above EMA, Current Close is below EMA
+    // B1 Entry: Price crosses/touches EMA 200 from ABOVE
     const prevClose = prices[i-1];
     const prevEMA = ema200[i-1];
     
     if (!b1_open && prevClose >= prevEMA && prices[i] < cEMA) {
       b1_open = true;
-      b1_entry_price = prices[i]; // ENTRY AT TRIGGER DAY CLOSE
+      b1_entry_price = prices[i]; // B1 Entry at Day Close
       b1_date = dateStr;
-      b1_ema_at_trigger = cEMA;
-      b1_target = Math.round(cEMA * 1.14); // B1 target: 14% above EMA at trigger
+      b1_ema_at_trigger = cEMA; // STATIC ANCHOR
+      b1_target = Math.round(cEMA * 1.14); // B1 Target locked on entry day
     }
 
-    // B2 Entry: Hits 14% Lower Blue Line (Locked to B1 EMA)
+    // B2 Entry: Hits 14% Lower Blue Line (Locked to B1 trigger EMA)
     if (b1_open && !b2_open) {
       const b2_line = b1_ema_at_trigger * 0.86;
       if (q.low <= b2_line) {
         b2_open = true;
-        b2_entry_price = prices[i]; // B2 Entry at Trigger Day Close
+        b2_entry_price = prices[i]; // B2 Entry at Day Close
         b2_date = dateStr;
-        b2_target = Math.round(b1_ema_at_trigger); // Target: Original B1 EMA
+        // STATIC RULE: B2 target is the same Orange Line (EMA) from B1 trigger day
+        b2_target = Math.round(b1_ema_at_trigger); 
       }
     }
 
