@@ -120,13 +120,13 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   const ema200 = calculateEMA(prices, 200);
   const latestIdx = quotes.length - 1;
 
-  // Market Cap based Gaps for C & D
+  // Gaps for C & D based on Market Cap
   const capCr = marketCap / 10000000;
   let gapPercent = 15; 
   if (capCr >= 65000) gapPercent = 10; 
   else if (capCr < 20000) gapPercent = 20; 
 
-  let b1_open = false, b1_entry_price = 0, b1_date = '', b1_ema_at_trigger = 0, b1_target = 0;
+  let b1_open = false, b1_entry_price = 0, b1_date = '', b1_ema_locked = 0, b1_target = 0;
   let b2_open = false, b2_entry_price = 0, b2_target = 0;
   let c_open = false, c_entry_price = 0, c_target = 0;
   let d_open = false, d_entry_price = 0, d_target = 0;
@@ -137,33 +137,42 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
     const cEMA = ema200[i];
     const dateStr = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
 
-    // B1 Entry: Price crosses/touches EMA 200 from ABOVE
+    // TRANCHE A (B1): Cross down EMA 200
     if (!b1_open && prices[i-1] >= ema200[i-1] && prices[i] < cEMA) {
-      b1_open = true; b1_entry_price = prices[i]; b1_date = dateStr; b1_ema_at_trigger = cEMA;
+      b1_open = true;
+      b1_entry_price = prices[i]; 
+      b1_date = dateStr;
+      b1_ema_locked = cEMA; // LOCK THE ANCHOR
       b1_target = Math.round(cEMA * 1.14); 
     }
 
     if (b1_open) {
-      // B2 Entry: Hits Lower Blue (14% down from B1 EMA)
-      const b2_line = b1_ema_at_trigger * 0.86;
+      // TRANCHE B (B2): 14% below Locked EMA
+      const b2_line = b1_ema_locked * 0.86;
       if (!b2_open && q.low <= b2_line) {
-        b2_open = true; b2_entry_price = b2_line; b2_target = Math.round(b1_ema_at_trigger);
+        b2_open = true;
+        b2_entry_price = Math.round(b2_line);
+        b2_target = Math.round(b1_ema_locked); // Target is Orange Line
       }
 
-      // TRANCHE C: Level C Entry (Cap-based gap from B)
-      const c_line = (b1_ema_at_trigger * 0.86) * (1 - gapPercent/100);
+      // TRANCHE C: Gap from B
+      const c_line = b2_line * (1 - gapPercent/100);
       if (b2_open && !c_open && q.low <= c_line) {
-        c_open = true; c_entry_price = c_line; c_target = Math.round(b1_ema_at_trigger * 0.86);
+        c_open = true;
+        c_entry_price = Math.round(c_line);
+        c_target = Math.round(b2_line); // Target is B Entry point
       }
 
-      // TRANCHE D: Level D Entry (Cap-based gap from C)
+      // TRANCHE D: Gap from C
       const d_line = c_line * (1 - gapPercent/100);
       if (c_open && !d_open && q.low <= d_line) {
-        d_open = true; d_entry_price = d_line; d_target = Math.round(c_line);
+        d_open = true;
+        d_entry_price = Math.round(d_line);
+        d_target = Math.round(c_line); // Target is C Entry point
       }
     }
 
-    // Exit Logic (Step-Back)
+    // EXIT LOGIC: Independent Step-Back
     if (d_open && q.high >= d_target) d_open = false;
     if (c_open && q.high >= c_target) c_open = false;
     if (b2_open && q.high >= b2_target) b2_open = false;
@@ -172,22 +181,23 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
 
   const isBuyZone = b1_open || b2_open || c_open || d_open;
   const currentPrice = prices[latestIdx];
-  
-  const a_point = b1_open ? Math.round(b1_ema_at_trigger) : Math.round(ema200[latestIdx]);
+  const a_point = b1_open ? Math.round(b1_ema_locked) : Math.round(ema200[latestIdx]);
   const b_point = Math.round(a_point * 0.86);
 
+  // OBJECTIVE: Reflect the lowest active tranche's goal
   let finalTarget = Math.round(a_point * 1.14);
-  let tranche = 'B1';
-  if (d_open) { finalTarget = Math.round(d_target); tranche = 'D'; }
-  else if (c_open) { finalTarget = Math.round(c_target); tranche = 'C'; }
-  else if (b2_open) { finalTarget = Math.round(b2_target); tranche = 'B2'; }
-  else if (b1_open) { finalTarget = Math.round(b1_target); tranche = 'B1'; }
-  else { tranche = 'WATCHLIST'; }
+  let activeTranche = 'B1';
+  
+  if (d_open) { finalTarget = d_target; activeTranche = 'D'; }
+  else if (c_open) { finalTarget = c_target; activeTranche = 'C'; }
+  else if (b2_open) { finalTarget = b2_target; activeTranche = 'B2'; }
+  else if (b1_open) { finalTarget = b1_target; activeTranche = 'B1'; }
+  else { activeTranche = 'WATCHLIST'; }
 
   return {
     isBuyZone,
-    tranche,
-    entryPrice: a_point, // Always anchor Base to Orange line
+    tranche: activeTranche,
+    entryPrice: a_point, // Always show A point as Base
     target: finalTarget,
     currentPrice: Math.round(currentPrice),
     triggerDate: b1_open ? b1_date : undefined,
