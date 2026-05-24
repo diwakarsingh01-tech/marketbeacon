@@ -131,33 +131,34 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   let b2_target = 0;
 
   // State Machine Simulation
-  for (let i = 202; i < quotes.length; i++) {
+  for (let i = 201; i < quotes.length; i++) {
     const q = quotes[i];
     const cEMA = ema200[i];
     const cLower = cEMA * 0.86;
     const dateStr = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
 
-    // B1 Entry with 2-Day Confirmation (GLAXO 8-Aug Sync)
-    // Rule: Prev Close > EMA AND current Close < EMA AND following Close < EMA
-    const day0Close = prices[i-2];
-    const day1Close = prices[i-1];
-    const day1EMA = ema200[i-1];
-    const day2Close = prices[i];
-    const day2EMA = ema200[i];
-
-    if (!b1_open && day0Close > day1EMA && day1Close <= day1EMA && day2Close <= day2EMA) {
+    // B1 Entry with Confirmation (GLAXO 8-Aug Sync)
+    // Rule: Previous Close was above EMA, Current Close is below EMA
+    const prevClose = prices[i-1];
+    const prevEMA = ema200[i-1];
+    
+    if (!b1_open && prevClose >= prevEMA && prices[i] < cEMA) {
       b1_open = true;
-      b1_entry_price = day2Close; // ENTRY AT DAY 2 CLOSE (Confirm Day)
+      b1_entry_price = prices[i]; // ENTRY AT TRIGGER DAY CLOSE
       b1_date = dateStr;
-      b1_target = Math.round(day1EMA * 1.14); // Target based on trigger EMA
+      b1_ema_at_trigger = cEMA;
+      b1_target = Math.round(cEMA * 1.14); // Target B1: 14% above EMA at trigger
     }
 
-    // B2 Entry: Hits 14% Lower Blue Line
-    if (b1_open && !b2_open && q.low <= cLower) {
-      b2_open = true;
-      b2_entry_price = prices[i]; // B2 Entry at Trigger Day Close
-      b2_date = dateStr;
-      b2_target = Math.round(cEMA); // Target: EMA at B2 Trigger
+    // B2 Entry: Hits 14% Lower Blue Line (Locked to B1 EMA)
+    if (b1_open && !b2_open) {
+      const b2_line = b1_ema_at_trigger * 0.86;
+      if (q.low <= b2_line) {
+        b2_open = true;
+        b2_entry_price = prices[i]; // B2 Entry at Trigger Day Close
+        b2_date = dateStr;
+        b2_target = Math.round(b1_ema_at_trigger); // Target: Original B1 EMA
+      }
     }
 
     // Exit Logic
@@ -174,13 +175,14 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   if (capCr >= 65000) gapPercent = 10; // Large Cap
   else if (capCr < 20000) gapPercent = 20; // Small Cap
 
-  const finalEntryPrice = b1_open ? b1_entry_price : ema200[latestIdx];
-  const finalTarget = b2_open ? b2_target : (b1_open ? b1_target : ema200[latestIdx] * 1.14);
+  // TABLE ANCHOR: Entry A is the B1 EMA value (The Orange Line)
+  const a_point = b1_open ? b1_ema_at_trigger : ema200[latestIdx];
+  const b_point = a_point * 0.86;
+
+  const finalEntryPrice = a_point;
+  const finalTarget = b2_open ? b2_target : (b1_open ? b1_target : a_point * 1.14);
   const finalTriggerDate = b1_open ? b1_date : undefined;
   const tranche = b2_open ? 'B2' : (b1_open ? 'B1' : 'WATCHLIST');
-
-  // Ladder Logic: B2 Entry point is the baseline for further averaging (C/D)
-  const b2_base = b1_open ? (b2_open ? b2_entry_price : b1_entry_price * 0.86) : (ema200[latestIdx] * 0.86);
 
   return {
     isBuyZone,
@@ -190,10 +192,10 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
     currentPrice,
     triggerDate: finalTriggerDate,
     abcd: {
-      a: finalEntryPrice,
-      b: b2_base,
-      c: b2_base * (1 - gapPercent/100),
-      d: b2_base * (1 - 2 * gapPercent/100),
+      a: a_point,
+      b: b_point,
+      c: b_point * (1 - gapPercent/100),
+      d: b_point * (1 - 2 * gapPercent/100),
       gap: gapPercent
     }
   };
