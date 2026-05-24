@@ -175,31 +175,59 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
 }
 
 /**
- * STRATEGY 3: Volatility Channel (Bollinger Bands)
+ * STRATEGY 3: Volatility Channel (Institutional Bollinger Band)
+ * Sibling to Long Envelope. Settings: Length 200, StdDev 2.5
  */
-export function calculateBollingerBand(quotes: Quote[], length: number = 20, stdDev: number = 2.5) {
-  if (!quotes || quotes.length < length) return { isBuyZone: false };
+export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd: number = 2.5) {
+  if (!quotes || quotes.length < length + 1) return { isBuyZone: false };
+
   const prices = quotes.map(q => q.close);
-  const sma = calculateSMA(prices, length);
   const latestIdx = prices.length - 1;
   const currentPrice = prices[latestIdx];
-  
-  let variance = 0;
-  for (let i = latestIdx - length + 1; i <= latestIdx; i++) {
-    variance += Math.pow(prices[i] - sma[latestIdx], 2);
-  }
-  const sd = Math.sqrt(variance / length);
-  const lowerBand = Math.round(sma[latestIdx] - stdDev * sd);
-  const upperBand = Math.round(sma[latestIdx] + stdDev * sd);
 
-  const isBuyZone = currentPrice <= lowerBand;
-  const isActuallyInBuyRange = isBuyZone && currentPrice <= lowerBand * 1.05;
+  const smaValues = calculateSMA(prices, length);
+  
+  let activeEntry = 0;
+  let activeTarget = 0;
+  let activeSignalDate = "";
+  let isPositionOpen = false;
+
+  for (let i = length; i < prices.length; i++) {
+    const sma = smaValues[i];
+    const window = prices.slice(i - length + 1, i + 1);
+    const mean = sma;
+    const squareDiffs = window.map(v => Math.pow(v - mean, 2));
+    const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / length;
+    const stdDev = Math.sqrt(avgSquareDiff);
+
+    const lowerBand = mean - stdDev * sd;
+    const upperBand = mean + stdDev * sd;
+
+    if (!isPositionOpen && quotes[i].low <= lowerBand) {
+      if (i + 1 < prices.length) {
+        isPositionOpen = true;
+        activeEntry = Math.round(quotes[i + 1].close); 
+        activeTarget = Math.round(upperBand); 
+        const dateVal = quotes[i].date;
+        activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+      }
+    }
+
+    if (isPositionOpen && quotes[i].high >= activeTarget) {
+      isPositionOpen = false;
+    }
+  }
+
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+  const inObservation = isPositionOpen && currentPrice > activeEntry * 1.05;
 
   return {
     isBuyZone: isActuallyInBuyRange,
-    entryPrice: lowerBand,
-    target: Math.round(sma[latestIdx]),
-    currentPrice: Math.round(currentPrice)
+    inObservation,
+    entryPrice: activeEntry,
+    target: activeTarget,
+    currentPrice: Math.round(currentPrice),
+    triggerDate: activeSignalDate
   };
 }
 
@@ -238,8 +266,11 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
   const currentPrice = quotes[quotes.length - 1].close;
 
   const isAtSupport = currentPrice <= low52 * 1.05;
+  const inObservation = currentPrice > low52 * 1.05 && currentPrice <= low52 * 1.15;
+
   return {
     isBuyZone: isAtSupport,
+    inObservation,
     entryPrice: Math.round(low52),
     target: Math.round(high52),
     currentPrice: Math.round(currentPrice)
@@ -268,8 +299,12 @@ export function calculateSRStrategy(quotes: Quote[]) {
       break;
     }
   }
+  const isActuallyInBuyRange = supportLevel > 0 && currentPrice <= supportLevel * 1.05;
+  const inObservation = supportLevel > 0 && currentPrice > supportLevel * 1.05;
+
   return {
-    isBuyZone: supportLevel > 0,
+    isBuyZone: isActuallyInBuyRange,
+    inObservation,
     entryPrice: Math.round(supportLevel),
     target: Math.round(supportLevel * 1.30),
     currentPrice: Math.round(currentPrice)
@@ -318,8 +353,17 @@ export function calculateCupHandle(quotes: Quote[]) {
   const recentHigh = Math.max(...prices.slice(-lookback, -20));
   const recentLow = Math.min(...prices.slice(-lookback, -20));
   const cupDepth = (recentHigh - recentLow) / recentHigh;
-  if (cupDepth > 0.15 && cupDepth < 0.50 && currentPrice >= recentHigh * 0.90 && currentPrice <= recentHigh * 1.05) {
-    return { isBuyZone: true, entryPrice: Math.round(recentHigh), target: Math.round(recentHigh + (recentHigh - recentLow)), currentPrice: Math.round(currentPrice) };
+  if (cupDepth > 0.15 && cupDepth < 0.50 && currentPrice >= recentHigh * 0.90 && currentPrice <= recentHigh * 1.15) {
+    const isActuallyInBuyRange = currentPrice >= recentHigh * 0.90 && currentPrice <= recentHigh * 1.05;
+    const inObservation = currentPrice > recentHigh * 1.05 && currentPrice <= recentHigh * 1.15;
+    
+    return { 
+      isBuyZone: isActuallyInBuyRange, 
+      inObservation,
+      entryPrice: Math.round(recentHigh), 
+      target: Math.round(recentHigh + (recentHigh - recentLow)), 
+      currentPrice: Math.round(currentPrice) 
+    };
   }
   return { isBuyZone: false }; 
 }
