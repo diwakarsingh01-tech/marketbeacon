@@ -138,7 +138,7 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
     const cLower = cEMA * 0.86;
     const dateStr = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
 
-    // B1 Entry with Confirmation (GLAXO 8-Aug Sync)
+    // B1 Entry with Single-Day Confirmation
     // Rule: Previous Close was above EMA, Current Close is below EMA
     const prevClose = prices[i-1];
     const prevEMA = ema200[i-1];
@@ -148,7 +148,7 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
       b1_entry_price = prices[i]; // ENTRY AT TRIGGER DAY CLOSE
       b1_date = dateStr;
       b1_ema_at_trigger = cEMA;
-      b1_target = Math.round(cEMA * 1.14); // Target B1: 14% above EMA at trigger
+      b1_target = Math.round(cEMA * 1.14); // B1 target: 14% above EMA at trigger
     }
 
     // B2 Entry: Hits 14% Lower Blue Line (Locked to B1 EMA)
