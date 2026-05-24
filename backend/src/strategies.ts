@@ -1,7 +1,7 @@
 
 /**
- * MarketBeacon Strategy Engine (Batch 9)
- * High-Accuracy Implementation for Institutional Auditing
+ * MarketBeacon Strategy Engine (Batch 10)
+ * High-Accuracy Institutional Implementation
  */
 
 export interface Quote {
@@ -44,27 +44,49 @@ export function calculateSMA(prices: number[], length: number): number[] {
 
 /**
  * STRATEGY 1: Institutional Floor (Long Envelope)
- * Rule: Price LOW <= Lower Band (14% below 200 SMA)
- * Target: MAX(Upper Band, Entry Price * 1.30)
+ * Settings: Length 200, 14% Envelope
+ * Logic: Signal Day I Entry (Close), Locked Target (MAX(UB, Entry*1.3))
  */
 export function calculateEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
   if (!quotes || quotes.length < length) return null;
-  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const prices = quotes.map(q => q.close);
   const smaValues = calculateSMA(prices, length);
-  const latestIdx = quotes.length - 1;
-  const currentSMA = smaValues[latestIdx];
-  const lowerBand = Math.round(currentSMA * (1 - percentage / 100));
-  const upperBand = Math.round(currentSMA * (1 + percentage / 100));
-  const currentPrice = Math.round(prices[latestIdx]);
+  const currentPrice = prices[prices.length - 1];
 
-  const isBuyZone = quotes[latestIdx].low <= lowerBand;
-  
+  let activeEntry = 0;
+  let activeTarget = 0;
+  let activeSignalDate = "";
+  let isPositionOpen = false;
+
+  for (let i = length; i < quotes.length; i++) {
+    const sma = smaValues[i];
+    const lowerBand = sma * (1 - percentage / 100);
+    const upperBand = sma * (1 + percentage / 100);
+
+    // Entry on Signal Day I (Institutional preference)
+    if (!isPositionOpen && quotes[i].low <= lowerBand) {
+      isPositionOpen = true;
+      activeEntry = Math.round(quotes[i].close);
+      activeTarget = Math.round(Math.max(upperBand, activeEntry * 1.30)); 
+      const dateVal = quotes[i].date;
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+    }
+
+    // Exit on Target Hit
+    if (isPositionOpen && quotes[i].high >= activeTarget) {
+      isPositionOpen = false;
+    }
+  }
+
+  // "Qualified" means it hit the floor and is still within 5% of entry
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+
   return {
-    isBuyZone,
-    entryPrice: lowerBand,
-    target: Math.max(upperBand, lowerBand * 1.30),
-    currentPrice,
-    triggerDate: isBuyZone ? (typeof quotes[latestIdx].date === 'string' ? quotes[latestIdx].date : (quotes[latestIdx].date as Date).toISOString()).split('T')[0] : undefined
+    isBuyZone: isActuallyInBuyRange,
+    entryPrice: activeEntry,
+    target: activeTarget,
+    currentPrice: Math.round(currentPrice),
+    triggerDate: activeSignalDate
   };
 }
 
@@ -163,34 +185,51 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
 
 /**
  * STRATEGY 3: Volatility Channel (Institutional Bollinger Band)
- * Buy: Price LOW <= Lower Band (SMA 200 - 2.5 SD)
- * Target: Upper Band (SMA 200 + 2.5 SD)
+ * Settings: Length 200, StdDev 2.5
+ * Logic: Signal Day I Entry (Close), Locked Target (Upper Band at Signal Day)
  */
 export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd: number = 2.5) {
   if (!quotes || quotes.length < length) return { isBuyZone: false };
 
   const prices = quotes.map(q => q.close);
-  const latestIdx = prices.length - 1;
-  const currentPrice = prices[latestIdx];
   const smaValues = calculateSMA(prices, length);
-  const sma = smaValues[latestIdx];
+  const currentPrice = prices[prices.length - 1];
   
-  const window = prices.slice(latestIdx - length + 1, latestIdx + 1);
-  const squareDiffs = window.map(v => Math.pow(v - sma, 2));
-  const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / length;
-  const stdDev = Math.sqrt(avgSquareDiff);
+  let activeEntry = 0;
+  let activeTarget = 0;
+  let activeSignalDate = "";
+  let isPositionOpen = false;
 
-  const lowerBand = Math.round(sma - stdDev * sd);
-  const upperBand = Math.round(sma + stdDev * sd);
+  for (let i = length; i < quotes.length; i++) {
+    const sma = smaValues[i];
+    const window = prices.slice(i - length + 1, i + 1);
+    const squareDiffs = window.map(v => Math.pow(v - sma, 2));
+    const stdDev = Math.sqrt(squareDiffs.reduce((a, b) => a + b, 0) / length);
 
-  const isBuyZone = quotes[latestIdx].low <= lowerBand;
+    const lowerBand = sma - stdDev * sd;
+    const upperBand = sma + stdDev * sd;
+
+    if (!isPositionOpen && quotes[i].low <= lowerBand) {
+      isPositionOpen = true;
+      activeEntry = Math.round(quotes[i].close); // Signal Day Entry
+      activeTarget = Math.round(upperBand); // Locked Target from Signal Day
+      const dateVal = quotes[i].date;
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+    }
+
+    if (isPositionOpen && quotes[i].high >= activeTarget) {
+      isPositionOpen = false;
+    }
+  }
+
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
 
   return {
-    isBuyZone,
-    entryPrice: lowerBand,
-    target: upperBand,
+    isBuyZone: isActuallyInBuyRange,
+    entryPrice: activeEntry,
+    target: activeTarget,
     currentPrice: Math.round(currentPrice),
-    triggerDate: isBuyZone ? (typeof quotes[latestIdx].date === 'string' ? quotes[latestIdx].date : (quotes[latestIdx].date as Date).toISOString()).split('T')[0] : undefined
+    triggerDate: activeSignalDate
   };
 }
 
