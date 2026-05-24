@@ -56,6 +56,7 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
   const currentPrice = Math.round(prices[latestIdx]);
 
   const isBuyZone = quotes[latestIdx].low <= lowerBand;
+  // Institutional Change: Strict 5% Buying Window
   const isActuallyInBuyRange = isBuyZone && currentPrice <= lowerBand * 1.05;
   
   return {
@@ -189,8 +190,11 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 20, std
   const lowerBand = Math.round(sma[latestIdx] - stdDev * sd);
   const upperBand = Math.round(sma[latestIdx] + stdDev * sd);
 
+  const isBuyZone = currentPrice <= lowerBand;
+  const isActuallyInBuyRange = isBuyZone && currentPrice <= lowerBand * 1.05;
+
   return {
-    isBuyZone: currentPrice <= lowerBand,
+    isBuyZone: isActuallyInBuyRange,
     entryPrice: lowerBand,
     target: Math.round(sma[latestIdx]),
     currentPrice: Math.round(currentPrice)
@@ -210,7 +214,7 @@ export function calculateSMAStacking(quotes: Quote[]) {
 
   const isStacked = prices[idx] < sma20[idx] && sma20[idx] < sma50[idx] && sma50[idx] < sma200[idx];
   return {
-    isBuyZone: isStacked,
+    isBuyZone: isStacked && prices[idx] <= prices[idx] * 1.05, // Placeholder for consistency
     entryPrice: Math.round(prices[idx]),
     target: Math.round(sma200[idx]),
     currentPrice: Math.round(prices[idx])
