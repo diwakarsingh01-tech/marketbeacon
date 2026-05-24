@@ -283,44 +283,42 @@ async function validateBatch9(symbol: string, snap: any) {
   const auditLog = [];
 
   // Segment 1: Profitability Quality (15 pts)
-  // Benchmark: 15% for full marks. ROCE is secondary for Finance.
+  // Benchmark: 15% for full marks as confirmed by User.
   let profScore = 15;
-  const roeBenchmark = isFinance ? 12 : 15; // Banks are capital intensive
+  const roeBenchmark = isFinance ? 12 : 15; 
   if (roe < roeBenchmark) profScore -= 5;
-  if (roe < (roeBenchmark - 5)) profScore -= 5;
+  if (roe < (roeBenchmark - 3)) profScore -= 5;
   if (roce < (isFinance ? 10 : 15)) profScore -= 5;
   
   const profitabilityQuality = {
     score: Math.max(0, profScore),
     max: 15,
     checks: [
-      { label: 'ROE Benchmark', value: `${roe.toFixed(1)}%`, pass: roe >= roeBenchmark },
-      { label: 'ROCE Benchmark', value: `${roce.toFixed(1)}%`, pass: roce >= (isFinance ? 10 : 15) }
+      { label: 'ROE > 15%', value: `${roe.toFixed(1)}%`, pass: roe >= roeBenchmark },
+      { label: 'ROCE > 15%', value: `${roce.toFixed(1)}%`, pass: roce >= (isFinance ? 10 : 15) }
     ]
   };
   if (profitabilityQuality.score < 15) totalScore -= (15 - profitabilityQuality.score);
 
   // Segment 2: Balance Sheet Safety (20 pts)
-  // Finance stocks are allowed higher leverage (8.0), but General stocks are benchmarked at 0.2.
+  // General stocks are benchmarked at 0.20 as confirmed by User.
   let safetyScore = 20;
-  const deLimit = isFinance ? 8.0 : 0.2; // New 0.2 Institutional Standard
+  const deLimit = isFinance ? 8.0 : 0.20; 
   if (debtToEquity > deLimit) safetyScore -= 10;
-  if (debtToEquity > (deLimit * 1.5)) safetyScore -= 10;
-  if (pledged > 5) safetyScore -= 10;
-  if (pledged > 15) safetyScore -= 10;
+  if (debtToEquity > (deLimit * 2)) safetyScore -= 10;
+  if (pledged > 0) safetyScore -= 5;
+  if (pledged >= 5) safetyScore -= 15;
 
   const balanceSheetSafety = {
     score: Math.max(0, safetyScore),
     max: 20,
     checks: [
-      { label: isFinance ? 'Debt Management' : 'D/E < 0.2', value: debtToEquity.toFixed(2), pass: debtToEquity <= deLimit },
+      { label: isFinance ? 'Debt Management' : 'D/E < 0.20', value: debtToEquity.toFixed(2), pass: debtToEquity <= deLimit },
       { label: 'Zero Pledge', value: `${pledged}%`, pass: pledged === 0 }
     ]
   };
   if (balanceSheetSafety.score < 20) {
     totalScore -= (20 - balanceSheetSafety.score);
-    if (!isFinance && debtToEquity > 1.0) auditLog.push('Critical Debt');
-    if (pledged > 15) auditLog.push('High Pledge Risk');
   }
 
   // Segment 3: Growth Quality (15 pts)
@@ -333,7 +331,7 @@ async function validateBatch9(symbol: string, snap: any) {
   };
 
   // 4. Ownership Matrix (25 pts)
-  // Benchmark: Smart Money > 70%
+  // Benchmark: Smart Money > 70% as confirmed by User.
   let ownScore = 25;
   if (!isETF) {
     if (smartMoneyTotal < 70) ownScore -= 10;
@@ -343,7 +341,7 @@ async function validateBatch9(symbol: string, snap: any) {
     // High-Accuracy Red Flags: Institutional/Promoter Exit
     if (fii < 2 && dii < 2) auditLog.push('Institutional Exit Flag');
     if (promoter < 30) auditLog.push('Low Promoter Conviction');
-    if (pledged > 15) auditLog.push('High Pledge Red Flag');
+    if (pledged >= 5) auditLog.push('High Pledge Red Flag');
   }
 
   const valuationConsistency = {
@@ -381,7 +379,7 @@ async function validateBatch9(symbol: string, snap: any) {
   let isHardReject = false;
   if (!isETF) {
     if (!isFinance && debtToEquity > 1.0) { isHardReject = true; auditLog.push('Auto-Reject: Excessive Debt'); }
-    if (pledged > 15) { isHardReject = true; auditLog.push('Auto-Reject: High Pledging'); }
+    if (pledged >= 5) { isHardReject = true; auditLog.push('Auto-Reject: High Pledging (>5%)'); }
     if (smartMoneyTotal < 30) { isHardReject = true; auditLog.push('Auto-Reject: Low Smart Money'); }
   }
 
@@ -466,7 +464,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
 
     res.json({
       symbol,
-      version: '10.7.1-PRO', // Institutional Version Signature
+      version: '10.7.2-PRO', // Institutional Version Signature
       price: quote.regularMarketPrice || (snap.quotes && snap.quotes.length > 0 ? snap.quotes[snap.quotes.length - 1].close : 0),
       change: quote.regularMarketChangePercent || 0,
       marketCap: quote.marketCap || 0,
@@ -547,7 +545,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
       results.push({ 
         symbol: baseSymbol, 
-        version: '10.7.1-PRO', // Updated Version Signature
+        version: '10.7.2-PRO', // Updated Version Signature
         entryTime: strategyData?.isBuyZone ? strategyData.triggerDate : null, 
         entryPrice, 
         strategy: currentStrat?.name || 'Institutional Matrix',
