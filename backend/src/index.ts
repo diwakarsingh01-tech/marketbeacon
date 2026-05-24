@@ -464,7 +464,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
 
     res.json({
       symbol,
-      version: '10.7.2-PRO', // Institutional Version Signature
+      version: '10.7.3-PRO', // Institutional Version Signature
       price: quote.regularMarketPrice || (snap.quotes && snap.quotes.length > 0 ? snap.quotes[snap.quotes.length - 1].close : 0),
       change: quote.regularMarketChangePercent || 0,
       marketCap: quote.marketCap || 0,
@@ -545,7 +545,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
       results.push({ 
         symbol: baseSymbol, 
-        version: '10.7.2-PRO', // Updated Version Signature
+        version: '10.7.3-PRO', // Updated Version Signature
         entryTime: strategyData?.isBuyZone ? strategyData.triggerDate : null, 
         entryPrice, 
         strategy: currentStrat?.name || 'Institutional Matrix',
@@ -637,6 +637,26 @@ async function startServer() {
   const PORT = process.env.PORT || 3001;
   try {
     await initDB();
+    await initSnapshotCache();
+    initScreenerCron();
+
+    // Ephemeral Storage Fix: Trigger priority snapshot if empty
+    const cache = getMarketSnapshot();
+    if (Object.keys(cache).length <= 1) {
+      console.log('🚀 [STARTUP] Cache empty. Triggering priority Bluechip snapshot...');
+      updateMarketSnapshot(BASKETS['BLUECHIP']).catch(e => console.error('Startup Snapshot Failed:', e.message));
+    }
+
+    app.listen(PORT, () => console.log(`MarketBeacon Backend running on port ${PORT}`));
+  } catch (e) { console.error(e); process.exit(1); }
+}
+function syncBaskets() {
+  const dynamicProfit = getDynamicBasket();
+  if (dynamicProfit.length > 0) BASKETS['PROFIT'] = dynamicProfit;
+}
+syncBaskets(); setInterval(syncBaskets, 60000);
+startServer();
+DB();
     await initSnapshotCache();
     initScreenerCron();
 
