@@ -452,7 +452,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
 
     res.json({
       symbol,
-      version: '10.7.0-PRO', // Institutional Version Signature
+      version: '10.7.1-PRO', // Institutional Version Signature
       price: quote.regularMarketPrice || (snap.quotes && snap.quotes.length > 0 ? snap.quotes[snap.quotes.length - 1].close : 0),
       change: quote.regularMarketChangePercent || 0,
       marketCap: quote.marketCap || 0,
@@ -507,8 +507,23 @@ app.get('/api/backtest/envelope', async (req, res) => {
         strategyData = calculateEnvelope(snap.quotes);
       } else if (strategyId === 'ENVELOPE_SHORT') {
         strategyData = processShortEnvelope(snap.quotes, snap.quote.marketCap);
+      } else if (strategyId === 'BOLLINGER') {
+        strategyData = calculateBollingerBand(snap.quotes);
+      } else if (strategyId === 'SMA_ABCD') {
+        strategyData = calculateSMAStacking(snap.quotes);
+      } else if (strategyId === '52W_HIGH_LOW') {
+        strategyData = calculate52WeekStrategy(snap.quotes);
+      } else if (strategyId === 'SR_STRATEGY') {
+        strategyData = calculateSRStrategy(snap.quotes);
+      } else if (strategyId === 'RHS_ABCD') {
+        strategyData = calculateRHS(snap.quotes);
+      } else if (strategyId === 'CUP_HANDLE_ABCD') {
+        strategyData = calculateCupHandle(snap.quotes);
+      } else if (strategyId === 'SIXTY_SEVEN_FUNDA') {
+        strategyData = calculateSixtySevenFunda(snap.quotes, snap.screener);
+      } else if (strategyId === 'TWENTY_RALLY_RETEST') {
+        strategyData = calculateTwentyRallyRetest(snap.quotes, baseSymbol);
       } else {
-        // Fallback for other strategies, but prioritized real-time execution
         strategyData = calculateEnvelope(snap.quotes);
       }
 
@@ -518,7 +533,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
       results.push({ 
         symbol: baseSymbol, 
-        version: '10.7.0-PRO', // Updated Version Signature
+        version: '10.7.1-PRO', // Updated Version Signature
         entryTime: strategyData?.isBuyZone ? strategyData.triggerDate : null, 
         entryPrice, 
         strategy: currentStrat?.name || 'Institutional Matrix',

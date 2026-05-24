@@ -2,8 +2,9 @@ import { updateMarketSnapshot, initSnapshotCache } from './screener.js';
 
 async function test() {
   initSnapshotCache();
-  console.log('--- Updating TCS ---');
-  await updateMarketSnapshot(['TCS']);
+  const symbols = ['TCS', 'HAVELLS', 'WHIRLPOOL', 'GLAXO', 'ITC'];
+  console.log(`--- Updating ${symbols.join(', ')} ---`);
+  await updateMarketSnapshot(symbols);
   console.log('--- Update Complete ---');
 }
 

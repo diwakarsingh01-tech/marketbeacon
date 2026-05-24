@@ -81,8 +81,8 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   // Market Cap based ABCD Ladder Gaps
   const capCr = marketCap / 10000000;
   let gapPercent = 15; 
-  if (capCr >= 65000) gapPercent = 10; 
-  else if (capCr < 20000) gapPercent = 20; 
+  if (capCr >= 20000) gapPercent = 10; 
+  else if (capCr < 5000) gapPercent = 20; 
 
   let b1_open = false, b1_entry_price = 0, b1_date = '', b1_ema_locked = 0, b1_target = 0;
   let b2_open = false, b2_entry_price = 0, b2_target = 0;
@@ -308,23 +308,74 @@ export function calculateCupHandle(quotes: Quote[]) {
 /**
  * STRATEGY 9: 67 Ka Funda
  */
-export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any) {
-  if (!quotes || quotes.length < 250) return null;
+export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any, basket?: any, providedATH?: number) {
+  if (!quotes || (quotes.length < 250 && !providedATH)) return null;
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
-  const ath = Math.max(...quotes.map(q => q.high));
+  
+  // Use provided ATH (for tests) or calculate from history
+  const ath = providedATH || Math.max(...quotes.map(q => q.high));
   const drawdown = ((ath - currentPrice) / ath) * 100;
-  return { isBuyZone: drawdown >= 60, entryPrice: Math.round(ath * 0.4), target: Math.round(ath * 0.67), currentPrice: Math.round(currentPrice) };
+  
+  // Fundamental Filter: Improving Quarterly PAT
+  const pat = screenerData?.quarterlyNetProfits || [];
+  const isImproving = pat.length >= 3 && pat[pat.length - 1] > pat[pat.length - 2];
+  
+  const isBuyZone = drawdown >= 66.5; // Threshold for 67% reset
+  const verdict = (isBuyZone && isImproving) ? 'QUALIFIED' : 'WATCHLIST';
+
+  return { 
+    isBuyZone, 
+    verdict,
+    entryPrice: Math.round(ath * 0.33), // Standard 67% reset target
+    target: Math.round(ath * 0.67), 
+    currentPrice: Math.round(currentPrice),
+    drawdown: Math.round(drawdown)
+  };
 }
 
 /**
  * STRATEGY 10: Velocity Retest
  */
-export function calculateTwentyRallyRetest(quotes: Quote[]) {
-  if (!quotes || quotes.length < 250) return null;
+export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
+  if (!quotes || quotes.length < 50) return null;
   const prices = quotes.map(q => q.close);
-  const base = prices[0]; 
-  return { isBuyZone: false, entryPrice: Math.round(base), target: Math.round(base * 1.2), currentPrice: Math.round(prices[prices.length-1]) };
+  const latestIdx = prices.length - 1;
+  const currentPrice = prices[latestIdx];
+
+  // Look for a 20% rally in any 10-bar window within the last year
+  let rallyOrigin = 0;
+  let rallyFound = false;
+  let barsSinceRally = 0;
+
+  // Scan back from current price to find the most recent rally origin
+  for (let i = latestIdx - 10; i >= Math.max(0, latestIdx - 300); i--) {
+    const startPrice = prices[i];
+    const maxInWindow = Math.max(...prices.slice(i, i + 10));
+    const rallyGain = (maxInWindow - startPrice) / startPrice;
+
+    if (rallyGain >= 0.20) {
+      rallyOrigin = startPrice;
+      rallyFound = true;
+      barsSinceRally = latestIdx - (i + 10); // Measured from end of rally window
+      break; 
+    }
+  }
+
+  if (!rallyFound || barsSinceRally > 252) return null; // Strict institutional 1-year limit
+
+  // A stock is "Qualified" if it returns to the origin within 5% tolerance
+  const isRetesting = currentPrice <= rallyOrigin * 1.05 && currentPrice >= rallyOrigin * 0.95;
+  const verdict = isRetesting ? 'QUALIFIED' : 'WATCHLIST';
+
+  return {
+    isBuyZone: isRetesting,
+    verdict,
+    entryPrice: Math.round(rallyOrigin),
+    target: Math.round(rallyOrigin * 1.20),
+    currentPrice: Math.round(currentPrice),
+    barsSinceRally
+  };
 }
 
 /**
@@ -333,7 +384,7 @@ export function calculateTwentyRallyRetest(quotes: Quote[]) {
 export function calculateABCDLevels(anchorPrice: number, marketCap: number) {
   const capCr = marketCap / 10000000;
   let gap = 0.15;
-  if (capCr >= 65000) gap = 0.10;
-  else if (capCr < 20000) gap = 0.20;
+  if (capCr >= 20000) gap = 0.10;
+  else if (capCr < 5000) gap = 0.20;
   return { a: anchorPrice, b: Math.round(anchorPrice * 0.86), c: Math.round(anchorPrice * 0.86 * (1 - gap)), d: Math.round(anchorPrice * 0.86 * (1 - 2 * gap)), gap: gap * 100 };
 }
