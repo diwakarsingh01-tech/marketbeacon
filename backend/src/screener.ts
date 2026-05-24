@@ -137,9 +137,22 @@ export async function fetchScreenerData(symbol: string) {
     const pe5YScraped = extractMedian(5);
     const pe10YScraped = extractMedian(10);
 
-    let pe3Y = pe3YScraped || (peRatio ? peRatio * 0.95 : 25.0);
-    let pe5Y = pe5YScraped || (peRatio ? peRatio * 0.90 : 22.0);
-    let pe10Y = pe10YScraped || (peRatio ? peRatio * 0.85 : 20.0);
+    // Hardened Sector Fallbacks (Absolute, not relative to current PE)
+    const industry = $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'General Research';
+    const isBanking = industry.includes('Bank') || symbol.includes('BANK');
+    const isIT = industry.includes('IT') || industry.includes('Software');
+    const isFMCG = industry.includes('FMCG') || industry.includes('Consumer');
+    const isPharma = industry.includes('Pharma') || industry.includes('Healthcare');
+
+    let baseMed = 25.0;
+    if (isBanking) baseMed = 18.0;
+    else if (isIT) baseMed = 30.0;
+    else if (isFMCG) baseMed = 45.0;
+    else if (isPharma) baseMed = 35.0;
+
+    const pe3Y = pe3YScraped || (baseMed * 1.1);
+    const pe5Y = pe5YScraped || baseMed;
+    const pe10Y = pe10YScraped || (baseMed * 0.9);
 
     const shareholding = {
       promoter: getShareholding('Promoter') || getShareholding('Promoters'),
@@ -153,20 +166,23 @@ export async function fetchScreenerData(symbol: string) {
     const smartMoneyTotal = (shareholding.promoter || 0) + (shareholding.fii || 0) + (shareholding.dii || 0);
     (shareholding as any).smartMoneyTotal = smartMoneyTotal;
 
-    // Hardened BFSI Detection for Median Fallbacks
-    const industry = $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'General Research';
-    const isBanking = industry.includes('Bank') || symbol.includes('BANK');
-    const isIT = industry.includes('IT') || industry.includes('Software');
-    
-    if (pe3Y === 25.0 && isBanking) { pe3Y = 18.0; pe5Y = 16.0; pe10Y = 14.0; }
-    if (pe3Y === 25.0 && isIT) { pe3Y = 30.0; pe5Y = 28.0; pe10Y = 25.0; }
-
-    const peMedians = { pe3Y, pe5Y, pe10Y };
-
     const netProfits = getAnnualTableData('profit-loss', 'Net Profit');
     const sales = getAnnualTableData('profit-loss', 'Sales');
     const opm = getAnnualTableData('profit-loss', 'OPM %');
     const eps = getAnnualTableData('profit-loss', 'EPS');
+    
+    // TTM/Latest Data logic
+    const currentSales = sales.slice(-1)[0] || 1;
+    const currentNetProfit = netProfits.slice(-1)[0] || 0;
+    const currentEPS = eps.slice(-1)[0] || (currentNetProfit / 10); // Rough fallback
+
+    // PE Calculation Fix: Price / Latest EPS
+    const calculatedPE = currentEPS > 0 ? (currentPrice / currentEPS) : (getRatio('Stock P/E') || 45);
+
+    // ATH Logic: Search for historical peak (excluding current if possible, or just the max of all)
+    const athSales = Math.max(...sales, 0);
+    const athNetProfit = Math.max(...netProfits, 0);
+
     const quarterlyNetProfits = getAnnualTableData('quarters', 'Net Profit');
     const quarterlySales = getAnnualTableData('quarters', 'Sales');
     const borrowings = getAnnualTableData('balance-sheet', 'Borrowings');
@@ -185,17 +201,12 @@ export async function fetchScreenerData(symbol: string) {
     const latestBorrowings = borrowings.slice(-1)[0] || 0;
     const latestEquity = (shareCapital.slice(-1)[0] || 0) + (reserves.slice(-1)[0] || 0);
     const debtToEquity = latestEquity > 0 ? (latestBorrowings / latestEquity) : 0;
-    const latestSales = sales.slice(-1)[0] || 1;
     const latestCFO = cashFlowOps.slice(-1)[0] || 0;
     const latestCapex = Math.abs(fixedAssetsPurchased.slice(-1)[0] || 0);
-const athSales = Math.max(...sales, 0);
-const athNetProfit = Math.max(...netProfits, 0);
-const currentSales = sales.slice(-1)[0] || 0;
-const currentNetProfit = netProfits.slice(-1)[0] || 0;
 
 return {
   marketCap,
-  peRatio,
+  peRatio: calculatedPE,
   peMedians: { pe3Y, pe5Y, pe10Y },
   dividendYield: getRatio('Dividend Yield'),
   roce,
@@ -209,7 +220,7 @@ return {
   bookValue,
   priceToBook: bookValue > 0 ? (currentPrice / bookValue) : 0,
   currentPrice,
-  industry: $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'General Research',
+  industry,
   historicalNetProfits: netProfits,
   historicalSales: sales,
   athSales,
@@ -221,7 +232,7 @@ return {
       historicalOPM: opm,
       historicalEPS: eps,
       operatingMargin: opm.slice(-1)[0] || 0,
-      netMargin: latestSales > 0 ? (netProfits.slice(-1)[0] / latestSales) * 100 : 0,
+      netMargin: currentSales > 0 ? (currentNetProfit / currentSales) * 100 : 0,
       yearsListed: sales.length,
       cashFlowFromOps: latestCFO,
       capex: latestCapex,

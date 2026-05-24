@@ -351,19 +351,21 @@ async function validateBatch9(symbol: string, snap: any) {
   const currentProfit = safeParse(scr.currentNetProfit);
   const athProfit = safeParse(scr.athNetProfit);
 
-  const salesAtATH = currentSales >= (athSales * 0.98); 
-  const profitAtATH = currentProfit >= (athProfit * 0.98);
+  // Softened ATH Rule: 90% tolerance for high-quality stocks
+  const growthTolerance = roe > 20 ? 0.90 : 0.95;
+  const salesAtATH = currentSales >= (athSales * growthTolerance); 
+  const profitAtATH = currentProfit >= (athProfit * growthTolerance);
 
   let growthScore = 15;
   if (!salesAtATH) growthScore -= 5;
-  if (!profitAtATH) growthScore -= 15; // STRICT: -15 if Profit not at ATH
+  if (!profitAtATH) growthScore -= 10; 
 
   const growthQuality = {
     score: Math.max(0, growthScore),
     max: 15,
     checks: [
-      { label: 'Sales at ATH', value: `₹${currentSales}Cr`, pass: salesAtATH },
-      { label: 'Profit at ATH', value: `₹${currentProfit}Cr`, pass: profitAtATH }
+      { label: 'Sales near ATH', value: `₹${currentSales}Cr`, pass: salesAtATH },
+      { label: 'Profit near ATH', value: `₹${currentProfit}Cr`, pass: profitAtATH }
     ]
   };
   totalScore -= (15 - growthQuality.score);
@@ -371,20 +373,20 @@ async function validateBatch9(symbol: string, snap: any) {
   // 4. Ownership Matrix (25 pts)
   let ownScore = 25;
   if (!isETF) {
-    if (smartMoneyTotal < 75) ownScore -= 10;
-    if (smartMoneyTotal < 50) ownScore -= 15;
+    if (smartMoneyTotal < 75) ownScore -= 5;
+    if (smartMoneyTotal < 50) ownScore -= 10;
     if (publicHolding > 25) ownScore -= 5;
     
-    if (fii < 2 && dii < 2) auditLog.push('Institutional Exit Flag');
-    if (promoter < 40) auditLog.push('Low Promoter Conviction');
+    if (fii < 1 && dii < 1) auditLog.push('Low Institutional Interest');
+    if (promoter < 30) auditLog.push('Low Promoter Conviction');
   }
 
   const valuationConsistency = {
     score: Math.max(0, ownScore),
     max: 25,
     checks: [
-      { label: isETF ? 'ETF Pass' : 'Smart Money > 75%', value: isETF ? 'N/A' : `${smartMoneyTotal.toFixed(1)}%`, pass: isETF ? true : smartMoneyTotal >= 75 },
-      { label: isETF ? 'ETF Pass' : 'Promoter Status', value: isETF ? 'N/A' : `${promoter.toFixed(1)}%`, pass: isETF ? true : promoter >= 50 }
+      { label: isETF ? 'ETF Pass' : 'Smart Money > 70%', value: isETF ? 'N/A' : `${smartMoneyTotal.toFixed(1)}%`, pass: isETF ? true : smartMoneyTotal >= 70 },
+      { label: isETF ? 'ETF Pass' : 'Promoter Status', value: isETF ? 'N/A' : `${promoter.toFixed(1)}%`, pass: isETF ? true : promoter >= 40 }
     ]
   };
   totalScore -= (25 - valuationConsistency.score);
@@ -392,20 +394,22 @@ async function validateBatch9(symbol: string, snap: any) {
   // Segment 5: Dynamic Valuation Matrix (25 pts)
   const peMedians = scr.peMedians || { pe3Y: 25.5, pe5Y: 25.5, pe10Y: 25.5 };
   let valScore = 25;
-  const isUndervalued = pe < peMedians.pe5Y;
+  
+  // High ROE stocks deserve a valuation premium
+  const qualityBuffer = roe > 25 ? 1.2 : 1.0;
+  const isUndervalued = pe < (peMedians.pe5Y * qualityBuffer);
   
   if (!isETF) {
-    if (pe > peMedians.pe5Y) valScore -= 10; // Penalty for premium valuation
-    if (pe > peMedians.pe3Y * 1.2) valScore -= 5; // Extra penalty for recent spike
-    if (pe > peMedians.pe10Y * 1.5) valScore -= 10; // Severe penalty if way above 10Y median
+    if (pe > (peMedians.pe5Y * qualityBuffer)) valScore -= 10; 
+    if (pe > (peMedians.pe10Y * 1.5 * qualityBuffer)) valScore -= 10; 
   }
 
   const efficiencyGovernance = {
     score: Math.max(0, valScore),
     max: 25,
     checks: [
-      { label: isETF ? 'ETF Pass' : 'Valuation Audit', value: isETF ? 'N/A' : (isUndervalued ? 'Undervalued' : 'Premium'), pass: isETF ? true : isUndervalued },
-      { label: isETF ? 'ETF Pass' : '10Y Median PE', value: isETF ? 'N/A' : peMedians.pe10Y.toFixed(1), pass: isETF ? true : pe < peMedians.pe10Y * 1.2 }
+      { label: isETF ? 'ETF Pass' : 'Valuation Audit', value: isETF ? 'N/A' : (isUndervalued ? 'Fair/Under' : 'Premium'), pass: isETF ? true : isUndervalued },
+      { label: isETF ? 'ETF Pass' : '10Y Median PE', value: isETF ? 'N/A' : peMedians.pe10Y.toFixed(1), pass: isETF ? true : pe < (peMedians.pe10Y * 1.5 * qualityBuffer) }
     ]
   };
   totalScore -= (25 - efficiencyGovernance.score);
@@ -415,17 +419,17 @@ async function validateBatch9(symbol: string, snap: any) {
   // --- INSTITUTIONAL HARD REJECTION RULES ---
   let isHardReject = false;
   if (!isETF) {
-    if (!isFinance && debtToEquity > 0.8) { isHardReject = true; auditLog.push('Auto-Reject: Excessive Debt (>0.8)'); }
-    if (pledged >= 5) { isHardReject = true; auditLog.push('Auto-Reject: High Pledging (>5%)'); }
-    if (smartMoneyTotal < 40) { isHardReject = true; auditLog.push('Auto-Reject: Low Smart Money (<40%)'); }
+    if (!isFinance && debtToEquity > 1.0) { isHardReject = true; auditLog.push('Auto-Reject: High Debt (>1.0)'); }
+    if (pledged >= 10) { isHardReject = true; auditLog.push('Auto-Reject: Dangerous Pledging (>10%)'); }
+    if (smartMoneyTotal < 30) { isHardReject = true; auditLog.push('Auto-Reject: Low Smart Money (<30%)'); }
   }
 
   // Pro-Level Conclusion Logic
   let conclusion = 'INSTITUTIONAL GRADE COMPLIANT';
-  const passThreshold = 75; // INSTITUTIONAL BAR
+  const passThreshold = 70; // Adjusted for 'Good Stock' inclusivity
   if (isHardReject || finalScore < passThreshold) conclusion = 'SPECULATIVE GRADE - HIGH RISK';
-  else if (finalScore < 85) conclusion = 'INVESTMENT GRADE - MODERATE';
-  else if (finalScore >= 85) conclusion = 'ELITE CORE - TOP 1% SELECTION';
+  else if (finalScore < 80) conclusion = 'INVESTMENT GRADE - MODERATE';
+  else if (finalScore >= 80) conclusion = 'ELITE CORE - TOP 1% SELECTION';
 
   if (auditLog.length > 0) {
     conclusion = `${conclusion} (Caution: ${auditLog.join(', ')})`;
