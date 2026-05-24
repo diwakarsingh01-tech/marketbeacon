@@ -44,10 +44,12 @@ export function calculateSMA(prices: number[], length: number): number[] {
 
 /**
  * STRATEGY 1: Institutional Floor (Long Envelope)
+ * Rule: Price LOW <= Lower Band (14% below 200 SMA)
+ * Target: MAX(Upper Band, Entry Price * 1.30)
  */
 export function calculateEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
   if (!quotes || quotes.length < length) return null;
-  const prices = quotes.map(q => q.close);
+  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
   const smaValues = calculateSMA(prices, length);
   const latestIdx = quotes.length - 1;
   const currentSMA = smaValues[latestIdx];
@@ -56,21 +58,18 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
   const currentPrice = Math.round(prices[latestIdx]);
 
   const isBuyZone = quotes[latestIdx].low <= lowerBand;
-  // Institutional Change: Strict 5% Buying Window
-  const isActuallyInBuyRange = isBuyZone && currentPrice <= lowerBand * 1.05;
   
   return {
-    isBuyZone: isActuallyInBuyRange,
+    isBuyZone,
     entryPrice: lowerBand,
-    target: upperBand,
+    target: Math.max(upperBand, lowerBand * 1.30),
     currentPrice,
-    triggerDate: isBuyZone ? (typeof quotes[latestIdx].date === 'string' ? quotes[latestIdx].date : quotes[latestIdx].date.toISOString()).split('T')[0] : undefined
+    triggerDate: isBuyZone ? (typeof quotes[latestIdx].date === 'string' ? quotes[latestIdx].date : (quotes[latestIdx].date as Date).toISOString()).split('T')[0] : undefined
   };
 }
 
 /**
  * STRATEGY 2: Momentum Ceiling (Short Envelope Step-Back)
- * FINAL INSTITUTIONAL MODEL
  */
 export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   if (!quotes || quotes.length < 250) return null;
@@ -79,7 +78,6 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   const ema200 = calculateEMA(prices, 200);
   const latestIdx = quotes.length - 1;
 
-  // Market Cap based ABCD Ladder Gaps
   const capCr = marketCap / 10000000;
   let gapPercent = 15; 
   if (capCr >= 20000) gapPercent = 10; 
@@ -90,15 +88,13 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   let c_open = false, c_entry_price = 0, c_target = 0;
   let d_open = false, d_entry_price = 0, d_target = 0;
 
-  // State Machine Simulation
   for (let i = 201; i < quotes.length - 1; i++) {
     const q = quotes[i];
     const nextQ = quotes[i+1];
     const cEMA = ema200[i];
-    const nextDateStr = (typeof nextQ.date === 'string' ? nextQ.date : nextQ.date.toISOString()).split('T')[0];
+    const nextDateStr = (typeof nextQ.date === 'string' ? nextQ.date : (nextQ.date as Date).toISOString()).split('T')[0];
 
-    // B1 Entry: Signal (Day I), Entry (Day I+1 Close)
-    if (!b1_open && prices[i-1] >= ema200[i-1] && prices[i] < cEMA) {
+    if (!b1_open && quotes[i-1].close >= ema200[i-1] && quotes[i].close < cEMA) {
       b1_open = true;
       b1_entry_price = Math.round(nextQ.close); 
       b1_date = nextDateStr;
@@ -113,14 +109,12 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
         b2_entry_price = Math.round(nextQ.close); 
         b2_target = b1_entry_price; 
       }
-
       const c_line = b2_line * (1 - gapPercent/100);
       if (b2_open && !c_open && q.low <= c_line) {
         c_open = true;
         c_entry_price = Math.round(nextQ.close);
         c_target = b2_entry_price; 
       }
-
       const d_line = c_line * (1 - gapPercent/100);
       if (c_open && !d_open && q.low <= d_line) {
         d_open = true;
@@ -150,15 +144,8 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   else if (b1_open) { activeEntry = b1_entry_price; finalTarget = b1_target; activeTranche = 'B1'; }
   else { activeTranche = 'WATCHLIST'; }
 
-  // Institutional Change: Strict 5% Buying Window
-  // A stock is only in "Buy Zone" if CMP is between Entry and Entry + 5%
-  const buyRangeUpper = activeEntry * 1.05;
-  const isActuallyInBuyRange = isBuyZone && currentPrice <= buyRangeUpper;
-  const inObservation = isBuyZone && currentPrice > buyRangeUpper;
-
   return {
-    isBuyZone: isActuallyInBuyRange,
-    inObservation,
+    isBuyZone: isBuyZone && currentPrice <= activeEntry * 1.05,
     tranche: activeTranche,
     entryPrice: activeEntry, 
     target: finalTarget,
@@ -176,58 +163,34 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
 
 /**
  * STRATEGY 3: Volatility Channel (Institutional Bollinger Band)
- * Sibling to Long Envelope. Settings: Length 200, StdDev 2.5
+ * Buy: Price LOW <= Lower Band (SMA 200 - 2.5 SD)
+ * Target: Upper Band (SMA 200 + 2.5 SD)
  */
 export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd: number = 2.5) {
-  if (!quotes || quotes.length < length + 1) return { isBuyZone: false };
+  if (!quotes || quotes.length < length) return { isBuyZone: false };
 
   const prices = quotes.map(q => q.close);
   const latestIdx = prices.length - 1;
   const currentPrice = prices[latestIdx];
-
   const smaValues = calculateSMA(prices, length);
+  const sma = smaValues[latestIdx];
   
-  let activeEntry = 0;
-  let activeTarget = 0;
-  let activeSignalDate = "";
-  let isPositionOpen = false;
+  const window = prices.slice(latestIdx - length + 1, latestIdx + 1);
+  const squareDiffs = window.map(v => Math.pow(v - sma, 2));
+  const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / length;
+  const stdDev = Math.sqrt(avgSquareDiff);
 
-  for (let i = length; i < prices.length; i++) {
-    const sma = smaValues[i];
-    const window = prices.slice(i - length + 1, i + 1);
-    const mean = sma;
-    const squareDiffs = window.map(v => Math.pow(v - mean, 2));
-    const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / length;
-    const stdDev = Math.sqrt(avgSquareDiff);
+  const lowerBand = Math.round(sma - stdDev * sd);
+  const upperBand = Math.round(sma + stdDev * sd);
 
-    const lowerBand = mean - stdDev * sd;
-    const upperBand = mean + stdDev * sd;
-
-    if (!isPositionOpen && quotes[i].low <= lowerBand) {
-      if (i + 1 < prices.length) {
-        isPositionOpen = true;
-        activeEntry = Math.round(quotes[i + 1].close); 
-        activeTarget = Math.round(upperBand); 
-        const dateVal = quotes[i].date;
-        activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
-      }
-    }
-
-    if (isPositionOpen && quotes[i].high >= activeTarget) {
-      isPositionOpen = false;
-    }
-  }
-
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
-  const inObservation = isPositionOpen && currentPrice > activeEntry * 1.05;
+  const isBuyZone = quotes[latestIdx].low <= lowerBand;
 
   return {
-    isBuyZone: isActuallyInBuyRange,
-    inObservation,
-    entryPrice: activeEntry,
-    target: activeTarget,
+    isBuyZone,
+    entryPrice: lowerBand,
+    target: upperBand,
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate
+    triggerDate: isBuyZone ? (typeof quotes[latestIdx].date === 'string' ? quotes[latestIdx].date : (quotes[latestIdx].date as Date).toISOString()).split('T')[0] : undefined
   };
 }
 
@@ -243,12 +206,9 @@ export function calculateSMAStacking(quotes: Quote[]) {
   const idx = prices.length - 1;
 
   const isStacked = prices[idx] < sma20[idx] && sma20[idx] < sma50[idx] && sma50[idx] < sma200[idx];
-  const isActuallyInBuyRange = isStacked && prices[idx] <= prices[idx] * 1.05; // Placeholder for consistency
-  const inObservation = isStacked && prices[idx] > prices[idx] * 1.05;
 
   return {
-    isBuyZone: isActuallyInBuyRange,
-    inObservation,
+    isBuyZone: isStacked,
     entryPrice: Math.round(prices[idx]),
     target: Math.round(sma200[idx]),
     currentPrice: Math.round(prices[idx])
@@ -266,11 +226,9 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
   const currentPrice = quotes[quotes.length - 1].close;
 
   const isAtSupport = currentPrice <= low52 * 1.05;
-  const inObservation = currentPrice > low52 * 1.05 && currentPrice <= low52 * 1.15;
 
   return {
     isBuyZone: isAtSupport,
-    inObservation,
     entryPrice: Math.round(low52),
     target: Math.round(high52),
     currentPrice: Math.round(currentPrice)
@@ -299,12 +257,9 @@ export function calculateSRStrategy(quotes: Quote[]) {
       break;
     }
   }
-  const isActuallyInBuyRange = supportLevel > 0 && currentPrice <= supportLevel * 1.05;
-  const inObservation = supportLevel > 0 && currentPrice > supportLevel * 1.05;
 
   return {
-    isBuyZone: isActuallyInBuyRange,
-    inObservation,
+    isBuyZone: supportLevel > 0,
     entryPrice: Math.round(supportLevel),
     target: Math.round(supportLevel * 1.30),
     currentPrice: Math.round(currentPrice)
@@ -328,12 +283,9 @@ export function calculateRHS(quotes: Quote[]) {
   const l3 = localLows[localLows.length - 1], l2 = localLows[localLows.length - 2], l1 = localLows[localLows.length - 3];
   if (l2.price < l1.price * 0.97 && l2.price < l3.price * 0.97 && Math.abs(l1.price - l3.price) / l1.price < 0.05) {
     const neckline = Math.max(...prices.slice(l1.idx, l3.idx));
-    const isActuallyInBuyRange = currentPrice >= neckline * 0.95 && currentPrice <= neckline * 1.05;
-    const inObservation = currentPrice > neckline * 1.05 && currentPrice <= neckline * 1.15;
     
     return { 
-      isBuyZone: isActuallyInBuyRange, 
-      inObservation,
+      isBuyZone: currentPrice >= neckline * 0.95 && currentPrice <= neckline * 1.05, 
       entryPrice: Math.round(neckline), 
       target: Math.round(neckline + (neckline - l2.price)), 
       currentPrice: Math.round(currentPrice) 
@@ -353,13 +305,9 @@ export function calculateCupHandle(quotes: Quote[]) {
   const recentHigh = Math.max(...prices.slice(-lookback, -20));
   const recentLow = Math.min(...prices.slice(-lookback, -20));
   const cupDepth = (recentHigh - recentLow) / recentHigh;
-  if (cupDepth > 0.15 && cupDepth < 0.50 && currentPrice >= recentHigh * 0.90 && currentPrice <= recentHigh * 1.15) {
-    const isActuallyInBuyRange = currentPrice >= recentHigh * 0.90 && currentPrice <= recentHigh * 1.05;
-    const inObservation = currentPrice > recentHigh * 1.05 && currentPrice <= recentHigh * 1.15;
-    
+  if (cupDepth > 0.15 && cupDepth < 0.50 && currentPrice >= recentHigh * 0.90 && currentPrice <= recentHigh * 1.05) {
     return { 
-      isBuyZone: isActuallyInBuyRange, 
-      inObservation,
+      isBuyZone: true, 
       entryPrice: Math.round(recentHigh), 
       target: Math.round(recentHigh + (recentHigh - recentLow)), 
       currentPrice: Math.round(currentPrice) 
@@ -376,21 +324,19 @@ export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any, bas
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
   
-  // Use provided ATH (for tests) or calculate from history
   const ath = providedATH || Math.max(...quotes.map(q => q.high));
   const drawdown = ((ath - currentPrice) / ath) * 100;
   
-  // Fundamental Filter: Improving Quarterly PAT
   const pat = screenerData?.quarterlyNetProfits || [];
   const isImproving = pat.length >= 3 && pat[pat.length - 1] > pat[pat.length - 2];
   
-  const isBuyZone = drawdown >= 66.5; // Threshold for 67% reset
+  const isBuyZone = drawdown >= 66.5; 
   const verdict = (isBuyZone && isImproving) ? 'QUALIFIED' : 'WATCHLIST';
 
   return { 
     isBuyZone, 
     verdict,
-    entryPrice: Math.round(ath * 0.33), // Standard 67% reset target
+    entryPrice: Math.round(ath * 0.33), 
     target: Math.round(ath * 0.67), 
     currentPrice: Math.round(currentPrice),
     drawdown: Math.round(drawdown)
@@ -406,12 +352,10 @@ export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
   const latestIdx = prices.length - 1;
   const currentPrice = prices[latestIdx];
 
-  // Look for a 20% rally in any 10-bar window within the last year
   let rallyOrigin = 0;
   let rallyFound = false;
   let barsSinceRally = 0;
 
-  // Scan back from current price to find the most recent rally origin
   for (let i = latestIdx - 10; i >= Math.max(0, latestIdx - 300); i--) {
     const startPrice = prices[i];
     const maxInWindow = Math.max(...prices.slice(i, i + 10));
@@ -420,14 +364,13 @@ export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
     if (rallyGain >= 0.20) {
       rallyOrigin = startPrice;
       rallyFound = true;
-      barsSinceRally = latestIdx - (i + 10); // Measured from end of rally window
+      barsSinceRally = latestIdx - (i + 10); 
       break; 
     }
   }
 
-  if (!rallyFound || barsSinceRally > 252) return null; // Strict institutional 1-year limit
+  if (!rallyFound || barsSinceRally > 252) return null; 
 
-  // A stock is "Qualified" if it returns to the origin within 5% tolerance
   const isRetesting = currentPrice <= rallyOrigin * 1.05 && currentPrice >= rallyOrigin * 0.95;
   const verdict = isRetesting ? 'QUALIFIED' : 'WATCHLIST';
 

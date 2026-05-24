@@ -605,7 +605,6 @@ app.get('/api/backtest/envelope', async (req, res) => {
         reason: audit.reason,
         auditMetrics: audit.metrics,
         isBuyZone: !!strategyData?.isBuyZone, 
-        inObservation: !!strategyData?.inObservation,
         marketCap: snap.quote.marketCap, 
         sector: MANUAL_SECTOR_MAP[baseSymbol] || snap.screener?.industry || 'General', 
         abcd: calculateABCDLevels(entryPrice || lastQuote.close, snap.quote.marketCap, basketId) 
@@ -614,7 +613,6 @@ app.get('/api/backtest/envelope', async (req, res) => {
     res.json({ 
       allStocks: results, 
       open: results.filter(r => r.isBuyZone && r.isPass), 
-      observation: results.filter(r => r.inObservation && r.isPass),
       rejected: results.filter(r => !r.isPass) 
     });
   } catch (e: any) { res.status(500).json({ error: e.message }); }

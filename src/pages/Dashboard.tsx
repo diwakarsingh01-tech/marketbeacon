@@ -191,7 +191,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const neutral = data.allStocks.filter((r: any) => !r.isBuyZone && r.isPass);
     const watchlist = data.allStocks;
 
-    if (activeTab === 'hold') return watchlist;
+    if (activeTab === 'hold') return watchlist; // Keeping 'hold' ID as Watchlist to avoid breaking type
     if (activeTab === 'neutral') return neutral;
     if (activeTab === 'rejected') return rejected;
     if (activeTab === 'open') return open;
@@ -409,10 +409,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       <div className="flex bg-slate-100/50 p-1.5 rounded-[2rem] border border-slate-100 w-fit overflow-x-auto no-scrollbar shadow-inner">
          {[
            { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => r.isBuyZone && r.isPass).length || 0 },
-           { id: 'hold', label: 'Observation', count: data?.allStocks?.filter((r: any) => r.inObservation && r.isPass).length || 0 },
-           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => !r.isBuyZone && !r.inObservation && r.isPass).length || 0 },
+           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => !r.isBuyZone && r.isPass).length || 0 },
            { id: 'rejected', label: 'Rejected', count: data?.allStocks?.filter((r: any) => !r.isPass).length || 0 },
-           { id: 'watchlist', label: 'Watchlist', count: data?.allStocks?.length || 0 },
+           { id: 'hold', label: 'Watchlist', count: data?.allStocks?.length || 0 },
          ].map(tab => (
            <button 
              key={tab.id} 
