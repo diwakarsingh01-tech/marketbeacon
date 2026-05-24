@@ -175,27 +175,30 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   if (capCr >= 65000) gapPercent = 10; // Large Cap
   else if (capCr < 20000) gapPercent = 20; // Small Cap
 
-  // TABLE ANCHOR: Entry A is the B1 EMA value (The Orange Line)
-  const a_point = b1_open ? b1_ema_at_trigger : ema200[latestIdx];
-  const b_point = a_point * 0.86;
+  // Institutional Logic:
+  // Base Price (Entry A) = Orange Line (EMA 200)
+  // Target B1 = EMA * 1.14
+  // Target B2 = EMA (Mean Reversion)
+  const a_point = b1_open ? Math.round(b1_ema_at_trigger) : Math.round(ema200[latestIdx]);
+  const b_point = Math.round(a_point * 0.86);
 
-  const finalEntryPrice = a_point;
-  const finalTarget = b2_open ? b2_target : (b1_open ? b1_target : a_point * 1.14);
+  // If both open, show B2 target (as it's the current objective)
+  const finalTarget = b2_open ? a_point : (b1_open ? Math.round(a_point * 1.14) : Math.round(a_point * 1.14));
   const finalTriggerDate = b1_open ? b1_date : undefined;
   const tranche = b2_open ? 'B2' : (b1_open ? 'B1' : 'WATCHLIST');
 
   return {
     isBuyZone,
     tranche,
-    entryPrice: finalEntryPrice, 
+    entryPrice: a_point, // Anchored to Orange line for the table
     target: finalTarget,
-    currentPrice,
+    currentPrice: Math.round(currentPrice),
     triggerDate: finalTriggerDate,
     abcd: {
       a: a_point,
       b: b_point,
-      c: b_point * (1 - gapPercent/100),
-      d: b_point * (1 - 2 * gapPercent/100),
+      c: Math.round(b_point * (1 - gapPercent/100)),
+      d: Math.round(b_point * (1 - 2 * gapPercent/100)),
       gap: gapPercent
     }
   };
