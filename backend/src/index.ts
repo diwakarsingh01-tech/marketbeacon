@@ -356,7 +356,7 @@ async function validateBatch9(symbol: string, snap: any) {
 
   let growthScore = 15;
   if (!salesAtATH) growthScore -= 5;
-  if (!profitAtATH) growthScore -= 10; 
+  if (!profitAtATH) growthScore -= 15; // STRICT: -15 if Profit not at ATH
 
   const growthQuality = {
     score: Math.max(0, growthScore),
@@ -415,14 +415,14 @@ async function validateBatch9(symbol: string, snap: any) {
   // --- INSTITUTIONAL HARD REJECTION RULES ---
   let isHardReject = false;
   if (!isETF) {
-    if (!isFinance && debtToEquity > 0.8) { isHardReject = true; auditLog.push('Auto-Reject: Excessive Debt'); }
+    if (!isFinance && debtToEquity > 0.8) { isHardReject = true; auditLog.push('Auto-Reject: Excessive Debt (>0.8)'); }
     if (pledged >= 5) { isHardReject = true; auditLog.push('Auto-Reject: High Pledging (>5%)'); }
-    if (smartMoneyTotal < 40) { isHardReject = true; auditLog.push('Auto-Reject: Low Smart Money'); }
+    if (smartMoneyTotal < 40) { isHardReject = true; auditLog.push('Auto-Reject: Low Smart Money (<40%)'); }
   }
 
   // Pro-Level Conclusion Logic
   let conclusion = 'INSTITUTIONAL GRADE COMPLIANT';
-  const passThreshold = 75; // RAISED: From 60 to 75 for Institutional Quality
+  const passThreshold = 75; // INSTITUTIONAL BAR
   if (isHardReject || finalScore < passThreshold) conclusion = 'SPECULATIVE GRADE - HIGH RISK';
   else if (finalScore < 85) conclusion = 'INVESTMENT GRADE - MODERATE';
   else if (finalScore >= 85) conclusion = 'ELITE CORE - TOP 1% SELECTION';
@@ -454,29 +454,24 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     const symbol = (req.query.symbol as string);
     if (!symbol) return res.status(400).json({ error: 'Symbol required' });
 
-    let snapshot = getMarketSnapshot();
+    const snapshot = getMarketSnapshot();
     let snap = snapshot[symbol];
 
-    // Pro-Level: Smart Refresh Logic (Aggressive)
+    // Performance Optimization: Background Smart Refresh (Don't block the UI)
     const sixHoursAgo = Date.now() - (6 * 60 * 60 * 1000);
     const isStale = !snap || new Date(snap.lastUpdated).getTime() < sixHoursAgo;
     
+    // Quality Check: Trigger refresh if data is missing or highly suspicious
     const shCheck = snap?.screener?.shareholding || {};
-    const peMed = snap?.screener?.peMedians || {};
-    
-    // Trigger refresh if data is missing or suspicious (Zeros in critical fields)
-    const isLowQuality = !snap || 
-                         (shCheck.promoter === 0 && shCheck.fii === 0 && shCheck.dii === 0) || 
-                         (!peMed.pe3Y || peMed.pe3Y === 25.5 || peMed.pe3Y === 0);
+    const isLowQuality = !snap || (shCheck.promoter === 0 && shCheck.fii === 0);
 
     if (isStale || isLowQuality) {
-      console.log(`🔄 [SMART REFRESH] Quality trigger for ${symbol}...`);
-      await updateMarketSnapshot([symbol]);
-      snapshot = getMarketSnapshot();
-      snap = snapshot[symbol];
+      console.log(`🔄 [ASYNC REFRESH] Triggered for ${symbol}...`);
+      updateMarketSnapshot([symbol]).catch(e => console.error('Async Refresh Error:', e.message));
     }
 
-    if (!snap) return res.status(404).json({ error: 'Stock not found in universe' });
+    // If we have ANY data, return it immediately. Don't wait for the refresh.
+    if (!snap) return res.status(404).json({ error: 'Initial data load in progress. Please refresh in 30 seconds.' });
 
     const audit = await validateBatch9(symbol, snap);
     const scr = snap.screener || {};
