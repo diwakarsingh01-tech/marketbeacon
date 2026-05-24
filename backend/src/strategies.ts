@@ -148,8 +148,13 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   else if (b1_open) { activeEntry = b1_entry_price; finalTarget = b1_target; activeTranche = 'B1'; }
   else { activeTranche = 'WATCHLIST'; }
 
+  // Institutional Change: Strict 5% Buying Window
+  // A stock is only in "Buy Zone" if CMP is between Entry and Entry + 5%
+  const buyRangeUpper = activeEntry * 1.05;
+  const isActuallyInBuyRange = isBuyZone && currentPrice <= buyRangeUpper;
+
   return {
-    isBuyZone,
+    isBuyZone: isActuallyInBuyRange,
     tranche: activeTranche,
     entryPrice: activeEntry, 
     target: finalTarget,
