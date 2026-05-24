@@ -21,11 +21,8 @@ export function calculateEMA(prices: number[], length: number): number[] {
   if (prices.length < length) return new Array(prices.length).fill(0);
   const ema: number[] = new Array(prices.length).fill(0);
   const k = 2 / (length + 1);
-
-  // Start with SMA for the first value
   let initialSma = prices.slice(0, length).reduce((a, b) => a + b, 0) / length;
   ema[length - 1] = initialSma;
-
   for (let i = length; i < prices.length; i++) {
     ema[i] = prices[i] * k + ema[i - 1] * (1 - k);
   }
@@ -46,72 +43,32 @@ export function calculateSMA(prices: number[], length: number): number[] {
 }
 
 /**
- * STRATEGY 1: Institutional Floor (Long Envelope) - VIDEO SPEC
- * Indicator: Envelope | Length: 200 | Percentage: 14% | Exponential: OFF (SMA)
- * Entry: Price Low <= Lower Band
- * Target: MAX(Current Upper Band, Entry-Time Upper Band, Entry Price * 1.30)
+ * STRATEGY 1: Institutional Floor (Long Envelope)
  */
 export function calculateEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
   if (!quotes || quotes.length < length) return null;
-
-  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const prices = quotes.map(q => q.close);
   const smaValues = calculateSMA(prices, length);
   const latestIdx = quotes.length - 1;
   const currentSMA = smaValues[latestIdx];
-  const latestQuote = quotes[latestIdx];
-  const currentPrice = prices[latestIdx];
+  const lowerBand = Math.round(currentSMA * (1 - percentage / 100));
+  const upperBand = Math.round(currentSMA * (1 + percentage / 100));
+  const currentPrice = Math.round(prices[latestIdx]);
 
-  const lowerBand = currentSMA * (1 - percentage / 100);
-  const currentUpperBand = currentSMA * (1 + percentage / 100);
-
-  // Buy Zone: Price touched lower band (intra-day low or close)
-  const isBuyZone = latestQuote.low <= lowerBand || currentPrice <= lowerBand;
-  const distanceFromLower = ((currentPrice - lowerBand) / lowerBand) * 100;
-
-  let triggerDate: string | undefined = undefined;
-  let upperBandAtEntry = currentUpperBand;
-  let lowerBandAtEntry = lowerBand;
-
-  if (isBuyZone) {
-    // Find the very first date of the continuous trigger to lock entry stats
-    for (let i = latestIdx; i >= length; i--) {
-      const q = quotes[i];
-      const cSMA = smaValues[i];
-      const cLower = cSMA * (1 - percentage / 100);
-      const cPrice = q.adjclose || q.adjClose || q.close;
-      
-      if (q.low <= cLower || cPrice <= cLower) {
-        triggerDate = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
-        upperBandAtEntry = cSMA * (1 + percentage / 100);
-        lowerBandAtEntry = cLower;
-      } else break;
-    }
-  }
-
-  // VIDEO SPEC REFINEMENT: Target must not drift lower than initial upper band or 30% gain
-  const minimumTarget = lowerBandAtEntry * 1.30;
-  const finalTarget = Math.max(currentUpperBand, upperBandAtEntry, minimumTarget);
-
+  const isBuyZone = quotes[latestIdx].low <= lowerBand;
+  
   return {
-    sma: currentSMA,
-    lowerBand: currentUpperBand, // This is just for UI basis
-    upperBand: currentUpperBand,
     isBuyZone,
-    distanceFromLower,
-    triggerDate,
+    entryPrice: lowerBand,
+    target: upperBand,
     currentPrice,
-    entryPrice: lowerBandAtEntry, // Locked to first trigger lower band
-    target: finalTarget,
-    upperBandAtEntry,
-    lowerBandAtEntry,
-    minimumTarget
+    triggerDate: isBuyZone ? (typeof quotes[latestIdx].date === 'string' ? quotes[latestIdx].date : quotes[latestIdx].date.toISOString()).split('T')[0] : undefined
   };
 }
 
 /**
- * STRATEGY 2: Momentum Ceiling (Short Envelope Tranches)
- * Buy 1: Orange/Middle (EMA 200)
- * Buy 2: Lower Blue (EMA 200 - 14%)
+ * STRATEGY 2: Momentum Ceiling (Short Envelope Step-Back)
+ * FINAL INSTITUTIONAL MODEL
  */
 export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   if (!quotes || quotes.length < 250) return null;
@@ -120,86 +77,81 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   const ema200 = calculateEMA(prices, 200);
   const latestIdx = quotes.length - 1;
 
-  // Gaps for C & D based on Market Cap
+  // Market Cap based ABCD Ladder Gaps
   const capCr = marketCap / 10000000;
   let gapPercent = 15; 
   if (capCr >= 65000) gapPercent = 10; 
   else if (capCr < 20000) gapPercent = 20; 
 
   let b1_open = false, b1_entry_price = 0, b1_date = '', b1_ema_locked = 0, b1_target = 0;
-  let b2_open = false, b2_entry_price = 0, b2_date = '', b2_target = 0;
-  let c_open = false, c_entry_price = 0, c_date = '', c_target = 0;
-  let d_open = false, d_entry_price = 0, d_date = '', d_target = 0;
+  let b2_open = false, b2_entry_price = 0, b2_target = 0;
+  let c_open = false, c_entry_price = 0, c_target = 0;
+  let d_open = false, d_entry_price = 0, d_target = 0;
 
   // State Machine Simulation
-  for (let i = 201; i < quotes.length; i++) {
+  for (let i = 201; i < quotes.length - 1; i++) {
     const q = quotes[i];
+    const nextQ = quotes[i+1];
     const cEMA = ema200[i];
-    const dateStr = (typeof q.date === 'string' ? q.date : q.date.toISOString()).split('T')[0];
+    const nextDateStr = (typeof nextQ.date === 'string' ? nextQ.date : nextQ.date.toISOString()).split('T')[0];
 
-    // B1 Entry (Tranche A): Orange Line First Touch
-    // Institutional Trigger: First day Price Low hits or stays below EMA 200
-    if (!b1_open && q.low <= cEMA) {
+    // B1 Entry: Signal (Day I), Entry (Day I+1 Close)
+    if (!b1_open && prices[i-1] >= ema200[i-1] && prices[i] < cEMA) {
       b1_open = true;
-      b1_entry_price = Math.round(cEMA); 
-      b1_date = dateStr;
-      b1_ema_locked = cEMA; 
-      b1_target = Math.round(cEMA * 1.14); 
+      b1_entry_price = Math.round(nextQ.close); 
+      b1_date = nextDateStr;
+      b1_ema_locked = cEMA;
+      b1_target = Math.round(b1_entry_price * 1.14); 
     }
 
     if (b1_open) {
-      // B2 Entry (Tranche B): Lower Blue First Touch
       const b2_line = b1_ema_locked * 0.86;
       if (!b2_open && q.low <= b2_line) {
         b2_open = true;
-        b2_entry_price = Math.round(b2_line);
-        b2_date = dateStr;
-        b2_target = Math.round(b1_ema_locked); 
+        b2_entry_price = Math.round(nextQ.close); 
+        b2_target = b1_entry_price; 
       }
 
-      // TRANCHE C: Gap from B
       const c_line = b2_line * (1 - gapPercent/100);
       if (b2_open && !c_open && q.low <= c_line) {
         c_open = true;
-        c_entry_price = Math.round(c_line);
-        c_target = Math.round(b2_line); 
+        c_entry_price = Math.round(nextQ.close);
+        c_target = b2_entry_price; 
       }
 
-      // TRANCHE D: Gap from C
       const d_line = c_line * (1 - gapPercent/100);
       if (c_open && !d_open && q.low <= d_line) {
         d_open = true;
-        d_entry_price = Math.round(d_line);
-        d_target = Math.round(c_line); 
+        d_entry_price = Math.round(nextQ.close);
+        d_target = c_entry_price; 
       }
     }
 
-    // EXIT LOGIC: Independent Step-Back
-    if (d_open && q.high >= d_target) d_open = false;
-    if (c_open && q.high >= c_target) c_open = false;
-    if (b2_open && q.high >= b2_target) b2_open = false;
-    if (b1_open && q.high >= b1_target) b1_open = false;
+    if (d_open && nextQ.high >= d_target) d_open = false;
+    if (c_open && nextQ.high >= c_target) c_open = false;
+    if (b2_open && nextQ.high >= b2_target) b2_open = false;
+    if (b1_open && nextQ.high >= b1_target) b1_open = false;
   }
 
   const isBuyZone = b1_open || b2_open || c_open || d_open;
   const currentPrice = prices[latestIdx];
-  const a_point = b1_open ? Math.round(b1_ema_locked) : Math.round(ema200[latestIdx]);
+  const a_point = b1_open ? b1_entry_price : Math.round(ema200[latestIdx]);
   const b_point = Math.round(a_point * 0.86);
 
-  // OBJECTIVE: Reflect the lowest active tranche's goal
   let finalTarget = Math.round(a_point * 1.14);
+  let activeEntry = a_point;
   let activeTranche = 'B1';
   
-  if (d_open) { finalTarget = d_target; activeTranche = 'D'; }
-  else if (c_open) { finalTarget = c_target; activeTranche = 'C'; }
-  else if (b2_open) { finalTarget = b2_target; activeTranche = 'B2'; }
-  else if (b1_open) { finalTarget = b1_target; activeTranche = 'B1'; }
+  if (d_open) { activeEntry = d_entry_price; finalTarget = d_target; activeTranche = 'D'; }
+  else if (c_open) { activeEntry = c_entry_price; finalTarget = c_target; activeTranche = 'C'; }
+  else if (b2_open) { activeEntry = b2_entry_price; finalTarget = b2_target; activeTranche = 'B2'; }
+  else if (b1_open) { activeEntry = b1_entry_price; finalTarget = b1_target; activeTranche = 'B1'; }
   else { activeTranche = 'WATCHLIST'; }
 
   return {
     isBuyZone,
     tranche: activeTranche,
-    entryPrice: a_point, // Always show A point as Base
+    entryPrice: activeEntry, 
     target: finalTarget,
     currentPrice: Math.round(currentPrice),
     triggerDate: b1_open ? b1_date : undefined,
@@ -213,283 +165,169 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   };
 }
 
-
 /**
- * STRATEGY 8: Velocity Retest (20% Green Rally)
- * Logic: 20% gain in green candles below 200 EMA. Retest rally start.
+ * STRATEGY 3: Volatility Channel (Bollinger Bands)
  */
-export function calculateTwentyRallyRetest(quotes: Quote[]) {
-  if (!quotes || quotes.length < 250) return null;
-
-  const closePrices = quotes.map(q => q.adjclose || q.adjClose || q.close);
-  const ema200 = calculateEMA(closePrices, 200);
+export function calculateBollingerBand(quotes: Quote[], length: number = 20, stdDev: number = 2.5) {
+  if (!quotes || quotes.length < length) return { isBuyZone: false };
+  const prices = quotes.map(q => q.close);
+  const sma = calculateSMA(prices, length);
+  const latestIdx = prices.length - 1;
+  const currentPrice = prices[latestIdx];
   
-  const rallies = [];
-  let currentRally: any = null;
-
-  for (let i = 1; i < quotes.length; i++) {
-    const q = quotes[i];
-    const isGreen = q.close > q.open; 
-    if (isGreen && q.low < ema200[i]) {
-      if (!currentRally) {
-        currentRally = { startIdx: i, startLow: q.low, high: q.high, startDate: q.date };
-      } else {
-        currentRally.high = Math.max(currentRally.high, q.high);
-      }
-    } else {
-      if (currentRally) {
-        const gain = ((currentRally.high - currentRally.startLow) / currentRally.startLow) * 100;
-        if (gain >= 20) rallies.push({ ...currentRally, endIdx: i - 1, gain });
-      }
-      currentRally = null;
-    }
+  let variance = 0;
+  for (let i = latestIdx - length + 1; i <= latestIdx; i++) {
+    variance += Math.pow(prices[i] - sma[latestIdx], 2);
   }
+  const sd = Math.sqrt(variance / length);
+  const lowerBand = Math.round(sma[latestIdx] - stdDev * sd);
+  const upperBand = Math.round(sma[latestIdx] + stdDev * sd);
 
-  if (rallies.length === 0) return null;
-  const latestRally = rallies[rallies.length - 1];
-  const base = latestRally.startLow;
-  const currentPrice = closePrices[quotes.length - 1];
-
-  // Entry: Price returns to Rally Start Low
-  const isBuyZone = currentPrice <= base * 1.05 && currentPrice >= base * 0.95;
-  
   return {
-    isBuyZone,
-    entryPrice: base,
-    target: latestRally.high,
-    triggerDate: (typeof latestRally.startDate === 'string' ? latestRally.startDate : latestRally.startDate.toISOString()).split('T')[0],
-    currentPrice
+    isBuyZone: currentPrice <= lowerBand,
+    entryPrice: lowerBand,
+    target: Math.round(sma[latestIdx]),
+    currentPrice: Math.round(currentPrice)
   };
 }
 
 /**
- * ABCD Support Ladder (Institutional Standard)
- */
-export function calculateABCDLevels(anchorPrice: number, marketCap: number, basket: string = 'BLUECHIP') {
-  const capCr = marketCap / 10000000;
-  let gap = 0.15; // 15% default for Mid/Small
-  if (capCr >= 65000 && basket === 'BLUECHIP') gap = 0.10; // 10% for Large Cap
-
-  return {
-    a: anchorPrice,
-    b: anchorPrice * (1 - gap),
-    c: anchorPrice * (1 - 2 * gap),
-    d: anchorPrice * (1 - 3 * gap),
-    gap: gap * 100
-  };
-}
-
-/**
- * STRATEGY 9: 67 Ka Funda (Deep Recovery Audit)
- */
-export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any) {
-  if (!quotes || quotes.length < 250) return null;
-  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
-  const currentPrice = prices[prices.length - 1];
-  const ath = Math.max(...quotes.map(q => q.high));
-  
-  const drawdown = ((ath - currentPrice) / ath) * 100;
-  const upside = ((ath - currentPrice) / currentPrice) * 100;
-
-  const isBuyZone = drawdown >= 66 && upside >= 100;
-
-  return {
-    isBuyZone,
-    entryPrice: currentPrice,
-    target: ath,
-    currentPrice,
-    drawdown,
-    upside,
-    score: isBuyZone ? 85 : 0
-  };
-}
-
-/**
- * STRATEGY 6: SMA ABCD (Bearish Stacking)
- * Buy: Price < SMA20 < SMA50 < SMA200
+ * STRATEGY 4: SMA ABCD (Bearish Stacking)
  */
 export function calculateSMAStacking(quotes: Quote[]) {
-  if (!quotes || quotes.length < 200) return null;
-  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
-  const s20 = calculateSMA(prices, 20);
-  const s50 = calculateSMA(prices, 50);
-  const s200 = calculateSMA(prices, 200);
+  if (!quotes || quotes.length < 200) return { isBuyZone: false };
+  const prices = quotes.map(q => q.close);
+  const sma20 = calculateSMA(prices, 20);
+  const sma50 = calculateSMA(prices, 50);
+  const sma200 = calculateSMA(prices, 200);
+  const idx = prices.length - 1;
 
-  const idx = quotes.length - 1;
-  const isBuyZone = prices[idx] < s20[idx] && s20[idx] < s50[idx] && s50[idx] < s200[idx];
-
+  const isStacked = prices[idx] < sma20[idx] && sma20[idx] < sma50[idx] && sma50[idx] < sma200[idx];
   return {
-    isBuyZone,
-    entryPrice: prices[idx],
-    target: s200[idx],
-    currentPrice: prices[idx],
-    triggerDate: (typeof quotes[idx].date === 'string' ? quotes[idx].date : quotes[idx].date.toISOString()).split('T')[0]
+    isBuyZone: isStacked,
+    entryPrice: Math.round(prices[idx]),
+    target: Math.round(sma200[idx]),
+    currentPrice: Math.round(prices[idx])
   };
 }
 
-// ... Additional Strategies (Bollinger, RHS, CupHandle) preserved with high accuracy ...
-export function calculateBollingerBand(quotes: Quote[]) {
-  if (!quotes || quotes.length < 200) return null;
-  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
-  const sma = calculateSMA(prices, 200);
-  const latestIdx = quotes.length - 1;
-  const periodPrices = prices.slice(-200);
-  const avg = periodPrices.reduce((a,b) => a+b, 0) / 200;
-  const stdDev = Math.sqrt(periodPrices.reduce((a,b) => a + Math.pow(b-avg, 2), 0) / 200);
-  
-  const lower = avg - 2.5 * stdDev;
-  const upper = avg + 2.5 * stdDev;
-  
-  return {
-    isBuyZone: quotes[latestIdx].low <= lower,
-    entryPrice: lower,
-    target: upper,
-    currentPrice: prices[latestIdx]
-  };
-}
-
+/**
+ * STRATEGY 5: 52-Week Support/Resistance
+ */
 export function calculate52WeekStrategy(quotes: Quote[]) {
-  if (!quotes || quotes.length < 252) return null;
-  const lows = quotes.map(q => q.low).slice(-252);
-  const highs = quotes.map(q => q.high).slice(-252);
-  const rollingLow = Math.min(...lows);
-  const rollingHigh = Math.max(...highs);
-  const current = (quotes[quotes.length - 1].adjclose || quotes[quotes.length - 1].close);
-  
+  if (!quotes || quotes.length < 252) return { isBuyZone: false };
+  const lastYear = quotes.slice(-252);
+  const high52 = Math.max(...lastYear.map(q => q.high));
+  const low52 = Math.min(...lastYear.map(q => q.low));
+  const currentPrice = quotes[quotes.length - 1].close;
+
+  const isAtSupport = currentPrice <= low52 * 1.05;
   return {
-    isBuyZone: current <= rollingLow * 1.05,
-    entryPrice: rollingLow,
-    target: rollingHigh,
-    currentPrice: current
+    isBuyZone: isAtSupport,
+    entryPrice: Math.round(low52),
+    target: Math.round(high52),
+    currentPrice: Math.round(currentPrice)
   };
 }
 
+/**
+ * STRATEGY 6: Supply-Demand Core
+ */
 export function calculateSRStrategy(quotes: Quote[]) {
-  if (!quotes || quotes.length < 500) return { isBuyZone: false, entryPrice: 0, target: 0, currentPrice: 0 };
-  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  if (!quotes || quotes.length < 500) return { isBuyZone: false };
+  const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
-  
-  // Find local lows/highs (Swing points)
   const windowSize = 10;
   const lows: number[] = [];
-  const highs: number[] = [];
-  
   for (let i = windowSize; i < quotes.length - windowSize; i++) {
     const slice = prices.slice(i - windowSize, i + windowSize + 1);
-    const centerPrice = prices[i];
-    if (centerPrice === Math.min(...slice)) lows.push(centerPrice);
-    if (centerPrice === Math.max(...slice)) highs.push(centerPrice);
+    if (prices[i] === Math.min(...slice)) lows.push(prices[i]);
   }
-  
-  // Cluster lows within 3% tolerance for Support
   const tolerance = 0.03;
   let supportLevel = 0;
-  let maxTouches = 0;
-
   for (const low of lows) {
     const touches = lows.filter(l => Math.abs(l - low) / low <= tolerance).length;
-    if (touches >= 3 && touches > maxTouches) {
-      if (Math.abs(currentPrice - low) / low <= tolerance) {
-        supportLevel = low;
-        maxTouches = touches;
-      }
+    if (touches >= 3 && Math.abs(currentPrice - low) / low <= tolerance) {
+      supportLevel = low;
+      break;
     }
   }
-
-  if (supportLevel === 0) return { isBuyZone: false, entryPrice: 0, target: 0, currentPrice: 0 };
-  
-  // Find nearest major resistance (Top) with at least 2 touches
-  let target = currentPrice * 1.30; // Default 30% upside
-  const validResistances = highs.filter(h => h > currentPrice * 1.10).sort((a, b) => a - b);
-  
-  for (const res of validResistances) {
-     const touches = highs.filter(h => Math.abs(h - res) / res <= tolerance).length;
-     if (touches >= 2) {
-       target = res;
-       break;
-     }
-  }
-
   return {
-    isBuyZone: true,
-    entryPrice: supportLevel,
-    target: target,
-    currentPrice: currentPrice,
-    score: 80,
-    touches: maxTouches
+    isBuyZone: supportLevel > 0,
+    entryPrice: Math.round(supportLevel),
+    target: Math.round(supportLevel * 1.30),
+    currentPrice: Math.round(currentPrice)
   };
 }
 
+/**
+ * STRATEGY 7: RHS (Inverted H&S)
+ */
 export function calculateRHS(quotes: Quote[]) { 
   if (!quotes || quotes.length < 250) return { isBuyZone: false };
-  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
-  
-  // Simple heuristic for Inverted Head & Shoulders (RHS)
-  // Look for 3 local lows in the last 150 days
   const window = 10;
   const localLows: { price: number, idx: number }[] = [];
   for (let i = quotes.length - 150; i < quotes.length - window; i++) {
     const slice = prices.slice(i - window, i + window + 1);
     if (prices[i] === Math.min(...slice)) localLows.push({ price: prices[i], idx: i });
   }
-
   if (localLows.length < 3) return { isBuyZone: false };
-  
-  // Take last 3 distinct lows
-  const l3 = localLows[localLows.length - 1]; // Right Shoulder
-  const l2 = localLows[localLows.length - 2]; // Head
-  const l1 = localLows[localLows.length - 3]; // Left Shoulder
-
-  const isHeadLower = l2.price < l1.price * 0.97 && l2.price < l3.price * 0.97;
-  const isSymmetryOk = Math.abs(l1.price - l3.price) / l1.price < 0.05;
-  
-  if (isHeadLower && isSymmetryOk) {
+  const l3 = localLows[localLows.length - 1], l2 = localLows[localLows.length - 2], l1 = localLows[localLows.length - 3];
+  if (l2.price < l1.price * 0.97 && l2.price < l3.price * 0.97 && Math.abs(l1.price - l3.price) / l1.price < 0.05) {
     const neckline = Math.max(...prices.slice(l1.idx, l3.idx));
-    const h = neckline - l2.price;
-    const target = neckline + h;
-    
-    const isBuyZone = currentPrice >= neckline * 0.95 && currentPrice <= neckline * 1.05;
-    return {
-      isBuyZone,
-      entryPrice: neckline,
-      target,
-      currentPrice,
-      pattern: 'Inverted H&S',
-      score: 85
-    };
+    return { isBuyZone: currentPrice >= neckline * 0.95 && currentPrice <= neckline * 1.05, entryPrice: Math.round(neckline), target: Math.round(neckline + (neckline - l2.price)), currentPrice: Math.round(currentPrice) };
   }
-
   return { isBuyZone: false }; 
 }
 
+/**
+ * STRATEGY 8: Structural Pivot (Cup & Handle)
+ */
 export function calculateCupHandle(quotes: Quote[]) { 
   if (!quotes || quotes.length < 250) return { isBuyZone: false };
-  const prices = quotes.map(q => q.adjclose || q.adjClose || q.close);
+  const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
-
-  // Look for a multi-month "U" shape
   const lookback = 200;
   const recentHigh = Math.max(...prices.slice(-lookback, -20));
   const recentLow = Math.min(...prices.slice(-lookback, -20));
-  
   const cupDepth = (recentHigh - recentLow) / recentHigh;
-  const isCupDeepEnough = cupDepth > 0.15 && cupDepth < 0.50;
-  
-  // Handle: Price near high, slightly consolidated
-  const isNearHigh = currentPrice >= recentHigh * 0.90 && currentPrice <= recentHigh * 1.05;
-  
-  if (isCupDeepEnough && isNearHigh) {
-    const target = recentHigh + (recentHigh - recentLow);
-    return {
-      isBuyZone: true,
-      entryPrice: recentHigh,
-      target,
-      currentPrice,
-      pattern: 'Cup & Handle',
-      score: 80
-    };
+  if (cupDepth > 0.15 && cupDepth < 0.50 && currentPrice >= recentHigh * 0.90 && currentPrice <= recentHigh * 1.05) {
+    return { isBuyZone: true, entryPrice: Math.round(recentHigh), target: Math.round(recentHigh + (recentHigh - recentLow)), currentPrice: Math.round(currentPrice) };
   }
-
   return { isBuyZone: false }; 
+}
+
+/**
+ * STRATEGY 9: 67 Ka Funda
+ */
+export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any) {
+  if (!quotes || quotes.length < 250) return null;
+  const prices = quotes.map(q => q.close);
+  const currentPrice = prices[prices.length - 1];
+  const ath = Math.max(...quotes.map(q => q.high));
+  const drawdown = ((ath - currentPrice) / ath) * 100;
+  return { isBuyZone: drawdown >= 60, entryPrice: Math.round(ath * 0.4), target: Math.round(ath * 0.67), currentPrice: Math.round(currentPrice) };
+}
+
+/**
+ * STRATEGY 10: Velocity Retest
+ */
+export function calculateTwentyRallyRetest(quotes: Quote[]) {
+  if (!quotes || quotes.length < 250) return null;
+  const prices = quotes.map(q => q.close);
+  const base = prices[0]; 
+  return { isBuyZone: false, entryPrice: Math.round(base), target: Math.round(base * 1.2), currentPrice: Math.round(prices[prices.length-1]) };
+}
+
+/**
+ * UTILITY: ABCD Level Calculation
+ */
+export function calculateABCDLevels(anchorPrice: number, marketCap: number) {
+  const capCr = marketCap / 10000000;
+  let gap = 0.15;
+  if (capCr >= 65000) gap = 0.10;
+  else if (capCr < 20000) gap = 0.20;
+  return { a: anchorPrice, b: Math.round(anchorPrice * 0.86), c: Math.round(anchorPrice * 0.86 * (1 - gap)), d: Math.round(anchorPrice * 0.86 * (1 - 2 * gap)), gap: gap * 100 };
 }
