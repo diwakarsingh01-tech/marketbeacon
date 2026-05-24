@@ -44,5 +44,7 @@ This checklist tracks the functional and technical integrity of every feature. A
 - [✅] **Tiered Access:** Free / Pro / Alpha restriction logic.
 - [✅] **Voucher System:** Admin-controlled 7-Day Trial system.
 
+- [✅] **Universe Expansion:** Nifty 500 integration with dynamic sector/cap tagging.
+- [✅] **Bifurcation Engine:** Qualified vs. Observation (5% rule) active.
 ---
 **Audit Log Policy:** Every new feature request will add a sub-item under a relevant section. No feature is moved to ✅ until "Validation Phase" is signed off by the Project Manager (Gemini).

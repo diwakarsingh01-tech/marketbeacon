@@ -10,6 +10,7 @@ import * as cheerio from 'cheerio';
 import { OAuth2Client } from 'google-auth-library';
 import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot, fetchScreenerData, initSnapshotCache } from './screener.js';
 import { initDB, getDB } from './db.js';
+import { NIFTY_500 } from './universe.js';
 import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest } from './strategies.js';
 
 const yahooFinance = new YahooFinance();
@@ -58,7 +59,8 @@ const BASKETS: Record<string, string[]> = {
     'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES', 'RAILTEL', 'BEL', 
     'HAL', 'BEML', 'MAZDOCK', 'SOLARINDS', 'BDL', 'KPITTECH', 'COFORGE', 'PERSISTENT', 
     'TATAELXSI', 'ZENTEC', 'NEWGEN', 'MAPMYINDIA', 'CEINFO', 'TANLA', 'ROUTE', 'LATENTVIEW'
-  ] 
+  ],
+  'UNIVERSE': NIFTY_500.map(s => s.replace('.NS', ''))
 };
 
 // --- INSTITUTIONAL SECTOR MAPPING ---
@@ -227,6 +229,31 @@ app.get('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any,
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// --- Manual Snapshot Trigger ---
+app.post('/api/admin/update-snapshot', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const { basket = 'ALL' } = req.body;
+    let symbols = [];
+    
+    if (basket === 'UNIVERSE') {
+      symbols = BASKETS['UNIVERSE'];
+    } else if (basket === 'BLUECHIP') {
+      symbols = BASKETS['BLUECHIP'];
+    } else if (basket === 'HIGH_BETA') {
+      symbols = BASKETS['HIGH_BETA'];
+    } else if (basket === 'PROFIT') {
+      symbols = BASKETS['PROFIT'];
+    } else {
+      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT'], ...BASKETS['UNIVERSE']]));
+    }
+
+    console.log(`🚀 [ADMIN] Manual Snapshot Triggered for ${basket} (${symbols.length} symbols)`);
+    updateMarketSnapshot(symbols).catch(e => console.error('Background Snapshot Error:', e));
+    
+    res.json({ success: true, message: `Market Snapshot Update for ${basket} started in background.` });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
     const { code, tier, duration_days, max_uses } = req.body;
@@ -322,13 +349,28 @@ async function validateBatch9(symbol: string, snap: any) {
   }
 
   // Segment 3: Growth Quality (15 pts)
+  // Benchmark: Sales TTM and Net Profit TTM at All-Time High as confirmed by User.
+  const currentSales = safeParse(scr.currentSales);
+  const athSales = safeParse(scr.athSales);
+  const currentProfit = safeParse(scr.currentNetProfit);
+  const athProfit = safeParse(scr.athNetProfit);
+
+  const salesAtATH = currentSales >= (athSales * 0.98); // 2% tolerance for reporting lags
+  const profitAtATH = currentProfit >= (athProfit * 0.98);
+
+  let growthScore = 15;
+  if (!salesAtATH) growthScore -= 5;
+  if (!profitAtATH) growthScore -= 10; // Profit ATH is higher priority
+
   const growthQuality = {
-    score: 15,
+    score: Math.max(0, growthScore),
     max: 15,
     checks: [
-      { label: 'Institutional Growth', value: 'Steady', pass: true }
+      { label: 'Sales at ATH', value: `₹${currentSales}Cr`, pass: salesAtATH },
+      { label: 'Profit at ATH', value: `₹${currentProfit}Cr`, pass: profitAtATH }
     ]
   };
+  if (growthQuality.score < 15) totalScore -= (15 - growthQuality.score);
 
   // 4. Ownership Matrix (25 pts)
   // Benchmark: Smart Money > 70% as confirmed by User.
@@ -464,7 +506,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
 
     res.json({
       symbol,
-      version: '10.7.3-PRO', // Institutional Version Signature
+      version: '10.7.4-PRO', // Institutional Version Signature
       price: quote.regularMarketPrice || (snap.quotes && snap.quotes.length > 0 ? snap.quotes[snap.quotes.length - 1].close : 0),
       change: quote.regularMarketChangePercent || 0,
       marketCap: quote.marketCap || 0,
@@ -505,7 +547,18 @@ app.get('/api/backtest/envelope', async (req, res) => {
   try {
     const basketId = (req.query.basket as string) || 'BLUECHIP';
     const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
-    let symbols = basketId === 'PROFIT' ? Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']])) : (basketId === 'HIGH_BETA' ? Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']])) : BASKETS['BLUECHIP']);
+    
+    let symbols = [];
+    if (basketId === 'UNIVERSE') {
+      symbols = BASKETS['UNIVERSE'];
+    } else if (basketId === 'PROFIT') {
+      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']]));
+    } else if (basketId === 'HIGH_BETA') {
+      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']]));
+    } else {
+      symbols = BASKETS['BLUECHIP'];
+    }
+
     const snapshot = getMarketSnapshot();
     const results = [];
     for (const baseSymbol of symbols) {
@@ -545,7 +598,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
       results.push({ 
         symbol: baseSymbol, 
-        version: '10.7.3-PRO', // Updated Version Signature
+        version: '10.7.4-PRO', // Updated Version Signature
         entryTime: strategyData?.isBuyZone ? strategyData.triggerDate : null, 
         entryPrice, 
         strategy: currentStrat?.name || 'Institutional Matrix',
@@ -556,12 +609,18 @@ app.get('/api/backtest/envelope', async (req, res) => {
         reason: audit.reason,
         auditMetrics: audit.metrics,
         isBuyZone: !!strategyData?.isBuyZone, 
+        inObservation: !!strategyData?.inObservation,
         marketCap: snap.quote.marketCap, 
         sector: MANUAL_SECTOR_MAP[baseSymbol] || snap.screener?.industry || 'General', 
         abcd: calculateABCDLevels(entryPrice || lastQuote.close, snap.quote.marketCap, basketId) 
       });
     }
-    res.json({ allStocks: results, open: results.filter(r => r.isBuyZone && r.isPass), rejected: results.filter(r => !r.isPass) });
+    res.json({ 
+      allStocks: results, 
+      open: results.filter(r => r.isBuyZone && r.isPass), 
+      observation: results.filter(r => r.inObservation && r.isPass),
+      rejected: results.filter(r => !r.isPass) 
+    });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -650,29 +709,12 @@ async function startServer() {
     app.listen(PORT, () => console.log(`MarketBeacon Backend running on port ${PORT}`));
   } catch (e) { console.error(e); process.exit(1); }
 }
+
 function syncBaskets() {
   const dynamicProfit = getDynamicBasket();
   if (dynamicProfit.length > 0) BASKETS['PROFIT'] = dynamicProfit;
 }
-syncBaskets(); setInterval(syncBaskets, 60000);
-startServer();
-DB();
-    await initSnapshotCache();
-    initScreenerCron();
 
-    // Ephemeral Storage Fix: Trigger priority snapshot if empty
-    const cache = getMarketSnapshot();
-    if (Object.keys(cache).length <= 1) {
-      console.log('🚀 [STARTUP] Cache empty. Triggering priority Bluechip snapshot...');
-      updateMarketSnapshot(BASKETS['BLUECHIP']).catch(e => console.error('Startup Snapshot Failed:', e.message));
-    }
-
-    app.listen(PORT, () => console.log(`MarketBeacon Backend running on port ${PORT}`));
-  } catch (e) { console.error(e); process.exit(1); }
-}
-function syncBaskets() {
-  const dynamicProfit = getDynamicBasket();
-  if (dynamicProfit.length > 0) BASKETS['PROFIT'] = dynamicProfit;
-}
-syncBaskets(); setInterval(syncBaskets, 60000);
+syncBaskets(); 
+setInterval(syncBaskets, 60000);
 startServer();

@@ -20,12 +20,12 @@ interface DashboardPageProps {
 const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, refreshAuth } = useAuth();
+  const { user } = useAuth();
   const searchParams = new URLSearchParams(location.search);
   const strategyId = searchParams.get('strategy') || 'ENVELOPE_LONG';
-  
+
   const currentStrategy = STRATEGIES.find(s => s.id === strategyId) || STRATEGIES[0];
-  
+
   const [data, setData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeBasket, setActiveBasket] = useState<string>(currentStrategy.baskets[0]);
@@ -409,9 +409,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       <div className="flex bg-slate-100/50 p-1.5 rounded-[2rem] border border-slate-100 w-fit overflow-x-auto no-scrollbar shadow-inner">
          {[
            { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => r.isBuyZone && r.isPass).length || 0 },
-           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => !r.isBuyZone && r.isPass).length || 0 },
+           { id: 'hold', label: 'Observation', count: data?.allStocks?.filter((r: any) => r.inObservation && r.isPass).length || 0 },
+           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => !r.isBuyZone && !r.inObservation && r.isPass).length || 0 },
            { id: 'rejected', label: 'Rejected', count: data?.allStocks?.filter((r: any) => !r.isPass).length || 0 },
-           { id: 'hold', label: 'Watchlist', count: data?.allStocks?.length || 0 },
+           { id: 'watchlist', label: 'Watchlist', count: data?.allStocks?.length || 0 },
          ].map(tab => (
            <button 
              key={tab.id} 
@@ -469,6 +470,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       </section>
 
       <BrokerHub isOpen={showBrokerHub} onClose={() => setShowBrokerHub(false)} onImportComplete={handleImportHoldings} />
+    </div>
+  );
+};
+export default DashboardPage;
+te={handleImportHoldings} />
     </div>
   );
 };

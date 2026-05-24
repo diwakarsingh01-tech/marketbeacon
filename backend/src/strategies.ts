@@ -154,9 +154,11 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   // A stock is only in "Buy Zone" if CMP is between Entry and Entry + 5%
   const buyRangeUpper = activeEntry * 1.05;
   const isActuallyInBuyRange = isBuyZone && currentPrice <= buyRangeUpper;
+  const inObservation = isBuyZone && currentPrice > buyRangeUpper;
 
   return {
     isBuyZone: isActuallyInBuyRange,
+    inObservation,
     tranche: activeTranche,
     entryPrice: activeEntry, 
     target: finalTarget,
@@ -213,8 +215,12 @@ export function calculateSMAStacking(quotes: Quote[]) {
   const idx = prices.length - 1;
 
   const isStacked = prices[idx] < sma20[idx] && sma20[idx] < sma50[idx] && sma50[idx] < sma200[idx];
+  const isActuallyInBuyRange = isStacked && prices[idx] <= prices[idx] * 1.05; // Placeholder for consistency
+  const inObservation = isStacked && prices[idx] > prices[idx] * 1.05;
+
   return {
-    isBuyZone: isStacked && prices[idx] <= prices[idx] * 1.05, // Placeholder for consistency
+    isBuyZone: isActuallyInBuyRange,
+    inObservation,
     entryPrice: Math.round(prices[idx]),
     target: Math.round(sma200[idx]),
     currentPrice: Math.round(prices[idx])
@@ -287,7 +293,16 @@ export function calculateRHS(quotes: Quote[]) {
   const l3 = localLows[localLows.length - 1], l2 = localLows[localLows.length - 2], l1 = localLows[localLows.length - 3];
   if (l2.price < l1.price * 0.97 && l2.price < l3.price * 0.97 && Math.abs(l1.price - l3.price) / l1.price < 0.05) {
     const neckline = Math.max(...prices.slice(l1.idx, l3.idx));
-    return { isBuyZone: currentPrice >= neckline * 0.95 && currentPrice <= neckline * 1.05, entryPrice: Math.round(neckline), target: Math.round(neckline + (neckline - l2.price)), currentPrice: Math.round(currentPrice) };
+    const isActuallyInBuyRange = currentPrice >= neckline * 0.95 && currentPrice <= neckline * 1.05;
+    const inObservation = currentPrice > neckline * 1.05 && currentPrice <= neckline * 1.15;
+    
+    return { 
+      isBuyZone: isActuallyInBuyRange, 
+      inObservation,
+      entryPrice: Math.round(neckline), 
+      target: Math.round(neckline + (neckline - l2.price)), 
+      currentPrice: Math.round(currentPrice) 
+    };
   }
   return { isBuyZone: false }; 
 }
@@ -391,4 +406,10 @@ export function calculateABCDLevels(anchorPrice: number, marketCap: number) {
   if (capCr >= 20000) gap = 0.10;
   else if (capCr < 5000) gap = 0.20;
   return { a: anchorPrice, b: Math.round(anchorPrice * 0.86), c: Math.round(anchorPrice * 0.86 * (1 - gap)), d: Math.round(anchorPrice * 0.86 * (1 - 2 * gap)), gap: gap * 100 };
+}
+
+}
+ath.round(anchorPrice * 0.86 * (1 - 2 * gap)), gap: gap * 100 };
+}
+
 }
