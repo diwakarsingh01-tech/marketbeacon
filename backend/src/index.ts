@@ -59,8 +59,7 @@ const BASKETS: Record<string, string[]> = {
     'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES', 'RAILTEL', 'BEL', 
     'HAL', 'BEML', 'MAZDOCK', 'SOLARINDS', 'BDL', 'KPITTECH', 'COFORGE', 'PERSISTENT', 
     'TATAELXSI', 'ZENTEC', 'NEWGEN', 'MAPMYINDIA', 'CEINFO', 'TANLA', 'ROUTE', 'LATENTVIEW'
-  ],
-  'UNIVERSE': NIFTY_500.map(s => s.replace('.NS', ''))
+  ]
 };
 
 // --- INSTITUTIONAL SECTOR MAPPING ---
@@ -235,16 +234,14 @@ app.post('/api/admin/update-snapshot', authenticateToken, requireAdmin, async (r
     const { basket = 'ALL' } = req.body;
     let symbols = [];
     
-    if (basket === 'UNIVERSE') {
-      symbols = BASKETS['UNIVERSE'];
-    } else if (basket === 'BLUECHIP') {
+    if (basket === 'BLUECHIP') {
       symbols = BASKETS['BLUECHIP'];
     } else if (basket === 'HIGH_BETA') {
       symbols = BASKETS['HIGH_BETA'];
     } else if (basket === 'PROFIT') {
       symbols = BASKETS['PROFIT'];
     } else {
-      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT'], ...BASKETS['UNIVERSE']]));
+      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']]));
     }
 
     console.log(`🚀 [ADMIN] Manual Snapshot Triggered for ${basket} (${symbols.length} symbols)`);
@@ -544,9 +541,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
     const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
     
     let symbols = [];
-    if (basketId === 'UNIVERSE') {
-      symbols = BASKETS['UNIVERSE'];
-    } else if (basketId === 'PROFIT') {
+    if (basketId === 'PROFIT') {
       symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']]));
     } else if (basketId === 'HIGH_BETA') {
       symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']]));

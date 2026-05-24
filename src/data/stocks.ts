@@ -1,14 +1,14 @@
 export const STRATEGIES = [
-  { id: 'ENVELOPE_LONG', name: 'Institutional Floor', baskets: ['BLUECHIP', 'UNIVERSE'], isLive: true, tier: 'free' },
-  { id: 'ENVELOPE_SHORT', name: 'Momentum Ceiling', baskets: ['BLUECHIP', 'UNIVERSE'], isLive: true, tier: 'free' },
-  { id: 'BOLLINGER', name: 'Volatility Channel', baskets: ['BLUECHIP', 'UNIVERSE'], isLive: true, tier: 'free' },
-  { id: 'CUP_HANDLE_ABCD', name: 'Structural Pivot', baskets: ['BLUECHIP', 'HIGH_BETA', 'UNIVERSE'], isLive: true, tier: 'pro' },
-  { id: 'RHS_ABCD', name: 'Dynamic Reversal', baskets: ['BLUECHIP', 'HIGH_BETA', 'UNIVERSE'], isLive: true, tier: 'pro' },
-  { id: 'SMA_ABCD', name: 'SMA-ABCD', baskets: ['BLUECHIP', 'HIGH_BETA', 'UNIVERSE'], isLive: true, tier: 'pro' },
-  { id: '52W_HIGH_LOW', name: '52W High/Low', baskets: ['BLUECHIP', 'HIGH_BETA', 'UNIVERSE'], isLive: true, tier: 'pro' },
-  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT', 'UNIVERSE'], isLive: true, tier: 'alpha' },
-  { id: 'SIXTY_SEVEN_FUNDA', name: 'Deep Recovery Audit', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT', 'UNIVERSE'], isLive: true, tier: 'alpha' },
-  { id: 'SR_STRATEGY', name: 'Supply-Demand Core', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT', 'UNIVERSE'], isLive: true, tier: 'alpha' },
+  { id: 'ENVELOPE_LONG', name: 'Institutional Floor', baskets: ['BLUECHIP'], isLive: true, tier: 'free' },
+  { id: 'ENVELOPE_SHORT', name: 'Momentum Ceiling', baskets: ['BLUECHIP'], isLive: true, tier: 'free' },
+  { id: 'BOLLINGER', name: 'Volatility Channel', baskets: ['BLUECHIP'], isLive: true, tier: 'free' },
+  { id: 'CUP_HANDLE_ABCD', name: 'Structural Pivot', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true, tier: 'pro' },
+  { id: 'RHS_ABCD', name: 'Dynamic Reversal', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true, tier: 'pro' },
+  { id: 'SMA_ABCD', name: 'SMA-ABCD', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true, tier: 'pro' },
+  { id: '52W_HIGH_LOW', name: '52W High/Low', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true, tier: 'pro' },
+  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'alpha' },
+  { id: 'SIXTY_SEVEN_FUNDA', name: 'Deep Recovery Audit', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'alpha' },
+  { id: 'SR_STRATEGY', name: 'Supply-Demand Core', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'alpha' },
 ];
 
 export const BASKETS: Record<string, string[]> = {
@@ -35,8 +35,7 @@ export const BASKETS: Record<string, string[]> = {
     'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES', 'RAILTEL', 'BEL', 
     'HAL', 'BEML', 'MAZDOCK', 'SOLARINDS', 'BDL', 'KPITTECH', 'COFORGE', 'PERSISTENT', 
     'TATAELXSI', 'ZENTEC', 'NEWGEN', 'MAPMYINDIA', 'CEINFO', 'TANLA', 'ROUTE', 'LATENTVIEW'
-  ],
-  'UNIVERSE': []
+  ]
 };
 
 // Simplified stocks for backward compatibility if needed
