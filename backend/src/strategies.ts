@@ -464,16 +464,21 @@ export function calculateCupHandle(quotes: Quote[]) {
     const cupLow = Math.min(...cupSlice);
     const cupDepth = (neckline - cupLow) / neckline;
 
-    // Rule: Rims should be relatively level (max 5% diff) and depth should be significant
+    // Rule: Rims should be relatively level (max 5% diff) 
+    // RULE HARDENING: Minimum 30% depth to avoid 'small necks'
     const rimsLevel = Math.abs(rim1.price - rim2.price) / neckline <= 0.05;
-    const hasProperDepth = cupDepth >= 0.15 && cupDepth <= 0.50;
+    const hasProperDepth = cupDepth >= 0.30 && cupDepth <= 0.65;
 
     if (rimsLevel && hasProperDepth) {
       // Trigger on Breakout: Price crosses neckline after rim2
       if (!isPositionOpen && quotes[i].close > neckline && i > rim2.idx) {
         isPositionOpen = true;
         activeEntry = Math.round(quotes[i].close);
-        activeTarget = Math.round(activeEntry + (neckline - cupLow));
+        
+        // TARGET LOGIC: Min 30% of price OR Full Depth (whichever is higher)
+        const verticalGain = neckline - cupLow;
+        activeTarget = Math.round(Math.max(activeEntry * 1.30, activeEntry + verticalGain));
+        
         const dateVal = quotes[i].date;
         activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
       }
