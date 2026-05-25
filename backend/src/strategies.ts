@@ -234,11 +234,15 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd
 }
 
 /**
- * STRATEGY 4: SMA ABCD (Bearish Stacking)
- * Logic: Triggers when short term trend is below long term trend.
+ * STRATEGY 4: MA 20/50/200 Stacking (Bulk Buying Model)
+ * Logic:
+ * 1. Entry (Deep Depressed Zone): Price < SMA 20 < SMA 50 < SMA 200
+ * 2. Exit (Bullish Reversal): Price > SMA 20 > SMA 50 > SMA 200
+ * 3. Exception: Only sell if current price >= avg_entry_price (Profit/Cost safe).
+ * 4. Scope: Intended for 'Super 45' (Bluechip) low-vol stocks.
  */
 export function calculateSMAStacking(quotes: Quote[]) {
-  if (!quotes || quotes.length < 250) return { isBuyZone: false };
+  if (!quotes || quotes.length < 300) return { isBuyZone: false };
 
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
@@ -248,33 +252,38 @@ export function calculateSMAStacking(quotes: Quote[]) {
 
   let isPositionOpen = false;
   let activeEntry = 0;
-  let activeTarget = 0;
   let activeSignalDate = "";
 
   for (let i = 200; i < quotes.length; i++) {
-    const isStacked = prices[i] < sma20[i] && sma20[i] < sma50[i] && sma50[i] < sma200[i];
+    const isBearishStacked = prices[i] < sma20[i] && sma20[i] < sma50[i] && sma50[i] < sma200[i];
+    const isBullishReversed = prices[i] > sma20[i] && sma20[i] > sma50[i] && sma50[i] > sma200[i];
 
-    if (!isPositionOpen && isStacked) {
+    // Bulk Buy in Deep Depressed Zone
+    if (!isPositionOpen && isBearishStacked) {
       isPositionOpen = true;
       activeEntry = Math.round(prices[i]);
-      activeTarget = Math.round(sma200[i]);
       const dateVal = quotes[i].date;
-      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
     }
 
-    if (isPositionOpen && quotes[i].high >= activeTarget) {
-      isPositionOpen = false;
+    // Profit-Safe Exit on Full Reversal
+    if (isPositionOpen && isBullishReversed) {
+      if (prices[i] >= activeEntry) {
+        isPositionOpen = false;
+      }
     }
   }
 
+  // Institutional Buy-Zone Rule: Within 5% of deep depressed entry
   const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
 
   return {
     isBuyZone: isActuallyInBuyRange,
     entryPrice: activeEntry,
-    target: activeTarget,
+    target: Math.round(sma200[prices.length - 1] * 1.15), // Theoretical objective
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate
+    triggerDate: activeSignalDate,
+    tranche: "BULK BUY"
   };
 }
 

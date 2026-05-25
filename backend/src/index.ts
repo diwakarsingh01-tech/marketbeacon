@@ -591,13 +591,18 @@ app.get('/api/backtest/envelope', async (req, res) => {
       const audit = await validateBatch9(baseSymbol, snap);
       const entryPrice = strategyData?.entryPrice || 0;
       const currentStrat = STRATEGIES.find(s => s.id === strategyId);
+      
+      let strategyName = currentStrat?.name || 'Institutional Matrix';
+      if (strategyData?.tranche && strategyData.tranche !== 'WATCHLIST') {
+        strategyName = `${strategyName} (${strategyData.tranche})`;
+      }
 
       results.push({ 
         symbol: baseSymbol, 
-        version: '10.7.4-PRO', // Updated Version Signature
+        version: '10.9.5-PRO', 
         entryTime: strategyData?.isBuyZone ? strategyData.triggerDate : null, 
         entryPrice, 
-        strategy: currentStrat?.name || 'Institutional Matrix',
+        strategy: strategyName,
         target: strategyData?.target || 0, 
         currentPrice: lastQuote.close, 
         isPass: audit.isPass, 
@@ -607,7 +612,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
         isBuyZone: !!strategyData?.isBuyZone, 
         marketCap: snap.quote.marketCap, 
         sector: MANUAL_SECTOR_MAP[baseSymbol] || snap.screener?.industry || 'General', 
-        abcd: calculateABCDLevels(entryPrice || lastQuote.close, snap.quote.marketCap, basketId) 
+        abcd: strategyData?.abcd || calculateABCDLevels(entryPrice || lastQuote.close, snap.quote.marketCap) 
       });
     }
     res.json({ 
