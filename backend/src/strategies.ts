@@ -381,9 +381,10 @@ export function calculateRHS(quotes: Quote[]) {
     const highPivots: { price: number, idx: number }[] = [];
     for (let i = 3; i < quotes.length - 1; i++) {
       const h = quotes[i].high, l = quotes[i].low;
-      if (l < quotes[i-1].low && l < quotes[i-2].low && l < quotes[i-3].low && l < quotes[i+1].low) 
+      // Softened Pivot: Use >= to allow for equal neighbors in consolidation
+      if (l <= quotes[i-1].low && l <= quotes[i-2].low && l <= quotes[i-3].low && l < quotes[i+1].low) 
         lowPivots.push({ price: l, idx: i });
-      if (h > quotes[i-1].high && h > quotes[i-2].high && h > quotes[i-3].high && h > quotes[i+1].high) 
+      if (h >= quotes[i-1].high && h >= quotes[i-2].high && h >= quotes[i-3].high && h > quotes[i+1].high) 
         highPivots.push({ price: h, idx: i });
     }
     return { lowPivots, highPivots };
@@ -393,43 +394,51 @@ export function calculateRHS(quotes: Quote[]) {
 
   // Simulation Loop
   for (let i = 300; i < quotes.length; i++) {
-    // Institutional Scale: Pattern must span at least 60-250 bars
-    const lows = lowPivots.filter(p => p.idx < i && p.idx > i - 250);
-    const highs = highPivots.filter(p => p.idx < i && p.idx > i - 250);
+    if (!isPositionOpen) {
+      const lows = lowPivots.filter(p => p.idx < i && p.idx > i - 300);
+      const highs = highPivots.filter(p => p.idx < i && p.idx > i - 300);
 
-    if (lows.length < 3 || highs.length < 2) continue;
+      if (lows.length < 3 || highs.length < 2) continue;
 
-    const s2 = lows[lows.length - 1];
-    const head = lows[lows.length - 2];
-    const s1 = lows[lows.length - 3];
+      // Exhaustive Triplet Search
+      for (let j2 = lows.length - 1; j2 >= 2; j2--) {
+        for (let j1 = j2 - 1; j1 >= 1; j1--) {
+          for (let j0 = j1 - 1; j0 >= 0; j0--) {
+            const s2 = lows[j2];
+            const head = lows[j1];
+            const s1 = lows[j0];
 
-    // Institutional Width Rule: Shoulder-to-Shoulder distance must be > 40 bars (approx 2 months)
-    const patternWidth = s2.idx - s1.idx;
-    if (patternWidth < 40) continue;
+            if (s2.idx - s1.idx < 30) continue; 
 
-    const p2 = highs.filter(h => h.idx > head.idx && h.idx < s2.idx)[0];
-    const p1Arr = highs.filter(h => h.idx > s1.idx && h.idx < head.idx);
-    const p1 = p1Arr[p1Arr.length - 1];
+            if (head.price < s1.price && head.price < s2.price) {
+              const p2Arr = highs.filter(h => h.idx > head.idx && h.idx < s2.idx);
+              const p1Arr = highs.filter(h => h.idx > s1.idx && h.idx < head.idx);
+              
+              if (p1Arr.length > 0 && p2Arr.length > 0) {
+                const p1 = p1Arr[p1Arr.length - 1];
+                const p2 = p2Arr[0];
 
-    if (!p1 || !p2) continue;
+                const shouldersLevel = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price) <= 0.12;
+                const neckLevel = Math.abs(p1.price - p2.price) / Math.max(p1.price, p2.price) <= 0.12;
 
-    const neckline = Math.max(p1.price, p2.price);
-    const headDepth = (neckline - head.price) / neckline;
-
-    // Rule 1: INSTITUTIONAL DEPTH (Min 30% Head Depth)
-    if (headDepth >= 0.30) {
-      // Rule 2: Softened Parallel Symmetry (10% tolerance for market realism)
-      const shouldersLevel = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price) <= 0.10;
-      const neckLevel = Math.abs(p1.price - p2.price) / Math.max(p1.price, p2.price) <= 0.10;
-
-      if (shouldersLevel && neckLevel) {
-        if (!isPositionOpen && quotes[i].close > neckline && i > s2.idx) {
-          isPositionOpen = true;
-          activeEntry = Math.round(quotes[i].close);
-          activeTarget = Math.round(Math.max(activeEntry * 1.30, activeEntry + (neckline - head.price)));
-          const dateVal = quotes[i].date;
-          activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+                if (shouldersLevel && neckLevel) {
+                  const neckline = Math.max(p1.price, p2.price);
+                  if (quotes[i].close > neckline && i > s2.idx) {
+                    isPositionOpen = true;
+                    activeEntry = Math.round(quotes[i].close);
+                    const patternHeight = neckline - head.price;
+                    activeTarget = Math.round(Math.max(activeEntry * 1.30, activeEntry + patternHeight));
+                    const dateVal = quotes[i].date;
+                    activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+                    break;
+                  }
+                }
+              }
+            }
+          }
+          if (isPositionOpen) break;
         }
+        if (isPositionOpen) break;
       }
     }
 
@@ -476,7 +485,7 @@ export function calculateCupHandle(quotes: Quote[]) {
   const isPivotHigh = (idx: number) => {
     if (idx < 3 || idx >= quotes.length - 1) return false;
     const h = quotes[idx].high;
-    return h > quotes[idx-1].high && h > quotes[idx-2].high && h > quotes[idx-3].high &&
+    return h >= quotes[idx-1].high && h >= quotes[idx-2].high && h >= quotes[idx-3].high &&
            h > quotes[idx+1].high;
   };
 
@@ -486,39 +495,40 @@ export function calculateCupHandle(quotes: Quote[]) {
   }
 
   // Simulation Loop
-  for (let i = 200; i < quotes.length; i++) {
-    // Look for valid cup between two pivots
-    const validPivotsBefore = pivots.filter(p => p.idx < i && p.idx > i - 150);
-    if (validPivotsBefore.length < 2) continue;
+  for (let i = 300; i < quotes.length; i++) {
+    if (!isPositionOpen) {
+      const validPivotsBefore = pivots.filter(p => p.idx < i && p.idx > i - 300);
+      
+      // Exhaustive Pivot Pair Search
+      for (let r2 = validPivotsBefore.length - 1; r2 >= 1; r2--) {
+        for (let r1 = r2 - 1; r1 >= 0; r1--) {
+          const rim2 = validPivotsBefore[r2];
+          const rim1 = validPivotsBefore[r1];
 
-    const rim2 = validPivotsBefore[validPivotsBefore.length - 1]; // Right Rim
-    const rim1 = validPivotsBefore[validPivotsBefore.length - 2]; // Left Rim
+          const neckline = Math.max(rim1.price, rim2.price);
+          const cupWidth = rim2.idx - rim1.idx;
+          if (cupWidth < 25 || cupWidth > 200) continue;
 
-    const neckline = Math.max(rim1.price, rim2.price);
-    const cupWidth = rim2.idx - rim1.idx;
-    if (cupWidth < 20) continue; // Too narrow
+          const cupSlice = prices.slice(rim1.idx, rim2.idx);
+          const cupLow = Math.min(...cupSlice);
+          const cupDepth = (neckline - cupLow) / neckline;
 
-    const cupSlice = prices.slice(rim1.idx, rim2.idx);
-    const cupLow = Math.min(...cupSlice);
-    const cupDepth = (neckline - cupLow) / neckline;
+          const rimsLevel = Math.abs(rim1.price - rim2.price) / neckline <= 0.15;
+          const hasProperDepth = cupDepth >= 0.30 && cupDepth <= 0.65;
 
-    // Rule: Rims should be relatively level (max 10% diff) 
-    // RULE HARDENING: Minimum 30% depth to avoid 'small necks'
-    const rimsLevel = Math.abs(rim1.price - rim2.price) / neckline <= 0.10;
-    const hasProperDepth = cupDepth >= 0.30 && cupDepth <= 0.65;
-
-    if (rimsLevel && hasProperDepth) {
-      // Trigger on Breakout: Price crosses neckline after rim2
-      if (!isPositionOpen && quotes[i].close > neckline && i > rim2.idx) {
-        isPositionOpen = true;
-        activeEntry = Math.round(quotes[i].close);
-        
-        // TARGET LOGIC: Min 30% of price OR Full Depth (whichever is higher)
-        const verticalGain = neckline - cupLow;
-        activeTarget = Math.round(Math.max(activeEntry * 1.30, activeEntry + verticalGain));
-        
-        const dateVal = quotes[i].date;
-        activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+          if (rimsLevel && hasProperDepth) {
+            if (quotes[i].close > neckline && i > rim2.idx) {
+              isPositionOpen = true;
+              activeEntry = Math.round(quotes[i].close);
+              const verticalGain = neckline - cupLow;
+              activeTarget = Math.round(Math.max(activeEntry * 1.30, activeEntry + verticalGain));
+              const dateVal = quotes[i].date;
+              activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+              break; 
+            }
+          }
+        }
+        if (isPositionOpen) break;
       }
     }
 
