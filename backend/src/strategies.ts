@@ -464,9 +464,9 @@ export function calculateCupHandle(quotes: Quote[]) {
     const cupLow = Math.min(...cupSlice);
     const cupDepth = (neckline - cupLow) / neckline;
 
-    // Rule: Rims should be relatively level (max 5% diff) 
+    // Rule: Rims should be relatively level (max 10% diff) 
     // RULE HARDENING: Minimum 30% depth to avoid 'small necks'
-    const rimsLevel = Math.abs(rim1.price - rim2.price) / neckline <= 0.05;
+    const rimsLevel = Math.abs(rim1.price - rim2.price) / neckline <= 0.10;
     const hasProperDepth = cupDepth >= 0.30 && cupDepth <= 0.65;
 
     if (rimsLevel && hasProperDepth) {
