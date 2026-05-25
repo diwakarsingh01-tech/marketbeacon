@@ -392,41 +392,42 @@ export function calculateRHS(quotes: Quote[]) {
   const { lowPivots, highPivots } = getPivots();
 
   // Simulation Loop
-  for (let i = 250; i < quotes.length; i++) {
-    const lows = lowPivots.filter(p => p.idx < i && p.idx > i - 200);
-    const highs = highPivots.filter(p => p.idx < i && p.idx > i - 200);
+  for (let i = 300; i < quotes.length; i++) {
+    // Institutional Scale: Pattern must span at least 60-250 bars
+    const lows = lowPivots.filter(p => p.idx < i && p.idx > i - 250);
+    const highs = highPivots.filter(p => p.idx < i && p.idx > i - 250);
 
     if (lows.length < 3 || highs.length < 2) continue;
 
-    // We need 3 lows and 2 highs in sequence
     const s2 = lows[lows.length - 1];
     const head = lows[lows.length - 2];
     const s1 = lows[lows.length - 3];
 
+    // Institutional Width Rule: Shoulder-to-Shoulder distance must be > 60 bars (approx 3 months)
+    const patternWidth = s2.idx - s1.idx;
+    if (patternWidth < 60) continue;
+
     const p2 = highs.filter(h => h.idx > head.idx && h.idx < s2.idx)[0];
-    const p1 = highs.filter(h => h.idx > s1.idx && h.idx < head.idx)[highs.filter(h => h.idx > s1.idx && h.idx < head.idx).length - 1];
+    const p1Arr = highs.filter(h => h.idx > s1.idx && h.idx < head.idx);
+    const p1 = p1Arr[p1Arr.length - 1];
 
     if (!p1 || !p2) continue;
 
-    // Rule 1: Head must be the lowest point
-    if (head.price < s1.price && head.price < s2.price) {
-      // Rule 2: PARALLEL SHOULDERS (5% tolerance)
+    const neckline = Math.max(p1.price, p2.price);
+    const headDepth = (neckline - head.price) / neckline;
+
+    // Rule 1: INSTITUTIONAL DEPTH (Min 30% Head Depth)
+    if (headDepth >= 0.30) {
       const shouldersLevel = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price) <= 0.05;
-      
-      // Rule 3: PARALLEL NECKLINE PEAKS (5% tolerance)
       const neckLevel = Math.abs(p1.price - p2.price) / Math.max(p1.price, p2.price) <= 0.05;
 
       if (shouldersLevel && neckLevel) {
-        const neckline = Math.max(p1.price, p2.price);
-        
-        // Trigger on Breakout: Close above neckline after right shoulder is fully formed
         if (!isPositionOpen && quotes[i].close > neckline && i > s2.idx) {
           isPositionOpen = true;
           activeEntry = Math.round(quotes[i].close);
-          const patternHeight = neckline - head.price;
-          activeTarget = Math.round(Math.max(activeEntry * 1.30, activeEntry + patternHeight));
+          activeTarget = Math.round(Math.max(activeEntry * 1.30, activeEntry + (neckline - head.price)));
           const dateVal = quotes[i].date;
-          activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+          activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
         }
       }
     }
