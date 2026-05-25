@@ -403,9 +403,9 @@ export function calculateRHS(quotes: Quote[]) {
     const head = lows[lows.length - 2];
     const s1 = lows[lows.length - 3];
 
-    // Institutional Width Rule: Shoulder-to-Shoulder distance must be > 60 bars (approx 3 months)
+    // Institutional Width Rule: Shoulder-to-Shoulder distance must be > 40 bars (approx 2 months)
     const patternWidth = s2.idx - s1.idx;
-    if (patternWidth < 60) continue;
+    if (patternWidth < 40) continue;
 
     const p2 = highs.filter(h => h.idx > head.idx && h.idx < s2.idx)[0];
     const p1Arr = highs.filter(h => h.idx > s1.idx && h.idx < head.idx);
@@ -418,8 +418,9 @@ export function calculateRHS(quotes: Quote[]) {
 
     // Rule 1: INSTITUTIONAL DEPTH (Min 30% Head Depth)
     if (headDepth >= 0.30) {
-      const shouldersLevel = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price) <= 0.05;
-      const neckLevel = Math.abs(p1.price - p2.price) / Math.max(p1.price, p2.price) <= 0.05;
+      // Rule 2: Softened Parallel Symmetry (10% tolerance for market realism)
+      const shouldersLevel = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price) <= 0.10;
+      const neckLevel = Math.abs(p1.price - p2.price) / Math.max(p1.price, p2.price) <= 0.10;
 
       if (shouldersLevel && neckLevel) {
         if (!isPositionOpen && quotes[i].close > neckline && i > s2.idx) {
