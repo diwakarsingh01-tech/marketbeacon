@@ -575,7 +575,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
       } else if (strategyId === '52W_HIGH_LOW') {
         strategyData = calculate52WeekStrategy(snap.quotes);
       } else if (strategyId === 'SR_STRATEGY') {
-        strategyData = calculateSRStrategy(snap.quotes);
+        strategyData = calculateSRStrategy(snap.quotes, snap.screener);
       } else if (strategyId === 'RHS_ABCD') {
         strategyData = calculateRHS(snap.quotes);
       } else if (strategyId === 'CUP_HANDLE_ABCD') {
@@ -597,10 +597,12 @@ app.get('/api/backtest/envelope', async (req, res) => {
         strategyName = `${strategyName} (${strategyData.tranche})`;
       }
 
+      const entryTime = strategyData?.triggerDate ? (strategyData.triggerDate.includes('T') ? strategyData.triggerDate : `${strategyData.triggerDate}T00:00:00.000Z`) : null;
+
       results.push({ 
         symbol: baseSymbol, 
-        version: '10.9.9-PRO', 
-        entryTime: strategyData?.triggerDate || null, 
+        version: '10.9.9-PRO-FINAL', 
+        entryTime, 
         entryPrice, 
         strategy: strategyName,
         target: strategyData?.target || 0, 
@@ -642,25 +644,41 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
         if (!snap) continue;
         const audit = await validateBatch9(sym, snap);
         if (!audit.isPass) continue;
+
         for (const strat of STRATEGIES) {
           if (!STRATEGY_BASKET_MAP[strat.id]?.includes(basketName)) continue;
-          const stratData = snap.strategies?.[strat.id] || (strat.id === 'ENVELOPE_LONG' ? calculateEnvelope(snap.quotes) : null);
+          
+          // REAL-TIME RECALCULATION (Mandatory for Accuracy)
+          let stratData: any;
+          if (strat.id === 'ENVELOPE_LONG') stratData = calculateEnvelope(snap.quotes);
+          else if (strat.id === 'ENVELOPE_SHORT') stratData = processShortEnvelope(snap.quotes, snap.quote.marketCap);
+          else if (strat.id === 'BOLLINGER') stratData = calculateBollingerBand(snap.quotes);
+          else if (strat.id === 'SMA_ABCD') stratData = calculateSMAStacking(snap.quotes);
+          else if (strat.id === '52W_HIGH_LOW') stratData = calculate52WeekStrategy(snap.quotes);
+          else if (strat.id === 'SR_STRATEGY') stratData = calculateSRStrategy(snap.quotes, snap.screener);
+          else if (strat.id === 'RHS_ABCD') stratData = calculateRHS(snap.quotes);
+          else if (strat.id === 'CUP_HANDLE_ABCD') stratData = calculateCupHandle(snap.quotes);
+          else if (strat.id === 'SIXTY_SEVEN_FUNDA') stratData = calculateSixtySevenFunda(snap.quotes, snap.screener);
+          else if (strat.id === 'TWENTY_RALLY_RETEST') stratData = calculateTwentyRallyRetest(snap.quotes, sym);
+
           if (stratData?.isBuyZone) {
             const lastQuote = snap.quotes[snap.quotes.length - 1];
             const entryPrice = stratData.entryPrice || lastQuote.close;
+            const entryTime = stratData?.triggerDate ? (stratData.triggerDate.includes('T') ? stratData.triggerDate : `${stratData.triggerDate}T00:00:00.000Z`) : null;
+
             results.push({ 
               symbol: sym, 
-              entryTime: stratData?.triggerDate || (lastQuote.date ? new Date(lastQuote.date).toISOString() : new Date().toISOString()), 
+              entryTime, 
               strategy: strat.name, 
               basketSource: basketName, 
               marketCap: snap.quote.marketCap, 
               sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General', 
               currentPrice: lastQuote.close, 
               entryPrice, 
-              target: stratData.target || (lastQuote.close * 1.3), 
+              target: stratData.target || 0, 
               roi: (((stratData.target || lastQuote.close * 1.3) - lastQuote.close) / lastQuote.close) * 100, 
               score: audit.score, 
-              abcd: calculateABCDLevels(entryPrice, snap.quote.marketCap, basketName) 
+              abcd: stratData.abcd || calculateABCDLevels(entryPrice, snap.quote.marketCap) 
             });
             break;
           }
@@ -670,9 +688,13 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     };
     const bluechip = await processBasket('BLUECHIP', BASKETS['BLUECHIP']);
     const highBeta = await processBasket('HIGH_BETA', BASKETS['HIGH_BETA']);
-    const profit = await processBasket('PROFIT', BASKETS['PROFIT']);
-    const final = [...bluechip.slice(0, 20), ...highBeta.slice(0, 12), ...profit.slice(0, 8)];
-    res.json({ stocks: final, summary: { total: final.length, bluechip: final.filter(s => s.basketSource === 'BLUECHIP').length, highBeta: final.filter(s => s.basketSource === 'HIGH_BETA').length, profit: final.filter(s => s.basketSource === 'PROFIT').length, large: final.filter(s => (s.marketCap || 0) / 10000000 >= 65000).length, mid: final.filter(s => (s.marketCap || 0) / 10000000 < 65000 && (s.marketCap || 0) / 10000000 >= 20000).length, small: final.filter(s => (s.marketCap || 0) / 10000000 < 20000).length, avgRoi: final.reduce((a,b) => a + b.roi, 0) / (final.length || 1) } });
+    
+    const dynamicWealth = getDynamicBasket();
+    const currentWealth = dynamicWealth.length > 0 ? dynamicWealth : BASKETS['WEALTH_BASKET'];
+    const wealth = await processBasket('WEALTH_BASKET', currentWealth);
+
+    const final = [...bluechip.slice(0, 20), ...highBeta.slice(0, 12), ...wealth.slice(0, 8)];
+    res.json({ stocks: final, summary: { total: final.length, bluechip: bluechip.length, highBeta: highBeta.length, wealth: wealth.length, large: final.filter(s => (s.marketCap || 0) / 10000000 >= 65000).length, mid: final.filter(s => (s.marketCap || 0) / 10000000 < 65000 && (s.marketCap || 0) / 10000000 >= 20000).length, small: final.filter(s => (s.marketCap || 0) / 10000000 < 20000).length, avgRoi: final.reduce((a,b) => a + b.roi, 0) / (final.length || 1) } });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
