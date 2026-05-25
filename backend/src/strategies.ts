@@ -354,41 +354,67 @@ export function calculateSRStrategy(quotes: Quote[]) {
 }
 
 /**
- * STRATEGY 7: RHS (Inverted H&S)
- * Logic: Identifies a Shoulder-Head-Shoulder pattern and triggers on Neckline Breakout.
+ * STRATEGY 7: Dynamic Reversal (Inverted H&S - Institutional)
+ * Logic:
+ * 1. Pre-condition: Price must be >= 30% down from ATH.
+ * 2. Shape: Shoulder-Head-Shoulder pattern (Inverted).
+ * 3. Breakout: Triggers on closing above the neckline.
  */
 export function calculateRHS(quotes: Quote[]) { 
-  if (!quotes || quotes.length < 300) return { isBuyZone: false };
+  if (!quotes || quotes.length < 350) return { isBuyZone: false };
 
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
+  const ath = Math.max(...quotes.map(q => q.high));
+  
+  // Rule 1: Minimum 30% down from ATH
+  const isDrawdownActive = currentPrice <= ath * 0.70;
+  if (!isDrawdownActive) return { isBuyZone: false };
 
   let isPositionOpen = false;
   let activeEntry = 0;
   let activeTarget = 0;
   let activeSignalDate = "";
 
-  const window = 10;
-  for (let i = 200; i < quotes.length; i++) {
-    const historicalSlice = prices.slice(i - 150, i - window);
-    const localLows: { price: number, idx: number }[] = [];
-    
-    // Find peaks/troughs in the slice
-    for (let k = 10; k < historicalSlice.length - 10; k++) {
-      const sub = historicalSlice.slice(k - 10, k + 10);
-      if (historicalSlice[k] === Math.min(...sub)) localLows.push({ price: historicalSlice[k], idx: k });
-    }
+  // Helper: Pivot Low (L3, R1)
+  const isPivotLow = (idx: number) => {
+    if (idx < 3 || idx >= quotes.length - 1) return false;
+    const l = quotes[idx].low;
+    return l < quotes[idx-1].low && l < quotes[idx-2].low && l < quotes[idx-3].low &&
+           l < quotes[idx+1].low;
+  };
 
-    if (localLows.length >= 3) {
-      const l3 = localLows[localLows.length - 1], l2 = localLows[localLows.length - 2], l1 = localLows[localLows.length - 3];
-      // H&S Logic: l2 (Head) is lower than shoulders
-      if (l2.price < l1.price * 0.98 && l2.price < l3.price * 0.98 && Math.abs(l1.price - l3.price) / l1.price < 0.05) {
-        const neckline = Math.max(...historicalSlice.slice(l1.idx, l3.idx));
+  const pivots: { price: number, idx: number }[] = [];
+  for (let i = 3; i < quotes.length - 1; i++) {
+    if (isPivotLow(i)) pivots.push({ price: quotes[i].low, idx: i });
+  }
+
+  // Simulation Loop
+  for (let i = 250; i < quotes.length; i++) {
+    const validPivotsBefore = pivots.filter(p => p.idx < i && p.idx > i - 200);
+    if (validPivotsBefore.length < 3) continue;
+
+    const s2 = validPivotsBefore[validPivotsBefore.length - 1]; // Right Shoulder
+    const head = validPivotsBefore[validPivotsBefore.length - 2]; // Head
+    const s1 = validPivotsBefore[validPivotsBefore.length - 3]; // Left Shoulder
+
+    // Rule: Head must be the lowest point
+    if (head.price < s1.price && head.price < s2.price) {
+      // Rule: Shoulders within 10% tolerance (Soften for realism)
+      const shouldersLevel = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price) <= 0.10;
+      
+      if (shouldersLevel) {
+        const neckline = Math.max(...prices.slice(s1.idx, s2.idx));
         
-        if (!isPositionOpen && quotes[i].close > neckline) {
+        // Trigger on Breakout: Close above neckline after right shoulder
+        if (!isPositionOpen && quotes[i].close > neckline && i > s2.idx) {
           isPositionOpen = true;
           activeEntry = Math.round(quotes[i].close);
-          activeTarget = Math.round(activeEntry + (neckline - l2.price));
+          
+          // Target: Min 25% gain OR vertical height of pattern
+          const patternHeight = neckline - head.price;
+          activeTarget = Math.round(Math.max(activeEntry * 1.25, activeEntry + patternHeight));
+          
           const dateVal = quotes[i].date;
           activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
         }
