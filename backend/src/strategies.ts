@@ -172,7 +172,7 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
     entryPrice: activeEntry, 
     target: finalTarget,
     currentPrice: Math.round(currentPrice),
-    triggerDate: b1_open ? b1_date : undefined,
+    triggerDate: b1_open ? b1_date : "",
     abcd: {
       a: a_point,
       b: b_point,
@@ -701,6 +701,7 @@ export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
     entryPrice: Math.round(rallyOrigin),
     target: Math.round(rallyOrigin * 1.20),
     currentPrice: Math.round(currentPrice),
+    triggerDate: rallyFound ? (typeof quotes[latestIdx-barsSinceRally].date === 'string' ? quotes[latestIdx-barsSinceRally].date : (quotes[latestIdx-barsSinceRally].date as Date).toISOString()).split('T')[0] : "",
     barsSinceRally
   };
 }

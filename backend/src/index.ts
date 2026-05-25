@@ -599,8 +599,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
       results.push({ 
         symbol: baseSymbol, 
-        version: '10.9.5-PRO', 
-        entryTime: strategyData?.isBuyZone ? strategyData.triggerDate : null, 
+        version: '10.9.9-PRO', 
+        entryTime: strategyData?.triggerDate || null, 
         entryPrice, 
         strategy: strategyName,
         target: strategyData?.target || 0, 
