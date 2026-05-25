@@ -557,7 +557,11 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
     const snapshot = getMarketSnapshot();
     const results = [];
-    for (const baseSymbol of symbols) {
+    
+    // Total Crash Prevention: Ensure symbols is iterable
+    const targetSymbols = Array.isArray(symbols) ? symbols : [];
+
+    for (const baseSymbol of targetSymbols) {
       const snap = snapshot[baseSymbol];
       if (!snap) continue;
       const lastQuote = snap.quotes[snap.quotes.length - 1];

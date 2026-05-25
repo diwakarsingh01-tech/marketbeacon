@@ -368,6 +368,11 @@ export function initScreenerCron() {
 
 export function getMarketSnapshot(): Record<string, any> { return snapshotCache; }
 export function getDynamicBasket(): string[] {
-  if (fs.existsSync(DYNAMIC_BASKET_PATH)) return JSON.parse(fs.readFileSync(DYNAMIC_BASKET_PATH, 'utf-8'));
+  try {
+    if (fs.existsSync(DYNAMIC_BASKET_PATH)) {
+      const data = JSON.parse(fs.readFileSync(DYNAMIC_BASKET_PATH, 'utf-8'));
+      if (Array.isArray(data)) return data;
+    }
+  } catch (e) { console.error('Dynamic Basket Parse Error:', e.message); }
   return []; 
 }
