@@ -354,11 +354,11 @@ export function calculateSRStrategy(quotes: Quote[]) {
 }
 
 /**
- * STRATEGY 7: Dynamic Reversal (Inverted H&S - Institutional)
+ * STRATEGY 7: Dynamic Reversal (Parallel Symmetric RHS)
  * Logic:
  * 1. Pre-condition: Price must be >= 30% down from ATH.
- * 2. Shape: Shoulder-Head-Shoulder pattern (Inverted).
- * 3. Breakout: Triggers on closing above the neckline.
+ * 2. Shape: Strict 5-point sequence (S1 -> P1 -> Head -> P2 -> S2).
+ * 3. Parallelism: S1/S2 and P1/P2 must be within 5% price alignment.
  */
 export function calculateRHS(quotes: Quote[]) { 
   if (!quotes || quotes.length < 350) return { isBuyZone: false };
@@ -376,45 +376,55 @@ export function calculateRHS(quotes: Quote[]) {
   let activeTarget = 0;
   let activeSignalDate = "";
 
-  // Helper: Pivot Low (L3, R1)
-  const isPivotLow = (idx: number) => {
-    if (idx < 3 || idx >= quotes.length - 1) return false;
-    const l = quotes[idx].low;
-    return l < quotes[idx-1].low && l < quotes[idx-2].low && l < quotes[idx-3].low &&
-           l < quotes[idx+1].low;
+  const getPivots = () => {
+    const lowPivots: { price: number, idx: number }[] = [];
+    const highPivots: { price: number, idx: number }[] = [];
+    for (let i = 3; i < quotes.length - 1; i++) {
+      const h = quotes[i].high, l = quotes[i].low;
+      if (l < quotes[i-1].low && l < quotes[i-2].low && l < quotes[i-3].low && l < quotes[i+1].low) 
+        lowPivots.push({ price: l, idx: i });
+      if (h > quotes[i-1].high && h > quotes[i-2].high && h > quotes[i-3].high && h > quotes[i+1].high) 
+        highPivots.push({ price: h, idx: i });
+    }
+    return { lowPivots, highPivots };
   };
 
-  const pivots: { price: number, idx: number }[] = [];
-  for (let i = 3; i < quotes.length - 1; i++) {
-    if (isPivotLow(i)) pivots.push({ price: quotes[i].low, idx: i });
-  }
+  const { lowPivots, highPivots } = getPivots();
 
   // Simulation Loop
   for (let i = 250; i < quotes.length; i++) {
-    const validPivotsBefore = pivots.filter(p => p.idx < i && p.idx > i - 200);
-    if (validPivotsBefore.length < 3) continue;
+    const lows = lowPivots.filter(p => p.idx < i && p.idx > i - 200);
+    const highs = highPivots.filter(p => p.idx < i && p.idx > i - 200);
 
-    const s2 = validPivotsBefore[validPivotsBefore.length - 1]; // Right Shoulder
-    const head = validPivotsBefore[validPivotsBefore.length - 2]; // Head
-    const s1 = validPivotsBefore[validPivotsBefore.length - 3]; // Left Shoulder
+    if (lows.length < 3 || highs.length < 2) continue;
 
-    // Rule: Head must be the lowest point
+    // We need 3 lows and 2 highs in sequence
+    const s2 = lows[lows.length - 1];
+    const head = lows[lows.length - 2];
+    const s1 = lows[lows.length - 3];
+
+    const p2 = highs.filter(h => h.idx > head.idx && h.idx < s2.idx)[0];
+    const p1 = highs.filter(h => h.idx > s1.idx && h.idx < head.idx)[highs.filter(h => h.idx > s1.idx && h.idx < head.idx).length - 1];
+
+    if (!p1 || !p2) continue;
+
+    // Rule 1: Head must be the lowest point
     if (head.price < s1.price && head.price < s2.price) {
-      // Rule: Shoulders within 10% tolerance (Soften for realism)
-      const shouldersLevel = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price) <= 0.10;
+      // Rule 2: PARALLEL SHOULDERS (5% tolerance)
+      const shouldersLevel = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price) <= 0.05;
       
-      if (shouldersLevel) {
-        const neckline = Math.max(...prices.slice(s1.idx, s2.idx));
+      // Rule 3: PARALLEL NECKLINE PEAKS (5% tolerance)
+      const neckLevel = Math.abs(p1.price - p2.price) / Math.max(p1.price, p2.price) <= 0.05;
+
+      if (shouldersLevel && neckLevel) {
+        const neckline = Math.max(p1.price, p2.price);
         
-        // Trigger on Breakout: Close above neckline after right shoulder
+        // Trigger on Breakout: Close above neckline after right shoulder is fully formed
         if (!isPositionOpen && quotes[i].close > neckline && i > s2.idx) {
           isPositionOpen = true;
           activeEntry = Math.round(quotes[i].close);
-          
-          // Target: Min 25% gain OR vertical height of pattern
           const patternHeight = neckline - head.price;
-          activeTarget = Math.round(Math.max(activeEntry * 1.25, activeEntry + patternHeight));
-          
+          activeTarget = Math.round(Math.max(activeEntry * 1.30, activeEntry + patternHeight));
           const dateVal = quotes[i].date;
           activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
         }
