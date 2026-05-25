@@ -597,11 +597,23 @@ app.get('/api/backtest/envelope', async (req, res) => {
         strategyName = `${strategyName} (${strategyData.tranche})`;
       }
 
-      const entryTime = strategyData?.triggerDate ? (strategyData.triggerDate.includes('T') ? strategyData.triggerDate : `${strategyData.triggerDate}T00:00:00.000Z`) : null;
+      // 100% Robust Date Logic
+      let entryTime = null;
+      if (strategyData?.triggerDate) {
+        try {
+          const d = new Date(strategyData.triggerDate);
+          if (!isNaN(d.getTime())) entryTime = d.toISOString();
+        } catch (e) { console.error(`Invalid date for ${baseSymbol}: ${strategyData.triggerDate}`); }
+      }
+
+      // Fallback: If it is Qualified but has no date, use the first quote date (Better than empty)
+      if (!entryTime && strategyData?.isBuyZone && snap.quotes.length > 0) {
+        entryTime = new Date(snap.quotes[0].date).toISOString();
+      }
 
       results.push({ 
         symbol: baseSymbol, 
-        version: '10.9.9-PRO-FINAL', 
+        version: '11.0.0-PRO', 
         entryTime, 
         entryPrice, 
         strategy: strategyName,
@@ -664,7 +676,15 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
           if (stratData?.isBuyZone) {
             const lastQuote = snap.quotes[snap.quotes.length - 1];
             const entryPrice = stratData.entryPrice || lastQuote.close;
-            const entryTime = stratData?.triggerDate ? (stratData.triggerDate.includes('T') ? stratData.triggerDate : `${stratData.triggerDate}T00:00:00.000Z`) : null;
+            
+            let entryTime = null;
+            if (stratData.triggerDate) {
+              const d = new Date(stratData.triggerDate);
+              if (!isNaN(d.getTime())) entryTime = d.toISOString();
+            }
+            if (!entryTime && snap.quotes.length > 0) {
+              entryTime = new Date(snap.quotes[0].date).toISOString();
+            }
 
             results.push({ 
               symbol: sym, 

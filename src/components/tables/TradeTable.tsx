@@ -336,12 +336,17 @@ const TradeTable: React.FC<TradeTableProps> = ({
                     <tr key={trade.symbol} className="hover:bg-slate-50 group transition-all font-black text-[11px]">
                       {visibleColumns.observation && (
                         <td className="px-8 py-5 text-[9px] text-slate-400 font-bold uppercase whitespace-nowrap">
-                          {trade.entryTime && trade.entryTime !== '-' ? (
-                            <div className="flex flex-col">
-                              <span>{new Date(trade.entryTime).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                              <span className="opacity-50">{new Date(trade.entryTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-                            </div>
-                          ) : '-'}
+                          {(() => {
+                            if (!trade.entryTime || trade.entryTime === '-') return '-';
+                            const d = new Date(trade.entryTime);
+                            if (isNaN(d.getTime())) return '-';
+                            return (
+                              <div className="flex flex-col">
+                                <span>{d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                <span className="opacity-50">{d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                              </div>
+                            );
+                          })()}
                         </td>
                       )}
                       {visibleColumns.symbol && (
