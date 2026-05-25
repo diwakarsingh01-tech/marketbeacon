@@ -421,7 +421,7 @@ async function validateBatch9(symbol: string, snap: any) {
   if (!isETF) {
     if (!isFinance && debtToEquity > 1.0) { isHardReject = true; auditLog.push('Auto-Reject: High Debt (>1.0)'); }
     if (pledged >= 10) { isHardReject = true; auditLog.push('Auto-Reject: Dangerous Pledging (>10%)'); }
-    if (smartMoneyTotal < 30) { isHardReject = true; auditLog.push('Auto-Reject: Low Smart Money (<30%)'); }
+    if (smartMoneyTotal < 70) { isHardReject = true; auditLog.push('Auto-Reject: Low Smart Money (<70%)'); }
   }
 
   // Pro-Level Conclusion Logic
@@ -637,7 +637,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-// --- ALPHA-40 HUB ---
+// --- ALPHA HUB ELITE SELECTION ---
 app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
   try {
     const snapshot = getMarketSnapshot();
@@ -649,19 +649,29 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
       'SIXTY_SEVEN_FUNDA': ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'],
       'SR_STRATEGY': ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET']
     };
+
+    const sectorLimits: Record<string, number> = {};
+    const MAX_PER_SECTOR = 4; // Sector Locking
+
     const processBasket = async (basketName: string, symbols: string[]) => {
-      const results: any[] = [];
+      const activeResults: any[] = [];
+      const closedResults: any[] = [];
+      
       for (const sym of symbols) {
         const snap = snapshot[sym];
         if (!snap) continue;
+        
+        // Rule 1: Harden Fundamental Barrier (70+ score and 70% Smart Money)
         const audit = await validateBatch9(sym, snap);
         if (!audit.isPass) continue;
+
+        const sector = MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General';
 
         for (const strat of STRATEGIES) {
           if (!STRATEGY_BASKET_MAP[strat.id]?.includes(basketName)) continue;
           
-          // REAL-TIME RECALCULATION (Mandatory for Accuracy)
           let stratData: any;
+          // Strategy Recalculation
           if (strat.id === 'ENVELOPE_LONG') stratData = calculateEnvelope(snap.quotes);
           else if (strat.id === 'ENVELOPE_SHORT') stratData = processShortEnvelope(snap.quotes, snap.quote.marketCap);
           else if (strat.id === 'BOLLINGER') stratData = calculateBollingerBand(snap.quotes);
@@ -673,48 +683,90 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
           else if (strat.id === 'SIXTY_SEVEN_FUNDA') stratData = calculateSixtySevenFunda(snap.quotes, snap.screener);
           else if (strat.id === 'TWENTY_RALLY_RETEST') stratData = calculateTwentyRallyRetest(snap.quotes, sym);
 
-          if (stratData?.isBuyZone) {
-            const lastQuote = snap.quotes[snap.quotes.length - 1];
-            const entryPrice = stratData.entryPrice || lastQuote.close;
-            
-            let entryTime = null;
-            if (stratData.triggerDate) {
-              const d = new Date(stratData.triggerDate);
-              if (!isNaN(d.getTime())) entryTime = d.toISOString();
-            }
-            if (!entryTime && snap.quotes.length > 0) {
-              entryTime = new Date(snap.quotes[0].date).toISOString();
-            }
+          if (!stratData) continue;
 
-            results.push({ 
+          const lastQuote = snap.quotes[snap.quotes.length - 1];
+          const entryPrice = stratData.entryPrice || lastQuote.close;
+          const targetPrice = stratData.target || (entryPrice * 1.3);
+          const roi = ((targetPrice / entryPrice) - 1) * 100;
+
+          // CASE A: Active Trade (Still in Buy Zone)
+          if (stratData.isBuyZone) {
+            // APPLY SECTOR LOCKING
+            if ((sectorLimits[sector] || 0) >= MAX_PER_SECTOR) continue;
+
+            activeResults.push({ 
               symbol: sym, 
-              entryTime, 
+              entryTime: stratData.triggerDate ? (stratData.triggerDate.includes('T') ? stratData.triggerDate : `${stratData.triggerDate}T00:00:00.000Z`) : null, 
               strategy: strat.name, 
               basketSource: basketName, 
               marketCap: snap.quote.marketCap, 
-              sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General', 
+              sector, 
               currentPrice: lastQuote.close, 
               entryPrice, 
-              target: stratData.target || 0, 
-              roi: (((stratData.target || lastQuote.close * 1.3) - lastQuote.close) / lastQuote.close) * 100, 
+              target: targetPrice, 
+              roi, 
               score: audit.score, 
               abcd: stratData.abcd || calculateABCDLevels(entryPrice, snap.quote.marketCap) 
             });
-            break;
+            
+            sectorLimits[sector] = (sectorLimits[sector] || 0) + 1;
+            break; 
+          } 
+          
+          // CASE B: Closed Trade (Hit Target)
+          else if (stratData.entryPrice > 0 && !stratData.isBuyZone) {
+             // Find when target was hit in history
+             const firstSignalIdx = snap.quotes.findIndex(q => q.date.toString().includes(stratData.triggerDate));
+             const exitIdx = snap.quotes.slice(Math.max(0, firstSignalIdx)).findIndex(q => q.high >= targetPrice);
+             
+             if (exitIdx !== -1) {
+                const durationDays = exitIdx;
+                closedResults.push({
+                  symbol: sym,
+                  entryDate: stratData.triggerDate,
+                  exitDate: new Date(snap.quotes[firstSignalIdx + exitIdx].date).toISOString().split('T')[0],
+                  roi: ((targetPrice / entryPrice) - 1) * 100,
+                  days: durationDays,
+                  strategy: strat.name,
+                  marketCap: snap.quote.marketCap,
+                  sector
+                });
+                break;
+             }
           }
         }
       }
-      return results.sort((a,b) => b.roi - a.roi);
+      return { active: activeResults.sort((a,b) => b.roi - a.roi), closed: closedResults };
     };
-    const bluechip = await processBasket('BLUECHIP', BASKETS['BLUECHIP']);
-    const highBeta = await processBasket('HIGH_BETA', BASKETS['HIGH_BETA']);
+
+    const bc = await processBasket('BLUECHIP', BASKETS['BLUECHIP']);
+    const hb = await processBasket('HIGH_BETA', BASKETS['HIGH_BETA']);
     
     const dynamicWealth = getDynamicBasket();
     const currentWealth = dynamicWealth.length > 0 ? dynamicWealth : BASKETS['WEALTH_BASKET'];
-    const wealth = await processBasket('WEALTH_BASKET', currentWealth);
+    const wb = await processBasket('WEALTH_BASKET', currentWealth);
 
-    const final = [...bluechip.slice(0, 20), ...highBeta.slice(0, 12), ...wealth.slice(0, 8)];
-    res.json({ stocks: final, summary: { total: final.length, bluechip: bluechip.length, highBeta: highBeta.length, wealth: wealth.length, large: final.filter(s => (s.marketCap || 0) / 10000000 >= 65000).length, mid: final.filter(s => (s.marketCap || 0) / 10000000 < 65000 && (s.marketCap || 0) / 10000000 >= 20000).length, small: final.filter(s => (s.marketCap || 0) / 10000000 < 20000).length, avgRoi: final.reduce((a,b) => a + b.roi, 0) / (final.length || 1) } });
+    // Dynamic Distribution (Total 40-60)
+    let finalActive = [...bc.active, ...hb.active, ...wb.active];
+    if (finalActive.length > 60) finalActive = finalActive.slice(0, 60);
+
+    const finalClosed = [...bc.closed, ...hb.closed, ...wb.closed]
+      .sort((a,b) => new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime())
+      .slice(0, 20);
+
+    res.json({ 
+      stocks: finalActive, 
+      closedTrades: finalClosed,
+      summary: { 
+        total: finalActive.length, 
+        bluechip: bc.active.length, 
+        highBeta: hb.active.length, 
+        wealth: wb.active.length,
+        avgRoi: finalActive.reduce((a,b) => a + b.roi, 0) / (finalActive.length || 1),
+        avgDays: finalClosed.reduce((a,b) => a + b.days, 0) / (finalClosed.length || 1)
+      } 
+    });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
