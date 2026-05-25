@@ -548,9 +548,9 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
     let symbols = [];
     if (basketId === 'WEALTH_BASKET') {
-      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...currentWealth]));
+      symbols = currentWealth;
     } else if (basketId === 'HIGH_BETA') {
-      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']]));
+      symbols = BASKETS['HIGH_BETA'];
     } else {
       symbols = BASKETS['BLUECHIP'];
     }
