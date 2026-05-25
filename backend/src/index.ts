@@ -234,14 +234,17 @@ app.post('/api/admin/update-snapshot', authenticateToken, requireAdmin, async (r
     const { basket = 'ALL' } = req.body;
     let symbols = [];
     
+    const dynamicWealth = getDynamicBasket();
+    const currentWealth = dynamicWealth.length > 0 ? dynamicWealth : BASKETS['WEALTH_BASKET'];
+
     if (basket === 'BLUECHIP') {
       symbols = BASKETS['BLUECHIP'];
     } else if (basket === 'HIGH_BETA') {
       symbols = BASKETS['HIGH_BETA'];
     } else if (basket === 'WEALTH_BASKET') {
-      symbols = BASKETS['WEALTH_BASKET'];
+      symbols = currentWealth;
     } else {
-      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['WEALTH_BASKET']]));
+      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...currentWealth]));
     }
 
     console.log(`🚀 [ADMIN] Manual Snapshot Triggered for ${basket} (${symbols.length} symbols)`);
@@ -540,9 +543,12 @@ app.get('/api/backtest/envelope', async (req, res) => {
     const basketId = (req.query.basket as string) || 'BLUECHIP';
     const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
     
+    const dynamicWealth = getDynamicBasket();
+    const currentWealth = dynamicWealth.length > 0 ? dynamicWealth : BASKETS['WEALTH_BASKET'];
+
     let symbols = [];
     if (basketId === 'WEALTH_BASKET') {
-      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['WEALTH_BASKET']]));
+      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...currentWealth]));
     } else if (basketId === 'HIGH_BETA') {
       symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']]));
     } else {
