@@ -245,7 +245,7 @@ return {
 }
 
 export async function runScreener() {
-  console.log('🚀 [BATCH 9] Starting Institutional Fundamental Audit...');
+  console.log('🚀 [WEALTH-BASKET] Starting Dynamic Growth Audit...');
   const results: string[] = [];
   const batchSize = 15;
   for (let i = 0; i < NIFTY_500.length; i += batchSize) {
@@ -253,10 +253,19 @@ export async function runScreener() {
     await Promise.all(batch.map(async (symbol) => {
       try {
         const summary: any = await yahooFinance.quoteSummary(symbol, { modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail'] });
+        
+        // Rule 1: Annual Net Profit > ₹50 Crore
         const annualProfit = (summary.defaultKeyStatistics?.netIncomeToCommon / 10000000) || 0;
+        
+        // Rule 2: Debt-to-Equity < 0.5
         const debtToEquity = ((summary.financialData?.debtToEquity || 0) as number) / 100;
+        
+        // Rule 3: Market Cap > ₹500 Crore
         const marketCapCr = (summary.summaryDetail?.marketCap || 0) / 10000000;
-        if (annualProfit > 50 && debtToEquity < 0.5 && marketCapCr > 500) results.push(symbol.replace('.NS', ''));
+        
+        if (annualProfit > 50 && debtToEquity < 0.5 && marketCapCr > 500) {
+          results.push(symbol.replace('.NS', ''));
+        }
       } catch (e) { }
     }));
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -343,8 +352,8 @@ export function initScreenerCron() {
   cron.schedule('0 11 * * *', async () => {
     const bluechip = ['WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 'WIPRO', 'INFY', 'NAM-INDIA', 'HCLTECH', 'ICICIGI', 'PIDILITIND', 'HDFCAMC', 'ASIANPAINT', 'BERGEPAINT', 'ULTRACEMCO', 'BAJFINANCE', 'NESTLEIND', 'ICICIBANK', 'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 'NIFTYBEES', 'BANKBEES'];
     const highBeta = ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'];
-    const profit = ['CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 'MTARTECH', 'MAHLOG', 'PRINCEPIPE', 'ANGELONE', 'MCX', 'KFINTECH', 'DATA PATTERNS', 'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES', 'RAILTEL', 'BEL', 'HAL', 'BEML', 'MAZDOCK', 'SOLARINDS', 'BDL', 'KPITTECH', 'COFORGE', 'PERSISTENT', 'TATAELXSI', 'ZENTEC', 'NEWGEN', 'MAPMYINDIA', 'CEINFO', 'TANLA', 'ROUTE', 'LATENTVIEW'];
-    await updateMarketSnapshot([...new Set([...bluechip, ...highBeta, ...profit, '^NSEI'])]);
+    const wealthBasket = ['CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 'MTARTECH', 'MAHLOG', 'PRINCEPIPE', 'ANGELONE', 'MCX', 'KFINTECH', 'DATA PATTERNS', 'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES', 'RAILTEL', 'BEL', 'HAL', 'BEML', 'MAZDOCK', 'SOLARINDS', 'BDL', 'KPITTECH', 'COFORGE', 'PERSISTENT', 'TATAELXSI', 'ZENTEC', 'NEWGEN', 'MAPMYINDIA', 'CEINFO', 'TANLA', 'ROUTE', 'LATENTVIEW'];
+    await updateMarketSnapshot([...new Set([...bluechip, ...highBeta, ...wealthBasket, '^NSEI'])]);
   });
 }
 

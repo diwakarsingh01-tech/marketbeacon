@@ -225,7 +225,7 @@ const AlphaHubPage: React.FC = () => {
          </div>
       </div>
 
-      {['BLUECHIP', 'HIGH_BETA', 'PROFIT'].map(basket => {
+      {['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'].map(basket => {
         const basketStocks = (data?.stocks || []).filter((s: any) => s.basketSource === basket);
         if (basketStocks.length === 0) return null;
 

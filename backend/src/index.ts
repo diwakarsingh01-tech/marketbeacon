@@ -53,7 +53,7 @@ const BASKETS: Record<string, string[]> = {
     'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 
     'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'
   ],
-  'PROFIT': [
+  'WEALTH_BASKET': [
     'CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 
     'MTARTECH', 'MAHLOG', 'PRINCEPIPE', 'ANGELONE', 'MCX', 'KFINTECH', 'DATA PATTERNS', 
     'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES', 'RAILTEL', 'BEL', 
@@ -238,10 +238,10 @@ app.post('/api/admin/update-snapshot', authenticateToken, requireAdmin, async (r
       symbols = BASKETS['BLUECHIP'];
     } else if (basket === 'HIGH_BETA') {
       symbols = BASKETS['HIGH_BETA'];
-    } else if (basket === 'PROFIT') {
-      symbols = BASKETS['PROFIT'];
+    } else if (basket === 'WEALTH_BASKET') {
+      symbols = BASKETS['WEALTH_BASKET'];
     } else {
-      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']]));
+      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['WEALTH_BASKET']]));
     }
 
     console.log(`🚀 [ADMIN] Manual Snapshot Triggered for ${basket} (${symbols.length} symbols)`);
@@ -541,8 +541,8 @@ app.get('/api/backtest/envelope', async (req, res) => {
     const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
     
     let symbols = [];
-    if (basketId === 'PROFIT') {
-      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['PROFIT']]));
+    if (basketId === 'WEALTH_BASKET') {
+      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...BASKETS['WEALTH_BASKET']]));
     } else if (basketId === 'HIGH_BETA') {
       symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA']]));
     } else {
@@ -620,9 +620,9 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
       'ENVELOPE_LONG': ['BLUECHIP'], 'ENVELOPE_SHORT': ['BLUECHIP'], 'BOLLINGER': ['BLUECHIP'],
       'CUP_HANDLE_ABCD': ['BLUECHIP', 'HIGH_BETA'], 'RHS_ABCD': ['BLUECHIP', 'HIGH_BETA'],
       'SMA_ABCD': ['BLUECHIP', 'HIGH_BETA'], '52W_HIGH_LOW': ['BLUECHIP', 'HIGH_BETA'],
-      'TWENTY_RALLY_RETEST': ['BLUECHIP', 'HIGH_BETA', 'PROFIT'],
-      'SIXTY_SEVEN_FUNDA': ['BLUECHIP', 'HIGH_BETA', 'PROFIT'],
-      'SR_STRATEGY': ['BLUECHIP', 'HIGH_BETA', 'PROFIT']
+      'TWENTY_RALLY_RETEST': ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'],
+      'SIXTY_SEVEN_FUNDA': ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'],
+      'SR_STRATEGY': ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET']
     };
     const processBasket = async (basketName: string, symbols: string[]) => {
       const results: any[] = [];
@@ -700,7 +700,7 @@ async function startServer() {
 
 function syncBaskets() {
   const dynamicProfit = getDynamicBasket();
-  if (dynamicProfit.length > 0) BASKETS['PROFIT'] = dynamicProfit;
+  if (dynamicProfit.length > 0) BASKETS['WEALTH_BASKET'] = dynamicProfit;
 }
 
 syncBaskets(); 

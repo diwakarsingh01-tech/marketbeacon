@@ -6,9 +6,9 @@ export const STRATEGIES = [
   { id: 'RHS_ABCD', name: 'Dynamic Reversal', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true, tier: 'pro' },
   { id: 'SMA_ABCD', name: 'SMA-ABCD', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true, tier: 'pro' },
   { id: '52W_HIGH_LOW', name: '52W High/Low', baskets: ['BLUECHIP', 'HIGH_BETA'], isLive: true, tier: 'pro' },
-  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'alpha' },
-  { id: 'SIXTY_SEVEN_FUNDA', name: 'Deep Recovery Audit', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'alpha' },
-  { id: 'SR_STRATEGY', name: 'Supply-Demand Core', baskets: ['BLUECHIP', 'HIGH_BETA', 'PROFIT'], isLive: true, tier: 'alpha' },
+  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest', baskets: ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'], isLive: true, tier: 'alpha' },
+  { id: 'SIXTY_SEVEN_FUNDA', name: 'Deep Recovery Audit', baskets: ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'], isLive: true, tier: 'alpha' },
+  { id: 'SR_STRATEGY', name: 'Supply-Demand Core', baskets: ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'], isLive: true, tier: 'alpha' },
 ];
 
 export const BASKETS: Record<string, string[]> = {
@@ -29,7 +29,7 @@ export const BASKETS: Record<string, string[]> = {
     'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 
     'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'
   ],
-  'PROFIT': [
+  'WEALTH_BASKET': [
     'CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 
     'MTARTECH', 'MAHLOG', 'PRINCEPIPE', 'ANGELONE', 'MCX', 'KFINTECH', 'DATA PATTERNS', 
     'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES', 'RAILTEL', 'BEL', 
