@@ -653,13 +653,16 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     const sectorLimits: Record<string, number> = {};
     const MAX_PER_SECTOR = 4; // Sector Locking
 
-    const processBasket = async (basketName: string, symbols: string[]) => {
+    const processBasket = async (basketName: string, symbols: string[] = []) => {
       const activeResults: any[] = [];
       const closedResults: any[] = [];
       
-      for (const sym of symbols) {
+      // Defensive: Ensure symbols is an array
+      const targetSymbols = Array.isArray(symbols) ? symbols : [];
+      
+      for (const sym of targetSymbols) {
         const snap = snapshot[sym];
-        if (!snap) continue;
+        if (!snap || !snap.quotes || snap.quotes.length === 0) continue;
         
         // Rule 1: Harden Fundamental Barrier (70+ score and 70% Smart Money)
         const audit = await validateBatch9(sym, snap);
@@ -671,17 +674,19 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
           if (!STRATEGY_BASKET_MAP[strat.id]?.includes(basketName)) continue;
           
           let stratData: any;
-          // Strategy Recalculation
-          if (strat.id === 'ENVELOPE_LONG') stratData = calculateEnvelope(snap.quotes);
-          else if (strat.id === 'ENVELOPE_SHORT') stratData = processShortEnvelope(snap.quotes, snap.quote.marketCap);
-          else if (strat.id === 'BOLLINGER') stratData = calculateBollingerBand(snap.quotes);
-          else if (strat.id === 'SMA_ABCD') stratData = calculateSMAStacking(snap.quotes);
-          else if (strat.id === '52W_HIGH_LOW') stratData = calculate52WeekStrategy(snap.quotes);
-          else if (strat.id === 'SR_STRATEGY') stratData = calculateSRStrategy(snap.quotes, snap.screener);
-          else if (strat.id === 'RHS_ABCD') stratData = calculateRHS(snap.quotes);
-          else if (strat.id === 'CUP_HANDLE_ABCD') stratData = calculateCupHandle(snap.quotes);
-          else if (strat.id === 'SIXTY_SEVEN_FUNDA') stratData = calculateSixtySevenFunda(snap.quotes, snap.screener);
-          else if (strat.id === 'TWENTY_RALLY_RETEST') stratData = calculateTwentyRallyRetest(snap.quotes, sym);
+          // Strategy Recalculation (Robust)
+          try {
+            if (strat.id === 'ENVELOPE_LONG') stratData = calculateEnvelope(snap.quotes);
+            else if (strat.id === 'ENVELOPE_SHORT') stratData = processShortEnvelope(snap.quotes, snap.quote.marketCap);
+            else if (strat.id === 'BOLLINGER') stratData = calculateBollingerBand(snap.quotes);
+            else if (strat.id === 'SMA_ABCD') stratData = calculateSMAStacking(snap.quotes);
+            else if (strat.id === '52W_HIGH_LOW') stratData = calculate52WeekStrategy(snap.quotes);
+            else if (strat.id === 'SR_STRATEGY') stratData = calculateSRStrategy(snap.quotes, snap.screener);
+            else if (strat.id === 'RHS_ABCD') stratData = calculateRHS(snap.quotes);
+            else if (strat.id === 'CUP_HANDLE_ABCD') stratData = calculateCupHandle(snap.quotes);
+            else if (strat.id === 'SIXTY_SEVEN_FUNDA') stratData = calculateSixtySevenFunda(snap.quotes, snap.screener);
+            else if (strat.id === 'TWENTY_RALLY_RETEST') stratData = calculateTwentyRallyRetest(snap.quotes, sym);
+          } catch (e) { continue; }
 
           if (!stratData) continue;
 
@@ -692,12 +697,13 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
 
           // CASE A: Active Trade (Still in Buy Zone)
           if (stratData.isBuyZone) {
-            // APPLY SECTOR LOCKING
             if ((sectorLimits[sector] || 0) >= MAX_PER_SECTOR) continue;
+
+            const entryTime = stratData.triggerDate ? (stratData.triggerDate.includes('T') ? stratData.triggerDate : `${stratData.triggerDate}T00:00:00.000Z`) : new Date(snap.quotes[0].date).toISOString();
 
             activeResults.push({ 
               symbol: sym, 
-              entryTime: stratData.triggerDate ? (stratData.triggerDate.includes('T') ? stratData.triggerDate : `${stratData.triggerDate}T00:00:00.000Z`) : null, 
+              entryTime, 
               strategy: strat.name, 
               basketSource: basketName, 
               marketCap: snap.quote.marketCap, 
@@ -716,23 +722,24 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
           
           // CASE B: Closed Trade (Hit Target)
           else if (stratData.entryPrice > 0 && !stratData.isBuyZone) {
-             // Find when target was hit in history
              const firstSignalIdx = snap.quotes.findIndex(q => q.date.toString().includes(stratData.triggerDate));
-             const exitIdx = snap.quotes.slice(Math.max(0, firstSignalIdx)).findIndex(q => q.high >= targetPrice);
+             const exitIdx = firstSignalIdx === -1 ? -1 : snap.quotes.slice(firstSignalIdx).findIndex(q => q.high >= targetPrice);
              
-             if (exitIdx !== -1) {
-                const durationDays = exitIdx;
-                closedResults.push({
-                  symbol: sym,
-                  entryDate: stratData.triggerDate,
-                  exitDate: new Date(snap.quotes[firstSignalIdx + exitIdx].date).toISOString().split('T')[0],
-                  roi: ((targetPrice / entryPrice) - 1) * 100,
-                  days: durationDays,
-                  strategy: strat.name,
-                  marketCap: snap.quote.marketCap,
-                  sector
-                });
-                break;
+             if (exitIdx !== -1 && firstSignalIdx !== -1) {
+                const quoteObj = snap.quotes[firstSignalIdx + exitIdx];
+                if (quoteObj) {
+                  closedResults.push({
+                    symbol: sym,
+                    entryDate: stratData.triggerDate,
+                    exitDate: new Date(quoteObj.date).toISOString().split('T')[0],
+                    roi: ((targetPrice / entryPrice) - 1) * 100,
+                    days: exitIdx,
+                    strategy: strat.name,
+                    marketCap: snap.quote.marketCap,
+                    sector
+                  });
+                  break;
+                }
              }
           }
         }
