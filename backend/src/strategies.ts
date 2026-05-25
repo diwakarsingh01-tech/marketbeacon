@@ -412,45 +412,78 @@ export function calculateRHS(quotes: Quote[]) {
 }
 
 /**
- * STRATEGY 8: Structural Pivot (Cup & Handle)
- * Logic: Finds a deep base, triggers on breakout above the pivot high.
- * Locked Target: Entry + (Entry - Cup Low)
+ * STRATEGY 8: Structural Pivot (Cup & Handle - Pine Script v5 Aligned)
+ * Logic:
+ * 1. Pre-condition: Price must be >= 30% down from ATH.
+ * 2. Shape: Uses Pivot Highs (L3, R1) to find rims. 
+ * 3. U-Shape: Checks for depth (min 15%) and consolidation.
  */
 export function calculateCupHandle(quotes: Quote[]) { 
-  if (!quotes || quotes.length < 250) return { isBuyZone: false };
+  if (!quotes || quotes.length < 300) return { isBuyZone: false };
 
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
+  const ath = Math.max(...quotes.map(q => q.high));
+  
+  // Rule 1: Minimum 30% down from ATH to even consider this stock
+  const isDrawdownActive = currentPrice <= ath * 0.70;
+  if (!isDrawdownActive) return { isBuyZone: false };
 
   let isPositionOpen = false;
   let activeEntry = 0;
   let activeTarget = 0;
   let activeSignalDate = "";
 
-  // Simulation Loop
-  const windowSize = 150;
-  for (let i = windowSize; i < quotes.length; i++) {
-    const historicalSlice = prices.slice(i - windowSize, i - 10);
-    const cupHigh = Math.max(...historicalSlice);
-    const cupLow = Math.min(...historicalSlice);
-    const cupDepth = (cupHigh - cupLow) / cupHigh;
+  // Helper: Pivot High (Pine Script: left=3, right=1)
+  const isPivotHigh = (idx: number) => {
+    if (idx < 3 || idx >= quotes.length - 1) return false;
+    const h = quotes[idx].high;
+    return h > quotes[idx-1].high && h > quotes[idx-2].high && h > quotes[idx-3].high &&
+           h > quotes[idx+1].high;
+  };
 
-    // Trigger on Breakout above Cup High (Neckline)
-    if (!isPositionOpen && quotes[i].close > cupHigh && cupDepth > 0.15 && cupDepth < 0.50) {
-      isPositionOpen = true;
-      activeEntry = Math.round(quotes[i].close);
-      activeTarget = Math.round(activeEntry + (cupHigh - cupLow));
-      const dateVal = quotes[i].date;
-      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+  const pivots: { price: number, idx: number }[] = [];
+  for (let i = 3; i < quotes.length - 1; i++) {
+    if (isPivotHigh(i)) pivots.push({ price: quotes[i].high, idx: i });
+  }
+
+  // Simulation Loop
+  for (let i = 200; i < quotes.length; i++) {
+    // Look for valid cup between two pivots
+    const validPivotsBefore = pivots.filter(p => p.idx < i && p.idx > i - 150);
+    if (validPivotsBefore.length < 2) continue;
+
+    const rim2 = validPivotsBefore[validPivotsBefore.length - 1]; // Right Rim
+    const rim1 = validPivotsBefore[validPivotsBefore.length - 2]; // Left Rim
+
+    const neckline = Math.max(rim1.price, rim2.price);
+    const cupWidth = rim2.idx - rim1.idx;
+    if (cupWidth < 20) continue; // Too narrow
+
+    const cupSlice = prices.slice(rim1.idx, rim2.idx);
+    const cupLow = Math.min(...cupSlice);
+    const cupDepth = (neckline - cupLow) / neckline;
+
+    // Rule: Rims should be relatively level (max 5% diff) and depth should be significant
+    const rimsLevel = Math.abs(rim1.price - rim2.price) / neckline <= 0.05;
+    const hasProperDepth = cupDepth >= 0.15 && cupDepth <= 0.50;
+
+    if (rimsLevel && hasProperDepth) {
+      // Trigger on Breakout: Price crosses neckline after rim2
+      if (!isPositionOpen && quotes[i].close > neckline && i > rim2.idx) {
+        isPositionOpen = true;
+        activeEntry = Math.round(quotes[i].close);
+        activeTarget = Math.round(activeEntry + (neckline - cupLow));
+        const dateVal = quotes[i].date;
+        activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+      }
     }
 
-    // Exit on Target
     if (isPositionOpen && quotes[i].high >= activeTarget) {
       isPositionOpen = false;
     }
   }
 
-  // 5% Institutional Buy-Zone Rule
   const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
 
   return { 
