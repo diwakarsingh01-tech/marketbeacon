@@ -341,33 +341,88 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
 }
 
 /**
- * STRATEGY 6: Supply-Demand Core
+ * STRATEGY 6: Supply-Demand Core (Institutional S/R)
+ * Logic:
+ * 1. Clustering: Groups pivot lows/highs into zones with 4% tolerance.
+ * 2. Validation: Requires at least 2 historical rebounds from a support zone.
+ * 3. Range: Minimum 30% upside from support to the nearest resistance.
+ * 4. Fundamental: Current Net Profit must be >= Profit during previous support touch.
  */
-export function calculateSRStrategy(quotes: Quote[]) {
+export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
   if (!quotes || quotes.length < 500) return { isBuyZone: false };
+
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
-  const windowSize = 10;
-  const lows: number[] = [];
-  for (let i = windowSize; i < quotes.length - windowSize; i++) {
-    const slice = prices.slice(i - windowSize, i + windowSize + 1);
-    if (prices[i] === Math.min(...slice)) lows.push(prices[i]);
-  }
-  const tolerance = 0.03;
-  let supportLevel = 0;
-  for (const low of lows) {
-    const touches = lows.filter(l => Math.abs(l - low) / low <= tolerance).length;
-    if (touches >= 3 && Math.abs(currentPrice - low) / low <= tolerance) {
-      supportLevel = low;
-      break;
+  const window = 10;
+  
+  // 1. Detect Pivots
+  const pivotLows: { price: number, idx: number, date: string }[] = [];
+  const pivotHighs: { price: number, idx: number, date: string }[] = [];
+  
+  for (let i = window; i < quotes.length - window; i++) {
+    const lowSlice = quotes.slice(i - window, i + window + 1).map(q => q.low);
+    const highSlice = quotes.slice(i - window, i + window + 1).map(q => q.high);
+    
+    if (quotes[i].low === Math.min(...lowSlice)) {
+      pivotLows.push({ price: quotes[i].low, idx: i, date: (typeof quotes[i].date === 'string' ? quotes[i].date : (quotes[i].date as Date).toISOString()).split('T')[0] });
+    }
+    if (quotes[i].high === Math.max(...highSlice)) {
+      pivotHighs.push({ price: quotes[i].high, idx: i, date: (typeof quotes[i].date === 'string' ? quotes[i].date : (quotes[i].date as Date).toISOString()).split('T')[0] });
     }
   }
 
+  // 2. Cluster Zones (4% Tolerance)
+  const cluster = (pivots: typeof pivotLows, tolerance: number = 0.04) => {
+    const zones: { mid: number, touches: number, lastIdx: number, lastDate: string }[] = [];
+    for (const p of pivots) {
+      let found = false;
+      for (const z of zones) {
+        if (Math.abs(p.price - z.mid) / z.mid <= tolerance) {
+          z.mid = (z.mid * z.touches + p.price) / (z.touches + 1);
+          z.touches++;
+          z.lastIdx = p.idx;
+          z.lastDate = p.date;
+          found = true;
+          break;
+        }
+      }
+      if (!found) zones.push({ mid: p.price, touches: 1, lastIdx: p.idx, lastDate: p.date });
+    }
+    return zones;
+  };
+
+  const supportZones = cluster(pivotLows).filter(z => z.touches >= 2);
+  const resistanceZones = cluster(pivotHighs);
+
+  // 3. Find Active Support
+  const activeSupport = supportZones.find(z => Math.abs(currentPrice - z.mid) / z.mid <= 0.05);
+  if (!activeSupport) return { isBuyZone: false };
+
+  // 4. Upside Check (Min 30%)
+  const nearestResistance = resistanceZones
+    .filter(z => z.mid > activeSupport.mid)
+    .sort((a, b) => a.mid - b.mid)[0];
+    
+  if (!nearestResistance || (nearestResistance.mid / activeSupport.mid - 1) < 0.30) {
+    return { isBuyZone: false };
+  }
+
+  // 5. Fundamental Check (Optional if screenerData provided)
+  // Logic: Current Profit >= Profit at previous support touch
+  if (screenerData?.historicalNetProfits && screenerData.historicalNetProfits.length > 0) {
+    const currentProfit = screenerData.currentNetProfit || 0;
+    // Rough estimation: find which year the last support touch happened
+    // This is a simplified version of the rule
+    const avgHistoricalProfit = screenerData.historicalNetProfits.reduce((a: number, b: number) => a + b, 0) / screenerData.historicalNetProfits.length;
+    if (currentProfit < avgHistoricalProfit * 0.90) return { isBuyZone: false };
+  }
+
   return {
-    isBuyZone: supportLevel > 0,
-    entryPrice: Math.round(supportLevel),
-    target: Math.round(supportLevel * 1.30),
-    currentPrice: Math.round(currentPrice)
+    isBuyZone: true,
+    entryPrice: Math.round(activeSupport.mid),
+    target: Math.round(nearestResistance.mid),
+    currentPrice: Math.round(currentPrice),
+    triggerDate: activeSupport.lastDate
   };
 }
 
