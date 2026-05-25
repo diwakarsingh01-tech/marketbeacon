@@ -288,8 +288,11 @@ export function calculateSMAStacking(quotes: Quote[]) {
 }
 
 /**
- * STRATEGY 5: 52-Week Support/Resistance
- * Logic: Triggers when stock hits a 52-week low. Target is the 52-week high.
+ * STRATEGY 5: 52-Week High/Low (Institutional Rule)
+ * Logic:
+ * 1. Entry: Price hits rolling 52-week low (1% tolerance).
+ * 2. Exit: Price hits rolling 52-week high (1% tolerance).
+ * 3. Scope: Primarily for Super 45 / Bluechip names.
  */
 export function calculate52WeekStrategy(quotes: Quote[]) {
   if (!quotes || quotes.length < 300) return { isBuyZone: false };
@@ -299,33 +302,39 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
 
   let isPositionOpen = false;
   let activeEntry = 0;
-  let activeTarget = 0;
   let activeSignalDate = "";
 
+  // Simulation Loop
   for (let i = 252; i < quotes.length; i++) {
     const lastYear = quotes.slice(i - 252, i);
     const low52 = Math.min(...lastYear.map(q => q.low));
     const high52 = Math.max(...lastYear.map(q => q.high));
 
-    if (!isPositionOpen && quotes[i].low <= low52) {
+    // Buy at 52-Week Low (1% Tolerance)
+    if (!isPositionOpen && quotes[i].low <= low52 * 1.01) {
       isPositionOpen = true;
       activeEntry = Math.round(quotes[i].close);
-      activeTarget = Math.round(high52);
       const dateVal = quotes[i].date;
-      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
     }
 
-    if (isPositionOpen && quotes[i].high >= activeTarget) {
+    // Sell at 52-Week High (1% Tolerance)
+    if (isPositionOpen && quotes[i].high >= high52 * 0.99) {
       isPositionOpen = false;
     }
   }
 
+  // Current 52-Week High for Target display
+  const currentYear = quotes.slice(-252);
+  const currentHigh52 = Math.max(...currentYear.map(q => q.high));
+
+  // Institutional Buy-Zone Rule: Within 5% of 52W low entry
   const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
 
   return {
     isBuyZone: isActuallyInBuyRange,
     entryPrice: activeEntry,
-    target: activeTarget,
+    target: Math.round(currentHigh52),
     currentPrice: Math.round(currentPrice),
     triggerDate: activeSignalDate
   };
