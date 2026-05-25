@@ -235,42 +235,90 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd
 
 /**
  * STRATEGY 4: SMA ABCD (Bearish Stacking)
+ * Logic: Triggers when short term trend is below long term trend.
  */
 export function calculateSMAStacking(quotes: Quote[]) {
-  if (!quotes || quotes.length < 200) return { isBuyZone: false };
+  if (!quotes || quotes.length < 250) return { isBuyZone: false };
+
   const prices = quotes.map(q => q.close);
+  const currentPrice = prices[prices.length - 1];
   const sma20 = calculateSMA(prices, 20);
   const sma50 = calculateSMA(prices, 50);
   const sma200 = calculateSMA(prices, 200);
-  const idx = prices.length - 1;
 
-  const isStacked = prices[idx] < sma20[idx] && sma20[idx] < sma50[idx] && sma50[idx] < sma200[idx];
+  let isPositionOpen = false;
+  let activeEntry = 0;
+  let activeTarget = 0;
+  let activeSignalDate = "";
+
+  for (let i = 200; i < quotes.length; i++) {
+    const isStacked = prices[i] < sma20[i] && sma20[i] < sma50[i] && sma50[i] < sma200[i];
+
+    if (!isPositionOpen && isStacked) {
+      isPositionOpen = true;
+      activeEntry = Math.round(prices[i]);
+      activeTarget = Math.round(sma200[i]);
+      const dateVal = quotes[i].date;
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+    }
+
+    if (isPositionOpen && quotes[i].high >= activeTarget) {
+      isPositionOpen = false;
+    }
+  }
+
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
 
   return {
-    isBuyZone: isStacked,
-    entryPrice: Math.round(prices[idx]),
-    target: Math.round(sma200[idx]),
-    currentPrice: Math.round(prices[idx])
+    isBuyZone: isActuallyInBuyRange,
+    entryPrice: activeEntry,
+    target: activeTarget,
+    currentPrice: Math.round(currentPrice),
+    triggerDate: activeSignalDate
   };
 }
 
 /**
  * STRATEGY 5: 52-Week Support/Resistance
+ * Logic: Triggers when stock hits a 52-week low. Target is the 52-week high.
  */
 export function calculate52WeekStrategy(quotes: Quote[]) {
-  if (!quotes || quotes.length < 252) return { isBuyZone: false };
-  const lastYear = quotes.slice(-252);
-  const high52 = Math.max(...lastYear.map(q => q.high));
-  const low52 = Math.min(...lastYear.map(q => q.low));
-  const currentPrice = quotes[quotes.length - 1].close;
+  if (!quotes || quotes.length < 300) return { isBuyZone: false };
 
-  const isAtSupport = currentPrice <= low52 * 1.05;
+  const prices = quotes.map(q => q.close);
+  const currentPrice = prices[prices.length - 1];
+
+  let isPositionOpen = false;
+  let activeEntry = 0;
+  let activeTarget = 0;
+  let activeSignalDate = "";
+
+  for (let i = 252; i < quotes.length; i++) {
+    const lastYear = quotes.slice(i - 252, i);
+    const low52 = Math.min(...lastYear.map(q => q.low));
+    const high52 = Math.max(...lastYear.map(q => q.high));
+
+    if (!isPositionOpen && quotes[i].low <= low52) {
+      isPositionOpen = true;
+      activeEntry = Math.round(quotes[i].close);
+      activeTarget = Math.round(high52);
+      const dateVal = quotes[i].date;
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+    }
+
+    if (isPositionOpen && quotes[i].high >= activeTarget) {
+      isPositionOpen = false;
+    }
+  }
+
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
 
   return {
-    isBuyZone: isAtSupport,
-    entryPrice: Math.round(low52),
-    target: Math.round(high52),
-    currentPrice: Math.round(currentPrice)
+    isBuyZone: isActuallyInBuyRange,
+    entryPrice: activeEntry,
+    target: activeTarget,
+    currentPrice: Math.round(currentPrice),
+    triggerDate: activeSignalDate
   };
 }
 
@@ -307,78 +355,153 @@ export function calculateSRStrategy(quotes: Quote[]) {
 
 /**
  * STRATEGY 7: RHS (Inverted H&S)
+ * Logic: Identifies a Shoulder-Head-Shoulder pattern and triggers on Neckline Breakout.
  */
 export function calculateRHS(quotes: Quote[]) { 
-  if (!quotes || quotes.length < 250) return { isBuyZone: false };
+  if (!quotes || quotes.length < 300) return { isBuyZone: false };
+
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
+
+  let isPositionOpen = false;
+  let activeEntry = 0;
+  let activeTarget = 0;
+  let activeSignalDate = "";
+
   const window = 10;
-  const localLows: { price: number, idx: number }[] = [];
-  for (let i = quotes.length - 150; i < quotes.length - window; i++) {
-    const slice = prices.slice(i - window, i + window + 1);
-    if (prices[i] === Math.min(...slice)) localLows.push({ price: prices[i], idx: i });
-  }
-  if (localLows.length < 3) return { isBuyZone: false };
-  const l3 = localLows[localLows.length - 1], l2 = localLows[localLows.length - 2], l1 = localLows[localLows.length - 3];
-  if (l2.price < l1.price * 0.97 && l2.price < l3.price * 0.97 && Math.abs(l1.price - l3.price) / l1.price < 0.05) {
-    const neckline = Math.max(...prices.slice(l1.idx, l3.idx));
+  for (let i = 200; i < quotes.length; i++) {
+    const historicalSlice = prices.slice(i - 150, i - window);
+    const localLows: { price: number, idx: number }[] = [];
     
-    return { 
-      isBuyZone: currentPrice >= neckline * 0.95 && currentPrice <= neckline * 1.05, 
-      entryPrice: Math.round(neckline), 
-      target: Math.round(neckline + (neckline - l2.price)), 
-      currentPrice: Math.round(currentPrice) 
-    };
+    // Find peaks/troughs in the slice
+    for (let k = 10; k < historicalSlice.length - 10; k++) {
+      const sub = historicalSlice.slice(k - 10, k + 10);
+      if (historicalSlice[k] === Math.min(...sub)) localLows.push({ price: historicalSlice[k], idx: k });
+    }
+
+    if (localLows.length >= 3) {
+      const l3 = localLows[localLows.length - 1], l2 = localLows[localLows.length - 2], l1 = localLows[localLows.length - 3];
+      // H&S Logic: l2 (Head) is lower than shoulders
+      if (l2.price < l1.price * 0.98 && l2.price < l3.price * 0.98 && Math.abs(l1.price - l3.price) / l1.price < 0.05) {
+        const neckline = Math.max(...historicalSlice.slice(l1.idx, l3.idx));
+        
+        if (!isPositionOpen && quotes[i].close > neckline) {
+          isPositionOpen = true;
+          activeEntry = Math.round(quotes[i].close);
+          activeTarget = Math.round(activeEntry + (neckline - l2.price));
+          const dateVal = quotes[i].date;
+          activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+        }
+      }
+    }
+
+    if (isPositionOpen && quotes[i].high >= activeTarget) {
+      isPositionOpen = false;
+    }
   }
-  return { isBuyZone: false }; 
+
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+
+  return { 
+    isBuyZone: isActuallyInBuyRange, 
+    entryPrice: activeEntry, 
+    target: activeTarget, 
+    currentPrice: Math.round(currentPrice),
+    triggerDate: activeSignalDate
+  }; 
 }
 
 /**
  * STRATEGY 8: Structural Pivot (Cup & Handle)
+ * Logic: Finds a deep base, triggers on breakout above the pivot high.
+ * Locked Target: Entry + (Entry - Cup Low)
  */
 export function calculateCupHandle(quotes: Quote[]) { 
   if (!quotes || quotes.length < 250) return { isBuyZone: false };
+
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
-  const lookback = 200;
-  const recentHigh = Math.max(...prices.slice(-lookback, -20));
-  const recentLow = Math.min(...prices.slice(-lookback, -20));
-  const cupDepth = (recentHigh - recentLow) / recentHigh;
-  if (cupDepth > 0.15 && cupDepth < 0.50 && currentPrice >= recentHigh * 0.90 && currentPrice <= recentHigh * 1.05) {
-    return { 
-      isBuyZone: true, 
-      entryPrice: Math.round(recentHigh), 
-      target: Math.round(recentHigh + (recentHigh - recentLow)), 
-      currentPrice: Math.round(currentPrice) 
-    };
+
+  let isPositionOpen = false;
+  let activeEntry = 0;
+  let activeTarget = 0;
+  let activeSignalDate = "";
+
+  // Simulation Loop
+  const windowSize = 150;
+  for (let i = windowSize; i < quotes.length; i++) {
+    const historicalSlice = prices.slice(i - windowSize, i - 10);
+    const cupHigh = Math.max(...historicalSlice);
+    const cupLow = Math.min(...historicalSlice);
+    const cupDepth = (cupHigh - cupLow) / cupHigh;
+
+    // Trigger on Breakout above Cup High (Neckline)
+    if (!isPositionOpen && quotes[i].close > cupHigh && cupDepth > 0.15 && cupDepth < 0.50) {
+      isPositionOpen = true;
+      activeEntry = Math.round(quotes[i].close);
+      activeTarget = Math.round(activeEntry + (cupHigh - cupLow));
+      const dateVal = quotes[i].date;
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+    }
+
+    // Exit on Target
+    if (isPositionOpen && quotes[i].high >= activeTarget) {
+      isPositionOpen = false;
+    }
   }
-  return { isBuyZone: false }; 
+
+  // 5% Institutional Buy-Zone Rule
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+
+  return { 
+    isBuyZone: isActuallyInBuyRange, 
+    entryPrice: activeEntry, 
+    target: activeTarget, 
+    currentPrice: Math.round(currentPrice),
+    triggerDate: activeSignalDate
+  }; 
 }
 
 /**
  * STRATEGY 9: 67 Ka Funda
+ * Logic: Triggers when a stock has fallen 67% from its ATH and starts recovering.
  */
 export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any, basket?: any, providedATH?: number) {
-  if (!quotes || (quotes.length < 250 && !providedATH)) return null;
+  if (!quotes || quotes.length < 250) return null;
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
-  
+
+  let isPositionOpen = false;
+  let activeEntry = 0;
+  let activeTarget = 0;
+  let activeSignalDate = "";
+
   const ath = providedATH || Math.max(...quotes.map(q => q.high));
-  const drawdown = ((ath - currentPrice) / ath) * 100;
   
-  const pat = screenerData?.quarterlyNetProfits || [];
-  const isImproving = pat.length >= 3 && pat[pat.length - 1] > pat[pat.length - 2];
-  
-  const isBuyZone = drawdown >= 66.5; 
-  const verdict = (isBuyZone && isImproving) ? 'QUALIFIED' : 'WATCHLIST';
+  for (let i = 100; i < quotes.length; i++) {
+    const drawdown = ((ath - quotes[i].low) / ath) * 100;
+
+    if (!isPositionOpen && drawdown >= 66.5) {
+      isPositionOpen = true;
+      activeEntry = Math.round(quotes[i].close);
+      activeTarget = Math.round(ath * 0.67);
+      const dateVal = quotes[i].date;
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+    }
+
+    if (isPositionOpen && quotes[i].high >= activeTarget) {
+      isPositionOpen = false;
+    }
+  }
+
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
 
   return { 
-    isBuyZone, 
-    verdict,
-    entryPrice: Math.round(ath * 0.33), 
-    target: Math.round(ath * 0.67), 
+    isBuyZone: isActuallyInBuyRange, 
+    entryPrice: activeEntry, 
+    target: activeTarget, 
     currentPrice: Math.round(currentPrice),
-    drawdown: Math.round(drawdown)
+    triggerDate: activeSignalDate
   };
 }
 
