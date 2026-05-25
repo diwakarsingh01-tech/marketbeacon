@@ -280,7 +280,7 @@ export function calculateSMAStacking(quotes: Quote[]) {
   return {
     isBuyZone: isActuallyInBuyRange,
     entryPrice: activeEntry,
-    target: Math.round(sma200[prices.length - 1] * 1.15), // Theoretical objective
+    target: Math.round(sma200[prices.length - 1]), // Minimum recovery objective (SMA 200)
     currentPrice: Math.round(currentPrice),
     triggerDate: activeSignalDate,
     tranche: "BULK BUY"
