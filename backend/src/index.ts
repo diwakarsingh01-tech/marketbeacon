@@ -751,31 +751,42 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
       return { active: activeResults.sort((a,b) => b.roi - a.roi), closed: closedResults };
     };
 
-    const bc = await processBasket('BLUECHIP', BASKETS['BLUECHIP']);
-    const hb = await processBasket('HIGH_BETA', BASKETS['HIGH_BETA']);
-    
+    const bc = await processBasket('BLUECHIP', BASKETS['BLUECHIP'] || []);
+    const hb = await processBasket('HIGH_BETA', BASKETS['HIGH_BETA'] || []);
     const dynamicWealth = getDynamicBasket();
-    const currentWealth = dynamicWealth.length > 0 ? dynamicWealth : BASKETS['WEALTH_BASKET'];
+    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['WEALTH_BASKET'] || []);
     const wb = await processBasket('WEALTH_BASKET', currentWealth);
 
-    // Dynamic Distribution (Total 40-60)
-    let finalActive = [...bc.active, ...hb.active, ...wb.active];
+    // FORTRESS: Spread guarding
+    let finalActive = [];
+    if (bc?.active && Array.isArray(bc.active)) finalActive.push(...bc.active);
+    if (hb?.active && Array.isArray(hb.active)) finalActive.push(...hb.active);
+    if (wb?.active && Array.isArray(wb.active)) finalActive.push(...wb.active);
+    
     if (finalActive.length > 60) finalActive = finalActive.slice(0, 60);
 
-    const finalClosed = [...bc.closed, ...hb.closed, ...wb.closed]
-      .sort((a,b) => new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime())
-      .slice(0, 20);
+    let finalClosed = [];
+    if (bc?.closed && Array.isArray(bc.closed)) finalClosed.push(...bc.closed);
+    if (hb?.closed && Array.isArray(hb.closed)) finalClosed.push(...hb.closed);
+    if (wb?.closed && Array.isArray(wb.closed)) finalClosed.push(...wb.closed);
+
+    const sortedClosed = finalClosed.sort((a,b) => {
+      try {
+        return new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime();
+      } catch (e) { return 0; }
+    }).slice(0, 20);
 
     res.json({ 
       stocks: finalActive, 
-      closedTrades: finalClosed,
+      closedTrades: sortedClosed,
       summary: { 
+        version: '11.2.0-PRO',
         total: finalActive.length, 
-        bluechip: bc.active.length, 
-        highBeta: hb.active.length, 
-        wealth: wb.active.length,
-        avgRoi: finalActive.reduce((a,b) => a + b.roi, 0) / (finalActive.length || 1),
-        avgDays: finalClosed.reduce((a,b) => a + b.days, 0) / (finalClosed.length || 1)
+        bluechip: bc?.active?.length || 0, 
+        highBeta: hb?.active?.length || 0, 
+        wealth: wb?.active?.length || 0,
+        avgRoi: finalActive.reduce((a,b) => a + (b.roi || 0), 0) / (finalActive.length || 1),
+        avgDays: sortedClosed.reduce((a,b) => a + (b.days || 0), 0) / (sortedClosed.length || 1)
       } 
     });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
