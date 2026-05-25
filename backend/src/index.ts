@@ -235,16 +235,21 @@ app.post('/api/admin/update-snapshot', authenticateToken, requireAdmin, async (r
     let symbols = [];
     
     const dynamicWealth = getDynamicBasket();
-    const currentWealth = dynamicWealth.length > 0 ? dynamicWealth : BASKETS['WEALTH_BASKET'];
+    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['WEALTH_BASKET'] || []);
 
     if (basket === 'BLUECHIP') {
-      symbols = BASKETS['BLUECHIP'];
+      symbols = BASKETS['BLUECHIP'] || [];
     } else if (basket === 'HIGH_BETA') {
-      symbols = BASKETS['HIGH_BETA'];
+      symbols = BASKETS['HIGH_BETA'] || [];
     } else if (basket === 'WEALTH_BASKET') {
       symbols = currentWealth;
     } else {
-      symbols = Array.from(new Set([...BASKETS['BLUECHIP'], ...BASKETS['HIGH_BETA'], ...currentWealth]));
+      // FIX: Safe spreading
+      const all = [];
+      if (Array.isArray(BASKETS['BLUECHIP'])) all.push(...BASKETS['BLUECHIP']);
+      if (Array.isArray(BASKETS['HIGH_BETA'])) all.push(...BASKETS['HIGH_BETA']);
+      if (Array.isArray(currentWealth)) all.push(...currentWealth);
+      symbols = Array.from(new Set(all));
     }
 
     console.log(`🚀 [ADMIN] Manual Snapshot Triggered for ${basket} (${symbols.length} symbols)`);
@@ -544,15 +549,19 @@ app.get('/api/backtest/envelope', async (req, res) => {
     const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
     
     const dynamicWealth = getDynamicBasket();
-    const currentWealth = dynamicWealth.length > 0 ? dynamicWealth : BASKETS['WEALTH_BASKET'];
+    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['WEALTH_BASKET'] || []);
 
     let symbols = [];
     if (basketId === 'WEALTH_BASKET') {
-      symbols = currentWealth;
+      const all = [];
+      if (Array.isArray(BASKETS['BLUECHIP'])) all.push(...BASKETS['BLUECHIP']);
+      if (Array.isArray(BASKETS['HIGH_BETA'])) all.push(...BASKETS['HIGH_BETA']);
+      if (Array.isArray(currentWealth)) all.push(...currentWealth);
+      symbols = Array.from(new Set(all));
     } else if (basketId === 'HIGH_BETA') {
-      symbols = BASKETS['HIGH_BETA'];
+      symbols = BASKETS['HIGH_BETA'] || [];
     } else {
-      symbols = BASKETS['BLUECHIP'];
+      symbols = BASKETS['BLUECHIP'] || [];
     }
 
     const snapshot = getMarketSnapshot();
@@ -826,8 +835,12 @@ async function startServer() {
 }
 
 function syncBaskets() {
-  const dynamicProfit = getDynamicBasket();
-  if (dynamicProfit.length > 0) BASKETS['WEALTH_BASKET'] = dynamicProfit;
+  try {
+    const dynamicProfit = getDynamicBasket();
+    if (Array.isArray(dynamicProfit) && dynamicProfit.length > 0) {
+      BASKETS['WEALTH_BASKET'] = dynamicProfit;
+    }
+  } catch (e) { console.error('Sync Baskets Failed:', e.message); }
 }
 
 syncBaskets(); 

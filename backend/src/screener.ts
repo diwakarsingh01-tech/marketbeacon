@@ -284,7 +284,14 @@ export async function runScreener() {
 }
 
 export async function updateMarketSnapshot(symbols: string[]) {
-  console.log(`📡 [SNAPSHOT] Updating ${symbols.length} symbols...`);
+  if (!Array.isArray(symbols)) {
+    console.error('Snapshot Error: symbols is not an array', symbols);
+    return;
+  }
+  if (symbols.length === 0) return;
+
+  console.log(`🚀 [SNAPSHOT] Refreshing ${symbols.length} symbols...`);
+
   
   // MERGE LOGIC: Load existing snapshot first to avoid wipe-out
   let snapshot: Record<string, any> = {};
