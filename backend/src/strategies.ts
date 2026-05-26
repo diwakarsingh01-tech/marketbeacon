@@ -364,10 +364,14 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
     const highSlice = quotes.slice(i - window, i + window + 1).map(q => q.high);
     
     if (quotes[i].low === Math.min(...lowSlice)) {
-      pivotLows.push({ price: quotes[i].low, idx: i, date: (typeof quotes[i].date === 'string' ? quotes[i].date : (quotes[i].date as Date).toISOString()).split('T')[0] });
+      const dateVal = quotes[i].date;
+      const dateStr = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+      pivotLows.push({ price: quotes[i].low, idx: i, date: dateStr });
     }
     if (quotes[i].high === Math.max(...highSlice)) {
-      pivotHighs.push({ price: quotes[i].high, idx: i, date: (typeof quotes[i].date === 'string' ? quotes[i].date : (quotes[i].date as Date).toISOString()).split('T')[0] });
+      const dateVal = quotes[i].date;
+      const dateStr = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+      pivotHighs.push({ price: quotes[i].high, idx: i, date: dateStr });
     }
   }
 
@@ -701,7 +705,10 @@ export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
     entryPrice: Math.round(rallyOrigin),
     target: Math.round(rallyOrigin * 1.20),
     currentPrice: Math.round(currentPrice),
-    triggerDate: rallyFound ? (typeof quotes[latestIdx-barsSinceRally].date === 'string' ? quotes[latestIdx-barsSinceRally].date : (quotes[latestIdx-barsSinceRally].date as Date).toISOString()).split('T')[0] : "",
+    triggerDate: rallyFound ? (() => {
+      const d = quotes[latestIdx-barsSinceRally].date;
+      return (typeof d === 'string' ? d : (d as Date).toISOString()).split('T')[0];
+    })() : "",
     barsSinceRally
   };
 }
