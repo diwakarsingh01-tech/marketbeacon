@@ -79,6 +79,10 @@ const MANUAL_SECTOR_MAP: Record<string, string> = {
 app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 
+// --- HEALTH CHECKS (Prevents Protocol Mismatch False Positives) ---
+app.get('/', (req, res) => res.json({ status: 'active', service: 'MarketBeacon Institutional Backend', version: '11.6.2-PRO' }));
+app.get('/api/health', (req, res) => res.json({ status: 'active', service: 'MarketBeacon Institutional API', version: '11.6.2-PRO' }));
+
 // --- ADMIN CONFIG ---
 const ADMIN_EMAILS = ['ajaythomasjohn@gmail.com', 'admin@marketbeacon.com', 'diwakarsingh01.tech@gmail.com'];
 
@@ -566,7 +570,13 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     const dyn = getDynamicBasket();
     const wb = await processBasket('WEALTH_BASKET', Array.isArray(dyn) && dyn.length > 0 ? dyn : BASKETS['WEALTH_BASKET']);
     
-    const candidates = [...bc.active, ...hb.active, ...wb.active].sort((a,b) => b.roi - a.roi);
+    // FORTRESS: Spread guarding
+    let allActive = [];
+    if (bc?.active && Array.isArray(bc.active)) allActive.push(...bc.active);
+    if (hb?.active && Array.isArray(hb.active)) allActive.push(...hb.active);
+    if (wb?.active && Array.isArray(wb.active)) allActive.push(...wb.active);
+    
+    const candidates = allActive.sort((a,b) => (b.roi || 0) - (a.roi || 0));
     const finalActive = [];
     const CAP_LIMITS = { LARGE: 25, MID: 15, SMALL: 10 };
     const MAX_PER_SECTOR = 10; // 20% exposure rule
@@ -580,11 +590,20 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
       if (finalActive.length >= 60) break;
     }
 
+    let allClosed = [];
+    if (bc?.closed && Array.isArray(bc.closed)) allClosed.push(...bc.closed);
+    if (hb?.closed && Array.isArray(hb.closed)) allClosed.push(...hb.closed);
+    if (wb?.closed && Array.isArray(wb.closed)) allClosed.push(...wb.closed);
+
     res.json({ 
       stocks: finalActive, 
-      closedTrades: [...bc.closed, ...hb.closed, ...wb.closed].sort((a,b) => new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime()).slice(0, 50),
+      closedTrades: allClosed.sort((a,b) => {
+        try {
+          return new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime();
+        } catch (e) { return 0; }
+      }).slice(0, 50),
       summary: { 
-        version: '11.6.1-PRO', 
+        version: '11.6.2-PRO', 
         total: finalActive.length, 
         large: capStats.LARGE, mid: capStats.MID, small: capStats.SMALL,
         avgRoi: finalActive.reduce((a,b) => a + (b.roi || 0), 0) / (finalActive.length || 1),
