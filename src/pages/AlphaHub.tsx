@@ -237,48 +237,87 @@ const AlphaHubPage: React.FC = () => {
                 <span className="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase">{basketStocks.length} Assets</span>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {basketStocks.map((stock: any, i: number) => {
-                  const qty = calculateQuantity(stock);
-                  const allocation = qty * (stock.currentPrice || 0);
-
-                  return (
-                    <div key={stock.symbol} className="bg-white rounded-[2.5rem] border border-slate-100 p-6 shadow-sm hover:border-slate-300 transition-all group flex flex-col justify-between h-auto">
-                       <div className="space-y-6">
-                          <div className="flex items-center space-x-3">
-                             <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-xs shadow-lg shadow-slate-200">{i + 1}</div>
-                             <div className="flex flex-col min-w-0">
-                                <span className="text-sm font-black text-slate-900 uppercase tracking-tight truncate">{stock.symbol}</span>
-                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest truncate">{stock.sector || 'Strategic Asset'}</span>
+             <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Obs</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Symbol</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Strategy</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Entry</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Target</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-emerald-600 whitespace-nowrap">ROI%</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Qty</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {basketStocks.map((stock: any) => {
+                      const qty = calculateQuantity(stock);
+                      return (
+                        <tr key={stock.symbol} className="hover:bg-slate-50/50 transition-colors group">
+                          <td className="px-8 py-5 text-[10px] font-black text-slate-400 whitespace-nowrap">
+                             {stock.entryTime ? new Date(stock.entryTime).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }) : '-'}
+                          </td>
+                          <td className="px-8 py-5">
+                             <div className="flex flex-col min-w-[120px]">
+                                <span className="text-xs font-black text-slate-900 uppercase tracking-tight">{stock.symbol}</span>
+                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest truncate">{stock.sector}</span>
                              </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4 border-t border-slate-50 pt-4">
-                             <div className="space-y-1">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Entry</span>
-                                <p className="text-xs font-black text-slate-800">₹{Number(stock.entryPrice)?.toLocaleString() || '-'}</p>
+                          </td>
+                          <td className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase whitespace-nowrap">{stock.strategy}</td>
+                          <td className="px-8 py-5 text-xs font-black text-slate-900 whitespace-nowrap">₹{Number(stock.entryPrice)?.toLocaleString()}</td>
+                          <td className="px-8 py-5 text-xs font-black text-slate-900 whitespace-nowrap">₹{Number(stock.target)?.toLocaleString()}</td>
+                          <td className="px-8 py-5 text-xs font-black text-emerald-600 whitespace-nowrap">+{Number(stock.roi)?.toFixed(1)}%</td>
+                          <td className="px-8 py-5 text-xs font-black text-slate-900 whitespace-nowrap">{qty}</td>
+                          <td className="px-8 py-5">
+                             <div className="flex items-center space-x-2">
+                                <Link to={`/stock/${stock.symbol}`} className="p-2.5 bg-slate-50 group-hover:bg-slate-900 group-hover:text-white rounded-xl text-slate-400 transition-all inline-block"><ArrowUpRight className="h-4 w-4" /></Link>
                              </div>
-                             <div className="space-y-1 text-right">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Quantity</span>
-                                <p className="text-xs font-black text-slate-900">{qty}</p>
-                             </div>
-                          </div>
-                       </div>
-
-                       <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
-                          <div className="flex flex-col">
-                             <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Expected ROI</span>
-                             <span className="text-[11px] font-black text-emerald-600">+{Number(stock.roi)?.toFixed(1)}%</span>
-                          </div>
-                          <Link to={`/stock/${stock.symbol}`} className="p-2 bg-slate-50 hover:bg-slate-900 hover:text-white rounded-xl text-slate-400 transition-all"><ArrowUpRight className="h-4 w-4" /></Link>
-                       </div>
-                    </div>
-                  );
-                })}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
              </div>
           </div>
         );
       })}
+
+      {data?.closedTrades?.length > 0 && (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+           <div className="flex items-center space-x-4">
+              <h2 className="text-2xl font-black text-slate-400 uppercase italic tracking-tighter">Profit Audit (Closed)</h2>
+              <div className="h-px flex-1 bg-slate-100" />
+           </div>
+
+           <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Exit Date</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Symbol</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Strategy</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-emerald-600">ROI%</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {data.closedTrades.map((trade: any) => (
+                    <tr key={`${trade.symbol}-${trade.exitDate}`} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-8 py-5 text-[10px] font-black text-slate-400">{new Date(trade.exitDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                      <td className="px-8 py-5 text-xs font-black text-slate-900 uppercase">{trade.symbol}</td>
+                      <td className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase">{trade.strategy}</td>
+                      <td className="px-8 py-5 text-xs font-black text-emerald-600">+{Number(trade.roi).toFixed(1)}%</td>
+                      <td className="px-8 py-5 text-xs font-black text-slate-400 uppercase">{trade.days} Trading Days</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+           </div>
+        </div>
+      )}
     </div>
   );
 };
