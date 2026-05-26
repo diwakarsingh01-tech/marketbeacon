@@ -337,7 +337,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
 
         // Aggressive Data Hardening for individual stock refresh
         snapshot[baseSymbol] = {
-          quotes: quotes.slice(-1300),
+          quotes: quotes.slice(-600), // REDUCED TO ~2.5 YEARS to fit into Render 512MB RAM limit
           quote: {
             marketCap,
             regularMarketPrice: quote.regularMarketPrice || (quotes.length > 0 ? quotes[quotes.length - 1].close : 0),
