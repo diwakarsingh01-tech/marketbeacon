@@ -63,6 +63,35 @@ const BASKETS: Record<string, string[]> = {
 };
 
 // --- INSTITUTIONAL SECTOR MAPPING ---
+const COMPANY_NAMES: Record<string, string> = {
+  'RELAXO': 'Relaxo Footwears Ltd.', 'FINCABLES': 'Finolex Cables Ltd.', 'SYMPHONY': 'Symphony Ltd.',
+  'TEAMLEASE': 'TeamLease Services Ltd.', 'SFL': 'Sheela Foam Ltd.', 'RAJESHEXPO': 'Rajesh Exports Ltd.',
+  'CERA': 'Cera Sanitaryware Ltd.', 'TASTYBITE': 'Tasty Bite Eatables Ltd.', 'HONAUT': 'Honeywell Automation India',
+  'SIS': 'SIS Ltd.', 'VGUARD': 'V-Guard Industries Ltd.', 'SUNTV': 'Sun TV Network Ltd.',
+  'OFSS': 'Oracle Financial Services Software', 'BAYERCROP': 'Bayer Cropscience Ltd.', 'TTKPRESTIG': 'TTK Prestige Ltd.',
+  'VIPIND': 'VIP Industries Ltd.', 'JCHAC': 'Johnson Controls-Hitachi AC', 'KAJARIACER': 'Kajaria Ceramics Ltd.',
+  'VINATIORGA': 'Vinati Organics Ltd.', 'CAPLIPOINT': 'Caplin Point Laboratories', 'GODREJCP': 'Godrej Consumer Products',
+  'FINEORG': 'Fine Organic Industries', 'DIXON': 'Dixon Technologies (India)', 'KEI': 'KEI Industries Ltd.',
+  'ERIS': 'Eris Lifesciences Ltd.', 'ASTRAZEN': 'AstraZeneca Pharma India', 'AVANTIFEED': 'Avanti Feeds Ltd.',
+  'PGHL': 'Procter & Gamble Health', 'LALPATHLAB': 'Dr. Lal PathLabs Ltd.', 'BOSCHLTD': 'Bosch Ltd.',
+  'MOTILALOFS': 'Motilal Oswal Financial Services', '3MINDIA': '3M India Ltd.', 'UJJIVANSFB': 'Ujjivan Small Finance Bank',
+  'TVSMOTOR': 'TVS Motor Company Ltd.', 'HEROMOTOCO': 'Hero MotoCorp Ltd.', 'RADICO': 'Radico Khaitan Ltd.',
+  'EICHERMOT': 'Eicher Motors Ltd.', 'POLYCAB': 'Polycab India Ltd.', 'MCX': 'Multi Commodity Exchange',
+  'CDSL': 'Central Depository Services', 'BSE': 'BSE Ltd.', 'IEX': 'Indian Energy Exchange',
+  'CAMS': 'Computer Age Management Services', 'HAPPSTMNDS': 'Happiest Minds Technologies', 'AFLE': 'Affle (India) Ltd.',
+  'CENTURYPLY': 'Century Plyboards (I) Ltd.', 'KAYNES': 'Kaynes Technology India', 'MTARTECH': 'MTAR Technologies Ltd.',
+  'MAHLOG': 'Mahindra Logistics Ltd.', 'PRINCEPIPE': 'Prince Pipes and Fittings', 'ANGELONE': 'Angel One Ltd.',
+  'KFINTECH': 'KFin Technologies Ltd.', 'DATA PATTERNS': 'Data Patterns (India) Ltd.', 'MAZAGONDOCK': 'Mazagon Dock Shipbuilders',
+  'COCHINSHIP': 'Cochin Shipyard Ltd.', 'GRSE': 'Garden Reach Shipbuilders', 'RVNL': 'Rail Vikas Nigam Ltd.',
+  'IRCON': 'Ircon International Ltd.', 'RITES': 'RITES Ltd.', 'RAILTEL': 'RailTel Corporation of India',
+  'BEL': 'Bharat Electronics Ltd.', 'HAL': 'Hindustan Aeronautics Ltd.', 'BEML': 'BEML Ltd.',
+  'MAZDOCK': 'Mazagon Dock Shipbuilders', 'SOLARINDS': 'Solar Industries India', 'BDL': 'Bharat Dynamics Ltd.',
+  'KPITTECH': 'KPIT Technologies Ltd.', 'COFORGE': 'Coforge Ltd.', 'PERSISTENT': 'Persistent Systems Ltd.',
+  'TATAELXSI': 'Tata Elxsi Ltd.', 'ZENTEC': 'Zen Technologies Ltd.', 'NEWGEN': 'Newgen Software Technologies',
+  'MAPMYINDIA': 'C.E. Info Systems (MapmyIndia)', 'CEINFO': 'C.E. Info Systems Ltd.', 'TANLA': 'Tanla Platforms Ltd.',
+  'ROUTE': 'Route Mobile Ltd.', 'LATENTVIEW': 'Latent View Analytics Ltd.'
+};
+
 const MANUAL_SECTOR_MAP: Record<string, string> = {
   'TCS': 'IT Services', 'INFY': 'IT Services', 'HCLTECH': 'IT Services', 'WIPRO': 'IT Services',
   'HDFCBANK': 'Banking', 'ICICIBANK': 'Banking', 'AXISBANK': 'Banking', 'KOTAKBANK': 'Banking',
@@ -552,7 +581,7 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
             const capType = capCr >= 20000 ? 'LARGE' : (capCr >= 5000 ? 'MID' : 'SMALL');
 
             if (sd.isBuyZone) {
-              active.push({ symbol: sym, entryTime: sd.triggerDate, strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, basketSource: basketName, marketCap, capType, sector, currentPrice: last.close, entryPrice: entry, target, roi: ((target / entry) - 1) * 100, score: audit.score, smartMoney: audit.smartMoneyTotal });
+              active.push({ symbol: sym, stockName: COMPANY_NAMES[sym] || sym, entryTime: sd.triggerDate, strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, basketSource: basketName, marketCap, capType, sector, currentPrice: last.close, entryPrice: entry, target, roi: ((target / entry) - 1) * 100, score: audit.score, smartMoney: audit.smartMoneyTotal });
               break; 
             } else if (entry > 0) {
               const idx = snap.quotes.findIndex(q => String(q.date).includes(String(sd.triggerDate)));
@@ -578,8 +607,8 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     
     const candidates = allActive.sort((a,b) => (b.roi || 0) - (a.roi || 0));
     const finalActive = [];
-    const CAP_LIMITS = { LARGE: 25, MID: 15, SMALL: 10 };
-    const MAX_PER_SECTOR = 10; // 20% exposure rule
+    const CAP_LIMITS = { LARGE: 38, MID: 23, SMALL: 15 }; // 50-30-20 Rule with +0.5 (50%) tolerance applied
+    const MAX_PER_SECTOR = 15; // Increased sector exposure limit proportionately to allow more High Beta / Wealth basket stocks
 
     for (const s of candidates) {
       if (capStats[s.capType] < CAP_LIMITS[s.capType] && (sectorStats[s.sector] || 0) < MAX_PER_SECTOR) {

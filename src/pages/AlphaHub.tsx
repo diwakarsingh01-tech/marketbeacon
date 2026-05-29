@@ -274,8 +274,13 @@ const AlphaHubPage: React.FC = () => {
                               </td>
                               <td className="px-6 py-4">
                                  <div className="flex flex-col">
-                                    <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{stock.symbol}</span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{stock.sector}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{stock.symbol}</span>
+                                        {stock.stockName && stock.stockName !== stock.symbol && (
+                                            <span className="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded truncate max-w-[120px]" title={stock.stockName}>{stock.stockName}</span>
+                                        )}
+                                    </div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{stock.sector}</span>
                                  </div>
                               </td>
                               <td className="px-6 py-4">
@@ -301,7 +306,7 @@ const AlphaHubPage: React.FC = () => {
                                 <span className="font-mono text-xs font-bold text-slate-600">₹{stock.entryPrice?.toLocaleString('en-IN') || stock.currentPrice?.toLocaleString('en-IN')}</span>
                               </td>
                               <td className="px-6 py-4 text-right">
-                                <div className="font-mono text-xs font-black text-emerald-600">₹{stock.targetPrice?.toLocaleString('en-IN') || '-'}</div>
+                                <div className="font-mono text-xs font-black text-emerald-600">₹{stock.target?.toLocaleString('en-IN') || '-'}</div>
                               </td>
                               <td className="px-6 py-4 text-sm font-black text-emerald-600 text-right">+{Number(stock.roi)?.toFixed(1)}%</td>
                               <td className="px-6 py-4 text-sm font-black text-slate-900 text-right">{qty}</td>
@@ -343,8 +348,13 @@ const AlphaHubPage: React.FC = () => {
                         <td className="px-8 py-5 text-[10px] font-black text-slate-400">{new Date(trade.exitDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                         <td className="px-8 py-5">
                            <div className="flex flex-col">
-                              <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{trade.symbol}</span>
-                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{trade.sector}</span>
+                              <div className="flex items-center gap-2">
+                                  <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{trade.symbol}</span>
+                                  {trade.stockName && trade.stockName !== trade.symbol && (
+                                      <span className="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded truncate max-w-[120px]" title={trade.stockName}>{trade.stockName}</span>
+                                  )}
+                              </div>
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</span>
                            </div>
                         </td>
                         <td className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase">{trade.strategy}</td>
