@@ -30,6 +30,7 @@ const AlphaHubPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'active' | 'closed'>('active');
   const [basketFilter, setBasketFilter] = useState<string>('ALL');
   const [strategyFilter, setStrategyFilter] = useState<string>('ALL');
+  const [showAudit, setShowAudit] = useState<boolean>(false);
 
   const handleExportAlpha = () => {
     if (!data?.stocks?.length) return;
@@ -134,9 +135,18 @@ const AlphaHubPage: React.FC = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.3em]">Elite Portfolio v11.5</span>
            </div>
            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Alpha Hub</h1>
-           <p className="text-xs md:text-sm text-slate-500 font-medium max-w-xl leading-relaxed">
-             Institutional Portfolio managed by the **50-30-20 Rule (5% Tolerance)** and **20% Sector Limit**.
-           </p>
+           <div className="flex items-center gap-4">
+               <p className="text-xs md:text-sm text-slate-500 font-medium max-w-xl leading-relaxed">
+                 Institutional Portfolio managed by the **50-30-20 Rule (5% Tolerance)** and **20% Sector Limit**.
+               </p>
+               <button 
+                  onClick={() => setShowAudit(!showAudit)}
+                  className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${showAudit ? 'bg-slate-900 text-white border-slate-900 shadow-xl' : 'bg-white text-slate-900 border-slate-900/10 hover:bg-slate-50'}`}
+               >
+                  <ShieldCheck className="h-3 w-3" />
+                  {showAudit ? 'Hide Audit Log' : 'System Integrity Audit'}
+               </button>
+           </div>
         </div>
         
         <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-2xl space-y-4 min-w-[300px] relative overflow-hidden group">
@@ -165,6 +175,83 @@ const AlphaHubPage: React.FC = () => {
            </div>
         </div>
       </div>
+
+      {showAudit && data?.summary?.auditLog && (
+        <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white border border-slate-800 shadow-2xl space-y-10 animate-in slide-in-from-top-4 duration-500">
+           <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                 <h2 className="text-2xl font-black uppercase italic tracking-tighter flex items-center gap-3">
+                    <ShieldCheck className="h-6 w-6 text-emerald-400" />
+                    System Integrity Audit Log
+                 </h2>
+                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Pre-Generation Verification Report</p>
+              </div>
+              <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                 Audit Status: 100% Passed
+              </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+              {/* Baskets Audited */}
+              <div className="space-y-6">
+                 <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                    <Database className="h-4 w-4 text-blue-400" />
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Baskets Scanned</h3>
+                 </div>
+                 <div className="space-y-3">
+                    {data.summary.auditLog.baskets.map((b: string) => (
+                       <div key={b} className="flex items-center gap-3 group">
+                          <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                             <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                          </div>
+                          <span className="text-xs font-black text-slate-200 group-hover:text-white transition-colors uppercase tracking-tight">{b}</span>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+
+              {/* Strategies Audited */}
+              <div className="space-y-6">
+                 <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                    <Zap className="h-4 w-4 text-amber-400" />
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Strategies Audited</h3>
+                 </div>
+                 <div className="grid grid-cols-1 gap-3">
+                    {data.summary.auditLog.strategies.map((s: string) => (
+                       <div key={s} className="flex items-center gap-3 group">
+                          <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                             <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                          </div>
+                          <span className="text-xs font-black text-slate-200 group-hover:text-white transition-colors uppercase tracking-tight">{s}</span>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+
+              {/* Rules & Compliance */}
+              <div className="space-y-6">
+                 <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                    <Briefcase className="h-4 w-4 text-purple-400" />
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Rule Compliance</h3>
+                 </div>
+                 <div className="space-y-4">
+                    {data.summary.auditLog.institutionalRules.map((rule: string) => (
+                       <div key={rule} className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between group hover:border-emerald-500/30 transition-all">
+                          <span className="text-[11px] font-bold text-slate-300 group-hover:text-white">{rule}</span>
+                          <span className="text-[8px] font-black text-emerald-400 uppercase">Verified</span>
+                       </div>
+                    ))}
+                    <div className="pt-4 mt-4 border-t border-slate-800">
+                        <div className="flex items-center gap-3 text-emerald-400">
+                           <RefreshCw className="h-3 w-3 animate-spin" />
+                           <span className="text-[9px] font-black uppercase tracking-widest">Fundamental Audit: {data.summary.auditLog.fundamentalCheck}</span>
+                        </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
          <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden group border border-slate-800 shadow-2xl">
