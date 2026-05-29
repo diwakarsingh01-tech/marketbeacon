@@ -133,7 +133,7 @@ const AlphaHubPage: React.FC = () => {
            </div>
            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Alpha Hub</h1>
            <p className="text-xs md:text-sm text-slate-500 font-medium max-w-xl leading-relaxed">
-             Institutional Portfolio managed by the **50-30-20 Rule** and **20% Sector Limit**.
+             Institutional Portfolio managed by the **50-30-20 Rule (5% Tolerance)** and **20% Sector Limit**.
            </p>
         </div>
         
@@ -192,7 +192,7 @@ const AlphaHubPage: React.FC = () => {
                   <div className="h-full bg-amber-500" style={{ width: `${((data?.summary?.mid || 0) / (data?.summary?.total || 1)) * 100}%` }} />
                   <div className="h-full bg-slate-300" style={{ width: `${((data?.summary?.small || 0) / (data?.summary?.total || 1)) * 100}%` }} />
                </div>
-               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center italic">Institutional 50-30-20 Mix</p>
+               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center italic">Inst. Mix (L: 45-55%, M: 25-35%, S: 15-25%)</p>
             </div>
          </div>
 
@@ -230,7 +230,7 @@ const AlphaHubPage: React.FC = () => {
            onClick={() => setActiveTab('closed')}
            className={`px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'closed' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-900'}`}
          >
-           Profit Audit
+           Booked Profit
          </button>
       </div>
 
@@ -325,8 +325,37 @@ const AlphaHubPage: React.FC = () => {
             );
           })}
         </div>
-      ) : (
+      ) : (() => {
+        const perTradeCap = totalCapital / 40;
+        let totalDeployed = 0;
+        let totalProfit = 0;
+        
+        data?.closedTrades?.forEach((trade: any) => {
+          const entry = trade.entryPrice || 1;
+          const estQty = Math.floor(perTradeCap / entry);
+          totalDeployed += (estQty * entry);
+          totalProfit += (estQty * ((trade.targetPrice || entry) - entry));
+        });
+        
+        const netRoi = totalDeployed > 0 ? (totalProfit / totalDeployed) * 100 : 0;
+
+        return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl border border-slate-800">
+                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Total Capital Deployed</div>
+                 <div className="text-3xl font-black font-mono">₹{Math.round(totalDeployed).toLocaleString('en-IN')}</div>
+              </div>
+              <div className="bg-gradient-to-br from-emerald-400 to-emerald-600 p-8 rounded-[2.5rem] text-white shadow-2xl border border-emerald-500">
+                 <div className="text-[10px] font-black uppercase tracking-widest text-emerald-100 mb-2">Total Booked Profit</div>
+                 <div className="text-3xl font-black font-mono">+₹{Math.round(totalProfit).toLocaleString('en-IN')}</div>
+              </div>
+              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Net Realized ROI</div>
+                 <div className="text-3xl font-black text-emerald-600 font-mono">+{netRoi.toFixed(2)}%</div>
+              </div>
+           </div>
+
            <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse min-w-[900px]">
                 <thead>
@@ -335,14 +364,14 @@ const AlphaHubPage: React.FC = () => {
                     <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset & Sector</th>
                     <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Strategy</th>
                     <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-emerald-600">ROI%</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-emerald-600">Est. P/L</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-emerald-600">Booked P/L</th>
                     <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {data?.closedTrades?.map((trade: any) => {
-                    const estQty = 200000 / 40 / trade.entryPrice; 
-                    const profitValue = Math.round(estQty * (trade.targetPrice - trade.entryPrice));
+                    const estQty = Math.floor(perTradeCap / (trade.entryPrice || 1)); 
+                    const profitValue = Math.round(estQty * ((trade.targetPrice || trade.entryPrice) - trade.entryPrice));
                     return (
                       <tr key={`${trade.symbol}-${trade.exitDate}`} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-8 py-5 text-[10px] font-black text-slate-400">{new Date(trade.exitDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</td>
@@ -359,7 +388,7 @@ const AlphaHubPage: React.FC = () => {
                         </td>
                         <td className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase">{trade.strategy}</td>
                         <td className="px-8 py-5 text-sm font-black text-emerald-600">+{Number(trade.roi).toFixed(1)}%</td>
-                        <td className="px-8 py-5 text-sm font-black text-emerald-600">₹{profitValue.toLocaleString()}</td>
+                        <td className="px-8 py-5 text-sm font-black text-emerald-600">₹{profitValue.toLocaleString('en-IN')}</td>
                         <td className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                            <div className="flex items-center space-x-2">
                               <Clock className="h-3 w-3" />
@@ -379,7 +408,7 @@ const AlphaHubPage: React.FC = () => {
               )}
            </div>
         </div>
-      )}
+      )})()}
     </div>
   );
 };

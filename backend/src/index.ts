@@ -607,8 +607,8 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     
     const candidates = allActive.sort((a,b) => (b.roi || 0) - (a.roi || 0));
     const finalActive = [];
-    const CAP_LIMITS = { LARGE: 38, MID: 23, SMALL: 15 }; // 50-30-20 Rule with +0.5 (50%) tolerance applied
-    const MAX_PER_SECTOR = 15; // Increased sector exposure limit proportionately to allow more High Beta / Wealth basket stocks
+    const CAP_LIMITS = { LARGE: 22, MID: 14, SMALL: 10 }; // Target 40 stocks with 5% tolerance (Max: 55%, 35%, 25%)
+    const MAX_PER_SECTOR = 8; // 20% of 40 max
 
     for (const s of candidates) {
       if (capStats[s.capType] < CAP_LIMITS[s.capType] && (sectorStats[s.sector] || 0) < MAX_PER_SECTOR) {
@@ -616,7 +616,7 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
         sectorStats[s.sector] = (sectorStats[s.sector] || 0) + 1;
         capStats[s.capType]++;
       }
-      if (finalActive.length >= 60) break;
+      if (finalActive.length >= 40) break;
     }
 
     let allClosed = [];
