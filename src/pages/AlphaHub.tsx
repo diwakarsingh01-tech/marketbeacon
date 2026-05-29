@@ -146,10 +146,17 @@ const AlphaHubPage: React.FC = () => {
            <div className="space-y-3 relative z-10">
               <div className="relative">
                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xl">₹</span>
-                 <input 
-                   type="number" 
-                   value={totalCapital}
-                   onChange={(e) => setTotalCapital(Number(e.target.value))}
+                 <input
+                   type="text"
+                   value={totalCapital ? totalCapital.toLocaleString('en-IN') : ''}
+                   onChange={(e) => {
+                     const rawValue = e.target.value.replace(/,/g, '');
+                     if (!isNaN(Number(rawValue)) && rawValue !== '') {
+                       setTotalCapital(Number(rawValue));
+                     } else if (rawValue === '') {
+                       setTotalCapital(0);
+                     }
+                   }}
                    className="w-full bg-slate-800/50 border-2 border-slate-700/50 rounded-2xl pl-10 pr-6 py-5 text-2xl font-black text-white focus:border-white transition-all outline-none"
                  />
               </div>
