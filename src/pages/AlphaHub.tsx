@@ -122,30 +122,30 @@ const AlphaHubPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6 md:p-10 lg:p-16 max-w-7xl mx-auto space-y-12 pb-32 bg-[#f8fafc] min-h-screen overflow-y-auto custom-scrollbar">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 border-b border-slate-100 pb-12">
-        <div className="space-y-4">
+    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 pb-32 bg-[#f8fafc] min-h-screen overflow-y-auto custom-scrollbar">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-100 pb-8">
+        <div className="space-y-3">
            <div className="flex items-center space-x-3 text-slate-900">
-              <div className="w-10 h-10 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-slate-200">
-                 <Shield className="h-5 w-5" />
+              <div className="w-8 h-8 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg shadow-slate-200">
+                 <Shield className="h-4 w-4" />
               </div>
-              <span className="text-[11px] font-black uppercase tracking-[0.4em]">Elite Portfolio v11.5</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Elite Portfolio v11.5</span>
            </div>
-           <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Alpha Hub</h1>
-           <p className="text-sm md:text-lg text-slate-500 font-medium max-w-xl leading-relaxed">
-             Institutional Portfolio managed by the **50-30-20 Rule** and **20% Sector Exposure Limit**.
+           <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Alpha Hub</h1>
+           <p className="text-xs md:text-sm text-slate-500 font-medium max-w-xl leading-relaxed">
+             Institutional Portfolio managed by the **50-30-20 Rule** and **20% Sector Limit**.
            </p>
         </div>
         
-        <div className="bg-slate-900 p-8 rounded-[3rem] border border-slate-800 shadow-2xl space-y-5 min-w-[340px] relative overflow-hidden group">
-           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-3xl -mr-16 -mt-16 group-hover:bg-white/10 transition-all" />
+        <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 shadow-2xl space-y-4 min-w-[300px] relative overflow-hidden group">
+           <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 blur-2xl -mr-12 -mt-12 group-hover:bg-white/10 transition-all" />
            <div className="flex justify-between items-center text-slate-500 relative z-10">
               <span className="text-[9px] font-black uppercase tracking-[0.2em]">Investment Simulator</span>
               <Target className="h-4 w-4" />
            </div>
            <div className="space-y-3 relative z-10">
               <div className="relative">
-                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xl">₹</span>
+                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-lg">₹</span>
                  <input
                    type="text"
                    value={totalCapital ? totalCapital.toLocaleString('en-IN') : ''}
@@ -157,7 +157,7 @@ const AlphaHubPage: React.FC = () => {
                        setTotalCapital(0);
                      }
                    }}
-                   className="w-full bg-slate-800/50 border-2 border-slate-700/50 rounded-2xl pl-10 pr-6 py-5 text-2xl font-black text-white focus:border-white transition-all outline-none"
+                   className="w-full bg-slate-800/50 border-2 border-slate-700/50 rounded-2xl pl-8 pr-4 py-3 text-xl font-black text-white focus:border-white transition-all outline-none"
                  />
               </div>
            </div>
@@ -252,14 +252,16 @@ const AlphaHubPage: React.FC = () => {
                     <table className="w-full text-left border-collapse min-w-[1200px]">
                       <thead>
                         <tr className="bg-slate-50/50 border-b border-slate-100">
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Obs Date</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset & Sector</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cap Tier</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Strategy</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fundamentals</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-emerald-600">ROI%</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Quantity</th>
-                          <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
+                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Obs Date</th>
+                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Asset & Sector</th>
+                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Cap Tier</th>
+                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Strategy</th>
+                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Fundamentals</th>
+                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Entry</th>
+                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Target</th>
+                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-emerald-600 text-right">ROI%</th>
+                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Quantity</th>
+                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
@@ -267,24 +269,24 @@ const AlphaHubPage: React.FC = () => {
                           const qty = calculateQuantity(stock);
                           return (
                             <tr key={stock.symbol} className="hover:bg-slate-50/50 transition-colors group">
-                              <td className="px-8 py-5 text-[10px] font-black text-slate-400 whitespace-nowrap">
+                              <td className="px-6 py-4 text-[10px] font-black text-slate-400 whitespace-nowrap">
                                  {stock.entryTime ? new Date(stock.entryTime).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }) : '-'}
                               </td>
-                              <td className="px-8 py-5">
+                              <td className="px-6 py-4">
                                  <div className="flex flex-col">
                                     <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{stock.symbol}</span>
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{stock.sector}</span>
                                  </div>
                               </td>
-                              <td className="px-8 py-5">
+                              <td className="px-6 py-4">
                                  <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${stock.capType === 'LARGE' ? 'bg-indigo-50 text-indigo-600' : (stock.capType === 'MID' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-600')}`}>
                                     {stock.capType}
                                  </span>
                               </td>
-                              <td className="px-8 py-5">
+                              <td className="px-6 py-4">
                                  <span className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100">{stock.strategy}</span>
                               </td>
-                              <td className="px-8 py-5">
+                              <td className="px-6 py-4">
                                  <div className="flex flex-col space-y-1">
                                     <div className="flex items-center space-x-2">
                                        <div className="h-1.5 w-12 bg-slate-100 rounded-full overflow-hidden">
@@ -295,10 +297,16 @@ const AlphaHubPage: React.FC = () => {
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Audit Score: {stock.score}/100</span>
                                  </div>
                               </td>
-                              <td className="px-8 py-5 text-sm font-black text-emerald-600">+{Number(stock.roi)?.toFixed(1)}%</td>
-                              <td className="px-8 py-5 text-sm font-black text-slate-900">{qty}</td>
-                              <td className="px-8 py-5 text-right">
-                                 <Link to={`/stock/${stock.symbol}`} className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-black transition-all inline-flex items-center shadow-lg shadow-slate-200">
+                              <td className="px-6 py-4 text-right">
+                                <span className="font-mono text-xs font-bold text-slate-600">₹{stock.entryPrice?.toLocaleString('en-IN') || stock.currentPrice?.toLocaleString('en-IN')}</span>
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="font-mono text-xs font-black text-emerald-600">₹{stock.targetPrice?.toLocaleString('en-IN') || '-'}</div>
+                              </td>
+                              <td className="px-6 py-4 text-sm font-black text-emerald-600 text-right">+{Number(stock.roi)?.toFixed(1)}%</td>
+                              <td className="px-6 py-4 text-sm font-black text-slate-900 text-right">{qty}</td>
+                              <td className="px-6 py-4 text-center">
+                                 <Link to={`/stock/${stock.symbol}`} className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center hover:bg-slate-900 hover:text-white transition-all mx-auto shadow-sm">
                                    <ArrowUpRight className="h-4 w-4" />
                                  </Link>
                               </td>
