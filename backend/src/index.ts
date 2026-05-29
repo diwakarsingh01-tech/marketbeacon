@@ -586,7 +586,15 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
             } else if (entry > 0) {
               const idx = snap.quotes.findIndex(q => String(q.date).includes(String(sd.triggerDate)));
               const eIdx = idx === -1 ? -1 : snap.quotes.slice(idx).findIndex(q => q.high >= target);
-              if (eIdx !== -1) { closed.push({ symbol: sym, exitDate: new Date(snap.quotes[idx + eIdx].date).toISOString().split('T')[0], roi: ((target/entry)-1)*100, days: eIdx, strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, sector, entryPrice: entry, targetPrice: target }); break; }
+              
+              if (eIdx !== -1) { 
+                const roi = ((target/entry)-1)*100;
+                // NOISE GUARD: Ignore 0-day trades that didn't hit a meaningful target (>0.5%)
+                if (eIdx === 0 && roi < 0.5) continue; 
+                
+                closed.push({ symbol: sym, stockName: COMPANY_NAMES[sym] || sym, exitDate: new Date(snap.quotes[idx + eIdx].date).toISOString().split('T')[0], roi, days: eIdx, strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, sector, entryPrice: entry, targetPrice: target }); 
+                break; 
+              }
             }
           }
         } catch (e) { }
