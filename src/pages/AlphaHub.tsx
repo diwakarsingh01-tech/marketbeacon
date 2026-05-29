@@ -122,7 +122,7 @@ const AlphaHubPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6 md:p-10 lg:p-16 max-w-7xl mx-auto space-y-12 pb-32 bg-[#f8fafc] min-h-screen overflow-y-auto">
+    <div className="p-6 md:p-10 lg:p-16 max-w-7xl mx-auto space-y-12 pb-32 bg-[#f8fafc] min-h-screen overflow-y-auto custom-scrollbar">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 border-b border-slate-100 pb-12">
         <div className="space-y-4">
            <div className="flex items-center space-x-3 text-slate-900">
@@ -248,7 +248,7 @@ const AlphaHubPage: React.FC = () => {
                     <span className="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase">{basketStocks.length} Stocks</span>
                  </div>
 
-                 <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm overflow-x-auto">
+                 <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[1200px]">
                       <thead>
                         <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -314,7 +314,7 @@ const AlphaHubPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-           <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm overflow-x-auto">
+           <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse min-w-[900px]">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
