@@ -17,8 +17,8 @@ const yahooFinance = new YahooFinance();
 dotenv.config();
 
 const app = express();
-const JWT_SECRET = process.env.JWT_SECRET || 'marketbeacon-super-secret-key-2026';
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '500460562927-5b1mt1r0vcke4u3mm5hhj1a4cmilsgao.apps.googleusercontent.com';
+const JWT_SECRET = process.env.JWT_SECRET;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // --- GLOBAL INSTITUTIONAL MATRIX ---
@@ -84,7 +84,7 @@ app.get('/', (req, res) => res.json({ status: 'active', service: 'MarketBeacon I
 app.get('/api/health', (req, res) => res.json({ status: 'active', service: 'MarketBeacon Institutional API', version: '11.6.2-PRO' }));
 
 // --- ADMIN CONFIG ---
-const ADMIN_EMAILS = ['ajaythomasjohn@gmail.com', 'admin@marketbeacon.com', 'diwakarsingh01.tech@gmail.com'];
+const ADMIN_EMAILS = ['ajaythomasjohn@gmail.com', 'admin@marketbeacon.com', 'diwakarsingh01.tech@gmail.com', 'diwakar.singh01@gmail.com'];
 
 // --- Authentication Middleware ---
 const authenticateToken = async (req: any, res: any, next: any) => {
