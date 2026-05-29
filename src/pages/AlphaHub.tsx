@@ -339,7 +339,9 @@ const AlphaHubPage: React.FC = () => {
           const entry = trade.entryPrice || 1;
           const target = trade.targetPrice || entry;
           const perTradeCap = runningCapital / 40;
-          const estQty = Math.floor(perTradeCap / entry);
+          
+          // Institutional Simulator: Allow fractional shares to ensure capital efficiency
+          const estQty = perTradeCap / entry; 
           const tradeProfit = estQty * (target - entry);
           
           runningCapital += tradeProfit;
@@ -390,12 +392,14 @@ const AlphaHubPage: React.FC = () => {
                     for(let i=0; i<tIdx; i++) {
                         const t = sortedTrades[i];
                         const entry = t.entryPrice || 1;
-                        const qty = Math.floor((tradeCap / 40) / entry);
+                        const qty = (tradeCap / 40) / entry;
                         tradeCap += (qty * ((t.targetPrice || entry) - entry));
                     }
                     const perTradeCap = tradeCap / 40;
-                    const estQty = Math.floor(perTradeCap / (trade.entryPrice || 1)); 
+                    const estQty = perTradeCap / (trade.entryPrice || 1); 
                     const profitValue = Math.round(estQty * ((trade.targetPrice || trade.entryPrice) - trade.entryPrice));
+                    const isRowProfit = profitValue >= 0;
+
                     return (
                       <tr key={`${trade.symbol}-${trade.exitDate}`} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-8 py-5 text-[10px] font-black text-slate-400">{new Date(trade.exitDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</td>
@@ -411,8 +415,12 @@ const AlphaHubPage: React.FC = () => {
                            </div>
                         </td>
                         <td className="px-8 py-5 text-[10px] font-bold text-slate-500 uppercase">{trade.strategy}</td>
-                        <td className="px-8 py-5 text-sm font-black text-emerald-600 text-right">+{Number(trade.roi).toFixed(1)}%</td>
-                        <td className="px-8 py-5 text-sm font-black text-emerald-600 text-right">₹{profitValue.toLocaleString('en-IN')}</td>
+                        <td className={`px-8 py-5 text-sm font-black text-right ${isRowProfit ? 'text-emerald-600' : 'text-red-600'}`}>
+                           {isRowProfit ? '+' : ''}{Number(trade.roi).toFixed(1)}%
+                        </td>
+                        <td className={`px-8 py-5 text-sm font-black text-right ${isRowProfit ? 'text-emerald-600' : 'text-red-600'}`}>
+                           {isRowProfit ? '+' : ''}₹{profitValue.toLocaleString('en-IN')}
+                        </td>
                         <td className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
                            <div className="flex items-center justify-end space-x-2">
                               <Clock className="h-3 w-3" />
