@@ -28,6 +28,8 @@ const AlphaHubPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [totalCapital, setTotalCapital] = useState<number>(200000);
   const [activeTab, setActiveTab] = useState<'active' | 'closed'>('active');
+  const [basketFilter, setBasketFilter] = useState<string>('ALL');
+  const [strategyFilter, setStrategyFilter] = useState<string>('ALL');
 
   const handleExportAlpha = () => {
     if (!data?.stocks?.length) return;
@@ -215,29 +217,69 @@ const AlphaHubPage: React.FC = () => {
             <div className="space-y-1">
                <h3 className="text-3xl font-black tracking-tighter text-emerald-600">Active</h3>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Max 20% Per Sector</p>
+               {data?.summary?.fetchTime && (
+                 <div className="mt-4 pt-4 border-t border-slate-50 flex items-center space-x-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                   <Clock className="h-3 w-3" />
+                   <span>Updated: {new Date(data.summary.fetchTime).toLocaleString(undefined, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                 </div>
+               )}
             </div>
          </div>
       </div>
 
-      <div className="flex items-center space-x-2 bg-white p-2 rounded-[2rem] border border-slate-100 w-fit shadow-sm">
-         <button 
-           onClick={() => setActiveTab('active')}
-           className={`px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-900'}`}
-         >
-           Alpha Portfolio
-         </button>
-         <button 
-           onClick={() => setActiveTab('closed')}
-           className={`px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'closed' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-900'}`}
-         >
-           Booked Profit
-         </button>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center space-x-2 bg-white p-2 rounded-[2rem] border border-slate-100 w-fit shadow-sm">
+             <button 
+               onClick={() => setActiveTab('active')}
+               className={`px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-900'}`}
+             >
+               Alpha Portfolio
+             </button>
+             <button 
+               onClick={() => setActiveTab('closed')}
+               className={`px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'closed' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-900'}`}
+             >
+               Booked Profit
+             </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-[2rem] border border-slate-100 shadow-sm">
+              <div className="flex items-center space-x-2 px-3 border-r border-slate-100">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Basket:</span>
+                  <select 
+                    value={basketFilter}
+                    onChange={(e) => setBasketFilter(e.target.value)}
+                    className="bg-transparent text-[10px] font-black text-slate-900 uppercase tracking-widest outline-none cursor-pointer"
+                  >
+                      <option value="ALL">All Baskets</option>
+                      <option value="BLUECHIP">Bluechip</option>
+                      <option value="HIGH_BETA">High Beta</option>
+                      <option value="WEALTH_BASKET">Wealth</option>
+                  </select>
+              </div>
+              <div className="flex items-center space-x-2 px-3">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Strategy:</span>
+                  <select 
+                    value={strategyFilter}
+                    onChange={(e) => setStrategyFilter(e.target.value)}
+                    className="bg-transparent text-[10px] font-black text-slate-900 uppercase tracking-widest outline-none cursor-pointer"
+                  >
+                      <option value="ALL">All Strategies</option>
+                      {Array.from(new Set((data?.stocks || []).map((s: any) => s.strategy))).map((strat: any) => (
+                        <option key={strat} value={strat}>{strat}</option>
+                      ))}
+                  </select>
+              </div>
+          </div>
       </div>
 
       {activeTab === 'active' ? (
         <div className="space-y-12">
-          {['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'].map(basket => {
-            const basketStocks = (data?.stocks || []).filter((s: any) => s.basketSource === basket);
+          {['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'].filter(b => basketFilter === 'ALL' || b === basketFilter).map(basket => {
+            const basketStocks = (data?.stocks || []).filter((s: any) => 
+                s.basketSource === basket && 
+                (strategyFilter === 'ALL' || s.strategy === strategyFilter)
+            );
             if (basketStocks.length === 0) return null;
 
             return (

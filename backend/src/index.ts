@@ -9,6 +9,12 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { OAuth2Client } from 'google-auth-library';
 import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot, fetchScreenerData, initSnapshotCache } from './screener.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const MARKET_SNAPSHOT_PATH = path.join(__dirname, '../market_snapshot.json');
 import { initDB, getDB } from './db.js';
 import { NIFTY_500 } from './universe.js';
 import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest } from './strategies.js';
@@ -644,7 +650,8 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
         total: finalActive.length, 
         large: capStats.LARGE, mid: capStats.MID, small: capStats.SMALL,
         avgRoi: finalActive.reduce((a,b) => a + (b.roi || 0), 0) / (finalActive.length || 1),
-        accuracy: 100
+        accuracy: 100,
+        fetchTime: fs.existsSync(MARKET_SNAPSHOT_PATH) ? fs.statSync(MARKET_SNAPSHOT_PATH).mtime : new Date()
       } 
     });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
