@@ -349,8 +349,8 @@ async function validateBatch9(symbol: string, snap: any, basketName: string = 'B
   const salesAtATH = currentSales >= (athSales * 0.90); 
   if (!salesAtATH) totalScore -= 10;
 
-  // RULE EXCEPTION: For Wealth Basket (Small/Mid growth), 70% SM is too high. We use 45% as a floor.
-  const smFloor = basketName === 'WEALTH_BASKET' ? 45 : 70;
+  // RULE EXCEPTION: For Wealth Basket (Small/Mid growth), 70% SM is too high. We use 35% as a floor.
+  const smFloor = basketName === 'WEALTH_BASKET' ? 35 : 65;
   const isHardReject = !isETF && (debtToEquity > 1.2 || pledged >= 15 || smartMoneyTotal < smFloor);
 
   return {
@@ -607,8 +607,8 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     
     const candidates = allActive.sort((a,b) => (b.roi || 0) - (a.roi || 0));
     const finalActive = [];
-    const CAP_LIMITS = { LARGE: 22, MID: 14, SMALL: 10 }; // Target 40 stocks with 5% tolerance (Max: 55%, 35%, 25%)
-    const MAX_PER_SECTOR = 8; // 20% of 40 max
+    const CAP_LIMITS = { LARGE: 30, MID: 20, SMALL: 15 }; // Higher limits to allow buffer, will slice to 40-50 best ones
+    const MAX_PER_SECTOR = 12; 
 
     for (const s of candidates) {
       if (capStats[s.capType] < CAP_LIMITS[s.capType] && (sectorStats[s.sector] || 0) < MAX_PER_SECTOR) {
@@ -616,7 +616,7 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
         sectorStats[s.sector] = (sectorStats[s.sector] || 0) + 1;
         capStats[s.capType]++;
       }
-      if (finalActive.length >= 40) break;
+      if (finalActive.length >= 60) break; // Increased from 40 to ensure "40 and 40+" requirement
     }
 
     let allClosed = [];
