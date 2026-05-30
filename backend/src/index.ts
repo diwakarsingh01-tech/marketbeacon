@@ -730,12 +730,11 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     const { timeline = 'ALL' } = req.query;
     const snapshot = getMarketSnapshot();
     
-    // Time filter logic for closed trades
-    const now = new Date();
+    // Time filter logic for closed trades (Fix: Avoid cumulative mutation)
     const timelineDates: Record<string, Date | null> = {
-      '1M': new Date(now.setMonth(now.getMonth() - 1)),
-      '3M': new Date(now.setMonth(now.getMonth() - 3)),
-      '6M': new Date(now.setMonth(now.getMonth() - 6)),
+      '1M': new Date(new Date().setMonth(new Date().getMonth() - 1)),
+      '3M': new Date(new Date().setMonth(new Date().getMonth() - 3)),
+      '6M': new Date(new Date().setMonth(new Date().getMonth() - 6)),
       'ALL': null
     };
     const cutoffDate = timelineDates[timeline as string] || null;
@@ -794,7 +793,28 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
             const capType = capCr >= 20000 ? 'LARGE' : (capCr >= 5000 ? 'MID' : 'SMALL');
 
             if (sd.isBuyZone) {
-              active.push({ symbol: sym, stockName: COMPANY_NAMES[sym] || sym, entryTime: sd.triggerDate, strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, basketSource: basketName, marketCap, capType, sector, currentPrice: last.close, entryPrice: entry, target, roi: ((target / entry) - 1) * 100, score: audit.score, smartMoney: audit.smartMoneyTotal });
+              let entryTime = sd.triggerDate;
+              // 100% Robust Date Fallback for Institutional Discovery
+              if (!entryTime && snap.quotes.length > 0) {
+                entryTime = new Date(snap.quotes[0].date).toISOString().split('T')[0];
+              }
+              
+              active.push({ 
+                symbol: sym, 
+                stockName: COMPANY_NAMES[sym] || sym, 
+                entryTime, 
+                strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, 
+                basketSource: basketName, 
+                marketCap, 
+                capType, 
+                sector, 
+                currentPrice: last.close, 
+                entryPrice: entry, 
+                target, 
+                roi: ((target / entry) - 1) * 100, 
+                score: audit.score, 
+                smartMoney: audit.smartMoneyTotal 
+              });
               break; 
             } else if (entry > 0) {
               const idx = snap.quotes.findIndex(q => String(q.date).includes(String(sd.triggerDate)));
