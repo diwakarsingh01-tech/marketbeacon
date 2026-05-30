@@ -727,8 +727,21 @@ app.get('/api/backtest/envelope', async (req, res) => {
 // --- ALPHA HUB ELITE SELECTION ---
 app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
   try {
+    const { timeline = 'ALL' } = req.query;
     const snapshot = getMarketSnapshot();
+    
+    // Time filter logic for closed trades
+    const now = new Date();
+    const timelineDates: Record<string, Date | null> = {
+      '1M': new Date(now.setMonth(now.getMonth() - 1)),
+      '3M': new Date(now.setMonth(now.getMonth() - 3)),
+      '6M': new Date(now.setMonth(now.getMonth() - 6)),
+      'ALL': null
+    };
+    const cutoffDate = timelineDates[timeline as string] || null;
+
     const STRATEGY_BASKET_MAP: Record<string, string[]> = {
+
       'ENVELOPE_LONG': ['BLUECHIP'], 'ENVELOPE_SHORT': ['BLUECHIP'], 'BOLLINGER': ['BLUECHIP'],
       'CUP_HANDLE_ABCD': ['BLUECHIP', 'HIGH_BETA'], 'RHS_ABCD': ['BLUECHIP', 'HIGH_BETA'],
       'SMA_ABCD': ['BLUECHIP', 'HIGH_BETA'], '52W_HIGH_LOW': ['BLUECHIP', 'HIGH_BETA'],
@@ -813,7 +826,11 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     if (hb?.active && Array.isArray(hb.active)) allActive.push(...hb.active);
     if (wb?.active && Array.isArray(wb.active)) allActive.push(...wb.active);
     
-    const candidates = allActive.sort((a,b) => (b.roi || 0) - (a.roi || 0));
+    // FORTRESS: Sort by Audit Score (Quality/Risk) first, then ROI (Profit)
+    const candidates = allActive.sort((a, b) => {
+      if (b.score !== a.score) return (b.score || 0) - (a.score || 0);
+      return (b.roi || 0) - (a.roi || 0);
+    });
     const finalActive = [];
     const CAP_LIMITS = { LARGE: 30, MID: 20, SMALL: 15 }; // Higher limits to allow buffer, will slice to 40-50 best ones
     const MAX_PER_SECTOR = 12; 
@@ -834,11 +851,13 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
 
     res.json({ 
       stocks: finalActive, 
-      closedTrades: allClosed.sort((a,b) => {
-        try {
-          return new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime();
-        } catch (e) { return 0; }
-      }).slice(0, 50),
+      closedTrades: allClosed
+        .filter(t => !cutoffDate || new Date(t.exitDate) >= cutoffDate)
+        .sort((a,b) => {
+          try {
+            return new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime();
+          } catch (e) { return 0; }
+        }),
       summary: { 
         version: '11.6.2-PRO', 
         total: finalActive.length, 
@@ -850,7 +869,8 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
             baskets: auditedBaskets,
             strategies: auditedStrategies,
             fundamentalCheck: '100% Passed',
-            institutionalRules: ['50-30-20 Cap Rule', '20% Sector Limit', '70% SM Hard Reject']
+            institutionalRules: ['50-30-20 Cap Rule', '20% Sector Limit', '70% SM Hard Reject'],
+            timeline
         }
       } 
     });

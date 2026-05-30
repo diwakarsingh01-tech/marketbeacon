@@ -30,6 +30,7 @@ const AlphaHubPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'active' | 'closed'>('active');
   const [basketFilter, setBasketFilter] = useState<string>('ALL');
   const [strategyFilter, setStrategyFilter] = useState<string>('ALL');
+  const [timelineFilter, setTimelineFilter] = useState<string>('ALL');
   const [showAudit, setShowAudit] = useState<boolean>(false);
 
   const handleExportAlpha = () => {
@@ -66,7 +67,7 @@ const AlphaHubPage: React.FC = () => {
     setError(null);
     try {
       const token = localStorage.getItem('mb_token');
-      const res = await fetch(`${API_URL}/api/backtest/alpha-40`, {
+      const res = await fetch(`${API_URL}/api/backtest/alpha-40?timeline=${timelineFilter}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -85,7 +86,7 @@ const AlphaHubPage: React.FC = () => {
 
   useEffect(() => {
     fetchAlphaHub();
-  }, []);
+  }, [timelineFilter]);
 
   const calculateQuantity = (stock: any) => {
     if (!totalCapital || totalCapital < 200000) return 0;
@@ -331,6 +332,21 @@ const AlphaHubPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-[2rem] border border-slate-100 shadow-sm">
+              {activeTab === 'closed' && (
+                <div className="flex items-center space-x-2 px-3 border-r border-slate-100">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Timeline:</span>
+                    <select 
+                      value={timelineFilter}
+                      onChange={(e) => setTimelineFilter(e.target.value)}
+                      className="bg-transparent text-[10px] font-black text-slate-900 uppercase tracking-widest outline-none cursor-pointer"
+                    >
+                        <option value="ALL">All Time</option>
+                        <option value="6M">Last 6 Months</option>
+                        <option value="3M">Last 3 Months</option>
+                        <option value="1M">Last Month</option>
+                    </select>
+                </div>
+              )}
               <div className="flex items-center space-x-2 px-3 border-r border-slate-100">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Basket:</span>
                   <select 
