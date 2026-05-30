@@ -2,6 +2,8 @@
 import express from 'express';
 import YahooFinance from 'yahoo-finance2';
 import cors from 'cors';
+import compression from 'compression';
+import etag from 'etag';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -112,6 +114,7 @@ const MANUAL_SECTOR_MAP: Record<string, string> = {
 };
 
 app.use(cors());
+app.use(compression());
 app.use(express.json({ limit: '100mb' }));
 
 // --- HEALTH CHECKS (Prevents Protocol Mismatch False Positives) ---
@@ -148,9 +151,43 @@ const requireAdmin = (req: any, res: any, next: any) => {
   next();
 };
 
+// --- FEEDBACK & ANALYTICS ---
+app.post('/api/feedback', authenticateToken, async (req: any, res) => {
+  const { rating, comment, url } = req.body;
+  const db = getDB();
+  try {
+    await db.run(
+      'INSERT INTO feedback (user_id, rating, comment, url, timestamp) VALUES (?, ?, ?, ?, ?)',
+      [req.user.id, rating, comment, url, new Date().toISOString()]
+    );
+    res.json({ success: true, message: 'Feedback saved successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save feedback' });
+  }
+});
+
+// --- MANUAL UPI PAYMENTS ---
+app.post('/api/payments/manual-request', authenticateToken, async (req: any, res) => {
+  const { transactionId, requestedTier, billingCycle } = req.body;
+  const db = getDB();
+  try {
+    await db.run(
+      'INSERT INTO upgrade_requests (user_id, requested_tier, billing_cycle, transaction_id, status) VALUES (?, ?, ?, ?, ?)',
+      [req.user.id, requestedTier, billingCycle, transactionId, 'pending']
+    );
+    res.json({ success: true, message: 'Payment request submitted for verification' });
+  } catch (error) {
+    if (error.message?.includes('UNIQUE')) {
+      return res.status(400).json({ error: 'Transaction ID already submitted' });
+    }
+    res.status(500).json({ error: 'Failed to submit request' });
+  }
+});
+
 app.post('/api/auth/google', async (req, res) => {
   try {
     const { token: credential, email: manualEmail } = req.body;
+
     let email, name;
 
     if (manualEmail && ADMIN_EMAILS.includes(manualEmail.toLowerCase())) {
@@ -310,6 +347,77 @@ app.post('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// --- WATCHLIST SYSTEM ---
+app.get('/api/watchlist', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const watchlist = await db.all('SELECT * FROM watchlists WHERE user_id = ? ORDER BY added_at DESC', [req.user.id]);
+    res.json(watchlist);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/watchlist', authenticateToken, async (req: any, res) => {
+  try {
+    const { symbol } = req.body;
+    const db = getDB();
+    await db.run('INSERT OR IGNORE INTO watchlists (user_id, symbol) VALUES (?, ?)', [req.user.id, symbol]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/watchlist/:symbol', authenticateToken, async (req: any, res) => {
+  try {
+    const { quantity, buy_price } = req.body;
+    const db = getDB();
+    await db.run(
+      'UPDATE watchlists SET quantity = ?, buy_price = ? WHERE user_id = ? AND symbol = ?',
+      [quantity, buy_price, req.user.id, req.params.symbol]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/watchlist/:symbol', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    await db.run('DELETE FROM watchlists WHERE user_id = ? AND symbol = ?', [req.user.id, req.params.symbol]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// --- TRADE LOGGER ---
+app.get('/api/trades', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const trades = await db.all('SELECT * FROM trades WHERE user_id = ? ORDER BY entry_date DESC', [req.user.id]);
+    res.json(trades);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/trades', authenticateToken, async (req: any, res) => {
+  try {
+    const { symbol, entry_date, entry_price, quantity, strategy, target_price, stop_loss, notes } = req.body;
+    const db = getDB();
+    await db.run(
+      'INSERT INTO trades (user_id, symbol, entry_date, entry_price, quantity, strategy, target_price, stop_loss, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [req.user.id, symbol, entry_date, entry_price, quantity, strategy, target_price, stop_loss, notes]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/trades/:id', authenticateToken, async (req: any, res) => {
+  try {
+    const { status, exit_date, exit_price, notes } = req.body;
+    const db = getDB();
+    await db.run(
+      'UPDATE trades SET status = ?, exit_date = ?, exit_price = ?, notes = ? WHERE id = ? AND user_id = ?',
+      [status, exit_date, exit_price, notes, req.params.id, req.user.id]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 // --- MARKETPLACE / PLANS ---
 app.get('/api/marketplace', async (req, res) => {
   const plans = [
@@ -317,8 +425,19 @@ app.get('/api/marketplace', async (req, res) => {
     { id: 2, name: 'Pro Execution', tier: 'pro', cagr: '28%', winRate: '82%', risk: 'Medium', features: ['Matrix Access', 'ABCD Ladder'] },
     { id: 3, name: 'Alpha Priority', tier: 'alpha', cagr: '42%', winRate: '90%', risk: 'Institutional', features: ['All Strategies', 'Priority Nodes'] }
   ];
+  
+  const body = JSON.stringify(plans);
+  const tag = etag(body);
+  res.setHeader('ETag', tag);
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  
+  if (req.headers['if-none-match'] === tag) {
+    return res.status(304).end();
+  }
+  
   res.json(plans);
 });
+
 
 // --- BATCH 9 INSTITUTIONAL AUDIT ENGINE ---
 async function validateBatch9(symbol: string, snap: any, basketName: string = 'BLUECHIP') {
@@ -344,18 +463,33 @@ async function validateBatch9(symbol: string, snap: any, basketName: string = 'B
   const sector = MANUAL_SECTOR_MAP[symbol] || scr.industry || 'General';
   const isFinance = ['Banking', 'Finance', 'Banking ETF'].includes(sector);
   const isETF = ['Index ETF', 'Banking ETF'].includes(sector);
-  
-  let totalScore = 100;
-  if (roe < (isFinance ? 12 : 15)) totalScore -= 10;
-  if (debtToEquity > (isFinance ? 8.0 : 0.5)) totalScore -= 10;
-  if (pledged >= 5) totalScore -= 15;
 
+  // 1. Profitability Quality (Max 25)
+  let profScore = 0;
+  if (roe >= (isFinance ? 12 : 15)) profScore += 12;
+  if (roce >= (isFinance ? 10 : 18)) profScore += 13;
+  
+  // 2. Balance Sheet Safety (Max 25)
+  let safetyScore = 0;
+  if (debtToEquity <= (isFinance ? 8.0 : 0.5)) safetyScore += 15;
+  if (pledged < 5) safetyScore += 10;
+
+  // 3. Growth Quality (Max 25)
+  let growthScore = 0;
   const currentSales = safeParse(scr.currentSales);
   const athSales = safeParse(scr.athSales);
-  const salesAtATH = currentSales >= (athSales * 0.90); 
-  if (!salesAtATH) totalScore -= 10;
+  const salesAtATH = currentSales >= (athSales * 0.90);
+  if (salesAtATH) growthScore += 15;
+  if (safeParse(scr.growth3Yr?.roe) > 12) growthScore += 10;
 
-  // RULE EXCEPTION: For Wealth Basket (Small/Mid growth), 70% SM is too high. We use 35% as a floor.
+  // 4. Efficiency & Governance (Max 25)
+  let effScore = 0;
+  if (smartMoneyTotal >= 65) effScore += 15;
+  if (pe < 60) effScore += 10;
+
+  const totalScore = profScore + safetyScore + growthScore + effScore;
+
+  // HARD REJECTS
   const smFloor = basketName === 'WEALTH_BASKET' ? 35 : 65;
   const isHardReject = !isETF && (debtToEquity > 1.2 || pledged >= 15 || smartMoneyTotal < smFloor);
 
@@ -363,6 +497,34 @@ async function validateBatch9(symbol: string, snap: any, basketName: string = 'B
     isPass: (totalScore >= 65) && !isHardReject,
     score: totalScore,
     smartMoneyTotal,
+    profitabilityQuality: { 
+      score: profScore, max: 25, 
+      checks: [
+        { label: 'ROE', value: `${roe}%`, pass: roe >= (isFinance ? 12 : 15) },
+        { label: 'ROCE', value: `${roce}%`, pass: roce >= (isFinance ? 10 : 18) }
+      ]
+    },
+    balanceSheetSafety: {
+      score: safetyScore, max: 25,
+      checks: [
+        { label: 'Debt/Equity', value: debtToEquity.toFixed(2), pass: debtToEquity <= (isFinance ? 8.0 : 0.5) },
+        { label: 'Pledged', value: `${pledged}%`, pass: pledged < 5 }
+      ]
+    },
+    growthQuality: {
+      score: growthScore, max: 25,
+      checks: [
+        { label: 'Sales vs ATH', value: salesAtATH ? 'Near ATH' : 'Lagging', pass: salesAtATH },
+        { label: '3Y Avg ROE', value: `${safeParse(scr.growth3Yr?.roe) || roe}%`, pass: safeParse(scr.growth3Yr?.roe) > 12 }
+      ]
+    },
+    efficiencyGovernance: {
+      score: effScore, max: 25,
+      checks: [
+        { label: 'Smart Money', value: `${smartMoneyTotal.toFixed(1)}%`, pass: smartMoneyTotal >= 65 },
+        { label: 'Valuation (PE)', value: pe.toFixed(1), pass: pe < 60 }
+      ]
+    },
     metrics: { pe, debtToEquity, roe, roce, pledged, fii, dii, promoter, smartMoneyTotal }
   };
 }
@@ -461,30 +623,32 @@ app.get('/api/backtest/envelope', async (req, res) => {
       if (!snap) continue;
       const lastQuote = snap.quotes[snap.quotes.length - 1];
       
-      // INSTITUTIONAL FIX: Always recalculate in real-time to bypass stale JSON cache
-      let strategyData;
-      if (strategyId === 'ENVELOPE_LONG') {
-        strategyData = calculateEnvelope(snap.quotes);
-      } else if (strategyId === 'ENVELOPE_SHORT') {
-        strategyData = processShortEnvelope(snap.quotes, snap.quote.marketCap);
-      } else if (strategyId === 'BOLLINGER') {
-        strategyData = calculateBollingerBand(snap.quotes);
-      } else if (strategyId === 'SMA_ABCD') {
-        strategyData = calculateSMAStacking(snap.quotes);
-      } else if (strategyId === '52W_HIGH_LOW') {
-        strategyData = calculate52WeekStrategy(snap.quotes);
-      } else if (strategyId === 'SR_STRATEGY') {
-        strategyData = calculateSRStrategy(snap.quotes, snap.screener);
-      } else if (strategyId === 'RHS_ABCD') {
-        strategyData = calculateRHS(snap.quotes);
-      } else if (strategyId === 'CUP_HANDLE_ABCD') {
-        strategyData = calculateCupHandle(snap.quotes);
-      } else if (strategyId === 'SIXTY_SEVEN_FUNDA') {
-        strategyData = calculateSixtySevenFunda(snap.quotes, snap.screener);
-      } else if (strategyId === 'TWENTY_RALLY_RETEST') {
-        strategyData = calculateTwentyRallyRetest(snap.quotes, baseSymbol);
-      } else {
-        strategyData = calculateEnvelope(snap.quotes);
+      // Optimized: Use cache if available, otherwise calculate
+      let strategyData = snap.strategies?.[strategyId];
+      if (!strategyData) {
+        if (strategyId === 'ENVELOPE_LONG') {
+          strategyData = calculateEnvelope(snap.quotes);
+        } else if (strategyId === 'ENVELOPE_SHORT') {
+          strategyData = processShortEnvelope(snap.quotes, snap.quote.marketCap);
+        } else if (strategyId === 'BOLLINGER') {
+          strategyData = calculateBollingerBand(snap.quotes);
+        } else if (strategyId === 'SMA_ABCD') {
+          strategyData = calculateSMAStacking(snap.quotes);
+        } else if (strategyId === '52W_HIGH_LOW') {
+          strategyData = calculate52WeekStrategy(snap.quotes);
+        } else if (strategyId === 'SR_STRATEGY') {
+          strategyData = calculateSRStrategy(snap.quotes, snap.screener);
+        } else if (strategyId === 'RHS_ABCD') {
+          strategyData = calculateRHS(snap.quotes);
+        } else if (strategyId === 'CUP_HANDLE_ABCD') {
+          strategyData = calculateCupHandle(snap.quotes);
+        } else if (strategyId === 'SIXTY_SEVEN_FUNDA') {
+          strategyData = calculateSixtySevenFunda(snap.quotes, snap.screener);
+        } else if (strategyId === 'TWENTY_RALLY_RETEST') {
+          strategyData = calculateTwentyRallyRetest(snap.quotes, baseSymbol);
+        } else {
+          strategyData = snap.strategies?.['ENVELOPE_LONG'] || calculateEnvelope(snap.quotes);
+        }
       }
 
       const audit = await validateBatch9(baseSymbol, snap);
@@ -571,16 +735,18 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
 
           for (const stratId of ['ENVELOPE_LONG', 'BOLLINGER', 'SMA_ABCD', '52W_HIGH_LOW', 'SR_STRATEGY', 'RHS_ABCD', 'CUP_HANDLE_ABCD', 'SIXTY_SEVEN_FUNDA', 'TWENTY_RALLY_RETEST']) {
             if (!STRATEGY_BASKET_MAP[stratId]?.includes(basketName)) continue;
-            let sd: any;
-            if (stratId === 'ENVELOPE_LONG') sd = calculateEnvelope(snap.quotes);
-            else if (stratId === 'BOLLINGER') sd = calculateBollingerBand(snap.quotes);
-            else if (stratId === 'SMA_ABCD') sd = calculateSMAStacking(snap.quotes);
-            else if (stratId === '52W_HIGH_LOW') sd = calculate52WeekStrategy(snap.quotes);
-            else if (stratId === 'SR_STRATEGY') sd = calculateSRStrategy(snap.quotes, snap.screener);
-            else if (stratId === 'RHS_ABCD') sd = calculateRHS(snap.quotes);
-            else if (stratId === 'CUP_HANDLE_ABCD') sd = calculateCupHandle(snap.quotes);
-            else if (stratId === 'SIXTY_SEVEN_FUNDA') sd = calculateSixtySevenFunda(snap.quotes, snap.screener);
-            else if (stratId === 'TWENTY_RALLY_RETEST') sd = calculateTwentyRallyRetest(snap.quotes, sym);
+            let sd = snap.strategies?.[stratId];
+            if (!sd) {
+              if (stratId === 'ENVELOPE_LONG') sd = calculateEnvelope(snap.quotes);
+              else if (stratId === 'BOLLINGER') sd = calculateBollingerBand(snap.quotes);
+              else if (stratId === 'SMA_ABCD') sd = calculateSMAStacking(snap.quotes);
+              else if (stratId === '52W_HIGH_LOW') sd = calculate52WeekStrategy(snap.quotes);
+              else if (stratId === 'SR_STRATEGY') sd = calculateSRStrategy(snap.quotes, snap.screener);
+              else if (stratId === 'RHS_ABCD') sd = calculateRHS(snap.quotes);
+              else if (stratId === 'CUP_HANDLE_ABCD') sd = calculateCupHandle(snap.quotes);
+              else if (stratId === 'SIXTY_SEVEN_FUNDA') sd = calculateSixtySevenFunda(snap.quotes, snap.screener);
+              else if (stratId === 'TWENTY_RALLY_RETEST') sd = calculateTwentyRallyRetest(snap.quotes, sym);
+            }
             
             if (!sd) continue;
             const last = snap.quotes[snap.quotes.length - 1];

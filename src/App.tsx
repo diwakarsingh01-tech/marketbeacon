@@ -19,6 +19,7 @@ const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const MembershipPage = lazy(() => import('./pages/Marketplace'));
 const AlphaHubPage = lazy(() => import('./pages/AlphaHub'));
 const ConnectivityHubPage = lazy(() => import('./pages/Connect'));
+const PublicAnalysisPage = lazy(() => import('./pages/PublicAnalysis'));
 
 // Institutional Loading Component
 const PageLoader = () => (
@@ -48,6 +49,7 @@ function App() {
             <Route path="/register" element={<Navigate to="/login" replace />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/connect" element={<ConnectivityHubPage />} />
+            <Route path="/analysis/:symbol" element={<PublicAnalysisPage />} />
 
             {/* Authenticated SaaS Platform */}
             <Route 
