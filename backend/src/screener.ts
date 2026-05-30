@@ -65,9 +65,14 @@ export async function fetchScreenerData(symbol: string) {
           return headerText.includes(tableName.replace('-', ' ')) || headerText.includes(tableName);
         });
       }
+      
+      // INSTITUTIONAL FIX: Support 'Revenue' for Banks/Finance if 'Sales' is requested
+      const searchTerms = [rowName.toLowerCase()];
+      if (rowName.toLowerCase() === 'sales') searchTerms.push('revenue', 'interest');
+
       const row = section.find(`tr`).filter(function() {
         const firstCol = $(this).find('td:first-child, th:first-child').text().trim().toLowerCase();
-        return firstCol === rowName.toLowerCase() || firstCol.includes(rowName.toLowerCase());
+        return searchTerms.some(term => firstCol === term || firstCol.includes(term));
       });
       if (row.length === 0) return [];
       const values = row.find('td').map((i, el) => $(el).text().trim().replace(/,/g, '').replace(/[₹%]/g, '')).get();
