@@ -76,8 +76,8 @@ export async function fetchScreenerData(symbol: string) {
       return parsed;
     };
 
-    const getShareholding = (label: string) => {
-      let foundVal = 0;
+    const getShareholdingHistory = (label: string) => {
+      let history: number[] = [];
       const shSection = $('#shareholding');
       const tables = shSection.length > 0 ? shSection.find('table') : $('table');
       
@@ -86,102 +86,64 @@ export async function fetchScreenerData(symbol: string) {
           const cells = $(row).find('td, th');
           const firstCellText = $(cells[0]).text().trim().toLowerCase();
           if (firstCellText === label.toLowerCase() || firstCellText.includes(label.toLowerCase())) {
-            // Get the last numeric value (most recent quarter/year)
-            for (let k = cells.length - 1; k >= 1; k--) {
+            for (let k = 1; k < cells.length; k++) {
               const val = $(cells[k]).text().trim().replace(/%/g, '');
               const parsed = parseFloat(val);
               if (!isNaN(parsed)) {
-                foundVal = parsed;
-                return false; 
+                history.push(parsed);
               }
             }
             return false;
           }
         });
-        if (foundVal > 0) return false;
+        if (history.length > 0) return false;
       });
-      return foundVal;
+      return history.slice(-4); // Last 4 quarters (latest at index 3)
     };
 
     const currentPrice = getRatio('Current Price');
-    const bookValue = getRatio('Book Value');
     const marketCap = (getRatio('Market Cap') || getRatio('MarketCap')) * 10000000;
-    const peRatio = getRatio('Stock P/E') || getRatio('P/E');
-
-    const pageText = $('body').text();
-    const aboutText = $('.company-profile, .about, #about').text() || pageText;
-
-    const extractMedian = (years: number) => {
-      const patterns = [
-        new RegExp(`${years}\\s*yr median PE of\\s*(\\d+\\.?\\d*)`, 'i'),
-        new RegExp(`${years}\\s*year median PE is\\s*(\\d+\\.?\\d*)`, 'i'),
-        new RegExp(`median PE of\\s*(\\d+\\.?\\d*)\\s*over the last\\s*${years}`, 'i'),
-        new RegExp(`${years}\\s*Yr Median P/E:\\s*(\\d+\\.?\\d*)`, 'i')
-      ];
-      
-      for (const pattern of patterns) {
-        const match = aboutText.match(pattern);
-        if (match) return parseFloat(match[1]);
-      }
-      
-      const analysisText = $('.commentary, .analysis, #analysis').text();
-      for (const pattern of patterns) {
-        const match = analysisText.match(pattern);
-        if (match) return parseFloat(match[1]);
-      }
-
-      return 0;
-    };
-
-    const pe3YScraped = extractMedian(3);
-    const pe5YScraped = extractMedian(5);
-    const pe10YScraped = extractMedian(10);
-
-    // Hardened Sector Fallbacks (Absolute, not relative to current PE)
-    const industry = $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'General Research';
-    const isBanking = industry.includes('Bank') || symbol.includes('BANK');
-    const isIT = industry.includes('IT') || industry.includes('Software');
-    const isFMCG = industry.includes('FMCG') || industry.includes('Consumer');
-    const isPharma = industry.includes('Pharma') || industry.includes('Healthcare');
-
-    let baseMed = 25.0;
-    if (isBanking) baseMed = 18.0;
-    else if (isIT) baseMed = 30.0;
-    else if (isFMCG) baseMed = 45.0;
-    else if (isPharma) baseMed = 35.0;
-
-    const pe3Y = pe3YScraped || (baseMed * 1.1);
-    const pe5Y = pe5YScraped || baseMed;
-    const pe10Y = pe10YScraped || (baseMed * 0.9);
+    
+    // SHAREHOLDING TRENDS
+    const promHistory = getShareholdingHistory('Promoter') || getShareholdingHistory('Promoters');
+    const fiiHistory = getShareholdingHistory('FII') || getShareholdingHistory('Foreign');
+    const diiHistory = getShareholdingHistory('DII') || getShareholdingHistory('Domestic');
 
     const shareholding = {
-      promoter: getShareholding('Promoter') || getShareholding('Promoters'),
-      fii: getShareholding('FII') || getShareholding('Foreign'),
-      dii: getShareholding('DII') || getShareholding('Domestic'),
-      public: getShareholding('Public') || getShareholding('Others') || getShareholding('Public & Others'),
-      pledged: getRatio('Pledged') || getRatio('Promoter holding pledged') || 0
+      promoter: promHistory.slice(-1)[0] || 0,
+      fii: fiiHistory.slice(-1)[0] || 0,
+      dii: diiHistory.slice(-1)[0] || 0,
+      public: getShareholding('Public') || 0,
+      pledged: getRatio('Pledged') || getRatio('Promoter holding pledged') || 0,
+      trends: {
+        promoter: promHistory,
+        fii: fiiHistory,
+        dii: diiHistory
+      }
     };
     
-    // Aggressive Smart Money Calculation
     const smartMoneyTotal = (shareholding.promoter || 0) + (shareholding.fii || 0) + (shareholding.dii || 0);
     (shareholding as any).smartMoneyTotal = smartMoneyTotal;
 
     const netProfits = getAnnualTableData('profit-loss', 'Net Profit');
     const sales = getAnnualTableData('profit-loss', 'Sales');
-    const opm = getAnnualTableData('profit-loss', 'OPM %');
     const eps = getAnnualTableData('profit-loss', 'EPS');
     
-    // TTM/Latest Data logic
+    // TTM Logic: Screener usually shows TTM as the last row in Profit & Loss
+    // If not, we fallback to the last element of the array
     const currentSales = sales.slice(-1)[0] || 1;
     const currentNetProfit = netProfits.slice(-1)[0] || 0;
-    const currentEPS = eps.slice(-1)[0] || (currentNetProfit / 10); // Rough fallback
+    const currentEPS = eps.slice(-1)[0] || (currentNetProfit / 10);
 
-    // PE Calculation Fix: Price / Latest EPS
-    const calculatedPE = currentEPS > 0 ? (currentPrice / currentEPS) : (getRatio('Stock P/E') || 45);
+    // ATH Logic (excluding the TTM/Current row for true historical comparison)
+    const historicalSales = sales.slice(0, -1);
+    const historicalProfits = netProfits.slice(0, -1);
+    const historicalEPS = eps.slice(0, -1);
 
-    // ATH Logic: Search for historical peak (excluding current if possible, or just the max of all)
-    const athSales = Math.max(...sales, 0);
-    const athNetProfit = Math.max(...netProfits, 0);
+    const athSales = historicalSales.length > 0 ? Math.max(...historicalSales) : currentSales;
+    const athNetProfit = historicalProfits.length > 0 ? Math.max(...historicalProfits) : currentNetProfit;
+    const athEPS = historicalEPS.length > 0 ? Math.max(...historicalEPS) : currentEPS;
+
 
     const quarterlyNetProfits = getAnnualTableData('quarters', 'Net Profit');
     const quarterlySales = getAnnualTableData('quarters', 'Sales');
@@ -225,19 +187,15 @@ return {
   historicalSales: sales,
   athSales,
   athNetProfit,
+  athEPS,
   currentSales,
   currentNetProfit,
+  currentEPS,
   quarterlyNetProfits,
   quarterlySales,
-      historicalOPM: opm,
-      historicalEPS: eps,
-      operatingMargin: opm.slice(-1)[0] || 0,
-      netMargin: currentSales > 0 ? (currentNetProfit / currentSales) * 100 : 0,
-      yearsListed: sales.length,
-      cashFlowFromOps: latestCFO,
-      capex: latestCapex,
-      shareholding
-    };
+  historicalEPS: eps,
+  shareholding
+};
   } catch (e: any) {
     console.error(`[SCRAPER ERROR] ${symbol}: ${e.message}`);
     return null;
@@ -359,6 +317,21 @@ export async function updateMarketSnapshot(symbols: string[]) {
   }
   
   fs.writeFileSync(MARKET_SNAPSHOT_PATH, JSON.stringify(snapshot, null, 2));
+  
+  // Scalability Fix: Sync to SQL Database
+  try {
+    const { getDB } = await import('./db.js');
+    const db = getDB();
+    for (const [symbol, data] of Object.entries(snapshot)) {
+      await db.run(
+        'INSERT INTO stock_snapshots (symbol, data) VALUES (?, ?) ON CONFLICT(symbol) DO UPDATE SET data = excluded.data, updated_at = CURRENT_TIMESTAMP',
+        [symbol, JSON.stringify(data)]
+      );
+    }
+  } catch (e: any) {
+    console.error('❌ SQL Snapshot Sync Failed:', e.message);
+  }
+
   snapshotCache = snapshot;
   console.log(`💎 [SNAPSHOT] Success! Market data merged and cached.`);
 }

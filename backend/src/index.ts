@@ -443,7 +443,7 @@ app.get('/api/marketplace', async (req, res) => {
 async function validateBatch9(symbol: string, snap: any, basketName: string = 'BLUECHIP') {
   const quote = snap?.quote || {};
   const scr = snap.screener || {};
-  const sh = quote.shareholding || scr.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0 };
+  const sh = quote.shareholding || scr.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0, trends: {} };
   
   const safeParse = (val: any, fallback: number = 0) => {
     const parsed = parseFloat(String(val));
@@ -464,68 +464,92 @@ async function validateBatch9(symbol: string, snap: any, basketName: string = 'B
   const isFinance = ['Banking', 'Finance', 'Banking ETF'].includes(sector);
   const isETF = ['Index ETF', 'Banking ETF'].includes(sector);
 
-  // 1. Profitability Quality (Max 25)
-  let profScore = 0;
-  if (roe >= (isFinance ? 12 : 15)) profScore += 12;
-  if (roce >= (isFinance ? 10 : 18)) profScore += 13;
-  
-  // 2. Balance Sheet Safety (Max 25)
-  let safetyScore = 0;
-  if (debtToEquity <= (isFinance ? 8.0 : 0.5)) safetyScore += 15;
-  if (pledged < 5) safetyScore += 10;
-
-  // 3. Growth Quality (Max 25)
-  let growthScore = 0;
+  // --- INSTITUTIONAL HARDENING: TTM VS ATH ---
   const currentSales = safeParse(scr.currentSales);
+  const currentNetProfit = safeParse(scr.currentNetProfit);
+  const currentEPS = safeParse(scr.currentEPS);
+  
   const athSales = safeParse(scr.athSales);
-  const salesAtATH = currentSales >= (athSales * 0.90);
-  if (salesAtATH) growthScore += 15;
-  if (safeParse(scr.growth3Yr?.roe) > 12) growthScore += 10;
+  const athNetProfit = safeParse(scr.athNetProfit);
+  const athEPS = safeParse(scr.athEPS);
 
-  // 4. Efficiency & Governance (Max 25)
-  let effScore = 0;
-  if (smartMoneyTotal >= 65) effScore += 15;
-  if (pe < 60) effScore += 10;
+  // Intelligent Tolerance (5% as per senior engineer intelligence)
+  const salesPass = currentSales >= (athSales * 0.95);
+  const profitPass = currentNetProfit >= (athNetProfit * 0.95);
+  const epsPass = currentEPS >= (athEPS * 0.95);
 
-  const totalScore = profScore + safetyScore + growthScore + effScore;
+  // --- INSTITUTIONAL TRENDS (Last 3 Quarters) ---
+  const getTrend = (history: number[] = []) => {
+    if (history.length < 2) return 'NEUTRAL';
+    const last = history[history.length - 1];
+    const prev = history[history.length - 2];
+    if (last > prev + 0.1) return 'UP';
+    if (last < prev - 0.1) return 'DOWN';
+    return 'FLAT';
+  };
 
-  // HARD REJECTS
-  const smFloor = basketName === 'WEALTH_BASKET' ? 35 : 65;
-  const isHardReject = !isETF && (debtToEquity > 1.2 || pledged >= 15 || smartMoneyTotal < smFloor);
+  const fiiTrend = getTrend(sh.trends?.fii);
+  const diiTrend = getTrend(sh.trends?.dii);
+  const promTrend = getTrend(sh.trends?.promoter);
+
+  // --- SCORING MODEL 2.0 ---
+  let profScore = 0;
+  if (roe >= (isFinance ? 12 : 15)) profScore += 8;
+  if (roce >= (isFinance ? 10 : 18)) profScore += 7;
+  if (profitPass) profScore += 10; // TTM Profit vs ATH
+
+  let safetyScore = 0;
+  if (debtToEquity <= (isFinance ? 8.0 : 0.6)) safetyScore += 15;
+  if (pledged < 2) safetyScore += 10; // Stricter for institutional
+
+  let growthScore = 0;
+  if (salesPass) growthScore += 15; // TTM Sales vs ATH
+  if (epsPass) growthScore += 10; // TTM EPS vs ATH
+
+  let instScore = 0;
+  if (smartMoneyTotal >= 65) instScore += 10;
+  if (fiiTrend === 'UP' || diiTrend === 'UP') instScore += 10;
+  if (promTrend === 'DOWN') instScore -= 10; // Massive penalty for promoter exit
+  if (pe < 50) instScore += 5;
+
+  const totalScore = Math.min(100, Math.max(0, profScore + safetyScore + growthScore + instScore));
+
+  // HARD REJECTS (The "Red Flags")
+  const isHardReject = !isETF && (debtToEquity > 1.2 || pledged >= 15 || smartMoneyTotal < (basketName === 'WEALTH_BASKET' ? 35 : 65));
 
   return {
-    isPass: (totalScore >= 65) && !isHardReject,
+    isPass: (totalScore >= 70) && !isHardReject,
     score: totalScore,
     smartMoneyTotal,
     profitabilityQuality: { 
       score: profScore, max: 25, 
       checks: [
         { label: 'ROE', value: `${roe}%`, pass: roe >= (isFinance ? 12 : 15) },
-        { label: 'ROCE', value: `${roce}%`, pass: roce >= (isFinance ? 10 : 18) }
+        { label: 'TTM Profit vs ATH', value: profitPass ? 'Record High' : 'Lagging', pass: profitPass }
       ]
     },
     balanceSheetSafety: {
       score: safetyScore, max: 25,
       checks: [
-        { label: 'Debt/Equity', value: debtToEquity.toFixed(2), pass: debtToEquity <= (isFinance ? 8.0 : 0.5) },
-        { label: 'Pledged', value: `${pledged}%`, pass: pledged < 5 }
+        { label: 'Net Debt/Equity', value: debtToEquity.toFixed(2), pass: debtToEquity <= 0.6 },
+        { label: 'Pledged Shares', value: `${pledged}%`, pass: pledged < 2 }
       ]
     },
     growthQuality: {
       score: growthScore, max: 25,
       checks: [
-        { label: 'Sales vs ATH', value: salesAtATH ? 'Near ATH' : 'Lagging', pass: salesAtATH },
-        { label: '3Y Avg ROE', value: `${safeParse(scr.growth3Yr?.roe) || roe}%`, pass: safeParse(scr.growth3Yr?.roe) > 12 }
+        { label: 'TTM Sales vs ATH', value: salesPass ? 'Record High' : 'Lagging', pass: salesPass },
+        { label: 'TTM EPS vs ATH', value: epsPass ? 'Growing' : 'Stale', pass: epsPass }
       ]
     },
     efficiencyGovernance: {
-      score: effScore, max: 25,
+      score: instScore, max: 25,
       checks: [
-        { label: 'Smart Money', value: `${smartMoneyTotal.toFixed(1)}%`, pass: smartMoneyTotal >= 65 },
-        { label: 'Valuation (PE)', value: pe.toFixed(1), pass: pe < 60 }
+        { label: 'Smart Money Total', value: `${smartMoneyTotal.toFixed(1)}%`, pass: smartMoneyTotal >= 65 },
+        { label: 'Inst. Trend', value: `${fiiTrend}/${diiTrend}`, pass: fiiTrend === 'UP' || diiTrend === 'UP' }
       ]
     },
-    metrics: { pe, debtToEquity, roe, roce, pledged, fii, dii, promoter, smartMoneyTotal }
+    metrics: { pe, debtToEquity, roe, roce, pledged, fii, dii, promoter, smartMoneyTotal, trends: { fiiTrend, diiTrend, promTrend } }
   };
 }
 
