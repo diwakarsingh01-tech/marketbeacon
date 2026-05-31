@@ -120,13 +120,20 @@ export async function precalculateAlpha40() {
             if (isMovingUp && priceDeviation > 2.0) continue; 
             else if (!isMovingUp && priceDeviation > 30.0) continue;
 
+            let entryTime = sd.triggerDate;
+            if (!entryTime && snap.quotes.length > 0) {
+              entryTime = new Date(snap.quotes[0].date).toISOString().split('T')[0];
+            }
+
             active.push({ 
               symbol: sym, 
+              stockName: sym, // Can be improved with a name map if available
               strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, 
               basketSource: basketName, 
               capType, 
               currentPrice: last.close, 
               entryPrice: entry, 
+              entryTime,
               target, 
               roi: ((target / entry) - 1) * 100, 
               score: audit.score, 
