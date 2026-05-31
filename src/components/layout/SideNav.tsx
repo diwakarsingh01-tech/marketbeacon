@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import BrandLogo from '../brand/BrandLogo';
 import { 
   Zap, 
   Globe, 
@@ -51,15 +52,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
     `}>
       {/* Brand Header */}
       <div className="p-8 pb-10">
-        <div className="flex items-center space-x-3 group cursor-default">
-          <div className="bg-blue-600 p-2 rounded-2xl text-white shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-500">
-            <BarChart3 className="h-6 w-6" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-black tracking-tighter uppercase italic text-white leading-none">MarketBeacon</span>
-            <span className="text-[8px] font-black text-blue-400 uppercase tracking-[0.3em] mt-1 ml-0.5">Terminal Pro</span>
-          </div>
-        </div>
+        <BrandLogo variant="dark" size={40} />
       </div>
 
       {/* Navigation Sections */}

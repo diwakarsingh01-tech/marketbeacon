@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
+import BrandLogo from '../components/brand/BrandLogo';
 import { Activity, ShieldCheck, AlertCircle, ArrowRight, Smartphone, UserPlus, LogIn, Key, Mail, Globe } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
@@ -198,11 +199,13 @@ const LoginPage: React.FC = () => {
 
       <div className="w-full max-w-lg bg-white p-12 md:p-16 rounded-[4rem] shadow-2xl border border-slate-100 space-y-12 animate-in fade-in zoom-in-95 duration-700 relative z-10">
         <div className="text-center space-y-4 relative z-10">
-           <div className="flex items-center justify-center space-x-3">
-              <div className="bg-slate-900 p-2.5 rounded-2xl text-white shadow-xl rotate-12"><Activity className="h-6 w-6" /></div>
-              <span className="text-3xl font-black tracking-tighter uppercase italic text-slate-900">MarketBeacon<span className="text-blue-600">Pro</span></span>
+           <div className="flex justify-center">
+              <BrandLogo variant="light" size={48} hideText={true} className="rotate-12 hover:rotate-0 transition-transform duration-500" />
            </div>
            <div className="space-y-1">
+              <span className="text-2xl font-black tracking-tighter uppercase italic text-slate-900 block mb-1">
+                MarketBeacon<span className="text-blue-600">Pro</span>
+              </span>
               <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Terminal Login</h1>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em]">Institutional Access Environment 11.6</p>
            </div>
