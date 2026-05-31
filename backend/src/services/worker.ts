@@ -155,11 +155,19 @@ export async function precalculateAlpha40() {
 
     // Dynamic Allocation (50-30-20)
     const sorted = allActive.sort((a,b) => (b.score - a.score) || (b.roi - a.roi));
-    const finalActive = sorted.slice(0, 50); // Proportional logic can be added if needed
+    const finalActive = sorted.slice(0, 50); 
+
+    const capStats = { LARGE: 0, MID: 0, SMALL: 0 };
+    finalActive.forEach(s => {
+      if (s.capType === 'LARGE') capStats.LARGE++;
+      else if (s.capType === 'MID') capStats.MID++;
+      else if (s.capType === 'SMALL') capStats.SMALL++;
+    });
 
     const results = {
       active: finalActive,
       closed: allClosed,
+      capStats,
       updatedAt: new Date().toISOString()
     };
 

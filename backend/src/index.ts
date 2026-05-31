@@ -585,7 +585,7 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     const cachedResults = getAlpha40Cache();
     
     if (cachedResults) {
-      const { active, closed, updatedAt } = cachedResults;
+      const { active, closed, capStats, updatedAt } = cachedResults;
       const cutoffDate = timeline === '1M' ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : 
                         timeline === '3M' ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) : null;
 
@@ -597,8 +597,11 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
         stocks: active, 
         closedTrades: filteredClosed,
         summary: { 
-          version: '12.0.0-SCALABLE', 
+          version: '12.2.0-STATS', 
           total: active.length, 
+          large: capStats?.LARGE || 0,
+          mid: capStats?.MID || 0,
+          small: capStats?.SMALL || 0,
           fetchTime: updatedAt,
           isCached: true
         } 
