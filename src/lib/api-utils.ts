@@ -32,15 +32,21 @@ export const getApiUrl = () => {
   // 2. Local Network Detection
   const isLocal = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.') || h.startsWith('10.') || h.startsWith('172.') || h.endsWith('.local');
   
-  // 🚀 CRITICAL FIX: If we are on port 5173 (frontend), we MUST hit 3001 (backend)
   if (isLocal) {
+    // If we are on the frontend port (5173), we MUST hit the backend port (3001)
     return `${p}//${h}:3001`;
   }
 
-  // 3. Environment Config
+  // 3. Production Environment Config
+  // Priority: VITE_API_URL > Current Domain API > Fallback
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl && envUrl !== '/' && envUrl !== 'undefined' && !envUrl.includes(`${h}:${port}`)) return envUrl;
+  if (envUrl && envUrl.startsWith('http') && !envUrl.includes(`${h}:${port}`)) return envUrl;
+
+  // If on production domain, check if it's marketbeaconpro.com
+  if (h.includes('marketbeaconpro.com')) {
+     return "https://marketbeacon.onrender.com"; 
+  }
 
   // 4. Default Fail-safe
-  return "https://marketbeacon.onrender.com"; // Fallback to production if local detection fails
+  return envUrl || "https://marketbeacon.onrender.com";
 };

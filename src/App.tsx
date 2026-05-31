@@ -44,7 +44,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public Marketing Routes */}
-            <Route path="/" element={<HomePage />} />
+            <Route path="/welcome" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<Navigate to="/login" replace />} />
             <Route path="/pricing" element={<PricingPage />} />
@@ -60,6 +60,9 @@ function App() {
                 </AuthGuard>
               }
             >
+              {/* Primary Landing: Alpha Hub */}
+              <Route path="/" element={<AlphaHubPage />} />
+              
               {/* Split Views */}
               <Route path="/screener" element={<DashboardPage key="screener" defaultTab="open" />} />
               <Route path="/market" element={<DashboardPage key="market" defaultTab="hold" />} />
