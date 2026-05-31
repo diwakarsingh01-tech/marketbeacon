@@ -17,6 +17,12 @@ interface DashboardPageProps {
   defaultTab?: 'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral';
 }
 
+const BASKET_LABELS: Record<string, string> = {
+  'SUPER_45': 'Bluechip (Super 45)',
+  'GOOD_45': 'High Beta (Good 45)',
+  'GOOD_200': 'Wealth (Good 200)'
+};
+
 const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -406,7 +412,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       )}
 
       {/* Institutional Tab Controller */}
-      <div className="flex bg-slate-100/50 p-1.5 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 w-full md:w-fit overflow-x-auto no-scrollbar shadow-inner gap-1">
+      <div className="flex bg-slate-100/50 p-1 rounded-[1.2rem] md:rounded-[2rem] border border-slate-100 w-fit max-w-full overflow-x-auto no-scrollbar shadow-inner gap-1">
          {[
            { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => r.isBuyZone && r.isPass).length || 0 },
            { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => !r.isBuyZone && r.isPass).length || 0 },
@@ -416,15 +422,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
            <button 
              key={tab.id} 
              onClick={() => setActiveTab(tab.id as any)} 
-             className={`flex-1 md:px-10 py-3 md:py-4 rounded-[1.2rem] md:rounded-[1.5rem] text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${
+             className={`px-4 md:px-8 py-2.5 md:py-3.5 rounded-[1rem] md:rounded-[1.5rem] text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${
                activeTab === tab.id 
-                 ? 'bg-white text-slate-900 shadow-lg md:shadow-xl' 
+                 ? 'bg-white text-slate-900 shadow-md md:shadow-xl' 
                  : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
              }`}
            >
-              <div className="flex flex-col md:flex-row items-center justify-center md:space-x-3">
+              <div className="flex items-center justify-center space-x-2 md:space-x-3">
                  <span>{tab.label}</span>
-                 <span className={`px-2 py-0.5 rounded-lg text-[7px] md:text-[8px] font-black ${
+                 <span className={`px-1.5 py-0.5 rounded-md md:rounded-lg text-[7px] md:text-[8px] font-black ${
                    activeTab === tab.id ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-500'
                  }`}>
                     {tab.count}

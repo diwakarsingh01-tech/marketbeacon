@@ -22,6 +22,12 @@ import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { Download } from 'lucide-react';
 const API_URL = getApiUrl();
 
+const BASKET_LABELS: Record<string, string> = {
+  'SUPER_45': 'Bluechip (Super 45)',
+  'GOOD_45': 'High Beta (Good 45)',
+  'GOOD_200': 'Wealth (Good 200)'
+};
+
 const AlphaHubPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -355,9 +361,9 @@ const AlphaHubPage: React.FC = () => {
                     className="bg-transparent text-[10px] font-black text-slate-900 uppercase tracking-widest outline-none cursor-pointer"
                   >
                       <option value="ALL">All Baskets</option>
-                      <option value="SUPER_45">Super 45</option>
-                      <option value="GOOD_45">Good 45</option>
-                      <option value="GOOD_200">Good 200</option>
+                      {Object.entries(BASKET_LABELS).map(([id, label]) => (
+                        <option key={id} value={id}>{label}</option>
+                      ))}
                   </select>
               </div>
               <div className="flex items-center space-x-2 px-3">
@@ -388,7 +394,9 @@ const AlphaHubPage: React.FC = () => {
             return (
               <div key={basket} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                  <div className="flex items-center space-x-4 px-2">
-                    <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase italic tracking-tighter">{basket.replace('_', ' ')}</h2>
+                    <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase italic tracking-tighter">
+                       {BASKET_LABELS[basket] || basket.replace('_', ' ')}
+                    </h2>
                     <div className="h-px flex-1 bg-slate-100" />
                     <span className="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase">{basketStocks.length}</span>
                  </div>
