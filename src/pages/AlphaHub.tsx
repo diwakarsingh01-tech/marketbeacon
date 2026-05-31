@@ -23,9 +23,9 @@ import { Download } from 'lucide-react';
 const API_URL = getApiUrl();
 
 const BASKET_LABELS: Record<string, string> = {
-  'SUPER_45': 'Bluechip (Super 45)',
-  'GOOD_45': 'High Beta (Good 45)',
-  'GOOD_200': 'Wealth (Good 200)'
+  'SUPER_45': 'Bluechip',
+  'GOOD_45': 'High Beta',
+  'GOOD_200': 'Wealth'
 };
 
 const AlphaHubPage: React.FC = () => {
