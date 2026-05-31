@@ -23,19 +23,24 @@ export async function safeJsonParse(response: Response) {
 export const getApiUrl = () => {
   const h = window.location.hostname;
   const p = window.location.protocol;
+  const port = window.location.port;
 
   // 1. Manual Overrides (Highest Priority)
   const override = localStorage.getItem('mb_api_override');
   if (override && override.length > 5) return override;
 
-  // 2. Local Network Detection (Antigravity/Home)
+  // 2. Local Network Detection
   const isLocal = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.') || h.startsWith('10.') || h.startsWith('172.') || h.endsWith('.local');
-  if (isLocal) return `${p}//${h}:3001`;
+  
+  // 🚀 CRITICAL FIX: If we are on port 5173 (frontend), we MUST hit 3001 (backend)
+  if (isLocal) {
+    return `${p}//${h}:3001`;
+  }
 
   // 3. Environment Config
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl && envUrl !== '/' && envUrl !== 'undefined' && !envUrl.includes(h)) return envUrl;
+  if (envUrl && envUrl !== '/' && envUrl !== 'undefined' && !envUrl.includes(`${h}:${port}`)) return envUrl;
 
-  // 4. Default Fail-safe (Avoid relative path loop)
-  return "http://localhost:3001";
+  // 4. Default Fail-safe
+  return "https://marketbeacon.onrender.com"; // Fallback to production if local detection fails
 };
