@@ -26,18 +26,21 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const isAdmin = (user as any)?.role === 'admin';
 
-  const navItems = [
-    { icon: Zap, label: 'Screener', path: '/screener', desc: 'Signal Discovery' },
-    { icon: LayoutGrid, label: 'Alpha-40 Hub', path: '/alpha-hub', desc: 'Institutional Basket' },
-    { icon: Briefcase, label: 'My Portfolio', path: '/portfolio', desc: 'Wealth Manager' },
-    { icon: ShieldCheck, label: 'Education', path: '/education', desc: 'Strategy Guides' },
-    { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Order Ledger' },
-    { icon: CreditCard, label: 'Membership', path: '/membership', desc: 'Billing & Access' },
+  const eliteItems = [
+    { icon: LayoutGrid, label: 'Alpha-40 Hub', path: '/alpha-hub', desc: 'Institutional Basket', tag: 'PRO' },
+    { icon: Zap, label: 'Signal Discovery', path: '/screener', desc: 'Active Opportunities' },
+    { icon: Store, label: 'Marketplace', path: '/marketplace', desc: 'Hardened Strategies' },
   ];
 
-  if (isAdmin) {
-    navItems.push({ icon: Terminal, label: 'Admin', path: '/admin', desc: 'Command Center' });
-  }
+  const tradeItems = [
+    { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Order Ledger' },
+    { icon: Briefcase, label: 'My Portfolio', path: '/portfolio', desc: 'Wealth Manager' },
+  ];
+
+  const resourceItems = [
+    { icon: ShieldCheck, label: 'Education', path: '/education', desc: 'Strategy Guides' },
+    { icon: CreditCard, label: 'Membership', path: '/membership', desc: 'Billing & Access' },
+  ];
 
   return (
     <aside className={`
@@ -47,7 +50,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
       md:relative md:translate-x-0
     `}>
       {/* Brand Header */}
-      <div className="p-8 pb-12">
+      <div className="p-8 pb-10">
         <div className="flex items-center space-x-3 group cursor-default">
           <div className="bg-blue-600 p-2 rounded-2xl text-white shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-500">
             <BarChart3 className="h-6 w-6" />
@@ -59,35 +62,129 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
         </div>
       </div>
 
-      {/* Main Nav Links */}
-      <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            onClick={onClose}
-            className={({ isActive }) => `
-              flex items-center space-x-4 px-6 py-4 rounded-2xl transition-all group relative
-              ${isActive 
-                ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
-                : 'text-slate-400 hover:text-white hover:bg-white/5'}
-            `}
-          >
-            {({ isActive }) => (
-              <>
-                <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
-                <div className="flex flex-col">
-                  <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
-                  <span className={`text-[8px] font-bold uppercase tracking-tighter ${isActive ? 'text-blue-100' : 'text-slate-600'}`}>{item.desc}</span>
-                </div>
-                {isActive && (
-                   <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />
-                )}
-              </>
-            )}
-          </NavLink>
-        ))}
+      {/* Navigation Sections */}
+      <nav className="flex-1 px-4 space-y-8 overflow-y-auto custom-scrollbar">
+        
+        {/* SECTION 1: ELITE ACCESS */}
+        <div className="space-y-2">
+           <h3 className="px-6 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4">Elite Access</h3>
+           {eliteItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={onClose}
+              className={({ isActive }) => `
+                flex items-center space-x-4 px-6 py-3.5 rounded-2xl transition-all group relative
+                ${isActive 
+                  ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'}
+              `}
+            >
+              {({ isActive }) => (
+                <>
+                  <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
+                  <div className="flex flex-col flex-1">
+                    <div className="flex items-center justify-between">
+                       <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
+                       {item.tag && (
+                         <span className="bg-emerald-500 text-[7px] font-black text-white px-1.5 py-0.5 rounded-md leading-none shadow-sm animate-pulse">
+                            {item.tag}
+                         </span>
+                       )}
+                    </div>
+                    <span className={`text-[8px] font-bold uppercase tracking-tighter ${isActive ? 'text-blue-100' : 'text-slate-600'}`}>{item.desc}</span>
+                  </div>
+                  {isActive && (
+                    <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />
+                  )}
+                </>
+              )}
+            </NavLink>
+           ))}
+        </div>
+
+        {/* SECTION 2: TRADING DESK */}
+        <div className="space-y-2">
+           <h3 className="px-6 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4">Trading Desk</h3>
+           {tradeItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={onClose}
+              className={({ isActive }) => `
+                flex items-center space-x-4 px-6 py-3.5 rounded-2xl transition-all group relative
+                ${isActive 
+                  ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'}
+              `}
+            >
+              {({ isActive }) => (
+                <>
+                  <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
+                  <div className="flex flex-col flex-1">
+                    <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
+                    <span className={`text-[8px] font-bold uppercase tracking-tighter ${isActive ? 'text-blue-100' : 'text-slate-600'}`}>{item.desc}</span>
+                  </div>
+                  {isActive && (
+                    <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />
+                  )}
+                </>
+              )}
+            </NavLink>
+           ))}
+        </div>
+
+        {/* SECTION 3: RESOURCES */}
+        <div className="space-y-2 pb-6">
+           <h3 className="px-6 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4">Account & Insights</h3>
+           {resourceItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={onClose}
+              className={({ isActive }) => `
+                flex items-center space-x-4 px-6 py-3.5 rounded-2xl transition-all group relative
+                ${isActive 
+                  ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'}
+              `}
+            >
+              {({ isActive }) => (
+                <>
+                  <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
+                  <div className="flex flex-col flex-1">
+                    <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
+                    <span className={`text-[8px] font-bold uppercase tracking-tighter ${isActive ? 'text-blue-100' : 'text-slate-600'}`}>{item.desc}</span>
+                  </div>
+                  {isActive && (
+                    <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />
+                  )}
+                </>
+              )}
+            </NavLink>
+           ))}
+
+           {isAdmin && (
+            <NavLink
+              to="/admin"
+              onClick={onClose}
+              className={({ isActive }) => `
+                flex items-center space-x-4 px-6 py-3.5 rounded-2xl transition-all group relative border border-blue-500/20 bg-blue-500/5 mt-4
+                ${isActive 
+                  ? 'bg-blue-600 text-white shadow-xl' 
+                  : 'text-blue-400 hover:text-white hover:bg-blue-600/10'}
+              `}
+            >
+              <Terminal className="h-5 w-5" />
+              <div className="flex flex-col">
+                <span className="text-xs font-black uppercase tracking-widest">Admin Center</span>
+                <span className="text-[8px] font-bold uppercase tracking-tighter opacity-70">Command Control</span>
+              </div>
+            </NavLink>
+           )}
+        </div>
       </nav>
+
 
       {/* Footer Section */}
       <div className="p-6 space-y-6 mt-auto">
