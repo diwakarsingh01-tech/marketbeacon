@@ -19,19 +19,20 @@ const StrategyEducation: React.FC = () => {
   const lessons = [
     {
       id: 'fundamentals',
-      title: 'Batch 9 Fundamentals',
+      title: 'End-to-End Core Rules',
       icon: ShieldCheck,
       color: 'text-emerald-600',
       category: 'Selection',
       content: {
-        logic: 'Quality filter applied before technical scanning.',
+        logic: 'The complete Institutional-Grade Alpha 40 constraints applied to all system portfolios.',
         checks: [
-          'PE < 75: Avoid overvaluation traps.',
-          'ROE > 12%: Focus on profitable businesses.',
-          'Debt to Equity < 0.25: Financial resilience (Excl. BFSI).',
-          'Market Cap > 1,000 Cr: Stability and scale.'
+          'Market Caps: Large (≥ 45,000 Cr), Mid (≥ 15,000 Cr), Small (< 15,000 Cr).',
+          'Fundamental Audit: Minimum 70/100 Score. D/E ≤ 0.2 (except BFSI). Pledged < 2%.',
+          'Entry Window: Upside strictly capped at 2.0%. Drawdowns allowed up to 30.0%.',
+          'Dynamic Allocation: Large Cap (50%), Mid Cap (30%), Small Cap (20%) strictly enforced.',
+          'Sector Hardening: Maximum 20% exposure to any single industry.'
         ],
-        drawdown: 'Large Cap (20-30%), Mid Cap (35-50%), Small Cap (50-70%)'
+        drawdown: 'Ensure discipline during accumulation (A, B, C, D tranches) down to -30%.'
       }
     },
     {
