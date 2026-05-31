@@ -311,19 +311,19 @@ app.post('/api/admin/update-snapshot', authenticateToken, requireAdmin, async (r
     let symbols = [];
     
     const dynamicWealth = getDynamicBasket();
-    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['WEALTH_BASKET'] || []);
+    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['GOOD_200'] || []);
 
-    if (basket === 'BLUECHIP') {
-      symbols = BASKETS['BLUECHIP'] || [];
-    } else if (basket === 'HIGH_BETA') {
-      symbols = BASKETS['HIGH_BETA'] || [];
-    } else if (basket === 'WEALTH_BASKET') {
+    if (basket === 'SUPER_45') {
+      symbols = BASKETS['SUPER_45'] || [];
+    } else if (basket === 'GOOD_45') {
+      symbols = BASKETS['GOOD_45'] || [];
+    } else if (basket === 'GOOD_200') {
       symbols = currentWealth;
     } else {
       // FIX: Safe spreading
       const all = [];
-      if (Array.isArray(BASKETS['BLUECHIP'])) all.push(...BASKETS['BLUECHIP']);
-      if (Array.isArray(BASKETS['HIGH_BETA'])) all.push(...BASKETS['HIGH_BETA']);
+      if (Array.isArray(BASKETS['SUPER_45'])) all.push(...BASKETS['SUPER_45']);
+      if (Array.isArray(BASKETS['GOOD_45'])) all.push(...BASKETS['GOOD_45']);
       if (Array.isArray(currentWealth)) all.push(...currentWealth);
       symbols = Array.from(new Set(all));
     }
@@ -488,7 +488,7 @@ app.get('/api/marketplace', async (req, res) => {
 
 
 // --- BATCH 9 INSTITUTIONAL AUDIT ENGINE ---
-async function validateBatch9(symbol: string, snap: any, basketName: string = 'BLUECHIP') {
+async function validateBatch9(symbol: string, snap: any, basketName: string = 'SUPER_45') {
   const quote = snap?.quote || {};
   const scr = snap.screener || {};
   const sh = quote.shareholding || scr.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0, trends: {} };
@@ -563,7 +563,7 @@ async function validateBatch9(symbol: string, snap: any, basketName: string = 'B
   const totalScore = Math.min(100, Math.max(0, profScore + safetyScore + growthScore + instScore));
 
   // HARD REJECTS (The "Red Flags")
-  const isHardReject = !isETF && (debtToEquity > 1.2 || pledged >= 15 || smartMoneyTotal < (basketName === 'WEALTH_BASKET' ? 35 : 65));
+  const isHardReject = !isETF && (debtToEquity > 1.2 || pledged >= 15 || smartMoneyTotal < (basketName === 'GOOD_200' ? 35 : 65));
 
   return {
     isPass: (totalScore >= 70) && !isHardReject,
@@ -665,23 +665,23 @@ app.get('/api/stock-fundamentals', async (req, res) => {
 // --- CORE SCANNER ---
 app.get('/api/backtest/envelope', async (req, res) => {
   try {
-    const basketId = (req.query.basket as string) || 'BLUECHIP';
+    const basketId = (req.query.basket as string) || 'SUPER_45';
     const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
     
     const dynamicWealth = getDynamicBasket();
-    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['WEALTH_BASKET'] || []);
+    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['GOOD_200'] || []);
 
     let symbols = [];
-    if (basketId === 'WEALTH_BASKET') {
+    if (basketId === 'GOOD_200') {
       const all = [];
-      if (Array.isArray(BASKETS['BLUECHIP'])) all.push(...BASKETS['BLUECHIP']);
-      if (Array.isArray(BASKETS['HIGH_BETA'])) all.push(...BASKETS['HIGH_BETA']);
+      if (Array.isArray(BASKETS['SUPER_45'])) all.push(...BASKETS['SUPER_45']);
+      if (Array.isArray(BASKETS['GOOD_45'])) all.push(...BASKETS['GOOD_45']);
       if (Array.isArray(currentWealth)) all.push(...currentWealth);
       symbols = Array.from(new Set(all));
-    } else if (basketId === 'HIGH_BETA') {
-      symbols = BASKETS['HIGH_BETA'] || [];
+    } else if (basketId === 'GOOD_45') {
+      symbols = BASKETS['GOOD_45'] || [];
     } else {
-      symbols = BASKETS['BLUECHIP'] || [];
+      symbols = BASKETS['SUPER_45'] || [];
     }
 
     const snapshot = getMarketSnapshot();
@@ -800,7 +800,7 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     const capStats = { LARGE: 0, MID: 0, SMALL: 0 };
     
     // Audit Checklist Tracking
-    const auditedBaskets = ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'];
+    const auditedBaskets = ['SUPER_45', 'GOOD_45', 'GOOD_200'];
     const auditedStrategies = STRATEGIES.map(s => s.name);
     
     const processBasket = async (basketName: string, symbols: string[] = []) => {
@@ -882,10 +882,10 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
       return { active, closed };
     };
 
-    const bc = await processBasket('BLUECHIP', BASKETS['BLUECHIP']);
-    const hb = await processBasket('HIGH_BETA', BASKETS['HIGH_BETA']);
+    const bc = await processBasket('SUPER_45', BASKETS['SUPER_45']);
+    const hb = await processBasket('GOOD_45', BASKETS['GOOD_45']);
     const dyn = getDynamicBasket();
-    const wb = await processBasket('WEALTH_BASKET', Array.isArray(dyn) && dyn.length > 0 ? dyn : BASKETS['WEALTH_BASKET']);
+    const wb = await processBasket('GOOD_200', Array.isArray(dyn) && dyn.length > 0 ? dyn : BASKETS['GOOD_200']);
     
     // FORTRESS: Spread guarding
     let allActive = [];
@@ -970,7 +970,7 @@ async function startServer() {
     const cache = getMarketSnapshot();
     if (Object.keys(cache).length <= 1) {
       console.log('🚀 [STARTUP] Cache empty. Triggering priority Bluechip snapshot...');
-      updateMarketSnapshot(BASKETS['BLUECHIP']).catch(e => console.error('Startup Snapshot Failed:', e.message));
+      updateMarketSnapshot(BASKETS['SUPER_45']).catch(e => console.error('Startup Snapshot Failed:', e.message));
     }
 
     app.listen(PORT, () => console.log(`MarketBeacon Backend running on port ${PORT}`));
@@ -981,7 +981,7 @@ function syncBaskets() {
   try {
     const dynamicProfit = getDynamicBasket();
     if (Array.isArray(dynamicProfit) && dynamicProfit.length > 0) {
-      BASKETS['WEALTH_BASKET'] = dynamicProfit;
+      BASKETS['GOOD_200'] = dynamicProfit;
     }
   } catch (e) { console.error('Sync Baskets Failed:', e.message); }
 }
