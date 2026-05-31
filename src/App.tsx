@@ -50,6 +50,7 @@ function App() {
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/connect" element={<ConnectivityHubPage />} />
             <Route path="/analysis/:symbol" element={<PublicAnalysisPage />} />
+            <Route path="/marketplace" element={<MembershipPage />} />
 
             {/* Authenticated SaaS Platform */}
             <Route 
@@ -67,7 +68,6 @@ function App() {
               <Route path="/journal" element={<Navigate to="/trades" replace />} />
               <Route path="/trades" element={<TradeJournalPage />} />
               <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/membership" element={<MembershipPage />} />
               <Route path="/stock/:symbol" element={<StockFundamentalsPage />} />
               <Route path="/education" element={<EducationPage />} />
               <Route path="/admin" element={<AdminPanel />} />

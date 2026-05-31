@@ -189,17 +189,22 @@ const LoginPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-lg bg-white p-12 md:p-16 rounded-[4rem] shadow-2xl border border-slate-100 space-y-12 animate-in fade-in zoom-in-95 duration-700 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-slate-900/5 blur-[100px] -mr-32 -mt-32" />
+    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 font-sans relative overflow-hidden">
+      {/* Subtle Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/5 blur-[120px] rounded-full" />
+      </div>
+
+      <div className="w-full max-w-lg bg-white p-12 md:p-16 rounded-[4rem] shadow-2xl border border-slate-100 space-y-12 animate-in fade-in zoom-in-95 duration-700 relative z-10">
         <div className="text-center space-y-4 relative z-10">
            <div className="flex items-center justify-center space-x-3">
               <div className="bg-slate-900 p-2.5 rounded-2xl text-white shadow-xl rotate-12"><Activity className="h-6 w-6" /></div>
-              <span className="text-3xl font-black tracking-tighter uppercase italic text-slate-900">MarketBeacon</span>
+              <span className="text-3xl font-black tracking-tighter uppercase italic text-slate-900">MarketBeacon<span className="text-blue-600">Pro</span></span>
            </div>
            <div className="space-y-1">
               <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Terminal Login</h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em]">Institutional Access Environment</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em]">Institutional Access Environment 11.6</p>
            </div>
         </div>
 
@@ -226,14 +231,14 @@ const LoginPage: React.FC = () => {
                 <div className="space-y-4">
                    <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Admin Identity</label>
-                      <input type="email" placeholder="admin@marketbeacon.com" className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] px-8 py-5 text-sm font-black focus:bg-white focus:border-slate-900 transition-all outline-none" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                      <input type="email" placeholder="admin@marketbeaconpro.com" className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] px-8 py-5 text-sm font-black focus:bg-white focus:border-slate-900 transition-all outline-none" value={email} onChange={(e) => setEmail(e.target.value)} required />
                    </div>
                    <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Security Key</label>
                       <input type="password" placeholder="••••••••" className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] px-8 py-5 text-sm font-black focus:bg-white focus:border-slate-900 transition-all outline-none" value={password} onChange={(e) => setPassword(e.target.value)} required />
                    </div>
                 </div>
-                <button type="submit" disabled={loading} className="w-full py-6 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center space-x-3 active:scale-95 transition-all">
+                <button type="submit" disabled={loading} className="w-full py-6 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center space-x-3 active:scale-95 transition-all hover:bg-black">
                    <span>{loading ? 'Verifying...' : 'Authorize Access'}</span>
                    <ArrowRight className="h-5 w-5" />
                 </button>

@@ -125,7 +125,7 @@ const MembershipPage: React.FC = () => {
             const isAlpha = item.tier === 'alpha';
             
             // Fixed Price Logic
-            let displayPrice = item.tier === 'pro' ? '₹99' : '₹199';
+            let displayPrice = item.price ? `₹${item.price}` : (item.tier === 'pro' ? '₹99' : '₹199');
             if (billingPeriod === 'yearly') {
                displayPrice = item.tier === 'pro' ? '₹799' : '₹1,599';
             }
@@ -153,19 +153,7 @@ const MembershipPage: React.FC = () => {
 
                     <div className="space-y-3">
                         <div className="grid grid-cols-1 gap-2.5">
-                          {(isAlpha ? [
-                              'Velocity Retest (Deep Demand)',
-                              '67% Deep Recovery Audit',
-                              'Supply-Demand Resistance Logic',
-                              'Real-Time Alpha Notifications',
-                              'Priority Institutional Nodes'
-                          ] : [
-                              'Structural Pivot (Breakouts)',
-                              'Dynamic Reversal Matrix',
-                              'Annual Range Statistics',
-                              'Quantum Stacking Averages',
-                              'Standard Portfolio Mix Audit'
-                          ]).map((feature, idx) => (
+                          {(item.features || []).map((feature: string, idx: number) => (
                               <div key={idx} className="flex items-center space-x-3">
                                 <div className={`h-4 w-4 rounded-full flex items-center justify-center shrink-0 ${isUserTierActive ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
                                     <Check className="h-2.5 w-2.5" />
@@ -176,19 +164,18 @@ const MembershipPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-1 md:gap-2 py-4 md:py-6 px-3 md:px-4 bg-slate-50 rounded-2xl text-center shadow-inner mt-4">
-                        <div className="flex flex-col">
+                    <div className="grid grid-cols-2 gap-1 md:gap-2 py-4 md:py-6 px-3 md:px-4 bg-slate-50 rounded-2xl text-center shadow-inner mt-4">
+                        <div className="flex flex-col border-r border-slate-200">
                           <span className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">CAGR</span>
                           <span className="text-[10px] md:text-sm font-black text-slate-900">{item.cagr}</span>
-                        </div>
-                        <div className="flex flex-col border-x border-slate-200">
-                          <span className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Win Rate</span>
-                          <span className="text-[10px] md:text-sm font-black text-emerald-600">{item.winRate}</span>
                         </div>
                         <div className="flex flex-col">
                           <span className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Risk</span>
                           <span className="text-[10px] md:text-sm font-black text-slate-900">{item.risk}</span>
                         </div>
+                    </div>
+                    <div className="text-center pt-2">
+                       <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">Institutional Grade Math Verified</p>
                     </div>
                   </div>
 

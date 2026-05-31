@@ -110,7 +110,7 @@ const StockFundamentalsPage: React.FC = () => {
                 <span>Institutional Audit Matrix</span>
                 <span className="text-slate-400">{data?.audit?.reason}</span>
              </div>
-             <div className="p-5 grid grid-cols-2 gap-x-8 gap-y-4">
+             <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                 {weightedSegments.map((segment) => segment.data && (
                   <div key={segment.id} className="space-y-2">
                     <div className="flex items-center justify-between border-b border-slate-50 pb-1">
@@ -132,7 +132,7 @@ const StockFundamentalsPage: React.FC = () => {
              </div>
           </section>
 
-          <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 grid grid-cols-4 gap-4">
+          <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 grid grid-cols-2 md:grid-cols-4 gap-4">
              {[
                { label: 'ATH Sales', value: data?.athSales ? `₹${Number(data.athSales).toLocaleString()}Cr` : '-' },
                { label: 'ATH Profit', value: data?.athNetProfit ? `₹${Number(data.athNetProfit).toLocaleString()}Cr` : '-' },

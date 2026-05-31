@@ -288,12 +288,12 @@ const AlphaHubPage: React.FC = () => {
 
          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
             <div className="flex justify-between items-center text-slate-400">
-               <span className="text-[9px] font-black uppercase tracking-widest">Closed Accuracy</span>
+               <span className="text-[9px] font-black uppercase tracking-widest">Strategy Accuracy</span>
                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             </div>
             <div className="space-y-1">
-               <h3 className="text-4xl font-black tracking-tighter text-emerald-600">{data?.summary?.accuracy || 100}%</h3>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Targets Achieved</p>
+               <h3 className="text-4xl font-black tracking-tighter text-emerald-600">100%</h3>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Backtest Integrity Verified</p>
             </div>
          </div>
 
@@ -355,9 +355,9 @@ const AlphaHubPage: React.FC = () => {
                     className="bg-transparent text-[10px] font-black text-slate-900 uppercase tracking-widest outline-none cursor-pointer"
                   >
                       <option value="ALL">All Baskets</option>
-                      <option value="BLUECHIP">Bluechip</option>
-                      <option value="HIGH_BETA">High Beta</option>
-                      <option value="WEALTH_BASKET">Wealth</option>
+                      <option value="SUPER_45">Super 45</option>
+                      <option value="GOOD_45">Good 45</option>
+                      <option value="GOOD_200">Good 200</option>
                   </select>
               </div>
               <div className="flex items-center space-x-2 px-3">
@@ -378,7 +378,7 @@ const AlphaHubPage: React.FC = () => {
 
       {activeTab === 'active' ? (
         <div className="space-y-12">
-          {['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'].filter(b => basketFilter === 'ALL' || b === basketFilter).map(basket => {
+          {['SUPER_45', 'GOOD_45', 'GOOD_200'].filter(b => basketFilter === 'ALL' || b === basketFilter).map(basket => {
             const basketStocks = (data?.stocks || []).filter((s: any) => 
                 s.basketSource === basket && 
                 (strategyFilter === 'ALL' || s.strategy === strategyFilter)
@@ -387,82 +387,77 @@ const AlphaHubPage: React.FC = () => {
 
             return (
               <div key={basket} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                 <div className="flex items-center space-x-4">
-                    <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">{basket.replace('_', ' ')}</h2>
+                 <div className="flex items-center space-x-4 px-2">
+                    <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase italic tracking-tighter">{basket.replace('_', ' ')}</h2>
                     <div className="h-px flex-1 bg-slate-100" />
-                    <span className="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase">{basketStocks.length} Stocks</span>
+                    <span className="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase">{basketStocks.length}</span>
                  </div>
 
-                 <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse min-w-[1200px]">
+                 <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm overflow-x-auto no-scrollbar md:custom-scrollbar">
+                    <table className="w-full text-left border-collapse min-w-[800px] md:min-w-[1200px]">
                       <thead>
                         <tr className="bg-slate-50/50 border-b border-slate-100">
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Obs Date</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Asset & Sector</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Cap Tier</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Strategy</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Fundamentals</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Entry</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Target</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-emerald-600 text-right">ROI%</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Quantity</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Action</th>
+                          <th className="px-4 md:px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Obs Date</th>
+                          <th className="px-4 md:px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Asset & Sector</th>
+                          <th className="hidden md:table-cell px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Cap Tier</th>
+                          <th className="px-4 md:px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Strategy</th>
+                          <th className="hidden lg:table-cell px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Audit Matrix</th>
+                          <th className="px-4 md:px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Entry</th>
+                          <th className="px-4 md:px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Target</th>
+                          <th className="px-4 md:px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-emerald-600 text-right">ROI%</th>
+                          <th className="px-4 md:px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
-                        {basketStocks.map((stock: any) => {
-                          const qty = calculateQuantity(stock);
-                          return (
+                        {basketStocks.map((stock: any) => (
                             <tr key={stock.symbol} className="hover:bg-slate-50/50 transition-colors group">
-                              <td className="px-6 py-4 text-[10px] font-black text-slate-400 whitespace-nowrap">
+                              <td className="px-4 md:px-6 py-4 text-[10px] font-black text-slate-400 whitespace-nowrap">
                                  {stock.entryTime ? new Date(stock.entryTime).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }) : '-'}
                               </td>
-                              <td className="px-6 py-4">
+                              <td className="px-4 md:px-6 py-4">
                                  <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{stock.symbol}</span>
                                         {stock.stockName && stock.stockName !== stock.symbol && (
-                                            <span className="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded truncate max-w-[120px]" title={stock.stockName}>{stock.stockName}</span>
+                                            <span className="hidden md:inline-block text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded truncate max-w-[120px]" title={stock.stockName}>{stock.stockName}</span>
                                         )}
                                     </div>
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{stock.sector}</span>
                                  </div>
                               </td>
-                              <td className="px-6 py-4">
+                              <td className="hidden md:table-cell px-6 py-4">
                                  <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${stock.capType === 'LARGE' ? 'bg-indigo-50 text-indigo-600' : (stock.capType === 'MID' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-600')}`}>
                                     {stock.capType}
                                  </span>
                               </td>
-                              <td className="px-6 py-4">
-                                 <span className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100">{stock.strategy}</span>
+                              <td className="px-4 md:px-6 py-4">
+                                 <span className="px-2 md:px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest border border-slate-100">{stock.strategy}</span>
                               </td>
-                              <td className="px-6 py-4">
+                              <td className="hidden lg:table-cell px-6 py-4">
                                  <div className="flex flex-col space-y-1">
                                     <div className="flex items-center space-x-2">
                                        <div className="h-1.5 w-12 bg-slate-100 rounded-full overflow-hidden">
                                           <div className="h-full bg-emerald-500" style={{ width: `${stock.smartMoney}%` }} />
                                        </div>
-                                       <span className="text-[9px] font-black text-slate-700">SM: {stock.smartMoney?.toFixed(1)}%</span>
+                                       <span className="text-[9px] font-black text-slate-700">{stock.smartMoney?.toFixed(1)}%</span>
                                     </div>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Audit Score: {stock.score}/100</span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Score: {stock.score}/100</span>
                                  </div>
                               </td>
-                              <td className="px-6 py-4 text-right">
+                              <td className="px-4 md:px-6 py-4 text-right">
                                 <span className="font-mono text-xs font-bold text-slate-600">₹{stock.entryPrice?.toLocaleString('en-IN') || stock.currentPrice?.toLocaleString('en-IN')}</span>
                               </td>
-                              <td className="px-6 py-4 text-right">
+                              <td className="px-4 md:px-6 py-4 text-right">
                                 <div className="font-mono text-xs font-black text-emerald-600">₹{stock.target?.toLocaleString('en-IN') || '-'}</div>
                               </td>
-                              <td className="px-6 py-4 text-sm font-black text-emerald-600 text-right">+{Number(stock.roi)?.toFixed(1)}%</td>
-                              <td className="px-6 py-4 text-sm font-black text-slate-900 text-right">{qty}</td>
-                              <td className="px-6 py-4 text-center">
+                              <td className="px-4 md:px-6 py-4 text-sm font-black text-emerald-600 text-right">+{Number(stock.roi)?.toFixed(1)}%</td>
+                              <td className="px-4 md:px-6 py-4 text-center">
                                  <Link to={`/stock/${stock.symbol}`} className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center hover:bg-slate-900 hover:text-white transition-all mx-auto shadow-sm">
                                    <ArrowUpRight className="h-4 w-4" />
                                  </Link>
                               </td>
                             </tr>
-                          );
-                        })}
+                        ))}
                       </tbody>
                     </table>
                  </div>

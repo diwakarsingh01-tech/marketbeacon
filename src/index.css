@@ -3,12 +3,12 @@
 
 @layer base {
   * {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Outfit', sans-serif;
   }
 
   body {
-    background-color: #f8fafc !important; /* Pure Institutional Slate-White */
-    color: #0f172a !important;
+    background-color: #f8fafc; /* Pure Institutional Slate-White */
+    color: #0f172a;
     margin: 0;
     padding: 0;
   }
@@ -17,42 +17,42 @@
 
   /* Panels, Cards, Navs */
   .bg-white {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
+    background-color: #ffffff;
+    color: #0f172a;
   }
 
   .bg-slate-50 {
-    background-color: #f1f5f9 !important;
-    color: #475569 !important;
+    background-color: #f1f5f9;
+    color: #475569;
   }
 
   .bg-slate-900 {
-    background-color: #0f172a !important;
-    color: #ffffff !important;
+    background-color: #0f172a;
+    color: #ffffff;
   }
 
   /* Borders & Dividers */
   .border-slate-100 {
-    border-color: #f1f5f9 !important;
+    border-color: #f1f5f9;
   }
 
   .border-slate-200 {
-    border-color: #e2e8f0 !important;
+    border-color: #e2e8f0;
   }
 
   .divide-slate-50 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #f1f5f9 !important;
+    border-color: #f1f5f9;
   }
 
   /* Text Contrast Enhancements */
-  .text-slate-900 { color: #0f172a !important; }
-  .text-slate-600 { color: #475569 !important; }
-  .text-slate-500 { color: #64748b !important; }
-  .text-slate-400 { color: #94a3b8 !important; }
+  .text-slate-900 { color: #0f172a; }
+  .text-slate-600 { color: #475569; }
+  .text-slate-500 { color: #64748b; }
+  .text-slate-400 { color: #94a3b8; }
 
   /* Interactive Elements */
   .text-blue-600 {
-    color: #2563eb !important; /* Premium Blue */
+    color: #2563eb; /* Premium Blue */
   }
 
   /* Scrollbars */
