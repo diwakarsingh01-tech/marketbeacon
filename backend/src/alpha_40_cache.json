@@ -1137,5 +1137,10 @@
       "score": 90
     }
   ],
-  "updatedAt": "2026-05-31T17:43:21.019Z"
+  "capStats": {
+    "LARGE": 20,
+    "MID": 8,
+    "SMALL": 9
+  },
+  "updatedAt": "2026-05-31T17:44:21.417Z"
 }
