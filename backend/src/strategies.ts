@@ -495,8 +495,8 @@ export function calculateRHS(quotes: Quote[]) {
                 const p1 = p1Arr[p1Arr.length - 1];
                 const p2 = p2Arr[0];
 
-                const shouldersLevel = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price) <= 0.12;
-                const neckLevel = Math.abs(p1.price - p2.price) / Math.max(p1.price, p2.price) <= 0.12;
+                const shouldersLevel = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price) <= 0.06;
+                const neckLevel = Math.abs(p1.price - p2.price) / Math.max(p1.price, p2.price) <= 0.06;
 
                 if (shouldersLevel && neckLevel) {
                   const neckline = Math.max(p1.price, p2.price);
@@ -590,7 +590,7 @@ export function calculateCupHandle(quotes: Quote[]) {
           const cupLow = Math.min(...cupSlice);
           const cupDepth = (neckline - cupLow) / neckline;
 
-          const rimsLevel = Math.abs(rim1.price - rim2.price) / neckline <= 0.15;
+          const rimsLevel = Math.abs(rim1.price - rim2.price) / neckline <= 0.07;
           const hasProperDepth = cupDepth >= 0.30 && cupDepth <= 0.65;
 
           if (rimsLevel && hasProperDepth) {

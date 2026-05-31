@@ -44,7 +44,7 @@ const STRATEGIES = [
 ];
 
 const BASKETS: Record<string, string[]> = {
-  'BLUECHIP': [
+  'SUPER_45': [
     'WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 
     'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 
     'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 
@@ -53,7 +53,7 @@ const BASKETS: Record<string, string[]> = {
     'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 
     'NIFTYBEES', 'BANKBEES'
   ],
-  'HIGH_BETA': [
+  'GOOD_45': [
     'RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 
     'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 
     'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KAJARIACER', 'VINATIORGA', 
@@ -61,7 +61,7 @@ const BASKETS: Record<string, string[]> = {
     'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 
     'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'
   ],
-  'WEALTH_BASKET': [
+  'GOOD_200': [
     'CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 
     'MTARTECH', 'MAHLOG', 'PRINCEPIPE', 'ANGELONE', 'MCX', 'KFINTECH', 'DATA PATTERNS', 
     'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES', 'RAILTEL', 'BEL', 
@@ -421,9 +421,57 @@ app.patch('/api/trades/:id', authenticateToken, async (req: any, res) => {
 // --- MARKETPLACE / PLANS ---
 app.get('/api/marketplace', async (req, res) => {
   const plans = [
-    { id: 1, name: 'Free Institutional', tier: 'free', cagr: '18%', winRate: '75%', risk: 'Low', features: ['Watchlist', 'Basic Signals'] },
-    { id: 2, name: 'Pro Execution', tier: 'pro', cagr: '28%', winRate: '82%', risk: 'Medium', features: ['Matrix Access', 'ABCD Ladder'] },
-    { id: 3, name: 'Alpha Priority', tier: 'alpha', cagr: '42%', winRate: '90%', risk: 'Institutional', features: ['All Strategies', 'Priority Nodes'] }
+    { 
+      id: 1, 
+      name: 'Free Institutional', 
+      tier: 'free', 
+      price: 199,
+      cagr: '18%', 
+      risk: 'Low', 
+      features: [
+        'Watchlist', 
+        'Basic Signals', 
+        'Structural Pivot (Breakouts)', 
+        'Dynamic Reversal Matrix', 
+        'Annual Range Statistics', 
+        'Quantum Stacking Averages', 
+        'Standard Portfolio Mix Audit'
+      ] 
+    },
+    { 
+      id: 2, 
+      name: 'Pro Execution', 
+      tier: 'pro', 
+      price: 99,
+      cagr: '28%', 
+      risk: 'Medium', 
+      features: [
+        'Alpha Hub Access',
+        'Matrix Access', 
+        'ABCD Ladder',
+        'Structural Pivot (Breakouts)', 
+        'Dynamic Reversal Matrix', 
+        'Annual Range Statistics', 
+        'Quantum Stacking Averages', 
+        'Standard Portfolio Mix Audit'
+      ] 
+    },
+    { 
+      id: 3, 
+      name: 'Alpha Priority', 
+      tier: 'alpha', 
+      price: 199,
+      cagr: '42%', 
+      risk: 'Institutional', 
+      features: [
+        'Alpha Hub Access',
+        'Priority Institutional Nodes',
+        'Velocity Retest (Deep Demand)',
+        '67% Deep Recovery Audit',
+        'Supply-Demand Resistance Logic',
+        'Real-Time Alpha Notifications'
+      ] 
+    }
   ];
   
   const body = JSON.stringify(plans);
@@ -740,13 +788,12 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     const cutoffDate = timelineDates[timeline as string] || null;
 
     const STRATEGY_BASKET_MAP: Record<string, string[]> = {
-
-      'ENVELOPE_LONG': ['BLUECHIP'], 'ENVELOPE_SHORT': ['BLUECHIP'], 'BOLLINGER': ['BLUECHIP'],
-      'CUP_HANDLE_ABCD': ['BLUECHIP', 'HIGH_BETA'], 'RHS_ABCD': ['BLUECHIP', 'HIGH_BETA'],
-      'SMA_ABCD': ['BLUECHIP', 'HIGH_BETA'], '52W_HIGH_LOW': ['BLUECHIP', 'HIGH_BETA'],
-      'TWENTY_RALLY_RETEST': ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'],
-      'SIXTY_SEVEN_FUNDA': ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET'],
-      'SR_STRATEGY': ['BLUECHIP', 'HIGH_BETA', 'WEALTH_BASKET']
+      'ENVELOPE_LONG': ['SUPER_45'], 'ENVELOPE_SHORT': ['SUPER_45'], 'BOLLINGER': ['SUPER_45'],
+      'CUP_HANDLE_ABCD': ['SUPER_45', 'GOOD_45'], 'RHS_ABCD': ['SUPER_45', 'GOOD_45'],
+      'SMA_ABCD': ['SUPER_45', 'GOOD_45'], '52W_HIGH_LOW': ['SUPER_45', 'GOOD_45'],
+      'TWENTY_RALLY_RETEST': ['SUPER_45', 'GOOD_45', 'GOOD_200'],
+      'SIXTY_SEVEN_FUNDA': ['SUPER_45', 'GOOD_45', 'GOOD_200'],
+      'SR_STRATEGY': ['SUPER_45', 'GOOD_45', 'GOOD_200']
     };
 
     const sectorStats: Record<string, number> = {};

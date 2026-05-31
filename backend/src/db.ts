@@ -51,6 +51,14 @@ export async function initDB() {
     )
   `);
 
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS stock_snapshots (
+      symbol TEXT PRIMARY KEY,
+      data JSON NOT NULL,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Ensure new columns exist for existing databases
   const alterColumns = [
     'ALTER TABLE users ADD COLUMN role TEXT DEFAULT "user"',
