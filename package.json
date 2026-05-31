@@ -1,7 +1,7 @@
 {
   "name": "supertracker",
   "private": true,
-  "version": "0.0.0",
+  "version": "12.2.0-PRO",
   "type": "module",
   "scripts": {
     "dev": "vite",

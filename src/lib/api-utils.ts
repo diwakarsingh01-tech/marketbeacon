@@ -48,5 +48,7 @@ export const getApiUrl = () => {
   }
 
   // 4. Default Fail-safe
-  return envUrl || "https://marketbeacon.onrender.com";
+  const finalUrl = envUrl || "https://marketbeacon.onrender.com";
+  console.log(`🌐 [Institutional Node] API Target: ${finalUrl}`);
+  return finalUrl;
 };

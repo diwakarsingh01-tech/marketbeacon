@@ -105,6 +105,7 @@ const HomePage: React.FC = () => {
                <Link to="/login" className="px-16 py-6 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-lg hover:scale-105 transition-all">
                   Launch Terminal Now
                </Link>
+               <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest mt-10">Institutional Build v12.2.0-PRO</p>
             </div>
          </div>
       </section>
