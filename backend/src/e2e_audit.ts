@@ -12,7 +12,7 @@ import {
   calculateSixtySevenFunda,
   calculateTwentyRallyRetest,
   calculateABCDLevels
-} from './strategies.js';
+} from './strategies/index.js';
 import { getDynamicBasket, getMarketSnapshot } from './screener.js';
 
 const BASKETS = {

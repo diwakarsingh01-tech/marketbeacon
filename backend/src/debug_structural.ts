@@ -1,6 +1,6 @@
 
 import fs from 'fs';
-import { calculateCupHandle, calculateRHS } from './strategies.js';
+import { calculateCupHandle, calculateRHS } from './strategies/index.js';
 
 function debugStock(sym: string) {
   const data = JSON.parse(fs.readFileSync("./market_snapshot.json", "utf-8"));

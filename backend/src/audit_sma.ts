@@ -1,6 +1,6 @@
 
 import fs from 'fs';
-import { calculateSMAStacking } from './strategies.js';
+import { calculateSMAStacking } from './strategies/index.js';
 
 async function auditSMA() {
   console.log("--- Auditing Strategy 4: SMA ABCD ---");

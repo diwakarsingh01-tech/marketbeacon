@@ -7,7 +7,7 @@ import {
   calculateCupHandle, 
   calculateRHS,
   calculateSixtySevenFunda
-} from './strategies.js';
+} from './strategies/index.js';
 import { getDynamicBasket } from './screener.js';
 
 const BASKETS = {

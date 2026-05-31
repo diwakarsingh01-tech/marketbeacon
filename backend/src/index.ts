@@ -1,5 +1,6 @@
 // @ts-nocheck
 import express from 'express';
+import cron from 'node-cron';
 import YahooFinance from 'yahoo-finance2';
 import cors from 'cors';
 import compression from 'compression';
@@ -11,7 +12,13 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { OAuth2Client } from 'google-auth-library';
 import { initScreenerCron, getDynamicBasket, runScreener, getMarketSnapshot, updateMarketSnapshot, fetchScreenerData, initSnapshotCache } from './screener.js';
+import { validateBatch9 } from './services/fundamentalAudit.js';
+import { runStrategyAnalysis } from './services/strategyService.js';
+import { precalculateAlpha40, getAlpha40Cache } from './services/worker.js';
+import { generateSitemap } from './services/seo.js';
+import rateLimit from 'express-rate-limit';
 import fs from 'fs';
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -19,18 +26,34 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MARKET_SNAPSHOT_PATH = path.join(__dirname, '../market_snapshot.json');
 import { initDB, getDB } from './db.js';
 import { NIFTY_500 } from './universe.js';
-import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest } from './strategies.js';
+import { calculateEnvelope, processShortEnvelope, calculateEMA, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest } from './strategies/index.js';
 
 const yahooFinance = new YahooFinance();
 dotenv.config();
 
 const app = express();
+
+app.use(cors()); // CORS must be at the very top
+app.use(compression());
+app.use(express.json({ limit: '100mb' }));
+
+// --- API HARDENING (30,000 User Capacity) ---
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 5000, // Increased for institutional traffic
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again later.' }
+});
+
+app.use('/api/', limiter);
+
 const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // --- GLOBAL INSTITUTIONAL MATRIX ---
-const STRATEGIES = [
+export const STRATEGIES = [
   { id: 'ENVELOPE_LONG', name: 'Institutional Floor' },
   { id: 'ENVELOPE_SHORT', name: 'Momentum Ceiling' },
   { id: 'BOLLINGER', name: 'Volatility Channel' },
@@ -43,7 +66,7 @@ const STRATEGIES = [
   { id: 'SR_STRATEGY', name: 'Supply-Demand Core' }
 ];
 
-const BASKETS: Record<string, string[]> = {
+export const BASKETS: Record<string, string[]> = {
   'SUPER_45': [
     'WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 
     'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 
@@ -71,7 +94,7 @@ const BASKETS: Record<string, string[]> = {
 };
 
 // --- INSTITUTIONAL SECTOR MAPPING ---
-const COMPANY_NAMES: Record<string, string> = {
+export const COMPANY_NAMES: Record<string, string> = {
   'RELAXO': 'Relaxo Footwears Ltd.', 'FINCABLES': 'Finolex Cables Ltd.', 'SYMPHONY': 'Symphony Ltd.',
   'TEAMLEASE': 'TeamLease Services Ltd.', 'SFL': 'Sheela Foam Ltd.', 'RAJESHEXPO': 'Rajesh Exports Ltd.',
   'CERA': 'Cera Sanitaryware Ltd.', 'TASTYBITE': 'Tasty Bite Eatables Ltd.', 'HONAUT': 'Honeywell Automation India',
@@ -100,7 +123,7 @@ const COMPANY_NAMES: Record<string, string> = {
   'ROUTE': 'Route Mobile Ltd.', 'LATENTVIEW': 'Latent View Analytics Ltd.'
 };
 
-const MANUAL_SECTOR_MAP: Record<string, string> = {
+export const MANUAL_SECTOR_MAP: Record<string, string> = {
   'TCS': 'IT Services', 'INFY': 'IT Services', 'HCLTECH': 'IT Services', 'WIPRO': 'IT Services',
   'HDFCBANK': 'Banking', 'ICICIBANK': 'Banking', 'AXISBANK': 'Banking', 'KOTAKBANK': 'Banking',
   'ASIANPAINT': 'Paints', 'BERGEPAINT': 'Paints', 'KANSAINER': 'Paints', 'AKZOINDIA': 'Paints',
@@ -112,10 +135,6 @@ const MANUAL_SECTOR_MAP: Record<string, string> = {
   'HAVELLS': 'Consumer Durables', 'WHIRLPOOL': 'Consumer Durables', 'BATAINDIA': 'Footwear',
   'NIFTYBEES': 'Index ETF', 'BANKBEES': 'Banking ETF'
 };
-
-app.use(cors());
-app.use(compression());
-app.use(express.json({ limit: '100mb' }));
 
 // --- HEALTH CHECKS (Prevents Protocol Mismatch False Positives) ---
 app.get('/', (req, res) => res.json({ status: 'active', service: 'MarketBeacon Institutional Backend', version: '11.6.2-PRO' }));
@@ -236,7 +255,7 @@ app.post('/api/auth/login', async (req, res) => {
     
     const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
     const isValid = user.password === 'GOOGLE' ? isAdmin : await bcrypt.compare(password, user.password);
-    if (!isValid && password !== 'MarketBeacon2026') return res.status(401).json({ error: 'Invalid credentials' });
+    if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
     res.json({ token, user: { ...user, role: isAdmin ? 'admin' : user.role, tier: isAdmin ? 'alpha' : user.tier } });
@@ -488,249 +507,28 @@ app.get('/api/marketplace', async (req, res) => {
 
 
 // --- BATCH 9 INSTITUTIONAL AUDIT ENGINE ---
-async function validateBatch9(symbol: string, snap: any, basketName: string = 'SUPER_45') {
-  const quote = snap?.quote || {};
-  const scr = snap.screener || {};
-  const sh = quote.shareholding || scr.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0, trends: {} };
-  
-  const safeParse = (val: any, fallback: number = 0) => {
-    const parsed = parseFloat(String(val));
-    return isNaN(parsed) ? fallback : parsed;
-  };
-
-  const pe = safeParse(scr.peRatio) || safeParse(quote.pe) || 45;
-  const debtToEquity = safeParse(scr.netDebtToEquity) || (safeParse(quote.debtToEquity) / 100) || 0.1;
-  const roe = safeParse(scr.returnOnEquity) || safeParse(quote.roe) || 15;
-  const roce = safeParse(scr.roce) || 15;
-  const pledged = safeParse(sh.pledged) || 0;
-  const fii = safeParse(sh.fii) || 0;
-  const dii = safeParse(sh.dii) || 0;
-  const promoter = safeParse(sh.promoter) || 0;
-  const smartMoneyTotal = promoter + fii + dii;
-  
-  const sector = MANUAL_SECTOR_MAP[symbol] || scr.industry || 'General';
-  const isFinance = ['Banking', 'Finance', 'Banking ETF'].includes(sector);
-  const isETF = ['Index ETF', 'Banking ETF'].includes(sector);
-
-  // --- INSTITUTIONAL HARDENING: TTM VS ATH ---
-  const currentSales = safeParse(scr.currentSales);
-  const currentNetProfit = safeParse(scr.currentNetProfit);
-  const currentEPS = safeParse(scr.currentEPS);
-  
-  const athSales = safeParse(scr.athSales);
-  const athNetProfit = safeParse(scr.athNetProfit);
-  const athEPS = safeParse(scr.athEPS);
-
-  // Intelligent Leeway: If ATH data is missing (0), we assume current is the peak for scoring purposes
-  const salesPass = athSales > 0 ? (currentSales >= (athSales * 0.95)) : true;
-  const profitPass = athNetProfit > 0 ? (currentNetProfit >= (athNetProfit * 0.95)) : true;
-  const epsPass = athEPS > 0 ? (currentEPS >= (athEPS * 0.95)) : true;
-
-  // --- INSTITUTIONAL TRENDS (Last 3 Quarters) ---
-  const getTrend = (history: number[] = []) => {
-    if (history.length < 2) return 'NEUTRAL';
-    const last = history[history.length - 1];
-    const prev = history[history.length - 2];
-    if (last > prev + 0.1) return 'UP';
-    if (last < prev - 0.1) return 'DOWN';
-    return 'FLAT';
-  };
-
-  const fiiTrend = getTrend(sh.trends?.fii);
-  const diiTrend = getTrend(sh.trends?.dii);
-  const promTrend = getTrend(sh.trends?.promoter);
-
-  // --- SCORING MODEL 2.0 (REFINED) ---
-  let profScore = 0;
-  if (roe >= (isFinance ? 12 : 15)) profScore += 10;
-  if (roce >= (isFinance ? 10 : 15)) profScore += 10;
-  if (profitPass) profScore += 5; // TTM Profit vs ATH
-
-  let safetyScore = 0;
-  // Non-Finance: Tight 0.2 limit. Finance: Up to 8.0 (Business model leeway)
-  if (debtToEquity <= (isFinance ? 8.0 : 0.2)) safetyScore += 15;
-  if (pledged < 2) safetyScore += 10;
-
-  let growthScore = 0;
-  if (salesPass) growthScore += 15;
-  if (epsPass) growthScore += 10;
-
-  let instScore = 0;
-  // Smart Money 70% Hardened Threshold (with 5% intelligence tolerance for quality)
-  if (smartMoneyTotal >= 65) instScore += 10; 
-  if (smartMoneyTotal >= 70) instScore += 5;
-  if (fiiTrend === 'UP' || diiTrend === 'UP') instScore += 10;
-  if (promTrend === 'DOWN') instScore -= 10;
-
-  const totalScore = Math.min(100, Math.max(0, profScore + safetyScore + growthScore + instScore));
-
-  // HARD REJECTS (Institutional Grade)
-  const smThreshold = (basketName === 'GOOD_200' ? 40 : 70);
-  const isHardReject = !isETF && (
-    (debtToEquity > (isFinance ? 8.0 : 0.2)) || // Hard Pillar 7 Rule: 0.2 (Non-Fin), 8.0 (Fin)
-    (pledged >= 10) || 
-    (smartMoneyTotal < (smThreshold * 0.95)) // 5% Tolerance for Elite Quality
-  );
-
-  return {
-    isPass: (totalScore >= 70) && !isHardReject,
-    score: totalScore,
-    smartMoneyTotal,
-    profitabilityQuality: { 
-      score: profScore, max: 25, 
-      checks: [
-        { label: 'ROE', value: `${roe}%`, pass: roe >= (isFinance ? 12 : 15) },
-        { label: 'ROCE', value: `${roce}%`, pass: roce >= (isFinance ? 10 : 15) }
-      ]
-    },
-    balanceSheetSafety: {
-      score: safetyScore, max: 25,
-      checks: [
-        { label: 'Net Debt/Equity', value: debtToEquity.toFixed(2), pass: debtToEquity <= (isFinance ? 8.0 : 0.2) },
-        { label: 'Pledged Shares', value: `${pledged}%`, pass: pledged < 2 }
-      ]
-    },
-    growthQuality: {
-      score: growthScore, max: 25,
-      checks: [
-        { label: 'TTM Sales vs ATH', value: salesPass ? 'Record High' : 'Lagging', pass: salesPass },
-        { label: 'TTM EPS vs ATH', value: epsPass ? 'Growing' : 'Stale', pass: epsPass }
-      ]
-    },
-    efficiencyGovernance: {
-      score: instScore, max: 25,
-      checks: [
-        { label: 'Smart Money Total', value: `${smartMoneyTotal.toFixed(1)}%`, pass: smartMoneyTotal >= 65 },
-        { label: 'Inst. Trend', value: `${fiiTrend}/${diiTrend}`, pass: fiiTrend === 'UP' || diiTrend === 'UP' }
-      ]
-    },
-    metrics: { pe, debtToEquity, roe, roce, pledged, fii, dii, promoter, smartMoneyTotal, trends: { fiiTrend, diiTrend, promTrend } }
-  };
-}
-
-// --- STOCK FUNDAMENTALS DATA ---
-app.get('/api/stock-fundamentals', async (req, res) => {
+app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
   try {
-    const symbol = (req.query.symbol as string);
-    if (!symbol) return res.status(400).json({ error: 'Symbol required' });
-
-    const snapshot = getMarketSnapshot();
-    let snap = snapshot[symbol];
-
-    // Performance Optimization: Background Smart Refresh (Don't block the UI)
-    const sixHoursAgo = Date.now() - (6 * 60 * 60 * 1000);
-    const isStale = !snap || new Date(snap.lastUpdated).getTime() < sixHoursAgo;
-    
-    // Quality Check: Trigger refresh if data is missing or highly suspicious
-    const shCheck = snap?.screener?.shareholding || {};
-    const isLowQuality = !snap || (shCheck.promoter === 0 && shCheck.fii === 0);
-
-    if (isStale || isLowQuality) {
-      console.log(`🔄 [ASYNC REFRESH] Triggered for ${symbol}...`);
-      updateMarketSnapshot([symbol]).catch(e => console.error('Async Refresh Error:', e.message));
-    }
-
-    // If we have ANY data, return it immediately. Don't wait for the refresh.
-    if (!snap) return res.status(404).json({ error: 'Initial data load in progress. Please refresh in 30 seconds.' });
-
-    const audit = await validateBatch9(symbol, snap);
-    const scr = snap.screener || {};
-    const quote = snap.quote || {};
-    
-    // RESTORE ALL FIELDS FOR FRONTEND
-    res.json({
-      symbol,
-      price: quote.regularMarketPrice || snap.quotes[snap.quotes.length - 1].close,
-      change: quote.regularMarketChangePercent || 0,
-      marketCap: quote.marketCap || 0,
-      industry: MANUAL_SECTOR_MAP[symbol] || scr.industry || 'General',
-      peRatio: audit.metrics.pe,
-      peMedians: scr.peMedians || { pe3Y: 25, pe5Y: 25, pe10Y: 25 },
-      dividendYield: scr.dividendYield || 0,
-      fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh || 0,
-      fiftyTwoWeekLow: quote.fiftyTwoWeekLow || 0,
-      beta: quote.beta || 1,
-      returnOnEquity: audit.metrics.roe,
-      roce: audit.metrics.roce,
-      netDebtToEquity: audit.metrics.debtToEquity,
-      athSales: scr.athSales || 0,
-      athNetProfit: scr.athNetProfit || 0,
-      currentSales: scr.currentSales || 0,
-      currentNetProfit: scr.currentNetProfit || 0,
-      forwardPE: audit.metrics.pe,
-      industryPe: 25,
-      faceValue: scr.faceValue || 1,
-      growth3Yr: { roe: audit.metrics.roe, sales: 15 },
-      shareholding: { promoter: audit.metrics.promoter, fii: audit.metrics.fii, dii: audit.metrics.dii, smartMoneyTotal: audit.smartMoneyTotal },
-      audit: {
-        ...audit,
-        universe: audit.isPass ? 'INSTITUTIONAL GRADE' : 'WATCHLIST'
-      }
-    });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
-});
-// --- CORE SCANNER ---
-app.get('/api/backtest/envelope', async (req, res) => {
-  try {
-    const basketId = (req.query.basket as string) || 'SUPER_45';
-    const strategyId = (req.query.strategy as string) || 'ENVELOPE_LONG';
-    
-    const dynamicWealth = getDynamicBasket();
-    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['GOOD_200'] || []);
-
-    let symbols = [];
-    if (basketId === 'GOOD_200') {
-      const all = [];
-      if (Array.isArray(BASKETS['SUPER_45'])) all.push(...BASKETS['SUPER_45']);
-      if (Array.isArray(BASKETS['GOOD_45'])) all.push(...BASKETS['GOOD_45']);
-      if (Array.isArray(currentWealth)) all.push(...currentWealth);
-      symbols = Array.from(new Set(all));
-    } else if (basketId === 'GOOD_45') {
-      symbols = BASKETS['GOOD_45'] || [];
-    } else {
-      symbols = BASKETS['SUPER_45'] || [];
-    }
-
+    const { basket = 'ALL' } = req.query;
     const snapshot = getMarketSnapshot();
     const results = [];
     
-    // Total Crash Prevention: Ensure symbols is iterable
-    const targetSymbols = Array.isArray(symbols) ? symbols : [];
+    let symbols = [];
+    if (basket === 'SUPER_45') symbols = BASKETS['SUPER_45'];
+    else if (basket === 'GOOD_45') symbols = BASKETS['GOOD_45'];
+    else symbols = Object.keys(snapshot);
 
-    for (const baseSymbol of targetSymbols) {
+    for (const baseSymbol of symbols) {
       const snap = snapshot[baseSymbol];
       if (!snap) continue;
+      const audit = await validateBatch9(baseSymbol, snap, basket as string);
       const lastQuote = snap.quotes[snap.quotes.length - 1];
       
-      // Optimized: Use cache if available, otherwise calculate
-      let strategyData = snap.strategies?.[strategyId];
-      if (!strategyData) {
-        if (strategyId === 'ENVELOPE_LONG') {
-          strategyData = calculateEnvelope(snap.quotes);
-        } else if (strategyId === 'ENVELOPE_SHORT') {
-          strategyData = processShortEnvelope(snap.quotes, snap.quote.marketCap);
-        } else if (strategyId === 'BOLLINGER') {
-          strategyData = calculateBollingerBand(snap.quotes);
-        } else if (strategyId === 'SMA_ABCD') {
-          strategyData = calculateSMAStacking(snap.quotes);
-        } else if (strategyId === '52W_HIGH_LOW') {
-          strategyData = calculate52WeekStrategy(snap.quotes);
-        } else if (strategyId === 'SR_STRATEGY') {
-          strategyData = calculateSRStrategy(snap.quotes, snap.screener);
-        } else if (strategyId === 'RHS_ABCD') {
-          strategyData = calculateRHS(snap.quotes);
-        } else if (strategyId === 'CUP_HANDLE_ABCD') {
-          strategyData = calculateCupHandle(snap.quotes);
-        } else if (strategyId === 'SIXTY_SEVEN_FUNDA') {
-          strategyData = calculateSixtySevenFunda(snap.quotes, snap.screener);
-        } else if (strategyId === 'TWENTY_RALLY_RETEST') {
-          strategyData = calculateTwentyRallyRetest(snap.quotes, baseSymbol);
-        } else {
-          strategyData = snap.strategies?.['ENVELOPE_LONG'] || calculateEnvelope(snap.quotes);
-        }
-      }
+      // Select the primary strategy signal if any
+      const activeStrats = Object.entries(snap.strategies || {}).filter(([_, s]: any) => s.isBuyZone);
+      const strategyId = activeStrats.length > 0 ? activeStrats[0][0] : 'ENVELOPE_LONG';
+      const strategyData: any = snap.strategies?.[strategyId];
 
-      const audit = await validateBatch9(baseSymbol, snap);
       const entryPrice = strategyData?.entryPrice || 0;
       const currentStrat = STRATEGIES.find(s => s.id === strategyId);
       
@@ -771,6 +569,7 @@ app.get('/api/backtest/envelope', async (req, res) => {
         abcd: strategyData?.abcd || calculateABCDLevels(entryPrice || lastQuote.close, snap.quote.marketCap) 
       });
     }
+
     res.json({ 
       allStocks: results, 
       open: results.filter(r => r.isBuyZone && r.isPass), 
@@ -781,271 +580,34 @@ app.get('/api/backtest/envelope', async (req, res) => {
 
 // --- ALPHA HUB ELITE SELECTION ---
 app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
-  console.log(`📡 [ALPHA-40] Request received from ${req.user?.email || 'Unknown'}`);
   try {
     const { timeline = 'ALL' } = req.query;
-    const snapshot = getMarketSnapshot();
+    const cachedResults = getAlpha40Cache();
     
-    // Time filter logic for closed trades (Fix: Avoid cumulative mutation)
-    const timelineDates: Record<string, Date | null> = {
-      '1M': new Date(new Date().setMonth(new Date().getMonth() - 1)),
-      '3M': new Date(new Date().setMonth(new Date().getMonth() - 3)),
-      '6M': new Date(new Date().setMonth(new Date().getMonth() - 6)),
-      'ALL': null
-    };
-    const cutoffDate = timelineDates[timeline as string] || null;
+    if (cachedResults) {
+      const { active, closed, updatedAt } = cachedResults;
+      const cutoffDate = timeline === '1M' ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : 
+                        timeline === '3M' ? new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) : null;
 
-    const STRATEGY_BASKET_MAP: Record<string, string[]> = {
-      'ENVELOPE_LONG': ['SUPER_45'], 'ENVELOPE_SHORT': ['SUPER_45'], 'BOLLINGER': ['SUPER_45'],
-      'CUP_HANDLE_ABCD': ['SUPER_45', 'GOOD_45'], 'RHS_ABCD': ['SUPER_45', 'GOOD_45'],
-      'SMA_ABCD': ['SUPER_45', 'GOOD_45'], '52W_HIGH_LOW': ['SUPER_45', 'GOOD_45'],
-      'TWENTY_RALLY_RETEST': ['SUPER_45', 'GOOD_45', 'GOOD_200'],
-      'SIXTY_SEVEN_FUNDA': ['SUPER_45', 'GOOD_45', 'GOOD_200'],
-      'SR_STRATEGY': ['SUPER_45', 'GOOD_45', 'GOOD_200']
-    };
+      const filteredClosed = closed
+        .filter(t => !cutoffDate || new Date(t.exitDate) >= cutoffDate)
+        .sort((a,b) => new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime());
 
-    const sectorStats: Record<string, number> = {};
-    const capStats = { LARGE: 0, MID: 0, SMALL: 0 };
-    
-    // Audit Checklist Tracking
-    const auditedBaskets = ['SUPER_45', 'GOOD_45', 'GOOD_200'];
-    const auditedStrategies = STRATEGIES.map(s => s.name);
-    
-    const processBasket = async (basketName: string, symbols: string[] = []) => {
-      const active: any[] = [];
-      const closed: any[] = [];
-      const targetSymbols = Array.isArray(symbols) ? symbols : (BASKETS[basketName] || []);
-      for (const sym of targetSymbols) {
-        try {
-          const snap = snapshot[sym];
-          if (!snap || !snap.quotes?.length) continue;
-          const audit = await validateBatch9(sym, snap, basketName);
-          if (!audit.isPass) continue;
-          
-          const marketCap = snap.quote.marketCap || 1;
-          const capCr = marketCap / 10000000;
-          const capType = capCr >= 45000 ? 'LARGE' : (capCr >= 15000 ? 'MID' : 'SMALL');
-          const sector = MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General';
-
-          // --- HISTORICAL BACKTESTING FOR BOOKED PROFITS ---
-          // Scan the price array to find historical 20%+ drawdowns that subsequently recovered.
-          // This generates an accurate historical ledger of closed trades for the dashboard.
-          let peak = 0;
-          let inDrawdown = false;
-          let simEntry = 0;
-          let simEntryDate = '';
-          
-          for (let i = 0; i < snap.quotes.length - 10; i++) {
-              const q = snap.quotes[i];
-              if (q.high > peak) peak = q.high;
-              
-              if (!inDrawdown && q.close <= peak * 0.75) { // 25% deep accumulation
-                  inDrawdown = true;
-                  simEntry = q.close;
-                  simEntryDate = new Date(q.date).toISOString();
-              }
-              
-              if (inDrawdown && q.high >= simEntry * 1.30) { // 30% structural recovery
-                  const exitDate = new Date(q.date);
-                  const eDate = new Date(simEntryDate);
-                  const days = Math.round((exitDate.getTime() - eDate.getTime()) / (1000*3600*24));
-                  
-                  if (days > 10 && days < 500) { // Filter out anomalies
-                      closed.push({
-                          symbol: sym,
-                          stockName: COMPANY_NAMES[sym] || sym,
-                          entryTime: simEntryDate,
-                          exitDate: exitDate.toISOString(),
-                          days,
-                          strategy: 'Deep Recovery Audit',
-                          basketSource: basketName,
-                          marketCap,
-                          capType,
-                          sector,
-                          entryPrice: simEntry,
-                          exitPrice: q.high,
-                          roi: ((q.high / simEntry) - 1) * 100,
-                          score: audit.score,
-                          smartMoney: audit.smartMoneyTotal
-                      });
-                  }
-                  inDrawdown = false;
-                  peak = q.high; // Reset anchor
-              }
-          }
-
-          for (const stratId of ['ENVELOPE_LONG', 'ENVELOPE_SHORT', 'BOLLINGER', 'SMA_ABCD', '52W_HIGH_LOW', 'SR_STRATEGY', 'RHS_ABCD', 'CUP_HANDLE_ABCD', 'SIXTY_SEVEN_FUNDA', 'TWENTY_RALLY_RETEST']) {
-            if (!STRATEGY_BASKET_MAP[stratId]?.includes(basketName)) continue;
-            let sd = snap.strategies?.[stratId];
-            if (!sd) {
-              if (stratId === 'ENVELOPE_LONG') sd = calculateEnvelope(snap.quotes);
-              else if (stratId === 'ENVELOPE_SHORT') sd = processShortEnvelope(snap.quotes, snap.quote.marketCap);
-              else if (stratId === 'BOLLINGER') sd = calculateBollingerBand(snap.quotes);
-              else if (stratId === 'SMA_ABCD') sd = calculateSMAStacking(snap.quotes);
-              else if (stratId === '52W_HIGH_LOW') sd = calculate52WeekStrategy(snap.quotes);
-              else if (stratId === 'SR_STRATEGY') sd = calculateSRStrategy(snap.quotes, snap.screener);
-              else if (stratId === 'RHS_ABCD') sd = calculateRHS(snap.quotes);
-              else if (stratId === 'CUP_HANDLE_ABCD') sd = calculateCupHandle(snap.quotes);
-              else if (stratId === 'SIXTY_SEVEN_FUNDA') sd = calculateSixtySevenFunda(snap.quotes, snap.screener);
-              else if (stratId === 'TWENTY_RALLY_RETEST') sd = calculateTwentyRallyRetest(snap.quotes, sym);
-            }
-
-            if (!sd || !sd.isBuyZone) continue;
-
-            const last = snap.quotes[snap.quotes.length - 1];
-            const entry = sd.entryPrice || last.close;
-            const target = sd.target || (entry * 1.3);
-
-            const marketCap = snap.quote.marketCap || 1;
-            const capCr = marketCap / 10000000;
-            const capType = capCr >= 45000 ? 'LARGE' : (capCr >= 15000 ? 'MID' : 'SMALL');
-
-            let entryTime = sd.triggerDate;
-            if (!entryTime && snap.quotes.length > 0) {
-              entryTime = new Date(snap.quotes[0].date).toISOString().split('T')[0];
-            }
-
-            // SIMULATED CLOSED TRADES LOGIC
-            // If the strategy generated a buy zone in the past, and the stock is currently trading *above* the target, 
-            // we consider it a successfully booked profit.
-            if (last.close >= target) {
-               closed.push({
-                  symbol: sym,
-                  stockName: COMPANY_NAMES[sym] || sym,
-                  entryTime,
-                  exitDate: new Date().toISOString(), // Simulating recent exit
-                  strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId,
-                  basketSource: basketName,
-                  marketCap,
-                  capType,
-                  sector,
-                  entryPrice: entry,
-                  exitPrice: last.close,
-                  roi: ((last.close / entry) - 1) * 100,
-                  score: audit.score,
-                  smartMoney: audit.smartMoneyTotal
-               });
-               continue; // Don't show as active if target is already hit
-            }
-
-            // --- RULE: REVISED ENTRY WINDOW GUARD ---
-            // If the stock is moving upside (current > entry), it must be within 2%.
-            // If the stock has fallen (current < entry), we allow it down to a 30% drawdown.
-            const isMovingUp = last.close >= entry;
-            const priceDeviation = Math.abs(((last.close / entry) - 1) * 100);
-            
-            if (isMovingUp && priceDeviation > 2.0) {
-              continue; // Too far gone upside
-            } else if (!isMovingUp && priceDeviation > 30.0) {
-              continue; // Fallen too far (more than 30% drawdown)
-            } 
-
-            active.push({ 
-              symbol: sym, 
-              stockName: COMPANY_NAMES[sym] || sym, 
-              entryTime, 
-              strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, 
-              basketSource: basketName, 
-              marketCap, 
-              capType, 
-              sector, 
-              currentPrice: last.close, 
-              entryPrice: entry, 
-              target, 
-              windowPrc: priceDeviation,
-              roi: ((target / entry) - 1) * 100, 
-              score: audit.score, 
-              smartMoney: audit.smartMoneyTotal 
-            });
-            break; 
-          }
-          } catch (e) { }
-          }
-          return { active, closed };
-          };
-
-          const bc = await processBasket('SUPER_45', BASKETS['SUPER_45']);
-          const hb = await processBasket('GOOD_45', BASKETS['GOOD_45']);
-          const dyn = getDynamicBasket();
-          const wb = await processBasket('GOOD_200', Array.isArray(dyn) && dyn.length > 0 ? dyn : BASKETS['GOOD_200']);
-
-          // FORTRESS: Spread guarding
-          let allActive = [];
-          if (bc?.active) allActive.push(...bc.active);
-          if (hb?.active) allActive.push(...hb.active);
-          if (wb?.active) allActive.push(...wb.active);
-
-          // FORTRESS: Sort by Audit Score (Quality) first, then ROI
-          const candidates = allActive.sort((a, b) => {
-          if (b.score !== a.score) return (b.score || 0) - (a.score || 0);
-          return (b.roi || 0) - (a.roi || 0);
-          });
-
-          // DYNAMIC PROPORTIONAL ALLOCATION
-          // Instead of static limits out of 50, we first group all passing candidates by cap type.
-          const largeCandidates = candidates.filter(s => s.capType === 'LARGE');
-          const midCandidates = candidates.filter(s => s.capType === 'MID');
-          const smallCandidates = candidates.filter(s => s.capType === 'SMALL');
-
-          // We want maximum 50 stocks total, but if we have fewer (e.g. 34), we base percentages on that.
-          const totalValid = Math.min(50, candidates.length);
-          
-          // Apply strict 50-30-20 Rules dynamically based on the total valid pool
-          const targetLarge = Math.round(totalValid * 0.50);
-          const targetMid = Math.round(totalValid * 0.30);
-          const targetSmall = Math.round(totalValid * 0.20);
-
-          const finalActive = [];
-          const finalSectorStats: Record<string, number> = {};
-          const finalCapStats = { LARGE: 0, MID: 0, SMALL: 0 };
-          const MAX_PER_SECTOR = 12; 
-
-          // Helper function to safely add stocks without violating sector limits
-          const addStocks = (sourceArray: any[], targetCount: number) => {
-             for (const s of sourceArray) {
-                if (finalCapStats[s.capType] >= targetCount) continue;
-                if ((finalSectorStats[s.sector] || 0) < MAX_PER_SECTOR) {
-                   finalActive.push(s);
-                   finalSectorStats[s.sector] = (finalSectorStats[s.sector] || 0) + 1;
-                   finalCapStats[s.capType]++;
-                }
-             }
-          };
-
-          // Fill the buckets
-          addStocks(largeCandidates, targetLarge);
-          addStocks(midCandidates, targetMid);
-          addStocks(smallCandidates, targetSmall);
-
-          let allClosed = [];
-          if (bc?.closed) allClosed.push(...bc.closed);
-          if (hb?.closed) allClosed.push(...hb.closed);
-          if (wb?.closed) allClosed.push(...wb.closed);
-
-          res.json({ 
-          stocks: finalActive, 
-          closedTrades: allClosed
-          .filter(t => !cutoffDate || new Date(t.exitDate) >= cutoffDate)
-          .sort((a,b) => new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime()),
-          summary: { 
-          version: '11.6.2-PRO', 
-          total: finalActive.length, 
-          large: finalCapStats.LARGE, mid: finalCapStats.MID, small: finalCapStats.SMALL,
-          avgRoi: finalActive.reduce((a,b) => a + (b.roi || 0), 0) / (finalActive.length || 1),
-          accuracy: 100,
-          fetchTime: fs.existsSync(MARKET_SNAPSHOT_PATH) ? fs.statSync(MARKET_SNAPSHOT_PATH).mtime : new Date(),
-          auditLog: {
-            baskets: auditedBaskets,
-            strategies: auditedStrategies,
-            fundamentalCheck: '100% Passed',
-            institutionalRules: ['50-30-20 Cap Rule', '20% Sector Limit', '70% SM Hard Reject'],
-            timeline
-          }
-          } 
-          });
+      return res.json({ 
+        stocks: active, 
+        closedTrades: filteredClosed,
+        summary: { 
+          version: '12.0.0-SCALABLE', 
+          total: active.length, 
+          fetchTime: updatedAt,
+          isCached: true
+        } 
+      });
+    }
+    console.warn('⚠️ [ALPHA-40] Cache empty, falling back.');
+    res.status(503).json({ error: 'System is warming up. Please refresh in 30 seconds.' });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
-
 // --- DYNAMIC DATA SYNC ---
 app.get('/api/stock-prices', async (req, res) => {
   try {
@@ -1060,6 +622,45 @@ app.get('/api/stock-prices', async (req, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// --- PUBLIC ANALYSIS ENGINE (Viral Acquisition) ---
+app.get('/api/public/analysis/:symbol', async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    const snapshot = getMarketSnapshot();
+    const snap = snapshot[symbol];
+    
+    if (!snap) return res.status(404).json({ error: 'Stock not found' });
+
+    const audit = await validateBatch9(symbol, snap, 'ALL');
+    
+    // Extract a few qualified strategies for the teaser
+    const qualifiedStrats = [];
+    const stratIds = ['ENVELOPE_LONG', 'SMA_ABCD', '52W_HIGH_LOW', 'BOLLINGER'];
+    
+    for (const id of stratIds) {
+      const sd = snap.strategies?.[id] || runStrategyAnalysis(id, snap, snap.quote.marketCap);
+      if (sd && sd.isBuyZone) {
+        qualifiedStrats.push({ name: STRATEGIES.find(s => s.id === id)?.name || id });
+      }
+    }
+
+    const publicData = {
+      symbol,
+      score: audit.score,
+      smartMoney: audit.smartMoneyTotal,
+      marketCap: snap.quote.marketCap,
+      upside: 30, // Pro-form target
+      risk: audit.score >= 80 ? 'Low' : 'Moderate',
+      strategies: qualifiedStrats.slice(0, 2) // Teaser only
+    };
+
+    const body = JSON.stringify(publicData);
+    res.setHeader('ETag', etag(body));
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.json(publicData);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 // --- SERVER START ---
 async function startServer() {
   const PORT = process.env.PORT || 3001;
@@ -1068,6 +669,17 @@ async function startServer() {
     await initSnapshotCache();
     initScreenerCron();
 
+    // 🚀 SCALABILITY WORKER: Initial Pre-calculation
+    console.log('🚀 [STARTUP] Warming up Alpha-40 Cache...');
+    precalculateAlpha40();
+    generateSitemap();
+    
+    // Schedule Pre-calculation every 15 minutes
+    cron.schedule('*/15 * * * *', () => {
+      console.log('⏰ [CRON] Refreshing Alpha-40 Cache...');
+      precalculateAlpha40();
+    });
+
     // Ephemeral Storage Fix: Trigger priority snapshot if empty
     const cache = getMarketSnapshot();
     if (Object.keys(cache).length <= 1) {
@@ -1075,7 +687,7 @@ async function startServer() {
       updateMarketSnapshot(BASKETS['SUPER_45']).catch(e => console.error('Startup Snapshot Failed:', e.message));
     }
 
-    app.listen(PORT, () => console.log(`MarketBeacon Backend running on port ${PORT}`));
+    app.listen(PORT, '0.0.0.0', () => console.log(`MarketBeacon Backend running on port ${PORT} (Institutional Network Active)`));
   } catch (e) { console.error(e); process.exit(1); }
 }
 

@@ -6,7 +6,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { fileURLToPath } from 'url';
 import { NIFTY_500 } from './universe.js';
-import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest } from './strategies.js';
+import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateABCDLevels, calculateRHS, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest } from './strategies/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DYNAMIC_BASKET_PATH = path.join(__dirname, '../dynamic_basket.json');

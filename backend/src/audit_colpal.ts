@@ -1,6 +1,6 @@
 
 import fs from 'fs';
-import { calculateEnvelope, calculateBollingerBand, calculateSRStrategy } from './strategies.js';
+import { calculateEnvelope, calculateBollingerBand, calculateSRStrategy } from './strategies/index.js';
 
 async function auditColpal() {
   const snapshot = JSON.parse(fs.readFileSync("./market_snapshot.json", "utf-8"));

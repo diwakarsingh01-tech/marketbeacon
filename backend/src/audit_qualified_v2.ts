@@ -1,6 +1,6 @@
 
 import fs from 'fs';
-import { calculateBollingerBand, calculateSRStrategy } from './strategies.js';
+import { calculateBollingerBand, calculateSRStrategy } from './strategies/index.js';
 
 async function auditQualified() {
   const snapshot = JSON.parse(fs.readFileSync("./market_snapshot.json", "utf-8"));

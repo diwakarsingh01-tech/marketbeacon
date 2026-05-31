@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import BrandLogo from '../components/brand/BrandLogo';
 import { 
   ShieldCheck, 
   TrendingUp, 
@@ -11,7 +10,8 @@ import {
   Target,
   ArrowUpRight,
   Info,
-  ExternalLink
+  ExternalLink,
+  Lock
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -24,7 +24,7 @@ const PublicAnalysisPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/stock-fundamentals?symbol=${symbol}`);
+        const res = await fetch(`${API_URL}/api/public/analysis/${symbol}`);
         const d = await res.json();
         if (res.ok) setData(d);
       } catch (e) {
@@ -40,7 +40,7 @@ const PublicAnalysisPage: React.FC = () => {
     if (navigator.share) {
       navigator.share({
         title: `MarketBeacon Pro: ${symbol} Institutional Analysis`,
-        text: `Check out the institutional-grade fundamental analysis for ${symbol} on MarketBeacon Pro.`,
+        text: `Check out the institutional-grade 100-point audit for ${symbol} on MarketBeacon Pro.`,
         url: window.location.href,
       });
     } else {
@@ -50,144 +50,149 @@ const PublicAnalysisPage: React.FC = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
       <div className="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
     </div>
   );
 
   if (!data) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-center">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-center">
       <div>
-        <h1 className="text-2xl font-black text-slate-900 mb-2">Analysis Not Found</h1>
-        <p className="text-slate-500 mb-6">The requested institutional audit for {symbol} is currently unavailable.</p>
-        <Link to="/" className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold">Return Home</Link>
+        <h1 className="text-2xl font-black text-white mb-4">Stock Not Found</h1>
+        <Link to="/" className="text-blue-400 hover:underline">Return to Terminal</Link>
       </div>
     </div>
   );
 
-  const score = data.score || 0;
-  const isPass = data.isPass;
+  const scoreColor = data.score >= 80 ? 'text-emerald-400' : data.score >= 60 ? 'text-blue-400' : 'text-amber-400';
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header / Brand Bar */}
-      <nav className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link to="/">
-            <BrandLogo variant="light" size={32} />
-          </Link>
+    <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-blue-500/30">
+      {/* Premium Header */}
+      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+              <BarChart2 className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-black tracking-tighter text-xl text-white">MARKETBEACON<span className="text-blue-500">PRO</span></span>
+          </div>
           <button 
             onClick={handleShare}
-            className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-800 transition-all"
+            className="p-2 hover:bg-slate-800 rounded-full transition-colors"
           >
-            <Share2 className="w-4 h-4" />
-            <span>Share Report</span>
+            <Share2 className="w-5 h-5 text-slate-400" />
           </button>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto p-6 md:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          
-          {/* Main Content */}
-          <div className="md:col-span-2 space-y-8">
-            {/* Stock Title */}
-            <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className="text-xs font-black text-blue-600 uppercase tracking-widest">Institutional Report</span>
-                    <Globe className="w-3 h-3 text-slate-300" />
-                  </div>
-                  <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">{symbol}</h1>
-                  <p className="text-slate-500 font-medium">{data.industry}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-3xl font-black text-slate-900">₹{data.price.toLocaleString()}</div>
-                  <div className={`text-sm font-bold flex items-center justify-end ${data.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    <TrendingUp className="w-4 h-4 mr-1" />
-                    {data.change > 0 ? '+' : ''}{data.change.toFixed(2)}%
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Ratios */}
-              <div className="grid grid-cols-3 gap-4 py-6 border-y border-slate-50">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">PE Ratio</p>
-                  <p className="text-lg font-black text-slate-900">{data.peRatio.toFixed(1)}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">ROE</p>
-                  <p className="text-lg font-black text-slate-900">{data.roe?.toFixed(1)}%</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">D/E Ratio</p>
-                  <p className="text-lg font-black text-slate-900">{data.debtToEquity.toFixed(2)}</p>
-                </div>
-              </div>
+      <main className="max-w-5xl mx-auto px-6 py-12">
+        {/* Hero Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+          <div className="lg:col-span-2">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-full border border-blue-500/20 uppercase tracking-widest">Institutional Audit</span>
+              <span className="text-slate-500 text-xs font-medium">Updated: {new Date().toLocaleDateString()}</span>
             </div>
+            <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tight mb-4">
+              {symbol}<span className="text-slate-600">.NS</span>
+            </h1>
+            <p className="text-xl text-slate-400 font-medium max-w-xl leading-relaxed">
+              Proprietary 100-point fundamental audit and strategy matrix analysis for institutional grade execution.
+            </p>
+          </div>
+          
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 flex flex-col items-center justify-center text-center">
+            <div className={`text-7xl font-black mb-2 ${scoreColor}`}>
+              {data.score}
+            </div>
+            <div className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-6">Audit Score</div>
+            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-8">
+              <div 
+                className={`h-full transition-all duration-1000 ${data.score >= 80 ? 'bg-emerald-500' : 'bg-blue-500'}`} 
+                style={{ width: `${data.score}%` }} 
+              />
+            </div>
+            <div className="flex items-center gap-2 text-emerald-400 font-bold">
+              <ShieldCheck className="w-5 h-5" />
+              <span>Verified Institutional Logic</span>
+            </div>
+          </div>
+        </div>
 
-            {/* Strategy Logic */}
-            <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
-              <div className="flex items-center space-x-3 mb-8">
-                <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
-                  <Target className="w-5 h-5 text-amber-600" />
-                </div>
-                <h3 className="text-xl font-black text-slate-900">Strategy Matrix Audit</h3>
-              </div>
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+          {[
+            { label: 'Market Cap', value: `₹${(data.marketCap / 10000000).toFixed(0)} Cr`, icon: Globe },
+            { label: 'Smart Money', value: `${data.smartMoney}%`, icon: TrendingUp },
+            { label: 'Target Upside', value: `+${data.upside}%`, icon: Target },
+            { label: 'Risk Profile', value: data.risk || 'Low', icon: ShieldCheck },
+          ].map((item, i) => (
+            <div key={i} className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
+              <item.icon className="w-5 h-5 text-blue-500 mb-4" />
+              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{item.label}</div>
+              <div className="text-xl font-black text-white">{item.value}</div>
+            </div>
+          ))}
+        </div>
 
-              <div className="space-y-4">
-                {Object.entries(data.strategies || {}).map(([name, strat]: [string, any]) => (
-                  <div key={name} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                    <span className="text-sm font-bold text-slate-700">{name.replace(/_/g, ' ')}</span>
-                    <div className="flex items-center space-x-3">
-                      <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${strat?.isBuyZone ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>
-                        {strat?.isBuyZone ? 'Qualified' : 'Neutral'}
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-slate-300" />
-                    </div>
+        {/* Strategy Matrix Section (Teaser) */}
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-1 px-1 mb-12">
+          <div className="bg-slate-950 rounded-[22px] p-8 lg:p-12 overflow-hidden relative">
+            <div className="relative z-10">
+              <h2 className="text-3xl font-black text-white mb-6">Strategy Matrix Analysis</h2>
+              <div className="space-y-4 mb-10">
+                {data.strategies?.map((strat: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between p-4 bg-slate-900/80 border border-slate-800 rounded-xl">
+                    <span className="font-bold text-slate-300">{strat.name}</span>
+                    <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-black rounded-md border border-emerald-500/20">QUALIFIED</span>
                   </div>
                 ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar Score */}
-          <div className="space-y-8">
-            <div className={`rounded-[2.5rem] p-8 text-white shadow-xl ${isPass ? 'bg-blue-600 shadow-blue-200' : 'bg-slate-900 shadow-slate-200'}`}>
-              <div className="text-center space-y-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Audit Score</p>
-                <div className="text-7xl font-black tracking-tighter">{score}</div>
-                <div className="inline-flex items-center px-4 py-2 bg-white/10 rounded-full backdrop-blur-md">
-                   {isPass ? <ShieldCheck className="w-4 h-4 mr-2" /> : <Info className="w-4 h-4 mr-2" />}
-                   <span className="text-xs font-bold uppercase tracking-widest">{isPass ? 'Institutional Pass' : 'Audit Rejected'}</span>
+                <div className="flex items-center justify-between p-4 bg-slate-900/40 border border-slate-800/50 rounded-xl blur-[2px]">
+                  <span className="font-bold text-slate-500">Momentum Ceiling (Step-Back)</span>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Lock className="w-4 h-4" />
+                    <span className="text-xs font-bold">LOCKED</span>
+                  </div>
                 </div>
               </div>
-              <p className="mt-8 text-sm font-medium opacity-70 text-center leading-relaxed">
-                This score is based on the 100-point Batch 10 Institutional Audit framework, checking for Debt, Promoters, and Sales Growth.
-              </p>
-            </div>
 
-            <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 text-center">
-               <h4 className="text-lg font-black text-slate-900 mb-4">Master the Matrix?</h4>
-               <p className="text-slate-500 text-sm font-medium mb-6">Join 30,000 traders using institutional data to catch high-probability setups.</p>
-               <Link to="/login" className="block w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-200 hover:scale-[1.02] transition-transform">
-                 Get Full Access
-                 <ArrowUpRight className="inline w-4 h-4 ml-2" />
-               </Link>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <Link 
+                  to="/auth" 
+                  className="w-full sm:w-auto px-8 py-4 bg-white text-slate-950 font-black rounded-xl hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
+                >
+                  Unlock Full Report <ArrowUpRight className="w-5 h-5" />
+                </Link>
+                <Link 
+                  to="/auth" 
+                  className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white font-black rounded-xl border border-slate-800 hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                >
+                  Join 30,000+ Traders
+                </Link>
+              </div>
             </div>
+            
+            {/* Abstract Background Element */}
+            <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-blue-600/20 blur-[120px] rounded-full" />
           </div>
-
         </div>
-      </main>
 
-      <footer className="max-w-4xl mx-auto p-12 text-center border-t border-slate-200">
-         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">MarketBeacon Pro &copy; 2026</p>
-         <div className="flex items-center justify-center space-x-6">
-           <a href="#" className="text-slate-400 hover:text-slate-900 transition-colors"><ExternalLink className="w-4 h-4" /></a>
-         </div>
-      </footer>
+        {/* Footer */}
+        <footer className="border-t border-slate-800 pt-12 pb-24 text-center">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center">
+              <BarChart2 className="w-3 h-3 text-slate-400" />
+            </div>
+            <span className="font-black tracking-tighter text-sm text-slate-500">MARKETBEACON<span className="text-slate-700">PRO</span></span>
+          </div>
+          <p className="text-slate-600 text-sm max-w-lg mx-auto leading-relaxed">
+            MarketBeacon Pro is an institutional grade research terminal. 
+            Investments in securities market are subject to market risks. 
+            Read all the related documents carefully before investing.
+          </p>
+        </footer>
+      </main>
     </div>
   );
 };

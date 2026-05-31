@@ -9,7 +9,7 @@ import {
   calculateSRStrategy,
   calculateRHS,
   calculateCupHandle
-} from './strategies.js';
+} from './strategies/index.js';
 import { getDynamicBasket } from './screener.js';
 
 async function runFinalAudit() {

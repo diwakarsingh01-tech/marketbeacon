@@ -90,7 +90,7 @@ const StockFundamentalsPage: React.FC = () => {
       <main className="max-w-[1600px] mx-auto w-full flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-4 p-6">
         
         <div className="lg:col-span-8 space-y-4 overflow-y-auto pr-2 no-scrollbar">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Market Cap</span>
                 <p className="text-lg font-black text-slate-900 leading-tight">{formatCr(data?.marketCap)}</p>
@@ -98,6 +98,10 @@ const StockFundamentalsPage: React.FC = () => {
              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Profitability (ROE)</span>
                 <p className="text-lg font-black text-slate-900 leading-tight">{data?.returnOnEquity ? `${Number(data.returnOnEquity).toFixed(1)}%` : '-'}</p>
+             </div>
+             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Efficiency (ROCE)</span>
+                <p className="text-lg font-black text-slate-900 leading-tight">{data?.roce ? `${Number(data.roce).toFixed(1)}%` : '-'}</p>
              </div>
              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Debt-To-Equity</span>

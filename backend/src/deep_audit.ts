@@ -11,7 +11,7 @@ import {
   calculateCupHandle,
   calculateSixtySevenFunda,
   calculateTwentyRallyRetest
-} from './strategies.js';
+} from './strategies/index.js';
 
 async function deepAudit() {
   console.log("--- DEEP DATA COMPLETENESS AUDIT ---");

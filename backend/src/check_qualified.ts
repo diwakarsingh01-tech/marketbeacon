@@ -1,6 +1,6 @@
 
 import fs from 'fs';
-import { calculateCupHandle } from './strategies.js';
+import { calculateCupHandle } from './strategies/index.js';
 
 const BASKETS: Record<string, string[]> = {
   'BLUECHIP': [

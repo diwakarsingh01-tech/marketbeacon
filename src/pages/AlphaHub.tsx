@@ -209,7 +209,7 @@ const AlphaHubPage: React.FC = () => {
                </div>
                <div className="space-y-0.5">
                   <div className="flex items-center gap-3">
-                     <h1 className="text-2xl font-black tracking-tighter uppercase italic leading-none">Alpha Hub</h1>
+                     <h1 className="text-2xl font-black tracking-tighter uppercase italic leading-none">Alpha 40 Terminal</h1>
                      <div className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded text-[8px] font-black text-emerald-400 uppercase tracking-widest animate-pulse">Live Terminal</div>
                   </div>
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.25em]">Institutional Asset Discovery Node v3.5.1</p>

@@ -190,29 +190,48 @@ const LoginPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 font-sans relative overflow-hidden">
-      {/* Subtle Background Elements */}
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 font-sans relative overflow-hidden">
+      {/* Dynamic Grid Background */}
+      <div className="absolute inset-0 z-0 opacity-20" 
+           style={{ backgroundImage: 'radial-gradient(#334155 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      
+      {/* Animated Glows */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/5 blur-[120px] rounded-full" />
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[140px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/10 blur-[140px] rounded-full" />
       </div>
 
-      <div className="w-full max-w-lg bg-white p-12 md:p-16 rounded-[4rem] shadow-2xl border border-slate-100 space-y-12 animate-in fade-in zoom-in-95 duration-700 relative z-10">
-        <div className="text-center space-y-4 relative z-10">
+      <div className="w-full max-w-xl bg-slate-900/50 backdrop-blur-2xl p-12 md:p-16 rounded-[4rem] shadow-2xl border border-white/5 space-y-12 animate-in fade-in zoom-in-95 duration-700 relative z-10">
+        <div className="text-center space-y-6 relative z-10">
            <div className="flex justify-center">
-              <BrandLogo variant="light" size={48} hideText={true} className="rotate-12 hover:rotate-0 transition-transform duration-500" />
+              <div className="w-20 h-20 bg-blue-600 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-blue-500/20 rotate-6 hover:rotate-0 transition-transform duration-500">
+                <Activity className="h-10 w-10 text-white" />
+              </div>
            </div>
-           <div className="space-y-1">
-              <span className="text-2xl font-black tracking-tighter uppercase italic text-slate-900 block mb-1">
-                MarketBeacon<span className="text-blue-600">Pro</span>
+           <div className="space-y-2">
+              <span className="text-sm font-black tracking-[0.4em] uppercase text-blue-500 block">
+                Authorized Access Only
               </span>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Terminal Login</h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em]">Institutional Access Environment 11.6</p>
+              <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none">
+                MarketBeacon<span className="text-blue-500">Pro</span>
+              </h1>
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <div className="flex -space-x-2">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden">
+                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+20}`} alt="User" />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Joined by 31,402 Traders
+                </p>
+              </div>
            </div>
         </div>
 
         {error && (
-          <div className="p-5 bg-rose-50 border border-rose-100 rounded-3xl flex items-start space-x-4 text-rose-600 animate-in fade-in zoom-in duration-300 relative z-10 shadow-sm">
+          <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start space-x-4 text-rose-400 animate-in shake duration-500">
              <AlertCircle className="h-5 w-5 shrink-0" />
              <span className="text-xs font-black uppercase tracking-tight leading-relaxed">{error}</span>
           </div>
@@ -224,54 +243,58 @@ const LoginPage: React.FC = () => {
                 <div className="flex justify-center transform hover:scale-[1.02] transition-transform">
                    <GoogleLogin onSuccess={onGoogleSuccess} onError={() => setError('Google Authentication Failed')} theme="filled_blue" shape="pill" size="large" text="continue_with" width="100%" />
                 </div>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                  <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest"><span className="bg-slate-900/50 px-4 text-slate-600 uppercase tracking-[0.5em]">Institutional Login</span></div>
+                </div>
                 <div className="flex flex-col space-y-4">
-                   <button onClick={() => setLoginMethod('email')} className="w-full py-5 bg-slate-50 border border-slate-100 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-900 transition-all flex items-center justify-center space-x-3"><Mail className="h-4 w-4" /><span>Login with Master ID</span></button>
-                   <button onClick={() => setLoginMethod('mobile')} className="w-full py-5 bg-slate-50 border border-slate-100 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-900 transition-all flex items-center justify-center space-x-3"><Smartphone className="h-4 w-4" /><span>Mobile OTP Verification</span></button>
+                   <button onClick={() => setLoginMethod('email')} className="w-full py-5 bg-white/5 border border-white/5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center space-x-3"><Mail className="h-4 w-4" /><span>Terminal Identity</span></button>
+                   <button onClick={() => setLoginMethod('mobile')} className="w-full py-5 bg-white/5 border border-white/5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center space-x-3"><Smartphone className="h-4 w-4" /><span>Mobile Passcode</span></button>
                 </div>
              </div>
            ) : loginMethod === 'email' ? (
-             <form onSubmit={handleEmailLogin} className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
+             <form onSubmit={handleEmailLogin} className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
                 <div className="space-y-4">
-                   <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Admin Identity</label>
-                      <input type="email" placeholder="admin@marketbeaconpro.com" className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] px-8 py-5 text-sm font-black focus:bg-white focus:border-slate-900 transition-all outline-none" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] ml-4">Account ID</label>
+                      <input type="email" placeholder="identity@marketbeacon.pro" className="w-full bg-white/5 border-2 border-white/5 rounded-[2.5rem] px-8 py-5 text-sm font-black text-white focus:bg-white/10 focus:border-blue-500/50 transition-all outline-none" value={email} onChange={(e) => setEmail(e.target.value)} required />
                    </div>
-                   <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Security Key</label>
-                      <input type="password" placeholder="••••••••" className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] px-8 py-5 text-sm font-black focus:bg-white focus:border-slate-900 transition-all outline-none" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] ml-4">Security Key</label>
+                      <input type="password" placeholder="••••••••" className="w-full bg-white/5 border-2 border-white/5 rounded-[2.5rem] px-8 py-5 text-sm font-black text-white focus:bg-white/10 focus:border-blue-500/50 transition-all outline-none" value={password} onChange={(e) => setPassword(e.target.value)} required />
                    </div>
                 </div>
-                <button type="submit" disabled={loading} className="w-full py-6 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center space-x-3 active:scale-95 transition-all hover:bg-black">
-                   <span>{loading ? 'Verifying...' : 'Authorize Access'}</span>
+                <button type="submit" disabled={loading} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-blue-600/20 flex items-center justify-center space-x-3 active:scale-95 transition-all hover:bg-blue-500">
+                   <span>{loading ? 'Authorizing...' : 'Enter Terminal'}</span>
                    <ArrowRight className="h-5 w-5" />
                 </button>
-                <button type="button" onClick={() => setLoginMethod('google')} className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest text-center mt-4">Return to Gmail SSO</button>
+                <button type="button" onClick={() => setLoginMethod('google')} className="w-full text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] text-center mt-6 hover:text-slate-400 transition-colors">Return to SSO Hub</button>
              </form>
            ) : (
              <form onSubmit={showOtpField ? handleVerifyOtp : handleSendOtp} className="space-y-8 animate-in slide-in-from-bottom duration-500">
                 <div id="recaptcha-container"></div>
                 {!showOtpField ? (
                    <div className="relative group">
-                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">+91</div>
-                     <input type="tel" placeholder="Verified Mobile" className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] pl-16 pr-8 py-5 text-sm font-black focus:bg-white focus:border-slate-900 transition-all outline-none" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0,10))} required />
+                     <div className="absolute left-8 top-1/2 -translate-y-1/2 text-sm font-black text-blue-500">+91</div>
+                     <input type="tel" placeholder="Mobile Number" className="w-full bg-white/5 border-2 border-white/5 rounded-[2.5rem] pl-20 pr-8 py-5 text-sm font-black text-white focus:bg-white/10 focus:border-blue-500/50 transition-all outline-none" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0,10))} required />
                    </div>
                 ) : (
                    <div className="relative space-y-4">
-                     <input type="text" placeholder="Passcode" className="w-full bg-slate-50 border-2 border-slate-900 rounded-[2rem] px-8 py-6 text-center text-2xl font-black tracking-[1.5em] focus:bg-white transition-all outline-none shadow-xl" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0,6))} required />
+                     <input type="text" placeholder="Passcode" className="w-full bg-white/5 border-2 border-blue-500/50 rounded-[2.5rem] px-8 py-7 text-center text-3xl font-black tracking-[1.5em] text-white focus:bg-white/10 transition-all outline-none shadow-2xl" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0,6))} required />
                    </div>
                 )}
-                <button type="submit" disabled={loading} className="w-full py-6 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all">
-                   {loading ? 'Initializing...' : (showOtpField ? 'Confirm Access' : 'Request OTP')}
+                <button type="submit" disabled={loading} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-blue-600/20 transition-all hover:bg-blue-500">
+                   {loading ? 'Processing...' : (showOtpField ? 'Verify Security' : 'Generate OTP')}
                 </button>
-                <button type="button" onClick={() => setLoginMethod('google')} className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest text-center mt-4">Return to Gmail SSO</button>
+                <button type="button" onClick={() => setLoginMethod('google')} className="w-full text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] text-center mt-6 hover:text-slate-400 transition-colors">Return to SSO Hub</button>
              </form>
            )}
         </div>
 
-        <div className="pt-8 text-center relative z-10">
-           <Link to="/connect" className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] hover:text-blue-600 transition-colors flex items-center justify-center space-x-2">
-              <Globe className="h-3 w-3" />
-              <span>Institutional Connectivity Hub</span>
+        <div className="pt-10 text-center relative z-10 border-t border-white/5">
+           <Link to="/connect" className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] hover:text-blue-500 transition-colors flex items-center justify-center space-x-3">
+              <Globe className="h-4 w-4" />
+              <span>Connectivity Hub</span>
            </Link>
         </div>
       </div>
