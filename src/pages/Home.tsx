@@ -2,24 +2,11 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ShieldCheck, 
-  Zap, 
   Target, 
-  Globe, 
   ArrowRight,
-  TrendingUp,
-  Award,
-  Activity
+  Activity,
+  Globe
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-const performanceData = [
-  { name: 'Jan', alpha: 4000, nifty: 2400 },
-  { name: 'Feb', alpha: 3000, nifty: 1398 },
-  { name: 'Mar', alpha: 5000, nifty: 3800 },
-  { name: 'Apr', alpha: 7780, nifty: 3908 },
-  { name: 'May', alpha: 8890, nifty: 4800 },
-  { name: 'Jun', alpha: 12390, nifty: 5800 },
-];
 
 const HomePage: React.FC = () => {
   useEffect(() => {
@@ -51,7 +38,6 @@ const HomePage: React.FC = () => {
 
       {/* Hero Section */}
       <header className="pt-48 pb-32 px-6 md:px-10 max-w-[1440px] mx-auto text-center relative">
-        {/* Animated Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-96 bg-blue-600/10 blur-[120px] pointer-events-none" />
 
         <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-950/50 backdrop-blur-sm rounded-full border border-blue-900 mb-10">
