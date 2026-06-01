@@ -87,9 +87,9 @@ const generateDynamicChartData = (capital: number) => {
 };
 
 const BASKET_LABELS: Record<string, string> = {
-  'SUPER_45': 'Bluechip',
-  'GOOD_45': 'High Beta',
-  'GOOD_200': 'Wealth'
+  'Bluechip': 'Bluechip',
+  'High Beta': 'High Beta',
+  'Wealth Universe': 'Wealth'
 };
 
 const AlphaHubPage: React.FC = () => {

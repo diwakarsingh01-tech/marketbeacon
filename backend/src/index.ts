@@ -67,7 +67,7 @@ export const STRATEGIES = [
 ];
 
 export const BASKETS: Record<string, string[]> = {
-  'SUPER_45': [
+  'Bluechip': [
     'WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 
     'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 
     'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 
@@ -76,7 +76,7 @@ export const BASKETS: Record<string, string[]> = {
     'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 
     'NIFTYBEES', 'BANKBEES'
   ],
-  'GOOD_45': [
+  'High Beta': [
     'RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 
     'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 
     'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KAJARIACER', 'VINATIORGA', 
@@ -84,7 +84,7 @@ export const BASKETS: Record<string, string[]> = {
     'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 
     'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'
   ],
-  'GOOD_200': [
+  'Wealth Universe': [
     'CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 
     'MTARTECH', 'MAHLOG', 'PRINCEPIPE', 'ANGELONE', 'MCX', 'KFINTECH', 'DATA PATTERNS', 
     'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES', 'RAILTEL', 'BEL', 
@@ -330,19 +330,19 @@ app.post('/api/admin/update-snapshot', authenticateToken, requireAdmin, async (r
     let symbols = [];
     
     const dynamicWealth = getDynamicBasket();
-    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['GOOD_200'] || []);
+    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['Wealth Universe'] || []);
 
-    if (basket === 'SUPER_45') {
-      symbols = BASKETS['SUPER_45'] || [];
-    } else if (basket === 'GOOD_45') {
-      symbols = BASKETS['GOOD_45'] || [];
-    } else if (basket === 'GOOD_200') {
+    if (basket === 'Bluechip') {
+      symbols = BASKETS['Bluechip'] || [];
+    } else if (basket === 'High Beta') {
+      symbols = BASKETS['High Beta'] || [];
+    } else if (basket === 'Wealth Universe') {
       symbols = currentWealth;
     } else {
       // FIX: Safe spreading
       const all = [];
-      if (Array.isArray(BASKETS['SUPER_45'])) all.push(...BASKETS['SUPER_45']);
-      if (Array.isArray(BASKETS['GOOD_45'])) all.push(...BASKETS['GOOD_45']);
+      if (Array.isArray(BASKETS['Bluechip'])) all.push(...BASKETS['Bluechip']);
+      if (Array.isArray(BASKETS['High Beta'])) all.push(...BASKETS['High Beta']);
       if (Array.isArray(currentWealth)) all.push(...currentWealth);
       symbols = Array.from(new Set(all));
     }
@@ -514,8 +514,8 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
     const results = [];
     
     let symbols = [];
-    if (basket === 'SUPER_45') symbols = BASKETS['SUPER_45'];
-    else if (basket === 'GOOD_45') symbols = BASKETS['GOOD_45'];
+    if (basket === 'Bluechip') symbols = BASKETS['Bluechip'];
+    else if (basket === 'High Beta') symbols = BASKETS['High Beta'];
     else symbols = Object.keys(snapshot);
 
     for (const baseSymbol of symbols) {
@@ -687,7 +687,7 @@ async function startServer() {
     const cache = getMarketSnapshot();
     if (Object.keys(cache).length <= 1) {
       console.log('🚀 [STARTUP] Cache empty. Triggering priority Bluechip snapshot...');
-      updateMarketSnapshot(BASKETS['SUPER_45']).catch(e => console.error('Startup Snapshot Failed:', e.message));
+      updateMarketSnapshot(BASKETS['Bluechip']).catch(e => console.error('Startup Snapshot Failed:', e.message));
     }
 
     app.listen(PORT, '0.0.0.0', () => console.log(`MarketBeacon Backend running on port ${PORT} (Institutional Network Active)`));
@@ -698,7 +698,7 @@ function syncBaskets() {
   try {
     const dynamicProfit = getDynamicBasket();
     if (Array.isArray(dynamicProfit) && dynamicProfit.length > 0) {
-      BASKETS['GOOD_200'] = dynamicProfit;
+      BASKETS['Wealth Universe'] = dynamicProfit;
     }
   } catch (e) { console.error('Sync Baskets Failed:', e.message); }
 }
