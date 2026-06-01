@@ -44,7 +44,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public Marketing Routes */}
-            <Route path="/welcome" element={<HomePage />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<Navigate to="/login" replace />} />
             <Route path="/pricing" element={<PricingPage />} />
@@ -60,15 +60,15 @@ function App() {
                 </AuthGuard>
               }
             >
-              {/* Primary Landing: Alpha Hub */}
-              <Route path="/" element={<AlphaHubPage />} />
+              {/* Dashboard Entry Points */}
+              <Route path="/dashboard" element={<AlphaHubPage />} />
+              <Route path="/alpha-hub" element={<AlphaHubPage />} />
               
               {/* Split Views */}
               <Route path="/screener" element={<DashboardPage key="screener" defaultTab="open" />} />
               <Route path="/market" element={<DashboardPage key="market" defaultTab="hold" />} />
               <Route path="/portfolio" element={<DashboardPage key="portfolio" defaultTab="portfolio" />} />
               <Route path="/alpha-hub" element={<AlphaHubPage />} />
-              <Route path="/journal" element={<Navigate to="/trades" replace />} />
               <Route path="/trades" element={<TradeJournalPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/stock/:symbol" element={<StockFundamentalsPage />} />
@@ -76,7 +76,6 @@ function App() {
               <Route path="/admin" element={<AdminPanel />} />
             </Route>
             {/* Legacy & Redirects */}
-            <Route path="/dashboard" element={<Navigate to="/screener" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
