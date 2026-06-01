@@ -38,6 +38,7 @@ const PageLoader = () => (
 );
 
 function App() {
+  console.log('🏗️ [MarketBeacon] App Component Rendering...');
   return (
     <AuthProvider>
       <Router>
