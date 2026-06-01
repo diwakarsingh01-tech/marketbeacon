@@ -26,7 +26,14 @@ export const getApiUrl = () => {
 
   // 1. Manual Overrides (For Debugging)
   const override = localStorage.getItem('mb_api_override');
-  if (override && override.length > 5) return override;
+  if (override && override.length > 5) {
+     // Safe-Guard: If override is hitting the frontend port, clear it
+     if (override.includes(':5173') || override.includes(':5174')) {
+        localStorage.removeItem('mb_api_override');
+     } else {
+        return override;
+     }
+  }
 
   // 2. Production Check (Explicit Domains)
   const isProduction = h.includes('marketbeaconpro.com') || h.includes('marketbeacon.vercel.app');

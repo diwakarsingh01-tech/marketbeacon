@@ -14,7 +14,9 @@ import {
   Lock
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+
+const API_URL = getApiUrl();
 
 const PublicAnalysisPage: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
@@ -25,8 +27,8 @@ const PublicAnalysisPage: React.FC = () => {
     const fetchData = async () => {
       try {
         const res = await fetch(`${API_URL}/api/public/analysis/${symbol}`);
-        const d = await res.json();
-        if (res.ok) setData(d);
+        const d = await safeJsonParse(res);
+        if (res.ok && !d.error) setData(d);
       } catch (e) {
         console.error('Failed to fetch analysis:', e);
       } finally {
