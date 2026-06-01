@@ -8,18 +8,42 @@ import {
   Globe,
   Search,
   TrendingUp,
-  ChevronRight
+  ChevronRight,
+  Zap,
+  BarChart2,
+  Lock,
+  ArrowUpRight
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+
+const API_URL = getApiUrl();
 
 const HomePage: React.FC = () => {
-  console.log('🏠 [MarketBeacon] HomePage Rendering...');
   const [searchQuery, setSearchSearchQuery] = useState('');
+  const [teaserData, setTeaserData] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery) {
-      navigate(`/analysis/${searchQuery.toUpperCase()}`);
+    if (!searchQuery) return;
+    
+    setIsSearching(true);
+    setTeaserData(null);
+    
+    try {
+      const res = await fetch(`${API_URL}/api/public/analysis/${searchQuery.toUpperCase()}`);
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) {
+        setTeaserData(data);
+      } else {
+        alert("Stock Node not found in institutional universe.");
+      }
+    } catch (e) {
+      console.error("Audit Search Error:", e);
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -109,15 +133,74 @@ const HomePage: React.FC = () => {
                 onChange={(e) => setSearchSearchQuery(e.target.value)}
               />
             </div>
-            <button type="submit" className="px-8 py-4 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-xs hover:bg-blue-500 transition-all flex items-center gap-2">
-              Instant Audit <ChevronRight className="w-4 h-4" />
+            <button type="submit" disabled={isSearching} className="px-8 py-4 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-xs hover:bg-blue-500 transition-all flex items-center gap-2">
+              {isSearching ? 'Auditing...' : 'Instant Audit'} <ChevronRight className="w-4 h-4" />
             </button>
           </form>
+
+          {/* INSTANT TEASER AUDIT CARD (Safe-Guard Rule #11) */}
+          <AnimatePresence>
+            {teaserData && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="mt-8 p-1 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-[2.5rem] shadow-2xl"
+              >
+                <div className="bg-slate-950 rounded-[2.4rem] p-8 text-left space-y-6 relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-[80px] -mr-24 -mt-24" />
+                   
+                   <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                           <h3 className="text-3xl font-black text-white italic tracking-tighter">{teaserData.symbol}</h3>
+                           <span className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-[8px] font-black text-blue-400 uppercase tracking-widest italic">Live Node</span>
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">Institutional 100-Point Audit Results</p>
+                      </div>
+                      <div className="text-right">
+                         <div className={`text-5xl font-black italic ${teaserData.score >= 80 ? 'text-emerald-400' : 'text-blue-400'}`}>{teaserData.score}</div>
+                         <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Audit Score</div>
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-3 gap-4">
+                      {[
+                        { label: 'Smart Money', val: `${teaserData.smartMoney}%`, icon: TrendingUp },
+                        { label: 'Alpha Target', val: `+${teaserData.upside}%`, icon: Target },
+                        { label: 'Risk Profile', val: teaserData.risk, icon: ShieldCheck },
+                      ].map((stat, i) => (
+                        <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl">
+                           <stat.icon className="h-4 w-4 text-blue-500 mb-2" />
+                           <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">{stat.label}</p>
+                           <p className="text-sm font-black text-white italic">{stat.val}</p>
+                        </div>
+                      ))}
+                   </div>
+
+                   <div className="pt-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {teaserData.strategies?.map((s: any, i: number) => (
+                           <span key={i} className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[8px] font-black text-emerald-400 uppercase tracking-widest">{s.name}</span>
+                        ))}
+                      </div>
+                      <Link 
+                        to={`/analysis/${teaserData.symbol}`}
+                        className="flex items-center gap-2 text-[10px] font-black text-blue-400 hover:text-white transition-colors uppercase tracking-widest"
+                      >
+                        Full Strategy Matrix <ArrowUpRight className="h-4 w-4" />
+                      </Link>
+                   </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="flex justify-center gap-4 mt-6">
             {["RELAXO", "TCS", "ITC"].map(sym => (
               <button 
                 key={sym} 
-                onClick={() => setSearchSearchQuery(sym)}
+                onClick={() => { setSearchSearchQuery(sym); }}
                 className="text-[10px] font-black text-slate-500 hover:text-blue-400 transition-colors uppercase tracking-widest"
               >
                 {sym}
