@@ -35,7 +35,7 @@ export async function precalculateAlpha40() {
           if (!snap || !snap.quotes?.length) continue;
           
           const audit = await validateBatch9(sym, snap, basketName);
-          if (!audit.isPass) continue;
+          if (!audit || !audit?.isPass) continue;
 
           const marketCap = snap.quote.marketCap || 1;
           const capCr = marketCap / 10000000;

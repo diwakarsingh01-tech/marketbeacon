@@ -71,7 +71,7 @@ async function performE2EAudit() {
     ];
 
     for (const s of res) {
-      if (s.r && s.r.isBuyZone) {
+      if (s.r && s?.r?.isBuyZone) {
         const dateOk = s.r.triggerDate && s.r.triggerDate.length > 5;
         console.log(`  [${s.id}] ${s.n}: QUALIFIED | Obs: ${s.r.triggerDate || 'MISSING'} | Target: ${s.r.target} - ${dateOk ? '✅' : '❌'}`);
       }
@@ -99,7 +99,7 @@ async function performE2EAudit() {
     const snap = snapshot[sym];
     const sector = snap.screener?.industry || 'General';
     const res = calculateEnvelope(snap.quotes); // Test with S1
-    if (res && res.isBuyZone) {
+    if (res && res?.isBuyZone) {
       const smart = snap.screener?.shareholding?.smartMoneyTotal || 0;
       if (smart >= 70 && (sectorLimits[sector] || 0) < 4) {
         totalActive++;

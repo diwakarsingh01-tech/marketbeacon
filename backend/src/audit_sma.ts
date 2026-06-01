@@ -11,7 +11,7 @@ async function auditSMA() {
     const snap = data[sym];
     const res = calculateSMAStacking(snap.quotes);
     
-    if (res && res.isBuyZone) {
+    if (res && res?.isBuyZone) {
       console.log(`✅ [SMA ABCD] ${sym} | Tranche: ${res.tranche} | Entry: ${res.entryPrice} | Target: ${res.target} | Date: ${res.triggerDate}`);
       found++;
     }

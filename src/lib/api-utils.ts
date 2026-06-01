@@ -6,9 +6,19 @@
 export async function safeJsonParse(response: Response) {
   const text = await response.text();
   try {
-    return JSON.parse(text);
+    const json = JSON.parse(text);
+    if (json.error) {
+       console.error(`🚨 [API Error Response] from ${response.url}:`, json.error);
+    }
+    return json;
   } catch (e) {
     const isHtml = text.trim().toLowerCase().startsWith('<!doctype') || text.includes('<html');
+    console.group('🛡 [Institutional Safe-Guard] Payload Audit');
+    console.error(`URL: ${response.url}`);
+    console.error(`Status: ${response.status} ${response.statusText}`);
+    console.error(`Raw Preview: ${text.substring(0, 200)}...`);
+    console.groupEnd();
+
     return { 
       error: isHtml 
         ? "Protocol Mismatch: Frontend hit an HTML server instead of the API. Please verify connectivity." 
