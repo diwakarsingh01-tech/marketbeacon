@@ -38,6 +38,51 @@ const PublicAnalysisPage: React.FC = () => {
     fetchData();
   }, [symbol]);
 
+  useEffect(() => {
+    if (data) {
+      // 1. Dynamic Meta Hardening
+      document.title = `${symbol} Fundamental Audit & Price Target | MarketBeacon Pro`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.setAttribute('content', `Get the institutional 100-point audit for ${symbol}. Audit Score: ${data.score}, Smart Money: ${data.smartMoney}%, Target Upside: +${data.upside}%. Verified logic by MarketBeacon Pro.`);
+      }
+
+      // 2. JSON-LD Structured Data (Rich Snippets)
+      const schema = {
+        "@context": "https://schema.org",
+        "@type": "InvestmentPortfolio",
+        "name": `MarketBeacon Institutional Analysis: ${symbol}`,
+        "description": `Professional fundamental audit and strategy matrix for ${symbol}`,
+        "provider": {
+          "@type": "Organization",
+          "name": "MarketBeacon Pro"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": data.score,
+          "bestRating": "100",
+          "worstRating": "0",
+          "ratingCount": "31400"
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": window.location.href
+        }
+      };
+
+      const script = document.createElement('script');
+      script.type = "application/ld+json";
+      script.id = `json-ld-${symbol}`;
+      script.text = JSON.stringify(schema);
+      document.head.appendChild(script);
+
+      return () => {
+        const oldScript = document.getElementById(`json-ld-${symbol}`);
+        if (oldScript) oldScript.remove();
+      };
+    }
+  }, [data, symbol]);
+
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({

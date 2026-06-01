@@ -1,14 +1,27 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, 
   Target, 
   ArrowRight,
   Activity,
-  Globe
+  Globe,
+  Search,
+  TrendingUp,
+  ChevronRight
 } from 'lucide-react';
 
 const HomePage: React.FC = () => {
+  const [searchQuery, setSearchSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery) {
+      navigate(`/analysis/${searchQuery.toUpperCase()}`);
+    }
+  };
+
   useEffect(() => {
     document.title = "MarketBeacon Pro | Institutional Trading Terminal";
     const metaDescription = document.createElement('meta');
@@ -19,8 +32,41 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 font-sans text-slate-100 overflow-x-hidden selection:bg-blue-500/30">
+      {/* Live Trust Ticker (Safe-Guard Rule #7) */}
+      <div className="bg-blue-600 py-2 overflow-hidden whitespace-nowrap border-b border-blue-500 relative z-[60]">
+        <div className="flex animate-marquee items-center gap-12">
+          {[
+            "RELAXO: Qualified with 92/100",
+            "TCS: Bullish SMA-ABCD Matrix",
+            "HDFC BANK: Institutional Accumulation",
+            "INFY: Volatility Channel Breakthrough",
+            "ITC: Zero-Debt High-SM Qualified",
+            "BAJAJ AUTO: 52W High Momentum",
+          ].map((text, i) => (
+            <div key={i} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white">
+              <ShieldCheck className="w-3 h-3" />
+              <span>{text}</span>
+            </div>
+          ))}
+          {/* Duplicate for infinite loop */}
+          {[
+            "RELAXO: Qualified with 92/100",
+            "TCS: Bullish SMA-ABCD Matrix",
+            "HDFC BANK: Institutional Accumulation",
+            "INFY: Volatility Channel Breakthrough",
+            "ITC: Zero-Debt High-SM Qualified",
+            "BAJAJ AUTO: 52W High Momentum",
+          ].map((text, i) => (
+            <div key={`d-${i}`} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white opacity-80">
+              <ShieldCheck className="w-3 h-3" />
+              <span>{text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 px-6 md:px-10 py-4 flex items-center justify-between">
+      <nav className="fixed top-10 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 px-6 md:px-10 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-2">
            <div className="bg-blue-600 p-2 rounded-xl text-white">
               <Activity className="h-6 w-6" />
@@ -37,7 +83,7 @@ const HomePage: React.FC = () => {
       </nav>
 
       {/* Hero Section */}
-      <header className="pt-48 pb-32 px-6 md:px-10 max-w-[1440px] mx-auto text-center relative">
+      <header className="pt-64 pb-32 px-6 md:px-10 max-w-[1440px] mx-auto text-center relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-96 bg-blue-600/10 blur-[120px] pointer-events-none" />
 
         <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-950/50 backdrop-blur-sm rounded-full border border-blue-900 mb-10">
@@ -48,6 +94,36 @@ const HomePage: React.FC = () => {
         <h1 className="text-6xl md:text-[10rem] font-black tracking-tighter leading-[0.85] text-white mb-10 drop-shadow-2xl">
            TRADE LIKE <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400">SMART MONEY.</span>
         </h1>
+
+        {/* Hero Search Bar (CDO Engagement Feature) */}
+        <div className="max-w-2xl mx-auto mb-16 relative group">
+          <form onSubmit={handleSearch} className="flex p-2 bg-slate-900/50 backdrop-blur-2xl border-2 border-slate-800 rounded-[2.5rem] focus-within:border-blue-600/50 transition-all shadow-2xl">
+            <div className="flex-1 flex items-center pl-6 gap-3">
+              <Search className="w-5 h-5 text-slate-500" />
+              <input 
+                type="text" 
+                placeholder="Enter stock symbol (e.g. RELAXO, TCS)..." 
+                className="bg-transparent border-none outline-none w-full text-sm font-black uppercase tracking-widest text-white placeholder:text-slate-600"
+                value={searchQuery}
+                onChange={(e) => setSearchSearchQuery(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="px-8 py-4 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-xs hover:bg-blue-500 transition-all flex items-center gap-2">
+              Instant Audit <ChevronRight className="w-4 h-4" />
+            </button>
+          </form>
+          <div className="flex justify-center gap-4 mt-6">
+            {["RELAXO", "TCS", "ITC"].map(sym => (
+              <button 
+                key={sym} 
+                onClick={() => setSearchSearchQuery(sym)}
+                className="text-[10px] font-black text-slate-500 hover:text-blue-400 transition-colors uppercase tracking-widest"
+              >
+                {sym}
+              </button>
+            ))}
+          </div>
+        </div>
         
         <p className="text-xl md:text-2xl font-medium text-slate-400 max-w-3xl mx-auto leading-relaxed mb-16 px-4">
            The same proprietary 100-point audits and mathematical models used by institutional desks, now accessible to you.
