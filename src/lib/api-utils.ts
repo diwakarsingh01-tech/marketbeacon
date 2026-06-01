@@ -1,6 +1,6 @@
 /**
  * MarketBeacon Institutional Data Hardening Utility
- * Prevents "Unexpected token <" crashes by validating JSON before parsing.
+ * Bulletproof API URL resolution for Local and Production environments.
  */
 
 export async function safeJsonParse(response: Response) {
@@ -11,7 +11,7 @@ export async function safeJsonParse(response: Response) {
     const isHtml = text.trim().toLowerCase().startsWith('<!doctype') || text.includes('<html');
     return { 
       error: isHtml 
-        ? "Protocol Mismatch: Your terminal is hitting a web server (HTML) instead of the Backend. Please enter your Backend IP using the 'Fix Connectivity' button." 
+        ? "Protocol Mismatch: Frontend hit an HTML server instead of the API. Please verify connectivity." 
         : "Institutional Data Corrupted: Backend returned invalid format.",
       isHtmlResponse: isHtml,
       status: response.status,
@@ -23,32 +23,33 @@ export async function safeJsonParse(response: Response) {
 export const getApiUrl = () => {
   const h = window.location.hostname;
   const p = window.location.protocol;
-  const port = window.location.port;
 
-  // 1. Manual Overrides (Highest Priority)
+  // 1. Manual Overrides (For Debugging)
   const override = localStorage.getItem('mb_api_override');
   if (override && override.length > 5) return override;
 
-  // 2. Local Network Detection
+  // 2. Production Check (Explicit Domains)
+  const isProduction = h.includes('marketbeaconpro.com') || h.includes('marketbeacon.vercel.app');
+  
+  if (isProduction) {
+    const prodUrl = "https://marketbeacon.onrender.com";
+    console.log(`🚀 [Production Node] Targeting: ${prodUrl}`);
+    return prodUrl;
+  }
+
+  // 3. Local / Network Environment Detection
   const isLocal = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.') || h.startsWith('10.') || h.startsWith('172.') || h.endsWith('.local');
   
   if (isLocal) {
-    // If we are on the frontend port (5173), we MUST hit the backend port (3001)
-    return `${p}//${h}:3001`;
+    const localUrl = `${p}//${h}:3001`;
+    console.log(`💻 [Local Node] Targeting: ${localUrl}`);
+    return localUrl;
   }
 
-  // 3. Production Environment Config
-  // Priority: VITE_API_URL > Current Domain API > Fallback
+  // 4. Fail-safe Fallback (Default to Production)
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl && envUrl.startsWith('http') && !envUrl.includes(`${h}:${port}`)) return envUrl;
-
-  // If on production domain, check if it's marketbeaconpro.com
-  if (h.includes('marketbeaconpro.com')) {
-     return "https://marketbeacon.onrender.com"; 
-  }
-
-  // 4. Default Fail-safe
-  const finalUrl = envUrl || "https://marketbeacon.onrender.com";
-  console.log(`🌐 [Institutional Node] API Target: ${finalUrl}`);
+  const finalUrl = (envUrl && envUrl.startsWith('http')) ? envUrl : "https://marketbeacon.onrender.com";
+  
+  console.log(`🌐 [Fail-safe Node] Targeting: ${finalUrl}`);
   return finalUrl;
 };
