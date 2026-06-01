@@ -66,9 +66,9 @@ interface DashboardPageProps {
 }
 
 const BASKET_LABELS: Record<string, string> = {
-  'Bluechip': 'Bluechip Universe',
-  'High Beta': 'High Beta Universe',
-  'Wealth Universe': 'Wealth Universe'
+  'H-Super45': 'H-Super45 Universe',
+  'H-GOOD45': 'H-GOOD45 Universe',
+  'H-Good200': 'H-Good200 Universe'
 };
 
 const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) => {
