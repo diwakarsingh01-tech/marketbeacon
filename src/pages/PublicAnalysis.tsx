@@ -44,7 +44,7 @@ const PublicAnalysisPage: React.FC = () => {
       document.title = `${symbol} Fundamental Audit & Price Target | MarketBeacon Pro`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
-        metaDesc.setAttribute('content', `Get the institutional 100-point audit for ${symbol}. Audit Score: ${data.score}, Smart Money: ${data.smartMoney}%, Target Upside: +${data.upside}%. Verified logic by MarketBeacon Pro.`);
+        metaDesc.setAttribute('content', `Get the institutional 100-point audit for ${symbol}. Audit Score: ${(data.score || 0).toFixed(0)}, Smart Money: ${(data.smartMoney || 0).toFixed(1)}%, Target Upside: +${data.upside}%. Verified logic by MarketBeacon Pro.`);
       }
 
       // 2. JSON-LD Structured Data (Rich Snippets)
@@ -151,13 +151,13 @@ const PublicAnalysisPage: React.FC = () => {
           
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 flex flex-col items-center justify-center text-center">
             <div className={`text-7xl font-black mb-2 ${scoreColor}`}>
-              {data.score}
+              {(data.score || 0).toFixed(0)}
             </div>
             <div className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-6">Audit Score</div>
             <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-8">
               <div 
                 className={`h-full transition-all duration-1000 ${data.score >= 80 ? 'bg-emerald-500' : 'bg-blue-500'}`} 
-                style={{ width: `${data.score}%` }} 
+                style={{ width: `${(data.score || 0).toFixed(0)}%` }} 
               />
             </div>
             <div className="flex items-center gap-2 text-emerald-400 font-bold">
@@ -171,7 +171,7 @@ const PublicAnalysisPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
           {[
             { label: 'Market Cap', value: `₹${(data.marketCap / 10000000).toFixed(0)} Cr`, icon: Globe },
-            { label: 'Smart Money', value: `${data.smartMoney}%`, icon: TrendingUp },
+            { label: 'Smart Money', value: `${(data.smartMoney || 0).toFixed(1)}%`, icon: TrendingUp },
             { label: 'Target Upside', value: `+${data.upside}%`, icon: Target },
             { label: 'Risk Profile', value: data.risk || 'Low', icon: ShieldCheck },
           ].map((item, i) => (
