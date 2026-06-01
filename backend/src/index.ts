@@ -48,6 +48,12 @@ const limiter = rateLimit({
 
 app.use('/api/', limiter);
 
+// --- REQUEST LOGGER (Safe-Guard Rule #5) ---
+app.use((req, res, next) => {
+  console.log(`📡 [${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -615,6 +621,7 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
     res.status(503).json({ error: 'System is warming up. Please refresh in 30 seconds.' });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
+
 // --- DYNAMIC DATA SYNC ---
 app.get('/api/stock-prices', async (req, res) => {
   try {
@@ -693,6 +700,14 @@ async function startServer() {
       console.log('🚀 [STARTUP] Cache empty. Triggering priority Bluechip snapshot...');
       updateMarketSnapshot(BASKETS['Bluechip']).catch(e => console.error('Startup Snapshot Failed:', e.message));
     }
+
+    // --- GLOBAL 404 HANDLER (Zero-HTML Policy) ---
+    app.use((req, res) => {
+      res.status(404).json({ 
+        error: `Route ${req.url} Not Found on MarketBeacon API`,
+        hint: "This is a JSON error (Safe-Guard Rule #5). If you see this, the frontend hit a wrong endpoint."
+      });
+    });
 
     app.listen(PORT, '0.0.0.0', () => console.log(`MarketBeacon Backend running on port ${PORT} (Institutional Network Active)`));
   } catch (e) { console.error(e); process.exit(1); }
