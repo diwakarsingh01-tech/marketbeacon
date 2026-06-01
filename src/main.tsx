@@ -4,27 +4,22 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
 import App from './App.tsx'
 
-console.log('🚀 [MarketBeacon] Terminal Bootstrap Initiated');
+console.log('🚀 [MarketBeacon] Terminal Initializing...');
 
-try {
-  const root = document.getElementById('root');
-  if (root) {
-    createRoot(root).render(
+const container = document.getElementById('root');
+if (!container) {
+  document.body.innerHTML = '<div style="padding:50px; text-align:center;"><h1>Fatal: Root Not Found</h1></div>';
+} else {
+  try {
+    const root = createRoot(container);
+    root.render(
       <StrictMode>
         <GoogleOAuthProvider clientId="500460562927-5b1mt1r0vcke4u3mm5hhj1a4cmilsgao.apps.googleusercontent.com">
           <App />
         </GoogleOAuthProvider>
-      </StrictMode>,
+      </StrictMode>
     );
-    console.log('✅ [MarketBeacon] React Mount Successful');
-  } else {
-    console.error('❌ [MarketBeacon] Root element not found!');
+  } catch (error) {
+    console.error('🔥 Bootstrap Crash:', error);
   }
-} catch (e) {
-  console.error('🔥 [MarketBeacon] Bootstrap Crash:', e);
-  document.body.innerHTML = `<div style="padding: 40px; font-family: sans-serif; text-align: center;">
-    <h1>Terminal Link Error</h1>
-    <p>MarketBeacon Pro is undergoing an automated architectural upgrade.</p>
-    <button onclick="location.reload()">Refresh Terminal</button>
-  </div>`;
 }

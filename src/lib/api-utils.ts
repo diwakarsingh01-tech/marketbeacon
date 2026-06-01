@@ -31,42 +31,32 @@ export async function safeJsonParse(response: Response) {
 }
 
 export const getApiUrl = () => {
-  const h = window.location.hostname;
-  const p = window.location.protocol;
+  try {
+    const h = window.location.hostname;
+    const p = window.location.protocol;
+    const port = window.location.port;
 
-  // 1. Manual Overrides (For Debugging)
-  const override = localStorage.getItem('mb_api_override');
-  if (override && override.length > 5) {
-     // Safe-Guard: If override is hitting the frontend port, clear it
-     if (override.includes(':5173') || override.includes(':5174')) {
-        localStorage.removeItem('mb_api_override');
-     } else {
-        return override;
-     }
+    // 1. Manual Overrides
+    const override = localStorage.getItem('mb_api_override');
+    if (override && override.length > 5) {
+       if (override.includes(':5173') || override.includes(':5174')) {
+          localStorage.removeItem('mb_api_override');
+       } else {
+          return override;
+       }
+    }
+
+    // 2. Production Check
+    const isProduction = h.includes('marketbeaconpro.com') || h.includes('marketbeacon.vercel.app');
+    if (isProduction) return "https://marketbeacon.onrender.com";
+
+    // 3. Local Network
+    const isLocal = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.') || h.startsWith('10.') || h.startsWith('172.') || h.endsWith('.local');
+    if (isLocal) return `${p}//${h}:3001`;
+
+    return import.meta.env.VITE_API_URL || "https://marketbeacon.onrender.com";
+  } catch (e) {
+    console.error('🛡️ [Safe-Guard] API URL Resolution failed, using fallback.');
+    return "https://marketbeacon.onrender.com";
   }
-
-  // 2. Production Check (Explicit Domains)
-  const isProduction = h.includes('marketbeaconpro.com') || h.includes('marketbeacon.vercel.app');
-  
-  if (isProduction) {
-    const prodUrl = "https://marketbeacon.onrender.com";
-    console.log(`🚀 [Production Node] Targeting: ${prodUrl}`);
-    return prodUrl;
-  }
-
-  // 3. Local / Network Environment Detection
-  const isLocal = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.') || h.startsWith('10.') || h.startsWith('172.') || h.endsWith('.local');
-  
-  if (isLocal) {
-    const localUrl = `${p}//${h}:3001`;
-    console.log(`💻 [Local Node] Targeting: ${localUrl}`);
-    return localUrl;
-  }
-
-  // 4. Fail-safe Fallback (Default to Production)
-  const envUrl = import.meta.env.VITE_API_URL;
-  const finalUrl = (envUrl && envUrl.startsWith('http')) ? envUrl : "https://marketbeacon.onrender.com";
-  
-  console.log(`🌐 [Fail-safe Node] Targeting: ${finalUrl}`);
-  return finalUrl;
 };
