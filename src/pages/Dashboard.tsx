@@ -1,9 +1,31 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import TradeTable from '../components/tables/TradeTable';
 import StrategyGuide from '../components/StrategyGuide';
 import { BASKETS, STRATEGIES } from '../data/stocks';
-import { Download, ChevronRight, Target, ShieldCheck, RefreshCw, TrendingUp, Wallet, BookOpen, X, Lock, ShieldAlert, Check, Zap, Globe, Activity, Database, PieChart, AlertCircle } from 'lucide-react';
+import { 
+  Download, 
+  ChevronRight, 
+  Target, 
+  ShieldCheck, 
+  RefreshCw, 
+  TrendingUp, 
+  Wallet, 
+  BookOpen, 
+  X, 
+  Lock, 
+  ShieldAlert, 
+  Check, 
+  Zap, 
+  Globe, 
+  Activity, 
+  Database, 
+  PieChart, 
+  AlertCircle,
+  Layers,
+  Search
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import BrokerHub from '../components/modals/BrokerHub';
@@ -12,6 +34,32 @@ import LegalModal from '../components/modals/LegalModal';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
 const API_URL = getApiUrl();
+
+// --- PREMIUM DASHBOARD COMPONENTS ---
+
+const DashboardStat = ({ title, value, icon: Icon, color = "blue" }: any) => {
+  const colors: any = {
+    blue: "text-blue-600 bg-blue-50 border-blue-100",
+    emerald: "text-emerald-600 bg-emerald-50 border-emerald-100",
+    amber: "text-amber-600 bg-amber-50 border-amber-100",
+    rose: "text-rose-600 bg-rose-50 border-rose-100"
+  };
+
+  return (
+    <motion.div 
+      whileHover={{ y: -2 }}
+      className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between"
+    >
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-2.5 rounded-xl ${colors[color]} border`}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{title}</span>
+      </div>
+      <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic">{value}</h3>
+    </motion.div>
+  );
+};
 
 interface DashboardPageProps {
   defaultTab?: 'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral';
@@ -291,21 +339,24 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   };
 
   return (
-    <div className="flex-1 flex flex-col py-6 md:py-10 px-4 md:px-10 space-y-8 bg-[#f8fafc] overflow-y-auto">
-      {/* Institutional Header */}
+    <div className="flex-1 flex flex-col py-6 md:py-10 px-4 md:px-10 space-y-10 bg-[#f8fafc] overflow-y-auto no-scrollbar">
+      {/* Institutional Header (Safe-Guard Rule #9) */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-100 pb-10 gap-8">
-        <div className="space-y-4">
+        <div className="space-y-5">
            <div className="flex items-center space-x-3 text-slate-400">
-              <div className="w-8 h-8 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg">
-                 <Zap className="h-4 w-4" />
+              <div className="w-10 h-10 bg-slate-ink text-white rounded-xl flex items-center justify-center shadow-2xl border border-white/5" style={{ backgroundColor: 'var(--slate-ink)' }}>
+                 <Zap className="h-5 w-5 text-blue-500" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.4em]">Terminal Monitor</span>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] leading-none">Matrix Node</span>
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">Real-time Terminal Monitor</span>
+              </div>
            </div>
            <div className="space-y-1">
-              <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">
-                {activeTab === 'portfolio' ? 'Portfolio Mix' : activeTab === 'hold' ? 'Watchlist Audit' : 'Matrix Screener'}
+              <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">
+                {activeTab === 'portfolio' ? 'Wealth Desk' : activeTab === 'hold' ? 'Watchlist' : 'Matrix Screener'}
               </h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">{currentStrategy.name}</p>
+              <p className="text-[11px] font-bold text-blue-600 uppercase tracking-[0.2em] pl-1">{currentStrategy.name}</p>
            </div>
         </div>
         
@@ -313,60 +364,61 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           {activeTab === 'portfolio' && (
             <button 
               onClick={() => setShowBrokerHub(true)} 
-              className="px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center space-x-3 hover:bg-black transition-all active:scale-95"
+              className="px-8 py-4 bg-slate-ink text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl flex items-center space-x-3 hover:bg-black transition-all active:scale-95 border border-white/5"
+              style={{ backgroundColor: 'var(--slate-ink)' }}
             >
-              <Globe className="h-4 w-4 text-blue-400" />
-              <span>Connect Broker</span>
+              <Globe className="h-4 w-4 text-blue-500" />
+              <span>Connect Institutional Node</span>
             </button>
           )}
 
           <div className="flex flex-col space-y-1.5">
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] pl-1">Active Universe</span>
+            <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] pl-2">Active Universe</span>
             <div className="relative group">
               <select 
                 value={activeBasket} 
                 onChange={(e) => setActiveBasket(e.target.value)} 
-                className="appearance-none bg-white border border-slate-100 rounded-2xl pl-6 pr-10 py-3.5 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all min-w-[140px]"
+                className="appearance-none bg-white border border-slate-200 rounded-2xl pl-6 pr-12 py-4 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-blue-500/30 transition-all min-w-[160px]"
               >
                 <option value="Bluechip">Bluechip</option>
                 <option value="High Beta">High Beta</option>
                 <option value="Wealth Universe">Wealth Universe</option>
               </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
+              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <ChevronRight className="w-4 h-4 rotate-90" />
               </div>
             </div>
           </div>
 
           <div className="flex flex-col space-y-1.5">
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] pl-1">Strategy Matrix</span>
+            <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] pl-2">Model Matrix</span>
             <div className="relative group">
               <select 
                 value={strategyId} 
                 onChange={(e) => navigate(`?strategy=${e.target.value}`)} 
-                className="appearance-none bg-white border border-slate-100 rounded-2xl pl-6 pr-10 py-3.5 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all min-w-[180px]"
+                className="appearance-none bg-white border border-slate-200 rounded-2xl pl-6 pr-12 py-4 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-blue-500/30 transition-all min-w-[200px]"
               >
                 {STRATEGIES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
+              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <ChevronRight className="w-4 h-4 rotate-90" />
               </div>
             </div>
           </div>
 
-          <div className="flex items-end h-full pb-0.5 pt-4 space-x-2">
+          <div className="flex items-end h-full pb-0.5 pt-4 space-x-3">
             <button 
               onClick={handleMasterExport}
-              className="flex items-center space-x-2 px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200 group"
+              className="flex items-center space-x-3 px-8 py-4 bg-slate-950 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200/50 group border border-white/5"
             >
-              <Download className="h-4 w-4 text-blue-400 group-hover:scale-110 transition-transform" />
-              <span>Export Master Audit</span>
+              <Download className="h-4 w-4 text-blue-500 group-hover:scale-110 transition-transform" />
+              <span>Export Audit</span>
             </button>
             <button 
               onClick={() => fetchData(true)} 
-              className={`p-3.5 rounded-2xl border border-slate-100 bg-white shadow-sm hover:bg-slate-50 transition-all ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
+              className={`p-4 rounded-2xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -374,47 +426,40 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
       {/* Unified Portfolio Summary */}
       {(activeTab === 'portfolio' || activeTab === 'hold') && portfolioSummary.totalInvested > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+        >
+          <div className="bg-slate-ink rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group border border-white/5" style={{ backgroundColor: 'var(--slate-ink)' }}>
              <div className="absolute right-0 top-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-16 -mt-16 group-hover:bg-blue-600/20 transition-all" />
-             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest relative z-10">Total Invested</span>
-             <h3 className="text-3xl font-black mt-2 tracking-tighter relative z-10">₹{portfolioSummary.totalInvested.toLocaleString()}</h3>
+             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest relative z-10">Total Invested</span>
+             <h3 className="text-4xl font-black mt-3 tracking-tighter relative z-10 italic">₹{portfolioSummary.totalInvested.toLocaleString()}</h3>
           </div>
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
-             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Current Valuation</span>
-             <h3 className="text-3xl font-black text-slate-900 mt-2 tracking-tighter">₹{portfolioSummary.totalCurrent.toLocaleString()}</h3>
-          </div>
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
-             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Absolute P&L</span>
-             <h3 className={`text-3xl font-black mt-2 tracking-tighter ${portfolioSummary.totalPnL >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-               {portfolioSummary.totalPnL >= 0 ? '+' : '-'}₹{Math.abs(portfolioSummary.totalPnL).toLocaleString()}
-             </h3>
-          </div>
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-4">
+          <DashboardStat title="Valuation" value={`₹${portfolioSummary.totalCurrent.toLocaleString()}`} icon={TrendingUp} color="blue" />
+          <DashboardStat title="Absolute P&L" value={`${portfolioSummary.totalPnL >= 0 ? '+' : '-'}₹${Math.abs(portfolioSummary.totalPnL).toLocaleString()}`} icon={Activity} color={portfolioSummary.totalPnL >= 0 ? "emerald" : "rose"} />
+          
+          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-5">
             <div className="flex justify-between items-center">
-               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cap Mix (50-30-20)</span>
-               <div className="flex space-x-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-               </div>
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cap Architecture</span>
+               <PieChart className="h-4 w-4 text-slate-300" />
             </div>
-            <div className="h-2 w-full flex rounded-full overflow-hidden bg-slate-50">
-               <div className="h-full bg-slate-900 transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.large}%` }} />
-               <div className="h-full bg-slate-600 transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.mid}%` }} />
-               <div className="h-full bg-slate-400 transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.small}%` }} />
+            <div className="h-2 w-full flex rounded-full overflow-hidden bg-slate-50 shadow-inner">
+               <div className="h-full bg-slate-ink transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.large}%` }} />
+               <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.mid}%` }} />
+               <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.small}%` }} />
             </div>
-            <div className="flex justify-between text-[8px] font-black text-slate-500 uppercase tracking-tighter">
-               <span>Large: {portfolioSummary.capBreakdown.large.toFixed(0)}%</span>
-               <span>Mid: {portfolioSummary.capBreakdown.mid.toFixed(0)}%</span>
-               <span>Small: {portfolioSummary.capBreakdown.small.toFixed(0)}%</span>
+            <div className="flex justify-between text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] italic">
+               <span>L: {portfolioSummary.capBreakdown.large.toFixed(0)}%</span>
+               <span>M: {portfolioSummary.capBreakdown.mid.toFixed(0)}%</span>
+               <span>S: {portfolioSummary.capBreakdown.small.toFixed(0)}%</span>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Institutional Tab Controller */}
-      <div className="flex bg-slate-100/50 p-1 rounded-[1.2rem] md:rounded-[2rem] border border-slate-100 w-fit max-w-full overflow-x-auto no-scrollbar shadow-inner gap-1">
+      <div className="flex bg-slate-200/40 p-1.5 rounded-[1.5rem] md:rounded-[2.2rem] border border-slate-200/50 w-fit max-w-full overflow-x-auto no-scrollbar shadow-inner gap-1.5">
          {[
            { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => r && r.isBuyZone && r.isPass).length || 0 },
            { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => r && !r.isBuyZone && r.isPass).length || 0 },
@@ -424,59 +469,74 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
            <button 
              key={tab.id} 
              onClick={() => setActiveTab(tab.id as any)} 
-             className={`px-4 md:px-8 py-2.5 md:py-3.5 rounded-[1rem] md:rounded-[1.5rem] text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${
+             className={`px-6 md:px-10 py-3.5 md:py-4 rounded-[1.2rem] md:rounded-[1.8rem] text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${
                activeTab === tab.id 
-                 ? 'bg-white text-slate-900 shadow-md md:shadow-xl' 
-                 : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                 ? 'bg-white text-slate-900 shadow-xl border border-slate-100' 
+                 : 'text-slate-500 hover:text-slate-950 hover:bg-white/40'
              }`}
            >
-              <div className="flex items-center justify-center space-x-2 md:space-x-3">
+              <div className="flex items-center justify-center space-x-3 md:space-x-4">
                  <span>{tab.label}</span>
-                 <span className={`px-1.5 py-0.5 rounded-md md:rounded-lg text-[7px] md:text-[8px] font-black ${
-                   activeTab === tab.id ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-500'
+                 <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black ${
+                   activeTab === tab.id ? 'bg-slate-ink text-white' : 'bg-slate-200 text-slate-600'
                  }`}>
                     {tab.count}
                  </span>
               </div>
+              {activeTab === tab.id && (
+                <motion.div layoutId="activeTab" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-blue-600 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.8)]" />
+              )}
            </button>
          ))}
       </div>
 
-      <section className="flex-1 min-h-0 animate-in fade-in duration-700">
-        {error ? (
-          <div className="bg-white rounded-[3rem] h-96 border border-slate-100 flex flex-col items-center justify-center space-y-8 shadow-sm">
-            <div className="bg-rose-50 p-6 rounded-[2rem] text-rose-600 border border-rose-100 max-w-md text-center">
-               <AlertCircle className="h-10 w-10 mx-auto mb-4" />
-               <p className="text-sm font-black uppercase tracking-widest">{error}</p>
+      <AnimatePresence mode="wait">
+        <motion.section 
+          key={activeTab + activeBasket}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="flex-1 min-h-0"
+        >
+          {error ? (
+            <div className="bg-white rounded-[3.5rem] h-96 border-2 border-slate-100 flex flex-col items-center justify-center space-y-8 shadow-sm p-12">
+              <div className="p-8 bg-rose-500/10 border-2 border-rose-500/20 rounded-[2.5rem] text-rose-600 max-w-md text-center">
+                 <ShieldAlert className="h-12 w-12 mx-auto mb-6 animate-pulse" />
+                 <h2 className="text-xl font-black uppercase tracking-tighter mb-2 italic">Institutional Link Severed</h2>
+                 <p className="text-xs font-bold uppercase tracking-widest leading-relaxed opacity-80">{error}</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <button 
+                  onClick={() => { localStorage.removeItem('mb_api_override'); window.location.reload(); }} 
+                  className="px-12 py-5 bg-slate-ink text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-black transition-all active:scale-95 border border-white/5"
+                  style={{ backgroundColor: 'var(--slate-ink)' }}
+                >
+                  Authorize Node Reset
+                </button>
+                <Link to="/connect" className="px-10 py-5 bg-white border-2 border-slate-100 text-slate-400 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] hover:text-slate-950 transition-all">Connectivity Hub</Link>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <button 
-                onClick={() => { localStorage.removeItem('mb_api_override'); window.location.reload(); }} 
-                className="px-10 py-5 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-widest shadow-2xl hover:bg-black transition-all active:scale-95"
-              >
-                Reset Connection Node
-              </button>
-              <Link to="/connect" className="px-8 py-5 bg-white border-2 border-slate-100 text-slate-400 rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:text-slate-900 transition-all">Fix Connectivity</Link>
+          ) : (
+            <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-2xl flex flex-col overflow-hidden h-full relative group/table">
+               <div className="flex-1 overflow-auto custom-scrollbar">
+                  <TradeTable 
+                    trades={getTradesForTab()} 
+                    livePrices={stockPrices} 
+                    athData={stockATHs}
+                    capData={stockCaps}
+                    userWatchlist={(userWatchlist || []).map(w => w.symbol)}
+                    onToggleWatchlist={handleToggleWatchlist}
+                    onUpdateHolding={handleUpdateHolding}
+                    activeTab={activeTab}
+                    strategyId={strategyId}
+                  />
+               </div>
+               {/* Institutional Border Highlight */}
+               <div className="absolute inset-0 border-2 border-blue-600/0 group-hover/table:border-blue-600/5 rounded-[3.5rem] pointer-events-none transition-all duration-700" />
             </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col overflow-hidden h-full">
-             <div className="flex-1 overflow-auto custom-scrollbar">
-                <TradeTable 
-                  trades={getTradesForTab()} 
-                  livePrices={stockPrices} 
-                  athData={stockATHs}
-                  capData={stockCaps}
-                  userWatchlist={(userWatchlist || []).map(w => w.symbol)}
-                  onToggleWatchlist={handleToggleWatchlist}
-                  onUpdateHolding={handleUpdateHolding}
-                  activeTab={activeTab}
-                  strategyId={strategyId}
-                />
-             </div>
-          </div>
-        )}
-      </section>
+          )}
+        </motion.section>
+      </AnimatePresence>
 
       <BrokerHub isOpen={showBrokerHub} onClose={() => setShowBrokerHub(false)} onImportComplete={handleImportHoldings} />
     </div>
