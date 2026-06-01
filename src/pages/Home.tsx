@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 const HomePage: React.FC = () => {
+  console.log('🏠 [MarketBeacon] HomePage Rendering...');
   const [searchQuery, setSearchSearchQuery] = useState('');
   const navigate = useNavigate();
 
