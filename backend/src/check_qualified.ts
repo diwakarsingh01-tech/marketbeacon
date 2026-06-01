@@ -36,7 +36,7 @@ async function auditBaskets() {
 
       const result = calculateCupHandle(snap.quotes);
       
-      if (result && result.isBuyZone) {
+      if (result && result?.isBuyZone) {
         console.log(`✅ [QUALIFIED] ${sym} | Entry: ${result.entryPrice} | CMP: ${result.currentPrice} | Target: ${result.target} | Date: ${result.triggerDate}`);
         found++;
       }

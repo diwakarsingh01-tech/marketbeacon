@@ -52,7 +52,7 @@ async function runFinalAudit() {
   for (const sym of bluechip) {
     if (!snapshot[sym]) continue;
     const res = calculateSMAStacking(snapshot[sym].quotes);
-    if (res && res.isBuyZone) s4Count++;
+    if (res && res?.isBuyZone) s4Count++;
   }
   console.log(`S4 Signals in BLUECHIP: ${s4Count} - ${s4Count > 0 ? '✅ ACTIVE' : '⚠️ LOW SIGNALS'}`);
 
@@ -62,7 +62,7 @@ async function runFinalAudit() {
   for (const sym of bluechip) {
     if (!snapshot[sym]) continue;
     const res = calculate52WeekStrategy(snapshot[sym].quotes);
-    if (res && res.isBuyZone) s5Count++;
+    if (res && res?.isBuyZone) s5Count++;
   }
   console.log(`S5 Signals in BLUECHIP: ${s5Count} - ${s5Count > 0 ? '✅ ACTIVE' : '⚠️ LOW SIGNALS'}`);
 
@@ -72,7 +72,7 @@ async function runFinalAudit() {
   const testStocks = Object.keys(snapshot).slice(0, 100);
   for (const sym of testStocks) {
     const res = calculateSRStrategy(snapshot[sym].quotes);
-    if (res && res.isBuyZone) s6Count++;
+    if (res && res?.isBuyZone) s6Count++;
   }
   console.log(`S6 Signals in Sample 100: ${s6Count} - ${s6Count > 0 ? '✅ ACTIVE' : '⚠️ LOW SIGNALS'}`);
 

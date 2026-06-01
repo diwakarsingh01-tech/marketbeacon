@@ -38,7 +38,7 @@ async function deepAudit() {
 
     for (const s of testStrats) {
       const res = s.fn(quotes);
-      if (res && res.isBuyZone) {
+      if (res && res?.isBuyZone) {
         if (!res.triggerDate) {
           console.log(`❌ [ISSUE] ${sym} in ${s.id} is Qualified but MISSING triggerDate!`);
           totalIssues++;

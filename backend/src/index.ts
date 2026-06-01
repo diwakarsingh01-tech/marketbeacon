@@ -561,23 +561,24 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
         entryTime = new Date(snap.quotes[0].date).toISOString();
       }
 
-      results.push({ 
+      results.push({
         symbol: baseSymbol, 
         version: '11.0.0-PRO', 
         entryTime, 
         entryPrice, 
         strategy: strategyName,
         target: strategyData?.target || 0, 
-        currentPrice: lastQuote.close, 
-        isPass: audit.isPass, 
-        score: audit.score,
-        reason: audit.reason,
-        auditMetrics: audit.metrics,
+        currentPrice: lastQuote?.close, 
+        isPass: audit?.isPass, 
+        score: audit?.score,
+        reason: audit?.reason,
+        auditMetrics: audit?.metrics,
         isBuyZone: !!strategyData?.isBuyZone, 
-        marketCap: snap.quote.marketCap, 
-        sector: MANUAL_SECTOR_MAP[baseSymbol] || snap.screener?.industry || 'General', 
-        abcd: strategyData?.abcd || calculateABCDLevels(entryPrice || lastQuote.close, snap.quote.marketCap) 
+        marketCap: snap?.quote?.marketCap, 
+        sector: MANUAL_SECTOR_MAP[baseSymbol] || snap?.screener?.industry || 'General', 
+        abcd: strategyData?.abcd || calculateABCDLevels(entryPrice || lastQuote?.close, snap?.quote?.marketCap) 
       });
+
     }
 
     res.json({ 
@@ -653,7 +654,7 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     
     for (const id of stratIds) {
       const sd = snap.strategies?.[id] || runStrategyAnalysis(id, snap, snap.quote.marketCap);
-      if (sd && sd.isBuyZone) {
+      if (sd && sd?.isBuyZone) {
         qualifiedStrats.push({ name: STRATEGIES.find(s => s.id === id)?.name || id });
       }
     }
@@ -706,6 +707,16 @@ async function startServer() {
       res.status(404).json({ 
         error: `Route ${req.url} Not Found on MarketBeacon API`,
         hint: "This is a JSON error (Safe-Guard Rule #5). If you see this, the frontend hit a wrong endpoint."
+      });
+    });
+
+    // --- GLOBAL ERROR HANDLER (Safe-Guard Rule #6) ---
+    app.use((err: any, req: any, res: any, next: any) => {
+      console.error('🔥 [CRITICAL SERVER ERROR]:', err.stack);
+      res.status(500).json({ 
+        error: "Internal Server Fault", 
+        message: err.message,
+        hint: "MarketBeacon Pro has encountered a deep logic error. Please report this to the development team."
       });
     });
 

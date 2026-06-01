@@ -10,7 +10,7 @@ async function auditQualified() {
   let s3Count = 0;
   for (const sym of symbols) {
     const res = calculateBollingerBand(snapshot[sym].quotes);
-    if (res && res.isBuyZone) {
+    if (res && res?.isBuyZone) {
       console.log(`✅ ${sym} | Date: ${res.triggerDate} | Entry: ${res.entryPrice}`);
       s3Count++;
     }
@@ -21,7 +21,7 @@ async function auditQualified() {
   let s6Count = 0;
   for (const sym of symbols) {
     const res = calculateSRStrategy(snapshot[sym].quotes);
-    if (res && res.isBuyZone) {
+    if (res && res?.isBuyZone) {
       console.log(`✅ ${sym} | Date: ${res.triggerDate} | Entry: ${res.entryPrice}`);
       s6Count++;
     }
