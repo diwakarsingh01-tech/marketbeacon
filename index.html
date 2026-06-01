@@ -18,8 +18,32 @@
     <meta name="twitter:card" content="summary_large_image" />
     
     <script>
-      // Service Worker Disabled for Architectural Sync
-      console.log('🛡️ [Safe-Guard] Service Worker bypassed for recovery.');
+      // 🚀 [Institutional Safe-Guard] Force Cache & Service Worker Purge
+      (function() {
+        console.log('🛡️ [Safe-Guard] Executing Automated System Recovery...');
+        
+        // 1. Unregister all existing Service Workers immediately
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+              registration.unregister();
+              console.log('✅ Service Worker Unregistered.');
+            }
+          });
+        }
+
+        // 2. Clear all Caches
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            for (let name of names) caches.delete(name);
+            console.log('✅ Caches Purged.');
+          });
+        }
+
+        // 3. Clear corrupted LocalStorage keys if any
+        const corruptKeys = ['mb_api_override'];
+        corruptKeys.forEach(k => localStorage.removeItem(k));
+      })();
     </script>
   </head>
   <body>
