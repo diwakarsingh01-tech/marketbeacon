@@ -12,7 +12,8 @@ import {
   Zap,
   BarChart2,
   Lock,
-  ArrowUpRight
+  ArrowUpRight,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
@@ -40,27 +41,38 @@ const HomePage: React.FC = () => {
       const q = searchQuery.toUpperCase();
       const filtered = ALL_SYMBOLS.filter(s => 
         s.includes(q) || 
-        (q === 'SDFC' && s === 'HDFCBANK') || // TYPO Shield
+        (q === 'SDFC' && s === 'HDFCBANK') || 
         (q === 'HDFC' && s === 'HDFCBANK')
       ).slice(0, 5);
       setSuggestions(filtered);
     } else {
       setSuggestions([]);
     }
-  }, [searchQuery, ALL_SYMBOLS]);
+    // Auto-clear teaser if user starts typing a fresh query
+    if (teaserData && searchQuery !== teaserData.symbol) {
+       setTeaserData(null);
+    }
+  }, [searchQuery, ALL_SYMBOLS, teaserData]);
+
+  const handleReset = () => {
+    setSearchSearchQuery('');
+    setTeaserData(null);
+    setSuggestions([]);
+  };
 
   const handleSearch = async (e?: React.FormEvent, symbolOverride?: string) => {
     if (e) e.preventDefault();
     const finalQuery = symbolOverride || searchQuery;
     if (!finalQuery) return;
     
-    setSearchSearchQuery(finalQuery.toUpperCase());
+    const upQuery = finalQuery.toUpperCase();
+    setSearchSearchQuery(upQuery);
     setSuggestions([]);
     setIsSearching(true);
     setTeaserData(null);
     
     try {
-      const res = await fetch(`${API_URL}/api/public/analysis/${searchQuery.toUpperCase()}`);
+      const res = await fetch(`${API_URL}/api/public/analysis/${upQuery}`);
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) {
         setTeaserData(data);
@@ -150,7 +162,7 @@ const HomePage: React.FC = () => {
 
         {/* Hero Search Bar (CDO Engagement Feature) */}
         <div className="max-w-2xl mx-auto mb-16 relative group">
-          <form onSubmit={handleSearch} className="flex p-2 bg-slate-900/50 backdrop-blur-2xl border-2 border-slate-800 rounded-[2.5rem] focus-within:border-blue-600/50 transition-all shadow-2xl">
+          <form onSubmit={(e) => handleSearch(e)} className="flex p-2 bg-slate-900/50 backdrop-blur-2xl border-2 border-slate-800 rounded-[2.5rem] focus-within:border-blue-600/50 transition-all shadow-2xl relative">
             <div className="flex-1 flex items-center pl-6 gap-3">
               <Search className="w-5 h-5 text-slate-500" />
               <input 
@@ -160,6 +172,15 @@ const HomePage: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchSearchQuery(e.target.value)}
               />
+              {searchQuery && (
+                <button 
+                  type="button" 
+                  onClick={handleReset}
+                  className="p-2 mr-2 text-slate-500 hover:text-white transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
             <button type="submit" disabled={isSearching} className="px-8 py-4 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-xs hover:bg-blue-500 transition-all flex items-center gap-2">
               {isSearching ? 'Auditing...' : 'Instant Audit'} <ChevronRight className="w-4 h-4" />
@@ -168,7 +189,7 @@ const HomePage: React.FC = () => {
 
           {/* Institutional Suggestions Dropdown */}
           <AnimatePresence>
-            {suggestions.length > 0 && !teaserData && (
+            {suggestions.length > 0 && (
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
