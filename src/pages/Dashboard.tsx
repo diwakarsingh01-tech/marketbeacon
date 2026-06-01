@@ -338,6 +338,27 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     link.click();
   };
 
+  if (!data && isRefreshing) {
+    return (
+      <div className="flex-1 flex flex-col py-6 md:py-10 px-4 md:px-10 space-y-10 bg-[#f8fafc] animate-in fade-in duration-500">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-100 pb-10 gap-8">
+           <div className="space-y-4">
+              <div className="w-48 h-8 bg-slate-200 rounded-xl animate-pulse" />
+              <div className="w-64 h-12 bg-slate-200 rounded-2xl animate-pulse" />
+           </div>
+           <div className="flex gap-4">
+              <div className="w-32 h-12 bg-slate-200 rounded-2xl animate-pulse" />
+              <div className="w-32 h-12 bg-slate-200 rounded-2xl animate-pulse" />
+           </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+           {[1,2,3,4].map(i => <div key={i} className="h-32 bg-white rounded-[2.5rem] border border-slate-100 animate-pulse" />)}
+        </div>
+        <div className="h-96 bg-white rounded-[3.5rem] border border-slate-100 animate-pulse" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col py-6 md:py-10 px-4 md:px-10 space-y-10 bg-[#f8fafc] overflow-y-auto no-scrollbar">
       {/* Institutional Header (Safe-Guard Rule #9) */}

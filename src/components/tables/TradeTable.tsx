@@ -506,61 +506,89 @@ const TradeTable: React.FC<TradeTableProps> = ({
         </div>
       </div>
 
-      {/* Mobile Card View (Hardened) */}
+      {/* Mobile Card View (Safe-Guard Rule #10: Smart Insight Cards) */}
       <div className="md:hidden space-y-6">
-         {filteredAndSortedTrades.map((trade) => {
-           const isStarred = userWatchlist?.includes(trade.symbol);
-           return (
-            <motion.div 
-               key={trade.symbol} 
-               initial={{ opacity: 0, scale: 0.95 }}
-               animate={{ opacity: 1, scale: 1 }}
-               className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm space-y-6 relative overflow-hidden group"
-            >
-               <div className="flex justify-between items-start">
-                  <div className="flex items-center space-x-4">
-                     <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-all">
-                        <StarIcon className={`h-5 w-5 ${isStarred ? 'fill-current text-amber-400' : ''}`} />
-                     </button>
-                     <div>
-                        <h3 className="text-xl font-black text-slate-900 tracking-tighter leading-none">{trade.symbol}</h3>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{trade.sector}</p>
-                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                     <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-3 bg-blue-50 text-blue-600 rounded-2xl active:scale-90 transition-all"><Share2 className="h-5 w-5" /></button>
-                     <Link to={`/stock/${trade.symbol}`} className="p-3 bg-slate-50 text-slate-400 rounded-2xl"><ChevronRight className="h-5 w-5" /></Link>
-                  </div>
-               </div>
-               
-               <div className="flex justify-between items-end p-5 bg-slate-50 rounded-3xl border border-slate-100 shadow-inner">
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Signal Value</p>
-                    <p className="text-lg font-black text-slate-950 font-mono italic">₹{trade.livePrice?.toLocaleString()}</p>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest italic">Alpha Target</p>
-                    <p className="text-lg font-black text-emerald-600 font-mono italic">+{trade.targetGap?.toFixed(1)}%</p>
-                  </div>
-               </div>
+         <AnimatePresence>
+            {filteredAndSortedTrades.map((trade, idx) => {
+              const isStarred = userWatchlist?.includes(trade.symbol);
+              const capTag = getMarketCapTag(trade.marketCap, trade.symbol);
+              
+              return (
+                <motion.div 
+                   key={trade.symbol} 
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   transition={{ delay: idx * 0.05 }}
+                   whileTap={{ scale: 0.98 }}
+                   className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/50 space-y-6 relative overflow-hidden group"
+                >
+                   {/* Card Background Pattern */}
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-blue-500/10 transition-all duration-700" />
+                   
+                   <div className="flex justify-between items-start relative z-10">
+                      <div className="flex items-center space-x-4">
+                         <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="p-2 -ml-2 text-slate-200 hover:text-amber-400 transition-all">
+                            <StarIcon className={`h-6 w-6 ${isStarred ? 'fill-current text-amber-400' : ''}`} />
+                         </button>
+                         <div>
+                            <h3 className="text-2xl font-black text-slate-950 tracking-tighter leading-none italic">{trade.symbol}</h3>
+                            <div className="flex items-center gap-2 mt-2">
+                               <span className={`px-2 py-0.5 rounded text-[7px] font-black border tracking-widest ${capTag.class}`}>{capTag.label}</span>
+                               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{trade.sector}</span>
+                            </div>
+                         </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                         <button 
+                            onClick={() => handleShareSignal(trade, 'telegram')} 
+                            className="p-3 bg-blue-50 text-blue-600 rounded-2xl active:scale-90 transition-all shadow-sm border border-blue-100"
+                         >
+                            <Share2 className="h-5 w-5" />
+                         </button>
+                         <Link 
+                            to={`/stock/${trade.symbol}`} 
+                            className="p-3 bg-slate-INK text-white rounded-2xl shadow-xl shadow-slate-900/20 active:scale-90 transition-all"
+                            style={{ backgroundColor: 'var(--slate-ink)' }}
+                         >
+                            <ChevronRight className="h-5 w-5" />
+                         </Link>
+                      </div>
+                   </div>
+                   
+                   <div className="grid grid-cols-2 gap-4 relative z-10">
+                      <div className="p-5 bg-slate-50/80 backdrop-blur-sm rounded-[2rem] border border-slate-100 flex flex-col justify-center space-y-1">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Signal Base</p>
+                        <p className="text-xl font-black text-slate-950 font-mono italic">₹{trade.entryPrice?.toLocaleString()}</p>
+                      </div>
+                      <div className="p-5 bg-blue-500/5 backdrop-blur-sm rounded-[2rem] border border-blue-500/10 flex flex-col justify-center space-y-1 text-right">
+                        <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest italic">Current Node</p>
+                        <p className="text-xl font-black text-blue-600 font-mono italic">₹{trade.livePrice?.toLocaleString()}</p>
+                      </div>
+                   </div>
 
-               <div className="flex items-center justify-between px-2">
-                  <div className="flex items-center gap-3">
-                    <CircularGauge value={trade.score} size={40} />
-                    <div className="flex flex-col">
-                       <span className={`text-[11px] font-black uppercase italic tracking-tighter ${trade.isPass !== false ? 'text-emerald-600' : 'text-orange-500'}`}>
-                         {trade.isPass !== false ? 'Qualified Node' : 'Observation Node'}
-                       </span>
-                       <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Audit Score: {trade.score}/100</span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-black text-slate-300 uppercase italic opacity-60">
-                    {trade.entryTime && trade.entryTime !== '-' ? new Date(trade.entryTime).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }) : ''}
-                  </span>
-               </div>
-            </motion.div>
-           );
-         })}
+                   <div className="flex items-center justify-between px-2 pt-2 relative z-10">
+                      <div className="flex items-center gap-4">
+                        <CircularGauge value={trade.score} size={48} strokeWidth={4} />
+                        <div className="flex flex-col">
+                           <span className={`text-[11px] font-black uppercase italic tracking-tighter ${trade.isPass !== false ? 'text-emerald-600' : 'text-orange-500'}`}>
+                             {trade.isPass !== false ? 'Institutional Pass' : 'Logic Observation'}
+                           </span>
+                           <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className={`text-sm font-black italic ${trade.targetGap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {trade.targetGap >= 0 ? '+' : ''}{trade.targetGap?.toFixed(1)}% Alpha
+                              </span>
+                           </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-60">Entry Window</span>
+                        <p className="text-xs font-black text-orange-600 font-mono">{trade.entryPrice > 0 ? (((trade.livePrice - trade.entryPrice)/trade.entryPrice) * 100).toFixed(1) : '0.0'}%</p>
+                      </div>
+                   </div>
+                </motion.div>
+              );
+            })}
+         </AnimatePresence>
       </div>
     </div>
   );
