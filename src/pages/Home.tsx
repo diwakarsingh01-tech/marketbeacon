@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, 
@@ -17,18 +17,45 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
+import { BASKETS } from '../data/stocks';
+
 const API_URL = getApiUrl();
 
 const HomePage: React.FC = () => {
   const [searchQuery, setSearchSearchQuery] = useState('');
   const [teaserData, setTeaserData] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const navigate = useNavigate();
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery) return;
+  // Unified Institutional Symbol List
+  const ALL_SYMBOLS = useMemo(() => {
+    const syms = new Set<string>();
+    Object.values(BASKETS).forEach(list => list.forEach(s => syms.add(s)));
+    return Array.from(syms);
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery.length >= 2) {
+      const q = searchQuery.toUpperCase();
+      const filtered = ALL_SYMBOLS.filter(s => 
+        s.includes(q) || 
+        (q === 'SDFC' && s === 'HDFCBANK') || // TYPO Shield
+        (q === 'HDFC' && s === 'HDFCBANK')
+      ).slice(0, 5);
+      setSuggestions(filtered);
+    } else {
+      setSuggestions([]);
+    }
+  }, [searchQuery, ALL_SYMBOLS]);
+
+  const handleSearch = async (e?: React.FormEvent, symbolOverride?: string) => {
+    if (e) e.preventDefault();
+    const finalQuery = symbolOverride || searchQuery;
+    if (!finalQuery) return;
     
+    setSearchSearchQuery(finalQuery.toUpperCase());
+    setSuggestions([]);
     setIsSearching(true);
     setTeaserData(null);
     
@@ -138,6 +165,32 @@ const HomePage: React.FC = () => {
               {isSearching ? 'Auditing...' : 'Instant Audit'} <ChevronRight className="w-4 h-4" />
             </button>
           </form>
+
+          {/* Institutional Suggestions Dropdown */}
+          <AnimatePresence>
+            {suggestions.length > 0 && !teaserData && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-full left-0 w-full mt-2 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden z-[70] shadow-2xl"
+              >
+                {suggestions.map((sym) => (
+                  <button
+                    key={sym}
+                    onClick={() => handleSearch(undefined, sym)}
+                    className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-white/5 last:border-none group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Zap className="w-4 h-4 text-blue-500 group-hover:animate-pulse" />
+                      <span className="text-sm font-black text-white uppercase tracking-widest">{sym}</span>
+                    </div>
+                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic group-hover:text-blue-400">Institutional Node</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* INSTANT TEASER AUDIT CARD (Safe-Guard Rule #11) */}
           <AnimatePresence>
