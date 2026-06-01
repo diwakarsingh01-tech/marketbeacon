@@ -75,8 +75,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     observation: true,
     symbol: true,
-    strategy: true,
-    sector: true,
     marketCap: true,
     abcd: true,
     basePrice: true,
@@ -96,8 +94,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
     setVisibleColumns({
       observation: !isWatchlistTab && !isPortfolioTab,
       symbol: true,
-      strategy: !isWatchlistTab && !isPortfolioTab,
-      sector: true,
       marketCap: true,
       abcd: !isWatchlistTab && !isPortfolioTab && !isSpecialStrat,
       basePrice: !isWatchlistTab && !isPortfolioTab,
@@ -355,13 +351,15 @@ const TradeTable: React.FC<TradeTableProps> = ({
                            transition={{ delay: idx * 0.02 }}
                            className="hover:bg-slate-50/50 transition-all font-black text-[11px] group divide-x divide-slate-50"
                         >
-                          <td className="px-10 py-6 text-left flex items-center space-x-5">
-                            <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-all active:scale-90">
-                               <StarIcon className={`h-4.5 w-4.5 ${isStarred ? 'fill-current text-amber-400' : ''}`} />
-                            </button>
-                            <div className="flex flex-col font-sans">
-                               <span className="text-base font-black text-slate-900 group-hover:text-blue-600 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
-                               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1.5">{trade.sector}</span>
+                          <td className="px-10 py-6 text-left">
+                            <div className="flex items-center space-x-5">
+                              <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-all active:scale-90">
+                                 <StarIcon className={`h-4.5 w-4.5 ${isStarred ? 'fill-current text-amber-400' : ''}`} />
+                              </button>
+                              <div className="flex flex-col font-sans">
+                                 <span className="text-base font-black text-slate-900 group-hover:text-blue-600 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
+                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1.5">{trade.sector}</span>
+                              </div>
                             </div>
                           </td>
                           <td className="px-8 py-6 text-center">
@@ -406,18 +404,20 @@ const TradeTable: React.FC<TradeTableProps> = ({
                           </td>
                         )}
                         {visibleColumns.symbol && (
-                          <td className="px-8 py-6 flex items-center space-x-4">
-                             <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-all active:scale-90">
-                                <StarIcon className={`h-4.5 w-4.5 ${isStarred ? 'fill-current text-amber-400' : ''}`} />
-                             </button>
-                             <div className="flex flex-col font-sans">
-                                <span className="text-base font-black text-slate-950 group-hover:text-blue-600 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1.5">{trade.sector}</span>
-                             </div>
-                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-auto pr-2">
-                                <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Share2 className="h-3.5 w-3.5" /></button>
-                                <Link to={`/stock/${trade.symbol}`} className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-INK hover:text-white transition-all"><ExternalLink className="h-3.5 w-3.5" /></Link>
-                             </div>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center space-x-4">
+                               <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-all active:scale-90">
+                                  <StarIcon className={`h-4.5 w-4.5 ${isStarred ? 'fill-current text-amber-400' : ''}`} />
+                               </button>
+                               <div className="flex flex-col font-sans">
+                                  <span className="text-base font-black text-slate-950 group-hover:text-blue-600 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
+                                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1.5">{trade.sector}</span>
+                               </div>
+                               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-auto pr-2">
+                                  <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"><Share2 className="h-3.5 w-3.5" /></button>
+                                  <Link to={`/stock/${trade.symbol}`} className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-INK hover:text-white transition-all"><ExternalLink className="h-3.5 w-3.5" /></Link>
+                               </div>
+                            </div>
                           </td>
                         )}
                         {visibleColumns.marketCap && (
@@ -426,7 +426,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                           </td>
                         )}
                         {visibleColumns.abcd && (
-                          <td className="px-8 py-6 group/ladder relative">
+                          <td className="px-8 py-6 text-center group/ladder relative">
                             <div className="flex items-center justify-center space-x-2 cursor-help">
                               {['a', 'b', 'c', 'd'].map((l) => {
                                 const levelVal = trade.abcd?.[l] || 0;
