@@ -640,13 +640,18 @@ app.get('/api/stock-prices', async (req, res) => {
 // --- PUBLIC ANALYSIS ENGINE (Viral Acquisition) ---
 app.get('/api/public/analysis/:symbol', async (req, res) => {
   try {
-    const { symbol } = req.params;
+    let { symbol } = req.params;
+    symbol = symbol.toUpperCase();
+    
     const snapshot = getMarketSnapshot();
-    const snap = snapshot[symbol];
+    
+    // Institutional Suffix Shield
+    let snap = snapshot[symbol] || snapshot[`${symbol}.NS`] || snapshot[`${symbol}.BO`];
+    const actualSymbol = snapshot[symbol] ? symbol : (snapshot[`${symbol}.NS`] ? `${symbol}.NS` : `${symbol}.BO`);
     
     if (!snap) return res.status(404).json({ error: 'Stock not found' });
 
-    const audit = await validateBatch9(symbol, snap, 'ALL');
+    const audit = await validateBatch9(actualSymbol, snap, 'ALL');
     
     // Extract a few qualified strategies for the teaser
     const qualifiedStrats = [];
