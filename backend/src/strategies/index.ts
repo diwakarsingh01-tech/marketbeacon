@@ -79,7 +79,7 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
   }
 
   // "Qualified" means it hit the floor and is still within 5% of entry
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
@@ -167,7 +167,7 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
   else { activeTranche = 'WATCHLIST'; }
 
   return {
-    isBuyZone: isBuyZone && currentPrice <= activeEntry * 1.05,
+    isBuyZone: isBuyZone && currentPrice <= activeEntry * 1.02,
     tranche: activeTranche,
     entryPrice: activeEntry, 
     target: finalTarget,
@@ -222,7 +222,7 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd
     }
   }
 
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
@@ -274,8 +274,8 @@ export function calculateSMAStacking(quotes: Quote[]) {
     }
   }
 
-  // Institutional Buy-Zone Rule: Within 5% of deep depressed entry
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+  // Institutional Buy-Zone Rule: Within 2% of deep depressed entry
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
@@ -328,8 +328,8 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
   const currentYear = quotes.slice(-252);
   const currentHigh52 = Math.max(...currentYear.map(q => q.high));
 
-  // Institutional Buy-Zone Rule: Within 5% of 52W low entry
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+  // Institutional Buy-Zone Rule: Within 2% of 52W low entry
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
@@ -349,85 +349,84 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
  * 4. Fundamental: Current Net Profit must be >= Profit during previous support touch.
  */
 export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
+  // Strategy #10: LOCKED INSTITUTIONAL BOX RULE (S-R-S-R-S)
+  // v1.0 - Sequential 5-Point Validation
   if (!quotes || quotes.length < 500) return { isBuyZone: false };
 
-  const prices = quotes.map(q => q.close);
-  const currentPrice = prices[prices.length - 1];
+  const currentPrice = quotes[quotes.length - 1].close;
   const window = 10;
-  
-  // 1. Detect Pivots
-  const pivotLows: { price: number, idx: number, date: string }[] = [];
-  const pivotHighs: { price: number, idx: number, date: string }[] = [];
+  const pivots: { price: number, date: string, type: 'S' | 'R' }[] = [];
   
   for (let i = window; i < quotes.length - window; i++) {
     const lowSlice = quotes.slice(i - window, i + window + 1).map(q => q.low);
     const highSlice = quotes.slice(i - window, i + window + 1).map(q => q.high);
-    
     if (quotes[i].low === Math.min(...lowSlice)) {
-      const dateVal = quotes[i].date;
-      const dateStr = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
-      pivotLows.push({ price: quotes[i].low, idx: i, date: dateStr });
+      const d = quotes[i].date;
+      const dStr = (typeof d === 'string' ? d : (d as Date).toISOString()).split('T')[0];
+      pivots.push({ price: quotes[i].low, date: dStr, type: 'S' });
     }
     if (quotes[i].high === Math.max(...highSlice)) {
-      const dateVal = quotes[i].date;
-      const dateStr = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
-      pivotHighs.push({ price: quotes[i].high, idx: i, date: dateStr });
+      const d = quotes[i].date;
+      const dStr = (typeof d === 'string' ? d : (d as Date).toISOString()).split('T')[0];
+      pivots.push({ price: quotes[i].high, date: dStr, type: 'R' });
     }
   }
 
-  // 2. Cluster Zones (4% Tolerance)
-  const cluster = (pivots: typeof pivotLows, tolerance: number = 0.04) => {
-    const zones: { mid: number, touches: number, lastIdx: number, lastDate: string }[] = [];
-    for (const p of pivots) {
+  const cluster = (type: 'S' | 'R', tolerance: number = 0.04) => {
+    const zones: any[] = [];
+    const filtered = pivots.filter(p => p.type === type);
+    for (const p of filtered) {
       let found = false;
       for (const z of zones) {
         if (Math.abs(p.price - z.mid) / z.mid <= tolerance) {
           z.mid = (z.mid * z.touches + p.price) / (z.touches + 1);
           z.touches++;
-          z.lastIdx = p.idx;
-          z.lastDate = p.date;
           found = true;
           break;
         }
       }
-      if (!found) zones.push({ mid: p.price, touches: 1, lastIdx: p.idx, lastDate: p.date });
+      if (!found) zones.push({ mid: p.price, touches: 1 });
     }
     return zones;
   };
 
-  const supportZones = cluster(pivotLows).filter(z => z.touches >= 2);
-  const resistanceZones = cluster(pivotHighs);
+  const sCandidateLevels = cluster('S').filter(z => z.touches >= 3);
+  const rCandidateLevels = cluster('R').filter(z => z.touches >= 2);
 
-  // 3. Find Active Support
-  const activeSupport = supportZones.find(z => Math.abs(currentPrice - z.mid) / z.mid <= 0.05);
-  if (!activeSupport) return { isBuyZone: false };
+  for (const sl of sCandidateLevels) {
+    for (const rl of rCandidateLevels) {
+      const gap = (rl.mid / sl.mid) - 1;
+      if (gap < 0.30) continue;
 
-  // 4. Upside Check (Min 30%)
-  const nearestResistance = resistanceZones
-    .filter(z => z.mid > activeSupport.mid)
-    .sort((a, b) => a.mid - b.mid)[0];
-    
-  if (!nearestResistance || (nearestResistance.mid / activeSupport.mid - 1) < 0.30) {
-    return { isBuyZone: false };
+      const inS = (p: any) => Math.abs(p.price - sl.mid) / sl.mid <= 0.05;
+      const inR = (p: any) => Math.abs(p.price - rl.mid) / rl.mid <= 0.05;
+      const relevantPivots = pivots.filter(p => inS(p) || inR(p));
+      
+      let sequence: any[] = [];
+      let state = 'S1';
+      for (const p of relevantPivots) {
+        if (state === 'S1' && inS(p)) { sequence = [p]; state = 'R1'; }
+        else if (state === 'R1' && inR(p)) { sequence.push(p); state = 'S2'; }
+        else if (state === 'S2' && inS(p)) { sequence.push(p); state = 'R2'; }
+        else if (state === 'R2' && inR(p)) { sequence.push(p); state = 'S3'; }
+        else if (state === 'S3' && inS(p)) { sequence.push(p); state = 'DONE'; }
+      }
+
+      if (state === 'DONE') {
+        if (Math.abs(currentPrice - sl.mid) / sl.mid <= 0.07) {
+          return {
+            isBuyZone: true,
+            entryPrice: Math.round(sl.mid),
+            target: Math.round(rl.mid),
+            currentPrice: Math.round(currentPrice),
+            triggerDate: sequence[sequence.length-1].date,
+            isLocked: true // Structural Lock Active
+          };
+        }
+      }
+    }
   }
-
-  // 5. Fundamental Check (Optional if screenerData provided)
-  // Logic: Current Profit >= Profit at previous support touch
-  if (screenerData?.historicalNetProfits && screenerData.historicalNetProfits.length > 0) {
-    const currentProfit = screenerData.currentNetProfit || 0;
-    // Rough estimation: find which year the last support touch happened
-    // This is a simplified version of the rule
-    const avgHistoricalProfit = screenerData.historicalNetProfits.reduce((a: number, b: number) => a + b, 0) / screenerData.historicalNetProfits.length;
-    if (currentProfit < avgHistoricalProfit * 0.90) return { isBuyZone: false };
-  }
-
-  return {
-    isBuyZone: true,
-    entryPrice: Math.round(activeSupport.mid),
-    target: Math.round(nearestResistance.mid),
-    currentPrice: Math.round(currentPrice),
-    triggerDate: activeSupport.lastDate
-  };
+  return { isBuyZone: false };
 }
 
 /**
@@ -524,7 +523,7 @@ export function calculateRHS(quotes: Quote[]) {
     }
   }
 
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
 
   return { 
     isBuyZone: isActuallyInBuyRange, 
@@ -614,7 +613,7 @@ export function calculateCupHandle(quotes: Quote[]) {
     }
   }
 
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
 
   return { 
     isBuyZone: isActuallyInBuyRange, 
@@ -657,7 +656,7 @@ export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any, bas
     }
   }
 
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
 
   return { 
     isBuyZone: isActuallyInBuyRange, 
@@ -696,7 +695,7 @@ export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
 
   if (!rallyFound || barsSinceRally > 252) return null; 
 
-  const isRetesting = currentPrice <= rallyOrigin * 1.05 && currentPrice >= rallyOrigin * 0.95;
+  const isRetesting = currentPrice <= rallyOrigin * 1.02 && currentPrice >= rallyOrigin * 0.98;
   const verdict = isRetesting ? 'QUALIFIED' : 'WATCHLIST';
 
   return {

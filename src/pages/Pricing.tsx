@@ -22,6 +22,16 @@ const PricingPage: React.FC = () => {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [selectedTier, setSelectedTier] = useState<'pro' | 'alpha'>('pro');
 
+  React.useEffect(() => {
+    const linkCanonical = document.createElement('link');
+    linkCanonical.rel = 'canonical';
+    linkCanonical.href = 'https://marketbeacon.pro/pricing';
+    document.head.appendChild(linkCanonical);
+    return () => {
+      document.head.removeChild(linkCanonical);
+    };
+  }, []);
+
   const handleRedeemVoucher = async () => {
     if (!voucherCode) return;
     setRedeemning(true);

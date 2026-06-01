@@ -40,13 +40,24 @@ app.use(express.json({ limit: '100mb' }));
 // --- API HARDENING (30,000 User Capacity) ---
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 5000, // Increased for institutional traffic
+  max: 50000, // Temporarily increased for stress testing
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Please try again later.' }
 });
 
 app.use('/api/', limiter);
+
+// --- AUTH HARDENING (Brute Force Protection) ---
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 Hour
+  max: 20, // Only 20 login attempts per hour
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts. Please try again after an hour.' }
+});
+
+app.use('/api/auth/', authLimiter);
 
 // --- REQUEST LOGGER (Safe-Guard Rule #5) ---
 app.use((req, res, next) => {
@@ -157,8 +168,9 @@ const authenticateToken = async (req: any, res: any, next: any) => {
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
     const db = getDB();
-    const user = await db.get('SELECT id, email, name, role, tier, subscription_expiry FROM users WHERE id = ?', [decoded.id]);
+    const user = await db.get('SELECT id, email, name, role, tier, subscription_expiry, is_active FROM users WHERE id = ?', [decoded.id]);
     if (!user) return res.status(403).json({ error: 'User not found.' });
+    if (!user.is_active) return res.status(403).json({ error: 'Account is deactivated. Contact support.' });
     
     // Normalize and Override for Admins
     const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase());
@@ -210,45 +222,69 @@ app.post('/api/payments/manual-request', authenticateToken, async (req: any, res
 });
 
 app.post('/api/auth/google', async (req, res) => {
+  const start = Date.now();
   try {
-    const { token: credential, email: manualEmail } = req.body;
+    const { token: credential } = req.body;
 
     let email, name;
 
-    if (manualEmail && ADMIN_EMAILS.includes(manualEmail.toLowerCase())) {
-      email = manualEmail.toLowerCase();
-      name = "Ajay Thomas John (Admin)";
-    } else {
-      const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
-      const payload = ticket.getPayload();
-      if (!payload) throw new Error('Invalid Google Token');
-      email = payload.email.toLowerCase();
-      name = payload.name;
-    }
-    
+    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
+    const payload = ticket.getPayload();
+    if (!payload) throw new Error('Invalid Google Token');
+    email = payload.email.toLowerCase();
+    name = payload.name;
+
     const db = getDB();
     let user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
-    
+
     const isAdmin = ADMIN_EMAILS.includes(email);
     const role = isAdmin ? 'admin' : 'user';
     const tier = isAdmin ? 'alpha' : 'free';
 
     if (!user) {
-      await db.run(
-        'INSERT INTO users (name, email, password, role, tier, is_active) VALUES (?, ?, ?, ?, ?, ?)', 
+      console.log(`🆕 [AUTH] Creating new user: ${email}`);
+      const result = await db.run(
+        'INSERT INTO users (name, email, password, role, tier, is_active) VALUES (?, ?, ?, ?, ?, ?)',
         [name, email, 'GOOGLE', role, tier, 1]
       );
-      user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+      user = { id: result.lastID, name, email, role, tier, is_active: 1 };
     } else if (isAdmin && user.role !== 'admin') {
+      console.log(`🛡️ [AUTH] Upgrading to Admin: ${email}`);
       await db.run('UPDATE users SET role = "admin", tier = "alpha", is_active = 1 WHERE id = ?', [user.id]);
-      user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+      user = { ...user, role: 'admin', tier: 'alpha' };
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
-    res.json({ token, user: { ...user, role, tier } });
-  } catch (e: any) { 
-    console.error('[AUTH ERROR]', e.message);
-    res.status(500).json({ error: `Auth Error: ${e.message}` }); 
+    console.log(`✅ [AUTH] Google Login Success: ${email} (${Date.now() - start}ms)`);
+    res.json({ token, user: { ...user, role: user.role, tier: user.tier } });
+  } catch (e: any) {
+    console.error(`❌ [AUTH ERROR] Google Login Failed (${Date.now() - start}ms):`, e.message);
+    res.status(500).json({ error: `Auth Error: ${e.message}` });
+  }
+});
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ error: 'All fields are required' });
+
+    const db = getDB();
+    const existing = await db.get('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
+    if (existing) return res.status(400).json({ error: 'Email already registered' });
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+    const role = isAdmin ? 'admin' : 'user';
+    const tier = isAdmin ? 'alpha' : 'free';
+
+    const result = await db.run(
+      'INSERT INTO users (name, email, password, role, tier, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email.toLowerCase(), hashedPassword, role, tier, 1]
+    );
+
+    const token = jwt.sign({ id: result.lastID, role }, JWT_SECRET);
+    res.json({ token, user: { id: result.lastID, name, email: email.toLowerCase(), role, tier } });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -270,6 +306,45 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/auth/me', authenticateToken, (req: any, res) => {
   res.json(req.user);
+});
+
+// --- VOUCHER REDEMPTION ENGINE ---
+app.post('/api/user/redeem-voucher', authenticateToken, async (req: any, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Voucher code is required' });
+
+    const db = getDB();
+    
+    // 1. Validate Voucher
+    const voucher = await db.get('SELECT * FROM vouchers WHERE code = ? AND is_active = 1', [code.toUpperCase()]);
+    if (!voucher) return res.status(404).json({ error: 'Invalid or expired voucher code' });
+
+    if (voucher.current_uses >= voucher.max_uses) {
+      return res.status(400).json({ error: 'Voucher usage limit reached' });
+    }
+
+    // 2. Check for Previous Redemption
+    const existing = await db.get('SELECT * FROM voucher_redemptions WHERE voucher_id = ? AND user_id = ?', [voucher.id, req.user.id]);
+    if (existing) return res.status(400).json({ error: 'You have already redeemed this voucher' });
+
+    // 3. Process Redemption
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + (voucher.duration_days || 7));
+
+    await db.batch([
+      { sql: 'UPDATE vouchers SET current_uses = current_uses + 1 WHERE id = ?', args: [voucher.id] },
+      { sql: 'INSERT INTO voucher_redemptions (voucher_id, user_id) VALUES (?, ?)', args: [voucher.id, req.user.id] },
+      { sql: 'UPDATE users SET tier = ?, subscription_expiry = ?, is_active = 1 WHERE id = ?', args: [voucher.tier, expiry.toISOString(), req.user.id] }
+    ]);
+
+    console.log(`🎁 [VOUCHER] User ${req.user.email} redeemed ${code} (Tier: ${voucher.tier})`);
+    res.json({ success: true, tier: voucher.tier, expiry: expiry.toISOString() });
+
+  } catch (e: any) {
+    console.error('🔥 [Voucher Error]:', e.message);
+    res.status(500).json({ error: 'Failed to redeem voucher. System node error.' });
+  }
 });
 
 // --- ADMIN ENDPOINTS ---
@@ -662,29 +737,50 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     let snap = snapshot[symbol] || snapshot[`${symbol}.NS`] || snapshot[`${symbol}.BO`];
     const actualSymbol = snapshot[symbol] ? symbol : (snapshot[`${symbol}.NS`] ? `${symbol}.NS` : `${symbol}.BO`);
     
+    // SCALABILITY FIX: On-Demand Growth Node (Safe-Guard Rule #15)
+    if (!snap && NIFTY_500.includes(`${symbol}.NS`)) {
+      console.log(`🚀 [GLOBAL SEARCH] Symbol ${symbol} not in cache. Triggering on-demand node audit...`);
+      // Trigger background update but don't wait for it for the teaser
+      updateMarketSnapshot([symbol]).catch(e => console.error('On-Demand Audit Failed:', e));
+      return res.status(202).json({ 
+        error: 'Node warming up', 
+        hint: `Symbol ${symbol} is in Nifty 500 but data is being audited. Please refresh in 30 seconds.` 
+      });
+    }
+
     if (!snap) return res.status(404).json({ error: 'Stock not found' });
 
     const audit = await validateBatch9(actualSymbol, snap, 'ALL');
     
-    // Extract a few qualified strategies for the teaser
+    // Extract ALL qualified strategies for the teaser
     const qualifiedStrats = [];
-    const stratIds = ['ENVELOPE_LONG', 'SMA_ABCD', '52W_HIGH_LOW', 'BOLLINGER'];
-    
-    for (const id of stratIds) {
+    for (const strat of STRATEGIES) {
+      const id = strat.id;
       const sd = snap.strategies?.[id] || runStrategyAnalysis(id, snap, snap.quote.marketCap);
       if (sd && sd?.isBuyZone) {
-        qualifiedStrats.push({ name: STRATEGIES.find(s => s.id === id)?.name || id });
+        qualifiedStrats.push({ id, name: strat.name });
+      }
+    }
+
+    // Identify Basket
+    let basket = 'Nifty 500';
+    for (const b in BASKETS) {
+      if (BASKETS[b].includes(symbol)) {
+        basket = b;
+        break;
       }
     }
 
     const publicData = {
       symbol,
       score: audit.score,
+      isPass: audit.score >= 70, // Institutional Threshold
       smartMoney: audit.smartMoneyTotal,
       marketCap: snap.quote.marketCap,
+      basket,
       upside: 30, // Pro-form target
       risk: audit.score >= 80 ? 'Low' : 'Moderate',
-      strategies: qualifiedStrats.slice(0, 2) // Teaser only
+      strategies: qualifiedStrats // Returning all qualified strategies
     };
 
     const body = JSON.stringify(publicData);

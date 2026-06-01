@@ -17,155 +17,52 @@ const StrategyEducation: React.FC = () => {
   const [activeTab, setActiveTab] = useState('fundamentals');
 
   const lessons = [
-    {
-      id: 'fundamentals',
-      title: 'End-to-End Core Rules',
-      icon: ShieldCheck,
-      color: 'text-emerald-600',
-      category: 'Selection',
-      content: {
-        logic: 'The complete Institutional-Grade Alpha 40 constraints applied to all system portfolios.',
-        checks: [
-          'Market Caps: Large (≥ 45,000 Cr), Mid (≥ 15,000 Cr), Small (< 15,000 Cr).',
-          'Fundamental Audit: Minimum 70/100 Score. D/E ≤ 0.2 (except BFSI). Pledged < 2%.',
-          'Entry Window: Upside strictly capped at 2.0%. Drawdowns allowed up to 30.0%.',
-          'Dynamic Allocation: Large Cap (50%), Mid Cap (30%), Small Cap (20%) strictly enforced.',
-          'Sector Hardening: Maximum 20% exposure to any single industry.'
-        ],
-        drawdown: 'Ensure discipline during accumulation (A, B, C, D tranches) down to -30%.'
-      }
-    },
-    {
-      id: 'envelope',
-      title: 'Institutional Floor',
-      icon: Target,
-      color: 'text-blue-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Identifies institutional demand zones based on statistical deviation benchmarks.',
-        entry: 'Price touches or closes near the lower research boundary.',
-        exit: 'Model Objective is the mathematical recovery to the upper benchmark.',
-        tranches: 'Accumulation starts at Tranche A, with B/C/D laddering if price falls further.'
-      }
-    },
-    {
-      id: 'short_envelope',
-      title: 'Momentum Ceiling',
-      icon: TrendingUp,
-      color: 'text-indigo-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Participation model for stocks in strong primary uptrends.',
-        entry: 'Research entry at the secondary regression line (EMA 200).',
-        exit: 'Model Objective is a +14% recovery move.',
-        notes: 'Focused on high-momentum names that rarely revisit deep discount zones.'
-      }
-    },
-    {
-      id: 'bollinger',
-      title: 'Volatility Channel',
-      icon: BarChart3,
-      color: 'text-emerald-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Mean reversion model based on statistical volatility boundaries.',
-        entry: 'Price reaches the lower volatility research band.',
-        exit: 'Model Objective is the upper volatility benchmark.',
-        risk: 'Risk is managed by verifying a narrow low-volatility squeeze before entry.'
-      }
-    },
-    {
-      id: 'quantum',
-      title: 'Quantum Stacking',
-      icon: Layers,
-      color: 'text-purple-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Identifies extreme exhaustion zones through moving average convergence.',
-        accumulation: 'Bearish Stacking (Price < SMA 20 < SMA 50 < SMA 200).',
-        objective: 'Full structural reversal (Model Objective reached).',
-        caveat: 'Requires 100-point fundamental confirmation to avoid value traps.'
-      }
-    },
-    {
-      id: 'annual',
-      title: 'Annual Range Matrix',
-      icon: Calendar,
-      color: 'text-rose-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Mean reversion system based on annual price extremes.',
-        accumulation: 'Accumulation at the 52-week statistical low.',
-        objective: 'Research objective at the 52-week statistical high.',
-        intent: 'Elite bluechips frequently rebound from annual support levels.'
-      }
-    },
-    {
-      id: 'recovery',
-      title: 'Deep Recovery Audit',
-      icon: ShieldCheck,
-      color: 'text-amber-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Capitalizes on the proprietary 67% All-Time High reset cycle.',
-        entry: 'Drawdown >= 66% with improving fundamental financials.',
-        exit: 'Model Objective is the return to the previous peak.',
-        audit: 'Requires institutional ownership matrix > 75%.'
-      }
-    },
-    {
-      id: 'velocity',
-      title: 'Velocity Retest',
-      icon: Zap,
-      color: 'text-blue-50',
-      category: 'Strategy',
-      content: {
-        logic: 'Identifies high-momentum bursts and enters on the origin retest.',
-        entry: 'Retest of the Rally Start Low within 1 year of the rally.',
-        exit: 'Model Objective is the previous rally peak price.',
-        risk: 'Entry valid only if the rally started below the 200 DMA safety line.'
-      }
-    },
-    {
-      id: 'pivot',
-      title: 'Structural Pivot',
-      icon: Target,
-      color: 'text-orange-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Rounded accumulation phase followed by breakout confirmation.',
-        structure: 'U-shaped base (Cup) and low-volatility handle formation.',
-        accuracy: 'Lips must be perfectly aligned within 5% price variance.',
-        abcd_rule: 'Algorithmic entry preferred at B/C/D levels for optimal risk-reward.'
-      }
-    },
-    {
-      id: 'reversal',
-      title: 'Dynamic Reversal',
-      icon: TrendingUp,
-      color: 'text-cyan-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Geometric identification of trend exhaustion and reversal.',
-        structure: 'Multi-pivot structure (Shoulder-Head-Shoulder sequence).',
-        accuracy: 'Structural symmetry must be > 95% for model qualification.',
-        abcd_rule: 'Uses retrace averaging if direct breakout objective is < 30%.'
-      }
-    },
-    {
-      id: 'supply',
-      title: 'Supply-Demand Core',
-      icon: Layers,
-      color: 'text-teal-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Identification of historical institutional demand/supply clusters.',
-        rebound_rule: 'Requires multi-touch historical validation of the demand zone.',
-        upside_rule: 'Model objective must be > 30% above the demand floor.',
-        fundamental_check: 'Ensures net-margin stability during retest phase.'
-      }
-    }
+    // ...
   ];
+
+  React.useEffect(() => {
+    // Pillar #1: Canonical Hardening
+    const linkCanonical = document.createElement('link');
+    linkCanonical.rel = 'canonical';
+    linkCanonical.href = 'https://marketbeacon.pro/education';
+    document.head.appendChild(linkCanonical);
+
+    // Pillar #4: FAQ Schema (Structured Data)
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the Institutional Floor strategy?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Institutional Floor strategy identifies demand zones where institutional buying typically occurs, based on statistical deviation from moving averages."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the Deep Recovery Audit work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Deep Recovery Audit targets stocks with a drawdown of 66% or more from their all-time high, provided they maintain strong institutional ownership and improving fundamentals."
+          }
+        }
+      ]
+    };
+
+    const script = document.createElement('script');
+    script.type = "application/ld+json";
+    script.id = "json-ld-faq";
+    script.text = JSON.stringify(schema);
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(linkCanonical);
+      const oldScript = document.getElementById('json-ld-faq');
+      if (oldScript) oldScript.remove();
+    };
+  }, []);
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto">

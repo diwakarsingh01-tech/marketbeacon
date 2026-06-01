@@ -328,8 +328,10 @@ const TradeTable: React.FC<TradeTableProps> = ({
                   {visibleColumns.cmp && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('price')}><div className="flex items-center justify-end text-blue-600 gap-1">CMP <SortIcon column="price" /></div></th>}
                   {activeTab === 'hold' && <th className="px-8 py-7 text-right font-black text-slate-400">ATH Node</th>}
                   {visibleColumns.dfh && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end gap-1">DFH% <SortIcon column="dfh" /></div></th>}
-                  {visibleColumns.roi && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('roi')}><div className="flex items-center justify-end gap-1 text-emerald-600">ROI% <SortIcon column="roi" /></div></th>}
-                  {visibleColumns.pending && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('pending')}><div className="flex items-center justify-end gap-1">Gap% <SortIcon column="pending" /></div></th>}
+                  {visibleColumns.objective && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('target')}><div className="flex items-center justify-end gap-1">Objective <SortIcon column="target" /></div></th>}
+                  {visibleColumns.roi && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('roi')}><div className="flex items-center justify-end gap-1 text-emerald-600">ROI% (Alpha) <SortIcon column="roi" /></div></th>}
+                  {visibleColumns.pending && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('pending')}><div className="flex items-center justify-end gap-1">Gap% (Window) <SortIcon column="pending" /></div></th>}
+
                   {visibleColumns.fundamentals && <th className="px-10 py-7 text-right">Audit</th>}
                 </tr>
               )}

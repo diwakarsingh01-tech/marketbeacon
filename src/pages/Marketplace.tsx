@@ -32,6 +32,11 @@ const MembershipPage: React.FC = () => {
   const [redeeming, setRedeemning] = useState(false);
 
   useEffect(() => {
+    const linkCanonical = document.createElement('link');
+    linkCanonical.rel = 'canonical';
+    linkCanonical.href = 'https://marketbeacon.pro/marketplace';
+    document.head.appendChild(linkCanonical);
+
     const fetchMembership = async () => {
       try {
         const res = await fetch(`${API_URL}/api/marketplace`);
@@ -46,6 +51,10 @@ const MembershipPage: React.FC = () => {
       }
     };
     fetchMembership();
+
+    return () => {
+      document.head.removeChild(linkCanonical);
+    };
   }, []);
 
   const handleRedeemVoucher = async () => {

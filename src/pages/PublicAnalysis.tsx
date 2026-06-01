@@ -47,6 +47,22 @@ const PublicAnalysisPage: React.FC = () => {
         metaDesc.setAttribute('content', `Get the institutional 100-point audit for ${symbol}. Audit Score: ${(data.score || 0).toFixed(0)}, Smart Money: ${(data.smartMoney || 0).toFixed(1)}%, Target Upside: +${data.upside}%. Verified logic by MarketBeacon Pro.`);
       }
 
+      // Pillar #3: Dynamic OpenGraph (Viral Hardening)
+      const updateOG = (property: string, content: string) => {
+        let meta = document.querySelector(`meta[property="${property}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute('property', property);
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', content);
+      };
+
+      updateOG('og:title', `${symbol} Institutional Audit: ${(data.score || 0).toFixed(0)}/100`);
+      updateOG('og:description', `Institutional 100-point audit for ${symbol}. Smart Money: ${(data.smartMoney || 0).toFixed(1)}%, Risk: ${data.risk || 'Low'}.`);
+      updateOG('og:url', window.location.href);
+      updateOG('og:type', 'article');
+
       // 2. JSON-LD Structured Data (Rich Snippets)
       const schema = {
         "@context": "https://schema.org",
@@ -76,9 +92,16 @@ const PublicAnalysisPage: React.FC = () => {
       script.text = JSON.stringify(schema);
       document.head.appendChild(script);
 
+      // Pillar #1: Canonical Hardening
+      const linkCanonical = document.createElement('link');
+      linkCanonical.rel = 'canonical';
+      linkCanonical.href = `https://marketbeacon.pro/analysis/${symbol}`;
+      document.head.appendChild(linkCanonical);
+
       return () => {
         const oldScript = document.getElementById(`json-ld-${symbol}`);
         if (oldScript) oldScript.remove();
+        document.head.removeChild(linkCanonical);
       };
     }
   }, [data, symbol]);
@@ -206,13 +229,13 @@ const PublicAnalysisPage: React.FC = () => {
 
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <Link 
-                  to="/auth" 
+                  to="/login" 
                   className="w-full sm:w-auto px-8 py-4 bg-white text-slate-950 font-black rounded-xl hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
                 >
                   Unlock Full Report <ArrowUpRight className="w-5 h-5" />
                 </Link>
                 <Link 
-                  to="/auth" 
+                  to="/login" 
                   className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white font-black rounded-xl border border-slate-800 hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
                 >
                   Join 30,000+ Traders
@@ -223,6 +246,29 @@ const PublicAnalysisPage: React.FC = () => {
             {/* Abstract Background Element */}
             <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-blue-600/20 blur-[120px] rounded-full" />
           </div>
+        </div>
+
+        {/* Pillar #2: Internal Link Matrix (Related Picks) */}
+        <div className="mb-24">
+           <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-black text-white tracking-tight">Related Institutional Picks</h2>
+              <Link to="/" className="text-blue-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">View All Audits</Link>
+           </div>
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {["HDFCBANK", "INFY", "RELAXO", "TCS"].filter(s => s !== symbol).slice(0, 4).map((sym) => (
+                <Link 
+                  key={sym} 
+                  to={`/analysis/${sym}`}
+                  className="p-6 bg-slate-900/30 border border-slate-800 rounded-2xl hover:border-blue-500/50 transition-all group"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-lg font-black text-white italic tracking-tighter group-hover:text-blue-400">{sym}</span>
+                    <ArrowUpRight className="w-4 h-4 text-slate-600 group-hover:text-blue-500" />
+                  </div>
+                  <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">View 100-Point Audit</div>
+                </Link>
+              ))}
+           </div>
         </div>
 
         {/* Footer */}

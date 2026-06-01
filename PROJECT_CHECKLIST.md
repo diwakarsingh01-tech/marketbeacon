@@ -45,6 +45,14 @@ This checklist tracks the functional and technical integrity of every feature. A
 - [✅] **Voucher System:** Admin-controlled 7-Day Trial system.
 
 - [✅] **Universe Expansion:** Nifty 500 integration with dynamic sector/cap tagging.
-- [✅] **Bifurcation Engine:** Qualified vs. Observation (5% rule) active.
+- [✅] **Bifurcation Engine:** Qualified vs. Observation (Strict 2% rule) active.
+
+## 🚀 7. Commercial Hardening (Phase 12)
+- [✅] **Staking Window:** Strict 2% entry tolerance enforced across all strategies.
+- [✅] **SM Hard Reject:** 70% Smart Money floor locked with 5% quality tolerance.
+- [✅] **Alpha Hub Worker:** 15-min background worker for pre-calculated signals.
+- [✅] **Viral Engine:** Public Analysis SEO pages live.
+- [✅] **Final Certification:** System 100% Operational for Commercial Launch.
+
 ---
 **Audit Log Policy:** Every new feature request will add a sub-item under a relevant section. No feature is moved to ✅ until "Validation Phase" is signed off by the Project Manager (Gemini).
