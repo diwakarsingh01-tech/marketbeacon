@@ -159,14 +159,14 @@ const HomePage: React.FC = () => {
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">Institutional 100-Point Audit Results</p>
                       </div>
                       <div className="text-right">
-                         <div className={`text-5xl font-black italic ${teaserData.score >= 80 ? 'text-emerald-400' : 'text-blue-400'}`}>{teaserData.score}</div>
+                         <div className={`text-5xl font-black italic ${teaserData.score >= 80 ? 'text-emerald-400' : 'text-blue-400'}`}>{(teaserData.score || 0).toFixed(0)}</div>
                          <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Audit Score</div>
                       </div>
                    </div>
 
                    <div className="grid grid-cols-3 gap-4">
                       {[
-                        { label: 'Smart Money', val: `${teaserData.smartMoney}%`, icon: TrendingUp },
+                        { label: 'Smart Money', val: `${(teaserData.smartMoney || 0).toFixed(1)}%`, icon: TrendingUp },
                         { label: 'Alpha Target', val: `+${teaserData.upside}%`, icon: Target },
                         { label: 'Risk Profile', val: teaserData.risk, icon: ShieldCheck },
                       ].map((stat, i) => (
