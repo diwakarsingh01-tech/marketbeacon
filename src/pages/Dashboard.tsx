@@ -194,10 +194,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     // 3. Neutral: !isBuyZone && isPass
     // 4. Watchlist: allStocks
     
-    const open = data.allStocks.filter((r: any) => r?.isBuyZone && r?.isPass);
-    const rejected = data.allStocks.filter((r: any) => !r?.isPass);
-    const neutral = data.allStocks.filter((r: any) => !r?.isBuyZone && r?.isPass);
-    const watchlist = data.allStocks;
+    const open = data.allStocks.filter((r: any) => r && r.isBuyZone && r.isPass);
+    const rejected = data.allStocks.filter((r: any) => r && !r.isPass);
+    const neutral = data.allStocks.filter((r: any) => r && !r.isBuyZone && r.isPass);
+    const watchlist = data.allStocks.filter((r: any) => r !== null);
 
     if (activeTab === 'hold') return watchlist; // Keeping 'hold' ID as Watchlist to avoid breaking type
     if (activeTab === 'neutral') return neutral;
@@ -416,10 +416,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       {/* Institutional Tab Controller */}
       <div className="flex bg-slate-100/50 p-1 rounded-[1.2rem] md:rounded-[2rem] border border-slate-100 w-fit max-w-full overflow-x-auto no-scrollbar shadow-inner gap-1">
          {[
-           { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => r?.isBuyZone && r?.isPass).length || 0 },
-           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => !r?.isBuyZone && r?.isPass).length || 0 },
-           { id: 'rejected', label: 'Rejected', count: data?.allStocks?.filter((r: any) => !r?.isPass).length || 0 },
-           { id: 'hold', label: 'Watchlist', count: data?.allStocks?.length || 0 },
+           { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => r && r.isBuyZone && r.isPass).length || 0 },
+           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => r && !r.isBuyZone && r.isPass).length || 0 },
+           { id: 'rejected', label: 'Rejected', count: data?.allStocks?.filter((r: any) => r && !r.isPass).length || 0 },
+           { id: 'hold', label: 'Watchlist', count: data?.allStocks?.filter((r: any) => r !== null).length || 0 },
          ].map(tab => (
            <button 
              key={tab.id} 

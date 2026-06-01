@@ -529,7 +529,7 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
       const lastQuote = snap.quotes[snap.quotes.length - 1];
       
       // Select the primary strategy signal if any
-      const activeStrats = Object.entries(snap.strategies || {}).filter(([_, s]: any) => s.isBuyZone);
+      const activeStrats = Object.entries(snap.strategies || {}).filter(([_, s]: any) => s?.isBuyZone);
       const strategyId = activeStrats.length > 0 ? activeStrats[0][0] : 'ENVELOPE_LONG';
       const strategyData: any = snap.strategies?.[strategyId];
 
@@ -576,8 +576,8 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
 
     res.json({ 
       allStocks: results, 
-      open: results.filter(r => r.isBuyZone && r.isPass), 
-      rejected: results.filter(r => !r.isPass) 
+      open: results.filter(r => r?.isBuyZone && r?.isPass), 
+      rejected: results.filter(r => !r?.isPass) 
     });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
