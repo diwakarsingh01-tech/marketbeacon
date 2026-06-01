@@ -513,10 +513,14 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
     const snapshot = getMarketSnapshot();
     const results = [];
     
-    let symbols = [];
-    if (basket === 'Bluechip') symbols = BASKETS['Bluechip'];
-    else if (basket === 'High Beta') symbols = BASKETS['High Beta'];
-    else symbols = Object.keys(snapshot);
+     let symbols = [];
+     if (basket === 'Bluechip') symbols = BASKETS['Bluechip'];
+     else if (basket === 'High Beta') symbols = BASKETS['High Beta'];
+     else if (basket === 'Wealth Universe') {
+       const dynamicWealth = getDynamicBasket();
+       symbols = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : BASKETS['Wealth Universe'];
+     }
+     else symbols = Object.keys(snapshot);
 
     for (const baseSymbol of symbols) {
       const snap = snapshot[baseSymbol];
