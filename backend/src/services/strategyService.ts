@@ -1,5 +1,5 @@
 import { validateBatch9 } from '../services/fundamentalAudit.js';
-import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateSRStrategy, calculateRHS, calculateCupHandle, calculateSixtySevenFunda, calculateTwentyRallyRetest } from '../strategies/index.js';
+import { calculateEnvelope, processShortEnvelope, calculateEnvelopeKnox, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateSRStrategy, calculateRHS, calculateCupHandle, calculateSixtySevenFunda, calculateTwentyRallyRetest } from '../strategies/index.js';
 
 export const runStrategyAnalysis = (stratId: string, snap: any, marketCap: number) => {
     switch (stratId) {

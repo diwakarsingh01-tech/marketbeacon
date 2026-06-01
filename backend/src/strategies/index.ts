@@ -673,6 +673,11 @@ export function calculateCupHandle(quotes: Quote[]) {
  */
 export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any, basket?: any, providedATH?: number) {
   if (!quotes || quotes.length < 250) return null;
+  
+  // STRATEGY #9 HARDENING: Dividend Floor Rule (Institutional Safety)
+  const divYield = parseFloat(screenerData?.dividendYield || 0);
+  if (divYield < 1.0) return { isBuyZone: false, reason: 'Dividend Yield below 1.0%' };
+
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
 
@@ -699,14 +704,15 @@ export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any, bas
     }
   }
 
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
 
   return { 
     isBuyZone: isActuallyInBuyRange, 
     entryPrice: activeEntry, 
     target: activeTarget, 
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate
+    triggerDate: activeSignalDate,
+    dividendYield: divYield
   };
 }
 
@@ -714,44 +720,58 @@ export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any, bas
  * STRATEGY 10: Velocity Retest
  */
 export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
-  if (!quotes || quotes.length < 50) return null;
+  if (!quotes || quotes.length < 250) return null;
   const prices = quotes.map(q => q.close);
+  const ema200 = calculateEMA(prices, 200);
   const latestIdx = prices.length - 1;
   const currentPrice = prices[latestIdx];
 
   let rallyOrigin = 0;
+  let rallyPeak = 0;
   let rallyFound = false;
-  let barsSinceRally = 0;
+  let rallyIdx = 0;
+  let peakIdx = 0;
 
+  // Rule 1: Find rally of 20% within 40 days
   for (let i = latestIdx - 10; i >= Math.max(0, latestIdx - 300); i--) {
     const startPrice = prices[i];
-    const maxInWindow = Math.max(...prices.slice(i, i + 10));
+    const window = prices.slice(i, i + 40);
+    const maxInWindow = Math.max(...window);
     const rallyGain = (maxInWindow - startPrice) / startPrice;
 
     if (rallyGain >= 0.20) {
-      rallyOrigin = startPrice;
-      rallyFound = true;
-      barsSinceRally = latestIdx - (i + 10); 
-      break; 
+      // RULE: Rally Start must be BELOW 200 EMA
+      if (startPrice < ema200[i]) {
+        rallyOrigin = startPrice;
+        rallyPeak = maxInWindow;
+        rallyIdx = i;
+        peakIdx = i + window.indexOf(maxInWindow);
+        rallyFound = true;
+        break; 
+      }
     }
   }
 
-  if (!rallyFound || barsSinceRally > 252) return null; 
+  if (!rallyFound) return { isBuyZone: false, reason: 'No qualifying rally found' };
 
-  const isRetesting = currentPrice <= rallyOrigin * 1.02 && currentPrice >= rallyOrigin * 0.98;
-  const verdict = isRetesting ? 'QUALIFIED' : 'WATCHLIST';
+  // Rule 2: Freshness (Retest must be within 1 year / 252 trading days)
+  const daysSincePeak = latestIdx - peakIdx;
+  if (daysSincePeak > 252) return { isBuyZone: false, reason: 'Rally older than 1 year' };
+
+  // Rule 3: Entry Retest must be BELOW 200 EMA
+  const isBelowEMA = currentPrice < ema200[latestIdx];
+  const isRetesting = currentPrice <= rallyOrigin * 1.05 && currentPrice >= rallyOrigin * 0.95;
+
+  const qualified = isRetesting && isBelowEMA;
 
   return {
-    isBuyZone: isRetesting,
-    verdict,
+    isBuyZone: qualified,
     entryPrice: Math.round(rallyOrigin),
-    target: Math.round(rallyOrigin * 1.20),
+    target: Math.round(rallyPeak),
     currentPrice: Math.round(currentPrice),
-    triggerDate: rallyFound ? (() => {
-      const d = quotes[latestIdx-barsSinceRally].date;
-      return (typeof d === 'string' ? d : (d as Date).toISOString()).split('T')[0];
-    })() : "",
-    barsSinceRally
+    triggerDate: quotes[rallyIdx].date,
+    daysSincePeak,
+    isHardened: true
   };
 }
 
