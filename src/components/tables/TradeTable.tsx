@@ -309,7 +309,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
             <thead>
               {activeTab === 'portfolio' ? (
                 <tr className="bg-slate-50/50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 italic">
-                  <th className="px-10 py-7 text-left">Institutional Instrument</th>
+                  <th className="px-10 py-7 text-left">Asset Node</th>
                   <th className="px-8 py-7 text-center">Qty</th>
                   <th className="px-8 py-7 text-right">Entry Base</th>
                   <th className="px-8 py-7 text-right">CMP</th>
@@ -321,17 +321,14 @@ const TradeTable: React.FC<TradeTableProps> = ({
                 <tr className="bg-slate-50/50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 italic">
                   {visibleColumns.observation && <th className="px-10 py-7 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('entryTime')}><div className="flex items-center gap-1">Obs <SortIcon column="entryTime" /></div></th>}
                   {visibleColumns.symbol && <th className="px-8 py-7 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('symbol')}><div className="flex items-center gap-1">Asset Node <SortIcon column="symbol" /></div></th>}
-                  {visibleColumns.strategy && <th className="px-8 py-7">Strategy Matrix</th>}
                   {visibleColumns.marketCap && <th className="px-8 py-7 cursor-pointer hover:text-blue-600 transition-colors text-center" onClick={() => handleSort('marketCap')}><div className="flex items-center justify-center gap-1">Tier <SortIcon column="marketCap" /></div></th>}
                   {visibleColumns.abcd && <th className="px-8 py-7 text-center">ABCD Ladder</th>}
                   {visibleColumns.basePrice && <th className="px-8 py-7 text-right">Base</th>}
                   {visibleColumns.cmp && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('price')}><div className="flex items-center justify-end text-blue-600 gap-1">CMP <SortIcon column="price" /></div></th>}
-                  {activeTab === 'hold' && <th className="px-8 py-7 text-right font-black text-slate-400">ATH Node</th>}
                   {visibleColumns.dfh && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end gap-1">DFH% <SortIcon column="dfh" /></div></th>}
                   {visibleColumns.objective && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('target')}><div className="flex items-center justify-end gap-1">Objective <SortIcon column="target" /></div></th>}
                   {visibleColumns.roi && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('roi')}><div className="flex items-center justify-end gap-1 text-emerald-600">ROI% (Alpha) <SortIcon column="roi" /></div></th>}
                   {visibleColumns.pending && <th className="px-8 py-7 text-right cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('pending')}><div className="flex items-center justify-end gap-1">Gap% (Window) <SortIcon column="pending" /></div></th>}
-
                   {visibleColumns.fundamentals && <th className="px-10 py-7 text-right">Audit</th>}
                 </tr>
               )}
@@ -423,7 +420,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
                              </div>
                           </td>
                         )}
-                        {visibleColumns.strategy && <td className="px-8 py-6 text-[9px] text-slate-500 italic font-bold uppercase tracking-widest opacity-80">{trade.strategy || 'Matrix Lens'}</td>}
                         {visibleColumns.marketCap && (
                           <td className="px-8 py-6 text-center">
                             {capTag && <span className={`px-3 py-1 rounded-lg text-[8px] font-black border tracking-widest ${capTag.class}`}>{capTag.label}</span>}
@@ -462,7 +458,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         )}
                         {visibleColumns.basePrice && <td className="px-8 py-6 text-right text-slate-400 font-black italic">₹{trade.entryPrice?.toLocaleString()}</td>}
                         {visibleColumns.cmp && <td className="px-8 py-6 text-right text-blue-600 font-black italic bg-slate-50/50 shadow-inner">₹{trade.livePrice?.toLocaleString()}</td>}
-                        {activeTab === 'hold' && <td className="px-8 py-6 text-right text-slate-400 font-bold">₹{ath?.toLocaleString() || '-'}</td>}
                         {visibleColumns.dfh && <td className="px-8 py-6 text-right text-slate-400 font-black opacity-60 italic">{trade.dfh?.toFixed(1)}%</td>}
                         {visibleColumns.objective && <td className="px-8 py-6 text-right text-fuchsia-600 font-black font-mono">₹{trade.target?.toLocaleString()}</td>}
                         {visibleColumns.roi && (
