@@ -416,9 +416,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       {/* Institutional Tab Controller */}
       <div className="flex bg-slate-100/50 p-1 rounded-[1.2rem] md:rounded-[2rem] border border-slate-100 w-fit max-w-full overflow-x-auto no-scrollbar shadow-inner gap-1">
          {[
-           { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => r.isBuyZone && r.isPass).length || 0 },
-           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => !r.isBuyZone && r.isPass).length || 0 },
-           { id: 'rejected', label: 'Rejected', count: data?.allStocks?.filter((r: any) => !r.isPass).length || 0 },
+           { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => r?.isBuyZone && r?.isPass).length || 0 },
+           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => !r?.isBuyZone && r?.isPass).length || 0 },
+           { id: 'rejected', label: 'Rejected', count: data?.allStocks?.filter((r: any) => !r?.isPass).length || 0 },
            { id: 'hold', label: 'Watchlist', count: data?.allStocks?.length || 0 },
          ].map(tab => (
            <button 
