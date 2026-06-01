@@ -599,11 +599,11 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
     const results = [];
     
      let symbols = [];
-     if (basket === 'Bluechip') symbols = BASKETS['Bluechip'];
-     else if (basket === 'High Beta') symbols = BASKETS['High Beta'];
-     else if (basket === 'Wealth Universe') {
+     if (basket === 'H-Super45') symbols = BASKETS['H-Super45'];
+     else if (basket === 'H-GOOD45') symbols = BASKETS['H-GOOD45'];
+     else if (basket === 'H-Good200') {
        const dynamicWealth = getDynamicBasket();
-       symbols = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : BASKETS['Wealth Universe'];
+       symbols = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : BASKETS['H-Good200'];
      }
      else symbols = Object.keys(snapshot);
 
