@@ -720,58 +720,56 @@ export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any, bas
  * STRATEGY 10: Velocity Retest
  */
 export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
-  if (!quotes || quotes.length < 250) return null;
+  // Strategy #13: LOCKED ABSOLUTE GREEN RALLY RULE (v1.0)
+  if (!quotes || quotes.length < 250) return { isBuyZone: false };
   const prices = quotes.map(q => q.close);
   const ema200 = calculateEMA(prices, 200);
-  const latestIdx = prices.length - 1;
+  const latestIdx = quotes.length - 1;
   const currentPrice = prices[latestIdx];
 
-  let rallyOrigin = 0;
-  let rallyPeak = 0;
-  let rallyFound = false;
-  let rallyIdx = 0;
-  let peakIdx = 0;
+  const qualifyingRallies: any[] = [];
 
-  // Rule 1: Find rally of 20% within 40 days
-  for (let i = latestIdx - 10; i >= Math.max(0, latestIdx - 300); i--) {
-    const startPrice = prices[i];
-    const window = prices.slice(i, i + 40);
-    const maxInWindow = Math.max(...window);
-    const rallyGain = (maxInWindow - startPrice) / startPrice;
-
-    if (rallyGain >= 0.20) {
-      // RULE: Rally Start must be BELOW 200 EMA
-      if (startPrice < ema200[i]) {
-        rallyOrigin = startPrice;
-        rallyPeak = maxInWindow;
-        rallyIdx = i;
-        peakIdx = i + window.indexOf(maxInWindow);
-        rallyFound = true;
-        break; 
+  for (let i = 200; i < latestIdx - 1; i++) {
+    const q = quotes[i];
+    const isGreen = q.close > q.open;
+    
+    if (isGreen && q.close < ema200[i]) {
+      const rallyStartLow = q.low;
+      let j = i + 1;
+      let allGreen = true;
+      while (j <= latestIdx && allGreen) {
+        if (quotes[j].close > quotes[j].open) j++;
+        else allGreen = false;
+      }
+      
+      const rallyEndClose = quotes[j-1].close;
+      const gain = (rallyEndClose - rallyStartLow) / rallyStartLow;
+      if (gain >= 0.20) {
+        qualifyingRallies.push({
+          originPrice: rallyStartLow,
+          peakPrice: rallyEndClose,
+          peakIdx: j - 1,
+          triggerDate: quotes[i].date
+        });
       }
     }
   }
 
-  if (!rallyFound) return { isBuyZone: false, reason: 'No qualifying rally found' };
+  if (qualifyingRallies.length === 0) return { isBuyZone: false };
+  const bestRally = qualifyingRallies.sort((a, b) => b.peakIdx - a.peakIdx)[0];
+  
+  if (latestIdx - bestRally.peakIdx > 252) return { isBuyZone: false };
 
-  // Rule 2: Freshness (Retest must be within 1 year / 252 trading days)
-  const daysSincePeak = latestIdx - peakIdx;
-  if (daysSincePeak > 252) return { isBuyZone: false, reason: 'Rally older than 1 year' };
-
-  // Rule 3: Entry Retest must be BELOW 200 EMA
+  const isAtOrigin = Math.abs(currentPrice - bestRally.originPrice) / bestRally.originPrice <= 0.05;
   const isBelowEMA = currentPrice < ema200[latestIdx];
-  const isRetesting = currentPrice <= rallyOrigin * 1.05 && currentPrice >= rallyOrigin * 0.95;
-
-  const qualified = isRetesting && isBelowEMA;
 
   return {
-    isBuyZone: qualified,
-    entryPrice: Math.round(rallyOrigin),
-    target: Math.round(rallyPeak),
+    isBuyZone: isAtOrigin && isBelowEMA,
+    entryPrice: Math.round(bestRally.originPrice),
+    target: Math.round(bestRally.peakPrice),
     currentPrice: Math.round(currentPrice),
-    triggerDate: quotes[rallyIdx].date,
-    daysSincePeak,
-    isHardened: true
+    triggerDate: bestRally.triggerDate,
+    isLocked: true
   };
 }
 
