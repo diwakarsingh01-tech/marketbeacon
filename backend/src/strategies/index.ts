@@ -672,47 +672,35 @@ export function calculateCupHandle(quotes: Quote[]) {
  * Logic: Triggers when a stock has fallen 67% from its ATH and starts recovering.
  */
 export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any, basket?: any, providedATH?: number) {
-  if (!quotes || quotes.length < 250) return null;
+  // Strategy #14: LOCKED 67 KA FUNDA (v1.0)
+  if (!quotes || quotes.length < 250) return { isBuyZone: false };
   
-  // STRATEGY #9 HARDENING: Dividend Floor Rule (Institutional Safety)
-  const divYield = parseFloat(screenerData?.dividendYield || 0);
-  if (divYield < 1.0) return { isBuyZone: false, reason: 'Dividend Yield below 1.0%' };
-
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
-
-  let isPositionOpen = false;
-  let activeEntry = 0;
-  let activeTarget = 0;
-  let activeSignalDate = "";
-
   const ath = providedATH || Math.max(...quotes.map(q => q.high));
-  
-  for (let i = 100; i < quotes.length; i++) {
-    const drawdown = ((ath - quotes[i].low) / ath) * 100;
+  const drawdown = ((ath - currentPrice) / ath) * 100;
 
-    if (!isPositionOpen && drawdown >= 66.5) {
-      isPositionOpen = true;
-      activeEntry = Math.round(quotes[i].close);
-      activeTarget = Math.round(ath * 0.67);
-      const dateVal = quotes[i].date;
-      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
-    }
+  // 1. Mandatory Dividend Floor (Anti-Fraud)
+  const divYield = parseFloat(screenerData?.dividendYield || 0);
+  if (divYield < 1.0) return { isBuyZone: false, reason: 'Dividend Floor (< 1.0%)' };
 
-    if (isPositionOpen && quotes[i].high >= activeTarget) {
-      isPositionOpen = false;
-    }
-  }
+  // 2. Technical Trigger (67% Reset)
+  const isDeepDrawdown = drawdown >= 66.5;
+  if (!isDeepDrawdown) return { isBuyZone: false };
 
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.05;
+  // 3. Target Calculation (Reset Price)
+  const target = Math.round(ath * 0.67);
 
+  // 4. Return Data Node
   return { 
-    isBuyZone: isActuallyInBuyRange, 
-    entryPrice: activeEntry, 
-    target: activeTarget, 
+    isBuyZone: true, 
+    entryPrice: Math.round(currentPrice), 
+    target: target, 
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate,
-    dividendYield: divYield
+    triggerDate: new Date().toISOString().split('T')[0],
+    drawdown: drawdown.toFixed(1),
+    dividendYield: divYield,
+    isLocked: true 
   };
 }
 
