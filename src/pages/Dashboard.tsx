@@ -162,12 +162,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     setStockSectors(sectorMap);
   };
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const fetchData = useCallback(async (forceRefresh = false) => {
     setIsRefreshing(true);
     setError(null);
     try {
-      const response = await fetch(`${API_URL}/api/backtest/envelope?basket=${activeBasket}&strategy=${strategyId}`);
+      const response = await fetch(`${API_URL}/api/backtest/audit?basket=${activeBasket}&strategy=${strategyId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` }
+      });
       const d = await safeJsonParse(response);
       if (response.ok && !d.error) {
           setData(d);
