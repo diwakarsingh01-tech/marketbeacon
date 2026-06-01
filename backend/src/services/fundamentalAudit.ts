@@ -82,7 +82,7 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   const smThreshold = (basketName === 'Wealth Universe' ? 40 : 70);
   const isHardReject = !isETF && (
     (debtToEquity > (isFinance ? 8.0 : 0.2)) || // Hard Pillar 7 Rule: 0.2 (Non-Fin), 8.0 (Fin)
-    (pledged >= 10) || 
+    (pledged >= 5) || // Hardened Rule: Max 5% Pledged
     (smartMoneyTotal < (smThreshold * 0.95)) // 5% Tolerance for Elite Quality
   );
 

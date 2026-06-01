@@ -91,6 +91,49 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
 }
 
 /**
+ * STRATEGY: Envelope + Knox
+ * Settings: EMA 200, 20% Envelope
+ * Logic: Hard Support detection for high-beta volatility.
+ */
+export function calculateEnvelopeKnox(quotes: Quote[]) {
+  if (!quotes || quotes.length < 200) return null;
+  const prices = quotes.map(q => q.close);
+  const ema200 = calculateEMA(prices, 200);
+  const currentPrice = prices[prices.length - 1];
+
+  let activeEntry = 0;
+  let activeTarget = 0;
+  let activeSignalDate = "";
+  let isPositionOpen = false;
+
+  for (let i = 200; i < quotes.length; i++) {
+    const ema = ema200[i];
+    const lowerBand = ema * 0.80; // 20% Envelope
+    const upperBand = ema * 1.20;
+
+    if (!isPositionOpen && quotes[i].low <= lowerBand) {
+      isPositionOpen = true;
+      activeEntry = Math.round(quotes[i].close);
+      activeTarget = Math.round(Math.max(upperBand, activeEntry * 1.40)); 
+      const dateVal = quotes[i].date;
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+    }
+
+    if (isPositionOpen && quotes[i].high >= activeTarget) {
+      isPositionOpen = false;
+    }
+  }
+
+  return {
+    isBuyZone: isPositionOpen && currentPrice <= activeEntry * 1.05,
+    entryPrice: activeEntry,
+    target: activeTarget,
+    currentPrice: Math.round(currentPrice),
+    triggerDate: activeSignalDate
+  };
+}
+
+/**
  * STRATEGY 2: Momentum Ceiling (Short Envelope Step-Back)
  */
 export function processShortEnvelope(quotes: Quote[], marketCap: number) {

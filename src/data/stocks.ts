@@ -1,18 +1,22 @@
 export const STRATEGIES = [
-  { id: 'ENVELOPE_LONG', name: 'Institutional Floor', baskets: ['Bluechip'], isLive: true, tier: 'free' },
-  { id: 'ENVELOPE_SHORT', name: 'Momentum Ceiling', baskets: ['Bluechip'], isLive: true, tier: 'free' },
-  { id: 'BOLLINGER', name: 'Volatility Channel', baskets: ['Bluechip'], isLive: true, tier: 'free' },
-  { id: 'CUP_HANDLE_ABCD', name: 'Structural Pivot', baskets: ['Bluechip', 'High Beta'], isLive: true, tier: 'pro' },
-  { id: 'RHS_ABCD', name: 'Dynamic Reversal', baskets: ['Bluechip', 'High Beta'], isLive: true, tier: 'pro' },
-  { id: 'SMA_ABCD', name: 'SMA-ABCD', baskets: ['Bluechip', 'High Beta'], isLive: true, tier: 'pro' },
-  { id: '52W_HIGH_LOW', name: '52W High/Low', baskets: ['Bluechip', 'High Beta'], isLive: true, tier: 'pro' },
-  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest', baskets: ['Bluechip', 'High Beta', 'Wealth Universe'], isLive: true, tier: 'alpha' },
-  { id: 'SIXTY_SEVEN_FUNDA', name: 'Deep Recovery Audit', baskets: ['Bluechip', 'High Beta', 'Wealth Universe'], isLive: true, tier: 'alpha' },
-  { id: 'SR_STRATEGY', name: 'Supply-Demand Core', baskets: ['Bluechip', 'High Beta', 'Wealth Universe'], isLive: true, tier: 'alpha' },
+  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['H-Super45'], isLive: true, tier: 'free' },
+  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['H-Super45'], isLive: true, tier: 'free' },
+  { id: 'ENVELOPE_KNOX', name: 'Envelope + Knox', baskets: ['H-Super45'], isLive: true, tier: 'pro' },
+  { id: 'SMA', name: 'SMA', baskets: ['H-Super45'], isLive: true, tier: 'pro' },
+  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['H-Super45'], isLive: true, tier: 'free' },
+  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['H-Super45'], isLive: true, tier: 'pro' },
+  { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle + ABCD', baskets: ['H-GOOD45', 'H-Super45'], isLive: true, tier: 'pro' },
+  { id: 'RHS_ABCD', name: 'Reverse Head and Shoulder + ABCD', baskets: ['H-GOOD45', 'H-Super45'], isLive: true, tier: 'pro' },
+  { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['H-GOOD45', 'H-Super45'], isLive: true, tier: 'pro' },
+  { id: 'CUP_HANDLE_CORRECTION', name: 'Cup with Handle + 10% correction', baskets: ['H-GOOD45', 'H-Super45'], isLive: true, tier: 'pro' },
+  { id: 'RHS_CORRECTION', name: 'Reverse Head and Shoulder + 10% correction', baskets: ['H-GOOD45', 'H-Super45'], isLive: true, tier: 'pro' },
+  { id: 'SR_STRATEGY', name: 'Support and Resistance Strategy (S&R)', baskets: ['H-Good200', 'H-GOOD45', 'H-Super45'], isLive: true, tier: 'alpha' },
+  { id: 'TWENTY_RALLY_RETEST', name: '20% ki rally', baskets: ['H-Good200', 'H-GOOD45', 'H-Super45'], isLive: true, tier: 'alpha' },
+  { id: 'SIXTY_SEVEN_FUNDA', name: '67 ka Funda', baskets: ['H-Good200', 'H-GOOD45', 'H-Super45'], isLive: true, tier: 'alpha' }
 ];
 
 export const BASKETS: Record<string, string[]> = {
-  'Bluechip': [
+  'H-Super45': [
     'WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 
     'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 
     'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 
@@ -21,7 +25,7 @@ export const BASKETS: Record<string, string[]> = {
     'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 
     'NIFTYBEES', 'BANKBEES'
   ],
-  'High Beta': [
+  'H-GOOD45': [
     'RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 
     'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 
     'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KAJARIACER', 'VINATIORGA', 
@@ -29,7 +33,7 @@ export const BASKETS: Record<string, string[]> = {
     'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 
     'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'
   ],
-  'Wealth Universe': [
+  'H-Good200': [
     'CDSL', 'BSE', 'IEX', 'CAMS', 'HAPPSTMNDS', 'AFLE', 'CENTURYPLY', 'KAYNES', 
     'MTARTECH', 'MAHLOG', 'PRINCEPIPE', 'ANGELONE', 'MCX', 'KFINTECH', 'DATA PATTERNS', 
     'MAZAGONDOCK', 'COCHINSHIP', 'GRSE', 'RVNL', 'IRCON', 'RITES', 'RAILTEL', 'BEL', 
@@ -39,7 +43,7 @@ export const BASKETS: Record<string, string[]> = {
 };
 
 // Simplified stocks for backward compatibility if needed
-export const stocks = BASKETS['Bluechip'].map(symbol => ({
+export const stocks = BASKETS['H-Super45'].map(symbol => ({
   symbol,
   stockName: symbol,
   strategy: 'Envelope Long',
