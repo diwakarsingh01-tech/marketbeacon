@@ -643,6 +643,19 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     let { symbol } = req.params;
     symbol = symbol.toUpperCase();
     
+    // Institutional Alias Shield (Safe-Guard Rule #12)
+    const ALIASES: Record<string, string> = {
+      'HDFC': 'HDFCBANK',
+      'RELIANCE': 'RELIANCE',
+      'KOTAK': 'KOTAKBANK',
+      'ICICI': 'ICICIBANK'
+    };
+
+    if (ALIASES[symbol]) {
+      console.log(`🛡️ [Alias Shield] Mapping ${symbol} to ${ALIASES[symbol]}`);
+      symbol = ALIASES[symbol];
+    }
+    
     const snapshot = getMarketSnapshot();
     
     // Institutional Suffix Shield

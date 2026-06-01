@@ -38,7 +38,8 @@ const HomePage: React.FC = () => {
       if (res.ok && !data.error) {
         setTeaserData(data);
       } else {
-        alert("Stock Node not found in institutional universe.");
+        setTeaserData(null);
+        alert(`Institutional Alert: Symbol "${searchQuery.toUpperCase()}" not found in current node snapshot.`);
       }
     } catch (e) {
       console.error("Audit Search Error:", e);
