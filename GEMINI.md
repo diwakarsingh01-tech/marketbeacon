@@ -22,6 +22,15 @@ Before any code modification, the following steps **must** be executed:
 - **Data Source:** Always use `adjClose` for strategy math.
 - **Cleanup:** Run the self-cleaning routine (summarize and free RAM) every 3 major tasks.
 
+## 🛡 MarketBeacon: Safe-Guard Institutional Standards (v12.0+)
+The project now follows a **Zero-Crash Policy**. All modifications must adhere to:
+- **Null-Safety:** Always use Optional Chaining (`?.`) for data access. Never access `properties of null`.
+- **Defensive Filtering:** Always check for null items in `filter` and `map` operations.
+- **Connectivity:** Use `getApiUrl()` for all fetches. Explicitly target Port 3001 locally and Render on Live.
+- **Build Hardening:** Run `npm run build` locally before pushing. No exceptions.
+- **Version Verification:** Confirm the version number in the UI footer after every push.
+
 ## 📅 Project History
 - **Day 1-9:** Initial setup, deployment, 10-strategy implementation, and mobile overhaul.
 - **Day 10 (May 23):** SOP Integration & Version Control enforcement.
+- **Phase 12 (May 31):** Safe-Guard Standards & Alpha Hub Performance Hardening.
