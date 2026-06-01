@@ -194,9 +194,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     // 3. Neutral: !isBuyZone && isPass
     // 4. Watchlist: allStocks
     
-    const open = data.allStocks.filter((r: any) => r.isBuyZone && r.isPass);
-    const rejected = data.allStocks.filter((r: any) => !r.isPass);
-    const neutral = data.allStocks.filter((r: any) => !r.isBuyZone && r.isPass);
+    const open = data.allStocks.filter((r: any) => r?.isBuyZone && r?.isPass);
+    const rejected = data.allStocks.filter((r: any) => !r?.isPass);
+    const neutral = data.allStocks.filter((r: any) => !r?.isBuyZone && r?.isPass);
     const watchlist = data.allStocks;
 
     if (activeTab === 'hold') return watchlist; // Keeping 'hold' ID as Watchlist to avoid breaking type
