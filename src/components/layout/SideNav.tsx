@@ -1,20 +1,19 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import BrandLogo from '../brand/BrandLogo';
 import { 
   Zap, 
-  Globe, 
   Briefcase, 
   BookOpen,
   Store,
-  BarChart3, 
-  Settings,
   ShieldCheck,
-  History as HistoryIcon,
-  Activity,
   Terminal,
   CreditCard,
-  LayoutGrid
+  LayoutGrid,
+  ChevronRight,
+  TrendingUp,
+  Settings,
+  HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -27,180 +26,140 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const isAdmin = (user as any)?.role === 'admin';
 
-  const eliteItems = [
-    { icon: LayoutGrid, label: 'Alpha-40 Hub', path: '/alpha-hub', desc: 'Institutional Basket', tag: 'PRO' },
-    { icon: Zap, label: 'Signal Discovery', path: '/screener', desc: 'Active Opportunities' },
-    { icon: Store, label: 'Marketplace', path: '/marketplace', desc: 'Hardened Strategies' },
-  ];
-
-  const tradeItems = [
-    { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Order Ledger' },
-    { icon: Briefcase, label: 'My Portfolio', path: '/portfolio', desc: 'Wealth Manager' },
-  ];
-
-  const resourceItems = [
-    { icon: ShieldCheck, label: 'Education', path: '/education', desc: 'Strategy Guides' },
-    { icon: CreditCard, label: 'Membership', path: '/membership', desc: 'Billing & Access' },
+  const sections = [
+    {
+      title: 'Institutional Core',
+      items: [
+        { icon: LayoutGrid, label: 'Alpha Hub', path: '/alpha-hub', desc: 'Main Terminal', tag: 'Alpha' },
+        { icon: Zap, label: 'Screener', path: '/screener', desc: 'Real-time Matrix' },
+        { icon: TrendingUp, label: 'Public Audit', path: '/welcome', desc: 'Growth Insights' },
+      ]
+    },
+    {
+      title: 'Portfolio Desk',
+      items: [
+        { icon: Briefcase, label: 'Manager', path: '/portfolio', desc: 'Wealth Tracking' },
+        { icon: BookOpen, label: 'Journal', path: '/trades', desc: 'Verified Ledger' },
+        { icon: Store, label: 'Marketplace', path: '/marketplace', desc: 'Edge Strategies' },
+      ]
+    },
+    {
+      title: 'System Access',
+      items: [
+        { icon: ShieldCheck, label: 'Education', path: '/education', desc: 'SOP Guides' },
+        { icon: CreditCard, label: 'Membership', path: '/pricing', desc: 'License Node' },
+      ]
+    }
   ];
 
   return (
     <aside className={`
-      fixed inset-y-0 left-0 z-[110] w-72 bg-slate-900 flex flex-col shrink-0 border-r border-slate-800 shadow-2xl 
-      transform transition-transform duration-300 ease-in-out h-screen
+      fixed inset-y-0 left-0 z-[110] w-64 bg-slate-ink flex flex-col shrink-0 border-r border-white/5 shadow-2xl 
+      transform transition-all duration-500 ease-in-out h-screen
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       md:relative md:translate-x-0
-    `}>
-      {/* Brand Header */}
-      <div className="p-8 pb-10">
-        <BrandLogo variant="dark" size={40} />
+    `} style={{ backgroundColor: 'var(--slate-ink)' }}>
+      
+      {/* Brand Identity */}
+      <div className="p-8 pb-12 flex items-center justify-between">
+        <BrandLogo variant="dark" size={32} hideText={false} />
+        <div className="md:hidden">
+           <button onClick={onClose} className="p-2 text-slate-500 hover:text-white transition-colors">
+              <ChevronRight className="h-5 w-5 rotate-180" />
+           </button>
+        </div>
       </div>
 
-      {/* Navigation Sections */}
-      <nav className="flex-1 px-4 space-y-8 overflow-y-auto custom-scrollbar">
-        
-        {/* SECTION 1: ELITE ACCESS */}
-        <div className="space-y-2">
-           <h3 className="px-6 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4">Elite Access</h3>
-           {eliteItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={onClose}
-              className={({ isActive }) => `
-                flex items-center space-x-4 px-6 py-3.5 rounded-2xl transition-all group relative
-                ${isActive 
-                  ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'}
-              `}
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
-                  <div className="flex flex-col flex-1">
-                    <div className="flex items-center justify-between">
-                       <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
-                       {item.tag && (
-                         <span className="bg-emerald-500 text-[7px] font-black text-white px-1.5 py-0.5 rounded-md leading-none shadow-sm animate-pulse">
-                            {item.tag}
-                         </span>
-                       )}
-                    </div>
-                    <span className={`text-[8px] font-bold uppercase tracking-tighter ${isActive ? 'text-blue-100' : 'text-slate-600'}`}>{item.desc}</span>
-                  </div>
-                  {isActive && (
-                    <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />
+      {/* Navigation Matrix */}
+      <nav className="flex-1 px-4 space-y-10 overflow-y-auto no-scrollbar">
+        {sections.map((section, idx) => (
+          <div key={idx} className="space-y-2">
+            <div className="px-5 flex items-center justify-between mb-4">
+               <h3 className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">{section.title}</h3>
+               <div className="h-px flex-1 bg-white/5 ml-4" />
+            </div>
+            
+            <div className="space-y-1">
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  onClick={onClose}
+                  className={({ isActive }) => `
+                    flex items-center group px-5 py-3.5 rounded-2xl transition-all relative
+                    ${isActive 
+                      ? 'bg-blue-600/10 text-blue-500 border border-blue-500/20' 
+                      : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}
+                  `}
+                >
+                  {({ isActive }) => (
+                    <>
+                      <item.icon className={`h-4.5 w-4.5 mr-4 transition-all duration-300 ${isActive ? 'text-blue-500' : 'text-slate-500 group-hover:text-blue-400 group-hover:rotate-6'}`} />
+                      <div className="flex flex-col flex-1">
+                        <div className="flex items-center justify-between">
+                           <span className="text-[11px] font-black uppercase tracking-widest">{item.label}</span>
+                           {item.tag && (
+                             <span className="bg-blue-600 text-[6px] font-black text-white px-1.5 py-0.5 rounded uppercase leading-none shadow-lg shadow-blue-600/20">
+                                {item.tag}
+                             </span>
+                           )}
+                        </div>
+                        <span className={`text-[8px] font-bold uppercase tracking-tighter mt-0.5 ${isActive ? 'text-blue-400/80' : 'text-slate-600'}`}>{item.desc}</span>
+                      </div>
+                      
+                      {isActive && (
+                        <div className="absolute right-4 h-1.5 w-1.5 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)]" />
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            </NavLink>
-           ))}
-        </div>
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        ))}
 
-        {/* SECTION 2: TRADING DESK */}
-        <div className="space-y-2">
-           <h3 className="px-6 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4">Trading Desk</h3>
-           {tradeItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={onClose}
-              className={({ isActive }) => `
-                flex items-center space-x-4 px-6 py-3.5 rounded-2xl transition-all group relative
-                ${isActive 
-                  ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'}
-              `}
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
-                  <div className="flex flex-col flex-1">
-                    <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
-                    <span className={`text-[8px] font-bold uppercase tracking-tighter ${isActive ? 'text-blue-100' : 'text-slate-600'}`}>{item.desc}</span>
-                  </div>
-                  {isActive && (
-                    <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />
-                  )}
-                </>
-              )}
-            </NavLink>
-           ))}
-        </div>
-
-        {/* SECTION 3: RESOURCES */}
-        <div className="space-y-2 pb-6">
-           <h3 className="px-6 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4">Account & Insights</h3>
-           {resourceItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={onClose}
-              className={({ isActive }) => `
-                flex items-center space-x-4 px-6 py-3.5 rounded-2xl transition-all group relative
-                ${isActive 
-                  ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'}
-              `}
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
-                  <div className="flex flex-col flex-1">
-                    <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
-                    <span className={`text-[8px] font-bold uppercase tracking-tighter ${isActive ? 'text-blue-100' : 'text-slate-600'}`}>{item.desc}</span>
-                  </div>
-                  {isActive && (
-                    <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />
-                  )}
-                </>
-              )}
-            </NavLink>
-           ))}
-
-           {isAdmin && (
+        {isAdmin && (
+          <div className="pt-4 border-t border-white/5">
             <NavLink
               to="/admin"
               onClick={onClose}
               className={({ isActive }) => `
-                flex items-center space-x-4 px-6 py-3.5 rounded-2xl transition-all group relative border border-blue-500/20 bg-blue-500/5 mt-4
+                flex items-center px-5 py-4 rounded-2xl transition-all border
                 ${isActive 
-                  ? 'bg-blue-600 text-white shadow-xl' 
-                  : 'text-blue-400 hover:text-white hover:bg-blue-600/10'}
+                  ? 'bg-blue-600 text-white border-blue-500' 
+                  : 'bg-slate-900/50 text-blue-400 border-blue-500/20 hover:border-blue-500/40'}
               `}
             >
-              <Terminal className="h-5 w-5" />
+              <Terminal className="h-4.5 w-4.5 mr-4" />
               <div className="flex flex-col">
-                <span className="text-xs font-black uppercase tracking-widest">Admin Center</span>
-                <span className="text-[8px] font-bold uppercase tracking-tighter opacity-70">Command Control</span>
+                <span className="text-[11px] font-black uppercase tracking-widest">Admin Node</span>
+                <span className="text-[8px] font-bold uppercase tracking-tighter opacity-60">Authorized Only</span>
               </div>
             </NavLink>
-           )}
-        </div>
+          </div>
+        )}
       </nav>
 
-
-      {/* Footer Section */}
-      <div className="p-6 space-y-6 mt-auto">
-         <div className="bg-white/5 rounded-2xl p-5 border border-white/5 space-y-3">
-            <div className="flex items-center space-x-2 text-emerald-400">
-               <ShieldCheck className="h-3 w-3" />
-               <span className="text-[9px] font-black uppercase tracking-widest leading-none">System Secure</span>
-            </div>
-            <p className="text-[8px] font-medium text-slate-500 leading-relaxed uppercase">Institutional Data Flow Active. Batch 9 Algorithm Verified.</p>
-         </div>
-
-         <div className="flex items-center justify-between px-2">
-            <NavLink 
-              to="/profile" 
-              onClick={onClose}
-              className={({ isActive }) => `p-2 rounded-xl transition-all ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-600 hover:text-white'}`}
-            >
-               <Settings className="h-4 w-4" />
-            </NavLink>
-            <div className="flex flex-col items-end">
-               <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Version</span>
-               <span className="text-[10px] font-bold text-slate-300">3.5.1-PRO</span>            </div>
-         </div>
+      {/* Sidebar Footer: Connectivity Info */}
+      <div className="p-6 mt-auto border-t border-white/5 space-y-6">
+        <div className="flex items-center justify-between px-2">
+           <div className="flex items-center space-x-4">
+              <Link to="/profile" onClick={onClose} className="p-2 text-slate-500 hover:text-white transition-colors">
+                 <Settings className="h-4 w-4" />
+              </Link>
+              <Link to="/education" onClick={onClose} className="p-2 text-slate-500 hover:text-white transition-colors">
+                 <HelpCircle className="h-4 w-4" />
+              </Link>
+           </div>
+           <div className="flex flex-col items-end">
+              <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Environment</span>
+              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest animate-pulse">Live Secure</span>
+           </div>
+        </div>
+        
+        <div className="text-center">
+           <p className="text-[8px] font-black text-slate-700 uppercase tracking-[0.4em]">v14.0 Institutional</p>
+        </div>
       </div>
     </aside>
   );
