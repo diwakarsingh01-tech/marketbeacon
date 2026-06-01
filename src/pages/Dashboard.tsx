@@ -242,10 +242,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     // 3. Neutral: !isBuyZone && isPass
     // 4. Watchlist: allStocks
     
-    const open = data.allStocks.filter((r: any) => r && r.isBuyZone && r.isPass);
-    const rejected = data.allStocks.filter((r: any) => r && !r.isPass);
-    const neutral = data.allStocks.filter((r: any) => r && !r.isBuyZone && r.isPass);
-    const watchlist = data.allStocks; // The full basket
+    const currentBasketStocks = BASKETS[activeBasket] || [];
+    const basketData = data.allStocks.filter((r: any) => currentBasketStocks.includes(r.symbol));
+
+    const open = basketData.filter((r: any) => r && r.isBuyZone && r.isPass);
+    const rejected = basketData.filter((r: any) => r && !r.isPass);
+    const neutral = basketData.filter((r: any) => r && !r.isBuyZone && r.isPass);
+    const watchlist = basketData; // Full institutional basket
 
     if (activeTab === 'hold') return watchlist; 
     if (activeTab === 'open') return open;
@@ -446,47 +449,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         </div>
       </div>
 
-      {/* Unified Portfolio Summary */}
-      {(activeTab === 'portfolio' || activeTab === 'hold') && portfolioSummary.totalInvested > 0 && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-        >
-          <div className="bg-slate-ink rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group border border-white/5" style={{ backgroundColor: 'var(--slate-ink)' }}>
-             <div className="absolute right-0 top-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-16 -mt-16 group-hover:bg-blue-600/20 transition-all" />
-             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest relative z-10">Total Invested</span>
-             <h3 className="text-4xl font-black mt-3 tracking-tighter relative z-10 italic">₹{portfolioSummary.totalInvested.toLocaleString()}</h3>
-          </div>
-          <DashboardStat title="Valuation" value={`₹${portfolioSummary.totalCurrent.toLocaleString()}`} icon={TrendingUp} color="blue" />
-          <DashboardStat title="Absolute P&L" value={`${portfolioSummary.totalPnL >= 0 ? '+' : '-'}₹${Math.abs(portfolioSummary.totalPnL).toLocaleString()}`} icon={Activity} color={portfolioSummary.totalPnL >= 0 ? "emerald" : "rose"} />
-          
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-5">
-            <div className="flex justify-between items-center">
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cap Architecture</span>
-               <PieChart className="h-4 w-4 text-slate-300" />
-            </div>
-            <div className="h-2 w-full flex rounded-full overflow-hidden bg-slate-50 shadow-inner">
-               <div className="h-full bg-slate-ink transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.large}%` }} />
-               <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.mid}%` }} />
-               <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.small}%` }} />
-            </div>
-            <div className="flex justify-between text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] italic">
-               <span>L: {portfolioSummary.capBreakdown.large.toFixed(0)}%</span>
-               <span>M: {portfolioSummary.capBreakdown.mid.toFixed(0)}%</span>
-               <span>S: {portfolioSummary.capBreakdown.small.toFixed(0)}%</span>
-            </div>
-          </div>
-        </motion.div>
-      )}
+      {/* Portfolio Summary Removed for Discovery Focus */}
 
       {/* Institutional Tab Controller */}
       <div className="flex bg-slate-200/40 p-1.5 rounded-[1.5rem] md:rounded-[2.2rem] border border-slate-200/50 w-fit max-w-full overflow-x-auto no-scrollbar shadow-inner gap-1.5">
          {[
-           { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => r && r.isBuyZone && r.isPass).length || 0 },
-           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => r && !r.isBuyZone && r.isPass).length || 0 },
-           { id: 'rejected', label: 'Rejected', count: data?.allStocks?.filter((r: any) => r && !r.isPass).length || 0 },
-           { id: 'hold', label: 'Watchlist', count: data?.allStocks?.filter((r: any) => r !== null).length || 0 },
+           { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isBuyZone && r.isPass).length || 0 },
+           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isBuyZone === false && r.isPass).length || 0 },
+           { id: 'rejected', label: 'Rejected', count: data?.allStocks?.filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isPass === false).length || 0 },
+           { id: 'hold', label: 'Watchlist', count: (BASKETS[activeBasket] || []).length || 0 },
          ].map(tab => (
            <button 
              key={tab.id} 
