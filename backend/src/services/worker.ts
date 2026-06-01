@@ -79,17 +79,17 @@ export async function precalculateAlpha40() {
             if (!STRATEGY_BASKET_MAP[stratId]?.includes(basketName)) continue;
             
             const sd = snap.strategies?.[stratId] || runStrategyAnalysis(stratId, snap, marketCap);
-            if (!sd || !sd.isBuyZone) continue;
+            if (!sd || !sd?.isBuyZone) continue;
 
-            const entry = sd.entryPrice || last.close;
-            const target = sd.target || (entry * 1.3);
-            const isMovingUp = last.close >= entry;
-            const priceDeviation = Math.abs(((last.close / entry) - 1) * 100);
+            const entry = sd?.entryPrice || last?.close;
+            const target = sd?.target || (entry * 1.3);
+            const isMovingUp = last?.close >= entry;
+            const priceDeviation = Math.abs(((last?.close / entry) - 1) * 100);
             
             if (isMovingUp && priceDeviation > 2.0) continue; 
             else if (!isMovingUp && priceDeviation > 30.0) continue;
 
-            let entryTime = sd.triggerDate;
+            let entryTime = sd?.triggerDate;
             if (!entryTime && snap.quotes.length > 0) {
               entryTime = new Date(snap.quotes[0].date).toISOString().split('T')[0];
             }
