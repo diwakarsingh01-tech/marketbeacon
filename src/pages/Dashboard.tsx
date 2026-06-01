@@ -162,6 +162,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     setStockSectors(sectorMap);
   };
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const fetchData = useCallback(async (forceRefresh = false) => {
     setIsRefreshing(true);
     setError(null);
