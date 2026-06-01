@@ -1,24 +1,50 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --slate-ink: #020617;
+    --electric-cobalt: #2563eb;
+    --institutional-white: #f8fafc;
+    --accent-emerald: #10b981;
+  }
+
   * {
     font-family: 'Outfit', sans-serif;
   }
 
-  body {
-    background-color: #f8fafc; /* Pure Institutional Slate-White */
-    color: #0f172a;
-    margin: 0;
-    padding: 0;
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  /* Universal Premium Light Theme (MarketBeacon Professional) */
+  body {
+    background-color: var(--institutional-white);
+    color: var(--slate-ink);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Universal Premium UI (MarketBeacon Professional) */
+
+  .bg-slate-ink {
+    background-color: var(--slate-ink);
+    color: #ffffff;
+  }
+
+  .text-electric-cobalt {
+    color: var(--electric-cobalt);
+  }
+
+  /* 4px/8px Grid Utilities */
+  .p-grid-1 { padding: 4px; }
+  .p-grid-2 { padding: 8px; }
+  .gap-grid-2 { gap: 8px; }
 
   /* Panels, Cards, Navs */
   .bg-white {
     background-color: #ffffff;
-    color: #0f172a;
+    color: var(--slate-ink);
   }
 
   .bg-slate-50 {
@@ -27,7 +53,7 @@
   }
 
   .bg-slate-900 {
-    background-color: #0f172a;
+    background-color: var(--slate-ink);
     color: #ffffff;
   }
 
