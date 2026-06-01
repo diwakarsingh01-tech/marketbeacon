@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import BrandLogo from '../components/brand/BrandLogo';
 import { Activity, ShieldCheck, AlertCircle, ArrowRight, Smartphone, UserPlus, LogIn, Key, Mail, Globe } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { auth } from '../lib/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
@@ -141,13 +142,52 @@ const LoginPage: React.FC = () => {
     }
   }, [user, navigate, from]);
 
+  const [showWakingMessage, setShowWakingMessage] = useState(false);
+
   const onGoogleSuccess = async (response: any) => {
+    setLoading(true);
+    setError(null);
+    setShowWakingMessage(false);
+    
+    // Cold Start Detection: Show message if login takes > 3s
+    const wakeTimer = setTimeout(() => setShowWakingMessage(true), 3000);
+
     try {
       await googleLogin(response.credential);
+      clearTimeout(wakeTimer);
     } catch (err: any) {
+      clearTimeout(wakeTimer);
       setError(err.message || 'Google Login Failed');
+      setLoading(false);
     }
   };
+
+  if (loading && !onboarding && loginMethod === 'google') {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-6">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-white/5 border-t-blue-600 rounded-full animate-spin" />
+          {showWakingMessage && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full animate-pulse border-2 border-slate-950" />
+          )}
+        </div>
+        <div className="space-y-2 text-center max-w-xs">
+          <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Authenticating Node</p>
+          <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic">Syncing with Institutional Identity Hub...</p>
+          {showWakingMessage && (
+            <motion.p 
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-[9px] font-black text-amber-500 uppercase tracking-widest pt-4"
+            >
+              🚀 Server is waking up... <br />
+              <span className="text-[7px] text-slate-600 font-bold">This may take 30s on first load (Render Free Tier)</span>
+            </motion.p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (onboarding) return (
     <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 font-sans">

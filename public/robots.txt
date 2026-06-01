@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /alpha-hub
+Disallow: /screener
+Disallow: /market
+Disallow: /portfolio
+Disallow: /trades
+Disallow: /profile
+
+Sitemap: https://marketbeacon.pro/sitemap.xml
