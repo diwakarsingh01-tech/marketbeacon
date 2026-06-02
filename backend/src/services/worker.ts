@@ -10,12 +10,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ALPHA_40_CACHE_PATH = path.join(__dirname, '../alpha_40_cache.json');
 
 const STRATEGY_BASKET_MAP: Record<string, string[]> = {
-  'ENVELOPE_LONG': ['Bluechip'], 'ENVELOPE_SHORT': ['Bluechip'], 'BOLLINGER': ['Bluechip'],
-  'CUP_HANDLE_ABCD': ['Bluechip', 'High Beta'], 'RHS_ABCD': ['Bluechip', 'High Beta'],
-  'SMA_ABCD': ['Bluechip', 'High Beta'], '52W_HIGH_LOW': ['Bluechip', 'High Beta'],
-  'TWENTY_RALLY_RETEST': ['Bluechip', 'High Beta', 'Wealth Universe'],
-  'SIXTY_SEVEN_FUNDA': ['Bluechip', 'High Beta', 'Wealth Universe'],
-  'SR_STRATEGY': ['Bluechip', 'High Beta', 'Wealth Universe']
+  'ENVELOPE_LONG': ['H-Super45'], 'ENVELOPE_SHORT': ['H-Super45'], 'BOLLINGER': ['H-Super45'],
+  'CUP_HANDLE_ABCD': ['H-Super45', 'H-GOOD45'], 'RHS_ABCD': ['H-Super45', 'H-GOOD45'],
+  'SMA_ABCD': ['H-Super45', 'H-GOOD45'], '52W_HIGH_LOW': ['H-Super45', 'H-GOOD45'],
+  'TWENTY_RALLY_RETEST': ['H-Super45', 'H-GOOD45', 'H-Good200'],
+  'SIXTY_SEVEN_FUNDA': ['H-Super45', 'H-GOOD45', 'H-Good200'],
+  'SR_STRATEGY': ['H-Super45', 'H-GOOD45', 'H-Good200']
 };
 
 export async function precalculateAlpha40() {
@@ -115,9 +115,9 @@ export async function precalculateAlpha40() {
       return { active, closed };
     };
 
-    const bc = await processBasket('Bluechip', BASKETS['Bluechip']);
-    const hb = await processBasket('High Beta', BASKETS['High Beta']);
-    const wb = await processBasket('Wealth Universe', currentWealth);
+    const bc = await processBasket('H-Super45', BASKETS['H-Super45']);
+    const hb = await processBasket('H-GOOD45', BASKETS['H-GOOD45']);
+    const wb = await processBasket('H-Good200', currentWealth);
 
     const allActive = [...(bc.active || []), ...(hb.active || []), ...(wb.active || [])];
     const allClosed = [...(bc.closed || []), ...(hb.closed || []), ...(wb.closed || [])];
