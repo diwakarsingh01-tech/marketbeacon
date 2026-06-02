@@ -76,9 +76,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const navigate = useNavigate();
   const { user } = useAuth();
   const searchParams = new URLSearchParams(location.search);
-  const strategyId = searchParams.get('strategy') || 'ENVELOPE_LONG';
+  const strategyId = searchParams.get('strategy') || 'SR_STRATEGY'; // Default to a locked strategy
 
   const currentStrategy = STRATEGIES.find(s => s.id === strategyId) || STRATEGIES[0];
+  const lockedStrategies = STRATEGIES.filter(s => s.isLocked);
 
   const [data, setData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -423,7 +424,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                 onChange={(e) => navigate(`?strategy=${e.target.value}`)} 
                 className="appearance-none bg-white border border-slate-200 rounded-2xl pl-6 pr-12 py-4 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-blue-500/30 transition-all min-w-[200px]"
               >
-                {STRATEGIES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                {lockedStrategies.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
               <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                 <ChevronRight className="w-4 h-4 rotate-90" />
