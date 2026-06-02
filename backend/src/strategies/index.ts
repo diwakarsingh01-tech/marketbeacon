@@ -479,102 +479,68 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
  * 2. Shape: Strict 5-point sequence (S1 -> P1 -> Head -> P2 -> S2).
  * 3. Parallelism: S1/S2 and P1/P2 must be within 5% price alignment.
  */
-export function calculateRHS(quotes: Quote[]) { 
-  if (!quotes || quotes.length < 350) return { isBuyZone: false };
-
+export function calculateRHS(quotes: Quote[]) {
+  // Strategy #11: LOCKED REVERSE H&S + 10% CORRECTION (v1.0)
+  if (!quotes || quotes.length < 400) return { isBuyZone: false };
   const prices = quotes.map(q => q.close);
-  const currentPrice = prices[prices.length - 1];
-  const ath = Math.max(...quotes.map(q => q.high));
-  
-  // Rule 1: Minimum 30% down from ATH
-  const isDrawdownActive = currentPrice <= ath * 0.70;
-  if (!isDrawdownActive) return { isBuyZone: false };
+  const ema200 = calculateEMA(prices, 200);
+  const latestIdx = quotes.length - 1;
+  const currentPrice = prices[latestIdx];
 
-  let isPositionOpen = false;
-  let activeEntry = 0;
-  let activeTarget = 0;
-  let activeSignalDate = "";
-
-  const getPivots = () => {
-    const lowPivots: { price: number, idx: number }[] = [];
-    const highPivots: { price: number, idx: number }[] = [];
-    for (let i = 3; i < quotes.length - 1; i++) {
-      const h = quotes[i].high, l = quotes[i].low;
-      // Softened Pivot: Use >= to allow for equal neighbors in consolidation
-      if (l <= quotes[i-1].low && l <= quotes[i-2].low && l <= quotes[i-3].low && l < quotes[i+1].low) 
-        lowPivots.push({ price: l, idx: i });
-      if (h >= quotes[i-1].high && h >= quotes[i-2].high && h >= quotes[i-3].high && h > quotes[i+1].high) 
-        highPivots.push({ price: h, idx: i });
+  const window = 15;
+  const lows: any[] = [];
+  const highs: any[] = [];
+  for (let i = window; i < latestIdx - window; i++) {
+    const lSlice = quotes.slice(i - window, i + window + 1).map(q => q.low);
+    const hSlice = quotes.slice(i - window, i + window + 1).map(q => q.high);
+    if (quotes[i].low === Math.min(...lSlice)) {
+      const d = quotes[i].date;
+      const dStr = (typeof d === 'string' ? d : (d as Date).toISOString()).split('T')[0];
+      lows.push({ price: quotes[i].low, idx: i, date: dStr });
     }
-    return { lowPivots, highPivots };
-  };
-
-  const { lowPivots, highPivots } = getPivots();
-
-  // Simulation Loop
-  for (let i = 300; i < quotes.length; i++) {
-    if (!isPositionOpen) {
-      const lows = lowPivots.filter(p => p.idx < i && p.idx > i - 300);
-      const highs = highPivots.filter(p => p.idx < i && p.idx > i - 300);
-
-      if (lows.length < 3 || highs.length < 2) continue;
-
-      // Exhaustive Triplet Search
-      for (let j2 = lows.length - 1; j2 >= 2; j2--) {
-        for (let j1 = j2 - 1; j1 >= 1; j1--) {
-          for (let j0 = j1 - 1; j0 >= 0; j0--) {
-            const s2 = lows[j2];
-            const head = lows[j1];
-            const s1 = lows[j0];
-
-            if (s2.idx - s1.idx < 30) continue; 
-
-            if (head.price < s1.price && head.price < s2.price) {
-              const p2Arr = highs.filter(h => h.idx > head.idx && h.idx < s2.idx);
-              const p1Arr = highs.filter(h => h.idx > s1.idx && h.idx < head.idx);
-              
-              if (p1Arr.length > 0 && p2Arr.length > 0) {
-                const p1 = p1Arr[p1Arr.length - 1];
-                const p2 = p2Arr[0];
-
-                const shouldersLevel = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price) <= 0.06;
-                const neckLevel = Math.abs(p1.price - p2.price) / Math.max(p1.price, p2.price) <= 0.06;
-
-                if (shouldersLevel && neckLevel) {
-                  const neckline = Math.max(p1.price, p2.price);
-                  if (quotes[i].close > neckline && i > s2.idx) {
-                    isPositionOpen = true;
-                    activeEntry = Math.round(quotes[i].close);
-                    const patternHeight = neckline - head.price;
-                    activeTarget = Math.round(Math.max(activeEntry * 1.30, activeEntry + patternHeight));
-                    const dateVal = quotes[i].date;
-                    activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
-                    break;
-                  }
-                }
-              }
-            }
-          }
-          if (isPositionOpen) break;
-        }
-        if (isPositionOpen) break;
-      }
-    }
-
-    if (isPositionOpen && quotes[i].high >= activeTarget) {
-      isPositionOpen = false;
+    if (quotes[i].high === Math.max(...hSlice)) {
+      const d = quotes[i].date;
+      const dStr = (typeof d === 'string' ? d : (d as Date).toISOString()).split('T')[0];
+      highs.push({ price: quotes[i].high, idx: i, date: dStr });
     }
   }
 
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
+  for (let hIdx = lows.length - 2; hIdx >= 1; hIdx--) {
+    const head = lows[hIdx];
+    const s1Arr = lows.filter(l => l.idx < head.idx && l.idx > head.idx - 150);
+    const s2Arr = lows.filter(l => l.idx > head.idx && l.idx < head.idx + 150);
+    if (s1Arr.length === 0 || s2Arr.length === 0) continue;
 
-  return { 
-    isBuyZone: isActuallyInBuyRange, 
-    entryPrice: activeEntry, 
-    target: activeTarget, 
-    currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate
-  }; 
+    const s1 = s1Arr[s1Arr.length - 1];
+    const s2 = s2Arr[0];
+
+    if (head.price >= s1.price || head.price >= s2.price) continue;
+
+    const peaks = highs.filter(h => h.idx > head.idx && h.idx < s2.idx);
+    if (peaks.length === 0) continue;
+    const neckline = peaks[0];
+
+    const correction = ((neckline.price - s2.price) / neckline.price) * 100;
+    if (correction < 8 || correction > 18) continue; 
+    if (head.price > ema200[head.idx]) continue;
+
+    const patternHeight = neckline.price - head.price;
+    const target = neckline.price + patternHeight;
+    if ((target / s2.price) - 1 < 0.30) continue;
+
+    if (Math.abs(currentPrice - s2.price) / s2.price <= 0.07) {
+      return {
+        isBuyZone: true,
+        entryPrice: Math.round(s2.price),
+        target: Math.round(target),
+        currentPrice: Math.round(currentPrice),
+        triggerDate: s2.date,
+        correction: correction.toFixed(1),
+        isLocked: true
+      };
+    }
+  }
+  return { isBuyZone: false };
 }
 
 /**
