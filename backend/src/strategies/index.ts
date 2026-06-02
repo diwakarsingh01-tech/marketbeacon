@@ -551,86 +551,69 @@ export function calculateRHS(quotes: Quote[]) {
  * 3. U-Shape: Checks for depth (min 15%) and consolidation.
  */
 export function calculateCupHandle(quotes: Quote[]) { 
-  if (!quotes || quotes.length < 300) return { isBuyZone: false };
+  // Strategy #10: LOCKED CUP WITH HANDLE + 10% CORRECTION (v1.0)
+  if (!quotes || quotes.length < 400) return { isBuyZone: false };
 
-  const prices = quotes.map(q => q.close);
-  const currentPrice = prices[prices.length - 1];
-  const ath = Math.max(...quotes.map(q => q.high));
-  
-  // Rule 1: Minimum 30% down from ATH to even consider this stock
-  const isDrawdownActive = currentPrice <= ath * 0.70;
-  if (!isDrawdownActive) return { isBuyZone: false };
-
-  let isPositionOpen = false;
-  let activeEntry = 0;
-  let activeTarget = 0;
-  let activeSignalDate = "";
-
-  // Helper: Pivot High (Pine Script: left=3, right=1)
-  const isPivotHigh = (idx: number) => {
-    if (idx < 3 || idx >= quotes.length - 1) return false;
-    const h = quotes[idx].high;
-    return h >= quotes[idx-1].high && h >= quotes[idx-2].high && h >= quotes[idx-3].high &&
-           h > quotes[idx+1].high;
-  };
-
-  const pivots: { price: number, idx: number }[] = [];
-  for (let i = 3; i < quotes.length - 1; i++) {
-    if (isPivotHigh(i)) pivots.push({ price: quotes[i].high, idx: i });
-  }
-
-  // Simulation Loop
-  for (let i = 300; i < quotes.length; i++) {
-    if (!isPositionOpen) {
-      const validPivotsBefore = pivots.filter(p => p.idx < i && p.idx > i - 300);
-      
-      // Exhaustive Pivot Pair Search
-      for (let r2 = validPivotsBefore.length - 1; r2 >= 1; r2--) {
-        for (let r1 = r2 - 1; r1 >= 0; r1--) {
-          const rim2 = validPivotsBefore[r2];
-          const rim1 = validPivotsBefore[r1];
-
-          const neckline = Math.max(rim1.price, rim2.price);
-          const cupWidth = rim2.idx - rim1.idx;
-          if (cupWidth < 25 || cupWidth > 200) continue;
-
-          const cupSlice = prices.slice(rim1.idx, rim2.idx);
-          const cupLow = Math.min(...cupSlice);
-          const cupDepth = (neckline - cupLow) / neckline;
-
-          const rimsLevel = Math.abs(rim1.price - rim2.price) / neckline <= 0.07;
-          const hasProperDepth = cupDepth >= 0.30 && cupDepth <= 0.65;
-
-          if (rimsLevel && hasProperDepth) {
-            if (quotes[i].close > neckline && i > rim2.idx) {
-              isPositionOpen = true;
-              activeEntry = Math.round(quotes[i].close);
-              const verticalGain = neckline - cupLow;
-              activeTarget = Math.round(Math.max(activeEntry * 1.30, activeEntry + verticalGain));
-              const dateVal = quotes[i].date;
-              activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
-              break; 
-            }
-          }
-        }
-        if (isPositionOpen) break;
-      }
+  const currentPrice = quotes[quotes.length - 1].close;
+  const window = 15;
+  const lows: any[] = [];
+  const highs: any[] = [];
+  for (let i = window; i < quotes.length - window; i++) {
+    const lSlice = quotes.slice(i - window, i + window + 1).map(q => q.low);
+    const hSlice = quotes.slice(i - window, i + window + 1).map(q => q.high);
+    if (quotes[i].low === Math.min(...lSlice)) {
+      const d = quotes[i].date;
+      const dStr = (typeof d === 'string' ? d : d.toISOString()).split('T')[0];
+      lows.push({ price: quotes[i].low, idx: i, date: dStr });
     }
-
-    if (isPositionOpen && quotes[i].high >= activeTarget) {
-      isPositionOpen = false;
+    if (quotes[i].high === Math.max(...hSlice)) {
+      const d = quotes[i].date;
+      const dStr = (typeof d === 'string' ? d : d.toISOString()).split('T')[0];
+      highs.push({ price: quotes[i].high, idx: i, date: dStr });
     }
   }
 
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
+  for (let rIdx = highs.length - 2; rIdx >= 10; rIdx--) {
+    const rim2 = highs[rIdx];
+    const leftLipArr = highs.filter(h => h.idx < rim2.idx - 40 && h.idx > rim2.idx - 300);
+    if (leftLipArr.length === 0) continue;
+    
+    const rim1 = leftLipArr.reduce((prev, curr) => 
+      Math.abs(curr.price - rim2.price) < Math.abs(prev.price - rim2.price) ? curr : prev
+    );
 
-  return { 
-    isBuyZone: isActuallyInBuyRange, 
-    entryPrice: activeEntry, 
-    target: activeTarget, 
-    currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate
-  }; 
+    if (Math.abs(rim1.price - rim2.price) / rim2.price > 0.08) continue;
+
+    const cupLows = lows.filter(l => l.idx > rim1.idx && l.idx < rim2.idx);
+    if (cupLows.length === 0) continue;
+    const bottom = cupLows.reduce((prev, curr) => curr.price < prev.price ? curr : prev);
+
+    if (bottom.price >= rim1.price * 0.90) continue; // Minimum 10% Depth
+
+    const handleLows = lows.filter(l => l.idx > rim2.idx && l.idx <= quotes.length - 1);
+    if (handleLows.length === 0) continue;
+    const handleLow = handleLows.reduce((prev, curr) => curr.price < prev.price ? curr : prev);
+
+    const correction = ((rim2.price - handleLow.price) / rim2.price) * 100;
+    if (correction < 7 || correction > 20) continue; // 7-20% Correction Range
+
+    const depth = rim2.price - bottom.price;
+    const target = rim2.price + depth;
+    if ((target / currentPrice) - 1 < 0.25) continue;
+
+    if (Math.abs(currentPrice - handleLow.price) / handleLow.price <= 0.10) {
+      return {
+        isBuyZone: true,
+        entryPrice: Math.round(handleLow.price),
+        target: Math.round(target),
+        currentPrice: Math.round(currentPrice),
+        triggerDate: handleLow.date,
+        correction: correction.toFixed(1),
+        isLocked: true
+      };
+    }
+  }
+  return { isBuyZone: false };
 }
 
 /**
