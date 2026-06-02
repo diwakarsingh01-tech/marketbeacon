@@ -406,9 +406,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                 onChange={(e) => setActiveBasket(e.target.value)} 
                 className="appearance-none bg-white border border-slate-200 rounded-2xl pl-6 pr-12 py-4 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-blue-500/30 transition-all min-w-[160px]"
               >
-                <option value="Bluechip">Bluechip</option>
-                <option value="High Beta">High Beta</option>
-                <option value="Wealth Universe">Wealth Universe</option>
+                <option value="H-Super45">H-Super45</option>
+                <option value="H-GOOD45">H-GOOD45</option>
+                <option value="H-Good200">H-Good200</option>
               </select>
               <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                 <ChevronRight className="w-4 h-4 rotate-90" />
