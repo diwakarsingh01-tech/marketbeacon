@@ -415,19 +415,19 @@ app.post('/api/admin/update-snapshot', authenticateToken, requireAdmin, async (r
     let symbols = [];
     
     const dynamicWealth = getDynamicBasket();
-    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['Wealth Universe'] || []);
+    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['H-Good200'] || []);
 
-    if (basket === 'Bluechip') {
-      symbols = BASKETS['Bluechip'] || [];
-    } else if (basket === 'High Beta') {
-      symbols = BASKETS['High Beta'] || [];
-    } else if (basket === 'Wealth Universe') {
+    if (basket === 'H-Super45') {
+      symbols = BASKETS['H-Super45'] || [];
+    } else if (basket === 'H-GOOD45') {
+      symbols = BASKETS['H-GOOD45'] || [];
+    } else if (basket === 'H-Good200') {
       symbols = currentWealth;
     } else {
       // FIX: Safe spreading
       const all = [];
-      if (Array.isArray(BASKETS['Bluechip'])) all.push(...BASKETS['Bluechip']);
-      if (Array.isArray(BASKETS['High Beta'])) all.push(...BASKETS['High Beta']);
+      if (Array.isArray(BASKETS['H-Super45'])) all.push(...BASKETS['H-Super45']);
+      if (Array.isArray(BASKETS['H-GOOD45'])) all.push(...BASKETS['H-GOOD45']);
       if (Array.isArray(currentWealth)) all.push(...currentWealth);
       symbols = Array.from(new Set(all));
     }
@@ -616,7 +616,7 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
       // Select the primary strategy signal if any
       const activeStrats = Object.entries(snap.strategies || {}).filter(([id, s]: any) => {
         // Pillar #7: Basket Isolation
-        if (id === '52W_HIGH_LOW' && basket === 'Wealth Universe') return false;
+        if (id === '52W_HIGH_LOW' && basket === 'H-Good200') return false;
         return s?.isBuyZone;
       });
       const strategyId = activeStrats.length > 0 ? activeStrats[0][0] : 'ENVELOPE_LONG';
@@ -809,6 +809,10 @@ async function startServer() {
     console.log('🚀 [STARTUP] Warming up Alpha-40 Cache...');
     precalculateAlpha40();
     generateSitemap();
+
+    // Pillar #9: Auto-Refresh Elite Basket on Startup
+    console.log('🛡️ [STARTUP] Refreshing H-Super45 Smart Money Data...');
+    updateMarketSnapshot(BASKETS['H-Super45']).catch(e => console.error('Startup SM Refresh Failed:', e.message));
     
     // Schedule Pre-calculation every 15 minutes
     cron.schedule('*/15 * * * *', () => {
@@ -819,8 +823,8 @@ async function startServer() {
     // Ephemeral Storage Fix: Trigger priority snapshot if empty
     const cache = getMarketSnapshot();
     if (Object.keys(cache).length <= 1) {
-      console.log('🚀 [STARTUP] Cache empty. Triggering priority Bluechip snapshot...');
-      updateMarketSnapshot(BASKETS['Bluechip']).catch(e => console.error('Startup Snapshot Failed:', e.message));
+      console.log('🚀 [STARTUP] Cache empty. Triggering priority H-Super45 snapshot...');
+      updateMarketSnapshot(BASKETS['H-Super45']).catch(e => console.error('Startup Snapshot Failed:', e.message));
     }
 
     // --- GLOBAL 404 HANDLER (Zero-HTML Policy) ---
@@ -849,7 +853,7 @@ function syncBaskets() {
   try {
     const dynamicProfit = getDynamicBasket();
     if (Array.isArray(dynamicProfit) && dynamicProfit.length > 0) {
-      BASKETS['Wealth Universe'] = dynamicProfit;
+      BASKETS['H-Good200'] = dynamicProfit;
     }
   } catch (e) { console.error('Sync Baskets Failed:', e.message); }
 }
