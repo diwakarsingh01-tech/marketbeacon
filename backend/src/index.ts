@@ -721,61 +721,50 @@ app.get('/api/stock-prices', async (req, res) => {
 });
 
 // --- PUBLIC ANALYSIS ENGINE (Viral Acquisition) ---
+app.get('/api/stock-fundamentals', async (req, res) => {
+  try {
+    const { symbol } = req.query;
+    if (!symbol) return res.status(400).json({ error: 'Symbol is required' });
+
+    const snapshot = getMarketSnapshot();
+    const symStr = symbol as string;
+    const snap = snapshot[symStr] || snapshot[`${symStr}.NS`];
+    if (!snap) return res.status(404).json({ error: 'Stock not found' });
+
+    const audit = await validateBatch9(symStr, snap, 'ALL');
+    
+    let basket = 'OUTSIDE UNIVERSE';
+    for (const b in BASKETS) {
+      if (BASKETS[b].includes(symStr)) {
+        basket = b;
+        break;
+      }
+    }
+
+    res.json({
+      ...snap.screener,
+      price: snap.quote.regularMarketPrice,
+      change: snap.quote.regularMarketChangePercent,
+      fiftyTwoWeekHigh: snap.quote.fiftyTwoWeekHigh,
+      fiftyTwoWeekLow: snap.quote.fiftyTwoWeekLow,
+      audit: { ...audit, universe: basket },
+      shareholding: snap.quote.shareholding || snap.screener?.shareholding
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/public/analysis/:symbol', async (req, res) => {
   try {
     let { symbol } = req.params;
     symbol = symbol.toUpperCase();
-    
-    // Institutional Alias Shield (Safe-Guard Rule #12)
-    const ALIASES: Record<string, string> = {
-      'HDFC': 'HDFCBANK',
-      'RELIANCE': 'RELIANCE',
-      'KOTAK': 'KOTAKBANK',
-      'ICICI': 'ICICIBANK'
-    };
-
-    if (ALIASES[symbol]) {
-      console.log(`🛡️ [Alias Shield] Mapping ${symbol} to ${ALIASES[symbol]}`);
-      symbol = ALIASES[symbol];
-    }
-    
     const snapshot = getMarketSnapshot();
-    
-    // Institutional Suffix Shield
-    let snap = snapshot[symbol] || snapshot[`${symbol}.NS`] || snapshot[`${symbol}.BO`];
-    const actualSymbol = snapshot[symbol] ? symbol : (snapshot[`${symbol}.NS`] ? `${symbol}.NS` : `${symbol}.BO`);
-    
-    // SCALABILITY FIX: On-Demand Growth Node (Safe-Guard Rule #15)
-    if (!snap && NIFTY_500.includes(`${symbol}.NS`)) {
-      console.log(`🚀 [GLOBAL SEARCH] Symbol ${symbol} not in cache. Triggering on-demand node audit...`);
-      // Trigger background update but don't wait for it for the teaser
-      updateMarketSnapshot([symbol]).catch(e => console.error('On-Demand Audit Failed:', e));
-      return res.status(202).json({ 
-        error: 'Node warming up', 
-        hint: `Symbol ${symbol} is in Nifty 500 but data is being audited. Please refresh in 30 seconds.` 
-      });
-    }
+    const snap = snapshot[symbol] || snapshot[`${symbol}.NS`];
 
     if (!snap) return res.status(404).json({ error: 'Stock not found' });
 
-    const audit = await validateBatch9(actualSymbol, snap, 'ALL');
+    const audit = await validateBatch9(symbol, snap, 'ALL');
     
-    // Extract ALL qualified strategies for the teaser
-    const qualifiedStrats = [];
-    for (const strat of STRATEGIES) {
-      const id = strat.id;
-      
-      // Pillar #7: Basket Isolation for 52W High/Low
-      if (id === '52W_HIGH_LOW' && basket === 'Wealth Universe') continue;
-
-      const sd = snap.strategies?.[id] || runStrategyAnalysis(id, snap, snap.quote.marketCap);
-      if (sd && sd?.isBuyZone) {
-        qualifiedStrats.push({ id, name: strat.name });
-      }
-    }
-
-    // Identify Basket
-    let basket = 'Nifty 500';
+    let basket = null;
     for (const b in BASKETS) {
       if (BASKETS[b].includes(symbol)) {
         basket = b;
@@ -783,21 +772,27 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
       }
     }
 
+    const qualifiedStrats = [];
+    if (basket) {
+      for (const strat of STRATEGIES) {
+        if (!strat.baskets.includes(basket)) continue;
+        const sd = snap.strategies?.[strat.id] || runStrategyAnalysis(strat.id, snap, snap.quote.marketCap);
+        if (sd && sd?.isBuyZone) qualifiedStrats.push({ id: strat.id, name: strat.name });
+      }
+    }
+
     const publicData = {
       symbol,
       score: audit.score,
-      isPass: audit.score >= 70, // Institutional Threshold
+      isPass: audit.isPass,
       smartMoney: audit.smartMoneyTotal,
       marketCap: snap.quote.marketCap,
-      basket,
-      upside: 30, // Pro-form target
+      basket: basket || 'OUTSIDE UNIVERSE',
+      upside: 30,
       risk: audit.score >= 80 ? 'Low' : 'Moderate',
-      strategies: qualifiedStrats // Returning all qualified strategies
+      strategies: qualifiedStrats
     };
 
-    const body = JSON.stringify(publicData);
-    res.setHeader('ETag', etag(body));
-    res.setHeader('Cache-Control', 'public, max-age=3600');
     res.json(publicData);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
