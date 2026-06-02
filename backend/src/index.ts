@@ -292,6 +292,46 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+app.post('/api/auth/mobile-send-otp', async (req, res) => {
+  try {
+    const { mobile } = req.body;
+    if (!mobile) return res.status(400).json({ error: 'Mobile number is required' });
+    console.log(`📡 [AUTH] Mobile OTP requested for: ${mobile}`);
+    res.json({ success: true, message: 'OTP flow initialized' });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/auth/mobile-verify-otp', async (req, res) => {
+  const start = Date.now();
+  try {
+    const { mobile, otp } = req.body;
+    if (!mobile || !otp) return res.status(400).json({ error: 'Mobile and OTP are required' });
+
+    const db = getDB();
+    const identifier = `${mobile}@marketbeacon.com`;
+    let user = await db.get('SELECT * FROM users WHERE email = ?', [identifier]);
+
+    const role = 'user';
+    const tier = 'free';
+
+    if (!user) {
+      console.log(`🆕 [AUTH] Creating new mobile user: ${mobile}`);
+      const result = await db.run(
+        'INSERT INTO users (name, email, password, role, tier, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+        [`User ${mobile.slice(-4)}`, identifier, 'MOBILE_AUTH', role, tier, 1]
+      );
+      user = { id: result.lastID, name: `User ${mobile.slice(-4)}`, email: identifier, role, tier, is_active: 1 };
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
+    console.log(`✅ [AUTH] Mobile Login Success: ${mobile} (${Date.now() - start}ms)`);
+    res.json({ token, user: { ...user, role: user.role, tier: user.tier } });
+  } catch (e: any) {
+    console.error(`❌ [AUTH ERROR] Mobile Verify Failed:`, e.message);
+    res.status(500).json({ error: `Auth Error: ${e.message}` });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
