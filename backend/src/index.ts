@@ -798,9 +798,20 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     let { symbol } = req.params;
     symbol = symbol.toUpperCase();
     const snapshot = getMarketSnapshot();
-    const snap = snapshot[symbol] || snapshot[`${symbol}.NS`];
+    
+    // Institutional Suffix Shield
+    let snap = snapshot[symbol] || snapshot[`${symbol}.NS`] || snapshot[`${symbol}.BO`];
 
-    if (!snap) return res.status(404).json({ error: 'Stock not found' });
+    // SCALABILITY FIX: On-Demand Global Audit (Global Search Pillar)
+    if (!snap) {
+      console.log(`🚀 [GLOBAL SEARCH] Symbol ${symbol} not in cache. Triggering on-demand node audit...`);
+      // Trigger background update but don't wait for it for the teaser
+      updateMarketSnapshot([symbol]).catch(e => console.error('On-Demand Audit Failed:', e));
+      return res.status(202).json({ 
+        error: 'Node warming up', 
+        hint: `Symbol ${symbol} data is being audited. Please refresh in 30 seconds.` 
+      });
+    }
 
     const audit = await validateBatch9(symbol, snap, 'ALL');
     
