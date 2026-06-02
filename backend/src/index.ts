@@ -642,41 +642,30 @@ app.get('/api/marketplace', async (req, res) => {
 // --- BATCH 9 INSTITUTIONAL AUDIT ENGINE ---
 app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
   try {
-    const { basket = 'ALL' } = req.query;
+    const { basket = 'ALL', strategy: selectedStrategyId } = req.query;
     const snapshot = getMarketSnapshot();
     const results = [];
     
      let symbols = [];
      if (basket === 'H-Super45') symbols = BASKETS['H-Super45'];
      else if (basket === 'H-GOOD45') symbols = BASKETS['H-GOOD45'];
-     else if (basket === 'H-Good200') {
-       const dynamicWealth = getDynamicBasket();
-       symbols = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : BASKETS['H-Good200'];
-     }
+     else if (basket === 'H-Good200') symbols = BASKETS['H-Good200'];
      else symbols = Object.keys(snapshot);
 
     for (const baseSymbol of symbols) {
-      const snap = snapshot[baseSymbol];
+      const snap = snapshot[baseSymbol] || snapshot[`${baseSymbol}.NS`];
       if (!snap) continue;
       const audit = await validateBatch9(baseSymbol, snap, basket as string);
       const lastQuote = snap.quotes[snap.quotes.length - 1];
       
-      // Select the primary strategy signal if any
-      const activeStrats = Object.entries(snap.strategies || {}).filter(([id, s]: any) => {
-        // Pillar #7: Basket Isolation
-        if (id === '52W_HIGH_LOW' && basket === 'H-Good200') return false;
-        return s?.isBuyZone;
-      });
-      const strategyId = activeStrats.length > 0 ? activeStrats[0][0] : 'ENVELOPE_LONG';
-      const strategyData: any = snap.strategies?.[strategyId];
+      // FIX: Strictly follow the selected strategy node
+      const strategyId = (selectedStrategyId as string) || 'SR_STRATEGY';
+      const strategyData: any = snap.strategies?.[strategyId] || runStrategyAnalysis(strategyId, snap, snap.quote.marketCap);
 
       const entryPrice = strategyData?.entryPrice || 0;
       const currentStrat = STRATEGIES.find(s => s.id === strategyId);
       
       let strategyName = currentStrat?.name || 'Institutional Matrix';
-      if (strategyData?.tranche && strategyData.tranche !== 'WATCHLIST') {
-        strategyName = `${strategyName} (${strategyData.tranche})`;
-      }
 
       // 100% Robust Date Logic
       let entryTime = null;
@@ -687,14 +676,14 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
         } catch (e) { console.error(`Invalid date for ${baseSymbol}: ${strategyData.triggerDate}`); }
       }
 
-      // Fallback: If it is Qualified but has no date, use the first quote date (Better than empty)
+      // Fallback
       if (!entryTime && strategyData?.isBuyZone && snap.quotes.length > 0) {
         entryTime = new Date(snap.quotes[0].date).toISOString();
       }
 
       results.push({
         symbol: baseSymbol, 
-        version: '11.0.0-PRO', 
+        version: '12.0.0-PRO', 
         entryTime, 
         entryPrice, 
         strategy: strategyName,
