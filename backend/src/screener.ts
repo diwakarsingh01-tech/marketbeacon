@@ -89,8 +89,10 @@ export async function fetchScreenerData(symbol: string) {
       tables.each((_, table) => {
         $(table).find('tr').each((_, row) => {
           const cells = $(row).find('td, th');
-          const firstCellText = $(cells[0]).text().trim().toLowerCase();
-          if (firstCellText === label.toLowerCase() || firstCellText.includes(label.toLowerCase())) {
+          const firstCellText = $(cells[0]).text().replace(/\s+/g, ' ').trim().toLowerCase();
+          const targetLabel = label.toLowerCase();
+          
+          if (firstCellText.startsWith(targetLabel) || firstCellText.includes(targetLabel)) {
             for (let k = cells.length - 1; k >= 1; k--) {
               const val = $(cells[k]).text().trim().replace(/%/g, '');
               const parsed = parseFloat(val);
@@ -115,8 +117,10 @@ export async function fetchScreenerData(symbol: string) {
       tables.each((_, table) => {
         $(table).find('tr').each((_, row) => {
           const cells = $(row).find('td, th');
-          const firstCellText = $(cells[0]).text().trim().toLowerCase();
-          if (firstCellText === label.toLowerCase() || firstCellText.includes(label.toLowerCase())) {
+          const firstCellText = $(cells[0]).text().replace(/\s+/g, ' ').trim().toLowerCase();
+          const targetLabel = label.toLowerCase();
+
+          if (firstCellText.startsWith(targetLabel) || firstCellText.includes(targetLabel)) {
             for (let k = 1; k < cells.length; k++) {
               const val = $(cells[k]).text().trim().replace(/%/g, '');
               const parsed = parseFloat(val);
@@ -129,7 +133,7 @@ export async function fetchScreenerData(symbol: string) {
         });
         if (history.length > 0) return false;
       });
-      return history.slice(-4); // Last 4 quarters (latest at index 3)
+      return history.slice(-4); 
     };
 
     const currentPrice = getRatio('Current Price');

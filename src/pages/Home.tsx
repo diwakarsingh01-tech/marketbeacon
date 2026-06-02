@@ -99,6 +99,9 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     document.title = "MarketBeacon Pro | Institutional Trading Terminal";
     
+    // Pillar #8: Pre-emptive Server Warm-up (Mitigate Cold Starts)
+    fetch(`${API_URL}/api/health`).catch(() => {/* Silent fail */});
+
     // SEO Meta Hardening
     const metaDescription = document.createElement('meta');
     metaDescription.name = "description";
