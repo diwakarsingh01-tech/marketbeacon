@@ -11,8 +11,12 @@ import {
   ArrowUpRight,
   Info,
   ExternalLink,
-  Lock
+  Lock,
+  Zap,
+  BadgeCheck,
+  Clock
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
@@ -40,14 +44,12 @@ const PublicAnalysisPage: React.FC = () => {
 
   useEffect(() => {
     if (data) {
-      // 1. Dynamic Meta Hardening
       document.title = `${symbol} Fundamental Audit & Price Target | MarketBeacon Pro`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
         metaDesc.setAttribute('content', `Get the institutional 100-point audit for ${symbol}. Audit Score: ${(data.score || 0).toFixed(0)}, Smart Money: ${(data.smartMoney || 0).toFixed(1)}%, Target Upside: +${data.upside}%. Verified logic by MarketBeacon Pro.`);
       }
 
-      // Pillar #3: Dynamic OpenGraph (Viral Hardening)
       const updateOG = (property: string, content: string) => {
         let meta = document.querySelector(`meta[property="${property}"]`);
         if (!meta) {
@@ -63,7 +65,6 @@ const PublicAnalysisPage: React.FC = () => {
       updateOG('og:url', window.location.href);
       updateOG('og:type', 'article');
 
-      // 2. JSON-LD Structured Data (Rich Snippets)
       const schema = {
         "@context": "https://schema.org",
         "@type": "InvestmentPortfolio",
@@ -92,7 +93,6 @@ const PublicAnalysisPage: React.FC = () => {
       script.text = JSON.stringify(schema);
       document.head.appendChild(script);
 
-      // Pillar #1: Canonical Hardening
       const linkCanonical = document.createElement('link');
       linkCanonical.rel = 'canonical';
       linkCanonical.href = `https://marketbeacon.pro/analysis/${symbol}`;
@@ -120,167 +120,178 @@ const PublicAnalysisPage: React.FC = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+    <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center space-y-6">
+      <div className="w-16 h-16 border-4 border-white/5 border-t-cyan-500 rounded-full animate-spin shadow-[0_0_20px_rgba(34,211,238,0.2)]" />
+      <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.4em]">Fetching Node Data</p>
     </div>
   );
 
   if (!data) return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-center">
-      <div>
-        <h1 className="text-2xl font-black text-white mb-4">Stock Not Found</h1>
-        <Link to="/" className="text-blue-400 hover:underline">Return to Terminal</Link>
+    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6 text-center">
+      <div className="space-y-6">
+        <h1 className="text-4xl font-black text-white italic tracking-tighter">NODE NOT FOUND</h1>
+        <Link to="/" className="inline-block px-10 py-4 bg-white text-[#020617] rounded-2xl font-black uppercase text-xs">Return to Alpha Hub</Link>
       </div>
     </div>
   );
 
-  const scoreColor = data.score >= 80 ? 'text-emerald-400' : data.score >= 60 ? 'text-blue-400' : 'text-amber-400';
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-blue-500/30">
+    <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-cyan-500/30 font-sans">
+      {/* Visual Design Layer */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-5%] right-[-5%] w-[40%] h-[40%] bg-blue-600/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-900/5 blur-[150px] rounded-full" />
+      </div>
+
       {/* Premium Header */}
-      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-              <BarChart2 className="w-5 h-5 text-white" />
+      <nav className="border-b border-white/5 bg-[#0f172a]/60 backdrop-blur-xl sticky top-0 z-50 px-6 py-4">
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-cyan-600 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-900/20">
+              <Zap className="w-5 h-5 text-[#020617]" />
             </div>
-            <span className="font-black tracking-tighter text-xl text-white">MARKETBEACON<span className="text-blue-500">PRO</span></span>
+            <span className="font-black tracking-tighter text-2xl text-white uppercase italic">MARKETBEACON<span className="text-cyan-500">PRO</span></span>
           </div>
           <button 
             onClick={handleShare}
-            className="p-2 hover:bg-slate-800 rounded-full transition-colors"
+            className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all"
           >
-            <Share2 className="w-5 h-5 text-slate-400" />
+            <Share2 className="w-5 h-5" />
           </button>
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
-        {/* Hero Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-full border border-blue-500/20 uppercase tracking-widest">Institutional Audit</span>
-              <span className="text-slate-500 text-xs font-medium">Updated: {new Date().toLocaleDateString()}</span>
+      <main className="relative z-10 max-w-5xl mx-auto px-6 py-20 space-y-16">
+        
+        {/* HERO SECTION */}
+        <section className="text-center space-y-10">
+          <div className="space-y-4">
+            <div className="inline-flex items-center space-x-2 px-4 py-1.5 bg-cyan-500/10 rounded-full border border-cyan-500/20 mb-4">
+              <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full shadow-[0_0_8px_#22d3ee]" />
+              <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">{data.basket} Node Audit</span>
             </div>
-            <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tight mb-4">
-              {symbol}<span className="text-slate-600">.NS</span>
-            </h1>
-            <p className="text-xl text-slate-400 font-medium max-w-xl leading-relaxed">
-              Proprietary 100-point fundamental audit and strategy matrix analysis for institutional grade execution.
-            </p>
+            <h1 className="text-7xl md:text-9xl font-black text-white italic tracking-tighter leading-none">{data.symbol}</h1>
+            <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto uppercase tracking-widest italic opacity-60">Verified Institutional Deep-Node Analysis</p>
           </div>
-          
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 flex flex-col items-center justify-center text-center">
-            <div className={`text-7xl font-black mb-2 ${scoreColor}`}>
-              {(data.score || 0).toFixed(0)}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-10 bg-[#0f172a]/40 backdrop-blur-2xl border border-white/5 rounded-[3rem] space-y-3 relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-600/5 blur-2xl -mr-12 -mt-12 group-hover:bg-cyan-600/10 transition-all" />
+               <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] relative z-10">Audit Score</span>
+               <div className={`text-7xl font-black italic tracking-tighter relative z-10 ${data.score >= 70 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                 {data.score}
+               </div>
+               <div className="flex items-center gap-2 relative z-10">
+                  {data.isPass ? <BadgeCheck className="w-4 h-4 text-emerald-400" /> : <Info className="w-4 h-4 text-rose-400" />}
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${data.isPass ? 'text-emerald-500' : 'text-rose-500'}`}>{data.isPass ? 'Qualified Node' : 'Audit Rejected'}</span>
+               </div>
             </div>
-            <div className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-6">Audit Score</div>
-            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-8">
-              <div 
-                className={`h-full transition-all duration-1000 ${data.score >= 80 ? 'bg-emerald-500' : 'bg-blue-500'}`} 
-                style={{ width: `${(data.score || 0).toFixed(0)}%` }} 
-              />
+
+            <div className="p-10 bg-[#0f172a]/40 backdrop-blur-2xl border border-white/5 rounded-[3rem] space-y-3">
+               <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Institutional Holding</span>
+               <div className="text-7xl font-black text-white italic tracking-tighter">{data.smartMoney?.toFixed(1)}%</div>
+               <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-cyan-400" />
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ownership Matrix Active</span>
+               </div>
             </div>
-            <div className="flex items-center gap-2 text-emerald-400 font-bold">
-              <ShieldCheck className="w-5 h-5" />
-              <span>Verified Institutional Logic</span>
+
+            <div className="p-10 bg-[#0f172a]/40 backdrop-blur-2xl border border-white/5 rounded-[3rem] space-y-3">
+               <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Growth Target</span>
+               <div className="text-7xl font-black text-indigo-400 italic tracking-tighter">+{data.upside}%</div>
+               <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-indigo-400" />
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Alpha Objective projection</span>
+               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-          {[
-            { label: 'Market Cap', value: `₹${(data.marketCap / 10000000).toFixed(0)} Cr`, icon: Globe },
-            { label: 'Smart Money', value: `${(data.smartMoney || 0).toFixed(1)}%`, icon: TrendingUp },
-            { label: 'Target Upside', value: `+${data.upside}%`, icon: Target },
-            { label: 'Risk Profile', value: data.risk || 'Low', icon: ShieldCheck },
-          ].map((item, i) => (
-            <div key={i} className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl">
-              <item.icon className="w-5 h-5 text-blue-500 mb-4" />
-              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{item.label}</div>
-              <div className="text-xl font-black text-white">{item.value}</div>
-            </div>
-          ))}
-        </div>
+        {/* STRATEGY NODES */}
+        <section className="space-y-10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-3xl font-black text-white italic tracking-tighter">Active Strategy <span className="text-cyan-500">Nodes.</span></h2>
+            <div className="h-px flex-1 bg-white/5 mx-8 hidden md:block" />
+            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Institutional Verification v12.0</span>
+          </div>
 
-        {/* Strategy Matrix Section (Teaser) */}
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-1 px-1 mb-12">
-          <div className="bg-slate-950 rounded-[22px] p-8 lg:p-12 overflow-hidden relative">
-            <div className="relative z-10">
-              <h2 className="text-3xl font-black text-white mb-6">Strategy Matrix Analysis</h2>
-              <div className="space-y-4 mb-10">
-                {data.strategies?.map((strat: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-4 bg-slate-900/80 border border-slate-800 rounded-xl">
-                    <span className="font-bold text-slate-300">{strat.name}</span>
-                    <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-black rounded-md border border-emerald-500/20">QUALIFIED</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest pl-2">Detected Logic Entry</span>
+              <div className="space-y-4">
+                {data.strategies?.length > 0 ? (
+                  data.strategies.map((strat: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between p-8 bg-cyan-600/5 border border-cyan-500/20 rounded-[2rem] shadow-xl group hover:bg-cyan-600/10 transition-all">
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 bg-cyan-500/10 rounded-2xl flex items-center justify-center text-cyan-400 shadow-inner">
+                          <Zap className="w-6 h-6" />
+                        </div>
+                        <span className="text-lg font-black text-white uppercase tracking-tighter italic">{strat.name}</span>
+                      </div>
+                      <span className="px-5 py-1.5 bg-emerald-500 text-[#020617] text-[10px] font-black rounded-xl italic tracking-widest">QUALIFIED</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-10 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-center flex-col space-y-4 text-center">
+                    <Clock className="w-10 h-10 text-slate-700" />
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Monitoring for institutional entry point...</p>
                   </div>
-                ))}
-                <div className="flex items-center justify-between p-4 bg-slate-900/40 border border-slate-800/50 rounded-xl blur-[2px]">
-                  <span className="font-bold text-slate-500">Momentum Ceiling (Step-Back)</span>
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <Lock className="w-4 h-4" />
-                    <span className="text-xs font-bold">LOCKED</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <Link 
-                  to="/login" 
-                  className="w-full sm:w-auto px-8 py-4 bg-white text-slate-950 font-black rounded-xl hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
-                >
-                  Unlock Full Report <ArrowUpRight className="w-5 h-5" />
-                </Link>
-                <Link 
-                  to="/login" 
-                  className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white font-black rounded-xl border border-slate-800 hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
-                >
-                  Join 30,000+ Traders
-                </Link>
+                )}
               </div>
             </div>
-            
-            {/* Abstract Background Element */}
-            <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-blue-600/20 blur-[120px] rounded-full" />
-          </div>
-        </div>
 
-        {/* Pillar #2: Internal Link Matrix (Related Picks) */}
-        <div className="mb-24">
-           <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black text-white tracking-tight">Related Institutional Picks</h2>
-              <Link to="/" className="text-blue-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">View All Audits</Link>
-           </div>
-           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-4">
+               <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest pl-2">Locked Premium Logic</span>
+               <div className="p-8 bg-[#0f172a]/40 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-[#020617]/40 backdrop-blur-[2px] z-10" />
+                  <div className="relative z-20 space-y-8">
+                     <div className="flex items-center justify-between">
+                        <span className="text-lg font-black text-slate-500 uppercase tracking-tighter italic">Deep Recovery Matrix</span>
+                        <Lock className="w-5 h-5 text-slate-600" />
+                     </div>
+                     <div className="flex items-center justify-between">
+                        <span className="text-lg font-black text-slate-500 uppercase tracking-tighter italic">Velocity Retest Node</span>
+                        <Lock className="w-5 h-5 text-slate-600" />
+                     </div>
+                     <Link to="/login" className="flex items-center justify-center gap-3 w-full py-5 bg-white text-[#020617] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all">
+                        Unlock Full Research Node <ArrowUpRight className="w-4 h-4" />
+                     </Link>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* RELATED ASSETS */}
+        <section className="space-y-10">
+           <h2 className="text-3xl font-black text-white italic tracking-tighter">Related <span className="text-cyan-500">Picks.</span></h2>
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {["HDFCBANK", "INFY", "RELAXO", "TCS"].filter(s => s !== symbol).slice(0, 4).map((sym) => (
                 <Link 
                   key={sym} 
                   to={`/analysis/${sym}`}
-                  className="p-6 bg-slate-900/30 border border-slate-800 rounded-2xl hover:border-blue-500/50 transition-all group"
+                  className="p-8 bg-[#0f172a]/40 border border-white/5 rounded-[2.5rem] hover:bg-white/[0.04] hover:border-cyan-500/30 transition-all group shadow-xl"
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-lg font-black text-white italic tracking-tighter group-hover:text-blue-400">{sym}</span>
-                    <ArrowUpRight className="w-4 h-4 text-slate-600 group-hover:text-blue-500" />
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xl font-black text-white italic tracking-tighter group-hover:text-cyan-400 transition-colors leading-none">{sym}</span>
+                    <ArrowUpRight className="w-5 h-5 text-slate-700 group-hover:text-cyan-400 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                   </div>
-                  <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">View 100-Point Audit</div>
+                  <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Institutional Audit Active</div>
                 </Link>
               ))}
            </div>
-        </div>
+        </section>
 
         {/* Footer */}
-        <footer className="border-t border-slate-800 pt-12 pb-24 text-center">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center">
-              <BarChart2 className="w-3 h-3 text-slate-400" />
+        <footer className="pt-20 border-t border-white/5 text-center">
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <div className="w-8 h-8 bg-white/5 rounded-xl flex items-center justify-center shadow-inner">
+              <BarChart2 className="w-4 h-4 text-slate-500" />
             </div>
-            <span className="font-black tracking-tighter text-sm text-slate-500">MARKETBEACON<span className="text-slate-700">PRO</span></span>
+            <span className="text-xs font-black tracking-widest uppercase text-slate-500">MarketBeacon<span className="text-cyan-500">Pro</span> Terminal Node</span>
           </div>
-          <p className="text-slate-600 text-sm max-w-lg mx-auto leading-relaxed">
-            MarketBeacon Pro is an institutional grade research terminal. 
+          <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em] leading-relaxed max-w-xl mx-auto italic">
+            This analysis is for institutional research purposes only. 
             Investments in securities market are subject to market risks. 
             Read all the related documents carefully before investing.
           </p>
