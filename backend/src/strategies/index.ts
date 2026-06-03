@@ -544,7 +544,7 @@ export function calculateRHS(quotes: Quote[]) {
         currentPrice: Math.round(currentPrice),
         triggerDate: s2.date,
         correction: correction.toFixed(1),
-        isLocked: true
+        isLocked: true // INSTITUTIONAL LOCK: 30% ATH Drawdown + 30% Target Enforced
       };
     }
   }
@@ -572,7 +572,7 @@ export function calculateCupHandle(quotes: Quote[]) {
   const window = 15;
   const lows: any[] = [];
   const highs: any[] = [];
-  for (let i = window; i < quotes.length - window; i++) {
+  for (let i = window; i < latestIdx - window; i++) {
     const lSlice = quotes.slice(i - window, i + window + 1).map(q => q.low);
     const hSlice = quotes.slice(i - window, i + window + 1).map(q => q.high);
     if (quotes[i].low === Math.min(...lSlice)) {
@@ -623,7 +623,7 @@ export function calculateCupHandle(quotes: Quote[]) {
         currentPrice: Math.round(currentPrice),
         triggerDate: handleLow.date,
         correction: correction.toFixed(1),
-        isLocked: true
+        isLocked: true // INSTITUTIONAL LOCK: 30% ATH Drawdown + 30% Depth Enforced
       };
     }
   }
