@@ -463,7 +463,7 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
             target: Math.round(rl.mid),
             currentPrice: Math.round(currentPrice),
             triggerDate: sequence[sequence.length-1].date,
-            isLocked: true // Structural Lock Active
+            isLocked: true // INSTITUTIONAL LOCK: 5-Point Box Validation (S-R-S-R-S)
           };
         }
       }
@@ -544,7 +544,7 @@ export function calculateRHS(quotes: Quote[]) {
         currentPrice: Math.round(currentPrice),
         triggerDate: s2.date,
         correction: correction.toFixed(1),
-        isLocked: true // INSTITUTIONAL LOCK: 30% ATH Drawdown + 30% Target Enforced
+        isLocked: true // INSTITUTIONAL LOCK: RHS Deep Recovery Model
       };
     }
   }
@@ -572,7 +572,7 @@ export function calculateCupHandle(quotes: Quote[]) {
   const window = 15;
   const lows: any[] = [];
   const highs: any[] = [];
-  for (let i = window; i < latestIdx - window; i++) {
+  for (let i = window; i < quotes.length - window; i++) {
     const lSlice = quotes.slice(i - window, i + window + 1).map(q => q.low);
     const hSlice = quotes.slice(i - window, i + window + 1).map(q => q.high);
     if (quotes[i].low === Math.min(...lSlice)) {
@@ -623,7 +623,7 @@ export function calculateCupHandle(quotes: Quote[]) {
         currentPrice: Math.round(currentPrice),
         triggerDate: handleLow.date,
         correction: correction.toFixed(1),
-        isLocked: true // INSTITUTIONAL LOCK: 30% ATH Drawdown + 30% Depth Enforced
+        isLocked: true // INSTITUTIONAL LOCK: Cup & Handle Value Model
       };
     }
   }
@@ -663,7 +663,7 @@ export function calculateSixtySevenFunda(quotes: Quote[], screenerData: any, bas
     triggerDate: new Date().toISOString().split('T')[0],
     drawdown: drawdown.toFixed(1),
     dividendYield: divYield,
-    isLocked: true 
+    isLocked: true // INSTITUTIONAL LOCK: 67% ATH Reset Rule
   };
 }
 
@@ -719,10 +719,11 @@ export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
     entryPrice: Math.round(bestRally.originPrice),
     target: Math.round(bestRally.peakPrice),
     currentPrice: Math.round(currentPrice),
-    triggerDate: bestRally.triggerDate,
-    isLocked: true
+    triggerDate: (typeof bestRally.triggerDate === 'string' ? bestRally.triggerDate : (bestRally.triggerDate as Date).toISOString()).split('T')[0],
+    isLocked: true // INSTITUTIONAL LOCK: 20% Velocity Rally Origin Retest
   };
 }
+
 
 /**
  * UTILITY: ABCD Level Calculation
