@@ -343,75 +343,52 @@ export function calculateSMAStacking(quotes: Quote[]) {
  * 3. Scope: Primarily for Super 45 / Bluechip names.
  */
 export function calculate52WeekStrategy(quotes: Quote[]) {
-  if (!quotes || quotes.length < 300) return { isBuyZone: false };
+  if (!quotes || quotes.length < 252) return { isBuyZone: false };
 
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
-  const sma20 = calculateSMA(prices, 20);
+  
+  // Pine Script: per = 251 trading days
+  const per = 251;
 
   let isPositionOpen = false;
   let activeEntry = 0;
   let activeSignalDate = "";
   
-  // Base building variables
-  let inObservationZone = false;
-  let observationLow = Infinity;
-  let daysInObservation = 0;
+  // Simulation Loop to find historical signal
+  for (let i = per; i < quotes.length; i++) {
+    const window = quotes.slice(i - per, i);
+    const low52 = Math.min(...window.map(q => q.low));
+    const high52 = Math.max(...window.map(q => q.high));
 
-  // Simulation Loop
-  for (let i = 252; i < quotes.length; i++) {
-    const lastYear = quotes.slice(i - 252, i);
-    const low52 = Math.min(...lastYear.map(q => q.low));
-    const high52 = Math.max(...lastYear.map(q => q.high));
-
-    // Exit Logic (Takes priority)
-    if (isPositionOpen && quotes[i].high >= high52 * 0.95) {
+    // Pine Script Match: Exit at High52
+    if (isPositionOpen && quotes[i].high >= high52 * 0.99) {
       isPositionOpen = false;
-      inObservationZone = false;
     }
 
-    // Step 1: Alert/Observation Zone (Hits 52W Low within 2%)
-    if (!isPositionOpen && quotes[i].low <= low52 * 1.02) {
-      inObservationZone = true;
-      observationLow = Math.min(observationLow, quotes[i].low);
-      daysInObservation = 0; // Reset counter
-    }
-
-    // Step 2: Confirmation Trigger
-    if (!isPositionOpen && inObservationZone) {
-      daysInObservation++;
-      
-      // If stock reclaims 20-SMA within 40 days of hitting the bottom zone
-      if (quotes[i].close > sma20[i] && daysInObservation < 40) {
-        isPositionOpen = true;
-        activeEntry = Math.round(quotes[i].close);
-        const dateVal = quotes[i].date;
-        activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
-        inObservationZone = false; // Reset
-      }
-      
-      // Timeout: If it stays down too long without recovery, reset observation
-      if (daysInObservation >= 40) {
-          inObservationZone = false;
-          observationLow = Infinity;
-      }
+    // Pine Script Match: Entry at Low52 (with 1% institutional tolerance)
+    if (!isPositionOpen && quotes[i].low <= low52 * 1.01) {
+      isPositionOpen = true;
+      activeEntry = Math.round(quotes[i].close); // Signal day close
+      const dateVal = quotes[i].date;
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
     }
   }
 
-  // Current 52-Week High for Target display
-  const currentYear = quotes.slice(-252);
-  const currentHigh52 = Math.max(...currentYear.map(q => q.high));
+  // Calculate Current Target (High52) based on the last 251 days
+  const currentWindow = quotes.slice(-per);
+  const currentHigh52 = Math.max(...currentWindow.map(q => q.high));
 
-  // Institutional Buy-Zone Rule: Within 2% of the SMA-confirmed entry
+  // Institutional Buy-Zone Rule: Within 2% of the entry
   const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
     entryPrice: activeEntry,
-    target: Math.round(currentHigh52 * 0.95), // Conservative target just below absolute high
+    target: Math.round(currentHigh52), // Target is exactly High52
     currentPrice: Math.round(currentPrice),
     triggerDate: activeSignalDate,
-    isLocked: true // INSTITUTIONAL LOCK: 52-Week Reversal + 20-SMA Reclaim
+    isLocked: true // INSTITUTIONAL LOCK: Pine Script Aligned (Low52 Entry, High52 Target)
   };
 }
 
