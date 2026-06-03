@@ -86,7 +86,8 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
     entryPrice: activeEntry,
     target: activeTarget,
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate
+    triggerDate: activeSignalDate,
+    isLocked: true // INSTITUTIONAL LOCK: 14% SMA Envelope Floor
   };
 }
 
@@ -125,11 +126,12 @@ export function calculateEnvelopeKnox(quotes: Quote[]) {
   }
 
   return {
-    isBuyZone: isPositionOpen && currentPrice <= activeEntry * 1.05,
+    isBuyZone: isPositionOpen && currentPrice <= activeEntry * 1.02,
     entryPrice: activeEntry,
     target: activeTarget,
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate
+    triggerDate: activeSignalDate,
+    isLocked: true // INSTITUTIONAL LOCK: 20% EMA Envelope Knox Support
   };
 }
 
@@ -216,6 +218,7 @@ export function processShortEnvelope(quotes: Quote[], marketCap: number) {
     target: finalTarget,
     currentPrice: Math.round(currentPrice),
     triggerDate: b1_open ? b1_date : "",
+    isLocked: true, // INSTITUTIONAL LOCK: EMA 200 Step-Back Matrix (B1-D)
     abcd: {
       a: a_point,
       b: b_point,
@@ -272,7 +275,8 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd
     entryPrice: activeEntry,
     target: activeTarget,
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate
+    triggerDate: activeSignalDate,
+    isLocked: true // INSTITUTIONAL LOCK: 2.5 SD Volatility Channel Reversion
   };
 }
 
@@ -326,7 +330,8 @@ export function calculateSMAStacking(quotes: Quote[]) {
     target: Math.round(sma200[prices.length - 1]), // Minimum recovery objective (SMA 200)
     currentPrice: Math.round(currentPrice),
     triggerDate: activeSignalDate,
-    tranche: "BULK BUY"
+    tranche: "BULK BUY",
+    isLocked: true // INSTITUTIONAL LOCK: MA 20/50/200 Bearish Stacking
   };
 }
 
@@ -379,7 +384,8 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
     entryPrice: activeEntry,
     target: Math.round(currentHigh52),
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate
+    triggerDate: activeSignalDate,
+    isLocked: true // INSTITUTIONAL LOCK: 52-Week High/Low Mean Reversion
   };
 }
 
