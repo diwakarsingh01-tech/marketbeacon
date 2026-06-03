@@ -373,7 +373,7 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
       // First touch of Red Line after a Blue Line peak
       if (quotes[i].low <= low52 * 1.01) {
         state = 'A_ACTIVE';
-        a_entry = Math.round(quotes[i].close);
+        a_entry = Math.round(low52); // EXACT RED LINE TOUCH (Not Candle Close)
         a_target = Math.round(high52); // Exactly same-day high as target
         const dateVal = quotes[i].date;
         a_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
