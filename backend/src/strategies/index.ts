@@ -347,10 +347,16 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
 
   const prices = quotes.map(q => q.close);
   const currentPrice = prices[prices.length - 1];
+  const sma20 = calculateSMA(prices, 20);
 
   let isPositionOpen = false;
   let activeEntry = 0;
   let activeSignalDate = "";
+  
+  // Base building variables
+  let inObservationZone = false;
+  let observationLow = Infinity;
+  let daysInObservation = 0;
 
   // Simulation Loop
   for (let i = 252; i < quotes.length; i++) {
@@ -358,17 +364,37 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
     const low52 = Math.min(...lastYear.map(q => q.low));
     const high52 = Math.max(...lastYear.map(q => q.high));
 
-    // Buy at 52-Week Low (1% Tolerance)
-    if (!isPositionOpen && quotes[i].low <= low52 * 1.01) {
-      isPositionOpen = true;
-      activeEntry = Math.round(quotes[i].close);
-      const dateVal = quotes[i].date;
-      activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+    // Exit Logic (Takes priority)
+    if (isPositionOpen && quotes[i].high >= high52 * 0.95) {
+      isPositionOpen = false;
+      inObservationZone = false;
     }
 
-    // Sell at 52-Week High (1% Tolerance)
-    if (isPositionOpen && quotes[i].high >= high52 * 0.99) {
-      isPositionOpen = false;
+    // Step 1: Alert/Observation Zone (Hits 52W Low within 2%)
+    if (!isPositionOpen && quotes[i].low <= low52 * 1.02) {
+      inObservationZone = true;
+      observationLow = Math.min(observationLow, quotes[i].low);
+      daysInObservation = 0; // Reset counter
+    }
+
+    // Step 2: Confirmation Trigger
+    if (!isPositionOpen && inObservationZone) {
+      daysInObservation++;
+      
+      // If stock reclaims 20-SMA within 40 days of hitting the bottom zone
+      if (quotes[i].close > sma20[i] && daysInObservation < 40) {
+        isPositionOpen = true;
+        activeEntry = Math.round(quotes[i].close);
+        const dateVal = quotes[i].date;
+        activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+        inObservationZone = false; // Reset
+      }
+      
+      // Timeout: If it stays down too long without recovery, reset observation
+      if (daysInObservation >= 40) {
+          inObservationZone = false;
+          observationLow = Infinity;
+      }
     }
   }
 
@@ -376,16 +402,16 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
   const currentYear = quotes.slice(-252);
   const currentHigh52 = Math.max(...currentYear.map(q => q.high));
 
-  // Institutional Buy-Zone Rule: Within 2% of 52W low entry
+  // Institutional Buy-Zone Rule: Within 2% of the SMA-confirmed entry
   const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
     entryPrice: activeEntry,
-    target: Math.round(currentHigh52),
+    target: Math.round(currentHigh52 * 0.95), // Conservative target just below absolute high
     currentPrice: Math.round(currentPrice),
     triggerDate: activeSignalDate,
-    isLocked: true // INSTITUTIONAL LOCK: 52-Week High/Low Mean Reversion
+    isLocked: true // INSTITUTIONAL LOCK: 52-Week Reversal + 20-SMA Reclaim
   };
 }
 
