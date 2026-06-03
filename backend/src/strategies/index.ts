@@ -343,52 +343,53 @@ export function calculateSMAStacking(quotes: Quote[]) {
  * 3. Scope: Primarily for Super 45 / Bluechip names.
  */
 export function calculate52WeekStrategy(quotes: Quote[]) {
-  if (!quotes || quotes.length < 252) return { isBuyZone: false };
+  const per = 251; // Trading days
+  if (!quotes || quotes.length < per + 1) return { isBuyZone: false };
 
-  const prices = quotes.map(q => q.close);
-  const currentPrice = prices[prices.length - 1];
+  const currentPrice = quotes[quotes.length - 1].close;
   
-  // Pine Script: per = 251 trading days
-  const per = 251;
+  let latestEntryPrice = 0;
+  let latestTarget = 0;
+  let latestSignalDate = "";
+  let isLatestTouchActive = false;
 
-  let isPositionOpen = false;
-  let activeEntry = 0;
-  let activeSignalDate = "";
-  
-  // Simulation Loop to find historical signal
+  // We only care about the latest valid entry.
+  // We scan forward to find the most recent time the stock touched the Red Line (Low52)
   for (let i = per; i < quotes.length; i++) {
-    const window = quotes.slice(i - per, i);
-    const low52 = Math.min(...window.map(q => q.low));
-    const high52 = Math.max(...window.map(q => q.high));
+    const window = quotes.slice(i - per + 1, i + 1); // 251 day window ending at current day
+    const low52 = Math.min(...window.map(q => q.low));   // Red Line
+    const high52 = Math.max(...window.map(q => q.high)); // Blue Line
 
-    // Pine Script Match: Exit at High52
-    if (isPositionOpen && quotes[i].high >= high52 * 0.99) {
-      isPositionOpen = false;
+    // If stock hits the target (Blue Line), we clear the active entry
+    if (isLatestTouchActive && quotes[i].high >= latestTarget) {
+      isLatestTouchActive = false;
     }
 
-    // Pine Script Match: Entry at Low52 (with 1% institutional tolerance)
-    if (!isPositionOpen && quotes[i].low <= low52 * 1.01) {
-      isPositionOpen = true;
-      activeEntry = Math.round(quotes[i].close); // Signal day close
+    // If stock touches the Red Line (Low52), this becomes our NEWEST active entry.
+    // 1% tolerance to catch the wick.
+    if (quotes[i].low <= low52 * 1.01) {
+      isLatestTouchActive = true;
+      latestEntryPrice = Math.round(quotes[i].close); // Entry is close of the touch day
+      latestTarget = Math.round(high52); // Target is the Blue Line of THIS EXACT DAY
       const dateVal = quotes[i].date;
-      activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+      latestSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
     }
   }
 
-  // Calculate Current Target (High52) based on the last 251 days
-  const currentWindow = quotes.slice(-per);
-  const currentHigh52 = Math.max(...currentWindow.map(q => q.high));
-
-  // Institutional Buy-Zone Rule: Within 2% of the entry
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
+  // Institutional Buy-Zone Rule: We are within 2% of the LATEST confirmed entry.
+  // If price falls way below the red line, ABCD handles it (so we don't buy).
+  // If price is already way up, we missed it.
+  const isActuallyInBuyRange = isLatestTouchActive && 
+                               currentPrice <= latestEntryPrice * 1.02 && 
+                               currentPrice >= latestEntryPrice * 0.95; // Don't buy if it fell 5% below the red line (ABCD territory)
 
   return {
     isBuyZone: isActuallyInBuyRange,
-    entryPrice: activeEntry,
-    target: Math.round(currentHigh52), // Target is exactly High52
+    entryPrice: latestEntryPrice,
+    target: latestTarget, 
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate,
-    isLocked: true // INSTITUTIONAL LOCK: Pine Script Aligned (Low52 Entry, High52 Target)
+    triggerDate: latestSignalDate,
+    isLocked: true // INSTITUTIONAL LOCK: Pine Script Aligned (Latest Touch, Same-Day Target)
   };
 }
 
