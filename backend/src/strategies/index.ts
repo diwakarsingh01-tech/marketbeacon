@@ -487,6 +487,11 @@ export function calculateRHS(quotes: Quote[]) {
   const latestIdx = quotes.length - 1;
   const currentPrice = prices[latestIdx];
 
+  // Pre-condition: Price must be >= 30% down from ATH
+  const ath = Math.max(...quotes.map(q => q.high));
+  const drawdown = ((ath - currentPrice) / ath) * 100;
+  if (drawdown < 30) return { isBuyZone: false };
+
   const window = 15;
   const lows: any[] = [];
   const highs: any[] = [];
@@ -524,9 +529,12 @@ export function calculateRHS(quotes: Quote[]) {
     if (correction < 8 || correction > 18) continue; 
     if (head.price > ema200[head.idx]) continue;
 
+    const patternDepth = (neckline.price - head.price) / neckline.price;
+    if (patternDepth < 0.30) continue; // 30% Pattern Depth
+
     const patternHeight = neckline.price - head.price;
     const target = neckline.price + patternHeight;
-    if ((target / s2.price) - 1 < 0.30) continue;
+    if ((target / s2.price) - 1 < 0.30) continue; // 30% Target Requirement
 
     if (Math.abs(currentPrice - s2.price) / s2.price <= 0.07) {
       return {
@@ -555,6 +563,12 @@ export function calculateCupHandle(quotes: Quote[]) {
   if (!quotes || quotes.length < 400) return { isBuyZone: false };
 
   const currentPrice = quotes[quotes.length - 1].close;
+
+  // Pre-condition: Price must be >= 30% down from ATH
+  const ath = Math.max(...quotes.map(q => q.high));
+  const drawdown = ((ath - currentPrice) / ath) * 100;
+  if (drawdown < 30) return { isBuyZone: false };
+
   const window = 15;
   const lows: any[] = [];
   const highs: any[] = [];
@@ -588,7 +602,7 @@ export function calculateCupHandle(quotes: Quote[]) {
     if (cupLows.length === 0) continue;
     const bottom = cupLows.reduce((prev, curr) => curr.price < prev.price ? curr : prev);
 
-    if (bottom.price >= rim1.price * 0.90) continue; // Minimum 10% Depth
+    if (bottom.price >= rim1.price * 0.70) continue; // Minimum 30% Depth (Institutional Rule)
 
     const handleLows = lows.filter(l => l.idx > rim2.idx && l.idx <= quotes.length - 1);
     if (handleLows.length === 0) continue;
@@ -599,7 +613,7 @@ export function calculateCupHandle(quotes: Quote[]) {
 
     const depth = rim2.price - bottom.price;
     const target = rim2.price + depth;
-    if ((target / currentPrice) - 1 < 0.25) continue;
+    if ((target / currentPrice) - 1 < 0.30) continue; // 30% Target Requirement
 
     if (Math.abs(currentPrice - handleLow.price) / handleLow.price <= 0.10) {
       return {
