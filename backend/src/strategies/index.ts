@@ -348,48 +348,98 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
 
   const currentPrice = quotes[quotes.length - 1].close;
   
-  let latestEntryPrice = 0;
-  let latestTarget = 0;
-  let latestSignalDate = "";
-  let isLatestTouchActive = false;
+  let state = 'SEEKING_BLUE'; // Possible: SEEKING_BLUE, SEEKING_RED, A_ACTIVE, B_ACTIVE, C_ACTIVE, D_ACTIVE
+  
+  let a_entry = 0, a_target = 0, a_date = '';
+  let b_entry = 0, b_target = 0;
+  let c_entry = 0, c_target = 0;
+  let d_entry = 0, d_target = 0;
 
-  // We only care about the latest valid entry.
-  // We scan forward to find the most recent time the stock touched the Red Line (Low52)
   for (let i = per; i < quotes.length; i++) {
     const window = quotes.slice(i - per + 1, i + 1); // 251 day window ending at current day
     const low52 = Math.min(...window.map(q => q.low));   // Red Line
     const high52 = Math.max(...window.map(q => q.high)); // Blue Line
 
-    // If stock hits the target (Blue Line), we clear the active entry
-    if (isLatestTouchActive && quotes[i].high >= latestTarget) {
-      isLatestTouchActive = false;
+    // Rule 1: Hitting the Blue Line resets everything to seek the first Red Line touch.
+    // Also, if 'A' is active and hits its target (which was a Blue Line), it resets.
+    if (quotes[i].high >= high52 * 0.99) {
+      state = 'SEEKING_RED';
+    } else if (state !== 'SEEKING_BLUE' && state !== 'SEEKING_RED' && quotes[i].high >= a_target) {
+      state = 'SEEKING_RED'; // A target achieved
     }
 
-    // If stock touches the Red Line (Low52), this becomes our NEWEST active entry.
-    // 1% tolerance to catch the wick.
-    if (quotes[i].low <= low52 * 1.01) {
-      isLatestTouchActive = true;
-      latestEntryPrice = Math.round(quotes[i].close); // Entry is close of the touch day
-      latestTarget = Math.round(high52); // Target is the Blue Line of THIS EXACT DAY
-      const dateVal = quotes[i].date;
-      latestSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+    // State Machine Transitions
+    if (state === 'SEEKING_RED') {
+      // First touch of Red Line after a Blue Line peak
+      if (quotes[i].low <= low52 * 1.01) {
+        state = 'A_ACTIVE';
+        a_entry = Math.round(quotes[i].close);
+        a_target = Math.round(high52); // Exactly same-day high as target
+        const dateVal = quotes[i].date;
+        a_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+        
+        // Define ABCD levels immediately based on exact 10% drops
+        b_entry = Math.round(a_entry * 0.90);
+        b_target = a_entry;
+        
+        c_entry = Math.round(b_entry * 0.90);
+        c_target = b_entry;
+        
+        d_entry = Math.round(c_entry * 0.90);
+        d_target = c_entry;
+      }
+    } 
+    else if (state === 'A_ACTIVE') {
+      if (quotes[i].low <= b_entry * 1.01) {
+        state = 'B_ACTIVE';
+      }
+    }
+    else if (state === 'B_ACTIVE') {
+      if (quotes[i].high >= b_target) {
+        state = 'A_ACTIVE'; // B exit reached, back to holding A
+      } else if (quotes[i].low <= c_entry * 1.01) {
+        state = 'C_ACTIVE';
+      }
+    }
+    else if (state === 'C_ACTIVE') {
+      if (quotes[i].high >= c_target) {
+        state = 'B_ACTIVE'; // C exit reached, back to holding B
+      } else if (quotes[i].low <= d_entry * 1.01) {
+        state = 'D_ACTIVE';
+      }
+    }
+    else if (state === 'D_ACTIVE') {
+      if (quotes[i].high >= d_target) {
+        state = 'C_ACTIVE'; // D exit reached, back to holding C
+      }
     }
   }
 
-  // Institutional Buy-Zone Rule: We are within 2% of the LATEST confirmed entry.
-  // If price falls way below the red line, ABCD handles it (so we don't buy).
-  // If price is already way up, we missed it.
-  const isActuallyInBuyRange = isLatestTouchActive && 
-                               currentPrice <= latestEntryPrice * 1.02 && 
-                               currentPrice >= latestEntryPrice * 0.95; // Don't buy if it fell 5% below the red line (ABCD territory)
+  // Determine current active node
+  let activeEntry = 0, activeTarget = 0, activeTranche = 'NONE';
+  if (state === 'A_ACTIVE') { activeEntry = a_entry; activeTarget = a_target; activeTranche = 'A'; }
+  else if (state === 'B_ACTIVE') { activeEntry = b_entry; activeTarget = b_target; activeTranche = 'B'; }
+  else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = c_target; activeTranche = 'C'; }
+  else if (state === 'D_ACTIVE') { activeEntry = d_entry; activeTarget = d_target; activeTranche = 'D'; }
+
+  // Institutional Buy-Zone Rule: Within 2% of the active tranche entry
+  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
-    entryPrice: latestEntryPrice,
-    target: latestTarget, 
+    entryPrice: activeEntry,
+    target: activeTarget, 
     currentPrice: Math.round(currentPrice),
-    triggerDate: latestSignalDate,
-    isLocked: true // INSTITUTIONAL LOCK: Pine Script Aligned (Latest Touch, Same-Day Target)
+    triggerDate: activeTranche !== 'NONE' ? a_date : "",
+    tranche: activeTranche,
+    abcd: {
+      a: a_entry,
+      b: b_entry,
+      c: c_entry,
+      d: d_entry,
+      gap: 10
+    },
+    isLocked: true // INSTITUTIONAL LOCK: High->Low First Touch + ABCD Step-Back
   };
 }
 
