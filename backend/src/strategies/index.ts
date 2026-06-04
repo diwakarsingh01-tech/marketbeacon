@@ -328,7 +328,7 @@ export function calculateSMAStacking(quotes: Quote[]) {
     else if (state === 'C_ACTIVE' && prices[i] >= c_target) state = 'B_ACTIVE';
     else if (state === 'B_ACTIVE' && prices[i] >= b_target) state = 'A_ACTIVE';
 
-    // Entry Logic
+    // Entry Logic - ANCHORED TO FIRST TOUCH OF CYCLE
     if (state === 'NONE') {
       if (isBearishStacked) {
         state = 'A_ACTIVE';
@@ -337,25 +337,16 @@ export function calculateSMAStacking(quotes: Quote[]) {
         const dateVal = quotes[i].date;
         a_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
         
-        // Define Ladder Prices
+        // Define Ladder Prices (Anchored to FIRST touch)
         b_entry = Math.round(a_entry * 0.90); b_target = a_entry;
         c_entry = Math.round(b_entry * 0.90); c_target = b_entry;
         d_entry = Math.round(c_entry * 0.90); d_target = c_entry;
       }
     } 
     else if (state === 'A_ACTIVE') {
-      if (isBearishStacked) {
-        // Anchor to LATEST A entry
-        a_entry = Math.round(prices[i]);
-        a_target = Math.round(sma200[i]);
-        const dateVal = quotes[i].date;
-        a_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
-        
-        // Recalculate based on LATEST A
-        b_entry = Math.round(a_entry * 0.90); b_target = a_entry;
-        c_entry = Math.round(b_entry * 0.90); c_target = b_entry;
-        d_entry = Math.round(c_entry * 0.90); d_target = c_entry;
-      } else if (quotes[i].low <= b_entry * 1.01) {
+      // Once A is active, we DO NOT update it even if bearish stacking continues.
+      // We only wait for a drop to B or a reset to NONE.
+      if (quotes[i].low <= b_entry * 1.01) {
         state = 'B_ACTIVE';
         const dVal = quotes[i].date;
         b_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
