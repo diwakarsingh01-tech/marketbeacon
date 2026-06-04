@@ -44,8 +44,11 @@ export function calculateSMA(prices: number[], length: number): number[] {
 
 /**
  * STRATEGY 1: Institutional Floor (Long Envelope)
- * Settings: Length 200, 14% Envelope
- * Logic: Signal Day I Entry (Close), Locked Target (MAX(UB, Entry*1.3))
+ * Settings: Length 200, 14% Envelope, Exponential = OFF
+ * Logic: 
+ *   - Entry: Price touches or reaches lower band.
+ *   - Target: MAX(Upper Band at Entry, Entry * 1.30). 
+ *   - Dynamic Exit: If current Upper Band > Initial Target, use current Upper Band.
  */
 export function calculateEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
   if (!quotes || quotes.length < length) return null;
@@ -54,40 +57,106 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
   const currentPrice = prices[prices.length - 1];
 
   let activeEntry = 0;
-  let activeTarget = 0;
+  let initialTargetAtEntry = 0;
   let activeSignalDate = "";
   let isPositionOpen = false;
 
+  // We scan the data to find the LATEST active trade cycle
   for (let i = length; i < quotes.length; i++) {
     const sma = smaValues[i];
     const lowerBand = sma * (1 - percentage / 100);
     const upperBand = sma * (1 + percentage / 100);
 
-    // Entry on Signal Day I (Institutional preference)
+    // RESET: If stock reaches target or upper band, we close the old cycle
+    const currentDynamicTarget = Math.max(initialTargetAtEntry, upperBand);
+    if (isPositionOpen && quotes[i].high >= currentDynamicTarget) {
+      isPositionOpen = false;
+      activeEntry = 0; // Clear for next fresh cycle
+    }
+
+    // NEW CYCLE ENTRY: First touch of lower band after a reset
     if (!isPositionOpen && quotes[i].low <= lowerBand) {
       isPositionOpen = true;
       activeEntry = Math.round(quotes[i].close);
-      activeTarget = Math.round(Math.max(upperBand, activeEntry * 1.30)); 
+      initialTargetAtEntry = Math.round(Math.max(upperBand, activeEntry * 1.30)); 
       const dateVal = quotes[i].date;
-      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
-    }
-
-    // Exit on Target Hit
-    if (isPositionOpen && quotes[i].high >= activeTarget) {
-      isPositionOpen = false;
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
     }
   }
 
-  // "Qualified" means it hit the floor and is still within 5% of entry
+  const currentSma = smaValues[smaValues.length - 1];
+  const currentUpperBand = currentSma * (1 + percentage / 100);
+  const finalActiveTarget = Math.max(initialTargetAtEntry, currentUpperBand);
+
+  // Qualified Buy Zone: Within 2% of entry
   const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
     entryPrice: activeEntry,
-    target: activeTarget,
+    target: Math.round(finalActiveTarget),
     currentPrice: Math.round(currentPrice),
     triggerDate: activeSignalDate,
-    isLocked: true // INSTITUTIONAL LOCK: 14% SMA Envelope Floor
+    isLocked: true // INSTITUTIONAL LOCK: 14% SMA Envelope Floor (Latest Cycle)
+  };
+}
+
+/**
+ * STRATEGY: Volatility Channel (Institutional Bollinger Band)
+ * Settings: Length 200, StdDev 2.5
+ * Logic: Buy at lower band, Sell at current upper band.
+ */
+export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd: number = 2.5) {
+  if (!quotes || quotes.length < length) return { isBuyZone: false };
+
+  const prices = quotes.map(q => q.close);
+  const smaValues = calculateSMA(prices, length);
+  const currentPrice = prices[prices.length - 1];
+  
+  let activeEntry = 0;
+  let activeSignalDate = "";
+  let isPositionOpen = false;
+
+  for (let i = length; i < quotes.length; i++) {
+    const sma = smaValues[i];
+    const window = prices.slice(i - length + 1, i + 1);
+    const squareDiffs = window.map(v => Math.pow(v - sma, 2));
+    const stdDev = Math.sqrt(squareDiffs.reduce((a, b) => a + b, 0) / length);
+
+    const lowerBand = sma - stdDev * sd;
+    const upperBand = sma + stdDev * sd;
+
+    // RESET: Reaching current upper band closes the cycle
+    if (isPositionOpen && quotes[i].high >= upperBand) {
+      isPositionOpen = false;
+      activeEntry = 0;
+    }
+
+    // NEW CYCLE ENTRY: First touch of lower band after reset
+    if (!isPositionOpen && quotes[i].low <= lowerBand) {
+      isPositionOpen = true;
+      activeEntry = Math.round(quotes[i].close);
+      const dateVal = quotes[i].date;
+      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+    }
+  }
+
+  // Calculate latest upper band for target display
+  const lastSma = smaValues[smaValues.length - 1];
+  const lastWindow = prices.slice(-length);
+  const lastSqDiffs = lastWindow.map(v => Math.pow(v - lastSma, 2));
+  const lastStdDev = Math.sqrt(lastSqDiffs.reduce((a, b) => a + b, 0) / length);
+  const currentUpperBand = lastSma + lastStdDev * sd;
+
+  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
+
+  return {
+    isBuyZone: isActuallyInBuyRange,
+    entryPrice: activeEntry,
+    target: Math.round(currentUpperBand),
+    currentPrice: Math.round(currentPrice),
+    triggerDate: activeSignalDate,
+    isLocked: true // INSTITUTIONAL LOCK: 2.5 SD Volatility Channel (Latest Cycle)
   };
 }
 
@@ -137,146 +206,75 @@ export function calculateEnvelopeKnox(quotes: Quote[]) {
 
 /**
  * STRATEGY 2: Momentum Ceiling (Short Envelope Step-Back)
+ * Logic:
+ *   - B1 (Tranche 1): Buy at Middle Line (SMA 200). Sell at Upper Band.
+ *   - B2 (Tranche 2): Buy at Lower Band (14% SMA). Sell at Middle Line.
  */
-export function processShortEnvelope(quotes: Quote[], marketCap: number) {
-  if (!quotes || quotes.length < 250) return null;
+export function processShortEnvelope(quotes: Quote[]) {
+  if (!quotes || quotes.length < 200) return null;
 
   const prices = quotes.map(q => q.close); 
-  const ema200 = calculateEMA(prices, 200);
+  const sma200 = calculateSMA(prices, 200);
   const latestIdx = quotes.length - 1;
-
-  const capCr = marketCap / 10000000;
-  let gapPercent = 15; 
-  if (capCr >= 20000) gapPercent = 10; 
-  else if (capCr < 5000) gapPercent = 20; 
-
-  let b1_open = false, b1_entry_price = 0, b1_date = '', b1_ema_locked = 0, b1_target = 0;
-  let b2_open = false, b2_entry_price = 0, b2_target = 0;
-  let c_open = false, c_entry_price = 0, c_target = 0;
-  let d_open = false, d_entry_price = 0, d_target = 0;
-
-  for (let i = 201; i < quotes.length - 1; i++) {
-    const q = quotes[i];
-    const nextQ = quotes[i+1];
-    const cEMA = ema200[i];
-    const nextDateStr = (typeof nextQ.date === 'string' ? nextQ.date : (nextQ.date as Date).toISOString()).split('T')[0];
-
-    if (!b1_open && quotes[i-1].close >= ema200[i-1] && quotes[i].close < cEMA) {
-      b1_open = true;
-      b1_entry_price = Math.round(nextQ.close); 
-      b1_date = nextDateStr;
-      b1_ema_locked = cEMA;
-      b1_target = Math.round(b1_entry_price * 1.14); 
-    }
-
-    if (b1_open) {
-      const b2_line = b1_ema_locked * 0.86;
-      if (!b2_open && q.low <= b2_line) {
-        b2_open = true;
-        b2_entry_price = Math.round(nextQ.close); 
-        b2_target = b1_entry_price; 
-      }
-      const c_line = b2_line * (1 - gapPercent/100);
-      if (b2_open && !c_open && q.low <= c_line) {
-        c_open = true;
-        c_entry_price = Math.round(nextQ.close);
-        c_target = b2_entry_price; 
-      }
-      const d_line = c_line * (1 - gapPercent/100);
-      if (c_open && !d_open && q.low <= d_line) {
-        d_open = true;
-        d_entry_price = Math.round(nextQ.close);
-        d_target = c_entry_price; 
-      }
-    }
-
-    if (d_open && nextQ.high >= d_target) d_open = false;
-    if (c_open && nextQ.high >= c_target) c_open = false;
-    if (b2_open && nextQ.high >= b2_target) b2_open = false;
-    if (b1_open && nextQ.high >= b1_target) b1_open = false;
-  }
-
-  const isBuyZone = b1_open || b2_open || c_open || d_open;
   const currentPrice = prices[latestIdx];
-  const a_point = b1_open ? b1_entry_price : Math.round(ema200[latestIdx]);
-  const b_point = Math.round(a_point * 0.86);
 
-  let finalTarget = Math.round(a_point * 1.14);
-  let activeEntry = a_point;
-  let activeTranche = 'B1';
-  
-  if (d_open) { activeEntry = d_entry_price; finalTarget = d_target; activeTranche = 'D'; }
-  else if (c_open) { activeEntry = c_entry_price; finalTarget = c_target; activeTranche = 'C'; }
-  else if (b2_open) { activeEntry = b2_entry_price; finalTarget = b2_target; activeTranche = 'B2'; }
-  else if (b1_open) { activeEntry = b1_entry_price; finalTarget = b1_target; activeTranche = 'B1'; }
-  else { activeTranche = 'WATCHLIST'; }
+  let b1_open = false, b1_entry_price = 0, b1_date = '', b1_target = 0;
+  let b2_open = false, b2_entry_price = 0, b2_date = '', b2_target = 0;
 
-  return {
-    isBuyZone: isBuyZone && currentPrice <= activeEntry * 1.02,
-    tranche: activeTranche,
-    entryPrice: activeEntry, 
-    target: finalTarget,
-    currentPrice: Math.round(currentPrice),
-    triggerDate: b1_open ? b1_date : "",
-    isLocked: true, // INSTITUTIONAL LOCK: EMA 200 Step-Back Matrix (B1-D)
-    abcd: {
-      a: a_point,
-      b: b_point,
-      c: Math.round(b_point * (1 - gapPercent/100)),
-      d: Math.round(b_point * (1 - 2 * gapPercent/100)),
-      gap: gapPercent
-    }
-  };
-}
+  for (let i = 200; i < quotes.length; i++) {
+    const sma = sma200[i];
+    const upperBand = sma * 1.14;
+    const lowerBand = sma * 0.86;
 
-/**
- * STRATEGY 3: Volatility Channel (Institutional Bollinger Band)
- * Settings: Length 200, StdDev 2.5
- * Logic: Signal Day I Entry (Close), Locked Target (Upper Band at Signal Day)
- */
-export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd: number = 2.5) {
-  if (!quotes || quotes.length < length) return { isBuyZone: false };
-
-  const prices = quotes.map(q => q.close);
-  const smaValues = calculateSMA(prices, length);
-  const currentPrice = prices[prices.length - 1];
-  
-  let activeEntry = 0;
-  let activeTarget = 0;
-  let activeSignalDate = "";
-  let isPositionOpen = false;
-
-  for (let i = length; i < quotes.length; i++) {
-    const sma = smaValues[i];
-    const window = prices.slice(i - length + 1, i + 1);
-    const squareDiffs = window.map(v => Math.pow(v - sma, 2));
-    const stdDev = Math.sqrt(squareDiffs.reduce((a, b) => a + b, 0) / length);
-
-    const lowerBand = sma - stdDev * sd;
-    const upperBand = sma + stdDev * sd;
-
-    if (!isPositionOpen && quotes[i].low <= lowerBand) {
-      isPositionOpen = true;
-      activeEntry = Math.round(quotes[i].close); // Signal Day Entry
-      activeTarget = Math.round(upperBand); // Locked Target from Signal Day
+    // Tranche B1: Buy at Middle Line (Cross from above)
+    if (!b1_open && quotes[i-1].close >= sma200[i-1] && quotes[i].low <= sma) {
+      b1_open = true;
+      b1_entry_price = Math.round(quotes[i].close);
+      b1_target = Math.round(Math.max(upperBand, b1_entry_price * 1.15));
       const dateVal = quotes[i].date;
-      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
+      b1_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
     }
 
-    if (isPositionOpen && quotes[i].high >= activeTarget) {
-      isPositionOpen = false;
+    // Tranche B2: Buy at Lower Band
+    if (!b2_open && quotes[i].low <= lowerBand) {
+      b2_open = true;
+      b2_entry_price = Math.round(quotes[i].close);
+      b2_target = Math.round(sma); // Sell at Middle Line
+      const dateVal = quotes[i].date;
+      b2_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+    }
+
+    // Exit B1: Hits Upper Band (Dynamic)
+    if (b1_open && quotes[i].high >= Math.max(b1_target, upperBand)) {
+      b1_open = false;
+    }
+
+    // Exit B2: Hits Middle Line (Dynamic)
+    if (b2_open && quotes[i].high >= sma) {
+      b2_open = false;
     }
   }
 
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
+  // Final Mapping for Signal
+  let activeEntry = 0, activeTarget = 0, activeTranche = 'NONE', activeDate = '';
+  if (b2_open) { activeEntry = b2_entry_price; activeTarget = b2_target; activeTranche = 'B2'; activeDate = b2_date; }
+  else if (b1_open) { activeEntry = b1_entry_price; activeTarget = b1_target; activeTranche = 'B1'; activeDate = b1_date; }
+
+  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
-    entryPrice: activeEntry,
+    tranche: activeTranche,
+    entryPrice: activeEntry, 
     target: activeTarget,
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate,
-    isLocked: true // INSTITUTIONAL LOCK: 2.5 SD Volatility Channel Reversion
+    triggerDate: activeDate,
+    isLocked: true, // INSTITUTIONAL LOCK: B1 (Mid) / B2 (Lower) Dual Tranche
+    abcd: { 
+      a: { price: Math.round(sma200[latestIdx] * 1.14), label: "Upper" },
+      b: { price: Math.round(sma200[latestIdx]), label: "Middle" },
+      c: { price: Math.round(sma200[latestIdx] * 0.86), label: "Lower" }
+    }
   };
 }
 
