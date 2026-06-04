@@ -142,6 +142,10 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
 
 /**
  * STRATEGY 2: Momentum Ceiling (Short Envelope Step-Back)
+ * Logic:
+ *   - A (Tranche 1): Buy at Middle Line (SMA 200). Sell at Upper Band.
+ *   - B (Tranche 2): Buy at Lower Band (14% SMA). Sell at Middle Line.
+ *   - C/D: 10% drops from B for deep recovery.
  */
 export function processShortEnvelope(quotes: Quote[]) {
   if (!quotes || quotes.length < 200) return null;
@@ -151,9 +155,9 @@ export function processShortEnvelope(quotes: Quote[]) {
   const latestIdx = quotes.length - 1;
   const currentPrice = prices[latestIdx];
 
-  let state = 'NONE'; // NONE, B1_ACTIVE, B2_ACTIVE, C_ACTIVE, D_ACTIVE
-  let b1_entry = 0, b1_date = '', b1_target = 0;
-  let b2_entry = 0, b2_date = '';
+  let state = 'NONE'; // NONE, A_ACTIVE, B_ACTIVE, C_ACTIVE, D_ACTIVE
+  let a_entry = 0, a_date = '', a_target = 0;
+  let b_entry = 0, b_date = '', b_target = 0;
   let c_entry = 0, c_date = '';
   let d_entry = 0, d_date = '';
 
@@ -163,37 +167,40 @@ export function processShortEnvelope(quotes: Quote[]) {
     const lowerBand = Math.round(sma * 0.86);
 
     // RESET/EXIT:
-    if (state === 'B1_ACTIVE' && quotes[i].high >= b1_target) state = 'NONE';
-    else if (state === 'B2_ACTIVE' && quotes[i].high >= sma) state = 'B1_ACTIVE';
-    else if (state === 'C_ACTIVE' && quotes[i].high >= b2_entry) state = 'B2_ACTIVE';
+    if (state === 'A_ACTIVE' && quotes[i].high >= a_target) state = 'NONE';
+    else if (state === 'B_ACTIVE' && quotes[i].high >= sma) state = 'A_ACTIVE';
+    else if (state === 'C_ACTIVE' && quotes[i].high >= b_entry) state = 'B_ACTIVE';
     else if (state === 'D_ACTIVE' && quotes[i].high >= c_entry) state = 'C_ACTIVE';
 
-    // NEW CYCLE ENTRY B1: Middle line touch from above
+    // NEW CYCLE ENTRY A: Middle line touch from above
     if (state === 'NONE') {
       if (quotes[i-1].close >= sma200[i-1] && quotes[i].low <= sma) {
-        state = 'B1_ACTIVE';
-        b1_entry = Math.round(sma);
-        b1_target = upperBand;
+        state = 'A_ACTIVE';
+        a_entry = Math.round(sma);
+        a_target = upperBand;
         const dVal = quotes[i].date;
-        b1_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+        a_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
         
-        // Ladder below
-        b2_entry = lowerBand;
-        c_entry = Math.round(b2_entry * 0.90);
+        // Define Ladder below
+        b_entry = lowerBand;
+        c_entry = Math.round(b_entry * 0.90);
         d_entry = Math.round(c_entry * 0.90);
-        b2_date = ''; c_date = ''; d_date = '';
+        b_date = ''; c_date = ''; d_date = '';
       }
     }
-    else if (state === 'B1_ACTIVE' && quotes[i].low <= b2_entry * 1.01) {
-      state = 'B2_ACTIVE';
+    // ENTRY B
+    else if (state === 'A_ACTIVE' && quotes[i].low <= b_entry * 1.01) {
+      state = 'B_ACTIVE';
       const dVal = quotes[i].date;
-      b2_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+      b_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
     }
-    else if (state === 'B2_ACTIVE' && quotes[i].low <= c_entry * 1.01) {
+    // ENTRY C
+    else if (state === 'B_ACTIVE' && quotes[i].low <= c_entry * 1.01) {
       state = 'C_ACTIVE';
       const dVal = quotes[i].date;
       c_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
     }
+    // ENTRY D
     else if (state === 'C_ACTIVE' && quotes[i].low <= d_entry * 1.01) {
       state = 'D_ACTIVE';
       const dVal = quotes[i].date;
@@ -202,9 +209,9 @@ export function processShortEnvelope(quotes: Quote[]) {
   }
 
   let activeEntry = 0, activeTarget = 0, activeTranche = 'NONE', activeDate = '';
-  if (state === 'B1_ACTIVE') { activeEntry = b1_entry; activeTarget = b1_target; activeTranche = 'B1'; activeDate = b1_date; }
-  else if (state === 'B2_ACTIVE') { activeEntry = b2_entry; activeTarget = b1_entry; activeTranche = 'B2'; activeDate = b2_date; }
-  else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = b2_entry; activeTranche = 'C'; activeDate = c_date; }
+  if (state === 'A_ACTIVE') { activeEntry = a_entry; activeTarget = a_target; activeTranche = 'A'; activeDate = a_date; }
+  else if (state === 'B_ACTIVE') { activeEntry = b_entry; activeTarget = a_entry; activeTranche = 'B'; activeDate = b_date; }
+  else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = b_entry; activeTranche = 'C'; activeDate = c_date; }
   else if (state === 'D_ACTIVE') { activeEntry = d_entry; activeTarget = c_entry; activeTranche = 'D'; activeDate = d_date; }
 
   const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
@@ -218,8 +225,8 @@ export function processShortEnvelope(quotes: Quote[]) {
     triggerDate: activeDate,
     isLocked: true,
     abcd: { 
-      a: { price: b1_entry, date: b1_date }, 
-      b: { price: b2_entry, date: b2_date }, 
+      a: { price: a_entry, date: a_date }, 
+      b: { price: b_entry, date: b_date }, 
       c: { price: c_entry, date: c_date }, 
       d: { price: d_entry, date: d_date } 
     }
