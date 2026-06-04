@@ -421,8 +421,8 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
   else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = c_target; activeTranche = 'C'; }
   else if (state === 'D_ACTIVE') { activeEntry = d_entry; activeTarget = d_target; activeTranche = 'D'; }
 
-  // Institutional Buy-Zone Rule: Within 2% of the active tranche entry, AND not fallen more than 5% below it
-  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02 && currentPrice >= activeEntry * 0.95;
+  // Institutional Buy-Zone Rule: Within 2% of the active tranche entry
+  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
