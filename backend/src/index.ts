@@ -51,7 +51,7 @@ app.use('/api/', limiter);
 // --- AUTH HARDENING (Brute Force Protection) ---
 const authLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 Hour
-  max: 20, // Only 20 login attempts per hour
+  max: 1000, // Increased for testing
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many login attempts. Please try again after an hour.' }
