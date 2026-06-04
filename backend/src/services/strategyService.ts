@@ -8,9 +8,7 @@ export const runStrategyAnalysis = (stratId: string, snap: any, marketCap: numbe
         case 'ENVELOPE_KNOX': return calculateEnvelopeKnox(snap.quotes);
         case 'SMA': return calculateSMAStacking(snap.quotes);
         case 'BOLLINGER': return calculateBollingerBand(snap.quotes);
-        case '52W_HIGH_LOW': 
-            const isRestrictedBasket = ['H-Super45', 'H-GOOD45'].includes(snap.basketName || 'ALL');
-            return isRestrictedBasket ? calculate52WeekStrategy(snap.quotes) : { isBuyZone: false };
+        case '52W_HIGH_LOW': return calculate52WeekStrategy(snap.quotes);
         case 'SMA_BCD': return calculateSMAStacking(snap.quotes); // Maps to Quantum Stacking for BCD
         case 'CUP_HANDLE_ABCD': 
         case 'CUP_HANDLE_CORRECTION': 
