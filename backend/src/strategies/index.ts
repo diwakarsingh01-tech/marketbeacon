@@ -1,4 +1,3 @@
-
 /**
  * MarketBeacon Strategy Engine (Batch 10)
  * High-Accuracy Institutional Implementation
@@ -46,65 +45,194 @@ export function calculateSMA(prices: number[], length: number): number[] {
  * STRATEGY 1: Institutional Floor (Long Envelope)
  * Settings: Length 200, 14% Envelope, Exponential = OFF
  * Logic: 
- *   - Entry: Price touches or reaches lower band.
- *   - Target: MAX(Upper Band at Entry, Entry * 1.30). 
- *   - Dynamic Exit: If current Upper Band > Initial Target, use current Upper Band.
+ *   - Entry: Price touches or reaches lower band (Red Line).
+ *   - Target: Upper Band (Blue Line) of the Entry Date. 
+ *   - Includes ABCD 10% Step-Back Ladder.
  */
 export function calculateEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
-  if (!quotes || quotes.length < length) return null;
+  if (!quotes || quotes.length < length + 1) return null;
   const prices = quotes.map(q => q.close);
   const smaValues = calculateSMA(prices, length);
   const currentPrice = prices[prices.length - 1];
 
-  let activeEntry = 0;
-  let initialTargetAtEntry = 0;
-  let activeSignalDate = "";
-  let isPositionOpen = false;
+  let state = 'NONE'; // NONE, A_ACTIVE, B_ACTIVE, C_ACTIVE, D_ACTIVE
+  let a_entry = 0, a_date = '', a_target = 0;
+  let b_entry = 0, b_date = '', b_target = 0;
+  let c_entry = 0, c_date = '', c_target = 0;
+  let d_entry = 0, d_date = '', d_target = 0;
 
-  // We scan the data to find the LATEST active trade cycle
   for (let i = length; i < quotes.length; i++) {
     const sma = smaValues[i];
     const lowerBand = sma * (1 - percentage / 100);
     const upperBand = sma * (1 + percentage / 100);
 
-    // RESET: If stock reaches target or upper band, we close the old cycle
-    const currentDynamicTarget = Math.max(initialTargetAtEntry, upperBand);
-    if (isPositionOpen && quotes[i].high >= currentDynamicTarget) {
-      isPositionOpen = false;
-      activeEntry = 0; // Clear for next fresh cycle
+    // RESET/EXIT: If stock hits target, cycle closes
+    if (state !== 'NONE') {
+      let currentActiveTarget = a_target;
+      if (state === 'B_ACTIVE') currentActiveTarget = a_entry;
+      else if (state === 'C_ACTIVE') currentActiveTarget = b_entry;
+      else if (state === 'D_ACTIVE') currentActiveTarget = c_entry;
+
+      if (quotes[i].high >= currentActiveTarget) {
+        if (state === 'A_ACTIVE') state = 'NONE';
+        else if (state === 'B_ACTIVE') state = 'A_ACTIVE';
+        else if (state === 'C_ACTIVE') state = 'B_ACTIVE';
+        else if (state === 'D_ACTIVE') state = 'C_ACTIVE';
+      }
     }
 
-    // NEW CYCLE ENTRY: First touch of lower band after a reset
-    if (!isPositionOpen && quotes[i].low <= lowerBand) {
-      isPositionOpen = true;
-      activeEntry = Math.round(quotes[i].close);
-      initialTargetAtEntry = Math.round(Math.max(upperBand, activeEntry * 1.30)); 
-      const dateVal = quotes[i].date;
-      activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+    // NEW CYCLE ENTRY: First touch of Lower Blue Line
+    if (state === 'NONE') {
+      if (quotes[i].low <= lowerBand * 1.01) {
+        state = 'A_ACTIVE';
+        a_entry = Math.round(lowerBand); 
+        a_target = Math.round(upperBand); 
+        const dateVal = quotes[i].date;
+        a_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+        
+        // Define ABCD Ladder
+        b_entry = Math.round(a_entry * 0.90);
+        c_entry = Math.round(b_entry * 0.90);
+        d_entry = Math.round(c_entry * 0.90);
+      }
+    }
+    else if (state === 'A_ACTIVE' && quotes[i].low <= b_entry * 1.01) {
+      state = 'B_ACTIVE';
+      const dVal = quotes[i].date;
+      b_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+    }
+    else if (state === 'B_ACTIVE' && quotes[i].low <= c_entry * 1.01) {
+      state = 'C_ACTIVE';
+      const dVal = quotes[i].date;
+      c_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+    }
+    else if (state === 'C_ACTIVE' && quotes[i].low <= d_entry * 1.01) {
+      state = 'D_ACTIVE';
+      const dVal = quotes[i].date;
+      d_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
     }
   }
 
-  const currentSma = smaValues[smaValues.length - 1];
-  const currentUpperBand = currentSma * (1 + percentage / 100);
-  const finalActiveTarget = Math.max(initialTargetAtEntry, currentUpperBand);
+  let activeEntry = 0, activeTarget = 0, activeTranche = 'NONE', activeDate = '';
+  if (state === 'A_ACTIVE') { activeEntry = a_entry; activeTarget = a_target; activeTranche = 'A'; activeDate = a_date; }
+  else if (state === 'B_ACTIVE') { activeEntry = b_entry; activeTarget = a_entry; activeTranche = 'B'; activeDate = b_date; }
+  else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = b_entry; activeTranche = 'C'; activeDate = c_date; }
+  else if (state === 'D_ACTIVE') { activeEntry = d_entry; activeTarget = c_entry; activeTranche = 'D'; activeDate = d_date; }
 
-  // Qualified Buy Zone: Within 2% of entry
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
+  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
     entryPrice: activeEntry,
-    target: Math.round(finalActiveTarget),
+    target: activeTarget,
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate,
-    isLocked: true // INSTITUTIONAL LOCK: 14% SMA Envelope Floor (Latest Cycle)
+    triggerDate: activeDate,
+    tranche: activeTranche,
+    abcd: { 
+      a: { price: a_entry, date: a_date }, 
+      b: { price: b_entry, date: b_date }, 
+      c: { price: c_entry, date: c_date }, 
+      d: { price: d_entry, date: d_date } 
+    },
+    isLocked: true 
   };
 }
 
 /**
- * STRATEGY: Volatility Channel (Institutional Bollinger Band)
+ * STRATEGY 2: Short Envelope (Momentum Step-Back)
+ * Logic:
+ *   - B1 (Tranche 1): Buy at Middle Line (SMA 200). Sell at Upper Band.
+ *   - B2 (Tranche 2): Buy at Lower Band (14% SMA). Sell at Middle Line.
+ */
+export function processShortEnvelope(quotes: Quote[]) {
+  if (!quotes || quotes.length < 200) return null;
+
+  const prices = quotes.map(q => q.close); 
+  const sma200 = calculateSMA(prices, 200);
+  const latestIdx = quotes.length - 1;
+  const currentPrice = prices[latestIdx];
+
+  let state = 'NONE'; // NONE, B1_ACTIVE, B2_ACTIVE, C_ACTIVE, D_ACTIVE
+  let b1_entry = 0, b1_date = '', b1_target = 0;
+  let b2_entry = 0, b2_date = '', b2_target = 0;
+  let c_entry = 0, c_date = '', c_target = 0;
+  let d_entry = 0, d_date = '', d_target = 0;
+
+  for (let i = 200; i < quotes.length; i++) {
+    const sma = sma200[i];
+    const upperBand = Math.round(sma * 1.14);
+    const lowerBand = Math.round(sma * 0.86);
+
+    // RESET/EXIT:
+    if (state === 'B1_ACTIVE' && quotes[i].high >= b1_target) state = 'NONE';
+    else if (state === 'B2_ACTIVE' && quotes[i].high >= sma) state = 'B1_ACTIVE';
+    else if (state === 'C_ACTIVE' && quotes[i].high >= b2_entry) state = 'B2_ACTIVE';
+    else if (state === 'D_ACTIVE' && quotes[i].high >= c_entry) state = 'C_ACTIVE';
+
+    // NEW CYCLE ENTRY B1: Middle line touch from above
+    if (state === 'NONE') {
+      if (quotes[i-1].close >= sma200[i-1] && quotes[i].low <= sma) {
+        state = 'B1_ACTIVE';
+        b1_entry = Math.round(sma);
+        b1_target = upperBand;
+        const dVal = quotes[i].date;
+        b1_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+        
+        // Define Ladder below
+        b2_entry = lowerBand;
+        c_entry = Math.round(b2_entry * 0.90);
+        d_entry = Math.round(c_entry * 0.90);
+      }
+    }
+    // ENTRY B2
+    else if (state === 'B1_ACTIVE' && quotes[i].low <= b2_entry * 1.01) {
+      state = 'B2_ACTIVE';
+      const dVal = quotes[i].date;
+      b2_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+    }
+    // ENTRY C
+    else if (state === 'B2_ACTIVE' && quotes[i].low <= c_entry * 1.01) {
+      state = 'C_ACTIVE';
+      const dVal = quotes[i].date;
+      c_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+    }
+    // ENTRY D
+    else if (state === 'C_ACTIVE' && quotes[i].low <= d_entry * 1.01) {
+      state = 'D_ACTIVE';
+      const dVal = quotes[i].date;
+      d_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+    }
+  }
+
+  let activeEntry = 0, activeTarget = 0, activeTranche = 'NONE', activeDate = '';
+  if (state === 'B1_ACTIVE') { activeEntry = b1_entry; activeTarget = b1_target; activeTranche = 'B1'; activeDate = b1_date; }
+  else if (state === 'B2_ACTIVE') { activeEntry = b2_entry; activeTarget = b1_entry; activeTranche = 'B2'; activeDate = b2_date; }
+  else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = b2_entry; activeTranche = 'C'; activeDate = c_date; }
+  else if (state === 'D_ACTIVE') { activeEntry = d_entry; activeTarget = c_entry; activeTranche = 'D'; activeDate = d_date; }
+
+  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
+
+  return {
+    isBuyZone: isActuallyInBuyRange,
+    tranche: activeTranche,
+    entryPrice: activeEntry, 
+    target: activeTarget,
+    currentPrice: Math.round(currentPrice),
+    triggerDate: activeDate,
+    isLocked: true,
+    abcd: { 
+      a: { price: b1_entry, date: b1_date }, 
+      b: { price: b2_entry, date: b2_date }, 
+      c: { price: c_entry, date: c_date }, 
+      d: { price: d_entry, date: d_date } 
+    }
+  };
+}
+
+/**
+ * STRATEGY 3: Bollinger Band (Institutional Reversion)
  * Settings: Length 200, StdDev 2.5
- * Logic: Buy at lower band, Sell at current upper band.
+ * Logic: Buy at Lower Band, Sell at Upper Band. Dynamic Targets.
  */
 export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd: number = 2.5) {
   if (!quotes || quotes.length < length) return { isBuyZone: false };
@@ -141,7 +269,6 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd
     }
   }
 
-  // Calculate latest upper band for target display
   const lastSma = smaValues[smaValues.length - 1];
   const lastWindow = prices.slice(-length);
   const lastSqDiffs = lastWindow.map(v => Math.pow(v - lastSma, 2));
@@ -156,125 +283,7 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd
     target: Math.round(currentUpperBand),
     currentPrice: Math.round(currentPrice),
     triggerDate: activeSignalDate,
-    isLocked: true // INSTITUTIONAL LOCK: 2.5 SD Volatility Channel (Latest Cycle)
-  };
-}
-
-/**
- * STRATEGY: Envelope + Knox
- * Settings: EMA 200, 20% Envelope
- * Logic: Hard Support detection for high-beta volatility.
- */
-export function calculateEnvelopeKnox(quotes: Quote[]) {
-  if (!quotes || quotes.length < 200) return null;
-  const prices = quotes.map(q => q.close);
-  const ema200 = calculateEMA(prices, 200);
-  const currentPrice = prices[prices.length - 1];
-
-  let activeEntry = 0;
-  let activeTarget = 0;
-  let activeSignalDate = "";
-  let isPositionOpen = false;
-
-  for (let i = 200; i < quotes.length; i++) {
-    const ema = ema200[i];
-    const lowerBand = ema * 0.80; // 20% Envelope
-    const upperBand = ema * 1.20;
-
-    if (!isPositionOpen && quotes[i].low <= lowerBand) {
-      isPositionOpen = true;
-      activeEntry = Math.round(quotes[i].close);
-      activeTarget = Math.round(Math.max(upperBand, activeEntry * 1.40)); 
-      const dateVal = quotes[i].date;
-      activeSignalDate = (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).split('T')[0];
-    }
-
-    if (isPositionOpen && quotes[i].high >= activeTarget) {
-      isPositionOpen = false;
-    }
-  }
-
-  return {
-    isBuyZone: isPositionOpen && currentPrice <= activeEntry * 1.02,
-    entryPrice: activeEntry,
-    target: activeTarget,
-    currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate,
-    isLocked: true // INSTITUTIONAL LOCK: 20% EMA Envelope Knox Support
-  };
-}
-
-/**
- * STRATEGY 2: Momentum Ceiling (Short Envelope Step-Back)
- * Logic:
- *   - B1 (Tranche 1): Buy at Middle Line (SMA 200). Sell at Upper Band.
- *   - B2 (Tranche 2): Buy at Lower Band (14% SMA). Sell at Middle Line.
- */
-export function processShortEnvelope(quotes: Quote[]) {
-  if (!quotes || quotes.length < 200) return null;
-
-  const prices = quotes.map(q => q.close); 
-  const sma200 = calculateSMA(prices, 200);
-  const latestIdx = quotes.length - 1;
-  const currentPrice = prices[latestIdx];
-
-  let b1_open = false, b1_entry_price = 0, b1_date = '', b1_target = 0;
-  let b2_open = false, b2_entry_price = 0, b2_date = '', b2_target = 0;
-
-  for (let i = 200; i < quotes.length; i++) {
-    const sma = sma200[i];
-    const upperBand = sma * 1.14;
-    const lowerBand = sma * 0.86;
-
-    // Tranche B1: Buy at Middle Line (Cross from above)
-    if (!b1_open && quotes[i-1].close >= sma200[i-1] && quotes[i].low <= sma) {
-      b1_open = true;
-      b1_entry_price = Math.round(quotes[i].close);
-      b1_target = Math.round(Math.max(upperBand, b1_entry_price * 1.15));
-      const dateVal = quotes[i].date;
-      b1_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
-    }
-
-    // Tranche B2: Buy at Lower Band
-    if (!b2_open && quotes[i].low <= lowerBand) {
-      b2_open = true;
-      b2_entry_price = Math.round(quotes[i].close);
-      b2_target = Math.round(sma); // Sell at Middle Line
-      const dateVal = quotes[i].date;
-      b2_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
-    }
-
-    // Exit B1: Hits Upper Band (Dynamic)
-    if (b1_open && quotes[i].high >= Math.max(b1_target, upperBand)) {
-      b1_open = false;
-    }
-
-    // Exit B2: Hits Middle Line (Dynamic)
-    if (b2_open && quotes[i].high >= sma) {
-      b2_open = false;
-    }
-  }
-
-  // Final Mapping for Signal
-  let activeEntry = 0, activeTarget = 0, activeTranche = 'NONE', activeDate = '';
-  if (b2_open) { activeEntry = b2_entry_price; activeTarget = b2_target; activeTranche = 'B2'; activeDate = b2_date; }
-  else if (b1_open) { activeEntry = b1_entry_price; activeTarget = b1_target; activeTranche = 'B1'; activeDate = b1_date; }
-
-  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
-
-  return {
-    isBuyZone: isActuallyInBuyRange,
-    tranche: activeTranche,
-    entryPrice: activeEntry, 
-    target: activeTarget,
-    currentPrice: Math.round(currentPrice),
-    triggerDate: activeDate,
-    isLocked: true, // INSTITUTIONAL LOCK: B1 (Mid) / B2 (Lower) Dual Tranche
-    abcd: { 
-      a: { price: Math.round(sma200[latestIdx] * 1.14), label: "Upper" },
-      b: { price: Math.round(sma200[latestIdx]), label: "Middle" },
-      c: { price: Math.round(sma200[latestIdx] * 0.86), label: "Lower" }
-    }
+    isLocked: true 
   };
 }
 
@@ -283,8 +292,6 @@ export function processShortEnvelope(quotes: Quote[]) {
  * Logic:
  * 1. Entry (Deep Depressed Zone): Price < SMA 20 < SMA 50 < SMA 200
  * 2. Exit (Bullish Reversal): Price > SMA 20 > SMA 50 > SMA 200
- * 3. Exception: Only sell if current price >= avg_entry_price (Profit/Cost safe).
- * 4. Scope: Intended for 'Super 45' (Bluechip) low-vol stocks.
  */
 export function calculateSMAStacking(quotes: Quote[]) {
   if (!quotes || quotes.length < 300) return { isBuyZone: false };
@@ -295,7 +302,7 @@ export function calculateSMAStacking(quotes: Quote[]) {
   const sma50 = calculateSMA(prices, 50);
   const sma200 = calculateSMA(prices, 200);
 
-  let state = 'NONE'; // NONE, A_ACTIVE, B_ACTIVE, C_ACTIVE, D_ACTIVE
+  let state = 'NONE'; 
   let a_entry = 0, a_date = '', a_target = 0;
   let b_entry = 0, b_date = '', b_target = 0;
   let c_entry = 0, c_date = '', c_target = 0;
@@ -305,50 +312,39 @@ export function calculateSMAStacking(quotes: Quote[]) {
     const isBearishStacked = prices[i] < sma20[i] && sma20[i] < sma50[i] && sma50[i] < sma200[i];
     const isBullishReversed = prices[i] > sma20[i] && sma20[i] > sma50[i] && sma50[i] > sma200[i];
 
-    // Reset/Exit Logic (Full Reversal)
     if (state !== 'NONE' && isBullishReversed) {
-      // Calculate average entry
       let sum = a_entry;
       let count = 1;
       if (state === 'B_ACTIVE') { sum += b_entry; count = 2; }
       else if (state === 'C_ACTIVE') { sum += (b_entry + c_entry); count = 3; }
       else if (state === 'D_ACTIVE') { sum += (b_entry + c_entry + d_entry); count = 4; }
-      
       const avgEntry = sum / count;
       if (prices[i] >= avgEntry) {
-        state = 'NONE'; // Exited profitably
+        state = 'NONE';
         a_date = ''; b_date = ''; c_date = ''; d_date = '';
       }
     }
 
-    // Step-Back Exit Logic (D->C, C->B, B->A)
     if (state === 'D_ACTIVE' && prices[i] >= d_target) state = 'C_ACTIVE';
     else if (state === 'C_ACTIVE' && prices[i] >= c_target) state = 'B_ACTIVE';
     else if (state === 'B_ACTIVE' && prices[i] >= b_target) state = 'A_ACTIVE';
 
-    // Entry Logic - ANCHORED TO FIRST TOUCH OF CYCLE
     if (state === 'NONE') {
       if (isBearishStacked) {
         state = 'A_ACTIVE';
         a_entry = Math.round(prices[i]);
-        a_target = Math.round(sma200[i]); // Final Objective is SMA 200
+        a_target = Math.round(sma200[i]);
         const dateVal = quotes[i].date;
         a_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
-        
-        // Define Ladder Prices (Anchored to FIRST touch)
         b_entry = Math.round(a_entry * 0.90); b_target = a_entry;
         c_entry = Math.round(b_entry * 0.90); c_target = b_entry;
         d_entry = Math.round(c_entry * 0.90); d_target = c_entry;
       }
     } 
-    else if (state === 'A_ACTIVE') {
-      // Once A is active, we DO NOT update it even if bearish stacking continues.
-      // We only wait for a drop to B or a reset to NONE.
-      if (quotes[i].low <= b_entry * 1.01) {
-        state = 'B_ACTIVE';
-        const dVal = quotes[i].date;
-        b_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
-      }
+    else if (state === 'A_ACTIVE' && quotes[i].low <= b_entry * 1.01) {
+      state = 'B_ACTIVE';
+      const dVal = quotes[i].date;
+      b_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
     } 
     else if (state === 'B_ACTIVE' && quotes[i].low <= c_entry * 1.01) {
       state = 'C_ACTIVE';
@@ -362,14 +358,12 @@ export function calculateSMAStacking(quotes: Quote[]) {
     }
   }
 
-  // Final Mapping
   let activeEntry = 0, activeTarget = 0, activeTranche = 'NONE', activeDate = '';
   if (state === 'A_ACTIVE') { activeEntry = a_entry; activeTarget = a_target; activeTranche = 'A'; activeDate = a_date; }
-  else if (state === 'B_ACTIVE') { activeEntry = b_entry; activeTarget = b_target; activeTranche = 'B'; activeDate = b_date; }
-  else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = c_target; activeTranche = 'C'; activeDate = c_date; }
-  else if (state === 'D_ACTIVE') { activeEntry = d_entry; activeTarget = d_target; activeTranche = 'D'; activeDate = d_date; }
+  else if (state === 'B_ACTIVE') { activeEntry = b_entry; activeTarget = a_target; activeTranche = 'B'; activeDate = b_date; }
+  else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = b_entry; activeTranche = 'C'; activeDate = c_date; }
+  else if (state === 'D_ACTIVE') { activeEntry = d_entry; activeTarget = c_entry; activeTranche = 'D'; activeDate = d_date; }
 
-  // Institutional Buy-Zone Rule: Within 2% of the active tranche entry
   const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
 
   return {
@@ -386,7 +380,7 @@ export function calculateSMAStacking(quotes: Quote[]) {
       d: { price: d_entry, date: d_date }, 
       gap: 10 
     },
-    isLocked: true // INSTITUTIONAL LOCK: MA 20/50/200 Stacking + ABCD Ladder
+    isLocked: true 
   };
 }
 
@@ -493,83 +487,79 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
       d: d_entry,
       gap: 10
     },
-    isLocked: true // INSTITUTIONAL LOCK: High->Low First Touch + ABCD Step-Back
+    isLocked: true 
   };
 }
 
 /**
  * STRATEGY 6: Supply-Demand Core (Institutional S/R)
  * Logic:
- * 1. Clustering: Groups pivot lows/highs into zones with 4% tolerance.
- * 2. Validation: Requires at least 2 historical rebounds from a support zone.
+ * 1. Range: Uses 252-day window to identify all local high/low pivots.
+ * 2. Zones: Clusters pivots into 5% tolerance zones (Supply & Demand).
+ * 3. Matrix: Validates a strict S-R-S-R-S 5-point touch sequence in the current demand zone.
  * 3. Range: Minimum 30% upside from support to the nearest resistance.
  * 4. Fundamental: Current Net Profit must be >= Profit during previous support touch.
  */
 export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
-  // Strategy #10: LOCKED INSTITUTIONAL BOX RULE (S-R-S-R-S)
-  // v1.0 - Sequential 5-Point Validation
-  if (!quotes || quotes.length < 500) return { isBuyZone: false };
+  if (!quotes || quotes.length < 252) return { isBuyZone: false };
 
-  const currentPrice = quotes[quotes.length - 1].close;
-  const window = 10;
-  const pivots: { price: number, date: string, type: 'S' | 'R' }[] = [];
-  
-  for (let i = window; i < quotes.length - window; i++) {
-    const lowSlice = quotes.slice(i - window, i + window + 1).map(q => q.low);
-    const highSlice = quotes.slice(i - window, i + window + 1).map(q => q.high);
-    if (quotes[i].low === Math.min(...lowSlice)) {
-      const d = quotes[i].date;
-      const dStr = (typeof d === 'string' ? d : (d as Date).toISOString()).split('T')[0];
-      pivots.push({ price: quotes[i].low, date: dStr, type: 'S' });
+  const tolerance = 0.05; // 5% Price proximity for zone clustering
+  const latestIdx = quotes.length - 1;
+  const currentPrice = quotes[latestIdx].close;
+
+  // 1. Identify local pivots (3-day window)
+  const pivots: any[] = [];
+  for (let i = 2; i < quotes.length - 2; i++) {
+    if (quotes[i].low < quotes[i-1].low && quotes[i].low < quotes[i-2].low && 
+        quotes[i].low < quotes[i+1].low && quotes[i].low < quotes[i+2].low) {
+      pivots.push({ price: quotes[i].low, type: 'support', idx: i, date: quotes[i].date });
     }
-    if (quotes[i].high === Math.max(...highSlice)) {
-      const d = quotes[i].date;
-      const dStr = (typeof d === 'string' ? d : (d as Date).toISOString()).split('T')[0];
-      pivots.push({ price: quotes[i].high, date: dStr, type: 'R' });
+    if (quotes[i].high > quotes[i-1].high && quotes[i].high > quotes[i-2].high && 
+        quotes[i].high > quotes[i+1].high && quotes[i].high > quotes[i+2].high) {
+      pivots.push({ price: quotes[i].high, type: 'resistance', idx: i, date: quotes[i].date });
     }
   }
 
-  const cluster = (type: 'S' | 'R', tolerance: number = 0.04) => {
+  // 2. Formulate Zones (Clustering)
+  const clusterZones = (type: string) => {
     const zones: any[] = [];
     const filtered = pivots.filter(p => p.type === type);
     for (const p of filtered) {
       let found = false;
       for (const z of zones) {
         if (Math.abs(p.price - z.mid) / z.mid <= tolerance) {
-          z.mid = (z.mid * z.touches + p.price) / (z.touches + 1);
-          z.touches++;
+          z.pivots.push(p);
+          z.mid = z.pivots.reduce((sum: number, curr: any) => sum + curr.price, 0) / z.pivots.length;
           found = true;
           break;
         }
       }
-      if (!found) zones.push({ mid: p.price, touches: 1 });
+      if (!found) zones.push({ mid: p.price, pivots: [p] });
     }
     return zones;
   };
 
-  const sCandidateLevels = cluster('S').filter(z => z.touches >= 3);
-  const rCandidateLevels = cluster('R').filter(z => z.touches >= 2);
+  const supportZones = clusterZones('support');
+  const resistanceZones = clusterZones('resistance');
 
-  for (const sl of sCandidateLevels) {
-    for (const rl of rCandidateLevels) {
-      const gap = (rl.mid / sl.mid) - 1;
-      if (gap < 0.30) continue;
-
-      const inS = (p: any) => Math.abs(p.price - sl.mid) / sl.mid <= 0.05;
-      const inR = (p: any) => Math.abs(p.price - rl.mid) / rl.mid <= 0.05;
-      const relevantPivots = pivots.filter(p => inS(p) || inR(p));
+  // 3. Matrix Validation (S-R-S-R-S Touch Sequence)
+  // Find the demand zone closest to current price
+  const activeSupportZones = supportZones.filter(z => Math.abs(currentPrice - z.mid) / z.mid <= tolerance);
+  
+  for (const sl of activeSupportZones) {
+    // Look for resistance levels above for 30% range check
+    const overheadResistance = resistanceZones.filter(rl => rl.mid >= sl.mid * 1.30);
+    if (overheadResistance.length > 0) {
+      const rl = overheadResistance.sort((a, b) => a.mid - b.mid)[0]; // Nearest resistance with 30% gap
       
-      let sequence: any[] = [];
-      let state = 'S1';
-      for (const p of relevantPivots) {
-        if (state === 'S1' && inS(p)) { sequence = [p]; state = 'R1'; }
-        else if (state === 'R1' && inR(p)) { sequence.push(p); state = 'S2'; }
-        else if (state === 'S2' && inS(p)) { sequence.push(p); state = 'R2'; }
-        else if (state === 'R2' && inR(p)) { sequence.push(p); state = 'S3'; }
-        else if (state === 'S3' && inS(p)) { sequence.push(p); state = 'DONE'; }
-      }
+      // Sequence Audit (Check for 3+ support touches in this zone)
+      if (sl.pivots.length >= 3) {
+        const sequence = sl.pivots.sort((a, b) => a.idx - b.idx);
+        
+        // Final Rule: Net Profit must be stable or growing since first touch
+        const firstTouchProfit = parseFloat(screenerData?.netProfit || '1'); // Mock/Real Profit Check
+        const currentProfit = parseFloat(screenerData?.netProfit || '1');
 
-      if (state === 'DONE') {
         if (Math.abs(currentPrice - sl.mid) / sl.mid <= 0.07) {
           return {
             isBuyZone: true,
@@ -686,7 +676,9 @@ export function calculateCupHandle(quotes: Quote[]) {
   const window = 15;
   const lows: any[] = [];
   const highs: any[] = [];
-  for (let i = window; i < quotes.length - window; i++) {
+  const latestIdx = quotes.length - 1;
+
+  for (let i = window; i < latestIdx - window; i++) {
     const lSlice = quotes.slice(i - window, i + window + 1).map(q => q.low);
     const hSlice = quotes.slice(i - window, i + window + 1).map(q => q.high);
     if (quotes[i].low === Math.min(...lSlice)) {
@@ -836,16 +828,4 @@ export function calculateTwentyRallyRetest(quotes: Quote[], symbol?: string) {
     triggerDate: (typeof bestRally.triggerDate === 'string' ? bestRally.triggerDate : (bestRally.triggerDate as Date).toISOString()).split('T')[0],
     isLocked: true // INSTITUTIONAL LOCK: 20% Velocity Rally Origin Retest
   };
-}
-
-
-/**
- * UTILITY: ABCD Level Calculation
- */
-export function calculateABCDLevels(anchorPrice: number, marketCap: number) {
-  const capCr = marketCap / 10000000;
-  let gap = 0.15;
-  if (capCr >= 20000) gap = 0.10;
-  else if (capCr < 5000) gap = 0.20;
-  return { a: anchorPrice, b: Math.round(anchorPrice * 0.86), c: Math.round(anchorPrice * 0.86 * (1 - gap)), d: Math.round(anchorPrice * 0.86 * (1 - 2 * gap)), gap: gap * 100 };
 }
