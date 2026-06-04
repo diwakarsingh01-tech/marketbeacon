@@ -2,13 +2,11 @@ export const STRATEGIES = [
   { id: 'SIXTY_SEVEN_FUNDA', name: '67 ka Funda', baskets: ['H-Good200', 'H-GOOD45', 'H-Super45'], isLive: true, tier: 'alpha', isLocked: true },
   { id: 'TWENTY_RALLY_RETEST', name: '20% ki rally', baskets: ['H-Good200', 'H-GOOD45', 'H-Super45'], isLive: true, tier: 'alpha', isLocked: true },
   { id: 'SR_STRATEGY', name: 'Support and Resistance Strategy (S&R)', baskets: ['H-Good200', 'H-GOOD45', 'H-Super45'], isLive: true, tier: 'alpha', isLocked: true },
-  { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['H-GOOD45', 'H-Super45'], isLive: true, tier: 'pro', isLocked: false },
+  { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['H-Super45', 'H-GOOD45'], isLive: true, tier: 'pro', isLocked: true },
   { id: 'RHS_ABCD', name: 'Reverse Head and Shoulder + ABCD', baskets: ['H-GOOD45', 'H-Super45'], isLive: true, tier: 'pro', isLocked: true },
   { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle + ABCD', baskets: ['H-GOOD45', 'H-Super45'], isLive: true, tier: 'pro', isLocked: true },
   { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['H-Super45'], isLive: true, tier: 'pro', isLocked: true },
   { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['H-Super45'], isLive: true, tier: 'free', isLocked: false },
-  { id: 'SMA', name: 'SMA', baskets: ['H-Super45'], isLive: true, tier: 'free', isLocked: false },
-  { id: 'ENVELOPE_KNOX', name: 'Envelope + Knox', baskets: ['H-Super45'], isLive: true, tier: 'pro', isLocked: false },
   { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['H-Super45'], isLive: true, tier: 'free', isLocked: false },
   { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['H-Super45'], isLive: true, tier: 'free', isLocked: false }
 ];
