@@ -297,41 +297,94 @@ export function calculateSMAStacking(quotes: Quote[]) {
   const sma50 = calculateSMA(prices, 50);
   const sma200 = calculateSMA(prices, 200);
 
-  let isPositionOpen = false;
-  let activeEntry = 0;
-  let activeSignalDate = "";
+  let state = 'NONE'; // NONE, A_ACTIVE, B_ACTIVE, C_ACTIVE, D_ACTIVE
+  let a_entry = 0, a_date = '', a_target = 0;
+  let b_entry = 0, b_date = '', b_target = 0;
+  let c_entry = 0, c_date = '', c_target = 0;
+  let d_entry = 0, d_date = '', d_target = 0;
 
   for (let i = 200; i < quotes.length; i++) {
     const isBearishStacked = prices[i] < sma20[i] && sma20[i] < sma50[i] && sma50[i] < sma200[i];
     const isBullishReversed = prices[i] > sma20[i] && sma20[i] > sma50[i] && sma50[i] > sma200[i];
 
-    // Bulk Buy in Deep Depressed Zone
-    if (!isPositionOpen && isBearishStacked) {
-      isPositionOpen = true;
-      activeEntry = Math.round(prices[i]);
-      const dateVal = quotes[i].date;
-      activeSignalDate = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+    // Reset/Exit Logic (Full Reversal)
+    if (state !== 'NONE' && isBullishReversed) {
+      // Calculate average entry
+      let sum = a_entry;
+      let count = 1;
+      if (state === 'B_ACTIVE') { sum += b_entry; count = 2; }
+      else if (state === 'C_ACTIVE') { sum += (b_entry + c_entry); count = 3; }
+      else if (state === 'D_ACTIVE') { sum += (b_entry + c_entry + d_entry); count = 4; }
+      
+      const avgEntry = sum / count;
+      if (prices[i] >= avgEntry) {
+        state = 'NONE'; // Exited profitably
+        a_date = ''; b_date = ''; c_date = ''; d_date = '';
+      }
     }
 
-    // Profit-Safe Exit on Full Reversal
-    if (isPositionOpen && isBullishReversed) {
-      if (prices[i] >= activeEntry) {
-        isPositionOpen = false;
+    // Step-Back Exit Logic (D->C, C->B, B->A)
+    if (state === 'D_ACTIVE' && prices[i] >= d_target) state = 'C_ACTIVE';
+    else if (state === 'C_ACTIVE' && prices[i] >= c_target) state = 'B_ACTIVE';
+    else if (state === 'B_ACTIVE' && prices[i] >= b_target) state = 'A_ACTIVE';
+
+    // Entry Logic
+    if (state === 'NONE') {
+      if (isBearishStacked) {
+        state = 'A_ACTIVE';
+        a_entry = Math.round(prices[i]);
+        a_target = Math.round(sma200[i]); // Final Objective is SMA 200
+        const dateVal = quotes[i].date;
+        a_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+        
+        // Define Ladder Prices
+        b_entry = Math.round(a_entry * 0.90); b_target = a_entry;
+        c_entry = Math.round(b_entry * 0.90); c_target = b_entry;
+        d_entry = Math.round(c_entry * 0.90); d_target = c_entry;
       }
+    } 
+    else if (state === 'A_ACTIVE' && quotes[i].low <= b_entry * 1.01) {
+      state = 'B_ACTIVE';
+      const dVal = quotes[i].date;
+      b_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+    } 
+    else if (state === 'B_ACTIVE' && quotes[i].low <= c_entry * 1.01) {
+      state = 'C_ACTIVE';
+      const dVal = quotes[i].date;
+      c_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+    } 
+    else if (state === 'C_ACTIVE' && quotes[i].low <= d_entry * 1.01) {
+      state = 'D_ACTIVE';
+      const dVal = quotes[i].date;
+      d_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
     }
   }
 
-  // Institutional Buy-Zone Rule: Within 2% of deep depressed entry
-  const isActuallyInBuyRange = isPositionOpen && currentPrice <= activeEntry * 1.02;
+  // Final Mapping
+  let activeEntry = 0, activeTarget = 0, activeTranche = 'NONE', activeDate = '';
+  if (state === 'A_ACTIVE') { activeEntry = a_entry; activeTarget = a_target; activeTranche = 'A'; activeDate = a_date; }
+  else if (state === 'B_ACTIVE') { activeEntry = b_entry; activeTarget = b_target; activeTranche = 'B'; activeDate = b_date; }
+  else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = c_target; activeTranche = 'C'; activeDate = c_date; }
+  else if (state === 'D_ACTIVE') { activeEntry = d_entry; activeTarget = d_target; activeTranche = 'D'; activeDate = d_date; }
+
+  // Institutional Buy-Zone Rule: Within 2% of the active tranche entry
+  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
 
   return {
     isBuyZone: isActuallyInBuyRange,
     entryPrice: activeEntry,
-    target: Math.round(sma200[prices.length - 1]), // Minimum recovery objective (SMA 200)
+    target: activeTarget,
     currentPrice: Math.round(currentPrice),
-    triggerDate: activeSignalDate,
-    tranche: "BULK BUY",
-    isLocked: true // INSTITUTIONAL LOCK: MA 20/50/200 Bearish Stacking
+    triggerDate: activeDate,
+    tranche: activeTranche,
+    abcd: { 
+      a: { price: a_entry, date: a_date }, 
+      b: { price: b_entry, date: b_date }, 
+      c: { price: c_entry, date: c_date }, 
+      d: { price: d_entry, date: d_date }, 
+      gap: 10 
+    },
+    isLocked: true // INSTITUTIONAL LOCK: MA 20/50/200 Stacking + ABCD Ladder
   };
 }
 
