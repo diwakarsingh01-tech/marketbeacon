@@ -343,10 +343,23 @@ export function calculateSMAStacking(quotes: Quote[]) {
         d_entry = Math.round(c_entry * 0.90); d_target = c_entry;
       }
     } 
-    else if (state === 'A_ACTIVE' && quotes[i].low <= b_entry * 1.01) {
-      state = 'B_ACTIVE';
-      const dVal = quotes[i].date;
-      b_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+    else if (state === 'A_ACTIVE') {
+      if (isBearishStacked) {
+        // Anchor to LATEST A entry
+        a_entry = Math.round(prices[i]);
+        a_target = Math.round(sma200[i]);
+        const dateVal = quotes[i].date;
+        a_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+        
+        // Recalculate based on LATEST A
+        b_entry = Math.round(a_entry * 0.90); b_target = a_entry;
+        c_entry = Math.round(b_entry * 0.90); c_target = b_entry;
+        d_entry = Math.round(c_entry * 0.90); d_target = c_entry;
+      } else if (quotes[i].low <= b_entry * 1.01) {
+        state = 'B_ACTIVE';
+        const dVal = quotes[i].date;
+        b_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+      }
     } 
     else if (state === 'B_ACTIVE' && quotes[i].low <= c_entry * 1.01) {
       state = 'C_ACTIVE';
