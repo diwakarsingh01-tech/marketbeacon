@@ -348,8 +348,8 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
 
   const currentPrice = quotes[quotes.length - 1].close;
   
-  let state = 'SEEKING_BLUE'; // Possible: SEEKING_BLUE, SEEKING_RED, A_ACTIVE, B_ACTIVE, C_ACTIVE, D_ACTIVE
-  
+  let state = 'SEEKING_RED'; // Start seeking red to catch ongoing drops
+
   let a_entry = 0, a_target = 0, a_date = '';
   let b_entry = 0, b_target = 0;
   let c_entry = 0, c_target = 0;
@@ -361,10 +361,9 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
     const high52 = Math.max(...window.map(q => q.high)); // Blue Line
 
     // Rule 1: Hitting the Blue Line resets everything to seek the first Red Line touch.
-    // Also, if 'A' is active and hits its target (which was a Blue Line), it resets.
     if (quotes[i].high >= high52 * 0.99) {
       state = 'SEEKING_RED';
-    } else if (state !== 'SEEKING_BLUE' && state !== 'SEEKING_RED' && quotes[i].high >= a_target) {
+    } else if (state !== 'SEEKING_RED' && quotes[i].high >= a_target) {
       state = 'SEEKING_RED'; // A target achieved
     }
 
@@ -422,8 +421,8 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
   else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = c_target; activeTranche = 'C'; }
   else if (state === 'D_ACTIVE') { activeEntry = d_entry; activeTarget = d_target; activeTranche = 'D'; }
 
-  // Institutional Buy-Zone Rule: Within 2% of the active tranche entry
-  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
+  // Institutional Buy-Zone Rule: Within 2% of the active tranche entry, AND not fallen more than 5% below it
+  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02 && currentPrice >= activeEntry * 0.95;
 
   return {
     isBuyZone: isActuallyInBuyRange,
