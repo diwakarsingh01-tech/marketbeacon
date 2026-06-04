@@ -44,10 +44,6 @@ export function calculateSMA(prices: number[], length: number): number[] {
 /**
  * STRATEGY 1: Institutional Floor (Long Envelope)
  * Settings: Length 200, 14% Envelope, Exponential = OFF
- * Logic: 
- *   - Entry: Price touches or reaches lower band (Red Line).
- *   - Target: Upper Band (Blue Line) of the Entry Date. 
- *   - Includes ABCD 10% Step-Back Ladder.
  */
 export function calculateEnvelope(quotes: Quote[], percentage: number = 14, length: number = 200) {
   if (!quotes || quotes.length < length + 1) return null;
@@ -55,18 +51,15 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
   const smaValues = calculateSMA(prices, length);
   const currentPrice = prices[prices.length - 1];
 
-  let state = 'NONE'; // NONE, A_ACTIVE, B_ACTIVE, C_ACTIVE, D_ACTIVE
+  let state = 'NONE'; 
   let a_entry = 0, a_date = '', a_target = 0;
-  let b_entry = 0, b_date = '';
-  let c_entry = 0, c_date = '';
-  let d_entry = 0, d_date = '';
+  let b_entry = 0, b_date = '', c_entry = 0, c_date = '', d_entry = 0, d_date = '';
 
   for (let i = length; i < quotes.length; i++) {
     const sma = smaValues[i];
     const lowerBand = sma * (1 - percentage / 100);
     const upperBand = sma * (1 + percentage / 100);
 
-    // Rule 1: Reset Cycle (Hit Target)
     if (state !== 'NONE') {
       let currentActiveTarget = a_target;
       if (state === 'B_ACTIVE') currentActiveTarget = a_entry;
@@ -81,37 +74,22 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
       }
     }
 
-    // Rule 2: Entry A - FIRST touch after a clean state
-    if (state === 'NONE') {
-      if (quotes[i].low <= lowerBand * 1.01) {
-        state = 'A_ACTIVE';
-        a_entry = Math.round(lowerBand); 
-        a_target = Math.round(upperBand); 
-        const dateVal = quotes[i].date;
-        a_date = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
-        
-        // Define ABCD Ladder
-        b_entry = Math.round(a_entry * 0.90);
-        c_entry = Math.round(b_entry * 0.90);
-        d_entry = Math.round(c_entry * 0.90);
-        b_date = ''; c_date = ''; d_date = '';
-      }
+    if (state === 'NONE' && quotes[i].low <= lowerBand * 1.01) {
+      state = 'A_ACTIVE';
+      a_entry = Math.round(lowerBand); 
+      a_target = Math.round(upperBand); 
+      const dV = quotes[i].date; a_date = (typeof dV === 'string' ? dV : dV.toISOString()).split('T')[0];
+      b_entry = Math.round(a_entry * 0.90); c_entry = Math.round(b_entry * 0.90); d_entry = Math.round(c_entry * 0.90);
+      b_date = ''; c_date = ''; d_date = '';
     }
-    // Rule 3: ABCD Slide
     else if (state === 'A_ACTIVE' && quotes[i].low <= b_entry * 1.01) {
-      state = 'B_ACTIVE';
-      const dVal = quotes[i].date;
-      b_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+      state = 'B_ACTIVE'; const dV = quotes[i].date; b_date = (typeof dV === 'string' ? dV : dV.toISOString()).split('T')[0];
     }
     else if (state === 'B_ACTIVE' && quotes[i].low <= c_entry * 1.01) {
-      state = 'C_ACTIVE';
-      const dVal = quotes[i].date;
-      c_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+      state = 'C_ACTIVE'; const dV = quotes[i].date; c_date = (typeof dV === 'string' ? dV : dV.toISOString()).split('T')[0];
     }
     else if (state === 'C_ACTIVE' && quotes[i].low <= d_entry * 1.01) {
-      state = 'D_ACTIVE';
-      const dVal = quotes[i].date;
-      d_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+      state = 'D_ACTIVE'; const dV = quotes[i].date; d_date = (typeof dV === 'string' ? dV : dV.toISOString()).split('T')[0];
     }
   }
 
@@ -121,116 +99,61 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
   else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = b_entry; activeTranche = 'C'; activeDate = c_date; }
   else if (state === 'D_ACTIVE') { activeEntry = d_entry; activeTarget = c_entry; activeTranche = 'D'; activeDate = d_date; }
 
-  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
-
-  return {
-    isBuyZone: isActuallyInBuyRange,
-    entryPrice: activeEntry,
-    target: activeTarget,
-    currentPrice: Math.round(currentPrice),
-    triggerDate: activeDate,
-    tranche: activeTranche,
-    abcd: { 
-      a: { price: a_entry, date: a_date }, 
-      b: { price: b_entry, date: b_date }, 
-      c: { price: c_entry, date: c_date }, 
-      d: { price: d_entry, date: d_date } 
-    },
-    isLocked: true 
-  };
+  return { isBuyZone: (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02, entryPrice: activeEntry, target: activeTarget, currentPrice: Math.round(currentPrice), triggerDate: activeDate, tranche: activeTranche, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date } }, isLocked: true };
 }
 
 /**
  * STRATEGY 2: Momentum Ceiling (Short Envelope Step-Back)
  * Logic:
- *   - A (Tranche 1): Buy at Middle Line (SMA 200). Sell at Upper Band.
- *   - B (Tranche 2): Buy at Lower Band (14% SMA). Sell at Middle Line.
- *   - C/D: 10% drops from B for deep recovery.
+ *   - A: Buy at Middle Line (SMA 200). Target: Upper Band of entry date.
+ *   - B: Buy at Lower Band (14%). Target: SMA 200.
+ *   - C/D: 10% steps below B. Target: Previous tranche.
  */
 export function processShortEnvelope(quotes: Quote[]) {
   if (!quotes || quotes.length < 200) return null;
-
   const prices = quotes.map(q => q.close); 
   const sma200 = calculateSMA(prices, 200);
   const latestIdx = quotes.length - 1;
   const currentPrice = prices[latestIdx];
 
-  let state = 'NONE'; // NONE, A_ACTIVE, B_ACTIVE, C_ACTIVE, D_ACTIVE
+  let state = 'NONE'; 
   let a_entry = 0, a_date = '', a_target = 0;
-  let b_entry = 0, b_date = '', b_target = 0;
-  let c_entry = 0, c_date = '';
-  let d_entry = 0, d_date = '';
+  let b_entry = 0, b_date = '', c_entry = 0, c_date = '', d_entry = 0, d_date = '';
 
   for (let i = 200; i < quotes.length; i++) {
     const sma = sma200[i];
     const upperBand = Math.round(sma * 1.14);
     const lowerBand = Math.round(sma * 0.86);
 
-    // RESET/EXIT:
     if (state === 'A_ACTIVE' && quotes[i].high >= a_target) state = 'NONE';
     else if (state === 'B_ACTIVE' && quotes[i].high >= sma) state = 'A_ACTIVE';
     else if (state === 'C_ACTIVE' && quotes[i].high >= b_entry) state = 'B_ACTIVE';
     else if (state === 'D_ACTIVE' && quotes[i].high >= c_entry) state = 'C_ACTIVE';
 
-    // NEW CYCLE ENTRY A: Middle line touch from above
-    if (state === 'NONE') {
-      if (quotes[i-1].close >= sma200[i-1] && quotes[i].low <= sma) {
-        state = 'A_ACTIVE';
-        a_entry = Math.round(sma);
-        a_target = upperBand;
-        const dVal = quotes[i].date;
-        a_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
-        
-        // Define Ladder below
-        b_entry = lowerBand;
-        c_entry = Math.round(b_entry * 0.90);
-        d_entry = Math.round(c_entry * 0.90);
-        b_date = ''; c_date = ''; d_date = '';
-      }
+    if (state === 'NONE' && quotes[i-1].close >= sma200[i-1] && quotes[i].low <= sma) {
+      state = 'A_ACTIVE'; a_entry = Math.round(sma); a_target = upperBand;
+      const dV = quotes[i].date; a_date = (typeof dV === 'string' ? dV : dV.toISOString()).split('T')[0];
+      b_entry = lowerBand; c_entry = Math.round(b_entry * 0.90); d_entry = Math.round(c_entry * 0.90);
+      b_date = ''; c_date = ''; d_date = '';
     }
-    // ENTRY B
     else if (state === 'A_ACTIVE' && quotes[i].low <= b_entry * 1.01) {
-      state = 'B_ACTIVE';
-      const dVal = quotes[i].date;
-      b_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+      state = 'B_ACTIVE'; const dV = quotes[i].date; b_date = (typeof dV === 'string' ? dV : dV.toISOString()).split('T')[0];
     }
-    // ENTRY C
     else if (state === 'B_ACTIVE' && quotes[i].low <= c_entry * 1.01) {
-      state = 'C_ACTIVE';
-      const dVal = quotes[i].date;
-      c_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+      state = 'C_ACTIVE'; const dV = quotes[i].date; c_date = (typeof dV === 'string' ? dV : dV.toISOString()).split('T')[0];
     }
-    // ENTRY D
     else if (state === 'C_ACTIVE' && quotes[i].low <= d_entry * 1.01) {
-      state = 'D_ACTIVE';
-      const dVal = quotes[i].date;
-      d_date = (typeof dVal === 'string' ? dVal : (dVal as Date).toISOString()).split('T')[0];
+      state = 'D_ACTIVE'; const dV = quotes[i].date; d_date = (typeof dV === 'string' ? dV : dV.toISOString()).split('T')[0];
     }
   }
 
   let activeEntry = 0, activeTarget = 0, activeTranche = 'NONE', activeDate = '';
   if (state === 'A_ACTIVE') { activeEntry = a_entry; activeTarget = a_target; activeTranche = 'A'; activeDate = a_date; }
-  else if (state === 'B_ACTIVE') { activeEntry = b_entry; activeTarget = a_entry; activeTranche = 'B'; activeDate = b_date; }
+  else if (state === 'B_ACTIVE') { activeEntry = b_entry; activeTarget = Math.round(sma200[latestIdx]); activeTranche = 'B'; activeDate = b_date; }
   else if (state === 'C_ACTIVE') { activeEntry = c_entry; activeTarget = b_entry; activeTranche = 'C'; activeDate = c_date; }
   else if (state === 'D_ACTIVE') { activeEntry = d_entry; activeTarget = c_entry; activeTranche = 'D'; activeDate = d_date; }
 
-  const isActuallyInBuyRange = (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02;
-
-  return {
-    isBuyZone: isActuallyInBuyRange,
-    tranche: activeTranche,
-    entryPrice: activeEntry, 
-    target: activeTarget,
-    currentPrice: Math.round(currentPrice),
-    triggerDate: activeDate,
-    isLocked: true,
-    abcd: { 
-      a: { price: a_entry, date: a_date }, 
-      b: { price: b_entry, date: b_date }, 
-      c: { price: c_entry, date: c_date }, 
-      d: { price: d_entry, date: d_date } 
-    }
-  };
+  return { isBuyZone: (activeTranche !== 'NONE') && currentPrice <= activeEntry * 1.02, tranche: activeTranche, entryPrice: activeEntry, target: activeTarget, currentPrice: Math.round(currentPrice), triggerDate: activeDate, isLocked: true, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date } } };
 }
 
 /**
@@ -436,7 +359,7 @@ export function calculateCupHandle(quotes: Quote[]) {
   const currentPrice = quotes[quotes.length - 1].close, ath = Math.max(...quotes.map(q => q.high)), dr = ((ath - currentPrice) / ath) * 100;
   if (dr < 30) return { isBuyZone: false };
   const window = 15, lows: any[] = [], highs: any[] = [];
-  for (let i = window; i < quotes.length - window; i++) {
+  for (let i = window; i < latestIdx - window; i++) {
     const lS = quotes.slice(i - window, i + window + 1).map(q => q.low), hS = quotes.slice(i - window, i + window + 1).map(q => q.high);
     if (quotes[i].low === Math.min(...lS)) lows.push({ price: quotes[i].low, idx: i, date: quotes[i].date });
     if (quotes[i].high === Math.max(...hS)) highs.push({ price: quotes[i].high, idx: i, date: quotes[i].date });
