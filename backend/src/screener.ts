@@ -109,7 +109,15 @@ export async function fetchScreenerData(symbol: string) {
     const currentPrice = getRatio('Current Price');
     const marketCap = (getRatio('Market Cap') || getRatio('MarketCap')) * 10000000;
     
-    const industry = $('.company-ratios .breadcrumb').text().trim().split('\n').pop()?.trim() || 'General Research';
+    // Improved Industry Extraction
+    let industry = 'General Research';
+    const breadcrumbText = $('.company-ratios .breadcrumb').text().trim();
+    if (breadcrumbText) {
+      const parts = breadcrumbText.split('\n').map(p => p.trim()).filter(p => p && p !== '/' && p.length > 2);
+      if (parts.length > 0) {
+        industry = parts[parts.length - 1];
+      }
+    }
 
     const promHistory = getShareholdingHistory('Promoter') || getShareholdingHistory('Promoters');
     const fiiHistory = getShareholdingHistory('FII') || getShareholdingHistory('Foreign');
