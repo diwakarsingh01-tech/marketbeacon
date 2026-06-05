@@ -26,15 +26,23 @@ app.use(compression());
 
 // --- CONSTANTS ---
 export const MANUAL_SECTOR_MAP: Record<string, string> = {
-  'TCS': 'IT Services', 'INFY': 'IT Services', 'HCLTECH': 'IT Services', 'WIPRO': 'IT Services',
-  'HDFCBANK': 'Banking', 'ICICIBANK': 'Banking', 'AXISBANK': 'Banking', 'KOTAKBANK': 'Banking',
-  'ASIANPAINT': 'Paints', 'BERGEPAINT': 'Paints', 'KANSAINER': 'Paints', 'AKZOINDIA': 'Paints',
-  'HINDUNILVR': 'FMCG', 'ITC': 'FMCG', 'COLPAL': 'FMCG', 'DABUR': 'FMCG', 'MARICO': 'FMCG', 'NESTLEIND': 'FMCG',
-  'BAJAJ-AUTO': 'Auto', 'EICHERMOT': 'Auto', 'HEROMOTOCO': 'Auto', 'TVSMOTOR': 'Auto',
-  'BAJFINANCE': 'Finance', 'BAJAJFINSV': 'Finance', 'HDFCAMC': 'Finance', 'NAM-INDIA': 'Finance',
-  'SANOFI': 'Pharma', 'GLAXO': 'Pharma', 'PFIZER': 'Pharma', 'ABBOTINDIA': 'Pharma',
-  'ULTRACEMCO': 'Cement', 'AMBUJACEM': 'Cement',
-  'HAVELLS': 'Consumer Durables', 'WHIRLPOOL': 'Consumer Durables', 'BATAINDIA': 'Footwear'
+  // IT & Tech
+  'TCS': 'IT Services', 'INFY': 'IT Services', 'HCLTECH': 'IT Services', 'WIPRO': 'IT Services', 'LTTS': 'Engineering Tech', 'KPITTECH': 'Automotive Tech', 'CYIENT': 'IT Services', 'SONATSOFTW': 'IT Services', 'ZENSARTECH': 'IT Services', 'MPHASIS': 'IT Services', 'NEWGEN': 'Software', 'TANLA': 'CPaaS',
+  // Banking & Finance
+  'HDFCBANK': 'Banking', 'ICICIBANK': 'Banking', 'AXISBANK': 'Banking', 'KOTAKBANK': 'Banking', 'UCOBANK': 'Banking', 'CENTRALBK': 'Banking', 'BANDHANBNK': 'Banking', 'J&KBANK': 'Banking', 'KARURVYSYA': 'Banking', 'CUB': 'Banking', 'DCBBANK': 'Banking',
+  'BAJFINANCE': 'NBFC', 'BAJAJFINSV': 'NBFC', 'HDFCAMC': 'Asset Management', 'NAM-INDIA': 'Asset Management', 'CAMS': 'Financial Infrastructure', 'CDSL': 'Exchange/Depository', 'MCX': 'Exchange/Depository', 'RBLBANK': 'Banking', 'MUTHOOTFIN': 'NBFC', 'CHOLAFIN': 'NBFC', 'POONAWALLA': 'NBFC',
+  // FMCG & Consumer
+  'HINDUNILVR': 'FMCG', 'ITC': 'FMCG', 'COLPAL': 'FMCG', 'DABUR': 'FMCG', 'MARICO': 'FMCG', 'NESTLEIND': 'FMCG', 'TATACONSUM': 'FMCG', 'BRITANNIA': 'FMCG', 'VGUARD': 'Consumer Durables', 'HAVELS': 'Consumer Durables', 'WHIRLPOOL': 'Consumer Durables', 'BATAINDIA': 'Footwear', 'RELAXO': 'Footwear', 'PAGEIND': 'Apparel', 'TITAN': 'Jewellery/Watches',
+  // Paints & Chemicals
+  'ASIANPAINT': 'Paints', 'BERGEPAINT': 'Paints', 'KANSAINER': 'Paints', 'AKZOINDIA': 'Paints', 'PIDILITIND': 'Adhesives', 'DEEPAKNTR': 'Chemicals', 'SRF': 'Chemicals', 'NAVINFLUOR': 'Chemicals', 'ATUL': 'Chemicals', 'FINEORG': 'Chemicals', 'VINATIORGA': 'Chemicals',
+  // Pharma & Healthcare
+  'SANOFI': 'Pharma', 'GLAXO': 'Pharma', 'PFIZER': 'Pharma', 'ABBOTINDIA': 'Pharma', 'APOLLOHOSP': 'Healthcare', 'MAXHEALTH': 'Healthcare', 'LALPATHLAB': 'Diagnostics', 'METROPOLIS': 'Diagnostics', 'SYNGENE': 'Contract Research', 'WOCKPHARMA': 'Pharma', 'NATCOPHARM': 'Pharma', 'JBCHEPHARM': 'Pharma', 'ERIS': 'Pharma', 'AJANTPHARM': 'Pharma',
+  // Auto & Engineering
+  'BAJAJ-AUTO': 'Automobile', 'EICHERMOT': 'Automobile', 'HEROMOTOCO': 'Automobile', 'TVSMOTOR': 'Automobile', 'MARUTI': 'Automobile', 'M&M': 'Automobile', 'ASHOKLEY': 'Automobile', 'POLYCAB': 'Electricals', 'KEI': 'Electricals', 'DIXON': 'Electronics Mfg', 'HONAUT': 'Automation', 'ABB': 'Industrial/Power', 'SIEMENS': 'Industrial/Power', 'CUMMINSIND': 'Industrial/Power',
+  // Infrastructure & Cement
+  'ULTRACEMCO': 'Cement', 'AMBUJACEM': 'Cement', 'ACC': 'Cement', 'RAMCOCEM': 'Cement', 'JKCEMENT': 'Cement', 'L&T': 'EPC/Infra', 'CONCOR': 'Logistics', 'WELCORP': 'Steel Pipes', 'TRITURBINE': 'Engineering',
+  // Others
+  'IEX': 'Energy Exchange', 'NYKAA': 'E-commerce', 'ZOMATO': 'Food Delivery', 'ZEEL': 'Media', 'SUNTV': 'Media'
 };
 
 export const STRATEGIES = [
