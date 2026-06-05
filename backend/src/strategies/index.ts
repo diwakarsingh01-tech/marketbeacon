@@ -258,27 +258,31 @@ export function calculateSMAStacking(quotes: Quote[]) {
 export function calculate52WeekStrategy(quotes: Quote[]) {
   const per = 251; if (!quotes || quotes.length < per + 1) return { isBuyZone: false };
   const currentPrice = quotes[quotes.length - 1].close;
-  let state = 'SEEKING_RED', a_entry = 0, a_target = 0, a_date = '', b_entry = 0, c_entry = 0, d_entry = 0;
+  let state = 'SEEKING_RED', a_entry = 0, a_target = 0, a_date = '', b_entry = 0, b_date = '', c_entry = 0, c_date = '', d_entry = 0, d_date = '';
   for (let i = per; i < quotes.length; i++) {
     const window = quotes.slice(i - per + 1, i + 1), low52 = Math.min(...window.map(q => q.low)), high52 = Math.max(...window.map(q => q.high));
+    const dateVal = quotes[i].date;
+    const dStr = (typeof dateVal === 'string' ? dateVal : (dateVal as Date).toISOString()).split('T')[0];
+
     if (quotes[i].high >= high52 * 0.99 || (state !== 'SEEKING_RED' && quotes[i].high >= a_target)) state = 'SEEKING_RED';
     if (state === 'SEEKING_RED' && quotes[i].low <= low52 * 1.01) {
       state = 'A_ACTIVE'; a_entry = Math.round(low52); a_target = Math.round(high52);
-      const dV = quotes[i].date; a_date = (typeof dV === 'string' ? dV : (dV as Date).toISOString()).split('T')[0];
+      a_date = dStr;
       b_entry = Math.round(a_entry * 0.90); c_entry = Math.round(b_entry * 0.90); d_entry = Math.round(c_entry * 0.90);
-    } else if (state === 'A_ACTIVE' && quotes[i].low <= b_entry * 1.01) state = 'B_ACTIVE';
+      b_date = ''; c_date = ''; d_date = '';
+    } else if (state === 'A_ACTIVE' && quotes[i].low <= b_entry * 1.01) { state = 'B_ACTIVE'; b_date = dStr; }
     else if (state === 'B_ACTIVE' && quotes[i].high >= a_entry) state = 'A_ACTIVE';
-    else if (state === 'B_ACTIVE' && quotes[i].low <= c_entry * 1.01) state = 'C_ACTIVE';
+    else if (state === 'B_ACTIVE' && quotes[i].low <= c_entry * 1.01) { state = 'C_ACTIVE'; c_date = dStr; }
     else if (state === 'C_ACTIVE' && quotes[i].high >= b_entry) state = 'B_ACTIVE';
-    else if (state === 'C_ACTIVE' && quotes[i].low <= d_entry * 1.01) state = 'D_ACTIVE';
+    else if (state === 'C_ACTIVE' && quotes[i].low <= d_entry * 1.01) { state = 'D_ACTIVE'; d_date = dStr; }
     else if (state === 'D_ACTIVE' && quotes[i].high >= c_entry) state = 'C_ACTIVE';
   }
-  let activeE = 0, activeT = 0, activeTr = 'NONE';
-  if (state === 'A_ACTIVE') { activeE = a_entry; activeT = a_target; activeTr = 'A'; }
-  else if (state === 'B_ACTIVE') { activeE = b_entry; activeT = a_entry; activeTr = 'B'; }
-  else if (state === 'C_ACTIVE') { activeE = c_entry; activeT = b_entry; activeTr = 'C'; }
-  else if (state === 'D_ACTIVE') { activeE = d_entry; activeT = c_entry; activeTr = 'D'; }
-  return { isBuyZone: (activeTr !== 'NONE') && currentPrice <= activeE * 1.02, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: a_date, tranche: activeTr, abcd: { a: a_entry, b: b_entry, c: c_entry, d: d_entry, gap: 10 }, isLocked: true };
+  let activeE = 0, activeT = 0, activeTr = 'NONE', activeD = '';
+  if (state === 'A_ACTIVE') { activeE = a_entry; activeT = a_target; activeTr = 'A'; activeD = a_date; }
+  else if (state === 'B_ACTIVE') { activeE = b_entry; activeT = a_entry; activeTr = 'B'; activeD = b_date; }
+  else if (state === 'C_ACTIVE') { activeE = c_entry; activeT = b_entry; activeTr = 'C'; activeD = c_date; }
+  else if (state === 'D_ACTIVE') { activeE = d_entry; activeT = c_entry; activeTr = 'D'; activeD = d_date; }
+  return { isBuyZone: (activeTr !== 'NONE') && currentPrice <= activeE * 1.02, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: activeD, tranche: activeTr, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date }, gap: 10 }, isLocked: true };
 }
 
 /**
