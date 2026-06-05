@@ -47,7 +47,7 @@ export const BASKETS: Record<string, string[]> = {
 };
 
 // Simplified stocks for backward compatibility if needed
-export const stocks = BASKETS['H-Super45'].map(symbol => ({
+export const stocks = BASKETS['Elite Basket'].map(symbol => ({
   symbol,
   stockName: symbol,
   strategy: 'Envelope Long',

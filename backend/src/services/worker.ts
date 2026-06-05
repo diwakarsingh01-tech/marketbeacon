@@ -10,12 +10,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ALPHA_40_CACHE_PATH = path.join(__dirname, '../alpha_40_cache.json');
 
 const STRATEGY_BASKET_MAP: Record<string, string[]> = {
-  'ENVELOPE_LONG': ['H-Super45'], 'ENVELOPE_SHORT': ['H-Super45'], 'BOLLINGER': ['H-Super45'],
-  'CUP_HANDLE_ABCD': ['H-Super45', 'H-GOOD45'], 'RHS_ABCD': ['H-Super45', 'H-GOOD45'],
-  'SMA_ABCD': ['H-Super45', 'H-GOOD45'], '52W_HIGH_LOW': ['H-Super45', 'H-GOOD45'],
-  'TWENTY_RALLY_RETEST': ['H-Super45', 'H-GOOD45', 'H-Good200'],
-  'SIXTY_SEVEN_FUNDA': ['H-Super45', 'H-GOOD45', 'H-Good200'],
-  'SR_STRATEGY': ['H-Super45', 'H-GOOD45', 'H-Good200']
+  'ENVELOPE_LONG': ['Elite Basket'], 'ENVELOPE_SHORT': ['Elite Basket'], 'BOLLINGER': ['Elite Basket'],
+  'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket'], 'RHS_ABCD': ['Elite Basket', 'Quality Basket'],
+  'SMA_ABCD': ['Elite Basket', 'Quality Basket'], '52W_HIGH_LOW': ['Elite Basket', 'Quality Basket'],
+  'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
+  'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
+  'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket']
 };
 
 export async function precalculateAlpha40() {
@@ -115,9 +115,9 @@ export async function precalculateAlpha40() {
       return { active, closed };
     };
 
-    const bc = await processBasket('H-Super45', BASKETS['H-Super45']);
-    const hb = await processBasket('H-GOOD45', BASKETS['H-GOOD45']);
-    const wb = await processBasket('H-Good200', currentWealth);
+    const bc = await processBasket('Elite Basket', BASKETS['Elite Basket']);
+    const hb = await processBasket('Quality Basket', BASKETS['Quality Basket']);
+    const wb = await processBasket('Growth Basket', currentWealth);
 
     const allActive = [...(bc.active || []), ...(hb.active || []), ...(wb.active || [])];
     const allClosed = [...(bc.closed || []), ...(hb.closed || []), ...(wb.closed || [])];
