@@ -120,6 +120,7 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
       const strategyData: any = runStrategyAnalysis(strategyId, snap, snap.quote.marketCap, basket as string);
       results.push({
         symbol: sym,
+        entryTime: strategyData?.triggerDate || snap.quotes[snap.quotes.length-1].date,
         entryPrice: strategyData?.entryPrice || 0,
         target: strategyData?.target || 0,
         currentPrice: snap.quotes[snap.quotes.length - 1].close,
