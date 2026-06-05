@@ -862,8 +862,8 @@ async function startServer() {
     console.log('🛡️ [STARTUP] Refreshing Elite Basket Smart Money Data...');
     updateMarketSnapshot(BASKETS['Elite Basket']).catch(e => console.error('Startup SM Refresh Failed:', e.message));
     
-    // Schedule Pre-calculation every 15 minutes
-    cron.schedule('*/15 * * * *', () => {
+    // Schedule Alpha Hub Pre-calculation DAILY at 2:45 AM (Post-Audit)
+    cron.schedule('45 2 * * *', () => {
       console.log('⏰ [CRON] Refreshing Alpha-40 Cache...');
       precalculateAlpha40();
     });
