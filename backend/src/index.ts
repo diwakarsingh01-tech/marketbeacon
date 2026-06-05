@@ -71,24 +71,24 @@ const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // --- GLOBAL INSTITUTIONAL MATRIX ---
 export const STRATEGIES = [
-  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['H-Super45'] },
-  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['H-Super45'] },
-  { id: 'ENVELOPE_KNOX', name: 'Envelope + Knox', baskets: ['H-Super45'] },
-  { id: 'SMA', name: 'SMA', baskets: ['H-Super45'] },
-  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['H-Super45'] },
-  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['H-Super45'] },
-  { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle + ABCD', baskets: ['H-GOOD45', 'H-Super45'] },
-  { id: 'RHS_ABCD', name: 'Reverse Head and Shoulder + ABCD', baskets: ['H-GOOD45', 'H-Super45'] },
-  { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['H-GOOD45', 'H-Super45'] },
-  { id: 'CUP_HANDLE_CORRECTION', name: 'Cup with Handle + 10% correction', baskets: ['H-GOOD45', 'H-Super45'] },
-  { id: 'RHS_CORRECTION', name: 'Reverse Head and Shoulder + 10% correction', baskets: ['H-GOOD45', 'H-Super45'] },
-  { id: 'SR_STRATEGY', name: 'Support and Resistance Strategy (S&R)', baskets: ['H-Good200', 'H-GOOD45', 'H-Super45'] },
-  { id: 'TWENTY_RALLY_RETEST', name: '20% ki rally', baskets: ['H-Good200', 'H-GOOD45', 'H-Super45'] },
-  { id: 'SIXTY_SEVEN_FUNDA', name: '67 ka Funda', baskets: ['H-Good200', 'H-GOOD45', 'H-Super45'] }
+  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Elite Basket'] },
+  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['Elite Basket'] },
+  { id: 'ENVELOPE_KNOX', name: 'Envelope + Knox', baskets: ['Elite Basket'] },
+  { id: 'SMA', name: 'SMA', baskets: ['Elite Basket'] },
+  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['Elite Basket'] },
+  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['Elite Basket'] },
+  { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle + ABCD', baskets: ['Quality Basket', 'Elite Basket'] },
+  { id: 'RHS_ABCD', name: 'Reverse Head and Shoulder + ABCD', baskets: ['Quality Basket', 'Elite Basket'] },
+  { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['Quality Basket', 'Elite Basket'] },
+  { id: 'CUP_HANDLE_CORRECTION', name: 'Cup with Handle + 10% correction', baskets: ['Quality Basket', 'Elite Basket'] },
+  { id: 'RHS_CORRECTION', name: 'Reverse Head and Shoulder + 10% correction', baskets: ['Quality Basket', 'Elite Basket'] },
+  { id: 'SR_STRATEGY', name: 'Support and Resistance Strategy (S&R)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'] },
+  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest (20%)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'] },
+  { id: 'SIXTY_SEVEN_FUNDA', name: 'Institutional Reset (67%)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'] }
 ];
 
 export const BASKETS: Record<string, string[]> = {
-  'H-Super45': [
+  'Elite Basket': [
     'WHIRLPOOL', 'SANOFI', 'COLPAL', 'BATAINDIA', 'KANSAINER', 'HAVELLS', 'TCS', 
     'PGHH', 'BAJAJ-AUTO', 'GLAXO', 'GILLETTE', 'PAGEIND', 'AKZOINDIA', 'AMBUJACEM', 
     'BAJAJHLDNG', 'DABUR', 'ITC', 'HINDUNILVR', 'PFIZER', 'ABBOTINDIA', 'ICICIPRULI', 
@@ -97,7 +97,7 @@ export const BASKETS: Record<string, string[]> = {
     'KOTAKBANK', 'HDFCLIFE', 'BAJAJFINSV', 'AXISBANK', 'MARICO', 'TITAN', 'HDFCBANK', 
     'NIFTYBEES', 'BANKBEES'
   ],
-  'H-GOOD45': [
+  'Quality Basket': [
     'RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 
     'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 
     'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KAJARIACER', 'VINATIORGA', 
@@ -105,7 +105,7 @@ export const BASKETS: Record<string, string[]> = {
     'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 
     'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'
   ],
-  'H-Good200': [
+  'Growth Basket': [
     "SPARC", "IEX", "TATAELXSI", "CAMS", "CHENNPETRO", "THYROCARE", "ECLERX", "SONATSOFTW", "EMAMILTD", "TRITURBINE", 
     "GODFRYPHLP", "AJANTPHARM", "BAJAJCON", "CDSL", "CRISIL", "SHARDACROP", "NBCC", "ENGINERSIN", "KFINTECH", "JAMNAAUTO", 
     "ELGIEQUIP", "LTTS", "TANLA", "GPPL", "KPITTECH", "CHAMBLFERT", "NAVINFLUOR", "NEWGEN", "WELCORP", "JBCHEPHARM", 
@@ -465,11 +465,11 @@ app.post('/api/admin/update-snapshot', authenticateToken, requireAdmin, async (r
     const dynamicWealth = getDynamicBasket();
     const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['H-Good200'] || []);
 
-    if (basket === 'H-Super45') {
-      symbols = BASKETS['H-Super45'] || [];
-    } else if (basket === 'H-GOOD45') {
-      symbols = BASKETS['H-GOOD45'] || [];
-    } else if (basket === 'H-Good200') {
+    if (basket === 'Elite Basket') {
+      symbols = BASKETS['Elite Basket'] || [];
+    } else if (basket === 'Quality Basket') {
+      symbols = BASKETS['Quality Basket'] || [];
+    } else if (basket === 'Growth Basket') {
       symbols = currentWealth;
     } else {
       // FIX: Safe spreading
@@ -647,9 +647,9 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
     const results = [];
     
      let symbols = [];
-     if (basket === 'H-Super45') symbols = BASKETS['H-Super45'];
-     else if (basket === 'H-GOOD45') symbols = BASKETS['H-GOOD45'];
-     else if (basket === 'H-Good200') symbols = BASKETS['H-Good200'];
+     if (basket === 'Elite Basket') symbols = BASKETS['Elite Basket'];
+     else if (basket === 'Quality Basket') symbols = BASKETS['Quality Basket'];
+     else if (basket === 'Growth Basket') symbols = BASKETS['Growth Basket'];
      else symbols = Object.keys(snapshot);
 
     for (const baseSymbol of symbols) {
