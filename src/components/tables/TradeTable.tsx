@@ -443,7 +443,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                 );
                               })}
                             </div>
-                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 z-[110] hidden group-hover/ladder:block bg-slate-ink text-white shadow-2xl rounded-2xl p-5 animate-in fade-in slide-in-from-bottom-2 duration-300 min-w-[220px]" style={{ backgroundColor: 'var(--slate-ink)' }}>
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 z-[200] hidden group-hover/ladder:block bg-slate-950 text-white shadow-2xl rounded-2xl p-5 animate-in fade-in slide-in-from-bottom-2 duration-300 min-w-[220px]">
                                <div className="space-y-3">
                                   <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
                                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Institutional Ladder</span>

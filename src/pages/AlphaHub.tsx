@@ -168,8 +168,6 @@ const AlphaHubPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [totalCapital, setTotalCapital] = useState<number>(200000);
   const [activeTab, setActiveTab] = useState<'active' | 'closed' | 'analytics'>('analytics');
-  const [capFilter, setCapFilter] = useState<string>('ALL');
-  const [strategyFilter, setStrategyFilter] = useState<string>('ALL');
 
   const historicalData = generateDynamicChartData(totalCapital);
 
@@ -472,7 +470,7 @@ const AlphaHubPage: React.FC = () => {
             </motion.div>
          )}
 
-         {/* TAB & FILTER CONTROLS */}
+         {/* TAB CONTROLS */}
          <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex p-1 bg-slate-100 rounded-xl border border-slate-200">
                <button 
@@ -495,33 +493,9 @@ const AlphaHubPage: React.FC = () => {
                </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4">
-               <div className="flex items-center gap-3 px-5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                  <PieChart className="h-4 w-4 text-slate-400" />
-                  <select 
-                    value={capFilter}
-                    onChange={(e) => setCapFilter(e.target.value)}
-                    className="bg-transparent text-[11px] font-black text-slate-900 uppercase outline-none cursor-pointer"
-                  >
-                      <option value="ALL">All Tiers</option>
-                      <option value="LARGE">Large Cap</option>
-                      <option value="MID">Mid Cap</option>
-                      <option value="SMALL">Small Cap</option>
-                  </select>
-               </div>
-               <div className="flex items-center gap-3 px-5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                  <Zap className="h-4 w-4 text-slate-400" />
-                  <select 
-                    value={strategyFilter}
-                    onChange={(e) => setStrategyFilter(e.target.value)}
-                    className="bg-transparent text-[11px] font-black text-slate-900 uppercase outline-none cursor-pointer"
-                  >
-                      <option value="ALL">All Strategy Models</option>
-                      {Array.from(new Set((data?.stocks || []).map((s: any) => s.strategy))).map((strat: any) => (
-                        <option key={strat} value={strat}>{strat}</option>
-                      ))}
-                  </select>
-               </div>
+            <div className="hidden md:flex items-center gap-3 text-slate-400">
+               <Activity className="h-3 w-3" />
+               <span className="text-[9px] font-black uppercase tracking-widest italic">Institutional Pulse Monitoring</span>
             </div>
          </div>
 
@@ -585,36 +559,6 @@ const AlphaHubPage: React.FC = () => {
                        </ResponsiveContainer>
                     </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white p-8 rounded-[2rem] border-2 border-slate-200 shadow-sm space-y-4">
-                       <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
-                          <ShieldCheck className="h-6 w-6" />
-                       </div>
-                       <h4 className="text-xl font-black uppercase tracking-tighter text-slate-900">Batch 9 Audit</h4>
-                       <p className="text-xs font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-                          Every asset is passed through a 100-point fundamental test before technical scanning. We strictly require a 70+ Score, rejecting high-debt (D/E &gt; 0.2) and low-growth companies.
-                       </p>
-                    </div>
-                    <div className="bg-white p-8 rounded-[2rem] border-2 border-slate-200 shadow-sm space-y-4">
-                       <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mb-6">
-                          <Target className="h-6 w-6" />
-                       </div>
-                       <h4 className="text-xl font-black uppercase tracking-tighter text-slate-900">Precision Lock</h4>
-                       <p className="text-xs font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-                          Chasing prices destroys Alpha. Our system enforces a strict 2.00% maximum upside window for entry, while systematically accumulating high-quality assets down to a 30.0% drawdown.
-                       </p>
-                    </div>
-                    <div className="bg-white p-8 rounded-[2rem] border-2 border-slate-200 shadow-sm space-y-4">
-                       <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6">
-                          <PieChart className="h-6 w-6" />
-                       </div>
-                       <h4 className="text-xl font-black uppercase tracking-tighter text-slate-900">Dynamic 50-30-20</h4>
-                       <p className="text-xs font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-                          The portfolio automatically balances across structural tiers based on live signal volume, guaranteeing a 50% Large, 30% Mid, and 20% Small Cap weighting out of active opportunities.
-                       </p>
-                    </div>
-                </div>
               </motion.div>
             ) : activeTab === 'active' ? (
               <motion.div 
@@ -624,11 +568,8 @@ const AlphaHubPage: React.FC = () => {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-12"
               >
-                 {['LARGE', 'MID', 'SMALL'].filter(c => capFilter === 'ALL' || c === capFilter).map(cap => {
-                    const capStocks = (data?.stocks || []).filter((s: any) => 
-                        s.capType === cap && 
-                        (strategyFilter === 'ALL' || s.strategy === strategyFilter)
-                    );
+                 {['LARGE', 'MID', 'SMALL'].map(cap => {
+                    const capStocks = (data?.stocks || []).filter((s: any) => s.capType === cap);
                     if (capStocks.length === 0) return null;
 
                     return (
