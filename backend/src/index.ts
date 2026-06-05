@@ -108,11 +108,15 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
     let symbols: string[] = [];
     if (basket === 'Elite Basket') symbols = BASKETS['Elite Basket'];
     else if (basket === 'Quality Basket') symbols = BASKETS['Quality Basket'];
-    else symbols = await getDynamicBasket();
+    else if (basket === 'Growth Basket') symbols = await getDynamicBasket();
+    else symbols = Array.from(new Set(Object.values(BASKETS).flat()));
 
-    const snapshot = await getSnapshotFromCloud(symbols);
+    // Deduplicate symbols to prevent duplicate rows in Screener
+    const uniqueSymbols = Array.from(new Set(symbols));
+
+    const snapshot = await getSnapshotFromCloud(uniqueSymbols);
     const results = [];
-    for (const sym of symbols) {
+    for (const sym of uniqueSymbols) {
       const snap = snapshot[sym];
       if (!snap) continue;
       const audit = await validateBatch9(sym, snap, basket as string);
