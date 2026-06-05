@@ -660,7 +660,7 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
       
       // FIX: Strictly follow the selected strategy node
       const strategyId = (selectedStrategyId as string) || 'SR_STRATEGY';
-      const strategyData: any = snap.strategies?.[strategyId] || runStrategyAnalysis(strategyId, snap, snap.quote.marketCap, basket as string);
+      const strategyData: any = runStrategyAnalysis(strategyId, snap, snap.quote.marketCap, basket as string);
 
       const entryPrice = strategyData?.entryPrice || 0;
       const currentStrat = STRATEGIES.find(s => s.id === strategyId);
@@ -824,7 +824,7 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     if (basket) {
       for (const strat of STRATEGIES) {
         if (!strat.baskets.includes(basket)) continue;
-        const sd = snap.strategies?.[strat.id] || runStrategyAnalysis(strat.id, snap, snap.quote.marketCap);
+        const sd = runStrategyAnalysis(strat.id, snap, snap.quote.marketCap, basketName);
         if (sd && sd?.isBuyZone) qualifiedStrats.push({ id: strat.id, name: strat.name });
       }
     }
