@@ -2,12 +2,7 @@ import { getMarketSnapshot, getDynamicBasket } from '../screener.js';
 import { validateBatch9 } from './fundamentalAudit.js';
 import { runStrategyAnalysis } from './strategyService.js';
 import { STRATEGIES, BASKETS } from '../index.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ALPHA_40_CACHE_PATH = path.join(__dirname, '../alpha_40_cache.json');
+import { supabase } from '../db.js';
 
 const STRATEGY_BASKET_MAP: Record<string, string[]> = {
   'ENVELOPE_LONG': ['Elite Basket'], 'ENVELOPE_SHORT': ['Elite Basket'], 'BOLLINGER': ['Elite Basket'],
@@ -19,10 +14,10 @@ const STRATEGY_BASKET_MAP: Record<string, string[]> = {
 };
 
 export async function precalculateAlpha40() {
-  console.log('👷 [WORKER] Pre-calculating Alpha-40 Snapshots...');
+  console.log('👷 [WORKER] Pre-calculating Alpha-40 Snapshots (Cloud Mode)...');
   try {
     const snapshot = getMarketSnapshot();
-    const dynamicWealth = getDynamicBasket();
+    const dynamicWealth = await getDynamicBasket();
     const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : [];
 
     const processBasket = async (basketName: string, symbols: string[]) => {
@@ -123,19 +118,14 @@ export async function precalculateAlpha40() {
     const allActive = [...(bc.active || []), ...(hb.active || []), ...(wb.active || [])];
     const allClosed = [...(bc.closed || []), ...(hb.closed || []), ...(wb.closed || [])];
 
-    // --- INSTITUTIONAL ALLOCATION ENGINE (50-30-20 & SECTOR CAP) ---
+    // --- INSTITUTIONAL ALLOCATION ENGINE ---
     const selectWithRules = (candidates: any[], targetCount: number, existingSectors: Record<string, number>) => {
       const selected: any[] = [];
-      // Sort candidates by Score then ROI
       const sorted = candidates.sort((a, b) => (b.score - a.score) || (b.roi - a.roi));
-      
       for (const s of sorted) {
         if (selected.length >= targetCount) break;
-        
         const sector = s.sector || 'General';
         const sectorCount = existingSectors[sector] || 0;
-        
-        // 20% Sector Exposure Rule (Max 10 per 50 stocks total)
         if (sectorCount < 10) {
           selected.push(s);
           existingSectors[sector] = sectorCount + 1;
@@ -145,14 +135,9 @@ export async function precalculateAlpha40() {
     };
 
     const sectorUsage: Record<string, number> = {};
-    const largeCaps = allActive.filter(s => s.capType === 'LARGE');
-    const midCaps = allActive.filter(s => s.capType === 'MID');
-    const smallCaps = allActive.filter(s => s.capType === 'SMALL');
-
-    const finalLarge = selectWithRules(largeCaps, 25, sectorUsage);
-    const finalMid = selectWithRules(midCaps, 15, sectorUsage);
-    const finalSmall = selectWithRules(smallCaps, 10, sectorUsage);
-
+    const finalLarge = selectWithRules(allActive.filter(s => s.capType === 'LARGE'), 25, sectorUsage);
+    const finalMid = selectWithRules(allActive.filter(s => s.capType === 'MID'), 15, sectorUsage);
+    const finalSmall = selectWithRules(allActive.filter(s => s.capType === 'SMALL'), 10, sectorUsage);
     const finalActive = [...finalLarge, ...finalMid, ...finalSmall];
 
     const results = {
@@ -163,18 +148,23 @@ export async function precalculateAlpha40() {
       updatedAt: new Date().toISOString()
     };
 
-    fs.writeFileSync(ALPHA_40_CACHE_PATH, JSON.stringify(results, null, 2));
-    console.log(`✅ [WORKER] Alpha-40 Cache Updated. Mix: ${finalLarge.length}L / ${finalMid.length}M / ${finalSmall.length}S`);
+    // Save to Supabase system_cache
+    await supabase.from('system_cache').upsert({
+      key: 'alpha_40_results',
+      data: results,
+      updated_at: new Date().toISOString()
+    });
+
+    console.log(`✅ [WORKER] Alpha-40 Cloud Cache Updated. Mix: ${finalLarge.length}L / ${finalMid.length}M / ${finalSmall.length}S`);
   } catch (e: any) {
     console.error('❌ [WORKER] Alpha-40 Pre-calculation Failed:', e.message);
   }
 }
 
-export function getAlpha40Cache() {
+export async function getAlpha40Cache() {
   try {
-    if (fs.existsSync(ALPHA_40_CACHE_PATH)) {
-      return JSON.parse(fs.readFileSync(ALPHA_40_CACHE_PATH, 'utf-8'));
-    }
+    const { data, error } = await supabase.from('system_cache').select('data').eq('key', 'alpha_40_results').single();
+    if (!error && data) return data.data;
   } catch (e) { }
   return null;
 }
