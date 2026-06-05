@@ -433,6 +433,45 @@ const AlphaHubPage: React.FC = () => {
             />
          </motion.div>
 
+         {/* SECTOR EXPOSURE ARCHITECTURE */}
+         {data?.summary?.sectorStats && (
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.95 }}
+               animate={{ opacity: 1, scale: 1 }}
+               className="p-8 bg-white border-2 border-slate-200 rounded-[2.5rem] shadow-sm space-y-8"
+            >
+               <div className="flex items-center gap-4">
+                  <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
+                     <PieChart className="h-5 w-5" />
+                  </div>
+                  <div>
+                     <h3 className="text-xl font-black uppercase tracking-tighter text-slate-900">Institutional Sector Proportions</h3>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hard-Capped at 20% per Sector</p>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                  {Object.entries(data.summary.sectorStats).sort((a: any, b: any) => b[1] - a[1]).map(([sector, count]: any) => {
+                     const percentage = ((count / (data?.summary?.total || 1)) * 100).toFixed(1);
+                     return (
+                        <div key={sector} className="p-5 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 hover:border-amber-200 transition-all group">
+                           <div className="flex justify-between items-start">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate max-w-[120px]">{sector}</span>
+                              <span className="text-[10px] font-black text-slate-900">{count}</span>
+                           </div>
+                           <div className="flex items-end justify-between">
+                              <div className="text-xl font-black text-slate-950 italic">{percentage}%</div>
+                              <div className="h-8 w-1 bg-amber-500/20 rounded-full overflow-hidden">
+                                 <div className="w-full bg-amber-500 transition-all duration-1000" style={{ height: `${percentage}%` }} />
+                              </div>
+                           </div>
+                        </div>
+                     );
+                  })}
+               </div>
+            </motion.div>
+         )}
+
          {/* TAB & FILTER CONTROLS */}
          <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex p-1 bg-slate-100 rounded-xl border border-slate-200">
