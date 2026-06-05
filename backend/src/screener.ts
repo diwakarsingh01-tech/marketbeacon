@@ -15,16 +15,33 @@ let snapshotCache: Record<string, any> = {};
 
 export async function initSnapshotCache() {
   try {
-    console.log('📦 Loading Market Snapshot from Supabase...');
-    const { data, error } = await supabase.from('market_data').select('*');
-    if (error) throw error;
+    console.log('📦 Loading Market Snapshot from Supabase (Batched)...');
+    
+    // Total count check
+    const { count, error: countError } = await supabase.from('market_data').select('*', { count: 'exact', head: true });
+    if (countError) throw countError;
+
+    const total = count || 0;
+    const batchSize = 50;
+    let allData: any[] = [];
+
+    for (let i = 0; i < total; i += batchSize) {
+      const { data, error } = await supabase
+        .from('market_data')
+        .select('*')
+        .range(i, i + batchSize - 1);
+      
+      if (error) throw error;
+      if (data) allData = [...allData, ...data];
+      console.log(`📡 Loaded ${allData.length}/${total} symbols...`);
+    }
     
     snapshotCache = {};
-    data?.forEach(row => {
+    allData.forEach(row => {
       snapshotCache[row.symbol] = row.data;
     });
     
-    console.log(`✅ Snapshot cache loaded from Cloud (${data?.length} symbols)`);
+    console.log(`✅ Snapshot cache fully restored from Cloud (${allData.length} symbols)`);
   } catch (e: any) {
     console.error('❌ Failed to load snapshot cache from Supabase:', e.message);
     snapshotCache = {};
