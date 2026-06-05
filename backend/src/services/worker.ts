@@ -78,7 +78,7 @@ export async function precalculateAlpha40() {
           for (const stratId of Object.keys(STRATEGY_BASKET_MAP)) {
             if (!STRATEGY_BASKET_MAP[stratId]?.includes(basketName)) continue;
             
-            const sd = runStrategyAnalysis(stratId, snap, marketCap, basketName);
+            const sd: any = runStrategyAnalysis(stratId, snap, marketCap, basketName);
             if (!sd || !sd?.isBuyZone) continue;
 
             const entry = sd?.entryPrice || last?.close;
@@ -100,6 +100,7 @@ export async function precalculateAlpha40() {
               strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, 
               basketSource: basketName, 
               capType, 
+              sector: (snap.screener?.industry || 'General').trim(),
               currentPrice: last.close, 
               entryPrice: entry, 
               entryTime,
@@ -122,26 +123,48 @@ export async function precalculateAlpha40() {
     const allActive = [...(bc.active || []), ...(hb.active || []), ...(wb.active || [])];
     const allClosed = [...(bc.closed || []), ...(hb.closed || []), ...(wb.closed || [])];
 
-    // Dynamic Allocation (50-30-20)
-    const sorted = allActive.sort((a,b) => (b.score - a.score) || (b.roi - a.roi));
-    const finalActive = sorted.slice(0, 50); 
+    // --- INSTITUTIONAL ALLOCATION ENGINE (50-30-20 & SECTOR CAP) ---
+    const selectWithRules = (candidates: any[], targetCount: number, existingSectors: Record<string, number>) => {
+      const selected: any[] = [];
+      // Sort candidates by Score then ROI
+      const sorted = candidates.sort((a, b) => (b.score - a.score) || (b.roi - a.roi));
+      
+      for (const s of sorted) {
+        if (selected.length >= targetCount) break;
+        
+        const sector = s.sector || 'General';
+        const sectorCount = existingSectors[sector] || 0;
+        
+        // 20% Sector Exposure Rule (Max 10 per 50 stocks total)
+        if (sectorCount < 10) {
+          selected.push(s);
+          existingSectors[sector] = sectorCount + 1;
+        }
+      }
+      return selected;
+    };
 
-    const capStats = { LARGE: 0, MID: 0, SMALL: 0 };
-    finalActive.forEach(s => {
-      if (s.capType === 'LARGE') capStats.LARGE++;
-      else if (s.capType === 'MID') capStats.MID++;
-      else if (s.capType === 'SMALL') capStats.SMALL++;
-    });
+    const sectorUsage: Record<string, number> = {};
+    const largeCaps = allActive.filter(s => s.capType === 'LARGE');
+    const midCaps = allActive.filter(s => s.capType === 'MID');
+    const smallCaps = allActive.filter(s => s.capType === 'SMALL');
+
+    const finalLarge = selectWithRules(largeCaps, 25, sectorUsage);
+    const finalMid = selectWithRules(midCaps, 15, sectorUsage);
+    const finalSmall = selectWithRules(smallCaps, 10, sectorUsage);
+
+    const finalActive = [...finalLarge, ...finalMid, ...finalSmall];
 
     const results = {
       active: finalActive,
       closed: allClosed,
-      capStats,
+      capStats: { LARGE: finalLarge.length, MID: finalMid.length, SMALL: finalSmall.length },
+      sectorStats: sectorUsage,
       updatedAt: new Date().toISOString()
     };
 
     fs.writeFileSync(ALPHA_40_CACHE_PATH, JSON.stringify(results, null, 2));
-    console.log('✅ [WORKER] Alpha-40 Cache Updated.');
+    console.log(`✅ [WORKER] Alpha-40 Cache Updated. Mix: ${finalLarge.length}L / ${finalMid.length}M / ${finalSmall.length}S`);
   } catch (e: any) {
     console.error('❌ [WORKER] Alpha-40 Pre-calculation Failed:', e.message);
   }
