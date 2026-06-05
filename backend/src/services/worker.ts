@@ -12,7 +12,7 @@ const ALPHA_40_CACHE_PATH = path.join(__dirname, '../alpha_40_cache.json');
 const STRATEGY_BASKET_MAP: Record<string, string[]> = {
   'ENVELOPE_LONG': ['Elite Basket'], 'ENVELOPE_SHORT': ['Elite Basket'], 'BOLLINGER': ['Elite Basket'],
   'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket'], 'RHS_ABCD': ['Elite Basket', 'Quality Basket'],
-  'SMA_ABCD': ['Elite Basket', 'Quality Basket'], '52W_HIGH_LOW': ['Elite Basket', 'Quality Basket'],
+  'SMA_ABCD': ['Elite Basket', 'Quality Basket'], '52W_HIGH_LOW': ['Elite Basket'],
   'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
   'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
   'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket']
@@ -78,7 +78,7 @@ export async function precalculateAlpha40() {
           for (const stratId of Object.keys(STRATEGY_BASKET_MAP)) {
             if (!STRATEGY_BASKET_MAP[stratId]?.includes(basketName)) continue;
             
-            const sd = snap.strategies?.[stratId] || runStrategyAnalysis(stratId, snap, marketCap);
+            const sd = runStrategyAnalysis(stratId, snap, marketCap, basketName);
             if (!sd || !sd?.isBuyZone) continue;
 
             const entry = sd?.entryPrice || last?.close;
