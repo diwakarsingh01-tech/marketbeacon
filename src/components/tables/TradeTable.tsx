@@ -429,8 +429,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
                           <td className="px-8 py-6 text-center group/ladder relative">
                             <div className="flex items-center justify-center space-x-2 cursor-help">
                               {['a', 'b', 'c', 'd'].map((l) => {
-                                const levelVal = trade.abcd?.[l] || 0;
-                                const isActive = (trade.livePrice || 0) <= levelVal;
+                                const levelObj = trade.abcd?.[l];
+                                const levelVal = typeof levelObj === 'object' ? levelObj.price : (typeof trade.abcd?.[l] === 'number' ? trade.abcd[l] : 0);
+                                const isActive = (trade.livePrice || 0) <= levelVal && levelVal > 0;
                                 const levelColor = l === 'a' ? (isActive ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/40' : 'bg-blue-50 text-blue-400 border-blue-100') :
                                                  (l === 'b' || l === 'c') ? (isActive ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-500/40' : 'bg-indigo-50 text-indigo-400 border-indigo-100') :
                                                  (isActive ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/40' : 'bg-emerald-50 text-emerald-400 border-emerald-100');
@@ -448,10 +449,21 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Institutional Ladder</span>
                                      <ShieldCheck className="h-3 w-3 text-emerald-400" />
                                   </div>
-                                  <div className="flex justify-between items-center"><span className="text-[10px] font-black text-blue-400">Entry A</span><span className="text-sm font-black text-white italic">₹{trade.abcd?.a?.toLocaleString()}</span></div>
-                                  <div className="flex justify-between items-center"><span className="text-[10px] font-black text-slate-400">Avg B</span><span className="text-sm font-black text-white italic">₹{trade.abcd?.b?.toLocaleString()}</span></div>
-                                  <div className="flex justify-between items-center"><span className="text-[10px] font-black text-slate-400">Avg C</span><span className="text-sm font-black text-white italic">₹{trade.abcd?.c?.toLocaleString()}</span></div>
-                                  <div className="flex justify-between items-center"><span className="text-[10px] font-black text-emerald-400">Avg D</span><span className="text-sm font-black text-white italic">₹{trade.abcd?.d?.toLocaleString()}</span></div>
+                                  {['a', 'b', 'c', 'd'].map((l) => {
+                                    const levelObj = trade.abcd?.[l];
+                                    const price = typeof levelObj === 'object' ? levelObj.price : (typeof trade.abcd?.[l] === 'number' ? trade.abcd[l] : 0);
+                                    const date = typeof levelObj === 'object' ? levelObj.date : null;
+                                    
+                                    return (
+                                      <div key={l} className="flex justify-between items-center">
+                                        <div className="flex flex-col">
+                                          <span className={`text-[10px] font-black ${l === 'a' ? 'text-blue-400' : l === 'd' ? 'text-emerald-400' : 'text-slate-400'}`}>Entry {l.toUpperCase()}</span>
+                                          {date && <span className="text-[7px] text-slate-500 font-bold uppercase">{date}</span>}
+                                        </div>
+                                        <span className="text-sm font-black text-white italic">₹{price?.toLocaleString()}</span>
+                                      </div>
+                                    );
+                                  })}
                                </div>
                             </div>
                           </td>
