@@ -734,7 +734,8 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
           mid: capStats?.MID || 0,
           small: capStats?.SMALL || 0,
           fetchTime: updatedAt,
-          isCached: true
+          isCached: true,
+          sectorStats: cachedResults.sectorStats || {}
         } 
       });
     }
