@@ -1,6 +1,5 @@
 
-import { MANUAL_SECTOR_MAP } from '../index.js'; // Assuming this exists or needs to be exported from index.js
-import { getMarketSnapshot } from '../screener.js'; // Assuming this exists
+import { MANUAL_SECTOR_MAP } from '../index.js'; 
 
 export async function validateBatch9(symbol: string, snap: any, basketName: string = 'Elite Basket') {
   const quote = snap?.quote || {};
@@ -35,12 +34,11 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   const athNetProfit = safeParse(scr.athNetProfit);
   const athEPS = safeParse(scr.athEPS);
 
-  // Intelligent Leeway: If ATH data is missing (0), we assume current is the peak for scoring purposes
+  // Intelligent Leeway
   const salesPass = athSales > 0 ? (currentSales >= (athSales * 0.95)) : true;
   const profitPass = athNetProfit > 0 ? (currentNetProfit >= (athNetProfit * 0.95)) : true;
   const epsPass = athEPS > 0 ? (currentEPS >= (athEPS * 0.95)) : true;
 
-  // --- INSTITUTIONAL TRENDS (Last 3 Quarters) ---
   const getTrend = (history: number[] = []) => {
     if (history.length < 2) return 'NEUTRAL';
     const last = history[history.length - 1];
@@ -54,14 +52,12 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   const diiTrend = getTrend(sh.trends?.dii);
   const promTrend = getTrend(sh.trends?.promoter);
 
-  // --- SCORING MODEL 2.0 (REFINED) ---
   let profScore = 0;
   if (roe >= (isFinance ? 12 : 15)) profScore += 10;
   if (roce >= (isFinance ? 10 : 15)) profScore += 10;
-  if (profitPass) profScore += 5; // TTM Profit vs ATH
+  if (profitPass) profScore += 5; 
 
   let safetyScore = 0;
-  // Non-Finance: Tight 0.2 limit. Finance: Up to 8.0 (Business model leeway)
   if (debtToEquity <= (isFinance ? 8.0 : 0.2)) safetyScore += 15;
   if (pledged < 2) safetyScore += 10;
 
@@ -70,7 +66,6 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   if (epsPass) growthScore += 10;
 
   let instScore = 0;
-  // Smart Money 70% Hardened Threshold (with 5% intelligence tolerance for quality)
   if (smartMoneyTotal >= 65) instScore += 10; 
   if (smartMoneyTotal >= 70) instScore += 5;
   if (fiiTrend === 'UP' || diiTrend === 'UP') instScore += 10;
@@ -78,46 +73,18 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
 
   const totalScore = Math.min(100, Math.max(0, profScore + safetyScore + growthScore + instScore));
 
-  // HARD REJECTS (Institutional Grade)
   const smThreshold = (basketName === 'Growth Basket' ? 40 : 70);
   const isHardReject = !isETF && (
-    (debtToEquity > (isFinance ? 8.0 : 0.2)) || // Hard Pillar 7 Rule: 0.2 (Non-Fin), 8.0 (Fin)
-    (pledged >= 5) || // Hardened Rule: Max 5% Pledged
-    (smartMoneyTotal < (smThreshold * 0.95)) // 5% Tolerance for Elite Quality
+    (debtToEquity > (isFinance ? 8.0 : 0.2)) || 
+    (pledged >= 5) || 
+    (smartMoneyTotal < (smThreshold * 0.95))
   );
 
   return {
     isPass: (totalScore >= 70) && !isHardReject,
     score: totalScore,
     smartMoneyTotal,
-    profitabilityQuality: { 
-      score: profScore, max: 25, 
-      checks: [
-        { label: 'ROE', value: `${roe}%`, pass: roe >= (isFinance ? 12 : 15) },
-        { label: 'ROCE', value: `${roce}%`, pass: roce >= (isFinance ? 10 : 15) }
-      ]
-    },
-    balanceSheetSafety: {
-      score: safetyScore, max: 25,
-      checks: [
-        { label: 'Net Debt/Equity', value: debtToEquity.toFixed(2), pass: debtToEquity <= (isFinance ? 8.0 : 0.2) },
-        { label: 'Pledged Shares', value: `${pledged}%`, pass: pledged < 2 }
-      ]
-    },
-    growthQuality: {
-      score: growthScore, max: 25,
-      checks: [
-        { label: 'TTM Sales vs ATH', value: salesPass ? 'Record High' : 'Lagging', pass: salesPass },
-        { label: 'TTM EPS vs ATH', value: epsPass ? 'Growing' : 'Stale', pass: epsPass }
-      ]
-    },
-    efficiencyGovernance: {
-      score: instScore, max: 25,
-      checks: [
-        { label: 'Smart Money Total', value: `${smartMoneyTotal.toFixed(1)}%`, pass: smartMoneyTotal >= 65 },
-        { label: 'Inst. Trend', value: `${fiiTrend}/${diiTrend}`, pass: fiiTrend === 'UP' || diiTrend === 'UP' }
-      ]
-    },
+    auditMetrics: { pe, debtToEquity, roe, roce, pledged, fii, dii, promoter, smartMoneyTotal, trends: { fiiTrend, diiTrend, promTrend } },
     metrics: { pe, debtToEquity, roe, roce, pledged, fii, dii, promoter, smartMoneyTotal, trends: { fiiTrend, diiTrend, promTrend } }
   };
 }
