@@ -2,7 +2,7 @@
 import { MANUAL_SECTOR_MAP } from '../index.js'; // Assuming this exists or needs to be exported from index.js
 import { getMarketSnapshot } from '../screener.js'; // Assuming this exists
 
-export async function validateBatch9(symbol: string, snap: any, basketName: string = 'H-Super45') {
+export async function validateBatch9(symbol: string, snap: any, basketName: string = 'Elite Basket') {
   const quote = snap?.quote || {};
   const scr = snap.screener || {};
   const sh = quote.shareholding || scr.shareholding || { promoter: 0, fii: 0, dii: 0, public: 0, pledged: 0, trends: {} };
@@ -79,7 +79,7 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   const totalScore = Math.min(100, Math.max(0, profScore + safetyScore + growthScore + instScore));
 
   // HARD REJECTS (Institutional Grade)
-  const smThreshold = (basketName === 'H-Good200' ? 40 : 70);
+  const smThreshold = (basketName === 'Growth Basket' ? 40 : 70);
   const isHardReject = !isETF && (
     (debtToEquity > (isFinance ? 8.0 : 0.2)) || // Hard Pillar 7 Rule: 0.2 (Non-Fin), 8.0 (Fin)
     (pledged >= 5) || // Hardened Rule: Max 5% Pledged

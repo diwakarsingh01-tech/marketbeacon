@@ -463,7 +463,7 @@ app.post('/api/admin/update-snapshot', authenticateToken, requireAdmin, async (r
     let symbols = [];
     
     const dynamicWealth = getDynamicBasket();
-    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['H-Good200'] || []);
+    const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : (BASKETS['Growth Basket'] || []);
 
     if (basket === 'Elite Basket') {
       symbols = BASKETS['Elite Basket'] || [];
@@ -474,8 +474,8 @@ app.post('/api/admin/update-snapshot', authenticateToken, requireAdmin, async (r
     } else {
       // FIX: Safe spreading
       const all = [];
-      if (Array.isArray(BASKETS['H-Super45'])) all.push(...BASKETS['H-Super45']);
-      if (Array.isArray(BASKETS['H-GOOD45'])) all.push(...BASKETS['H-GOOD45']);
+      if (Array.isArray(BASKETS['Elite Basket'])) all.push(...BASKETS['Elite Basket']);
+      if (Array.isArray(BASKETS['Quality Basket'])) all.push(...BASKETS['Quality Basket']);
       if (Array.isArray(currentWealth)) all.push(...currentWealth);
       symbols = Array.from(new Set(all));
     }
@@ -859,8 +859,8 @@ async function startServer() {
     generateSitemap();
 
     // Pillar #9: Auto-Refresh Elite Basket on Startup
-    console.log('🛡️ [STARTUP] Refreshing H-Super45 Smart Money Data...');
-    updateMarketSnapshot(BASKETS['H-Super45']).catch(e => console.error('Startup SM Refresh Failed:', e.message));
+    console.log('🛡️ [STARTUP] Refreshing Elite Basket Smart Money Data...');
+    updateMarketSnapshot(BASKETS['Elite Basket']).catch(e => console.error('Startup SM Refresh Failed:', e.message));
     
     // Schedule Pre-calculation every 15 minutes
     cron.schedule('*/15 * * * *', () => {
@@ -871,8 +871,8 @@ async function startServer() {
     // Ephemeral Storage Fix: Trigger priority snapshot if empty
     const cache = getMarketSnapshot();
     if (Object.keys(cache).length <= 1) {
-      console.log('🚀 [STARTUP] Cache empty. Triggering priority H-Super45 snapshot...');
-      updateMarketSnapshot(BASKETS['H-Super45']).catch(e => console.error('Startup Snapshot Failed:', e.message));
+      console.log('🚀 [STARTUP] Cache empty. Triggering priority Elite Basket snapshot...');
+      updateMarketSnapshot(BASKETS['Elite Basket']).catch(e => console.error('Startup Snapshot Failed:', e.message));
     }
 
     // --- GLOBAL 404 HANDLER (Zero-HTML Policy) ---
@@ -901,7 +901,7 @@ function syncBaskets() {
   try {
     const dynamicProfit = getDynamicBasket();
     if (Array.isArray(dynamicProfit) && dynamicProfit.length > 0) {
-      BASKETS['H-Good200'] = dynamicProfit;
+      BASKETS['Growth Basket'] = dynamicProfit;
     }
   } catch (e) { console.error('Sync Baskets Failed:', e.message); }
 }

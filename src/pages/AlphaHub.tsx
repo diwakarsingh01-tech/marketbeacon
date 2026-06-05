@@ -157,9 +157,9 @@ const generateDynamicChartData = (capital: number) => {
 };
 
 const BASKET_LABELS: Record<string, string> = {
-  'H-Super45': 'H-Super45 (Elite)',
-  'H-GOOD45': 'H-GOOD45 (Quality)',
-  'H-Good200': 'H-Good200 (Universe)'
+  'Elite Basket': 'Elite Basket (Top Bluechips)',
+  'Quality Basket': 'Quality Basket (Midcaps)',
+  'Growth Basket': 'Growth Basket (Smallcaps)'
 };
 
 const AlphaHubPage: React.FC = () => {
