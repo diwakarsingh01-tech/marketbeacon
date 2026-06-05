@@ -1,7 +1,7 @@
 import { getMarketSnapshot, getDynamicBasket } from '../screener.js';
 import { validateBatch9 } from './fundamentalAudit.js';
 import { runStrategyAnalysis } from './strategyService.js';
-import { STRATEGIES, BASKETS } from '../index.js';
+import { STRATEGIES, BASKETS, MANUAL_SECTOR_MAP } from '../index.js';
 import { supabase } from '../db.js';
 
 const STRATEGY_BASKET_MAP: Record<string, string[]> = {
@@ -81,7 +81,8 @@ export async function precalculateAlpha40() {
             const isMovingUp = last?.close >= entry;
             const priceDeviation = Math.abs(((last?.close / entry) - 1) * 100);
             
-            if (isMovingUp && priceDeviation > 2.0) continue; 
+            // Loosened for Alpha Hub: Allow up to 20% move from entry (Institutional Action Zone)
+            if (isMovingUp && priceDeviation > 20.0) continue; 
             else if (!isMovingUp && priceDeviation > 30.0) continue;
 
             let entryTime = sd?.triggerDate;
@@ -95,7 +96,7 @@ export async function precalculateAlpha40() {
               strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, 
               basketSource: basketName, 
               capType, 
-              sector: (snap.screener?.industry || 'General').trim(),
+              sector: (MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General').trim(),
               currentPrice: last.close, 
               entryPrice: entry, 
               entryTime,
@@ -115,7 +116,15 @@ export async function precalculateAlpha40() {
     const hb = await processBasket('Quality Basket', BASKETS['Quality Basket']);
     const wb = await processBasket('Growth Basket', currentWealth);
 
-    const allActive = [...(bc.active || []), ...(hb.active || []), ...(wb.active || [])];
+    // DEDUPLICATE: Ensure a symbol only appears once across all baskets
+    const dedupeMap = new Map<string, any>();
+    [...(bc.active || []), ...(hb.active || []), ...(wb.active || [])].forEach(s => {
+      if (!dedupeMap.has(s.symbol) || s.score > dedupeMap.get(s.symbol).score) {
+        dedupeMap.set(s.symbol, s);
+      }
+    });
+
+    const allActive = Array.from(dedupeMap.values());
     const allClosed = [...(bc.closed || []), ...(hb.closed || []), ...(wb.closed || [])];
 
     // --- INSTITUTIONAL ALLOCATION ENGINE ---
