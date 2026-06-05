@@ -402,3 +402,20 @@ export function calculateTwentyRallyRetest(quotes: Quote[]) {
   const best = rallies.sort((a, b) => b.peakIdx - a.peakIdx)[0];
   return { isBuyZone: latestIdx - best.peakIdx <= 252 && Math.abs(currentPrice - best.origin) / best.origin <= 0.05 && currentPrice < ema200[latestIdx], entryPrice: Math.round(best.origin), target: Math.round(best.peak), currentPrice: Math.round(currentPrice), triggerDate: (typeof best.date === 'string' ? best.date : (best.date as Date).toISOString()).split('T')[0], isLocked: true };
 }
+
+/**
+ * UTILITY: ABCD Level Calculation (Legacy Fallback)
+ */
+export function calculateABCDLevels(anchorPrice: number, marketCap: number) {
+  const capCr = marketCap / 10000000;
+  let gap = 0.15; // Default 15%
+  if (capCr >= 20000) gap = 0.10;
+  else if (capCr < 5000) gap = 0.20;
+  return { 
+    a: { price: anchorPrice, label: "A" }, 
+    b: { price: Math.round(anchorPrice * 0.90), label: "B" }, 
+    c: { price: Math.round(anchorPrice * 0.81), label: "C" }, 
+    d: { price: Math.round(anchorPrice * 0.73), label: "D" }, 
+    gap: 10 
+  };
+}
