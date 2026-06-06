@@ -81,7 +81,7 @@ const MembershipPage: React.FC = () => {
 
   const allFeatures = [
     // label, free, pro, alpha
-    ['Live Screener (Qualified / Neutral / Rejected)', true,  true,  true ],
+    ['Live Screener (Passed Audit / Observation / Rejected)', true,  true,  true ],
     ['Wealth Desk — Portfolio Tracker',                true,  true,  true ],
     ['Trade Journal & Ledger',                         true,  true,  true ],
     ['Bollinger Band Strategy',                        true,  true,  true ],
@@ -96,7 +96,7 @@ const MembershipPage: React.FC = () => {
     ['Velocity Retest — Deep Demand (20%)',            false, false, true ],
     ['67% Deep Recovery Audit',                        false, false, true ],
     ['Support & Resistance Core Logic',                false, false, true ],
-    ['Priority Alpha Signals',                         false, false, true ],
+    ['Priority Alpha Strategy Triggers',               false, false, true ],
     ['Institutional Reset Strategy',                   false, false, true ],
     ['Alpha Hub — All Baskets Unlocked',               false, false, true ],
   ];

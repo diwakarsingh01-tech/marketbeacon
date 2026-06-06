@@ -179,10 +179,10 @@ const PublicAnalysisPage: React.FC = () => {
                <div className={`text-7xl font-black italic tracking-tighter relative z-10 ${data.score >= 70 ? 'text-emerald-400' : 'text-rose-400'}`}>
                  {data.score}
                </div>
-               <div className="flex items-center gap-2 relative z-10">
-                  {data.isPass ? <BadgeCheck className="w-4 h-4 text-emerald-400" /> : <Info className="w-4 h-4 text-rose-400" />}
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${data.isPass ? 'text-emerald-500' : 'text-rose-500'}`}>{data.isPass ? 'Qualified Node' : 'Audit Rejected'}</span>
-               </div>
+                <div className="flex items-center gap-2 relative z-10">
+                   {data.isPass ? <BadgeCheck className="w-4 h-4 text-emerald-400" /> : <Info className="w-4 h-4 text-rose-400" />}
+                   <span className={`text-[10px] font-black uppercase tracking-widest ${data.isPass ? 'text-emerald-500' : 'text-rose-500'}`}>{data.isPass ? 'Passed Audit' : 'Audit Failed'}</span>
+                </div>
             </div>
 
             <div className="p-10 bg-[#0f172a]/40 backdrop-blur-2xl border border-white/5 rounded-[3rem] space-y-3">
@@ -226,7 +226,7 @@ const PublicAnalysisPage: React.FC = () => {
                         </div>
                         <span className="text-lg font-black text-white uppercase tracking-tighter italic">{strat.name}</span>
                       </div>
-                      <span className="px-5 py-1.5 bg-emerald-500 text-[#020617] text-[10px] font-black rounded-xl italic tracking-widest">QUALIFIED</span>
+                      <span className="px-5 py-1.5 bg-emerald-500 text-[#020617] text-[10px] font-black rounded-xl italic tracking-widest">ACTIVE FLOOR</span>
                     </div>
                   ))
                 ) : (
@@ -262,7 +262,7 @@ const PublicAnalysisPage: React.FC = () => {
 
         {/* RELATED ASSETS */}
         <section className="space-y-10">
-           <h2 className="text-3xl font-black text-white italic tracking-tighter">Related <span className="text-cyan-500">Picks.</span></h2>
+           <h2 className="text-3xl font-black text-white italic tracking-tighter">Related <span className="text-cyan-500">Assets.</span></h2>
            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {["HDFCBANK", "INFY", "RELAXO", "TCS"].filter(s => s !== symbol).slice(0, 4).map((sym) => (
                 <Link 

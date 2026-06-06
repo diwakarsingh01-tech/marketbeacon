@@ -23,6 +23,8 @@ import {
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import UpgradeModal from '../components/modals/UpgradeModal';
+import { useAuth } from '../context/AuthContext';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const API_URL = getApiUrl();
@@ -132,6 +134,9 @@ const AlphaHubPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { user } = useAuth();
+  
   const [totalCapital, setTotalCapital] = useState<number>(500000); // Standard default of 5 Lakhs
   const [activeTab, setActiveTab] = useState<'analytics' | 'active' | 'closed'>('active'); // Default to Active Portfolio for immediate execution visibility
 
@@ -150,6 +155,11 @@ const AlphaHubPage: React.FC = () => {
       if (res.ok && !data.error) {
         setData(data);
       } else {
+        if (res.status === 403 && data.requiredTier) {
+          setError('ALPHA_REQUIRED');
+          setShowUpgradeModal(true);
+          return;
+        }
         if (res.status === 401 || res.status === 403 || data.error === 'Invalid token.' || data.error === 'Access denied.') {
           localStorage.removeItem('mb_token');
           localStorage.removeItem('mb_user');
@@ -257,7 +267,33 @@ const AlphaHubPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc] text-slate-900 overflow-hidden relative">
-
+      
+      {error === 'ALPHA_REQUIRED' ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-700">
+           <div className="w-24 h-24 bg-blue-600/10 border border-blue-500/20 rounded-[2rem] flex items-center justify-center shadow-2xl relative">
+              <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full animate-pulse" />
+              <Lock className="h-10 w-10 text-blue-600 relative z-10" />
+           </div>
+           <div className="space-y-3 max-w-xl">
+              <h2 className="text-4xl font-black tracking-tighter uppercase italic leading-none">Institutional Lockdown</h2>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                 The Alpha 40 Desk is a high-performance portfolio engine reserved for <span className="text-blue-600">Institutional Alpha</span> subscribers.
+              </p>
+           </div>
+           <div className="flex flex-col sm:flex-row items-center gap-4">
+              <button 
+                onClick={() => setShowUpgradeModal(true)}
+                className="px-10 py-5 bg-blue-600 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-blue-700 transition-all active:scale-95"
+              >
+                Unlock Alpha Access
+              </button>
+              <Link to="/screener" className="px-8 py-5 bg-white border-2 border-slate-100 text-slate-400 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] hover:text-slate-900 transition-all">
+                Return to Screener
+              </Link>
+           </div>
+        </div>
+      ) : (
+        <>
       {/* INSTITUTIONAL COMMAND BAR */}
       <header className="bg-slate-950 text-white border-b border-slate-800 px-6 py-5 relative z-50">
          <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row justify-between items-center gap-6">
@@ -321,10 +357,10 @@ const AlphaHubPage: React.FC = () => {
                   <span>Premium Strategy Desk</span>
                </div>
                <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">
-                  Replicate a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">42.5% CAGR Institutional Portfolio</span>
+                  Simulate a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">42.5% CAGR Backtest Portfolio</span>
                </h2>
                <p className="text-slate-600 text-xs font-semibold leading-relaxed max-w-4xl">
-                  Stop paying advisory percentages or locking funds in benchmark-lagging mutual funds. The Alpha 40 Desk computes an institutional-grade, cap-weighted holding model built around deep structural reversals. Simply enter your capital in the desk below, and buy the calculated share quantities on your broker.
+                  This desk provides a math-based capital allocation model based on historical deep structural reversals. It is a simulation tool for educational research only and does not constitute investment advice. Enter your model capital in the input below to see the simulated allocation breakdown.
                </p>
             </div>
             
@@ -620,7 +656,7 @@ const AlphaHubPage: React.FC = () => {
                                                <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500">Strategy</th>
                                                <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Base Price</th>
                                                <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">CMP (Diff)</th>
-                                               <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-right bg-blue-50/50 text-blue-600">Qty to Buy</th>
+                                               <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-right bg-blue-50/50 text-blue-600">Model Qty</th>
                                                <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-right bg-blue-50/50 text-blue-600">Total Invest</th>
                                                <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-center">Link</th>
                                             </tr>
@@ -705,7 +741,7 @@ const AlphaHubPage: React.FC = () => {
                                                      <span className="text-slate-800 font-black">₹{stock.entryPrice?.toLocaleString()}</span>
                                                   </div>
                                                   <div className="text-right">
-                                                     <span className="text-[7.5px] text-slate-400 block mb-0.5">Qty to Buy</span>
+                                                     <span className="text-[7.5px] text-slate-400 block mb-0.5">Model Qty</span>
                                                      <span className="text-blue-600 font-black">{qty}</span>
                                                   </div>
                                                </div>
@@ -909,6 +945,15 @@ const AlphaHubPage: React.FC = () => {
              <ArrowDown className="h-3 w-3 animate-bounce" />
           </motion.button>
        </div>
+       </>
+      )}
+
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)} 
+        requiredTier="alpha"
+        userEmail={user?.email}
+      />
     </div>
   );
 };

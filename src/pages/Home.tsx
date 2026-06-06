@@ -544,7 +544,7 @@ const HomePage: React.FC = () => {
                 "Risk management weak hai, capital protect nahi ho raha." — Tranche Laddering se capital systematic way mein deploy hota hai. No emotional decisions.
               </p>
               <div className="space-y-2 mb-8">
-                {['Full Alpha Hub Access', 'Priority Alpha Signals', 'Custom Enterprise Node'].map(f => (
+                {['Full Alpha Hub Access', 'Priority Alpha Strategy Triggers', 'Custom Enterprise Node'].map(f => (
                   <div key={f} className="flex items-center gap-2 text-xs text-slate-300">
                     <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
                       <ShieldCheck className="w-2.5 h-2.5 text-amber-400" />
@@ -703,7 +703,7 @@ const HomePage: React.FC = () => {
                   </div>
                   <h2 className="text-5xl md:text-6xl font-black tracking-tighter leading-none">Master the <br /><span className="text-blue-500">12 Proprietary</span> Strategies.</h2>
                   <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-md">
-                     Don't just follow signals. Understand the institutional logic behind every trade—from SMA-ABCD Stacking to the 67% ATH Reset Cycle.
+                     Don't just follow triggers. Understand the institutional logic behind every setup—from SMA-ABCD Stacking to the 67% ATH Reset Cycle.
                   </p>
                   <Link to="/education" className="inline-flex items-center px-8 py-4 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-500 hover:text-white transition-all">
                      Explore Knowledge Base <ChevronRight className="ml-2 w-4 h-4" />
@@ -894,7 +894,7 @@ const HomePage: React.FC = () => {
               ['Hard Reject Rules (Debt, ROCE)', false, true],
               ['Live NSE/BSE Price Feed', true, true],
               ['PE Percentile vs 5-Year History', false, true],
-              ['Institutional Strategy Signals (12 models)', false, true],
+              ['Institutional Strategy Triggers (12 models)', false, true],
             ].map(([feature, others, mb], i) => (
               <div key={i} className={`grid grid-cols-3 border-b border-slate-800/50 last:border-none ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}>
                 <div className="px-5 py-4 text-[11px] font-bold text-slate-300">{feature as string}</div>

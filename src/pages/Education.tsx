@@ -349,13 +349,13 @@ const tourSections = [
     path: '/alpha-hub',
     icon: LayoutGrid,
     color: 'blue',
-    description: 'Your main command center. Shows live market snapshot, top qualified stocks across all strategies, real-time indices, and your portfolio overview at a glance.',
+    description: 'Your main command center. Shows live market snapshot, top audited stocks across all strategies, real-time indices, and your portfolio overview at a glance.',
     features: [
       'Live market indices (NIFTY, SENSEX, BANK NIFTY)',
-      'Top qualified stocks with audit scores',
+      'Top audited stocks with audit scores',
       'Strategy-wise distribution across baskets',
       'Portfolio P&L quick summary',
-      'Recent signal activity feed'
+      'Recent trigger activity feed'
     ]
   },
   {
@@ -364,11 +364,11 @@ const tourSections = [
     path: '/screener',
     icon: Search,
     color: 'indigo',
-    description: 'The core signal engine. Real-time scanning across all 336+ tracked stocks filtered by strategy. Tabs show Qualified (entry ready), Neutral (watching), and Rejected (failed audit).',
+    description: 'The core strategy matrix engine. Real-time scanning across all 336+ tracked stocks filtered by strategy. Tabs show Passed Audit (meets parameters), Observation (watching), and Audit Fails (failed checks).',
     features: [
-      'Qualified tab: Stocks meeting entry criteria now',
-      'Neutral tab: Stocks in observation — not yet actionable',
-      'Rejected tab: Stocks that failed the audit — avoid',
+      'Passed Audit tab: Stocks meeting audit parameters now',
+      'Observation tab: Stocks in observation — not currently triggering',
+      'Audit Fails tab: Stocks that failed the audit checks',
       'Filter by Active Universe (Growth / Quality / Elite Basket)',
       'Switch strategy via Model Matrix dropdown',
       'Export Audit as CSV for offline analysis',
