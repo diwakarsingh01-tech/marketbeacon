@@ -91,7 +91,7 @@ const getSnapshotFromCloud = async (symbols: string[]) => {
 app.get('/api/health', (req, res) => res.json({ 
   status: 'active', 
   node: 'Supabase-Cloud-Production', 
-  version: '12.2.1-PRO-FIX',
+  version: '12.2.2-PRO-FIX-FINAL',
   timestamp: new Date().toISOString()
 }));
 

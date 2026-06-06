@@ -23,3 +23,4 @@ if (!container) {
     console.error('🔥 Bootstrap Crash:', error);
   }
 }
+// [Institutional Deploy] v12.2.2-PRO-FIX-FINAL
