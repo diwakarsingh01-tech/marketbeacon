@@ -193,22 +193,53 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
 
                  <div className="w-full max-w-sm space-y-4">
                     {/* Import Strategy Options */}
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col space-y-3">
-                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left pl-1">Import Strategy</span>
-                       <div className="flex gap-3">
+                    <div className="flex flex-col space-y-2 text-left">
+                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Import Strategy</span>
+                       <div className="grid grid-cols-1 gap-2.5">
+                          {/* Merge Option */}
                           <button 
                             type="button"
                             onClick={() => setImportMode('merge')}
-                            className={`flex-1 py-3 px-4 rounded-xl text-[9px] font-black uppercase border tracking-wider transition-all ${importMode === 'merge' ? 'bg-white border-blue-600 text-blue-600 shadow-sm' : 'bg-transparent border-slate-200 text-slate-500 hover:text-slate-700'}`}
+                            className={`p-3.5 rounded-2xl border text-left transition-all flex items-start space-x-3 outline-none ${
+                              importMode === 'merge' 
+                                ? 'bg-blue-50/45 border-blue-500 ring-2 ring-blue-500/10' 
+                                : 'bg-slate-50 border-slate-100 hover:bg-slate-100/30'
+                            }`}
                           >
-                             Merge Portfolio
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                              importMode === 'merge' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300'
+                            }`}>
+                              {importMode === 'merge' && <Check className="h-2.5 w-2.5" />}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Merge Portfolio</span>
+                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 leading-normal">
+                                Keep current positions and merge the newly uploaded holdings.
+                              </span>
+                            </div>
                           </button>
+
+                          {/* Overwrite Option */}
                           <button 
                             type="button"
                             onClick={() => setImportMode('overwrite')}
-                            className={`flex-1 py-3 px-4 rounded-xl text-[9px] font-black uppercase border tracking-wider transition-all ${importMode === 'overwrite' ? 'bg-white border-rose-500 text-rose-500 shadow-sm' : 'bg-transparent border-slate-200 text-slate-500 hover:text-slate-700'}`}
+                            className={`p-3.5 rounded-2xl border text-left transition-all flex items-start space-x-3 outline-none ${
+                              importMode === 'overwrite' 
+                                ? 'bg-rose-50/45 border-rose-500 ring-2 ring-rose-500/10' 
+                                : 'bg-slate-50 border-slate-100 hover:bg-slate-100/30'
+                            }`}
                           >
-                             Overwrite Portfolio
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                              importMode === 'overwrite' ? 'border-rose-600 bg-rose-600 text-white' : 'border-slate-300'
+                            }`}>
+                              {importMode === 'overwrite' && <Check className="h-2.5 w-2.5" />}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Remove Old & Upload New</span>
+                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 leading-normal">
+                                Delete all existing positions and upload new holdings.
+                              </span>
+                            </div>
                           </button>
                        </div>
                     </div>

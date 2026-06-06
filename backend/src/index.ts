@@ -542,6 +542,59 @@ app.delete('/api/watchlist', authenticateToken, async (req: any, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/watchlist/bulk', authenticateToken, async (req: any, res) => {
+  try {
+    const { holdings, mode } = req.body;
+    const db = getDB();
+    
+    if (mode === 'overwrite') {
+      await db.run('DELETE FROM watchlists WHERE user_id = ?', [req.user.id]);
+    }
+    
+    await db.run('BEGIN TRANSACTION');
+    try {
+      for (const item of holdings) {
+        const symbol = item.symbol.toUpperCase().trim();
+        const quantity = parseFloat(item.quantity) || 0;
+        const buyPrice = parseFloat(item.buyPrice) || 0;
+        
+        const existing = await db.get('SELECT * FROM watchlists WHERE user_id = ? AND symbol = ?', [req.user.id, symbol]);
+        if (existing) {
+          if (mode === 'merge') {
+            const oldQty = existing.quantity || 0;
+            const oldPrice = existing.buy_price || 0;
+            const newQty = oldQty + quantity;
+            const newPrice = newQty > 0 ? ((oldPrice * oldQty) + (buyPrice * quantity)) / newQty : 0;
+            await db.run(
+              'UPDATE watchlists SET quantity = ?, buy_price = ? WHERE user_id = ? AND symbol = ?',
+              [newQty, newPrice, req.user.id, symbol]
+            );
+          } else {
+            await db.run(
+              'UPDATE watchlists SET quantity = ?, buy_price = ? WHERE user_id = ? AND symbol = ?',
+              [quantity, buyPrice, req.user.id, symbol]
+            );
+          }
+        } else {
+          await db.run(
+            'INSERT INTO watchlists (user_id, symbol, quantity, buy_price) VALUES (?, ?, ?, ?)',
+            [req.user.id, symbol, quantity, buyPrice]
+          );
+        }
+      }
+      await db.run('COMMIT');
+    } catch (txnError: any) {
+      try { await db.run('ROLLBACK'); } catch (_) {}
+      throw txnError;
+    }
+    
+    res.json({ success: true, count: holdings.length });
+  } catch (e: any) {
+    console.error('🔥 [Bulk Watchlist Error]:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.delete('/api/watchlist/:symbol', authenticateToken, async (req: any, res) => {
   try {
     const db = getDB();
