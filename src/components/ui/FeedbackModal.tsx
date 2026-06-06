@@ -57,6 +57,13 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
         })
       });
 
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('mb_token');
+        localStorage.removeItem('mb_user');
+        window.location.href = '/login';
+        return;
+      }
+
       if (response.ok) {
         setIsSuccess(true);
         setTimeout(() => {

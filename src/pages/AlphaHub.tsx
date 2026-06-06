@@ -184,6 +184,12 @@ const AlphaHubPage: React.FC = () => {
       if (res.ok && !data.error) {
         setData(data);
       } else {
+        if (res.status === 401 || res.status === 403 || data.error === 'Invalid token.' || data.error === 'Access denied.') {
+          localStorage.removeItem('mb_token');
+          localStorage.removeItem('mb_user');
+          window.location.href = '/login';
+          return;
+        }
         setError(data.error || 'Failed to sync Alpha Terminal');
       }
     } catch (e) {

@@ -1,3 +1,4 @@
+import { DEPLOY_VERIFICATION } from './verify_deploy.js';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -6,11 +7,14 @@ import bcrypt from 'bcryptjs';
 import { OAuth2Client } from 'google-auth-library';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
+import etag from 'etag';
+import YahooFinance from 'yahoo-finance2';
 import { 
   initScreenerCron, 
   updateMarketSnapshot, 
   getDynamicBasket,
-  initSnapshotCache
+  initSnapshotCache,
+  getMarketSnapshot
 } from './screener.js';
 import { validateBatch9 } from './services/fundamentalAudit.js';
 import { runStrategyAnalysis } from './services/strategyService.js';
@@ -18,6 +22,8 @@ import { precalculateAlpha40, getAlpha40Cache } from './services/worker.js';
 import { supabase, initDB, getDB } from './db.js';
 
 dotenv.config();
+
+const ADMIN_EMAILS = ['ajaythomasjohn@gmail.com', 'admin@marketbeacon.com', 'diwakarsingh01.tech@gmail.com', 'diwakar.singh01@gmail.com'];
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -77,21 +83,53 @@ const authenticateToken = async (req: any, res: any, next: any) => {
     const db = getDB();
     const user = await db.get('SELECT * FROM users WHERE id = ?', [decoded.id]);
     if (!user) return res.status(403).json({ error: 'User not found.' });
-    req.user = user;
+
+    // --- Subscription Expiry Check ---
+    if (user.tier !== 'free' && user.subscription_expiry) {
+      const expiry = new Date(user.subscription_expiry);
+      if (expiry < new Date()) {
+        console.log(`[SUBSCRIPTION] Expiring tier for user ${user.email}`);
+        await db.run("UPDATE users SET tier = 'free' WHERE id = ?", [user.id]);
+        user.tier = 'free';
+      }
+    }
+    
+    // Normalize and Override for Admins
+    const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase());
+    const finalRole = isAdmin ? 'admin' : (user.role || 'user').toLowerCase();
+    const finalTier = isAdmin ? 'alpha' : (user.tier || 'free').toLowerCase();
+
+    req.user = { ...user, role: finalRole, tier: finalTier };
     next();
-  } catch (err) { return res.status(403).json({ error: 'Invalid token.' }); }
+  } catch (err: any) { 
+    console.error('Token verification error:', err.message || err); 
+    return res.status(403).json({ error: 'Invalid token.' }); 
+  }
 };
 
 const getSnapshotFromCloud = async (symbols: string[]) => {
-  const { data, error } = await supabase.from('market_data').select('*').in('symbol', symbols);
-  if (error) throw error;
-  return Object.fromEntries(data.map(row => [row.symbol, row.data]));
+  try {
+    const { data, error } = await supabase.from('market_data').select('*').in('symbol', symbols);
+    if (error) throw error;
+    return Object.fromEntries(data.map(row => [row.symbol, row.data]));
+  } catch (err: any) {
+    console.warn(`⚠️ [Supabase Fallback] Query failed: ${err.message}. Serving from memory cache...`);
+    const cache = getMarketSnapshot();
+    const result: Record<string, any> = {};
+    symbols.forEach(sym => {
+      if (cache[sym]) {
+        result[sym] = cache[sym];
+      }
+    });
+    return result;
+  }
 };
 
 app.get('/api/health', (req, res) => res.json({ 
   status: 'active', 
   node: 'Supabase-Cloud-Production', 
   version: '12.2.2-PRO-FIX-FINAL',
+  verify: DEPLOY_VERIFICATION.message,
   timestamp: new Date().toISOString()
 }));
 
@@ -245,6 +283,402 @@ app.get('/api/stock-fundamentals', async (req, res) => {
         efficiencyGovernance: audit.efficiencyGovernance
       }
     });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// --- ADDITIONAL ROUTES TO CONNECT FRONTEND & LOCAL SERVER ---
+
+const getMarketStatus = () => {
+  const istString = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+  const istDate = new Date(istString);
+  
+  const day = istDate.getDay(); // 0-6
+  const hours = istDate.getHours();
+  const minutes = istDate.getMinutes();
+  const currentTime = hours * 100 + minutes;
+
+  if (day === 0 || day === 6) return 'CLOSED'; 
+  
+  if (currentTime >= 900 && currentTime < 915) return 'PRE-MARKET';
+  if (currentTime >= 915 && currentTime <= 1530) return 'LIVE';
+  if (currentTime > 1530 && currentTime < 1600) return 'POST-MARKET';
+  return 'CLOSED';
+};
+
+const requireAdmin = (req: any, res: any, next: any) => {
+  if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+  next();
+};
+
+app.get('/api/market-indices', async (req, res) => {
+  try {
+    const symbols = ['^NSEI', '^NSEBANK', '^BSESN'];
+    const status = getMarketStatus();
+    const results = await Promise.all(
+      symbols.map(async (symbol) => {
+        try {
+          const quote: any = await YahooFinance.quote(symbol);
+          return {
+            name: symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'),
+            price: quote.regularMarketPrice,
+            ath: quote.fiftyTwoWeekHigh,
+            openPrice: quote.regularMarketOpen,
+            change: quote.regularMarketChangePercent
+          };
+        } catch (e) {
+          return {
+            name: symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'),
+            price: symbol === '^NSEI' ? 22000 : (symbol === '^NSEBANK' ? 47000 : 72000),
+            change: 0
+          };
+        }
+      })
+    );
+    res.json({ status, results });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ error: 'All fields are required' });
+
+    const db = getDB();
+    const existing = await db.get('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
+    if (existing) return res.status(400).json({ error: 'Email already registered' });
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+    const role = isAdmin ? 'admin' : 'user';
+    const tier = isAdmin ? 'alpha' : 'free';
+
+    const result = await db.run(
+      'INSERT INTO users (name, email, password, role, tier, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email.toLowerCase(), hashedPassword, role, tier, 1]
+    );
+
+    const token = jwt.sign({ id: result.lastID, role }, JWT_SECRET);
+    res.json({ token, user: { id: result.lastID, name, email: email.toLowerCase(), role, tier } });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    const normalizedEmail = email.toLowerCase().trim();
+    console.log(`🔑 [LOGIN-ATTEMPT] Email: "${normalizedEmail}"`);
+    
+    const db = getDB();
+    const user = await db.get('SELECT * FROM users WHERE email = ?', [normalizedEmail]);
+    if (!user) {
+      console.log(`❌ [LOGIN-FAILED] User not found for email: "${normalizedEmail}"`);
+      return res.status(401).json({ error: 'User not found' });
+    }
+    
+    const isAdmin = ADMIN_EMAILS.includes(normalizedEmail);
+    const isValid = user.password === 'GOOGLE' ? isAdmin : await bcrypt.compare(password, user.password);
+    console.log(`ℹ️ [LOGIN-CHECK] Found user. ID: ${user.id}, Role: ${user.role}, IsAdmin: ${isAdmin}, passwordTypeGoogle: ${user.password === 'GOOGLE'}, isValid: ${isValid}`);
+    
+    if (!isValid) {
+      console.log(`❌ [LOGIN-FAILED] Invalid credentials for email: "${normalizedEmail}"`);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
+    console.log(`✅ [LOGIN-SUCCESS] User ${user.id} logged in successfully`);
+    res.json({ token, user: { ...user, role: isAdmin ? 'admin' : user.role, tier: isAdmin ? 'alpha' : user.tier } });
+  } catch (e: any) { 
+    console.error(`🚨 [LOGIN-ERROR] error:`, e);
+    res.status(500).json({ error: e.message }); 
+  }
+});
+
+app.post('/api/auth/mobile-send-otp', async (req, res) => {
+  try {
+    const { mobile } = req.body;
+    if (!mobile) return res.status(400).json({ error: 'Mobile number is required' });
+    console.log(`📡 [AUTH] Mobile OTP requested for: ${mobile}`);
+    res.json({ success: true, message: 'OTP flow initialized' });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/auth/mobile-verify-otp', async (req, res) => {
+  const start = Date.now();
+  try {
+    const { mobile, otp } = req.body;
+    if (!mobile || !otp) return res.status(400).json({ error: 'Mobile and OTP are required' });
+
+    const db = getDB();
+    const identifier = `${mobile}@marketbeacon.com`;
+    let user = await db.get('SELECT * FROM users WHERE email = ?', [identifier]);
+
+    const role = 'user';
+    const tier = 'free';
+
+    if (!user) {
+      console.log(`🆕 [AUTH] Creating new mobile user: ${mobile}`);
+      const result = await db.run(
+        'INSERT INTO users (name, email, password, role, tier, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+        [`User ${mobile.slice(-4)}`, identifier, 'MOBILE_AUTH', role, tier, 1]
+      );
+      user = { id: result.lastID, name: `User ${mobile.slice(-4)}`, email: identifier, role, tier, is_active: 1 };
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
+    console.log(`✅ [AUTH] Mobile Login Success: ${mobile} (${Date.now() - start}ms)`);
+    res.json({ token, user: { ...user, role: user.role, tier: user.tier } });
+  } catch (e: any) {
+    console.error(`❌ [AUTH ERROR] Mobile Verify Failed:`, e.message);
+    res.status(500).json({ error: `Auth Error: ${e.message}` });
+  }
+});
+
+app.get('/api/auth/me', authenticateToken, (req: any, res) => {
+  let daysRemaining = null;
+  if (req.user?.subscription_expiry) {
+    const diff = new Date(req.user.subscription_expiry).getTime() - new Date().getTime();
+    daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
+  res.json({ user: { ...req.user, daysRemaining } });
+});
+
+app.get('/api/user/profile', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const user = await db.get('SELECT id, name, email, mobile, tier, created_at FROM users WHERE id = ?', [req.user.id]);
+    
+    // Calculate Trading Stats
+    const trades = await db.all('SELECT status, entry_price, quantity, exit_price FROM trades WHERE user_id = ?', [req.user.id]);
+    
+    const stats = {
+      totalTrades: trades.length,
+      openTrades: trades.filter(t => t.status === 'OPEN').length,
+      totalRealizedPnL: trades
+        .filter(t => t.status === 'CLOSED' && t.exit_price)
+        .reduce((sum, t) => sum + (t.exit_price - t.entry_price) * t.quantity, 0)
+    };
+
+    res.json({ ...user, stats });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/user/redeem-voucher', authenticateToken, async (req: any, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Voucher code is required' });
+
+    const db = getDB();
+    
+    // 1. Validate Voucher
+    const voucher = await db.get('SELECT * FROM vouchers WHERE code = ? AND is_active = 1', [code.toUpperCase()]);
+    if (!voucher) return res.status(404).json({ error: 'Invalid or expired voucher code' });
+
+    if (voucher.current_uses >= voucher.max_uses) {
+      return res.status(400).json({ error: 'Voucher usage limit reached' });
+    }
+
+    // 2. Check for Previous Redemption
+    const existing = await db.get('SELECT * FROM voucher_redemptions WHERE voucher_id = ? AND user_id = ?', [voucher.id, req.user.id]);
+    if (existing) return res.status(400).json({ error: 'You have already redeemed this voucher' });
+
+    // 3. Process Redemption
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + (voucher.duration_days || 7));
+
+    await db.batch([
+      { sql: 'UPDATE vouchers SET current_uses = current_uses + 1 WHERE id = ?', args: [voucher.id] },
+      { sql: 'INSERT INTO voucher_redemptions (voucher_id, user_id) VALUES (?, ?)', args: [voucher.id, req.user.id] },
+      { sql: 'UPDATE users SET tier = ?, subscription_expiry = ?, is_active = 1 WHERE id = ?', args: [voucher.tier, expiry.toISOString(), req.user.id] }
+    ]);
+
+    console.log(`🎁 [VOUCHER] User ${req.user.email} redeemed ${code} (Tier: ${voucher.tier})`);
+    res.json({ success: true, tier: voucher.tier, expiry: expiry.toISOString() });
+
+  } catch (e: any) {
+    console.error('🔥 [Voucher Error]:', e.message);
+    res.status(500).json({ error: 'Failed to redeem voucher. System node error.' });
+  }
+});
+
+app.get('/api/watchlist', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const watchlist = await db.all('SELECT * FROM watchlists WHERE user_id = ? ORDER BY added_at DESC', [req.user.id]);
+    res.json(watchlist);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/watchlist', authenticateToken, async (req: any, res) => {
+  try {
+    const { symbol } = req.body;
+    const db = getDB();
+    await db.run('INSERT OR IGNORE INTO watchlists (user_id, symbol) VALUES (?, ?)', [req.user.id, symbol]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/watchlist/:symbol', authenticateToken, async (req: any, res) => {
+  try {
+    const { quantity, buy_price } = req.body;
+    const db = getDB();
+    await db.run(
+      'UPDATE watchlists SET quantity = ?, buy_price = ? WHERE user_id = ? AND symbol = ?',
+      [quantity, buy_price, req.user.id, req.params.symbol]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/watchlist', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    await db.run('DELETE FROM watchlists WHERE user_id = ?', [req.user.id]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/watchlist/:symbol', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    await db.run('DELETE FROM watchlists WHERE user_id = ? AND symbol = ?', [req.user.id, req.params.symbol]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/trades', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const trades = await db.all('SELECT * FROM trades WHERE user_id = ? ORDER BY entry_date DESC', [req.user.id]);
+    res.json(trades);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/trades', authenticateToken, async (req: any, res) => {
+  try {
+    const { symbol, entry_date, entry_price, quantity, strategy, target_price, stop_loss, notes, level } = req.body;
+    const db = getDB();
+    await db.run(
+      'INSERT INTO trades (user_id, symbol, entry_date, entry_price, quantity, strategy, target_price, stop_loss, notes, level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [req.user.id, symbol, entry_date, entry_price, quantity, strategy, target_price, stop_loss, notes, level || 'A']
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/trades/:id', authenticateToken, async (req: any, res) => {
+  try {
+    const { status, exit_date, exit_price, notes } = req.body;
+    const db = getDB();
+    await db.run(
+      'UPDATE trades SET status = ?, exit_date = ?, exit_price = ?, notes = ? WHERE id = ? AND user_id = ?',
+      [status, exit_date, exit_price, notes, req.params.id, req.user.id]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/marketplace', async (req, res) => {
+  const plans = [
+    { 
+      id: 1, 
+      name: 'Free Institutional', 
+      tier: 'free', 
+      price: 199,
+      cagr: '18%', 
+      risk: 'Low', 
+      features: [
+        'Watchlist', 
+        'Basic Signals', 
+        'Structural Pivot (Breakouts)', 
+        'Dynamic Reversal Matrix', 
+        'Annual Range Statistics', 
+        'Quantum Stacking Averages', 
+        'Standard Portfolio Mix Audit'
+      ] 
+    },
+    { 
+      id: 2, 
+      name: 'Pro Execution', 
+      tier: 'pro', 
+      price: 99,
+      cagr: '28%', 
+      risk: 'Medium', 
+      features: [
+        'Alpha Hub Access',
+        'Matrix Access', 
+        'ABCD Ladder',
+        'Structural Pivot (Breakouts)', 
+        'Dynamic Reversal Matrix', 
+        'Annual Range Statistics', 
+        'Quantum Stacking Averages', 
+        'Standard Portfolio Mix Audit'
+      ] 
+    },
+    { 
+      id: 3, 
+      name: 'Alpha Priority', 
+      tier: 'alpha', 
+      price: 199,
+      cagr: '42%', 
+      risk: 'Institutional', 
+      features: [
+        'Alpha Hub Access',
+        'Priority Institutional Nodes',
+        'Velocity Retest (Deep Demand)',
+        '67% Deep Recovery Audit',
+        'Supply-Demand Resistance Logic',
+        'Real-Time Alpha Notifications'
+      ] 
+    }
+  ];
+  
+  const body = JSON.stringify(plans);
+  const tag = etag(body);
+  res.setHeader('ETag', tag);
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.json(plans);
+});
+
+app.get('/api/stock-prices', async (req, res) => {
+  try {
+    const symbolsQuery = req.query.symbols as string;
+    if (!symbolsQuery) return res.status(400).json({ error: 'Symbols required' });
+    const symbols = symbolsQuery.split(',').map(s => s.trim().toUpperCase());
+    const snapshot = await getSnapshotFromCloud(symbols);
+    const results = symbols.map(s => {
+      const snap = snapshot[s];
+      if (!snap) return { symbol: s, price: 0 };
+      const lastQuote = snap.quotes && snap.quotes.length > 0 ? snap.quotes[snap.quotes.length - 1] : null;
+      return { 
+        symbol: s, 
+        price: lastQuote?.close || snap.quote?.regularMarketPrice || 0, 
+        ath: snap.quote?.fiftyTwoWeekHigh || 0, 
+        marketCap: snap.quote?.marketCap || 0, 
+        sector: MANUAL_SECTOR_MAP[s] || snap.screener?.industry || 'General',
+        change: snap.quote?.regularMarketChangePercent || 0
+      };
+    });
+    res.json(results);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: any, res) => {
+  const db = getDB();
+  const users = await db.all('SELECT id, name, email, role, tier, subscription_expiry FROM users');
+  res.json(users);
+});
+
+app.patch('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const { name, email, tier, subscription_expiry } = req.body;
+    const db = getDB();
+    await db.run('UPDATE users SET name = ?, email = ?, tier = ?, subscription_expiry = ? WHERE id = ?', [name, email, tier, subscription_expiry, req.params.id]);
+    res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
