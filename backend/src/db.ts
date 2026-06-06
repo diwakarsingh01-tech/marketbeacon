@@ -1,24 +1,31 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createClient as createLibsqlClient } from '@libsql/client';
 import dotenv from 'dotenv';
-
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// --- Environment Hardening ---
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+const envPath = path.resolve(__dirname, '../.env');
+
+// Try loading local .env, but don't fail if missing (expected in production/Docker)
+dotenv.config();
+dotenv.config({ path: envPath });
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-export const supabase = createSupabaseClient(supabaseUrl, supabaseKey);
+// Safely initialize Supabase only if credentials exist
+export const supabase = (supabaseUrl && supabaseKey) 
+  ? createSupabaseClient(supabaseUrl, supabaseKey)
+  : null as any;
 
 let db: any = null;
 let tursoClient: any = null;
 
 export async function initDB() {
-  const tursoUrl = process.env.TURSO_DATABASE_URL?.replace(/\s/g, '');
-  const tursoToken = process.env.TURSO_AUTH_TOKEN?.replace(/\s/g, '');
+  const tursoUrl = (process.env.TURSO_DATABASE_URL || '').replace(/\s/g, '');
+  const tursoToken = (process.env.TURSO_AUTH_TOKEN || '').replace(/\s/g, '');
 
   if (!tursoUrl || !tursoToken) {
     console.log('🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...');

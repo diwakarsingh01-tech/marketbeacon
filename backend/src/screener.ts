@@ -15,6 +15,7 @@ let snapshotCache: Record<string, any> = {};
 
 export async function initSnapshotCache() {
   try {
+    if (!supabase) throw new Error('Supabase client not initialized');
     console.log('📦 Loading Market Snapshot from Supabase (Batched)...');
     const { count, error: countError } = await supabase.from('market_data').select('*', { count: 'exact', head: true });
     if (countError) throw countError;
@@ -181,7 +182,9 @@ export async function runScreener() {
       } catch (e) { }
     }));
   }
-  await supabase.from('system_cache').upsert({ key: 'dynamic_growth_basket', data: results, updated_at: new Date().toISOString() });
+  if (supabase) {
+    await supabase.from('system_cache').upsert({ key: 'dynamic_growth_basket', data: results, updated_at: new Date().toISOString() });
+  }
   console.log(`✅ [WEALTH-BASKET] Growth Basket Cloud Updated (${results.length} symbols)`);
   return results;
 }
@@ -227,7 +230,9 @@ export async function updateMarketSnapshot(symbols: string[]) {
           },
           screener: screenerData, strategies, lastUpdated: new Date().toISOString()
         };
-        await supabase.from('market_data').upsert({ symbol: baseSymbol, data: finalData, updated_at: new Date().toISOString() });
+        if (supabase) {
+          await supabase.from('market_data').upsert({ symbol: baseSymbol, data: finalData, updated_at: new Date().toISOString() });
+        }
         snapshotCache[baseSymbol] = finalData;
       } catch (e: any) { console.error(`Snapshot failed for ${baseSymbol}: ${e.message}`); }
     }));
@@ -250,6 +255,7 @@ export function initScreenerCron() {
 export function getMarketSnapshot(): Record<string, any> { return snapshotCache; }
 export async function getDynamicBasket(): Promise<string[]> {
   try {
+    if (!supabase) return [];
     const { data, error } = await supabase.from('system_cache').select('data').eq('key', 'dynamic_growth_basket').single();
     if (!error && data && Array.isArray(data.data)) return data.data;
   } catch (e) { }
