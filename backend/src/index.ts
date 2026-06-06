@@ -109,6 +109,7 @@ const authenticateToken = async (req: any, res: any, next: any) => {
 
 const getSnapshotFromCloud = async (symbols: string[]) => {
   try {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase.from('market_data').select('*').in('symbol', symbols);
     if (error) throw error;
     return Object.fromEntries(data.map(row => [row.symbol, row.data]));
@@ -128,8 +129,8 @@ const getSnapshotFromCloud = async (symbols: string[]) => {
 app.get('/api/health', (req, res) => res.json({ 
   status: 'active', 
   node: 'Supabase-Cloud-Production', 
-  version: '12.2.2-PRO-FIX-FINAL',
-  verify: DEPLOY_VERIFICATION.message,
+  version: '14.1.0-PRO-CRASH-PROOF',
+  verify: 'Deployment triggered via heartbeat file (Crash-Proof Edition)',
   timestamp: new Date().toISOString()
 }));
 
