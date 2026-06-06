@@ -156,7 +156,7 @@ app.post('/api/auth/google', async (req, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
+app.get('/api/backtest/audit', authenticateToken, async (req: any, res) => {
   try {
     const { basket = 'Elite Basket', strategy: selectedStrategyId } = req.query;
     
