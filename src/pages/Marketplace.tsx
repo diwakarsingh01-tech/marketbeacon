@@ -499,14 +499,24 @@ const MembershipPage: React.FC = () => {
                 Multiple seats, API access, or fund-level reporting? Contact us for an enterprise node.
               </p>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-              onClick={() => window.open('https://wa.me/917056633633?text=Hi%20Admin,%20I%20am%20interested%20in%20a%20Corporate%20Deployment%20for%20my%20fund.', '_blank')}
-              className="shrink-0 px-8 py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-colors flex items-center gap-3"
-            >
-              <span>Contact Admin on WhatsApp</span>
-              <ArrowUpRight className="h-4 w-4" />
-            </motion.button>
+            <div className="flex flex-col sm:flex-row gap-4 shrink-0">
+              <motion.button
+                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                onClick={() => window.open('https://wa.me/917056633633?text=Hi%20Admin,%20I%20am%20interested%20in%20a%20Corporate%20Deployment%20for%20my%20fund.', '_blank')}
+                className="px-8 py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-3"
+              >
+                <span>WhatsApp Admin</span>
+                <ArrowUpRight className="h-4 w-4" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                onClick={() => window.open('https://t.me/Marketbeconpro', '_blank')}
+                className="px-8 py-4 bg-white/10 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest border border-white/20 hover:bg-white/20 transition-all flex items-center justify-center gap-3"
+              >
+                <span>Join Telegram</span>
+                <TrendingUp className="h-4 w-4" />
+              </motion.button>
+            </div>
           </div>
         </div>
 
