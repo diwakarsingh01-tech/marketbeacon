@@ -46,12 +46,12 @@ export const getApiUrl = () => {
        }
     }
 
-    // 2. Explicit Environment Variable (Highest Priority)
-    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-
-    // 3. Production Check
+    // 2. Production Lockdown (Highest Priority)
     const isProduction = h.includes('marketbeaconpro.com') || h.includes('marketbeacon.vercel.app');
     if (isProduction) return "https://marketbeacon.onrender.com";
+
+    // 3. Explicit Environment Variable (Local/Manual Override)
+    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
 
     // 4. Local Network Fallback
     const isLocal = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.') || h.startsWith('10.') || h.startsWith('172.') || h.endsWith('.local');
