@@ -69,7 +69,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
           <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide leading-relaxed mb-5">
             No institutional assets are currently active in your portfolio ledger. Upload new details or enter assets manually to begin monitoring.
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button 
               onClick={onAddPosition}
               className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm active:scale-95"
@@ -82,6 +82,15 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
             >
               Upload New Details
             </button>
+            <a 
+              href="https://t.me/Marketbeconpro" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-100 flex items-center space-x-1.5 group"
+            >
+              <TrendingUp className="h-3 w-3 group-hover:scale-110 transition-transform" />
+              <span>Get Symbols</span>
+            </a>
           </div>
         </>
       ) : activeTab === 'hold' ? (

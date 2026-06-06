@@ -116,6 +116,25 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
           </div>
         ))}
 
+        {/* Telegram Community Button */}
+        <div className="px-4 mt-6">
+          <a 
+            href="https://t.me/Marketbeconpro" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex flex-col p-4 bg-gradient-to-br from-blue-600/20 to-indigo-600/10 border border-blue-500/20 rounded-2xl group hover:border-blue-500/40 transition-all shadow-xl shadow-blue-900/10"
+          >
+            <div className="flex items-center justify-between mb-2">
+               <div className="p-1.5 bg-blue-600 rounded-lg text-white group-hover:rotate-12 transition-transform">
+                  <TrendingUp className="h-3.5 w-3.5" />
+               </div>
+               <span className="bg-blue-500 text-[6px] font-black text-white px-1.5 py-0.5 rounded-full uppercase tracking-tighter animate-pulse">Join Live</span>
+            </div>
+            <span className="text-[10px] font-black text-white uppercase tracking-wider">Alpha Community</span>
+            <span className="text-[7px] font-bold text-blue-400 uppercase tracking-widest mt-1">Get Real-time Alerts</span>
+          </a>
+        </div>
+
         {isAdmin && (
           <div className="pt-4 border-t border-white/5">
             <NavLink
