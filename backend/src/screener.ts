@@ -64,14 +64,40 @@ export async function initSnapshotCache() {
 }
 
 export async function fetchScreenerData(symbol: string) {
+  const cleanSymbol = symbol.split('.')[0]; 
+  const urls = [
+    `https://www.screener.in/company/${cleanSymbol}/consolidated/`,
+    `https://www.screener.in/company/${cleanSymbol}/`
+  ];
+  
+  let data: any = null;
+  let lastError: any = null;
+  
+  for (const url of urls) {
+    try {
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+      const response = await axios.get(url, {
+        headers: { 
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': 'https://www.screener.in/'
+        },
+        timeout: 10000
+      });
+      data = response.data;
+      break; 
+    } catch (e: any) {
+      lastError = e;
+      if (e.response?.status !== 404) {
+        break; 
+      }
+    }
+  }
+  
+  if (!data) {
+    throw new Error(lastError?.message || 'Failed to fetch screener data');
+  }
+
   try {
-    const cleanSymbol = symbol.split('.')[0]; 
-    const url = `https://www.screener.in/company/${cleanSymbol}/consolidated/`;
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-    const { data } = await axios.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
-      timeout: 10000
-    });
     const $ = cheerio.load(data);
     const getRatio = (name: string) => {
       const el = $(`#top-ratios li`).filter(function() {
@@ -271,7 +297,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
 export function initScreenerCron() {
   cron.schedule('30 2 * * *', () => runScreener());
   cron.schedule('0 11 * * *', async () => {
-    const elite = ['TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'RELIANCE', 'KOTAKBANK', 'AXISBANK', 'SBIN', 'LT', 'ITC', 'HINDUNILVR', 'ASIANPAINT', 'TITAN', 'BAJFINANCE', 'BAJAJFINSV', 'BHARTIARTL', 'M&M', 'MARUTI', 'TATAMOTORS', 'SUNPHARMA', 'DRREDDY', 'CIPLA', 'ULTRACEMCO', 'NESTLEIND', 'BRITANNIA', 'ADANIPORTS', 'ADANENT', 'JSWSTEEL', 'TATASTEEL', 'NTPC', 'ONGC', 'POWERGRID', 'COALINDIA', 'SHRIRAMFIN', 'APOLLOHOSP', 'PIDILITIND', 'HAVELLS', 'EICHERMOT', 'NIFTYBEES', 'BANKBEES'];
+    const elite = ['TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'RELIANCE', 'KOTAKBANK', 'AXISBANK', 'SBIN', 'LT', 'ITC', 'HINDUNILVR', 'ASIANPAINT', 'TITAN', 'BAJFINANCE', 'BAJAJFINSV', 'BHARTIARTL', 'M&M', 'MARUTI', 'TMCV', 'SUNPHARMA', 'DRREDDY', 'CIPLA', 'ULTRACEMCO', 'NESTLEIND', 'BRITANNIA', 'ADANIPORTS', 'ADANIENT', 'JSWSTEEL', 'TATASTEEL', 'NTPC', 'ONGC', 'POWERGRID', 'COALINDIA', 'SHRIRAMFIN', 'APOLLOHOSP', 'PIDILITIND', 'HAVELLS', 'EICHERMOT', 'NIFTYBEES', 'BANKBEES'];
     const quality = ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'];
     const growth = await getDynamicBasket();
     const all = elite.concat(quality, growth, ['^NSEI']);
