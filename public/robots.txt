@@ -1,5 +1,13 @@
 User-agent: *
 Allow: /
+Allow: /blog
+Allow: /blog/
+Allow: /analysis/
+Allow: /license-desk
+Allow: /login
+Allow: /pricing
+
+# Block authenticated/private routes
 Disallow: /admin
 Disallow: /alpha-hub
 Disallow: /screener
@@ -7,5 +15,10 @@ Disallow: /market
 Disallow: /portfolio
 Disallow: /trades
 Disallow: /profile
+Disallow: /stock/
+Disallow: /connect
+
+# Block old marketplace URL (301 redirected to /license-desk)
+Disallow: /marketplace
 
 Sitemap: https://marketbeacon.pro/sitemap.xml

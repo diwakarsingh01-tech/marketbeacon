@@ -428,7 +428,7 @@ const tourSections = [
   {
     id: 'marketplace',
     name: 'Access Licenses',
-    path: '/marketplace',
+    path: '/license-desk',
     icon: Store,
     color: 'rose',
     description: 'Upgrade your access tier. Free gives you basic strategies. Pro unlocks structural patterns and ABCD. Alpha gives full institutional access including the 3 premium strategies.',

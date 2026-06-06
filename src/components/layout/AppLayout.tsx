@@ -23,7 +23,7 @@ const AppLayout: React.FC = () => {
     { icon: Zap, label: 'Screener', path: '/screener' },
     { icon: Briefcase, label: 'Manager', path: '/portfolio' },
     { icon: BookOpen, label: 'Journal', path: '/trades' },
-    { icon: Store, label: 'Market', path: '/marketplace' },
+    { icon: Store, label: 'Licenses', path: '/license-desk' },
   ];
 
   return (
