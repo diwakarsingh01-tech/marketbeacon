@@ -37,7 +37,7 @@ const GlobalFooter: React.FC = () => {
               <ul className="space-y-2 text-[10px] font-black text-slate-600 uppercase tracking-wider">
                 <li><Link to="/portfolio" className="hover:text-blue-600 transition-colors flex items-center gap-1.5">Wealth Manager</Link></li>
                 <li><Link to="/trades" className="hover:text-blue-600 transition-colors flex items-center gap-1.5"><BookOpen className="h-3 w-3" /> Verified Ledger</Link></li>
-                <li><Link to="/marketplace" className="hover:text-blue-600 transition-colors flex items-center gap-1.5">Licenses Shop</Link></li>
+                <li><Link to="/license-desk" className="hover:text-blue-600 transition-colors flex items-center gap-1.5">License Desk</Link></li>
               </ul>
             </div>
 

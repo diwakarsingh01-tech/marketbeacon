@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, ShieldCheck, Lock, Unlock, ChevronRight, Activity,
   Check, Shield, Gift, ArrowUpRight, Star, TrendingUp,
   Users, Clock, Flame, Target, BarChart2, BookOpen,
-  PieChart, AlertCircle, Sparkles, Crown, Bolt, X
+  PieChart, AlertCircle, Sparkles, Crown, Bolt, X, ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
@@ -57,6 +58,7 @@ const FeatureRow = ({ feature, included }: { feature: string; included: boolean 
 
 const MembershipPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [selectedTier, setSelectedTier] = useState<'pro' | 'alpha'>('alpha');
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('yearly');
@@ -149,11 +151,28 @@ const MembershipPage: React.FC = () => {
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto">
+          {/* Go Back button */}
+          <div className="flex justify-start mb-6">
+            <button 
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate('/alpha-hub');
+                }
+              }} 
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 transition-all shadow-md active:scale-95"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Go Back</span>
+            </button>
+          </div>
+
           {/* Top row: badge + headline */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600/20 border border-blue-500/30 rounded-full mb-3">
               <Flame className="h-3 w-3 text-blue-400 animate-pulse" />
-              <span className="text-[8px] font-black uppercase tracking-[0.3em] text-blue-300">Access Licenses — MarketBeacon Pro</span>
+              <span className="text-[8px] font-black uppercase tracking-[0.3em] text-blue-300">Access Licenses — License Desk</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase italic leading-none text-white">
               Unlock Your{' '}
@@ -162,7 +181,7 @@ const MembershipPage: React.FC = () => {
               </span>
             </h1>
             <p className="mt-2 text-slate-400 text-xs md:text-sm font-medium max-w-lg mx-auto leading-relaxed">
-              India's institutional-grade research terminal. Stop guessing. Start with data-backed conviction.
+              Institutional-grade research tools for educational purposes. Audit Scores + ABCD Tranche Zones — powerful data to empower your own research. Not investment advice.
             </p>
           </motion.div>
 
@@ -173,7 +192,7 @@ const MembershipPage: React.FC = () => {
           >
             <TrustStat value="336+" label="Tracked Symbols" icon={BarChart2} />
             <TrustStat value="10+" label="Proven Strategies" icon={Target} />
-            <TrustStat value="42%" label="Alpha CAGR" icon={TrendingUp} />
+            <TrustStat value="12+" label="Strategy Models" icon={TrendingUp} />
             <TrustStat value="15 min" label="Access Activation" icon={Clock} />
           </motion.div>
         </div>

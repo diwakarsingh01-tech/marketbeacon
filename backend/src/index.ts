@@ -131,8 +131,8 @@ const getSnapshotFromCloud = async (symbols: string[]) => {
 app.get('/api/health', (req, res) => res.json({ 
   status: 'active', 
   node: 'Supabase-Cloud-Production', 
-  version: '14.1.0-PRO-CRASH-PROOF',
-  verify: 'Deployment triggered via heartbeat file (Crash-Proof Edition)',
+  version: '14.1.1-PRO-FIX-TARGET',
+  verify: 'Alpha Target data binding resolved',
   timestamp: new Date().toISOString()
 }));
 
@@ -236,12 +236,34 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     const snapshot = await getSnapshotFromCloud([symbol]);
     const snap = snapshot[symbol];
     if (!snap) return res.status(404).json({ error: 'Asset not found' });
+    
     const audit = await validateBatch9(symbol, snap, 'Elite Basket');
+    
+    let maxUpside = 30; // Default Institutional Target
     const qualified = STRATEGIES.filter(s => {
-      const res: any = runStrategyAnalysis(s.id, snap, snap.quote.marketCap, 'Elite Basket');
-      return res?.isBuyZone;
+      const sRes: any = runStrategyAnalysis(s.id, snap, snap.quote.marketCap, 'Elite Basket');
+      if (sRes?.isBuyZone && sRes?.target) {
+        const lastQuote = snap.quotes[snap.quotes.length - 1];
+        const entry = sRes.entryPrice || lastQuote.close;
+        const potential = ((sRes.target / entry) - 1) * 100;
+        if (potential > maxUpside) maxUpside = Math.round(potential);
+      }
+      return sRes?.isBuyZone;
     });
-    res.json({ symbol, score: audit.score, isPass: audit.isPass, strategies: qualified });
+
+    const capCr = (snap.quote?.marketCap || 0) / 10000000;
+    const basketType = capCr >= 20000 ? 'LARGE' : (capCr >= 5000 ? 'MID' : 'SMALL');
+
+    res.json({ 
+      symbol, 
+      score: audit.score, 
+      isPass: audit.isPass, 
+      strategies: qualified,
+      smartMoney: audit.smartMoneyTotal || 0,
+      upside: maxUpside,
+      basket: basketType,
+      risk: audit.score >= 80 ? 'LOW' : (audit.score >= 70 ? 'MODERATE' : 'HIGH')
+    });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 

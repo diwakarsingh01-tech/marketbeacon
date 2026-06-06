@@ -1,7 +1,7 @@
 {
   "name": "supertracker",
   "private": true,
-  "version": "14.1.0-PRO-CRASH-PROOF",
+  "version": "14.1.1-PRO-FIX-TARGET",
   "type": "module",
   "scripts": {
     "dev": "vite",

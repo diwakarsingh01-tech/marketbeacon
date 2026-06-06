@@ -165,26 +165,26 @@ const AdminPanel: React.FC = () => {
           <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">Institutional Membership Control</p>
         </div>
 
-        <div className="flex items-center space-x-3">
-           <div className="relative">
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+           <div className="relative flex-1 md:flex-initial min-w-[200px]">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
               <input 
                 type="text" 
                 placeholder="Search Database..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-3 text-[11px] font-black uppercase tracking-widest focus:bg-white transition-all w-64 shadow-inner"
+                className="bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-3 text-[11px] font-black uppercase tracking-widest focus:bg-white transition-all w-full md:w-64 shadow-inner"
               />
            </div>
-           <button onClick={() => setIsAddUserModalOpen(true)} className="p-3.5 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm flex items-center space-x-2 text-slate-400">
+           <button onClick={() => setIsAddUserModalOpen(true)} className="p-3 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center space-x-2 text-slate-400 flex-1 md:flex-initial">
               <UserPlus className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">Member</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">Member</span>
            </button>
-           <button onClick={() => setIsAddVoucherModalOpen(true)} className="p-3.5 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-lg flex items-center space-x-2">
+           <button onClick={() => setIsAddVoucherModalOpen(true)} className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-lg flex items-center justify-center space-x-2 flex-1 md:flex-initial">
               <Gift className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">Voucher</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">Voucher</span>
            </button>
-           <button onClick={fetchData} className="p-3.5 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm text-slate-400">
+           <button onClick={fetchData} className="p-3 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm text-slate-400 flex items-center justify-center">
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
            </button>
         </div>
@@ -192,7 +192,7 @@ const AdminPanel: React.FC = () => {
 
       {/* 2. Controls & Tabs */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-         <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 w-fit overflow-x-auto no-scrollbar">
+         <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 w-full max-w-full overflow-x-auto no-scrollbar">
             <button 
               onClick={() => setActiveTab('pending')}
               className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'pending' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
@@ -235,169 +235,301 @@ const AdminPanel: React.FC = () => {
          </div>
       </div>
 
-      {/* 3. Main Table */}
+      {/* 3. Main Table & Mobile View */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden">
-        <table className="w-full text-left">
-           <thead>
-             <tr className="border-b border-slate-50 bg-slate-50/30">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  {activeTab === 'users' ? 'Member Profile' : activeTab === 'vouchers' ? 'Voucher Code' : 'Approval Request'}
-                </th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Plan Tier</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  {activeTab === 'users' ? 'Membership Validity' : activeTab === 'vouchers' ? 'Usage Matrix' : 'Transaction ID'}
-                </th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-             </tr>
-           </thead>
-           <tbody className="divide-y divide-slate-50">
-             {activeTab === 'vouchers' ? (
-               (vouchers || []).map(v => (
-                 <tr key={v.id} className="group hover:bg-slate-50/50 transition-colors">
-                   <td className="px-8 py-6 font-mono font-black text-slate-900 text-xs select-all">{v.code}</td>
-                   <td className="px-8 py-6">
-                      <div className="flex justify-center">
-                        <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${v.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                           {v.is_active ? 'Live' : 'Disabled'}
-                        </span>
-                      </div>
-                   </td>
-                   <td className="px-8 py-6">
-                      <div className="flex flex-col items-center">
-                         <span className="text-[10px] font-black text-slate-900 uppercase">{v.tier}</span>
-                         <span className="text-[8px] font-bold text-slate-400 uppercase">{v.duration_days} Days Access</span>
-                      </div>
-                   </td>
-                   <td className="px-8 py-6">
-                      <div className="flex flex-col">
-                         <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-600" style={{ width: `${(v.current_uses / v.max_uses) * 100}%` }} />
-                         </div>
-                         <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase">{v.current_uses} / {v.max_uses} Redemptions</span>
-                      </div>
-                   </td>
-                   <td className="px-8 py-6 text-right">
-                      {/* Controls can be added here */}
-                   </td>
-                 </tr>
-               ))
-             ) : activeTab === 'users' ? (
-               filteredUsers.map(u => {
-                 const days = getDaysRemaining(u.subscription_expiry);
-                 return (
-                  <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors">
-                    <td className="px-8 py-6">
-                       <div className="flex items-center space-x-4">
-                          <div className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xs uppercase italic">
-                             {u.name?.substring(0,2)}
-                          </div>
-                          <div className="flex flex-col">
-                             <span className="text-[13px] font-black text-slate-900 leading-none">{u.name}</span>
-                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{u.email || u.mobile || 'No Contact'}</span>
-                          </div>
-                       </div>
-                    </td>
-                    <td className="px-8 py-6">
-                       <div className="flex justify-center">
-                          <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.1em] ${u.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                             {u.is_active ? 'Active' : 'Deactivated'}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left">
+             <thead>
+               <tr className="border-b border-slate-50 bg-slate-50/30">
+                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    {activeTab === 'users' ? 'Member Profile' : activeTab === 'vouchers' ? 'Voucher Code' : 'Approval Request'}
+                  </th>
+                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
+                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Plan Tier</th>
+                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    {activeTab === 'users' ? 'Membership Validity' : activeTab === 'vouchers' ? 'Usage Matrix' : 'Transaction ID'}
+                  </th>
+                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+               </tr>
+             </thead>
+             <tbody className="divide-y divide-slate-50">
+               {activeTab === 'vouchers' ? (
+                 (vouchers || []).map(v => (
+                   <tr key={v.id} className="group hover:bg-slate-50/50 transition-colors">
+                     <td className="px-8 py-6 font-mono font-black text-slate-900 text-xs select-all">{v.code}</td>
+                     <td className="px-8 py-6">
+                        <div className="flex justify-center">
+                          <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${v.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                             {v.is_active ? 'Live' : 'Disabled'}
                           </span>
-                       </div>
+                        </div>
+                     </td>
+                     <td className="px-8 py-6">
+                        <div className="flex flex-col items-center">
+                           <span className="text-[10px] font-black text-slate-900 uppercase">{v.tier}</span>
+                           <span className="text-[8px] font-bold text-slate-400 uppercase">{v.duration_days} Days Access</span>
+                        </div>
+                     </td>
+                     <td className="px-8 py-6">
+                        <div className="flex flex-col">
+                           <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-600" style={{ width: `${(v.current_uses / v.max_uses) * 100}%` }} />
+                           </div>
+                           <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase">{v.current_uses} / {v.max_uses} Redemptions</span>
+                        </div>
+                     </td>
+                     <td className="px-8 py-6 text-right">
+                        {/* Controls can be added here */}
+                     </td>
+                   </tr>
+                 ))
+               ) : activeTab === 'users' ? (
+                 filteredUsers.map(u => {
+                   const days = getDaysRemaining(u.subscription_expiry);
+                   return (
+                    <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <td className="px-8 py-6">
+                         <div className="flex items-center space-x-4">
+                            <div className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xs uppercase italic">
+                               {u.name?.substring(0,2)}
+                            </div>
+                            <div className="flex flex-col">
+                               <span className="text-[13px] font-black text-slate-900 leading-none">{u.name}</span>
+                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{u.email || u.mobile || 'No Contact'}</span>
+                            </div>
+                         </div>
+                      </td>
+                      <td className="px-8 py-6">
+                         <div className="flex justify-center">
+                            <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.1em] ${u.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                               {u.is_active ? 'Active' : 'Deactivated'}
+                            </span>
+                         </div>
+                      </td>
+                      <td className="px-8 py-6">
+                         <div className="flex justify-center">
+                            <div className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border ${u.tier === 'alpha' ? 'bg-slate-900 text-white border-slate-900 shadow-lg' : u.tier === 'pro' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                               {u.tier === 'alpha' ? <ShieldCheck className="h-3 w-3" /> : u.tier === 'pro' ? <Zap className="h-3 w-3" /> : null}
+                               <span className="text-[9px] font-black uppercase">{u.tier}</span>
+                            </div>
+                         </div>
+                      </td>
+                      <td className="px-8 py-6">
+                         <div className="flex flex-col space-y-1">
+                            <div className="flex items-center space-x-2 text-slate-700">
+                               <Calendar className="h-3.5 w-3.5 text-slate-300" />
+                               <span className="text-[11px] font-bold font-mono">{u.subscription_expiry ? new Date(u.subscription_expiry).toLocaleDateString() : 'Unlimited'}</span>
+                            </div>
+                            {days !== null && (
+                               <span className={`text-[8px] font-black uppercase ${days <= 3 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                                  {days === 0 ? 'Expired' : `${days} Days Remaining`}
+                               </span>
+                            )}
+                         </div>
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                         <div className="flex items-center justify-end space-x-2">
+                            <button 
+                              onClick={() => { setSelectedUser(u); setIsManageModalOpen(true); }}
+                              className="p-2 text-slate-400 hover:text-blue-600 transition-colors bg-white border border-slate-100 rounded-xl shadow-sm"
+                              title="Manage Access"
+                            >
+                               <Settings2 className="h-4 w-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteUser(u.id)}
+                              className="p-2 text-slate-300 hover:text-rose-600 transition-colors"
+                            >
+                               <Trash2 className="h-4 w-4" />
+                            </button>
+                         </div>
+                      </td>
+                    </tr>
+                   );
+                 })
+               ) : (
+                 filteredRequests.map(req => (
+                  <tr key={req.id} className="group hover:bg-slate-50/50 transition-colors">
+                    <td className="px-8 py-6">
+                      <div className="flex flex-col">
+                         <span className="text-[13px] font-black text-slate-900 leading-none">{req.name}</span>
+                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{req.email || req.mobile}</span>
+                      </div>
                     </td>
                     <td className="px-8 py-6">
-                       <div className="flex justify-center">
-                          <div className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border ${u.tier === 'alpha' ? 'bg-slate-900 text-white border-slate-900 shadow-lg' : u.tier === 'pro' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-                             {u.tier === 'alpha' ? <ShieldCheck className="h-3 w-3" /> : u.tier === 'pro' ? <Zap className="h-3 w-3" /> : null}
-                             <span className="text-[9px] font-black uppercase">{u.tier}</span>
-                          </div>
-                       </div>
+                      <div className="flex justify-center">
+                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                            {req.status}
+                         </span>
+                      </div>
                     </td>
                     <td className="px-8 py-6">
-                       <div className="flex flex-col space-y-1">
-                          <div className="flex items-center space-x-2 text-slate-700">
-                             <Calendar className="h-3.5 w-3.5 text-slate-300" />
-                             <span className="text-[11px] font-bold font-mono">{u.subscription_expiry ? new Date(u.subscription_expiry).toLocaleDateString() : 'Unlimited'}</span>
-                          </div>
-                          {days !== null && (
-                             <span className={`text-[8px] font-black uppercase ${days <= 3 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                                {days === 0 ? 'Expired' : `${days} Days Remaining`}
-                             </span>
-                          )}
-                       </div>
+                      <div className="flex flex-col items-center space-y-1">
+                         <div className="flex items-center space-x-2 text-blue-600">
+                            <Zap className="h-3 w-3" />
+                            <span className="text-[11px] font-black uppercase">{req.requested_tier}</span>
+                         </div>
+                         <span className="text-[8px] font-black uppercase text-slate-400">{req.billing_cycle}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center space-x-2 text-slate-500">
+                         <CreditCard className="h-4 w-4" />
+                         <span className="text-xs font-mono font-bold tracking-tight select-all">{req.transaction_id}</span>
+                      </div>
                     </td>
                     <td className="px-8 py-6 text-right">
-                       <div className="flex items-center justify-end space-x-2">
-                          <button 
-                            onClick={() => { setSelectedUser(u); setIsManageModalOpen(true); }}
-                            className="p-2 text-slate-400 hover:text-blue-600 transition-colors bg-white border border-slate-100 rounded-xl shadow-sm"
-                            title="Manage Access"
-                          >
-                             <Settings2 className="h-4 w-4" />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteUser(u.id)}
-                            className="p-2 text-slate-300 hover:text-rose-600 transition-colors"
-                          >
-                             <Trash2 className="h-4 w-4" />
-                          </button>
-                       </div>
+                      {req.status === 'pending' && (
+                        <button 
+                          onClick={() => handleApprove(req.id)}
+                          className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md active:scale-95"
+                        >
+                          Approve Upgrade
+                        </button>
+                      )}
                     </td>
                   </tr>
-                 );
-               })
-             ) : (
-               filteredRequests.map(req => (
-                <tr key={req.id} className="group hover:bg-slate-50/50 transition-colors">
-                  <td className="px-8 py-6">
-                    <div className="flex flex-col">
-                       <span className="text-[13px] font-black text-slate-900 leading-none">{req.name}</span>
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{req.email || req.mobile}</span>
+                 ))
+               )}
+             </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {activeTab === 'vouchers' ? (
+            (vouchers || []).map(v => (
+              <div key={v.id} className="p-5 space-y-3.5 hover:bg-slate-50/40 transition-colors">
+                 <div className="flex justify-between items-start">
+                    <div>
+                       <span className="text-[7.5px] text-slate-400 block mb-0.5 uppercase font-bold">Voucher Code</span>
+                       <span className="text-sm font-black text-slate-900 font-mono uppercase select-all">{v.code}</span>
                     </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex justify-center">
-                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                    <div className="text-right">
+                       <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${v.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                          {v.is_active ? 'Live' : 'Disabled'}
+                       </span>
+                    </div>
+                 </div>
+                 <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+                    <div>
+                       <span className="text-[7.5px] text-slate-400 block mb-0.5">Tier Plan</span>
+                       <span className="text-slate-800 font-black">{v.tier}</span>
+                    </div>
+                    <div className="text-right">
+                       <span className="text-[7.5px] text-slate-400 block mb-0.5">Duration</span>
+                       <span className="text-slate-800 font-black">{v.duration_days} Days Access</span>
+                    </div>
+                 </div>
+                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                       <span className="text-[7.5px] text-slate-400 block mb-0.5">Redemptions</span>
+                       <span className="text-[9.5px] font-black text-slate-900 font-mono">{v.current_uses} / {v.max_uses}</span>
+                    </div>
+                    <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden shrink-0 ml-4">
+                       <div className="h-full bg-blue-600" style={{ width: `${(v.current_uses / v.max_uses) * 100}%` }} />
+                    </div>
+                 </div>
+              </div>
+            ))
+          ) : activeTab === 'users' ? (
+            filteredUsers.map(u => {
+              const days = getDaysRemaining(u.subscription_expiry);
+              return (
+                <div key={u.id} className="p-5 space-y-3.5 hover:bg-slate-50/40 transition-colors">
+                   <div className="flex justify-between items-start">
+                      <div className="flex items-center space-x-3">
+                         <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xs uppercase italic shrink-0">
+                            {u.name?.substring(0,2)}
+                         </div>
+                         <div>
+                            <span className="text-xs font-black text-slate-900 leading-none block">{u.name}</span>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-1 block">{u.email || u.mobile || 'No Contact'}</span>
+                         </div>
+                      </div>
+                      <div className="text-right">
+                         <span className={`px-2 py-0.5 rounded-full text-[7.5px] font-black uppercase tracking-[0.1em] ${u.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                            {u.is_active ? 'Active' : 'Deactivated'}
+                         </span>
+                      </div>
+                   </div>
+                   <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+                      <div>
+                         <span className="text-[7.5px] text-slate-400 block mb-0.5">Tier Plan</span>
+                         <span className="text-slate-800 font-black text-[9.5px] uppercase">{u.tier}</span>
+                      </div>
+                      <div className="text-right">
+                         <span className="text-[7.5px] text-slate-400 block mb-0.5">Validity</span>
+                         <span className="text-[9.5px] font-black font-mono text-slate-900 block leading-tight">{u.subscription_expiry ? new Date(u.subscription_expiry).toLocaleDateString() : 'Unlimited'}</span>
+                         {days !== null && (
+                            <span className={`text-[7px] font-black uppercase mt-0.5 block ${days === 0 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                               {days === 0 ? 'Expired' : `${days} Days Left`}
+                            </span>
+                         )}
+                      </div>
+                   </div>
+                   <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => { setSelectedUser(u); setIsManageModalOpen(true); }}
+                        className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 text-slate-600 text-[8px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-950 hover:text-white transition-all shadow-sm flex items-center gap-1.5"
+                      >
+                         <Settings2 className="h-3 w-3" />
+                         <span>Edit Access</span>
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteUser(u.id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                      >
+                         <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                   </div>
+                </div>
+              );
+            })
+          ) : (
+            filteredRequests.map(req => (
+              <div key={req.id} className="p-5 space-y-3.5 hover:bg-slate-50/40 transition-colors">
+                 <div className="flex justify-between items-start">
+                    <div>
+                       <span className="text-xs font-black text-slate-900 block leading-none">{req.name}</span>
+                       <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-1 block">{req.email || req.mobile}</span>
+                    </div>
+                    <div className="text-right">
+                       <span className={`px-2.5 py-1 rounded-full text-[8.5px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
                           {req.status}
                        </span>
                     </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex flex-col items-center space-y-1">
-                       <div className="flex items-center space-x-2 text-blue-600">
-                          <Zap className="h-3 w-3" />
-                          <span className="text-[11px] font-black uppercase">{req.requested_tier}</span>
-                       </div>
-                       <span className="text-[8px] font-black uppercase text-slate-400">{req.billing_cycle}</span>
+                 </div>
+                 <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+                    <div>
+                       <span className="text-[7.5px] text-slate-400 block mb-0.5">Requested Tier</span>
+                       <span className="text-blue-600 font-black">{req.requested_tier} ({req.billing_cycle})</span>
                     </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center space-x-2 text-slate-500">
-                       <CreditCard className="h-4 w-4" />
-                       <span className="text-xs font-mono font-bold tracking-tight select-all">{req.transaction_id}</span>
+                    <div className="text-right">
+                       <span className="text-[7.5px] text-slate-400 block mb-0.5">Transaction ID</span>
+                       <span className="text-slate-800 font-black text-[8.5px] truncate block select-all">{req.transaction_id}</span>
                     </div>
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    {req.status === 'pending' && (
-                      <button 
-                        onClick={() => handleApprove(req.id)}
-                        className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md active:scale-95"
-                      >
-                        Approve Upgrade
-                      </button>
-                    )}
-                  </td>
-                </tr>
-               ))
-             )}
-           </tbody>
-        </table>
+                 </div>
+                 {req.status === 'pending' && (
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
+                       <button 
+                         onClick={() => handleApprove(req.id)}
+                         className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md active:scale-95 w-full"
+                       >
+                         Approve Upgrade
+                       </button>
+                    </div>
+                 )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* 4. Manage User Modal */}
       {isManageModalOpen && selectedUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-           <div className="bg-white rounded-[3.5rem] p-10 max-w-lg w-full shadow-2xl border border-slate-100 space-y-8 animate-in zoom-in-95 duration-500">
+           <div className="bg-white rounded-[2rem] md:rounded-[3.5rem] p-6 md:p-10 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 space-y-6 md:space-y-8 animate-in zoom-in-95 duration-500 no-scrollbar">
               <div className="flex justify-between items-start">
                  <div className="space-y-1">
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Modify Access</h2>
@@ -461,7 +593,7 @@ const AdminPanel: React.FC = () => {
       {/* 5. Add User Modal */}
       {isAddUserModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-           <div className="bg-white rounded-[3.5rem] p-10 max-w-lg w-full shadow-2xl border border-slate-100 space-y-8 animate-in zoom-in-95 duration-500">
+           <div className="bg-white rounded-[2rem] md:rounded-[3.5rem] p-6 md:p-10 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 space-y-6 md:space-y-8 animate-in zoom-in-95 duration-500 no-scrollbar">
               <div className="flex justify-between items-start">
                  <div className="space-y-1">
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Onboard Member</h2>
@@ -529,7 +661,7 @@ const AdminPanel: React.FC = () => {
       {/* 6. Add Voucher Modal */}
       {isAddVoucherModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-           <div className="bg-white rounded-[3.5rem] p-10 max-w-lg w-full shadow-2xl border border-slate-100 space-y-8 animate-in zoom-in-95 duration-500">
+           <div className="bg-white rounded-[2rem] md:rounded-[3.5rem] p-6 md:p-10 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 space-y-6 md:space-y-8 animate-in zoom-in-95 duration-500 no-scrollbar">
               <div className="flex justify-between items-start">
                  <div className="space-y-1">
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Create Voucher</h2>

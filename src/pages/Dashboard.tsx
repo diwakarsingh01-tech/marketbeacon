@@ -507,42 +507,52 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
            </div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-col md:flex-row md:items-end gap-4 w-full lg:w-auto">
           {isPortfolioRoute && (
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex items-center gap-2.5 w-full md:w-auto">
+              <div className="grid grid-cols-3 gap-2.5 w-full md:flex md:w-auto">
+                <button 
+                  onClick={handleClearPortfolio} 
+                  className="px-4 py-2.5 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center space-x-1.5 hover:bg-rose-100/50 hover:border-rose-300 transition-all active:scale-95 animate-in fade-in"
+                >
+                  <Trash2 className="h-4 w-4 text-rose-500" />
+                  <span className="hidden sm:inline">Remove Old Details</span>
+                  <span className="sm:hidden">Reset</span>
+                </button>
+                <button 
+                  onClick={() => setShowAddManualModal(true)} 
+                  className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center space-x-1.5 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95"
+                >
+                  <span>+ Add</span>
+                </button>
+                <button 
+                  onClick={() => setShowBrokerHub(true)} 
+                  className="px-5 py-2.5 bg-slate-ink text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center space-x-2 hover:bg-black transition-all active:scale-95 border border-white/5"
+                  style={{ backgroundColor: 'var(--slate-ink)' }}
+                >
+                  <Globe className="h-4 w-4 text-blue-500" />
+                  <span className="hidden sm:inline">Upload New Details</span>
+                  <span className="sm:hidden">Upload</span>
+                </button>
+              </div>
               <button 
-                onClick={handleClearPortfolio} 
-                className="px-4 py-2.5 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center space-x-1.5 hover:bg-rose-100/50 hover:border-rose-300 transition-all active:scale-95 animate-in fade-in"
+                onClick={() => fetchData(true)} 
+                className={`p-2.5 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all shrink-0 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
               >
-                <Trash2 className="h-4 w-4 text-rose-500" />
-                <span>Remove Old Details</span>
-              </button>
-              <button 
-                onClick={() => setShowAddManualModal(true)} 
-                className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center space-x-1.5 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95"
-              >
-                <span>+ Add Position</span>
-              </button>
-              <button 
-                onClick={() => setShowBrokerHub(true)} 
-                className="px-5 py-2.5 bg-slate-ink text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center space-x-2 hover:bg-black transition-all active:scale-95 border border-white/5"
-                style={{ backgroundColor: 'var(--slate-ink)' }}
-              >
-                <Globe className="h-4 w-4 text-blue-500" />
-                <span>Upload New Details</span>
+                <RefreshCw className="h-4 w-4" />
               </button>
             </div>
           )}
 
           {!isPortfolioRoute && (
-            <>
+            <div className="grid grid-cols-2 md:flex md:flex-row md:items-end gap-3.5 w-full md:w-auto">
               <div className="flex flex-col space-y-1">
                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] pl-1.5">Active Universe</span>
                 <div className="relative group">
                   <select 
                     value={activeBasket} 
                     onChange={(e) => setActiveBasket(e.target.value)} 
-                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all min-w-[150px]"
+                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all w-full md:min-w-[150px]"
                   >
                     {currentStrategy.baskets.map(b => (
                       <option key={b} value={b}>{b}</option>
@@ -560,7 +570,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                   <select 
                     value={strategyId} 
                     onChange={(e) => navigate(`?strategy=${e.target.value}`)} 
-                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all min-w-[180px]"
+                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all w-full md:min-w-[180px]"
                   >
                     {lockedStrategies.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -570,26 +580,24 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                 </div>
               </div>
 
-              <div className="flex items-end h-full pb-0.5 space-x-2">
+              <div className="flex items-center gap-2.5 col-span-2 md:col-span-1 w-full md:w-auto md:pb-0.5">
                 <button 
                   onClick={handleMasterExport}
-                  className="flex items-center space-x-2 px-5 py-2.5 bg-slate-950 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-md group border border-white/5"
+                  className="flex-1 md:flex-initial flex items-center justify-center space-x-2 px-5 py-2.5 bg-slate-950 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-md group border border-white/5"
                 >
                   <Download className="h-4 w-4 text-blue-500 group-hover:scale-110 transition-transform" />
                   <span>Export Audit</span>
                 </button>
+                
+                <button 
+                  onClick={() => fetchData(true)} 
+                  className={`p-2.5 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all shrink-0 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
               </div>
-            </>
+            </div>
           )}
-
-          <div className="flex items-end h-full pb-0.5 space-x-2">
-            <button 
-              onClick={() => fetchData(true)} 
-              className={`p-2.5 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
-            >
-              <RefreshCw className="h-4 w-4" />
-            </button>
-          </div>
         </div>
       </div>
 

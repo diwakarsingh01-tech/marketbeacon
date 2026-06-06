@@ -17,6 +17,9 @@ import PricingPage from './pages/Pricing';
 import AdminPanel from './pages/AdminPanel';
 import MembershipPage from './pages/Marketplace';
 import ConnectivityHubPage from './pages/Connect';
+import BlogPage from './pages/Blog';
+import BlogArticlePage from './pages/BlogArticle';
+import PrivacyPolicyPage from './pages/PrivacyPolicy';
 
 // Institutional Loading Component
 const PageLoader = () => (
@@ -38,7 +41,11 @@ function App() {
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/connect" element={<ConnectivityHubPage />} />
             <Route path="/analysis/:symbol" element={<PublicAnalysisPage />} />
-            <Route path="/marketplace" element={<MembershipPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:slug" element={<BlogArticlePage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<PrivacyPolicyPage />} />
+            <Route path="/marketplace" element={<Navigate to="/license-desk" replace />} />
 
             {/* Authenticated SaaS Platform */}
             <Route 
@@ -57,6 +64,7 @@ function App() {
               <Route path="/stock/:symbol" element={<StockFundamentalsPage />} />
               <Route path="/education" element={<EducationPage />} />
               <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/license-desk" element={<MembershipPage />} />
             </Route>
             
             {/* Redirects */}

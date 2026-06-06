@@ -38,7 +38,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
       items: [
         { icon: Briefcase, label: 'Manager', path: '/portfolio', desc: 'Wealth Tracking' },
         { icon: BookOpen, label: 'Journal', path: '/trades', desc: 'Verified Ledger' },
-        { icon: Store, label: 'Marketplace', path: '/marketplace', desc: 'Licenses Desk' },
+        {icon: Store, label: 'License Desk', path: '/license-desk', desc: 'Subscription Desk' },
       ]
     },
     {

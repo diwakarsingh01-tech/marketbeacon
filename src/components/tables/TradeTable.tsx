@@ -365,7 +365,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
     <div className="space-y-6">
       {/* Search and Settings Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between bg-white/50 backdrop-blur-md px-6 py-4 rounded-[2rem] border border-slate-100 gap-4 shadow-sm">
-        <div className="flex flex-col md:flex-row items-center gap-4 flex-1">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3.5 flex-1 w-full">
           {/* Search Input */}
           <div className="relative w-full md:max-w-xs">
             <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -380,12 +380,12 @@ const TradeTable: React.FC<TradeTableProps> = ({
           
           {/* Compact Pill Tabs */}
           {setActiveTab && visibleTabs.length > 0 && (
-            <div className="flex flex-wrap items-center bg-slate-200/40 p-1 rounded-xl border border-slate-200/50 gap-0.5 max-w-full overflow-x-auto no-scrollbar shadow-inner">
+            <div className="grid grid-cols-3 bg-slate-200/40 p-1 rounded-xl border border-slate-200/50 gap-0.5 w-full md:flex md:w-auto overflow-x-auto no-scrollbar shadow-inner">
                {visibleTabs.map(tab => (
                  <button
                    key={tab.id}
                    onClick={() => setActiveTab(tab.id as any)}
-                   className={`px-3 py-1.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider transition-all whitespace-nowrap ${
+                   className={`px-3 py-1.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider transition-all whitespace-nowrap w-full flex items-center justify-center ${
                      activeTab === tab.id 
                        ? 'bg-white text-slate-900 shadow-md border border-slate-200/20' 
                        : 'text-slate-500 hover:text-slate-900 hover:bg-white/20'
@@ -401,23 +401,26 @@ const TradeTable: React.FC<TradeTableProps> = ({
           )}
         </div>
         
-        <div className="flex items-center gap-4 shrink-0 justify-end w-full lg:w-auto">
+        <div className="flex items-center gap-3 shrink-0 justify-between md:justify-end w-full lg:w-auto">
           <button 
             onClick={handleExportCSV} 
-            className="flex items-center gap-3 px-6 py-3 bg-slate-INK text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-900/10 group border border-white/5"
+            className="flex-1 md:flex-initial flex items-center justify-center gap-3 px-5 py-2.5 bg-slate-ink text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-900/10 group border border-white/5"
             style={{ backgroundColor: 'var(--slate-ink)' }}
           >
             <DownloadIcon className="h-3.5 w-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
-            <span>Export Matrix</span>
+            <span>
+              <span className="hidden sm:inline">Export Matrix</span>
+              <span className="sm:hidden">Export</span>
+            </span>
           </button>
           <button 
             onClick={() => setShowColumnSettings(!showColumnSettings)} 
-            className={`p-3 rounded-2xl border transition-all ${showColumnSettings ? 'bg-slate-ink text-white border-blue-500/30' : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50'}`}
+            className={`p-2.5 rounded-2xl border transition-all ${showColumnSettings ? 'bg-slate-ink text-white border-blue-500/30' : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50'}`}
             style={showColumnSettings ? { backgroundColor: 'var(--slate-ink)' } : {}}
           >
             <SettingsIcon className="h-4 w-4" />
           </button>
-          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-white px-4 py-3 rounded-2xl border border-slate-100 shadow-sm italic whitespace-nowrap">
+          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-slate-100 shadow-sm italic whitespace-nowrap">
             {filteredAndSortedTrades.length} Nodes
           </div>
         </div>
