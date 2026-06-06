@@ -172,6 +172,16 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
         </button>
 
+        <a 
+          href="https://t.me/Marketbeconpro" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-sm border border-blue-100 flex items-center space-x-2 group"
+        >
+          <TrendingUp className="h-4 w-4 group-hover:scale-110 transition-transform" />
+          <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">Join Community</span>
+        </a>
+
         <div className="relative">
           {user ? (
             <>
