@@ -156,12 +156,12 @@ app.post('/api/auth/google', async (req, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/backtest/audit', authenticateToken, async (req: any, res) => {
+app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => {
   try {
     const { basket = 'Elite Basket', strategy: selectedStrategyId } = req.query;
     
     // --- Institutional Tier Guard ---
-    const userTier = req.user.tier || 'free';
+    const userTier = req.user?.tier || 'free';
     const tierWeights: Record<string, number> = { 'free': 1, 'pro': 2, 'alpha': 3 };
     const strategy = STRATEGIES.find(s => s.id === selectedStrategyId);
     const requiredTier = strategy?.tier || 'free';
