@@ -5,15 +5,33 @@ import { STRATEGIES, BASKETS, MANUAL_SECTOR_MAP } from '../index.js';
 import { supabase } from '../db.js';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 let localAlpha40Cache: any = null;
-const CACHE_FILE_PATH = path.join(process.cwd(), 'alpha_40_results.json');
+
+const pathsToTry = [
+  path.resolve(process.cwd(), 'alpha_40_results.json'),
+  path.resolve(process.cwd(), 'backend', 'alpha_40_results.json'),
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../alpha_40_results.json'),
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../alpha_40_results.json'),
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../alpha_40_results.json')
+];
+
+let CACHE_FILE_PATH = pathsToTry[0];
+for (const p of pathsToTry) {
+  if (fs.existsSync(p)) {
+    CACHE_FILE_PATH = p;
+    break;
+  }
+}
 
 try {
   if (fs.existsSync(CACHE_FILE_PATH)) {
     const raw = fs.readFileSync(CACHE_FILE_PATH, 'utf-8');
     localAlpha40Cache = JSON.parse(raw);
-    console.log('💾 [Alpha-40 Cache] Loaded initial cache from disk.');
+    console.log(`💾 [Alpha-40 Cache] Loaded initial cache from disk path: ${CACHE_FILE_PATH}`);
+  } else {
+    console.warn(`⚠️ [Alpha-40 Cache] Cache file not found on startup in any paths.`);
   }
 } catch (e: any) {
   console.error('⚠️ [Alpha-40 Cache] Failed to load initial cache from disk:', e.message);
@@ -200,6 +218,19 @@ export async function getAlpha40Cache() {
     return localAlpha40Cache;
   }
   
+  // Try loading from resolved disk path
+  try {
+    if (fs.existsSync(CACHE_FILE_PATH)) {
+      const raw = fs.readFileSync(CACHE_FILE_PATH, 'utf-8');
+      localAlpha40Cache = JSON.parse(raw);
+      console.log(`💾 [Alpha-40 Cache] Loaded cache from disk in getAlpha40Cache: ${CACHE_FILE_PATH}`);
+      return localAlpha40Cache;
+    }
+  } catch (err: any) {
+    console.warn(`⚠️ [Alpha-40 Cache] Failed to load cache from disk fallback: ${err.message}`);
+  }
+
+  // Database fallback
   try {
     const { data, error } = await supabase.from('system_cache').select('data').eq('key', 'alpha_40_results').single();
     if (!error && data && data.data) {

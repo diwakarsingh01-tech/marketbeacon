@@ -178,6 +178,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
 
   const visibleTabs = useMemo(() => {
     if (activeTab === 'portfolio' || activeTab === 'hold') {
@@ -740,91 +741,175 @@ const TradeTable: React.FC<TradeTableProps> = ({
       </div>
 
       {/* Mobile Card View (Safe-Guard Rule #10: Smart Insight Cards) */}
-      <div className="md:hidden space-y-6">
+      <div className="md:hidden space-y-3 px-2">
          <AnimatePresence>
             {filteredAndSortedTrades.map((trade, idx) => {
               const isStarred = userWatchlist?.includes(trade.symbol);
               const capTag = getMarketCapTag(trade.marketCap, trade.symbol);
+              const isExpanded = expandedSymbol === trade.symbol;
               
+              // 1-day Change percent estimate from live prices
+              const changePercent = trade.change || 0;
+              const isPositive = changePercent >= 0;
+
               return (
                 <motion.div 
                    key={trade.symbol} 
-                   initial={{ opacity: 0, y: 20 }}
+                   initial={{ opacity: 0, y: 10 }}
                    animate={{ opacity: 1, y: 0 }}
-                   transition={{ delay: idx * 0.05 }}
-                   whileTap={{ scale: 0.98 }}
-                   className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/50 space-y-6 relative overflow-hidden group"
+                   transition={{ delay: Math.min(idx * 0.03, 0.3) }}
+                   className="bg-white rounded-[1.25rem] border border-slate-100/80 shadow-md shadow-slate-100 overflow-hidden"
                 >
-                   {/* Card Background Pattern */}
-                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-blue-500/10 transition-all duration-700" />
-                   
-                   <div className="flex justify-between items-start relative z-10">
-                      <div className="flex items-center space-x-4">
-                         <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="p-2 -ml-2 text-slate-200 hover:text-amber-400 transition-all">
-                            <StarIcon className={`h-6 w-6 ${isStarred ? 'fill-current text-amber-400' : ''}`} />
-                         </button>
-                         <div>
-                            <h3 className="text-2xl font-black text-slate-950 tracking-tighter leading-none italic">{trade.symbol}</h3>
-                            <div className="flex items-center gap-2 mt-2">
-                               <span className={`px-2 py-0.5 rounded text-[7px] font-black border tracking-widest ${capTag.class}`}>{capTag.label}</span>
-                               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{trade.sector}</span>
+                   {/* Clickable Header Area */}
+                   <div 
+                      onClick={() => setExpandedSymbol(isExpanded ? null : trade.symbol)}
+                      className="p-4 flex items-center justify-between cursor-pointer active:bg-slate-50 transition-colors"
+                   >
+                      {/* Left: Symbol & Details */}
+                      <div className="flex items-center space-x-3">
+                         <div className="flex flex-col">
+                            <div className="flex items-center space-x-2">
+                               <span className="text-sm font-black text-slate-900 tracking-tight font-mono uppercase">{trade.symbol}</span>
+                               <span className={`px-1.5 py-0.5 rounded-[0.25rem] text-[6.5px] font-black border tracking-wider leading-none ${capTag.class}`}>{capTag.label}</span>
                             </div>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</span>
                          </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                         <button 
-                            onClick={() => handleShareSignal(trade, 'telegram')} 
-                            className="p-3 bg-blue-50 text-blue-600 rounded-2xl active:scale-90 transition-all shadow-sm border border-blue-100"
-                         >
-                            <Share2 className="h-5 w-5" />
-                         </button>
-                         <Link 
-                            to={`/stock/${trade.symbol}`} 
-                            className="p-3 bg-slate-INK text-white rounded-2xl shadow-xl shadow-slate-900/20 active:scale-90 transition-all"
-                            style={{ backgroundColor: 'var(--slate-ink)' }}
-                         >
-                            <ChevronRight className="h-5 w-5" />
-                         </Link>
-                      </div>
-                   </div>
-                   
-                   <div className="grid grid-cols-2 gap-4 relative z-10">
-                      <div className="p-5 bg-slate-50/80 backdrop-blur-sm rounded-[2rem] border border-slate-100 flex flex-col justify-center space-y-1">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Signal Base</p>
-                        <p className="text-xl font-black text-slate-950 font-mono italic">₹{trade.entryPrice?.toLocaleString()}</p>
-                      </div>
-                      <div className="p-5 bg-blue-500/5 backdrop-blur-sm rounded-[2rem] border border-blue-500/10 flex flex-col justify-center space-y-1 text-right">
-                        <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest italic">Current Node</p>
-                        <p className="text-xl font-black text-blue-600 font-mono italic">₹{trade.livePrice?.toLocaleString()}</p>
+                      
+                      {/* Right: Price & Toggle */}
+                      <div className="flex items-center space-x-3">
+                         <div className="text-right flex flex-col items-end">
+                            <span className="text-sm font-extrabold text-slate-900 font-mono">₹{trade.livePrice?.toLocaleString()}</span>
+                            <span className={`text-[8.5px] font-black font-mono leading-none mt-0.5 ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+                               {isPositive ? '+' : ''}{changePercent.toFixed(2)}%
+                            </span>
+                         </div>
+                         <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
                       </div>
                    </div>
 
-                    <div className="flex items-center justify-between px-2 pt-2 relative z-10">
-                       <div className="flex items-center gap-3">
-                         <CircularGauge value={trade.score} size={44} strokeWidth={4} />
-                         <div className="flex flex-col font-sans">
-                            <div className="flex items-center gap-1.5">
-                              {trade.isPass !== false ? (
-                                <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-full text-[8px] font-black tracking-wide">
-                                  PASS
-                                </span>
-                              ) : (
-                                <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-full text-[8px] font-black tracking-wide">
-                                  OBS
-                                </span>
-                              )}
-                              <span className="text-[10px] font-black text-slate-900">Score {trade.score}</span>
-                            </div>
-                            <span className={`text-xs font-black tracking-tighter italic mt-1 ${trade.targetGap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                              {trade.targetGap >= 0 ? '+' : ''}{trade.targetGap?.toFixed(1)}% Alpha
-                            </span>
+                   {/* Quick Info (Always Visible: ABCD ladder & status) */}
+                   <div className="px-4 pb-3 flex items-center justify-between border-b border-slate-50">
+                      {/* ABCD indicators */}
+                      {visibleColumns.abcd ? (
+                         <div className="flex items-center space-x-1">
+                            {['a', 'b', 'c', 'd'].map((l) => {
+                              const levelObj = trade.abcd?.[l];
+                              const levelVal = typeof levelObj === 'object' ? levelObj.price : (typeof trade.abcd?.[l] === 'number' ? trade.abcd[l] : 0);
+                              const isActive = (trade.livePrice || 0) <= levelVal && levelVal > 0;
+                              const levelColor = l === 'a' ? (isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-blue-50/50 text-blue-300 border-blue-100/40') :
+                                               (l === 'b' || l === 'c') ? (isActive ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50/50 text-indigo-300 border-indigo-100/40') :
+                                               (isActive ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-50/50 text-emerald-300 border-emerald-100/40');
+
+                              return (
+                                <div key={l} className={`w-5 h-5 rounded-[0.35rem] flex items-center justify-center text-[7px] font-black border transition-all ${levelColor} ${isActive ? 'scale-105 font-black opacity-100' : 'opacity-40'}`}>
+                                  {l.toUpperCase()}
+                                </div>
+                              );
+                            })}
                          </div>
-                       </div>
-                       <div className="text-right">
-                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-60">Entry Window</span>
-                         <p className="text-xs font-black text-orange-600 font-mono">{trade.entryPrice > 0 ? (((trade.livePrice - trade.entryPrice)/trade.entryPrice) * 100).toFixed(1) : '0.0'}%</p>
-                       </div>
-                    </div>
+                      ) : (
+                         <div className="text-[9px] font-bold text-slate-400">Institutional Strategy</div>
+                      )}
+
+                      {/* Buy Zone Status */}
+                      <div className="flex items-center gap-1.5">
+                         {trade.isBuyZone ? (
+                            <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-full text-[8px] font-black">BUY ZONE</span>
+                         ) : (
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-full text-[8px] font-black">HOLD</span>
+                         )}
+                      </div>
+                   </div>
+
+                   {/* Expanded Details Section */}
+                   {isExpanded && (
+                      <div className="p-4 bg-slate-50/40 border-t border-slate-50 space-y-4 animate-in slide-in-from-top-1 duration-200">
+                         {/* ABCD Prices */}
+                         {visibleColumns.abcd && trade.abcd && (
+                            <div className="bg-white p-3 rounded-[0.75rem] border border-slate-100/80 space-y-1.5 shadow-sm">
+                               <div className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-1 mb-1">Entry Tranche Target Levels</div>
+                               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                  {['a', 'b', 'c', 'd'].map((l) => {
+                                     const levelObj = trade.abcd?.[l];
+                                     const price = typeof levelObj === 'object' ? levelObj.price : (typeof trade.abcd?.[l] === 'number' ? trade.abcd[l] : 0);
+                                     return (
+                                        <div key={l} className="flex justify-between items-center text-[10px]">
+                                           <span className={`font-black uppercase text-[9px] ${l === 'a' ? 'text-blue-500' : l === 'd' ? 'text-emerald-500' : 'text-indigo-500'}`}>T-{l.toUpperCase()}</span>
+                                           <span className="font-bold font-mono text-slate-900">₹{price?.toLocaleString()}</span>
+                                        </div>
+                                     );
+                                  })}
+                               </div>
+                            </div>
+                         )}
+
+                         {/* Core Metrics Grid */}
+                         <div className="grid grid-cols-3 gap-2">
+                            <div className="bg-white p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
+                               <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Obs Base</span>
+                               <span className="text-xs font-black font-mono text-slate-900">₹{trade.entryPrice?.toLocaleString()}</span>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
+                               <span className="text-[7.5px] font-black text-fuchsia-500 uppercase tracking-widest leading-none mb-1">Target</span>
+                               <span className="text-xs font-black font-mono text-fuchsia-600">₹{trade.target?.toLocaleString()}</span>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
+                               <span className="text-[7.5px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-1">ROI (Est.)</span>
+                               <span className="text-xs font-black font-mono text-emerald-600">+{trade.targetGap?.toFixed(1)}%</span>
+                            </div>
+                         </div>
+
+                         {/* Audit / PE / Score row */}
+                         <div className="flex items-center justify-between bg-white px-3 py-2.5 rounded-[0.75rem] border border-slate-100/80 shadow-sm text-[10px]">
+                            <div className="flex items-center space-x-1.5">
+                               {trade.isPass !== false ? (
+                                  <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[7.5px] font-black">PASS</span>
+                               ) : (
+                                  <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded text-[7.5px] font-black">OBS</span>
+                               )}
+                               <span className="font-extrabold text-slate-700">Audit Score:</span>
+                               <span className="font-black text-slate-900">{trade.score || 0}</span>
+                            </div>
+                            {trade.peRatio > 0 && (
+                               <div className="flex items-center space-x-1 font-mono">
+                                  <span className="font-extrabold text-slate-400 uppercase text-[8px] tracking-wider">PE:</span>
+                                  <span className="font-black text-slate-900">{trade.peRatio?.toFixed(1)}</span>
+                               </div>
+                            )}
+                         </div>
+
+                         {/* Action Buttons */}
+                         <div className="flex items-center gap-2 pt-1">
+                            <button 
+                               onClick={(e) => { e.stopPropagation(); onToggleWatchlist?.(trade.symbol); }}
+                               className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 border transition-all ${
+                                  isStarred 
+                                     ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/10' 
+                                     : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                               }`}
+                            >
+                               <StarIcon className={`h-3.5 w-3.5 ${isStarred ? 'fill-current text-white' : ''}`} />
+                               {isStarred ? 'Watchlisted' : 'Watchlist'}
+                            </button>
+
+                            <button 
+                               onClick={(e) => { e.stopPropagation(); handleShareSignal(trade, 'telegram'); }}
+                               className="px-3.5 py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center"
+                            >
+                               <Share2 className="h-3.5 w-3.5" />
+                            </button>
+
+                            <Link 
+                               to={`/stock/${trade.symbol}`}
+                               className="flex-1 py-2 bg-slate-950 text-white text-[9px] font-black uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-1 hover:bg-black transition-all"
+                            >
+                               <InfoIcon className="h-3.5 w-3.5" />
+                               Audit details
+                            </Link>
+                         </div>
+                      </div>
+                   )}
                 </motion.div>
               );
             })}

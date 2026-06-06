@@ -53,11 +53,11 @@ const StockFundamentalsPage: React.FC = () => {
   const isPEOvervalued = peRatio > avgMedian && avgMedian > 0;
 
   return (
-    <div className="flex-1 flex flex-col font-sans text-slate-800 bg-[#f8fafc] h-screen overflow-hidden">
+    <div className="flex-1 flex flex-col font-sans text-slate-800 bg-[#f8fafc] lg:h-screen lg:overflow-hidden overflow-y-auto pb-24 md:pb-0">
       
       {/* COMPACT HEADER */}
-      <div className="bg-white border-b border-slate-200 py-3 shadow-sm sticky top-0 z-10">
-        <div className="max-w-[1600px] mx-auto px-6 flex justify-between items-center">
+      <div className="bg-white border-b border-slate-200 py-3.5 shadow-sm sticky top-0 z-10">
+        <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center space-x-6">
               <div className="space-y-0.5">
                  <div className="flex items-center space-x-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">
@@ -73,14 +73,14 @@ const StockFundamentalsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-8">
+            <div className="flex items-center justify-between md:justify-end w-full md:w-auto space-x-8">
                <div className="flex flex-col items-end">
                  <span className="text-xl font-black text-slate-900 tracking-tighter leading-none">₹{data?.price?.toLocaleString() || '-'}</span>
                  <div className={`font-black text-[9px] ${Number(data?.change) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {Number(data?.change) >= 0 ? '▲' : '▼'} {Math.abs(Number(data?.change) || 0).toFixed(2)}%
                  </div>
                </div>
-               <div className="h-8 w-px bg-slate-100" />
+               <div className="h-8 w-px bg-slate-200" />
                <div className="text-right">
                   <div className="text-2xl font-black tracking-tighter text-slate-900 leading-none">{score.toFixed(0)}<span className="text-xs text-slate-300 ml-0.5">/100</span></div>
                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Audit Score</span>
@@ -90,10 +90,10 @@ const StockFundamentalsPage: React.FC = () => {
       </div>
 
       {/* FIT-TO-SCREEN CONTENT */}
-      <main className="max-w-[1600px] mx-auto w-full flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-4 p-6">
+      <main className="max-w-[1600px] mx-auto w-full flex-1 lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-4 p-6">
         
-        <div className="lg:col-span-8 space-y-4 overflow-y-auto pr-2 no-scrollbar">
-          <div className="grid grid-cols-4 gap-4">
+        <div className="lg:col-span-8 space-y-4 lg:overflow-y-auto pr-2 no-scrollbar">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Market Cap</span>
                 <p className="text-lg font-black text-slate-900 leading-tight">{formatCr(data?.marketCap)}</p>

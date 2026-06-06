@@ -469,7 +469,7 @@ const TradeJournalPage: React.FC = () => {
          {selectedIds.length > 0 && <button onClick={handleBulkDelete} className="flex items-center space-x-2 px-6 py-3 bg-red-50 text-red-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3 w-3" /><span>Delete ({selectedIds.length})</span></button>}
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden relative">
+      <div className="hidden md:flex flex-1 flex flex-col min-h-0 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden relative">
          <div className="flex-1 overflow-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
                <thead>
@@ -546,6 +546,134 @@ const TradeJournalPage: React.FC = () => {
                </tbody>
             </table>
          </div>
+      </div>
+
+      {/* Mobile Positions / History Card List */}
+      <div className="md:hidden space-y-3 px-2 flex-1 overflow-auto py-2 custom-scrollbar">
+         {processedTrades.map((t) => {
+            const isGain = t.pnl >= 0;
+            return (
+              <div 
+                 key={t.id} 
+                 className="bg-white rounded-[1.25rem] border border-slate-100/80 shadow-md shadow-slate-100 p-4 space-y-3 animate-in fade-in duration-250"
+              >
+                 {/* Card Header */}
+                 <div className="flex justify-between items-start">
+                    <div className="flex flex-col">
+                       <div className="flex items-center space-x-2">
+                          <span className="text-sm font-black text-slate-900 tracking-tight font-mono uppercase">{t.symbol}</span>
+                          {activeSegment === 'OPEN' && (
+                             <span className={`px-1.5 py-0.5 rounded-[0.25rem] text-[6.5px] font-black border tracking-wider leading-none ${
+                                t.level === 'A' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                t.level === 'B' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                t.level === 'C' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                                'bg-slate-50 text-slate-600 border-slate-200'
+                             }`}>
+                                L-{t.level}
+                             </span>
+                          )}
+                       </div>
+                       <span className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t.strategy}</span>
+                    </div>
+                    
+                    <div className="text-right flex flex-col items-end">
+                       <span className={`text-sm font-black font-mono ${isGain ? 'text-green-600' : 'text-red-600'}`}>
+                          ₹{Math.abs(t.pnl).toLocaleString()}
+                       </span>
+                       <span className={`text-[8.5px] font-black font-mono mt-0.5 ${isGain ? 'text-green-600' : 'text-red-600'}`}>
+                          {isGain ? '+' : ''}{t.pnlPer.toFixed(2)}%
+                       </span>
+                    </div>
+                 </div>
+
+                 {/* Metrics Grid */}
+                 <div className="grid grid-cols-2 gap-2 bg-slate-50/50 p-3 rounded-[0.75rem] border border-slate-100/50 text-[10px] font-semibold text-slate-600">
+                    {activeSegment === 'OPEN' ? (
+                       <>
+                          <div className="flex justify-between">
+                             <span className="text-slate-400 uppercase text-[8px] font-bold tracking-wider">Qty:</span>
+                             <span className="font-bold font-mono text-slate-900">{t.quantity}</span>
+                          </div>
+                          <div className="flex justify-between">
+                             <span className="text-slate-400 uppercase text-[8px] font-bold tracking-wider">Avg Price:</span>
+                             <span className="font-bold font-mono text-slate-900">₹{t.entry_price.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                             <span className="text-slate-400 uppercase text-[8px] font-bold tracking-wider">CMP:</span>
+                             <span className="font-bold font-mono text-blue-600">₹{t.cmp.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                             <span className="text-slate-400 uppercase text-[8px] font-bold tracking-wider">Target:</span>
+                             <span className="font-bold font-mono text-slate-900">₹{t.targetVal.toLocaleString()}</span>
+                          </div>
+                       </>
+                    ) : (
+                       <>
+                          <div className="flex justify-between">
+                             <span className="text-slate-400 uppercase text-[8px] font-bold tracking-wider">Qty:</span>
+                             <span className="font-bold font-mono text-slate-900">{t.quantity}</span>
+                          </div>
+                          <div className="flex justify-between">
+                             <span className="text-slate-400 uppercase text-[8px] font-bold tracking-wider">Hold Days:</span>
+                             <span className="font-bold font-mono text-slate-900">{t.days} Days</span>
+                          </div>
+                          <div className="flex justify-between">
+                             <span className="text-slate-400 uppercase text-[8px] font-bold tracking-wider">Entry Price:</span>
+                             <span className="font-bold font-mono text-slate-900">₹{t.entry_price.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                             <span className="text-slate-400 uppercase text-[8px] font-bold tracking-wider">Sell Price:</span>
+                             <span className="font-bold font-mono text-slate-900">₹{t.exit_price?.toLocaleString() || '-'}</span>
+                          </div>
+                       </>
+                    )}
+                 </div>
+
+                 {/* Date & Actions row */}
+                 <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1">
+                    <div>
+                       {activeSegment === 'OPEN' ? (
+                          <span>Opened: <strong className="text-slate-700">{t.entry_date}</strong></span>
+                       ) : (
+                          <span>Period: <strong className="text-slate-700">{t.entry_date} - {t.exit_date}</strong></span>
+                       )}
+                    </div>
+                    
+                    <div className="flex items-center space-x-1.5">
+                       <button 
+                          onClick={() => handleShareTrade(t)} 
+                          className="p-1.5 bg-slate-50 text-slate-500 border border-slate-100 rounded-lg hover:bg-slate-100"
+                       >
+                          <Share2 className="h-3.5 w-3.5" />
+                       </button>
+
+                       {activeSegment === 'OPEN' ? (
+                          <button 
+                             onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} 
+                             className="px-2.5 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[8.5px] font-black uppercase tracking-wider flex items-center gap-1 hover:bg-emerald-600 hover:text-white"
+                          >
+                             <CheckCircle2 className="h-3 w-3" /> Close
+                          </button>
+                       ) : (
+                          <button 
+                             onClick={() => { if(window.confirm('Re-open?')) { fetch(`${API_URL}/api/trades/${t.id}/reopen`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} 
+                             className="p-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg hover:bg-blue-600 hover:text-white"
+                          >
+                             <RotateCcw className="h-3.5 w-3.5" />
+                          </button>
+                       )}
+
+                       <button 
+                          onClick={() => { if(window.confirm('Delete?')) { fetch(`${API_URL}/api/trades/${t.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} 
+                          className="p-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white"
+                       >
+                          <Trash2 className="h-3.5 w-3.5" />
+                       </button>
+                    </div>
+                 </div>
+              </div>
+            );
+         })}
       </div>
 
       {showAddModal && (

@@ -34,13 +34,26 @@ export async function initSnapshotCache() {
     console.error('❌ Failed to load snapshot cache from Supabase:', e.message);
     try {
       console.log('🔄 Attempting local fallback: loading from market_snapshot.json...');
-      const fallbackPath = path.resolve(process.cwd(), 'market_snapshot.json');
-      if (fs.existsSync(fallbackPath)) {
-        const fileContent = fs.readFileSync(fallbackPath, 'utf8');
-        snapshotCache = JSON.parse(fileContent);
-        console.log(`✅ Snapshot cache successfully restored from local fallback (${Object.keys(snapshotCache).length} symbols)`);
-      } else {
-        console.error('❌ Local fallback failed: market_snapshot.json does not exist');
+      const pathsToTry = [
+        path.resolve(process.cwd(), 'market_snapshot.json'),
+        path.resolve(process.cwd(), 'backend', 'market_snapshot.json'),
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../market_snapshot.json'),
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../market_snapshot.json'),
+        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../market_snapshot.json')
+      ];
+      let loaded = false;
+      for (const p of pathsToTry) {
+        if (fs.existsSync(p)) {
+          console.log(`💾 Found market_snapshot.json at: ${p}`);
+          const fileContent = fs.readFileSync(p, 'utf8');
+          snapshotCache = JSON.parse(fileContent);
+          console.log(`✅ Snapshot cache successfully restored from local fallback (${Object.keys(snapshotCache).length} symbols)`);
+          loaded = true;
+          break;
+        }
+      }
+      if (!loaded) {
+        console.error('❌ Local fallback failed: market_snapshot.json does not exist in any searched paths');
         snapshotCache = {};
       }
     } catch (localErr: any) {
