@@ -635,6 +635,56 @@ app.patch('/api/trades/:id', authenticateToken, async (req: any, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// ── Single trade delete ───────────────────────────────────────────────────────
+app.delete('/api/trades/:id', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const result = await db.run(
+      'DELETE FROM trades WHERE id = ? AND user_id = ?',
+      [req.params.id, req.user.id]
+    );
+    res.json({ success: true });
+  } catch (e: any) {
+    console.error('🔥 [Trade Delete Error]:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Bulk trade delete ─────────────────────────────────────────────────────────
+app.post('/api/trades/batch-delete', authenticateToken, async (req: any, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'No IDs provided.' });
+    }
+    const db = getDB();
+    const placeholders = ids.map(() => '?').join(', ');
+    await db.run(
+      `DELETE FROM trades WHERE user_id = ? AND id IN (${placeholders})`,
+      [req.user.id, ...ids]
+    );
+    res.json({ success: true, deleted: ids.length });
+  } catch (e: any) {
+    console.error('🔥 [Batch Delete Error]:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Reopen a closed trade ─────────────────────────────────────────────────────
+app.patch('/api/trades/:id/reopen', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    await db.run(
+      'UPDATE trades SET status = ?, exit_date = NULL, exit_price = NULL WHERE id = ? AND user_id = ?',
+      ['OPEN', req.params.id, req.user.id]
+    );
+    res.json({ success: true });
+  } catch (e: any) {
+    console.error('🔥 [Trade Reopen Error]:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/marketplace', async (req, res) => {
   const plans = [
     { 

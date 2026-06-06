@@ -85,6 +85,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const searchParams = new URLSearchParams(location.search);
   const strategyId = searchParams.get('strategy') || 'SR_STRATEGY'; // Default to a locked strategy
 
+  // Determine route context so tabs never bleed between screener and portfolio
+  const isPortfolioRoute = location.pathname === '/portfolio';
+  const isMarketRoute = location.pathname === '/market';
+  const isScreenerRoute = location.pathname === '/screener';
+
   const currentStrategy = STRATEGIES.find(s => s.id === strategyId) || STRATEGIES[0];
   const lockedStrategies = STRATEGIES.filter(s => s.isLocked);
 
@@ -92,6 +97,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const [error, setError] = useState<string | null>(null);
   const [activeBasket, setActiveBasket] = useState<string>(currentStrategy.baskets[0]);
   const [activeTab, setActiveTab] = useState<'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral'>(defaultTab);
+
+  // Locked tab setter — prevents screener route from ever showing portfolio tab & vice versa
+  const handleSetActiveTab = (tab: 'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral') => {
+    if (isPortfolioRoute) return; // portfolio route tab is fixed
+    if (isMarketRoute) return;   // market route tab is fixed
+    if (isScreenerRoute && tab === 'portfolio') return; // screener can't show portfolio
+    setActiveTab(tab);
+  };
   const [showGuide, setShowGuide] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showBrokerHub, setShowBrokerHub] = useState(false);
@@ -486,16 +499,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
            </div>
             <div className="space-y-1">
               <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">
-                {activeTab === 'portfolio' ? 'Wealth Desk' : activeTab === 'hold' ? 'Watchlist' : 'Matrix Screener'}
+                {isPortfolioRoute ? 'Wealth Desk' : isMarketRoute ? 'Market Watch' : 'Matrix Screener'}
               </h1>
               <p className="text-[10px] font-bold text-blue-600 uppercase tracking-[0.2em] pl-1">
-                {activeTab === 'portfolio' ? 'Custom Portfolio Asset Ledger' : currentStrategy.name}
+                {isPortfolioRoute ? 'Custom Portfolio Asset Ledger' : currentStrategy.name}
               </p>
            </div>
         </div>
         
         <div className="flex flex-wrap items-center gap-4">
-          {activeTab === 'portfolio' && (
+          {isPortfolioRoute && (
             <div className="flex flex-wrap gap-2.5">
               <button 
                 onClick={handleClearPortfolio} 
@@ -521,7 +534,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
             </div>
           )}
 
-          {activeTab !== 'portfolio' && (
+          {!isPortfolioRoute && (
             <>
               <div className="flex flex-col space-y-1">
                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] pl-1.5">Active Universe</span>
@@ -580,8 +593,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         </div>
       </div>
 
-      {/* Unified Portfolio Summary */}
-      {(activeTab === 'portfolio' || ((activeTab === 'hold' || activeTab === 'open') && portfolioSummary.totalInvested > 0)) && (
+      {/* Unified Portfolio Summary — only on Wealth Desk (/portfolio) */}
+      {isPortfolioRoute && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -654,7 +667,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                     onToggleWatchlist={handleToggleWatchlist}
                     onUpdateHolding={handleUpdateHolding}
                     activeTab={activeTab}
-                    setActiveTab={setActiveTab}
+                    setActiveTab={handleSetActiveTab}
                     strategyId={strategyId}
                     portfolioCount={portfolioCount}
                     openCount={openCount}

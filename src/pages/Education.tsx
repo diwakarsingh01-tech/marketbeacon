@@ -1,324 +1,757 @@
 import React, { useState } from 'react';
-import { 
-  BookOpen, 
-  Target, 
-  TrendingUp, 
-  ShieldCheck, 
-  ChevronRight, 
-  Info,
-  Layers,
-  BarChart3,
-  Calendar,
-  AlertTriangle,
-  Zap
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  BookOpen, Target, TrendingUp, ShieldCheck, ChevronRight,
+  Info, Layers, BarChart3, Calendar, AlertTriangle, Zap,
+  MapPin, LayoutGrid, Briefcase, BookMarked, Store,
+  LineChart, Activity, BarChart2, RefreshCw, Upload,
+  FileText, PieChart, Search, Eye, Lock, Compass
 } from 'lucide-react';
 
-const StrategyEducation: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('fundamentals');
+// ─────────────────────────────────────────────────────────────────────────────
+// DATA: STRATEGIES (exact names from the platform)
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const lessons = [
-    {
-      id: 'fundamentals',
-      title: 'End-to-End Core Rules',
-      icon: ShieldCheck,
-      color: 'text-emerald-600',
-      category: 'Selection',
-      content: {
-        logic: 'The complete Institutional-Grade Alpha 40 constraints applied to all system portfolios.',
-        checks: [
-          'Market Caps: Large (≥ 45,000 Cr), Mid (≥ 15,000 Cr), Small (< 15,000 Cr).',
-          'Fundamental Audit: Minimum 70/100 Score. D/E ≤ 0.2 (except BFSI). Pledged < 2%.',
-          'Entry Window: Upside strictly capped at 2.0%. Drawdowns allowed up to 30.0%.',
-          'Dynamic Allocation: Large Cap (50%), Mid Cap (30%), Small Cap (20%) strictly enforced.',
-          'Sector Hardening: Maximum 20% exposure to any single industry.'
-        ],
-        drawdown: 'Ensure discipline during accumulation (A, B, C, D tranches) down to -30%.'
+const strategies = [
+  {
+    id: 'core_rules',
+    name: 'Core Selection Rules',
+    subtitle: 'Universal Institutional Filter',
+    tier: 'all',
+    icon: ShieldCheck,
+    color: 'emerald',
+    category: 'Foundation',
+    tagline: 'Every stock must clear these gates before any strategy applies.',
+    sections: [
+      {
+        heading: 'Market Cap Classification',
+        body: 'Large Cap ≥ ₹45,000 Cr · Mid Cap ≥ ₹15,000 Cr · Small Cap < ₹15,000 Cr. Portfolio allocation: Large 50% · Mid 30% · Small 20%.'
+      },
+      {
+        heading: 'Fundamental Audit (Min 70/100)',
+        body: 'D/E Ratio ≤ 0.2 (BFSI exempt). Pledged Shares < 2%. PE Ratio ≤ Industry Median. Consistent revenue & profit growth verified TTM.'
+      },
+      {
+        heading: 'Entry Window Rule',
+        body: 'Upside capped at 2% from entry — price must be at or near the research level. Drawdowns allowed up to -30% with ABCD averaging.'
+      },
+      {
+        heading: 'Sector Hardening',
+        body: 'Maximum 20% portfolio exposure to any single sector. Prevents concentration risk.'
+      },
+      {
+        heading: 'ABCD Tranche Averaging',
+        body: 'A → First entry. B → -10%. C → -20%. D → -30%. Each tranche equal weight. Full position at D.'
       }
-    },
-    {
-      id: 'envelope',
-      title: 'Institutional Floor',
-      icon: Target,
-      color: 'text-blue-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Identifies institutional demand zones based on statistical deviation benchmarks.',
-        entry: 'Price touches or closes near the lower research boundary.',
-        exit: 'Model Objective is the mathematical recovery to the upper benchmark.',
-        tranches: 'Accumulation starts at Tranche A, with B/C/D laddering if price falls further.'
+    ],
+    guardrail: 'Never skip the fundamental audit. A low-priced stock with weak fundamentals is a trap, not an opportunity.'
+  },
+  {
+    id: 'sr_strategy',
+    name: 'Support & Resistance Strategy (S&R)',
+    subtitle: 'Price Action at Key Zones',
+    tier: 'alpha',
+    icon: Activity,
+    color: 'blue',
+    category: 'Alpha Strategy',
+    tagline: 'Identify proven support zones where price has historically reversed. Enter demand, exit supply.',
+    sections: [
+      {
+        heading: 'Entry Logic',
+        body: 'Price revisits a historically validated support zone (multi-touch confirmation). Entry on the 2nd or 3rd retest of the level.'
+      },
+      {
+        heading: 'Model Objective',
+        body: 'Target is the next identified resistance zone. Minimum upside threshold: 20% from entry.'
+      },
+      {
+        heading: 'Qualification',
+        body: 'Support zone must have at least 2 prior clean bounces. Price must not have broken the zone by more than 2% on any prior touch.'
+      },
+      {
+        heading: 'Risk Management',
+        body: 'Stop loss placed 3–5% below the support zone. If price closes below the zone, trade is invalidated.'
       }
-    },
-    {
-      id: 'short_envelope',
-      title: 'Momentum Ceiling',
-      icon: TrendingUp,
-      color: 'text-indigo-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Participation model for stocks in strong primary uptrends.',
-        entry: 'Research entry at the secondary regression line (EMA 200).',
-        exit: 'Model Objective is a +14% recovery move.',
-        notes: 'Focused on high-momentum names that rarely revisit deep discount zones.'
+    ],
+    guardrail: 'A support zone that breaks decisively becomes resistance. Never average into a broken support.'
+  },
+  {
+    id: 'institutional_reset',
+    name: 'Institutional Reset (67%)',
+    subtitle: 'Deep Recovery from All-Time High',
+    tier: 'alpha',
+    icon: RefreshCw,
+    color: 'amber',
+    category: 'Alpha Strategy',
+    tagline: 'Stocks that have corrected 67%+ from their ATH with intact fundamentals offer asymmetric risk-reward.',
+    sections: [
+      {
+        heading: 'Entry Trigger',
+        body: 'Drawdown ≥ 66% from All-Time High. Fundamental score must still be ≥ 70/100. Institutional holding > 75%.'
+      },
+      {
+        heading: 'Model Objective',
+        body: 'Return to previous ATH. This typically represents a 200%+ recovery opportunity from the reset zone.'
+      },
+      {
+        heading: 'Validation Checks',
+        body: 'Revenue must not have declined > 20% TTM. Pledging < 2%. D/E still ≤ 0.2. No ongoing litigation or governance issue.'
+      },
+      {
+        heading: 'Timeframe',
+        body: 'Medium to long-term hold. ATH recovery cycles typically take 12–36 months. ABCD averaging applied if price falls further.'
       }
-    },
-    {
-      id: 'bollinger',
-      title: 'Volatility Channel',
-      icon: BarChart3,
-      color: 'text-emerald-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Mean reversion model based on statistical volatility boundaries.',
-        entry: 'Price reaches the lower volatility research band.',
-        exit: 'Model Objective is the upper volatility benchmark.',
-        risk: 'Risk is managed by verifying a narrow low-volatility squeeze before entry.'
+    ],
+    guardrail: 'A 67% drawdown does not guarantee recovery. Fundamentals must remain intact — this is non-negotiable.'
+  },
+  {
+    id: 'velocity_retest',
+    name: 'Velocity Retest (20%)',
+    subtitle: 'High-Momentum Retest Entry',
+    tier: 'alpha',
+    icon: Zap,
+    color: 'indigo',
+    category: 'Alpha Strategy',
+    tagline: 'Stocks that rallied 20%+ from a base, then pulled back to retest the rally origin — offering a precision re-entry.',
+    sections: [
+      {
+        heading: 'Setup Identification',
+        body: 'Stock rallied ≥ 20% from a base (Rally Start Low) within 12 months. Price now retests the Rally Start Low within the same 12-month window.'
+      },
+      {
+        heading: 'Entry Condition',
+        body: 'Entry valid only if the original rally started below the 200 DMA (deep demand confirmation). Retest within 5% of Rally Start Low.'
+      },
+      {
+        heading: 'Model Objective',
+        body: 'Previous rally peak price. This recreates the full prior move from the origin — typically 20–50% upside.'
+      },
+      {
+        heading: 'Invalidation',
+        body: 'If price closes more than 8% below Rally Start Low, the setup is cancelled. Rally was likely a dead-cat bounce.'
       }
-    },
-    {
-      id: 'quantum',
-      title: 'Quantum Stacking',
-      icon: Layers,
-      color: 'text-purple-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Identifies extreme exhaustion zones through moving average convergence.',
-        accumulation: 'Bearish Stacking (Price < SMA 20 < SMA 50 < SMA 200).',
-        objective: 'Full structural reversal (Model Objective reached).',
-        caveat: 'Requires 100-point fundamental confirmation to avoid value traps.'
+    ],
+    guardrail: 'Never enter a Velocity Retest if the original rally started above the 200 DMA. The safety line is mandatory.'
+  },
+  {
+    id: 'sma_bcd',
+    name: 'SMA + BCD',
+    subtitle: 'Moving Average Convergence + ABCD Pattern',
+    tier: 'pro',
+    icon: LineChart,
+    color: 'purple',
+    category: 'Pro Strategy',
+    tagline: 'When price stacks below all key moving averages (bearish stacking) and forms an ABCD base — the reversal setup is complete.',
+    sections: [
+      {
+        heading: 'SMA Bearish Stacking',
+        body: 'Price < SMA 20 < SMA 50 < SMA 200. This alignment confirms maximum short-term pessimism — the ideal accumulation condition.'
+      },
+      {
+        heading: 'BCD Averaging Integration',
+        body: 'B → Entry at SMA 20. C → Entry at SMA 50. D → Entry at SMA 200. Equal weight each tranche.'
+      },
+      {
+        heading: 'Model Objective',
+        body: 'Full structural reversal back above SMA 20. Minimum 15% move expected. Ideal target is prior resistance.'
+      },
+      {
+        heading: 'Confirmation',
+        body: 'Requires fundamental audit score ≥ 70. Volume must expand at the D-level entry to confirm institutional accumulation.'
       }
-    },
-    {
-      id: 'annual',
-      title: 'Annual Range Matrix',
-      icon: Calendar,
-      color: 'text-rose-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Mean reversion system based on annual price extremes.',
-        accumulation: 'Accumulation at the 52-week statistical low.',
-        objective: 'Research objective at the 52-week statistical high.',
-        intent: 'Elite bluechips frequently rebound from annual support levels.'
+    ],
+    guardrail: 'Bearish stacking without fundamental support is a falling knife. Always confirm fundamentals first.'
+  },
+  {
+    id: 'rhs_abcd',
+    name: 'Reverse Head & Shoulder + ABCD',
+    subtitle: 'Classic Reversal Pattern with ABCD Averaging',
+    tier: 'pro',
+    icon: TrendingUp,
+    color: 'cyan',
+    category: 'Pro Strategy',
+    tagline: 'The Reverse H&S pattern signals the end of a downtrend. ABCD averaging at the right shoulder gives optimal risk-reward.',
+    sections: [
+      {
+        heading: 'Pattern Structure',
+        body: 'Left Shoulder → Head (new low) → Right Shoulder (higher low than head). Structural symmetry must be > 90%.'
+      },
+      {
+        heading: 'Neckline Breakout',
+        body: 'Confirmed breakout above the neckline (connecting left & right shoulder peaks) with expanding volume.'
+      },
+      {
+        heading: 'ABCD at Right Shoulder',
+        body: 'A → Start of right shoulder. B/C/D → If shoulder deepens, average down. Entry at neckline retest post-breakout is ideal.'
+      },
+      {
+        heading: 'Model Objective',
+        body: 'Pattern height added to neckline breakout point. Typically 25–40% move from optimal entry.'
       }
-    },
-    {
-      id: 'recovery',
-      title: 'Deep Recovery Audit',
-      icon: ShieldCheck,
-      color: 'text-amber-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Capitalizes on the proprietary 67% All-Time High reset cycle.',
-        entry: 'Drawdown >= 66% with improving fundamental financials.',
-        exit: 'Model Objective is the return to the previous peak.',
-        audit: 'Requires institutional ownership matrix > 75%.'
+    ],
+    guardrail: 'Pattern fails if right shoulder goes lower than the head. Exit immediately if this happens post-entry.'
+  },
+  {
+    id: 'cup_handle',
+    name: 'Cup with Handle + ABCD',
+    subtitle: 'Rounded Base Breakout',
+    tier: 'pro',
+    icon: Target,
+    color: 'orange',
+    category: 'Pro Strategy',
+    tagline: 'Rounded cup base followed by a tight handle consolidation. Breakout above handle resistance initiates the markup phase.',
+    sections: [
+      {
+        heading: 'Cup Formation',
+        body: 'U-shaped price base (not V-shaped). Duration: 3–12 months. Cup lips must be within 5% price variance of each other.'
+      },
+      {
+        heading: 'Handle Structure',
+        body: 'Tight consolidation in upper 30% of cup depth. Handle depth ≤ 15% from cup lip. Low-volume drift is ideal.'
+      },
+      {
+        heading: 'ABCD Entry Optimisation',
+        body: 'A → Handle entry. B/C/D → If handle dips below midpoint, average into the base. Ideal entry = handle breakout point.'
+      },
+      {
+        heading: 'Model Objective',
+        body: 'Cup depth added to breakout point. E.g., if cup base was ₹100 and lip ₹140 — target is ₹140 + ₹40 = ₹180.'
       }
-    },
-    {
-      id: 'velocity',
-      title: 'Velocity Retest',
-      icon: Zap,
-      color: 'text-blue-50',
-      category: 'Strategy',
-      content: {
-        logic: 'Identifies high-momentum bursts and enters on the origin retest.',
-        entry: 'Retest of the Rally Start Low within 1 year of the rally.',
-        exit: 'Model Objective is the previous rally peak price.',
-        risk: 'Entry valid only if the rally started below the 200 DMA safety line.'
+    ],
+    guardrail: 'A V-shaped recovery is not a cup — skip it. Only smooth, gradual U-shaped bases qualify.'
+  },
+  {
+    id: '52w_high_low',
+    name: '52-Week High Low',
+    subtitle: 'Annual Statistical Range System',
+    tier: 'pro',
+    icon: Calendar,
+    color: 'rose',
+    category: 'Pro Strategy',
+    tagline: 'Mean reversion from annual price extremes. Elite bluechips frequently rebound from 52-week lows.',
+    sections: [
+      {
+        heading: 'Entry at 52-Week Low',
+        body: 'Price touches or falls within 3% of the 52-week statistical low. Fundamental integrity must be verified (score ≥ 70).'
+      },
+      {
+        heading: 'Model Objective',
+        body: '52-week statistical high. Represents the full annual range recovery — typically 30–80% move.'
+      },
+      {
+        heading: 'Stock Qualification',
+        body: 'Large or Mid Cap only. Consistent dividend history preferred. No governance or pledging red flags.'
+      },
+      {
+        heading: 'ABCD Application',
+        body: 'A → At 52-week low. B/C/D → If price continues declining, average at -8%, -16%, -24% below the annual low.'
       }
-    },
-    {
-      id: 'pivot',
-      title: 'Structural Pivot',
-      icon: Target,
-      color: 'text-orange-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Rounded accumulation phase followed by breakout confirmation.',
-        structure: 'U-shaped base (Cup) and low-volatility handle formation.',
-        accuracy: 'Lips must be perfectly aligned within 5% price variance.',
-        abcd_rule: 'Algorithmic entry preferred at B/C/D levels for optimal risk-reward.'
+    ],
+    guardrail: 'New 52-week lows in a fundamentally deteriorating business are traps. Audit financials first — always.'
+  },
+  {
+    id: 'bollinger',
+    name: 'Bollinger Band',
+    subtitle: 'Statistical Volatility Channel',
+    tier: 'free',
+    icon: BarChart3,
+    color: 'emerald',
+    category: 'Free Strategy',
+    tagline: 'Mean reversion model using statistical volatility bands. Price at the lower band with low volatility = entry signal.',
+    sections: [
+      {
+        heading: 'Lower Band Entry',
+        body: 'Price touches or closes at the lower Bollinger Band (2 standard deviations below 20-period MA). Low Band Width preferred.'
+      },
+      {
+        heading: 'Band Width Squeeze',
+        body: 'Low volatility squeeze (narrow bands) before entry confirms the setup. Expansion after squeeze drives the move.'
+      },
+      {
+        heading: 'Model Objective',
+        body: 'Upper Bollinger Band. Typically 8–15% move depending on the band width at entry.'
+      },
+      {
+        heading: 'Risk Control',
+        body: 'Stop loss: Close below lower band by > 1%. If price walks the lower band for 3+ sessions, exit and reassess.'
       }
-    },
-    {
-      id: 'reversal',
-      title: 'Dynamic Reversal',
-      icon: TrendingUp,
-      color: 'text-cyan-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Geometric identification of trend exhaustion and reversal.',
-        structure: 'Multi-pivot structure (Shoulder-Head-Shoulder sequence).',
-        accuracy: 'Structural symmetry must be > 95% for model qualification.',
-        abcd_rule: 'Uses retrace averaging if direct breakout objective is < 30%.'
+    ],
+    guardrail: 'In a strong downtrend, price can "walk" the lower band for weeks. Always wait for the squeeze confirmation.'
+  },
+  {
+    id: 'envelope_long',
+    name: 'Envelope Long',
+    subtitle: 'Institutional Demand Zone (Lower Band)',
+    tier: 'free',
+    icon: Layers,
+    color: 'blue',
+    category: 'Free Strategy',
+    tagline: 'Identifies statistical lower deviation from a moving average — marking institutional demand zones for long entries.',
+    sections: [
+      {
+        heading: 'Entry Signal',
+        body: 'Price touches or closes near the lower envelope boundary (typically 10–15% deviation below MA). Confirms institutional demand zone.'
+      },
+      {
+        heading: 'Model Objective',
+        body: 'Upper envelope boundary — the mathematical recovery to the mean and beyond. Typically 20–25% upside.'
+      },
+      {
+        heading: 'ABCD Averaging',
+        body: 'A → Lower envelope touch. B/C/D → If price falls further, ladder entries at equal intervals toward the extreme lower band.'
+      },
+      {
+        heading: 'Timeframe',
+        body: 'Weekly chart preferred for envelope calculation. Reliable on large caps with high institutional participation.'
       }
-    },
-    {
-      id: 'supply',
-      title: 'Supply-Demand Core',
-      icon: Layers,
-      color: 'text-teal-600',
-      category: 'Strategy',
-      content: {
-        logic: 'Identification of historical institutional demand/supply clusters.',
-        rebound_rule: 'Requires multi-touch historical validation of the demand zone.',
-        upside_rule: 'Model objective must be > 30% above the demand floor.',
-        fundamental_check: 'Ensures net-margin stability during retest phase.'
+    ],
+    guardrail: 'Never enter an envelope long in a stock undergoing fundamental deterioration. The envelope does not protect against bad businesses.'
+  },
+  {
+    id: 'envelope_short',
+    name: 'Envelope Short',
+    subtitle: 'Momentum Continuation (Upper Band)',
+    tier: 'free',
+    icon: TrendingUp,
+    color: 'violet',
+    category: 'Free Strategy',
+    tagline: 'Participation model for stocks in strong uptrends. Entry near the secondary regression line (EMA 200) during pullbacks.',
+    sections: [
+      {
+        heading: 'Entry Signal',
+        body: 'Price pulls back to the EMA 200 or secondary regression line in a confirmed uptrend (higher highs and higher lows structure).'
+      },
+      {
+        heading: 'Model Objective',
+        body: '+14% recovery move from entry. Target is the upper envelope boundary — the momentum continuation zone.'
+      },
+      {
+        heading: 'Stock Criteria',
+        body: 'High-momentum names with strong institutional interest. Stock should rarely revisit deep discount zones. Relative strength > market.'
+      },
+      {
+        heading: 'Risk Control',
+        body: 'Stop loss: Close below EMA 200. If the uptrend structure breaks (lower low formation), exit immediately.'
       }
-    }
-  ];
+    ],
+    guardrail: 'This is a momentum continuation strategy, not a reversal play. Only use in confirmed uptrends.'
+  }
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DATA: WEBSITE TOUR
+// ─────────────────────────────────────────────────────────────────────────────
+
+const tourSections = [
+  {
+    id: 'alpha_hub',
+    name: 'Alpha Hub',
+    path: '/alpha-hub',
+    icon: LayoutGrid,
+    color: 'blue',
+    description: 'Your main command center. Shows live market snapshot, top qualified stocks across all strategies, real-time indices, and your portfolio overview at a glance.',
+    features: [
+      'Live market indices (NIFTY, SENSEX, BANK NIFTY)',
+      'Top qualified stocks with audit scores',
+      'Strategy-wise distribution across baskets',
+      'Portfolio P&L quick summary',
+      'Recent signal activity feed'
+    ]
+  },
+  {
+    id: 'screener',
+    name: 'Matrix Screener',
+    path: '/screener',
+    icon: Search,
+    color: 'indigo',
+    description: 'The core signal engine. Real-time scanning across all 336+ tracked stocks filtered by strategy. Tabs show Qualified (entry ready), Neutral (watching), and Rejected (failed audit).',
+    features: [
+      'Qualified tab: Stocks meeting entry criteria now',
+      'Neutral tab: Stocks in observation — not yet actionable',
+      'Rejected tab: Stocks that failed the audit — avoid',
+      'Filter by Active Universe (Growth / Quality / Elite Basket)',
+      'Switch strategy via Model Matrix dropdown',
+      'Export Audit as CSV for offline analysis',
+      'Click any stock → Full Fundamentals page'
+    ]
+  },
+  {
+    id: 'wealth_desk',
+    name: 'Wealth Desk',
+    path: '/portfolio',
+    icon: Briefcase,
+    color: 'emerald',
+    description: 'Your personal portfolio tracker. Upload holdings from your broker, track real-time P&L, see cap architecture, and manage individual positions.',
+    features: [
+      'Upload New Details — import broker CSV (merge or overwrite)',
+      'Remove Old Details — clear the entire ledger',
+      'Add Position manually — symbol, qty, buy price',
+      'Live CMP pulled automatically for each holding',
+      'P&L, Invested Value, Valuation calculated in real time',
+      'Cap Architecture breakdown (Large / Mid / Small %)',
+      'Edit quantity or buy price inline in the table'
+    ]
+  },
+  {
+    id: 'trade_journal',
+    name: 'Trade Journal',
+    path: '/trades',
+    icon: BookMarked,
+    color: 'amber',
+    description: 'A verified trade ledger. Log every trade entry and exit with strategy, level, notes. Close trades to record exits. Re-open if needed. Full CSV import/export.',
+    features: [
+      'Log open trades with entry price, date, strategy, target',
+      'Close a trade → records exit price and P&L automatically',
+      'Re-open closed trades if exit was premature',
+      'Bulk import trades via CSV template download',
+      'Delete individual or bulk trades',
+      'Filter by Open / Closed segment',
+      'Export all trades as CSV for tax/review'
+    ]
+  },
+  {
+    id: 'stock_page',
+    name: 'Stock Fundamentals',
+    path: '/stock/:symbol',
+    icon: FileText,
+    color: 'purple',
+    description: 'Deep-dive into any stock. Full institutional audit — financials, ABCD ladder status, DFH%, sector, market cap, scoring breakdown. Click any stock in the screener to access.',
+    features: [
+      'Institutional audit score (0–100) with breakdown',
+      'Current strategy classification for this stock',
+      'ABCD tranche status and next entry levels',
+      'DFH% (Distance from High) — how far from ATH',
+      'Sector, market cap, and fundamental ratios',
+      'Links to Screener.in and NSE for deeper research'
+    ]
+  },
+  {
+    id: 'marketplace',
+    name: 'Access Licenses',
+    path: '/marketplace',
+    icon: Store,
+    color: 'rose',
+    description: 'Upgrade your access tier. Free gives you basic strategies. Pro unlocks structural patterns and ABCD. Alpha gives full institutional access including the 3 premium strategies.',
+    features: [
+      'Free — Bollinger Band, Envelope Long/Short, basic screener',
+      'Pro — All Free + ABCD patterns, 52W, SMA+BCD, RHS, Cup & Handle',
+      'Alpha — All Pro + S&R, Institutional Reset (67%), Velocity Retest (20%)',
+      'Pay via UPI QR — submit UTR for 15-min activation',
+      'Redeem Voucher for trial access',
+      'Contact Admin for Corporate / Fund deployment'
+    ]
+  }
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COLOUR MAP
+// ─────────────────────────────────────────────────────────────────────────────
+
+const colorMap: Record<string, { bg: string; text: string; border: string; badge: string; badgeText: string; dot: string }> = {
+  blue:    { bg: 'bg-blue-50',    text: 'text-blue-600',   border: 'border-blue-200',   badge: 'bg-blue-600',    badgeText: 'text-white',      dot: 'bg-blue-500' },
+  indigo:  { bg: 'bg-indigo-50',  text: 'text-indigo-600', border: 'border-indigo-200', badge: 'bg-indigo-600',  badgeText: 'text-white',      dot: 'bg-indigo-500' },
+  emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600',border: 'border-emerald-200',badge: 'bg-emerald-600', badgeText: 'text-white',      dot: 'bg-emerald-500' },
+  amber:   { bg: 'bg-amber-50',   text: 'text-amber-600',  border: 'border-amber-200',  badge: 'bg-amber-500',   badgeText: 'text-white',      dot: 'bg-amber-500' },
+  purple:  { bg: 'bg-purple-50',  text: 'text-purple-600', border: 'border-purple-200', badge: 'bg-purple-600',  badgeText: 'text-white',      dot: 'bg-purple-500' },
+  cyan:    { bg: 'bg-cyan-50',    text: 'text-cyan-600',   border: 'border-cyan-200',   badge: 'bg-cyan-600',    badgeText: 'text-white',      dot: 'bg-cyan-500' },
+  orange:  { bg: 'bg-orange-50',  text: 'text-orange-600', border: 'border-orange-200', badge: 'bg-orange-500',  badgeText: 'text-white',      dot: 'bg-orange-500' },
+  rose:    { bg: 'bg-rose-50',    text: 'text-rose-600',   border: 'border-rose-200',   badge: 'bg-rose-600',    badgeText: 'text-white',      dot: 'bg-rose-500' },
+  violet:  { bg: 'bg-violet-50',  text: 'text-violet-600', border: 'border-violet-200', badge: 'bg-violet-600',  badgeText: 'text-white',      dot: 'bg-violet-500' },
+};
+
+const tierBadge: Record<string, { label: string; cls: string }> = {
+  all:   { label: 'All Tiers', cls: 'bg-slate-100 text-slate-600' },
+  free:  { label: 'Free',      cls: 'bg-emerald-100 text-emerald-700' },
+  pro:   { label: 'Pro',       cls: 'bg-blue-100 text-blue-700' },
+  alpha: { label: 'Alpha',     cls: 'bg-indigo-900 text-indigo-100' },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+const EducationPage: React.FC = () => {
+  const [mainTab, setMainTab] = useState<'strategies' | 'tour'>('strategies');
+  const [activeStrategy, setActiveStrategy] = useState('core_rules');
+  const [activeTour, setActiveTour] = useState('alpha_hub');
 
   React.useEffect(() => {
-    // Pillar #1: Canonical Hardening
     const linkCanonical = document.createElement('link');
     linkCanonical.rel = 'canonical';
     linkCanonical.href = 'https://marketbeacon.pro/education';
     document.head.appendChild(linkCanonical);
-
-    // Pillar #4: FAQ Schema (Structured Data)
-    const schema = {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "What is the Institutional Floor strategy?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "The Institutional Floor strategy identifies demand zones where institutional buying typically occurs, based on statistical deviation from moving averages."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How does the Deep Recovery Audit work?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "The Deep Recovery Audit targets stocks with a drawdown of 66% or more from their all-time high, provided they maintain strong institutional ownership and improving fundamentals."
-          }
-        }
-      ]
-    };
-
-    const script = document.createElement('script');
-    script.type = "application/ld+json";
-    script.id = "json-ld-faq";
-    script.text = JSON.stringify(schema);
-    document.head.appendChild(script);
-
-    return () => {
-      document.head.removeChild(linkCanonical);
-      const oldScript = document.getElementById('json-ld-faq');
-      if (oldScript) oldScript.remove();
-    };
+    return () => { document.head.removeChild(linkCanonical); };
   }, []);
 
+  const activeStrat = strategies.find(s => s.id === activeStrategy)!;
+  const activeTourItem = tourSections.find(t => t.id === activeTour)!;
+
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto">
-      <div className="mb-12">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center shadow-xl">
-            <BookOpen className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase italic">Education Center</h1>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">Institutional Knowledge & Logic Guides</p>
-          </div>
-        </div>
-      </div>
+    <div className="bg-[#f8fafc] min-h-screen font-sans overflow-y-auto pb-20">
+      <div className="px-4 md:px-10 py-6 md:py-10 max-w-7xl mx-auto space-y-8">
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Navigation */}
-        <div className="lg:col-span-4 space-y-3">
-          {lessons.map((lesson) => {
-            const Icon = lesson.icon;
-            const isActive = activeTab === lesson.id;
-            return (
-              <button
-                key={lesson.id}
-                onClick={() => setActiveTab(lesson.id)}
-                className={`w-full flex items-center justify-between p-5 rounded-3xl border transition-all ${
-                  isActive 
-                    ? 'bg-white border-blue-600 shadow-xl shadow-blue-100 scale-[1.02] z-10' 
-                    : 'bg-white/50 border-slate-100 hover:border-slate-300 text-slate-500'
-                }`}
-              >
-                <div className="flex items-center space-x-4">
-                  <div className={`p-3 rounded-2xl ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest leading-none mb-1">{lesson.category}</span>
-                    <span className={`text-[13px] font-black uppercase tracking-tight ${isActive ? 'text-slate-900' : ''}`}>
-                      {lesson.title}
-                    </span>
-                  </div>
-                </div>
-                <ChevronRight className={`h-4 w-4 transition-transform ${isActive ? 'translate-x-1 text-blue-600' : 'opacity-0'}`} />
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Content Area */}
-        <div className="lg:col-span-8 bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden min-h-[600px]">
-          {lessons.filter(s => s.id === activeTab).map((lesson) => (
-            <div key={lesson.id} className="p-8 md:p-12 animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col h-full">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center space-x-3">
-                  <lesson.icon className={`h-8 w-8 ${lesson.color}`} />
-                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">{lesson.title}</h2>
-                </div>
-                <span className="px-4 py-1.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-full">{lesson.category}</span>
-              </div>
-
-              <div className="space-y-10 flex-1">
-                <section>
-                  <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center">
-                    <Info className="h-3 w-3 mr-2" /> Essential Concept
-                  </h3>
-                  <p className="text-lg font-bold text-slate-700 leading-relaxed italic border-l-4 border-slate-100 pl-6">
-                    "{lesson.content.logic}"
-                  </p>
-                </section>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {Object.entries(lesson.content).map(([key, value]) => {
-                    if (['logic', 'headline', 'video'].includes(key)) return null;
-                    return (
-                      <div key={key} className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 capitalize">{key.replace('_', ' ')}</h4>
-                        {Array.isArray(value) ? (
-                          <ul className="space-y-3">
-                            {value.map((v, i) => (
-                              <li key={i} className="flex items-start text-[13px] font-bold text-slate-700">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 mr-2 flex-shrink-0" />
-                                {v}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : typeof value === 'string' ? (
-                          <p className="text-[13px] font-bold text-slate-700">{value}</p>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="bg-amber-50 rounded-3xl p-6 border border-amber-100 flex items-start space-x-4">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-                  <div>
-                    <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Institutional Guardrail</h4>
-                    <p className="text-[12px] font-bold text-amber-800 leading-relaxed">
-                      Build confidence with rule-based investing. MarketBeacon shows strategy entries; your execution discipline creates the alpha.
-                    </p>
-                  </div>
-                </div>
-              </div>
+        {/* ── HEADER ── */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-100 pb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center shadow-xl shrink-0">
+              <BookOpen className="h-6 w-6 text-white" />
             </div>
-          ))}
+            <div>
+              <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+                Education Center
+              </h1>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">
+                Strategy Guides · Platform Tour · Institutional Knowledge
+              </p>
+            </div>
+          </div>
+
+          {/* Main tab switcher */}
+          <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 shadow-sm gap-1 w-fit">
+            <button
+              onClick={() => setMainTab('strategies')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                mainTab === 'strategies' ? 'bg-slate-900 text-white shadow' : 'text-slate-400 hover:text-slate-700'
+              }`}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Strategy Guides
+            </button>
+            <button
+              onClick={() => setMainTab('tour')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                mainTab === 'tour' ? 'bg-slate-900 text-white shadow' : 'text-slate-400 hover:text-slate-700'
+              }`}
+            >
+              <Compass className="h-3.5 w-3.5" />
+              Website Tour
+            </button>
+          </div>
         </div>
+
+        {/* ── STRATEGY GUIDES ── */}
+        <AnimatePresence mode="wait">
+          {mainTab === 'strategies' && (
+            <motion.div
+              key="strategies"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+            >
+              {/* Sidebar */}
+              <div className="lg:col-span-4 space-y-2">
+                {strategies.map(s => {
+                  const c = colorMap[s.color] || colorMap.blue;
+                  const isActive = activeStrategy === s.id;
+                  const tb = tierBadge[s.tier];
+                  return (
+                    <motion.button
+                      key={s.id}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setActiveStrategy(s.id)}
+                      className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-left ${
+                        isActive
+                          ? `bg-white border-2 ${c.border} shadow-lg`
+                          : 'bg-white/60 border border-slate-100 hover:border-slate-200 hover:bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className={`p-2.5 rounded-xl shrink-0 ${isActive ? c.bg : 'bg-slate-100'}`}>
+                          <s.icon className={`h-4 w-4 ${isActive ? c.text : 'text-slate-400'}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-[7px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${tb.cls}`}>
+                              {tb.label}
+                            </span>
+                          </div>
+                          <p className={`text-[11px] font-black uppercase tracking-tight mt-0.5 truncate ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>
+                            {s.name}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className={`h-3.5 w-3.5 shrink-0 ml-2 transition-all ${isActive ? `${c.text} translate-x-0.5` : 'text-slate-200'}`} />
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {/* Content Panel */}
+              <div className="lg:col-span-8">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeStrategy}
+                    initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}
+                    transition={{ duration: 0.2 }}
+                    className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden"
+                  >
+                    {/* Card header */}
+                    {(() => {
+                      const c = colorMap[activeStrat.color] || colorMap.blue;
+                      const tb = tierBadge[activeStrat.tier];
+                      return (
+                        <>
+                          <div className={`px-8 py-6 border-b border-slate-100 ${c.bg}`}>
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${tb.cls}`}>
+                                    {tb.label}
+                                  </span>
+                                  <span className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full">
+                                    {activeStrat.category}
+                                  </span>
+                                </div>
+                                <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-tight mt-2">
+                                  {activeStrat.name}
+                                </h2>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{activeStrat.subtitle}</p>
+                              </div>
+                              <div className={`p-3 rounded-2xl ${c.bg} border ${c.border} shrink-0`}>
+                                <activeStrat.icon className={`h-7 w-7 ${c.text}`} />
+                              </div>
+                            </div>
+                            {/* Tagline */}
+                            <p className={`mt-4 text-sm font-bold ${c.text} italic leading-relaxed border-l-4 ${c.border} pl-4`}>
+                              "{activeStrat.tagline}"
+                            </p>
+                          </div>
+
+                          {/* Sections */}
+                          <div className="p-8 space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {activeStrat.sections.map((sec, i) => (
+                                <motion.div
+                                  key={i}
+                                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
+                                  className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-2"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${c.dot}`} />
+                                    <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{sec.heading}</h4>
+                                  </div>
+                                  <p className="text-[12px] font-bold text-slate-700 leading-relaxed">{sec.body}</p>
+                                </motion.div>
+                              ))}
+                            </div>
+
+                            {/* Guardrail */}
+                            <div className="flex items-start gap-4 bg-amber-50 border border-amber-100 rounded-2xl p-5">
+                              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-1">Institutional Guardrail</p>
+                                <p className="text-[12px] font-bold text-amber-800 leading-relaxed">{activeStrat.guardrail}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── WEBSITE TOUR ── */}
+          {mainTab === 'tour' && (
+            <motion.div
+              key="tour"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+            >
+              {/* Sidebar */}
+              <div className="lg:col-span-4 space-y-2">
+                {tourSections.map(t => {
+                  const c = colorMap[t.color] || colorMap.blue;
+                  const isActive = activeTour === t.id;
+                  return (
+                    <motion.button
+                      key={t.id}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setActiveTour(t.id)}
+                      className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-left ${
+                        isActive
+                          ? `bg-white border-2 ${c.border} shadow-lg`
+                          : 'bg-white/60 border border-slate-100 hover:border-slate-200 hover:bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2.5 rounded-xl shrink-0 ${isActive ? c.bg : 'bg-slate-100'}`}>
+                          <t.icon className={`h-4 w-4 ${isActive ? c.text : 'text-slate-400'}`} />
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.path}</p>
+                          <p className={`text-[12px] font-black uppercase tracking-tight ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>
+                            {t.name}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className={`h-3.5 w-3.5 shrink-0 ml-2 transition-all ${isActive ? `${c.text} translate-x-0.5` : 'text-slate-200'}`} />
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {/* Tour Content */}
+              <div className="lg:col-span-8">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTour}
+                    initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}
+                    transition={{ duration: 0.2 }}
+                    className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden"
+                  >
+                    {(() => {
+                      const c = colorMap[activeTourItem.color] || colorMap.blue;
+                      return (
+                        <>
+                          <div className={`px-8 py-6 border-b border-slate-100 ${c.bg}`}>
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="space-y-1">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{activeTourItem.path}</span>
+                                <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+                                  {activeTourItem.name}
+                                </h2>
+                              </div>
+                              <div className={`p-3 rounded-2xl ${c.bg} border ${c.border} shrink-0`}>
+                                <activeTourItem.icon className={`h-7 w-7 ${c.text}`} />
+                              </div>
+                            </div>
+                            <p className={`mt-4 text-sm font-bold text-slate-600 leading-relaxed border-l-4 ${c.border} pl-4`}>
+                              {activeTourItem.description}
+                            </p>
+                          </div>
+
+                          <div className="p-8 space-y-3">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                              <Eye className="h-3 w-3" /> What You Can Do Here
+                            </p>
+                            {activeTourItem.features.map((feature, i) => (
+                              <motion.div
+                                key={i}
+                                initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+                                className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors"
+                              >
+                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${c.bg} border ${c.border}`}>
+                                  <span className={`text-[8px] font-black ${c.text}`}>{String(i + 1).padStart(2, '0')}</span>
+                                </div>
+                                <p className="text-[11px] font-bold text-slate-700 leading-snug">{feature}</p>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
     </div>
   );
 };
 
-export default StrategyEducation;
+export default EducationPage;
