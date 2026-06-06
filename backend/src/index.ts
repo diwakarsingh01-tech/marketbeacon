@@ -1,6 +1,7 @@
 import { DEPLOY_VERIFICATION } from './verify_deploy.js';
 import express from 'express';
 import cors from 'cors';
+import axios from 'axios';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -329,21 +330,41 @@ app.get('/api/market-indices', async (req, res) => {
     const results = await Promise.all(
       symbols.map(async (symbol) => {
         try {
-          const quote: any = await yahooFinance.quote(symbol);
+          // Fetch directly from Yahoo query2 API (which is free from cloud IP rate-limit blocks)
+          const response = await axios.get(`https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`);
+          const quote = response.data.chart.result[0].meta;
+          const price = quote.regularMarketPrice;
+          const ath = quote.fiftyTwoWeekHigh;
+          const prevClose = quote.chartPreviousClose || price;
+          const change = ((price - prevClose) / prevClose) * 100;
+
           return {
             name: symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'),
-            price: quote.regularMarketPrice,
-            ath: quote.fiftyTwoWeekHigh,
-            openPrice: quote.regularMarketOpen,
-            change: quote.regularMarketChangePercent
+            price,
+            ath,
+            openPrice: prevClose,
+            change
           };
-        } catch (e) {
-          return {
-            name: symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'),
-            price: symbol === '^NSEI' ? 22000 : (symbol === '^NSEBANK' ? 47000 : 72000),
-            ath: symbol === '^NSEI' ? 23263 : (symbol === '^NSEBANK' ? 51133 : 75124),
-            change: 0
-          };
+        } catch (e: any) {
+          console.warn(`⚠️ [Indices Fallback] query2 failed for ${symbol}: ${e.message}. Attempting library fallback...`);
+          try {
+            const quote: any = await yahooFinance.quote(symbol);
+            return {
+              name: symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'),
+              price: quote.regularMarketPrice,
+              ath: quote.fiftyTwoWeekHigh,
+              openPrice: quote.regularMarketOpen,
+              change: quote.regularMarketChangePercent
+            };
+          } catch (err: any) {
+            console.error(`❌ [Indices Fallback] Library fallback also failed for ${symbol}: ${err.message}. Serving updated static estimation.`);
+            return {
+              name: symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'),
+              price: symbol === '^NSEI' ? 23366 : (symbol === '^NSEBANK' ? 54496 : 74243),
+              ath: symbol === '^NSEI' ? 26373 : (symbol === '^NSEBANK' ? 54496 : 74243),
+              change: 0
+            };
+          }
         }
       })
     );
