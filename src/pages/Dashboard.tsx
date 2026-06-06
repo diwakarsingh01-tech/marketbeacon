@@ -109,6 +109,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showBrokerHub, setShowBrokerHub] = useState(false);
   const [requiredTier, setRequiredTier] = useState<'pro' | 'alpha'>('pro');
+
+  const canAccess = (stratTier: string) => {
+    const userTier = user?.tier || 'free';
+    const weights: Record<string, number> = { 'free': 1, 'pro': 2, 'alpha': 3 };
+    return weights[userTier] >= weights[stratTier];
+  };
+
   const [showAddManualModal, setShowAddManualModal] = useState(false);
   const [manualSymbol, setManualSymbol] = useState('');
   const [manualQty, setManualQty] = useState('');
@@ -304,6 +311,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` }
       });
       const d = await safeJsonParse(response);
+      
+      if (response.status === 403 && d.requiredTier) {
+        setRequiredTier(d.requiredTier);
+        setShowUpgradeModal(true);
+        setError(`This strategy requires ${d.requiredTier.toUpperCase()} tier access.`);
+        return;
+      }
+
       if (response.status === 401 || response.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
         localStorage.removeItem('mb_token');
         localStorage.removeItem('mb_user');
@@ -569,10 +584,22 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                 <div className="relative group">
                   <select 
                     value={strategyId} 
-                    onChange={(e) => navigate(`?strategy=${e.target.value}`)} 
+                    onChange={(e) => {
+                      const selected = STRATEGIES.find(s => s.id === e.target.value);
+                      if (selected && !canAccess(selected.tier)) {
+                        setRequiredTier(selected.tier as any);
+                        setShowUpgradeModal(true);
+                        return;
+                      }
+                      navigate(`?strategy=${e.target.value}`);
+                    }} 
                     className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all w-full md:min-w-[180px]"
                   >
-                    {lockedStrategies.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    {lockedStrategies.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} {!canAccess(s.tier) ? '🔒' : ''}
+                      </option>
+                    ))}
                   </select>
                   <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                     <ChevronRight className="w-3.5 h-3.5 rotate-90" />

@@ -63,7 +63,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
         'Velocity Retest Strategy',
         'Deep Recovery Audit (67%)',
         'Supply-Demand Core Logic',
-        'Priority Alpha Signals'
+        'Priority Alpha Strategy Triggers'
       ],
       color: 'bg-slate-900'
     }

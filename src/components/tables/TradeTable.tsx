@@ -111,7 +111,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
         </>
       ) : (
         <>
-          <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">No Screener Signals Detected</h3>
+          <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">No Screener Matches Detected</h3>
           <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide leading-relaxed mb-2">
             No institutional assets in the current basket match the selected criteria.
           </p>
@@ -185,9 +185,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
       return [];
     }
     return [
-      { id: 'open', label: 'Qualified', count: openCount || 0 },
-      { id: 'neutral', label: 'Neutral', count: neutralCount || 0 },
-      { id: 'rejected', label: 'Rejected', count: rejectedCount || 0 },
+      { id: 'open', label: 'Passed Audit', count: openCount || 0 },
+      { id: 'neutral', label: 'Observation', count: neutralCount || 0 },
+      { id: 'rejected', label: 'Audit Fails', count: rejectedCount || 0 },
     ];
   }, [activeTab, openCount, neutralCount, rejectedCount]);
   
@@ -280,17 +280,18 @@ const TradeTable: React.FC<TradeTableProps> = ({
 ⚡️ *Strategy:* ${trade.strategy || 'Institutional Matrix'}
 💰 *Price:* ₹${livePrice.toLocaleString()}
 🎯 *Objective:* ₹${(trade.target || trade.targetPrice || 0).toLocaleString()}
-📊 *Audit:* ${trade.isPass !== false ? '✅ Qualified' : '🔍 Observation'}
+📊 *Audit Status:* ${trade.isPass !== false ? '✅ Passed Audit' : '🔍 Observation'}
 
-🔗 *Full Terminal:* https://marketbeacon.vercel.app/stock/${trade.symbol}
+⚠️ Disclaimer: Educational research model. We are NOT SEBI registered. No advisory calls.
+🔗 *Full Terminal:* https://marketbeacon.pro/stock/${trade.symbol}
 
 #MarketBeacon #InstitutionalResearch #Batch9`;
     
     if (method === 'copy') {
       navigator.clipboard.writeText(text);
-      alert(`Signal for ${trade.symbol} copied to clipboard! Ready to paste.`);
+      alert(`Research for ${trade.symbol} copied to clipboard! Ready to paste.`);
     } else {
-      const url = `https://t.me/share/url?url=https://marketbeacon.vercel.app&text=${encodeURIComponent(text)}`;
+      const url = `https://t.me/share/url?url=https://marketbeacon.pro&text=${encodeURIComponent(text)}`;
       window.open(url, '_blank');
     }
   };
@@ -815,12 +816,12 @@ const TradeTable: React.FC<TradeTableProps> = ({
                          <div className="text-[9px] font-bold text-slate-400">Institutional Strategy</div>
                       )}
 
-                      {/* Buy Zone Status */}
+                      {/* Strategy Floor Status */}
                       <div className="flex items-center gap-1.5">
                          {trade.isBuyZone ? (
-                            <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-full text-[8px] font-black">BUY ZONE</span>
+                            <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-full text-[8px] font-black">STRATEGY FLOOR</span>
                          ) : (
-                            <span className="px-2 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-full text-[8px] font-black">HOLD</span>
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-full text-[8px] font-black">OUT OF RANGE</span>
                          )}
                       </div>
                    </div>

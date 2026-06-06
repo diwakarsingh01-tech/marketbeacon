@@ -43,6 +43,11 @@ const AppLayout: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 relative">
         <TopNav onMenuClick={() => setIsSidebarOpen(true)} />
         
+        {/* Sticky SEBI Compliance Banner */}
+        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-center text-[8.5px] md:text-[9.5px] font-black uppercase tracking-wider text-amber-600 flex items-center justify-center gap-2 relative z-30 shrink-0">
+          <span>⚠️ DISCLAIMER: We are NOT a SEBI-registered Investment Adviser or Research Analyst. MarketBeacon provides purely educational & mathematical tools. No content constitutes investment advice or recommendations.</span>
+        </div>
+        
         {/* Page Content - Independent Scroll */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden relative flex flex-col no-scrollbar pb-16 md:pb-0">
           <div className="flex-1">

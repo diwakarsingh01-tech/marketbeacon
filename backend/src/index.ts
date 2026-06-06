@@ -159,6 +159,21 @@ app.post('/api/auth/google', async (req, res) => {
 app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
   try {
     const { basket = 'Elite Basket', strategy: selectedStrategyId } = req.query;
+    
+    // --- Institutional Tier Guard ---
+    const userTier = req.user.tier || 'free';
+    const tierWeights: Record<string, number> = { 'free': 1, 'pro': 2, 'alpha': 3 };
+    const strategy = STRATEGIES.find(s => s.id === selectedStrategyId);
+    const requiredTier = strategy?.tier || 'free';
+    
+    if (tierWeights[userTier] < tierWeights[requiredTier]) {
+      return res.status(403).json({ 
+        error: 'Access Denied', 
+        message: `This strategy requires a ${requiredTier.toUpperCase()} tier subscription.`,
+        requiredTier 
+      });
+    }
+
     let symbols: string[] = [];
     if (basket === 'Elite Basket') symbols = BASKETS['Elite Basket'];
     else if (basket === 'Quality Basket') symbols = BASKETS['Quality Basket'];
@@ -213,6 +228,15 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
 
 app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
   try {
+    // --- Alpha Hub Lockdown ---
+    if (req.user.tier !== 'alpha') {
+      return res.status(403).json({ 
+        error: 'Access Denied', 
+        message: 'The Alpha Hub is reserved for Institutional Alpha subscribers.',
+        requiredTier: 'alpha'
+      });
+    }
+
     const cache = await getAlpha40Cache();
     if (cache) {
       return res.json({ 
