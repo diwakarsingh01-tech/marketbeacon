@@ -88,7 +88,12 @@ const getSnapshotFromCloud = async (symbols: string[]) => {
   return Object.fromEntries(data.map(row => [row.symbol, row.data]));
 };
 
-app.get('/api/health', (req, res) => res.json({ status: 'active', node: 'Supabase-Cloud', version: '12.2.0-PRO' }));
+app.get('/api/health', (req, res) => res.json({ 
+  status: 'active', 
+  node: 'Supabase-Cloud-Production', 
+  version: '12.2.1-PRO-FIX',
+  timestamp: new Date().toISOString()
+}));
 
 app.post('/api/auth/google', async (req, res) => {
   try {
