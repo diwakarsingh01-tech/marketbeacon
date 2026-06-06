@@ -15,7 +15,8 @@ import {
   Share2,
   ExternalLink,
   ChevronRight,
-  Trash2
+  Trash2,
+  TrendingUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';

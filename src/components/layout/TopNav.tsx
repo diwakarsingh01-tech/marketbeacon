@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Activity, LogOut, User, Store, Menu, Search, Bell, Command, ChevronRight, Zap } from 'lucide-react';
+import { Activity, LogOut, User, Store, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BASKETS } from '../../data/stocks';
 
