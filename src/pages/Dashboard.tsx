@@ -83,7 +83,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const navigate = useNavigate();
   const { user } = useAuth();
   const searchParams = new URLSearchParams(location.search);
-  const strategyId = searchParams.get('strategy') || 'SR_STRATEGY'; // Default to a locked strategy
+  const userTier = user?.tier || 'free';
+  const defaultStrategyId = userTier === 'alpha' 
+    ? 'SR_STRATEGY' 
+    : userTier === 'pro' 
+      ? 'SMA_BCD' 
+      : 'ENVELOPE_LONG';
+  const strategyId = searchParams.get('strategy') || defaultStrategyId;
+
+
 
   // Determine route context so tabs never bleed between screener and portfolio
   const isPortfolioRoute = location.pathname === '/portfolio';

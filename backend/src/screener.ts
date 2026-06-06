@@ -282,9 +282,32 @@ export function initScreenerCron() {
 export function getMarketSnapshot(): Record<string, any> { return snapshotCache; }
 export async function getDynamicBasket(): Promise<string[]> {
   try {
-    if (!supabase) return [];
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase.from('system_cache').select('data').eq('key', 'dynamic_growth_basket').single();
     if (!error && data && Array.isArray(data.data)) return data.data;
-  } catch (e) { }
+    if (error) throw error;
+  } catch (e: any) {
+    console.warn(`⚠️ [Supabase Fallback] Failed to fetch dynamic growth basket: ${e.message}. Using local fallback...`);
+  }
+  try {
+    const pathsToTry = [
+      path.resolve(process.cwd(), 'dynamic_basket.json'),
+      path.resolve(process.cwd(), 'backend', 'dynamic_basket.json'),
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dynamic_basket.json'),
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dynamic_basket.json')
+    ];
+    for (const p of pathsToTry) {
+      if (fs.existsSync(p)) {
+        const fileContent = fs.readFileSync(p, 'utf8');
+        const parsed = JSON.parse(fileContent);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    }
+  } catch (localErr: any) {
+    console.error('❌ Failed to load dynamic growth basket from local file:', localErr.message);
+  }
   return []; 
 }
+
