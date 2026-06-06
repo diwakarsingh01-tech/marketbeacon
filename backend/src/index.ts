@@ -331,7 +331,12 @@ app.get('/api/market-indices', async (req, res) => {
       symbols.map(async (symbol) => {
         try {
           // Fetch directly from Yahoo query2 API (which is free from cloud IP rate-limit blocks)
-          const response = await axios.get(`https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`);
+          const response = await axios.get(`https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'application/json'
+            }
+          });
           const quote = response.data.chart.result[0].meta;
           const price = quote.regularMarketPrice;
           const ath = quote.fiftyTwoWeekHigh;
