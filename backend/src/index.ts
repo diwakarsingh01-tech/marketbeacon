@@ -140,7 +140,15 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
         isPass: audit.isPass,
         score: audit.score,
         abcd: strategyData?.abcd || null,
-        sector: snap.screener?.industry || 'General'
+        sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
+        peRatio: snap.quote?.pe || snap.screener?.peRatio,
+        peMedians: snap.screener?.peMedians || {},
+        auditSegments: {
+          profitability: audit.profitabilityQuality,
+          safety: audit.balanceSheetSafety,
+          growth: audit.growthQuality,
+          efficiency: audit.efficiencyGovernance
+        }
       });
     }
     res.json({ allStocks: results });
@@ -178,6 +186,60 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
       return res?.isBuyZone;
     });
     res.json({ symbol, score: audit.score, isPass: audit.isPass, strategies: qualified });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/stock-fundamentals', async (req, res) => {
+  try {
+    const { symbol } = req.query;
+    if (!symbol) return res.status(400).json({ error: 'Symbol required' });
+    const snapshot = await getSnapshotFromCloud([symbol as string]);
+    let snap = snapshot[symbol as string];
+    
+    // Auto-Refresh Logic for Missing or Stale Data
+    const isDataIncomplete = !snap || !snap.screener?.athSales || snap.screener?.athSales === 0;
+    const isStale = snap && (new Date().getTime() - new Date(snap.lastUpdated).getTime() > 24 * 60 * 60 * 1000);
+
+    if (isDataIncomplete || isStale) {
+      console.log(`🔄 [AUTO-REFRESH] Patching data for ${symbol}...`);
+      await updateMarketSnapshot([symbol as string]);
+      const freshSnapshot = await getSnapshotFromCloud([symbol as string]);
+      snap = freshSnapshot[symbol as string];
+    }
+
+    if (!snap) return res.status(404).json({ error: 'Asset data unavailable' });
+
+    const audit = await validateBatch9(symbol as string, snap, 'Elite Basket');
+    const lastQuote = snap.quotes[snap.quotes.length - 1];
+    
+    res.json({
+      symbol,
+      price: lastQuote?.close,
+      change: snap.quote?.regularMarketChangePercent || 0,
+      marketCap: snap.quote?.marketCap,
+      industry: MANUAL_SECTOR_MAP[symbol as string] || snap.screener?.industry || 'General',
+      peRatio: snap.quote?.pe || snap.screener?.peRatio,
+      peMedians: snap.screener?.peMedians || {},
+      returnOnEquity: snap.screener?.returnOnEquity || snap.quote?.roe,
+      roce: snap.screener?.roce,
+      netDebtToEquity: snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity / 100),
+      athSales: snap.screener?.athSales,
+      athNetProfit: snap.screener?.athNetProfit,
+      currentSales: snap.screener?.currentSales,
+      currentNetProfit: snap.screener?.currentNetProfit,
+      fiftyTwoWeekHigh: snap.quote?.fiftyTwoWeekHigh,
+      beta: snap.quote?.beta,
+      shareholding: audit.metrics,
+      audit: {
+        score: audit.score,
+        reason: audit.reason,
+        universe: audit.isPass ? 'INSTITUTIONAL' : 'WATCHLIST',
+        profitabilityQuality: audit.profitabilityQuality,
+        balanceSheetSafety: audit.balanceSheetSafety,
+        growthQuality: audit.growthQuality,
+        efficiencyGovernance: audit.efficiencyGovernance
+      }
+    });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
