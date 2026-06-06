@@ -3,6 +3,21 @@ import { validateBatch9 } from './fundamentalAudit.js';
 import { runStrategyAnalysis } from './strategyService.js';
 import { STRATEGIES, BASKETS, MANUAL_SECTOR_MAP } from '../index.js';
 import { supabase } from '../db.js';
+import fs from 'fs';
+import path from 'path';
+
+let localAlpha40Cache: any = null;
+const CACHE_FILE_PATH = path.join(process.cwd(), 'alpha_40_results.json');
+
+try {
+  if (fs.existsSync(CACHE_FILE_PATH)) {
+    const raw = fs.readFileSync(CACHE_FILE_PATH, 'utf-8');
+    localAlpha40Cache = JSON.parse(raw);
+    console.log('💾 [Alpha-40 Cache] Loaded initial cache from disk.');
+  }
+} catch (e: any) {
+  console.error('⚠️ [Alpha-40 Cache] Failed to load initial cache from disk:', e.message);
+}
 
 const STRATEGY_BASKET_MAP: Record<string, string[]> = {
   'ENVELOPE_LONG': ['Elite Basket'], 'ENVELOPE_SHORT': ['Elite Basket'], 'BOLLINGER': ['Elite Basket'],
@@ -157,6 +172,15 @@ export async function precalculateAlpha40() {
       updatedAt: new Date().toISOString()
     };
 
+    // Update local cache
+    localAlpha40Cache = results;
+    try {
+      fs.writeFileSync(CACHE_FILE_PATH, JSON.stringify(results, null, 2), 'utf-8');
+      console.log('💾 [Alpha-40 Cache] Saved calculated cache to disk.');
+    } catch (e: any) {
+      console.error('⚠️ [Alpha-40 Cache] Failed to write cache to disk:', e.message);
+    }
+
     // Save to Supabase system_cache
     await supabase.from('system_cache').upsert({
       key: 'alpha_40_results',
@@ -171,9 +195,17 @@ export async function precalculateAlpha40() {
 }
 
 export async function getAlpha40Cache() {
+  // Return in-memory cache directly for ultra-fast, timeout-proof response
+  if (localAlpha40Cache) {
+    return localAlpha40Cache;
+  }
+  
   try {
     const { data, error } = await supabase.from('system_cache').select('data').eq('key', 'alpha_40_results').single();
-    if (!error && data) return data.data;
+    if (!error && data && data.data) {
+      localAlpha40Cache = data.data;
+      return data.data;
+    }
   } catch (e) { }
   return null;
 }
