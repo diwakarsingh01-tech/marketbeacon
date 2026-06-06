@@ -56,7 +56,7 @@ const StockFundamentalsPage: React.FC = () => {
     <div className="flex-1 flex flex-col font-sans text-slate-800 bg-[#f8fafc] h-screen overflow-hidden">
       
       {/* COMPACT HEADER */}
-      <div className="bg-white border-b border-slate-200 py-3 shadow-sm sticky top-0 z-[100]">
+      <div className="bg-white border-b border-slate-200 py-3 shadow-sm sticky top-0 z-10">
         <div className="max-w-[1600px] mx-auto px-6 flex justify-between items-center">
             <div className="flex items-center space-x-6">
               <div className="space-y-0.5">

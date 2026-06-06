@@ -8,7 +8,8 @@ import { OAuth2Client } from 'google-auth-library';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import etag from 'etag';
-import YahooFinance from 'yahoo-finance2';
+import YahooFinanceClass from 'yahoo-finance2';
+const yahooFinance = new (YahooFinanceClass as any)({ suppressNotices: ['yahooSurvey'] });
 import { 
   initScreenerCron, 
   updateMarketSnapshot, 
@@ -174,6 +175,16 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
       const audit = await validateBatch9(sym, snap, basket as string);
       const strategyId = (selectedStrategyId as string) || 'SR_STRATEGY';
       const strategyData: any = runStrategyAnalysis(strategyId, snap, snap.quote.marketCap, basket as string);
+      
+      // Compute ABCD levels fallback if they are not natively provided by the strategy
+      const basePrice = strategyData?.entryPrice || snap.quotes[snap.quotes.length - 1].close;
+      const abcdLevels = strategyData?.abcd || {
+        a: { price: Math.round(basePrice), date: strategyData?.triggerDate || snap.quotes[snap.quotes.length - 1].date || new Date().toISOString().split('T')[0] },
+        b: { price: Math.round(basePrice * 0.90), date: '' },
+        c: { price: Math.round(basePrice * 0.81), date: '' },
+        d: { price: Math.round(basePrice * 0.73), date: '' }
+      };
+
       results.push({
         symbol: sym,
         entryTime: strategyData?.triggerDate || snap.quotes[snap.quotes.length-1].date,
@@ -183,7 +194,7 @@ app.get('/api/backtest/audit', authenticateToken, async (req, res) => {
         isBuyZone: !!strategyData?.isBuyZone,
         isPass: audit.isPass,
         score: audit.score,
-        abcd: strategyData?.abcd || null,
+        abcd: abcdLevels,
         sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
         peRatio: snap.quote?.pe || snap.screener?.peRatio,
         peMedians: snap.screener?.peMedians || {},
@@ -318,7 +329,7 @@ app.get('/api/market-indices', async (req, res) => {
     const results = await Promise.all(
       symbols.map(async (symbol) => {
         try {
-          const quote: any = await YahooFinance.quote(symbol);
+          const quote: any = await yahooFinance.quote(symbol);
           return {
             name: symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'),
             price: quote.regularMarketPrice,
@@ -330,6 +341,7 @@ app.get('/api/market-indices', async (req, res) => {
           return {
             name: symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'),
             price: symbol === '^NSEI' ? 22000 : (symbol === '^NSEBANK' ? 47000 : 72000),
+            ath: symbol === '^NSEI' ? 23263 : (symbol === '^NSEBANK' ? 51133 : 75124),
             change: 0
           };
         }
@@ -503,6 +515,39 @@ app.post('/api/user/redeem-voucher', authenticateToken, async (req: any, res) =>
   } catch (e: any) {
     console.error('🔥 [Voucher Error]:', e.message);
     res.status(500).json({ error: 'Failed to redeem voucher. System node error.' });
+  }
+});
+
+app.post('/api/user/upgrade-request', authenticateToken, async (req: any, res) => {
+  try {
+    const { requested_tier, billing_cycle, transaction_id } = req.body;
+    if (!requested_tier || !transaction_id) {
+      return res.status(400).json({ error: 'Requested tier and transaction ID are required.' });
+    }
+    
+    // Check UTR format: exactly 12 digits
+    if (!/^\d{12}$/.test(transaction_id)) {
+      return res.status(400).json({ error: 'Transaction ID must be a 12-digit UTR number.' });
+    }
+
+    const db = getDB();
+    
+    // Check if transaction_id already exists (to prevent duplicate submissions)
+    const existing = await db.get('SELECT id FROM upgrade_requests WHERE transaction_id = ?', [transaction_id]);
+    if (existing) {
+      return res.status(400).json({ error: 'This transaction ID has already been submitted.' });
+    }
+
+    // Insert the upgrade request
+    await db.run(
+      'INSERT INTO upgrade_requests (user_id, requested_tier, billing_cycle, transaction_id, status) VALUES (?, ?, ?, ?, ?)',
+      [req.user.id, requested_tier.toLowerCase(), billing_cycle || 'monthly', transaction_id, 'pending']
+    );
+
+    console.log(`💰 [UPGRADE REQUEST] User ${req.user.email} submitted transaction ${transaction_id} for ${requested_tier} (${billing_cycle || 'monthly'})`);
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -772,16 +817,108 @@ app.get('/api/stock-prices', async (req, res) => {
 });
 
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: any, res) => {
-  const db = getDB();
-  const users = await db.all('SELECT id, name, email, role, tier, subscription_expiry FROM users');
-  res.json(users);
+  try {
+    const db = getDB();
+    const users = await db.all('SELECT id, name, email, mobile, role, tier, subscription_start, subscription_expiry, is_active FROM users');
+    res.json(users);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.patch('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
-    const { name, email, tier, subscription_expiry } = req.body;
+    const { name, email, mobile, role, tier, subscription_start, subscription_expiry, is_active } = req.body;
     const db = getDB();
-    await db.run('UPDATE users SET name = ?, email = ?, tier = ?, subscription_expiry = ? WHERE id = ?', [name, email, tier, subscription_expiry, req.params.id]);
+    
+    const updates: string[] = [];
+    const params: any[] = [];
+    
+    if (name !== undefined) { updates.push('name = ?'); params.push(name); }
+    if (email !== undefined) { updates.push('email = ?'); params.push(email ? email.toLowerCase() : null); }
+    if (mobile !== undefined) { updates.push('mobile = ?'); params.push(mobile); }
+    if (role !== undefined) { updates.push('role = ?'); params.push(role); }
+    if (tier !== undefined) { updates.push('tier = ?'); params.push(tier); }
+    if (subscription_start !== undefined) { updates.push('subscription_start = ?'); params.push(subscription_start || null); }
+    if (subscription_expiry !== undefined) { updates.push('subscription_expiry = ?'); params.push(subscription_expiry || null); }
+    if (is_active !== undefined) { updates.push('is_active = ?'); params.push(Number(is_active)); }
+    
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    params.push(req.params.id);
+    await db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const db = getDB();
+    await db.run('DELETE FROM users WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/upgrade-requests', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const requests = await db.all(`
+      SELECT ur.*, u.name, u.email, u.mobile 
+      FROM upgrade_requests ur 
+      JOIN users u ON ur.user_id = u.id 
+      ORDER BY ur.created_at DESC
+    `);
+    res.json(requests);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const requestId = req.params.id;
+    const request = await db.get('SELECT * FROM upgrade_requests WHERE id = ?', [requestId]);
+    if (!request) return res.status(404).json({ error: 'Request not found' });
+    if (request.status !== 'pending') return res.status(400).json({ error: 'Request already processed' });
+
+    const user = await db.get('SELECT * FROM users WHERE id = ?', [request.user_id]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const durationDays = request.billing_cycle === 'yearly' ? 365 : 30;
+    const now = new Date();
+    const expiry = new Date();
+    expiry.setDate(now.getDate() + durationDays);
+
+    const startStr = now.toISOString();
+    const expiryStr = expiry.toISOString();
+
+    await db.run('UPDATE users SET tier = ?, subscription_start = ?, subscription_expiry = ? WHERE id = ?', [request.requested_tier, startStr, expiryStr, request.user_id]);
+    await db.run('UPDATE upgrade_requests SET status = "approved" WHERE id = ?', [requestId]);
+
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const vouchers = await db.all('SELECT * FROM vouchers ORDER BY created_at DESC');
+    res.json(vouchers);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const { code, tier, duration_days, max_uses } = req.body;
+    if (!code || !tier || !duration_days) return res.status(400).json({ error: 'Missing code, tier, or duration_days' });
+    const db = getDB();
+
+    const existing = await db.get('SELECT id FROM vouchers WHERE code = ?', [code.toUpperCase()]);
+    if (existing) return res.status(400).json({ error: 'Voucher code already exists' });
+
+    await db.run(
+      'INSERT INTO vouchers (code, tier, duration_days, max_uses, current_uses, is_active) VALUES (?, ?, ?, ?, 0, 1)',
+      [code.toUpperCase(), tier, Number(duration_days), Number(max_uses || 100)]
+    );
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });

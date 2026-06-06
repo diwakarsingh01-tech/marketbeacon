@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import BrandLogo from '../components/brand/BrandLogo';
 import { 
   ShieldCheck, 
   TrendingUp, 
@@ -146,12 +147,9 @@ const PublicAnalysisPage: React.FC = () => {
       {/* Premium Header */}
       <nav className="border-b border-white/5 bg-[#0f172a]/60 backdrop-blur-xl sticky top-0 z-50 px-6 py-4">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-cyan-600 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-900/20">
-              <Zap className="w-5 h-5 text-[#020617]" />
-            </div>
-            <span className="font-black tracking-tighter text-2xl text-white uppercase italic">MARKETBEACON<span className="text-cyan-500">PRO</span></span>
-          </div>
+          <Link to="/" className="flex items-center transition-all hover:opacity-90 active:scale-95">
+            <BrandLogo variant="dark" size={28} />
+          </Link>
           <button 
             onClick={handleShare}
             className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all"
@@ -284,11 +282,8 @@ const PublicAnalysisPage: React.FC = () => {
 
         {/* Footer */}
         <footer className="pt-20 border-t border-white/5 text-center">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-8 h-8 bg-white/5 rounded-xl flex items-center justify-center shadow-inner">
-              <BarChart2 className="w-4 h-4 text-slate-500" />
-            </div>
-            <span className="text-xs font-black tracking-widest uppercase text-slate-500">MarketBeacon<span className="text-cyan-500">Pro</span> Terminal Node</span>
+          <div className="mb-8 flex justify-center">
+            <BrandLogo variant="dark" size={24} />
           </div>
           <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em] leading-relaxed max-w-xl mx-auto italic">
             This analysis is for institutional research purposes only. 

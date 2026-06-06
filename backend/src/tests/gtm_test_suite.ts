@@ -3,7 +3,7 @@ import {
   calculateSixtySevenFunda,
   calculateABCDLevels,
   Quote
-} from '../strategies.js';
+} from '../strategies/index.js';
 
 /**
  * MarketBeacon GTM Test Suite (Senior Developer Edition)
@@ -67,12 +67,12 @@ async function testVelocityRetestTimeDecay() {
 
   const totalQuotes = [...generateHistory(200, 210, 0, false), ...rallyQuotes, ...waitQuotes, retestBar];
   
-  const result = calculateTwentyRallyRetest(totalQuotes, 'HAVELLS');
-  LOG("Retest at 250 bars (Should PASS)", result?.verdict === 'QUALIFIED');
+  const result = calculateTwentyRallyRetest(totalQuotes);
+  LOG("Retest at 250 bars (Should PASS)", result?.isBuyZone === true);
 
   const tooLateQuotes = [...generateHistory(200, 210, 0, false), ...rallyQuotes, ...generateHistory(price, 255, 0, false), retestBar];
-  const lateResult = calculateTwentyRallyRetest(tooLateQuotes, 'TEST');
-  LOG("Retest at 255 bars (Should be INVALID/NULL)", lateResult === null);
+  const lateResult = calculateTwentyRallyRetest(tooLateQuotes);
+  LOG("Retest at 255 bars (Should be INVALID/NULL)", lateResult?.isBuyZone === false);
 }
 
 /**
@@ -80,15 +80,28 @@ async function testVelocityRetestTimeDecay() {
  */
 async function testDeepRecoveryLogic() {
   console.log("\n--- TEST 2: Deep Recovery Audit (67% Logic) ---");
-  const ath = 1000;
-  const quotes65 = generateHistory(350, 50, 0);
-  const screenerImproving = { quarterlyNetProfits: [100, 110, 120] };
-  const res65 = calculateSixtySevenFunda(quotes65, screenerImproving, {}, ath);
-  LOG("Drawdown 65% (Should be WATCHLIST/REJECT)", res65?.verdict !== 'QUALIFIED');
+  const baseQuotes = generateHistory(350, 250);
+  baseQuotes[10].high = 1000; // Inject ATH of 1000
+  
+  // Set current price to 350 (65% drawdown)
+  baseQuotes[baseQuotes.length - 1].close = 350;
+  baseQuotes[baseQuotes.length - 1].low = 350;
+  baseQuotes[baseQuotes.length - 1].high = 350;
+  
+  const data = { dividendYield: "1.5" };
+  const res65 = calculateSixtySevenFunda(baseQuotes, data);
+  LOG("Drawdown 65% (Should be WATCHLIST/REJECT)", res65?.isBuyZone !== true);
 
-  const quotes67 = generateHistory(330, 50, 0);
-  const res67Pass = calculateSixtySevenFunda(quotes67, screenerImproving, {}, ath);
-  LOG("Drawdown 67% + Improving PAT (Should be QUALIFIED)", res67Pass?.verdict === 'QUALIFIED');
+  // Set current price to 330 (67% drawdown)
+  const baseQuotes67 = [...baseQuotes];
+  baseQuotes67[baseQuotes67.length - 1] = {
+    ...baseQuotes67[baseQuotes67.length - 1],
+    close: 330,
+    low: 330,
+    high: 330
+  };
+  const res67Pass = calculateSixtySevenFunda(baseQuotes67, data);
+  LOG("Drawdown 67% + Improving PAT (Should be QUALIFIED)", res67Pass?.isBuyZone === true);
 }
 
 /**

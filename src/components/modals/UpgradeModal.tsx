@@ -10,7 +10,12 @@ import {
   Send,
   MessageSquare,
   Calendar,
-  Clock
+  Clock,
+  Copy,
+  Smartphone,
+  ExternalLink,
+  AlertCircle,
+  Sparkles
 } from 'lucide-react';
 
 interface UpgradeModalProps {
@@ -31,6 +36,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
   const [transactionId, setTransactionId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
 
@@ -115,6 +121,17 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
     const text = `Hi Admin, I have paid ${currentPrice} for MarketBeacon ${currentTier.name} (${billingCycle}). My Email: ${userEmail}. Transaction ID: ${transactionId || 'Pending Verification'}`;
     window.open(`https://wa.me/917056633633?text=${encodeURIComponent(text)}`, '_blank');
   };
+  
+  const upiId = "diwakarsingh01.tech@okaxis";
+  
+  const handleCopyUPI = () => {
+    navigator.clipboard.writeText(upiId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  
+  const amountVal = currentPrice.replace('₹', '');
+  const upiLink = `upi://pay?pa=${upiId}&pn=MarketBeacon&am=${amountVal}&cu=INR&tn=MB_${selectedTier.toUpperCase()}_${billingCycle.toUpperCase()}`;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300 overscroll-contain">
@@ -169,7 +186,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                <div className="space-y-2">
                   <h3 className="text-xl md:text-2xl font-black text-slate-900 uppercase italic">Submission Logged</h3>
                   <p className="text-[13px] md:text-sm text-slate-500 font-medium leading-relaxed max-w-sm px-4">
-                    Institutional audit is in progress. Your {currentTier.name} access will be activated within 15 minutes of transaction verification.
+                     Institutional audit is in progress. Your {currentTier.name} access will be activated within 15 minutes of transaction verification.
                   </p>
                </div>
                <button 
@@ -209,26 +226,26 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
 
                <div className="grid grid-cols-1 gap-3 md:gap-4">
                   {Object.entries(tiers).map(([id, t]) => (
-                    <button 
-                      key={id}
-                      onClick={() => setSelectedTier(id as any)}
-                      className={`w-full p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border-2 text-left transition-all flex items-center justify-between ${selectedTier === id ? 'border-blue-600 bg-blue-50/30' : 'border-slate-100 hover:border-slate-200'}`}
-                    >
-                      <div className="space-y-1">
-                        <span className="text-[11px] md:text-xs font-black text-slate-900 uppercase tracking-tight">{t.name}</span>
-                        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">{id === 'pro' ? 'Structural Patterns' : 'Full Institutional Access'}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-lg md:text-xl font-black text-slate-900 block">{billingCycle === 'monthly' ? t.monthly : t.yearly}</span>
-                        <span className="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase">{billingCycle}</span>
-                      </div>
-                    </button>
+                     <button 
+                       key={id}
+                       onClick={() => setSelectedTier(id as any)}
+                       className={`w-full p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border-2 text-left transition-all flex items-center justify-between ${selectedTier === id ? 'border-blue-600 bg-blue-50/30' : 'border-slate-100 hover:border-slate-200'}`}
+                     >
+                       <div className="space-y-1">
+                         <span className="text-[11px] md:text-xs font-black text-slate-900 uppercase tracking-tight">{t.name}</span>
+                         <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">{id === 'pro' ? 'Structural Patterns' : 'Full Institutional Access'}</p>
+                       </div>
+                       <div className="text-right">
+                         <span className="text-lg md:text-xl font-black text-slate-900 block">{billingCycle === 'monthly' ? t.monthly : t.yearly}</span>
+                         <span className="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase">{billingCycle}</span>
+                       </div>
+                     </button>
                   ))}
                </div>
 
                <button 
                  onClick={() => setStep('payment')}
-                 className="w-full py-4 md:py-5 bg-blue-600 text-white rounded-2xl md:rounded-3xl text-[11px] md:text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center space-x-3 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-blue-200"
+                 className="w-full py-4 md:py-5 bg-blue-600 text-white rounded-2xl md:rounded-3xl text-[11px] md:xs font-black uppercase tracking-[0.2em] flex items-center justify-center space-x-3 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-blue-200"
                >
                  <span>Secure Checkout</span>
                  <ChevronRight className="h-4 w-4" />
@@ -245,43 +262,82 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                </div>
 
                <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 p-6 md:p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
-                  <div className="w-40 h-40 md:w-44 md:h-44 bg-white p-3 rounded-2xl shadow-inner flex items-center justify-center border border-slate-200 relative group">
+                  <div className="w-40 h-40 md:w-44 md:h-44 bg-white p-3 rounded-2xl shadow-inner flex items-center justify-center border border-slate-200 relative group shrink-0">
                      <img src="/qr-code.png" className="w-full h-full object-contain" alt="Payment QR" />
                      <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
                         <span className="text-[10px] font-black text-slate-900 uppercase text-center px-4">Scan QR to Pay</span>
                      </div>
                   </div>
-                  <div className="space-y-4 flex-1 text-center md:text-left">
+                  <div className="space-y-4 flex-1 text-center md:text-left w-full">
                      <div className="space-y-1">
                         <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest block">Fixed Plan Amount ({billingCycle})</span>
-                        <div className="bg-white px-5 py-3 rounded-2xl border-2 border-blue-100 w-fit mx-auto md:mx-0">
+                        <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm w-fit mx-auto md:mx-0">
                            <p className="text-3xl md:text-4xl font-black text-blue-600 tracking-tighter">{currentPrice}</p>
                         </div>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase mt-2 tracking-widest italic">Non-Negotiable Institutional Rate</p>
                      </div>
+
+                     <div className="space-y-1.5">
+                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Or transfer to UPI ID</span>
+                       <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-2.5 max-w-sm mx-auto md:mx-0">
+                         <span className="text-[10px] font-mono font-black text-slate-900 select-all tracking-tight">{upiId}</span>
+                         <button 
+                           type="button" 
+                           onClick={handleCopyUPI} 
+                           className={`p-1.5 rounded-lg transition-all ${copied ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
+                         >
+                           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                         </button>
+                       </div>
+                     </div>
+
+                     <a 
+                       href={upiLink} 
+                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-blue-100 transition-all active:scale-95 shadow-sm"
+                     >
+                       <Smartphone className="h-3.5 w-3.5" />
+                       <span>Pay via UPI App</span>
+                       <ExternalLink className="h-2.5 w-2.5" />
+                     </a>
                   </div>
                </div>
 
                <form onSubmit={handleSubmitTransaction} className="space-y-4">
                   <div className="space-y-1">
-                     <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest block pl-1">Transaction UTR (12 Digits)</label>
+                     <div className="flex justify-between items-center pl-1">
+                       <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest block">Transaction UTR (12 Digits)</label>
+                       {transactionId && (
+                         <span className={`text-[8px] font-black uppercase tracking-wider ${/^\d{12}$/.test(transactionId) ? 'text-emerald-600' : 'text-rose-500'}`}>
+                           {/^\d{12}$/.test(transactionId) ? '✓ Valid UTR' : `${transactionId.length} / 12 Digits`}
+                         </span>
+                       )}
+                     </div>
                      <div className="relative">
                         <input 
                            type="text" 
-                           placeholder="Enter UTR Number"
+                           placeholder="Enter 12-digit UTR Number"
                            required
+                           maxLength={12}
                            value={transactionId}
-                           onChange={(e) => setTransactionId(e.target.value)}
-                           className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-6 pr-4 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none"
+                           onChange={(e) => setTransactionId(e.target.value.replace(/\D/g, ''))}
+                           className={`w-full bg-slate-50 border-2 rounded-2xl pl-5 pr-4 py-3.5 text-xs font-black tracking-widest outline-none transition-all ${
+                             transactionId 
+                               ? /^\d{12}$/.test(transactionId)
+                                 ? 'border-emerald-500 focus:bg-white focus:border-emerald-600'
+                                 : 'border-rose-400 focus:bg-white focus:border-rose-500'
+                               : 'border-slate-100 focus:border-blue-600 focus:bg-white'
+                           }`}
                         />
                      </div>
+                     <p className="text-[8px] font-medium text-slate-400 pl-1 leading-relaxed uppercase">
+                       Find the 12-digit UTR/Ref number in your Google Pay, PhonePe, or Paytm receipt.
+                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 pt-2">
                      <button 
                         type="submit"
-                        disabled={isSubmitting || !transactionId}
-                        className="py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center space-x-2 disabled:opacity-50 transition-all hover:scale-[1.02]"
+                        disabled={isSubmitting || !/^\d{12}$/.test(transactionId)}
+                        className="py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center space-x-2 disabled:opacity-40 transition-all hover:scale-[1.02] shadow-lg shadow-slate-900/10 active:scale-95"
                      >
                         <Send className="h-4 w-4" />
                         <span>{isSubmitting ? 'Verifying...' : 'Submit Proof'}</span>
@@ -289,13 +345,36 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                      <button 
                         type="button"
                         onClick={openWhatsApp}
-                        className="py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center space-x-2 transition-all hover:bg-emerald-700 hover:scale-[1.02]"
+                        className="py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center space-x-2 transition-all hover:bg-emerald-700 hover:scale-[1.02] shadow-lg shadow-emerald-600/10 active:scale-95"
                      >
                         <MessageSquare className="h-4 w-4" />
                         <span>Send WhatsApp</span>
                      </button>
                   </div>
                </form>
+
+               {/* Social Proof Live Log */}
+               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2.5">
+                  <div className="flex items-center gap-1.5 text-blue-600">
+                     <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                     <span className="text-[9px] font-black uppercase tracking-wider">Live System Log</span>
+                  </div>
+                  <div className="space-y-1.5">
+                     {[
+                        { name: "hitesh***", plan: `Alpha ${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'}`, time: "4m ago" },
+                        { name: "vikas***", plan: `Pro ${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'}`, time: "12m ago" },
+                        { name: "amit***", plan: `Alpha ${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'}`, time: "24m ago" }
+                     ].map((act, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-[8px] font-bold text-slate-500 uppercase tracking-tight">
+                           <div className="flex items-center gap-1.5">
+                              <span className="h-1 w-1 rounded-full bg-emerald-500" />
+                              <span>User {act.name} activated {act.plan}</span>
+                           </div>
+                           <span className="text-slate-400 font-normal">{act.time}</span>
+                        </div>
+                     ))}
+                  </div>
+               </div>
             </div>
           )}
         </div>
