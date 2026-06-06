@@ -46,15 +46,18 @@ export const getApiUrl = () => {
        }
     }
 
-    // 2. Production Check
+    // 2. Explicit Environment Variable (Highest Priority)
+    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+
+    // 3. Production Check
     const isProduction = h.includes('marketbeaconpro.com') || h.includes('marketbeacon.vercel.app');
     if (isProduction) return "https://marketbeacon.onrender.com";
 
-    // 3. Local Network
+    // 4. Local Network Fallback
     const isLocal = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.') || h.startsWith('10.') || h.startsWith('172.') || h.endsWith('.local');
     if (isLocal) return `${p}//${h}:3001`;
 
-    return import.meta.env.VITE_API_URL || "https://marketbeacon.onrender.com";
+    return "https://marketbeacon.onrender.com";
   } catch (e) {
     console.error('🛡️ [Safe-Guard] API URL Resolution failed, using fallback.');
     return "https://marketbeacon.onrender.com";

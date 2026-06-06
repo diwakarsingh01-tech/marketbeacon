@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { 
-  ArrowLeft, Check, X, Target, ExternalLink, Info, ShieldCheck, 
-  TrendingUp, AlertCircle, ChevronRight, PieChart as PieIcon, Activity, ArrowUpRight 
+  Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight 
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
@@ -49,6 +48,10 @@ const StockFundamentalsPage: React.FC = () => {
     { id: 'valuation', label: 'Valuation', data: audit?.efficiencyGovernance, icon: <Target className="h-3 w-3 mr-1" /> }
   ];
 
+  const peRatio = Number(data?.peRatio || 0);
+  const avgMedian = (Number(data?.peMedians?.pe3Y || 0) + Number(data?.peMedians?.pe5Y || 0)) / 2;
+  const isPEOvervalued = peRatio > avgMedian && avgMedian > 0;
+
   return (
     <div className="flex-1 flex flex-col font-sans text-slate-800 bg-[#f8fafc] h-screen overflow-hidden">
       
@@ -65,7 +68,7 @@ const StockFundamentalsPage: React.FC = () => {
                  <div className="flex items-center space-x-3">
                     <h1 className="text-2xl font-black text-slate-900 tracking-tighter uppercase leading-none">{symbol}</h1>
                     <span className="px-2 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-500 uppercase tracking-tighter">{data?.industry || 'General'}</span>
-                    <div className="px-2 py-0.5 bg-slate-900 text-white rounded text-[9px] font-black uppercase tracking-tighter">{universe}</div>
+                    <div className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter ${universe === 'INSTITUTIONAL' ? 'bg-blue-600 text-white' : 'bg-slate-900 text-white'}`}>{universe}</div>
                  </div>
               </div>
             </div>
@@ -105,14 +108,14 @@ const StockFundamentalsPage: React.FC = () => {
              </div>
              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Debt-To-Equity</span>
-                <p className={`text-lg font-black leading-tight ${Number(data?.netDebtToEquity) > 1.0 ? 'text-red-600' : 'text-slate-900'}`}>{Number(data?.netDebtToEquity).toFixed(2)}</p>
+                <p className={`text-lg font-black leading-tight ${Number(data?.netDebtToEquity) > 0.2 ? 'text-red-600' : 'text-slate-900'}`}>{Number(data?.netDebtToEquity).toFixed(2)}</p>
              </div>
           </div>
 
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
              <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-900">
                 <span>Institutional Audit Matrix</span>
-                <span className="text-slate-400">{data?.audit?.reason}</span>
+                <span className="text-slate-400">{audit?.reason}</span>
              </div>
              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                 {weightedSegments.map((segment) => segment.data && (
@@ -138,9 +141,9 @@ const StockFundamentalsPage: React.FC = () => {
 
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 grid grid-cols-2 md:grid-cols-4 gap-4">
              {[
-               { label: 'ATH Sales', value: data?.athSales ? `₹${Number(data.athSales).toLocaleString()}Cr` : '-' },
-               { label: 'ATH Profit', value: data?.athNetProfit ? `₹${Number(data.athNetProfit).toLocaleString()}Cr` : '-' },
-               { label: '52W High', value: `₹${data?.fiftyTwoWeekHigh?.toLocaleString()}` },
+               { label: 'ATH Sales', value: data?.athSales ? `₹${Number(data.athSales).toLocaleString()} Cr.` : '-' },
+               { label: 'ATH Profit', value: data?.athNetProfit ? `₹${Number(data.athNetProfit).toLocaleString()} Cr.` : '-' },
+               { label: '52W High', value: `₹${Number(data?.fiftyTwoWeekHigh || 0).toLocaleString()}` },
                { label: 'Beta', value: Number(data?.beta)?.toFixed(2) }
              ].map((item, i) => (
                <div key={i} className="space-y-0.5">
@@ -158,14 +161,14 @@ const StockFundamentalsPage: React.FC = () => {
               </h3>
               <div className="space-y-4">
                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                       <p className="text-[7px] font-black text-slate-400 uppercase">Current PE</p>
-                       <p className="text-lg font-black text-slate-900 leading-none">{Number(data?.peRatio || 0).toFixed(1)}</p>
+                    <div className={`p-4 rounded-xl border ${isPEOvervalued ? 'bg-rose-50 border-rose-100' : 'bg-slate-50 border-slate-100'}`}>
+                       <p className={`text-[7px] font-black uppercase ${isPEOvervalued ? 'text-rose-400' : 'text-slate-400'}`}>Current PE</p>
+                       <p className={`text-lg font-black leading-none ${isPEOvervalued ? 'text-rose-600' : 'text-slate-900'}`}>{peRatio.toFixed(1)}</p>
                     </div>
                     <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 text-center">
-                       <p className="text-[7px] font-black text-slate-500 uppercase">Avg Median</p>
+                       <p className="text-[7px] font-black text-slate-500 uppercase">Avg Median (3Y/5Y)</p>
                        <p className="text-lg font-black text-white leading-none">
-                          {((Number(data?.peMedians?.pe3Y||0) + Number(data?.peMedians?.pe5Y||0) + Number(data?.peMedians?.pe10Y||0))/3).toFixed(1)}
+                          {avgMedian > 0 ? avgMedian.toFixed(1) : 'N/A'}
                        </p>
                     </div>
                  </div>
@@ -196,11 +199,11 @@ const StockFundamentalsPage: React.FC = () => {
            <div className="bg-slate-900 rounded-2xl p-5 text-white space-y-3 shadow-xl">
               <h3 className="text-xs font-black uppercase tracking-widest italic">Research Hub</h3>
               <div className="grid grid-cols-1 gap-2">
-                 <a href={`https://www.tradingview.com/symbols/NSE-${symbol}`} target="_blank" className="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all border border-white/10 group">
+                 <a href={`https://www.tradingview.com/symbols/NSE-${symbol}`} target="_blank" className="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all border border-white/10 group" rel="noreferrer">
                     <span className="text-[9px] font-black uppercase tracking-widest">Charts</span>
                     <ArrowUpRight className="h-3 w-3 text-slate-400 group-hover:text-white" />
                  </a>
-                 <a href={`https://www.screener.in/company/${symbol}/consolidated/`} target="_blank" className="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all border border-white/10 group">
+                 <a href={`https://www.screener.in/company/${symbol}/consolidated/`} target="_blank" className="flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all border border-white/10 group" rel="noreferrer">
                     <span className="text-[9px] font-black uppercase tracking-widest">Screener</span>
                     <ArrowUpRight className="h-3 w-3 text-slate-400 group-hover:text-white" />
                  </a>
