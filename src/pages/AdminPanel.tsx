@@ -18,7 +18,9 @@ import {
   ArrowRight,
   Settings2,
   Power,
-  Gift
+  Gift,
+  MessageSquare,
+  Star
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
@@ -30,8 +32,9 @@ const AdminPanel: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [vouchers, setVouchers] = useState<any[]>([]);
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users' | 'vouchers'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users' | 'vouchers' | 'feedback'>('pending');
   const [search, setSearch] = useState('');
   
   // Modals
@@ -44,13 +47,14 @@ const AdminPanel: React.FC = () => {
     setIsLoading(true);
     const token = localStorage.getItem('mb_token');
     try {
-      const [uRes, rRes, vRes] = await Promise.all([
+      const [uRes, rRes, vRes, fRes] = await Promise.all([
         fetch(`${API_URL}/api/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`${API_URL}/api/admin/upgrade-requests`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/admin/vouchers`, { headers: { 'Authorization': `Bearer ${token}` } })
+        fetch(`${API_URL}/api/admin/vouchers`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/api/admin/feedback`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
 
-      if (uRes.status === 401 || uRes.status === 403 || rRes.status === 401 || rRes.status === 403 || vRes.status === 401 || vRes.status === 403) {
+      if (uRes.status === 401 || uRes.status === 403 || rRes.status === 401 || rRes.status === 403 || vRes.status === 401 || vRes.status === 403 || fRes.status === 401 || fRes.status === 403) {
         localStorage.removeItem('mb_token');
         localStorage.removeItem('mb_user');
         window.location.href = '/login';
@@ -60,6 +64,7 @@ const AdminPanel: React.FC = () => {
       if (uRes.ok) setUsers(await safeJsonParse(uRes) || []);
       if (rRes.ok) setRequests(await safeJsonParse(rRes) || []);
       if (vRes.ok) setVouchers(await safeJsonParse(vRes) || []);
+      if (fRes.ok) setFeedbacks(await safeJsonParse(fRes) || []);
     } catch (e) {
       console.error("Admin fetch failed:", e);
     } finally {
@@ -221,6 +226,13 @@ const AdminPanel: React.FC = () => {
               <Gift className="h-4 w-4" />
               <span>Vouchers ({vouchers.length})</span>
             </button>
+            <button 
+              onClick={() => setActiveTab('feedback')}
+              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'feedback' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+            >
+              <MessageSquare className="h-4 w-4" />
+              <span>Feedback ({feedbacks.length})</span>
+            </button>
          </div>
          
          <div className="flex items-center space-x-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -242,12 +254,16 @@ const AdminPanel: React.FC = () => {
              <thead>
                <tr className="border-b border-slate-50 bg-slate-50/30">
                   <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    {activeTab === 'users' ? 'Member Profile' : activeTab === 'vouchers' ? 'Voucher Code' : 'Approval Request'}
+                    {activeTab === 'users' ? 'Member Profile' : activeTab === 'vouchers' ? 'Voucher Code' : activeTab === 'feedback' ? 'Member Profile' : 'Approval Request'}
                   </th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Plan Tier</th>
+                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                    {activeTab === 'feedback' ? 'Rating' : 'Status'}
+                  </th>
+                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                    {activeTab === 'feedback' ? 'Type' : 'Plan Tier'}
+                  </th>
                   <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    {activeTab === 'users' ? 'Membership Validity' : activeTab === 'vouchers' ? 'Usage Matrix' : 'Transaction ID'}
+                    {activeTab === 'users' ? 'Membership Validity' : activeTab === 'vouchers' ? 'Usage Matrix' : activeTab === 'feedback' ? 'Commentary & Context' : 'Transaction ID'}
                   </th>
                   <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                </tr>
@@ -347,7 +363,56 @@ const AdminPanel: React.FC = () => {
                     </tr>
                    );
                  })
-               ) : (
+               ) : activeTab === 'feedback' ? (
+                  (feedbacks || []).map(f => (
+                    <tr key={f.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <td className="px-8 py-6">
+                        <div className="flex flex-col">
+                           <span className="text-[13px] font-black text-slate-900 leading-none">{f.user_name || 'System User'}</span>
+                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{f.user_email}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex justify-center items-center space-x-0.5">
+                           {[1, 2, 3, 4, 5].map(star => (
+                             <Star 
+                               key={star} 
+                               className={`h-3 w-3 ${star <= f.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} 
+                             />
+                           ))}
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex justify-center">
+                           <span className={`px-2.5 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100`}>
+                             {f.disposition}
+                           </span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex flex-col space-y-1 max-w-md">
+                           <p className="text-xs text-slate-800 font-medium leading-relaxed">{f.comment}</p>
+                           {f.url && (
+                             <a 
+                               href={f.url} 
+                               target="_blank" 
+                               rel="noreferrer" 
+                               className="text-[9px] font-black text-blue-500 hover:underline truncate"
+                             >
+                               {f.url}
+                             </a>
+                           )}
+                           <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                             {new Date(f.timestamp).toLocaleString()}
+                           </span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                         {/* Action can be added here */}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
                  filteredRequests.map(req => (
                   <tr key={req.id} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-6">
@@ -486,6 +551,48 @@ const AdminPanel: React.FC = () => {
                 </div>
               );
             })
+          ) : activeTab === 'feedback' ? (
+            (feedbacks || []).map(f => (
+              <div key={f.id} className="p-5 space-y-3 hover:bg-slate-50/40 transition-colors">
+                 <div className="flex justify-between items-start">
+                    <div>
+                       <span className="text-xs font-black text-slate-900 block leading-none">{f.user_name || 'System User'}</span>
+                       <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-1 block">{f.user_email}</span>
+                    </div>
+                    <div className="flex items-center space-x-0.5">
+                       {[1, 2, 3, 4, 5].map(star => (
+                         <Star 
+                           key={star} 
+                           className={`h-3 w-3 ${star <= f.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} 
+                         />
+                       ))}
+                    </div>
+                 </div>
+                 <div className="pt-3 border-t border-slate-100 space-y-2">
+                    <div className="flex items-center justify-between">
+                       <span className="text-[7.5px] text-slate-400 uppercase font-bold">Feedback Type</span>
+                       <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-100">
+                          {f.disposition}
+                       </span>
+                    </div>
+                    <div>
+                       <span className="text-[7.5px] text-slate-400 block mb-1 uppercase font-bold">Commentary</span>
+                       <p className="text-xs text-slate-800 font-medium leading-relaxed bg-slate-50 p-3 rounded-xl">{f.comment}</p>
+                    </div>
+                    {f.url && (
+                       <div>
+                          <span className="text-[7.5px] text-slate-400 block mb-0.5 uppercase font-bold">Source URL</span>
+                          <a href={f.url} target="_blank" rel="noreferrer" className="text-[9px] font-black text-blue-500 hover:underline truncate block">
+                             {f.url}
+                          </a>
+                       </div>
+                    )}
+                    <div className="text-[7.5px] font-bold text-slate-400 uppercase tracking-wider pt-1">
+                       {new Date(f.timestamp).toLocaleString()}
+                    </div>
+                 </div>
+              </div>
+            ))
           ) : (
             filteredRequests.map(req => (
               <div key={req.id} className="p-5 space-y-3.5 hover:bg-slate-50/40 transition-colors">
