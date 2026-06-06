@@ -995,6 +995,40 @@ app.post('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// --- Feedback Endpoints ---
+app.post('/api/feedback', authenticateToken, async (req: any, res) => {
+  try {
+    const { rating, disposition, comment, timestamp, url } = req.body;
+    const userId = req.user.id;
+    const db = getDB();
+    
+    await db.run(
+      'INSERT INTO feedback (user_id, rating, disposition, comment, timestamp, url) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, rating, disposition, comment, timestamp || new Date().toISOString(), url || '']
+    );
+    res.json({ success: true, message: 'Feedback logged successfully' });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/admin/feedback', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const feedbacks = await db.all(`
+      SELECT f.*, u.name as user_name, u.email as user_email 
+      FROM feedback f 
+      JOIN users u ON f.user_id = u.id 
+      ORDER BY f.id DESC
+    `);
+    res.json(feedbacks);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
+
 const startServer = async () => {
   const PORT = Number(process.env.PORT) || 3001;
   try {

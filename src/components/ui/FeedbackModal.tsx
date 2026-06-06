@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getApiUrl } from '../../lib/api-utils';
 import { 
   Star, 
   X, 
@@ -25,7 +26,7 @@ const DISPOSITIONS = [
   { id: 'OTHER', label: 'General Feedback', icon: HelpCircle },
 ];
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = getApiUrl();
 
 const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
   const [rating, setRating] = useState(0);
