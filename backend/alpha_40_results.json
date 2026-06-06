@@ -1,34 +1,49 @@
 {
   "active": [
     {
-      "symbol": "HDFCAMC",
-      "stockName": "HDFCAMC",
-      "strategy": "Envelope Short",
-      "basketSource": "Elite Basket",
-      "capType": "LARGE",
-      "sector": "Asset Management",
-      "currentPrice": 2495.89990234375,
-      "entryPrice": 2584,
-      "entryTime": "2026-01-08",
-      "target": 2946,
-      "roi": 14.0092879256966,
-      "score": 95,
-      "smartMoney": 91.24
-    },
-    {
       "symbol": "DABUR",
       "stockName": "DABUR",
-      "strategy": "Envelope Long",
-      "basketSource": "Elite Basket",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Growth Basket",
       "capType": "LARGE",
       "sector": "FMCG",
       "currentPrice": 424.1499938964844,
-      "entryPrice": 446,
-      "entryTime": "2024-11-18",
-      "target": 495,
-      "roi": 10.986547085201792,
+      "entryPrice": 437,
+      "entryTime": "2026-05-21T03:45:00.000Z",
+      "target": 649,
+      "roi": 48.51258581235698,
       "score": 95,
       "smartMoney": 94.69
+    },
+    {
+      "symbol": "HCLTECH",
+      "stockName": "HCLTECH",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Growth Basket",
+      "capType": "LARGE",
+      "sector": "IT Services",
+      "currentPrice": 1154.699951171875,
+      "entryPrice": 1183,
+      "entryTime": "2026-05-27T03:45:00.000Z",
+      "target": 1669,
+      "roi": 41.08199492814877,
+      "score": 90,
+      "smartMoney": 95.32000000000001
+    },
+    {
+      "symbol": "COLPAL",
+      "stockName": "COLPAL",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Growth Basket",
+      "capType": "LARGE",
+      "sector": "FMCG",
+      "currentPrice": 1999.5,
+      "entryPrice": 2087,
+      "entryTime": "2026-01-30T03:45:00.000Z",
+      "target": 2814,
+      "roi": 34.834690943938675,
+      "score": 90,
+      "smartMoney": 79.85
     },
     {
       "symbol": "HAL",
@@ -61,6 +76,21 @@
       "smartMoney": 88.33
     },
     {
+      "symbol": "ICICIGI",
+      "stockName": "ICICIGI",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Growth Basket",
+      "capType": "LARGE",
+      "sector": "General Research",
+      "currentPrice": 1758,
+      "entryPrice": 1745,
+      "entryTime": "2026-04-30T03:45:00.000Z",
+      "target": 2293,
+      "roi": 31.40401146131806,
+      "score": 90,
+      "smartMoney": 92.97999999999999
+    },
+    {
       "symbol": "OBEROIRLTY",
       "stockName": "OBEROIRLTY",
       "strategy": "Support and Resistance Strategy (S&R)",
@@ -76,36 +106,6 @@
       "smartMoney": 97.71
     },
     {
-      "symbol": "BERGEPAINT",
-      "stockName": "BERGEPAINT",
-      "strategy": "Envelope Short",
-      "basketSource": "Elite Basket",
-      "capType": "LARGE",
-      "sector": "Paints",
-      "currentPrice": 490.25,
-      "entryPrice": 524,
-      "entryTime": "2025-09-26",
-      "target": 598,
-      "roi": 14.122137404580148,
-      "score": 90,
-      "smartMoney": 91.37
-    },
-    {
-      "symbol": "ICICIGI",
-      "stockName": "ICICIGI",
-      "strategy": "Envelope Short",
-      "basketSource": "Elite Basket",
-      "capType": "LARGE",
-      "sector": "General Research",
-      "currentPrice": 1758,
-      "entryPrice": 1836,
-      "entryTime": "2024-11-19",
-      "target": 2093,
-      "roi": 13.997821350762528,
-      "score": 90,
-      "smartMoney": 92.97999999999999
-    },
-    {
       "symbol": "PIDILITIND",
       "stockName": "PIDILITIND",
       "strategy": "Envelope Short",
@@ -119,36 +119,6 @@
       "roi": 13.96426207809398,
       "score": 90,
       "smartMoney": 90.63
-    },
-    {
-      "symbol": "HCLTECH",
-      "stockName": "HCLTECH",
-      "strategy": "Envelope Long",
-      "basketSource": "Elite Basket",
-      "capType": "LARGE",
-      "sector": "IT Services",
-      "currentPrice": 1154.699951171875,
-      "entryPrice": 1204,
-      "entryTime": "2025-04-03",
-      "target": 1338,
-      "roi": 11.129568106312293,
-      "score": 90,
-      "smartMoney": 95.32000000000001
-    },
-    {
-      "symbol": "COLPAL",
-      "stockName": "COLPAL",
-      "strategy": "Envelope Long",
-      "basketSource": "Elite Basket",
-      "capType": "LARGE",
-      "sector": "FMCG",
-      "currentPrice": 1999.5,
-      "entryPrice": 2135,
-      "entryTime": "2025-01-15",
-      "target": 2372,
-      "roi": 11.10070257611242,
-      "score": 90,
-      "smartMoney": 79.85
     },
     {
       "symbol": "TCS",
@@ -211,32 +181,17 @@
       "smartMoney": 92.28
     },
     {
-      "symbol": "ABBOTINDIA",
-      "stockName": "ABBOTINDIA",
-      "strategy": "Envelope Long",
-      "basketSource": "Elite Basket",
-      "capType": "LARGE",
-      "sector": "Pharma",
-      "currentPrice": 26035,
-      "entryPrice": 26393,
-      "entryTime": "2026-01-29",
-      "target": 34987,
-      "roi": 32.56166407759633,
-      "score": 85,
-      "smartMoney": 84.19
-    },
-    {
       "symbol": "SBIN",
       "stockName": "SBIN",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
       "capType": "LARGE",
       "sector": "General Research",
       "currentPrice": 977.7000122070312,
-      "entryPrice": 944,
-      "entryTime": "2026-06-03T03:45:00.000Z",
-      "target": 1230,
-      "roi": 30.296610169491522,
+      "entryPrice": 973,
+      "entryTime": "2026-05-11",
+      "target": 1109,
+      "roi": 13.97738951695786,
       "score": 85,
       "smartMoney": 93.04
     },
@@ -254,6 +209,21 @@
       "roi": 43.66729678638941,
       "score": 80,
       "smartMoney": 77.87
+    },
+    {
+      "symbol": "COALINDIA",
+      "stockName": "COALINDIA",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
+      "capType": "LARGE",
+      "sector": "General Research",
+      "currentPrice": 472.29998779296875,
+      "entryPrice": 469,
+      "entryTime": "2024-10-25",
+      "target": 534,
+      "roi": 13.85927505330491,
+      "score": 80,
+      "smartMoney": 94.27000000000001
     },
     {
       "symbol": "HDFCBANK",
@@ -299,21 +269,6 @@
       "roi": 37.60307861462342,
       "score": 75,
       "smartMoney": 87.56
-    },
-    {
-      "symbol": "IOB",
-      "stockName": "IOB",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
-      "capType": "LARGE",
-      "sector": "General Research",
-      "currentPrice": 32.93000030517578,
-      "entryPrice": 34,
-      "entryTime": "2026-06-02T03:45:00.000Z",
-      "target": 46,
-      "roi": 35.29411764705883,
-      "score": 75,
-      "smartMoney": 97.15
     },
     {
       "symbol": "ASIANPAINT",
@@ -376,21 +331,6 @@
       "smartMoney": 90.02
     },
     {
-      "symbol": "PAGEIND",
-      "stockName": "PAGEIND",
-      "strategy": "Envelope Long",
-      "basketSource": "Elite Basket",
-      "capType": "MID",
-      "sector": "Apparel",
-      "currentPrice": 38345,
-      "entryPrice": 37947,
-      "entryTime": "2025-11-21",
-      "target": 50302,
-      "roi": 32.55856852979156,
-      "score": 90,
-      "smartMoney": 94.39
-    },
-    {
       "symbol": "LTTS",
       "stockName": "LTTS",
       "strategy": "Support and Resistance Strategy (S&R)",
@@ -423,30 +363,30 @@
     {
       "symbol": "PFIZER",
       "stockName": "PFIZER",
-      "strategy": "Envelope Short",
-      "basketSource": "Elite Basket",
+      "strategy": "Velocity Retest (20%)",
+      "basketSource": "Growth Basket",
       "capType": "MID",
       "sector": "Pharma",
       "currentPrice": 4456.2998046875,
-      "entryPrice": 4948,
-      "entryTime": "2025-12-03",
-      "target": 5641,
-      "roi": 14.005658852061442,
+      "entryPrice": 4405,
+      "entryTime": "2025-05-19",
+      "target": 5797,
+      "roi": 31.600454029511926,
       "score": 70,
       "smartMoney": 83.62
     },
     {
       "symbol": "GLAXO",
       "stockName": "GLAXO",
-      "strategy": "Envelope Long",
-      "basketSource": "Elite Basket",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Growth Basket",
       "capType": "MID",
       "sector": "Pharma",
       "currentPrice": 2164.10009765625,
-      "entryPrice": 2186,
-      "entryTime": "2025-11-24",
-      "target": 2429,
-      "roi": 11.11619396157366,
+      "entryPrice": 2150,
+      "entryTime": "2026-06-02T03:45:00.000Z",
+      "target": 2827,
+      "roi": 31.488372093023266,
       "score": 70,
       "smartMoney": 87.30000000000001
     },
@@ -483,15 +423,15 @@
     {
       "symbol": "SANOFI",
       "stockName": "SANOFI",
-      "strategy": "Envelope Short",
-      "basketSource": "Elite Basket",
+      "strategy": "Institutional Reset (67%)",
+      "basketSource": "Growth Basket",
       "capType": "SMALL",
       "sector": "Pharma",
       "currentPrice": 3186.39990234375,
-      "entryPrice": 4346,
-      "entryTime": "2025-04-25",
-      "target": 4829,
-      "roi": 11.113667740450994,
+      "entryPrice": 3186,
+      "entryTime": "2026-06-06",
+      "target": 7052,
+      "roi": 121.34337727558066,
       "score": 80,
       "smartMoney": 87.17
     },
@@ -527,54 +467,6 @@
     }
   ],
   "closed": [
-    {
-      "symbol": "GLAXO",
-      "entryTime": "2024-03-27T03:45:00.000Z",
-      "exitDate": "2024-05-23T03:45:00.000Z",
-      "days": 57,
-      "roi": 33.5248396000811,
-      "score": 70
-    },
-    {
-      "symbol": "GLAXO",
-      "entryTime": "2024-12-12T03:45:00.000Z",
-      "exitDate": "2025-04-24T03:45:00.000Z",
-      "days": 133,
-      "roi": 36.62600870518482,
-      "score": 70
-    },
-    {
-      "symbol": "GILLETTE",
-      "entryTime": "2025-02-13T03:45:00.000Z",
-      "exitDate": "2025-06-06T03:45:00.000Z",
-      "days": 113,
-      "roi": 30.095400101907078,
-      "score": 90
-    },
-    {
-      "symbol": "NAM-INDIA",
-      "entryTime": "2025-01-27T03:45:00.000Z",
-      "exitDate": "2025-05-20T03:45:00.000Z",
-      "days": 113,
-      "roi": 30.84224087711962,
-      "score": 80
-    },
-    {
-      "symbol": "HDFCAMC",
-      "entryTime": "2025-02-28T03:45:00.000Z",
-      "exitDate": "2025-05-16T03:45:00.000Z",
-      "days": 77,
-      "roi": 31.52164748726527,
-      "score": 95
-    },
-    {
-      "symbol": "BERGEPAINT",
-      "entryTime": "2024-05-31T03:45:00.000Z",
-      "exitDate": "2024-09-04T03:45:00.000Z",
-      "days": 96,
-      "roi": 30.32608695652175,
-      "score": 90
-    },
     {
       "symbol": "KEI",
       "entryTime": "2024-11-18T03:45:00.000Z",
@@ -1249,26 +1141,24 @@
     }
   ],
   "capStats": {
-    "LARGE": 24,
-    "MID": 6,
+    "LARGE": 21,
+    "MID": 5,
     "SMALL": 5
   },
   "sectorStats": {
-    "Asset Management": 1,
     "FMCG": 4,
-    "General Research": 10,
-    "Paints": 2,
-    "Adhesives": 1,
     "IT Services": 4,
-    "Pharma": 4,
+    "General Research": 10,
+    "Adhesives": 1,
     "Banking": 2,
+    "Paints": 1,
     "Automation": 1,
-    "Apparel": 1,
     "Engineering Tech": 1,
     "Logistics": 1,
+    "Pharma": 3,
     "Energy Exchange": 1,
     "Chemicals": 1,
     "Consumer Durables": 1
   },
-  "updatedAt": "2026-06-06T16:02:58.689Z"
+  "updatedAt": "2026-06-06T17:20:21.224Z"
 }
