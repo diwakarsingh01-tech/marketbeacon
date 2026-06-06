@@ -244,17 +244,12 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-xl bg-slate-900/50 backdrop-blur-2xl p-12 md:p-16 rounded-[4rem] shadow-2xl border border-white/5 space-y-12 animate-in fade-in zoom-in-95 duration-700 relative z-10">
         <div className="text-center space-y-6 relative z-10">
            <div className="flex justify-center">
-              <div className="w-20 h-20 bg-blue-600 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-blue-500/20 rotate-6 hover:rotate-0 transition-transform duration-500">
-                <Activity className="h-10 w-10 text-white" />
-              </div>
+              <BrandLogo variant="dark" size={36} />
            </div>
-           <div className="space-y-2">
-              <span className="text-sm font-black tracking-[0.4em] uppercase text-blue-500 block">
+           <div className="space-y-2 pt-4">
+              <span className="text-[9px] font-black tracking-[0.45em] uppercase text-blue-500 block">
                 Authorized Access Only
               </span>
-              <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none">
-                MarketBeacon<span className="text-blue-500">Pro</span>
-              </h1>
               <div className="flex items-center justify-center gap-2 pt-2">
                 <div className="flex -space-x-2">
                   {[1,2,3].map(i => (

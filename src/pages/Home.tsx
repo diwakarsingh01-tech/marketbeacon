@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
 import { BASKETS } from '../data/stocks';
+import BrandLogo from '../components/brand/BrandLogo';
 
 const API_URL = getApiUrl();
 
@@ -172,12 +173,9 @@ const HomePage: React.FC = () => {
 
       {/* Navigation */}
       <nav className="fixed top-10 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 px-6 md:px-10 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-           <div className="bg-blue-600 p-2 rounded-xl text-white">
-              <Activity className="h-6 w-6" />
-           </div>
-           <span className="text-xl font-black tracking-tighter uppercase italic">MarketBeacon<span className="text-blue-500">Pro</span></span>
-        </div>
+        <Link to="/" className="flex items-center transition-all hover:opacity-90 active:scale-95">
+           <BrandLogo variant="dark" size={30} />
+        </Link>
         <div className="hidden md:flex items-center space-x-8">
            <div className="flex items-center space-x-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />

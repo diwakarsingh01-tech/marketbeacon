@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getApiUrl } from '../lib/api-utils';
+import BrandLogo from '../components/brand/BrandLogo';
 
 const ConnectivityHub: React.FC = () => {
   const [apiUrl, setApiUrl] = useState(getApiUrl());
@@ -81,12 +82,7 @@ const ConnectivityHub: React.FC = () => {
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] -mr-32 -mt-32" />
           
           <div className="relative z-10 space-y-12">
-            <div className="flex items-center space-x-3">
-              <div className="bg-white p-2.5 rounded-2xl text-slate-900 shadow-xl rotate-12">
-                <Globe className="h-6 w-6" />
-              </div>
-              <span className="text-2xl font-black tracking-tighter uppercase italic">MarketBeacon</span>
-            </div>
+            <BrandLogo variant="dark" size={30} />
 
             <div className="space-y-4">
               <h1 className="text-4xl font-black tracking-tight uppercase italic leading-tight">Connectivity<br />Monitor</h1>

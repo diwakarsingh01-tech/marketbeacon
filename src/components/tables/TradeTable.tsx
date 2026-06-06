@@ -441,9 +441,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
         </motion.div>
       )}
 
-      {/* Desktop Table View */}
       <div className="hidden md:block border border-slate-100 rounded-[1.5rem] bg-white shadow-2xl overflow-hidden relative">
-        <div className="overflow-x-auto custom-scrollbar">
+        <div className="overflow-x-auto custom-scrollbar min-h-[300px]">
           <table className="w-full text-left border-collapse min-w-[1200px]">
             <thead>
               {activeTab === 'portfolio' ? (
@@ -637,7 +636,11 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                 );
                               })}
                             </div>
-                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 z-[200] hidden group-hover/ladder:block bg-slate-950 text-white shadow-2xl rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300 min-w-[200px]">
+                            <div className={`absolute left-1/2 -translate-x-1/2 z-[200] hidden group-hover/ladder:block bg-slate-950 text-white shadow-2xl rounded-xl p-4 animate-in fade-in duration-300 min-w-[200px] ${
+                              idx < 2 
+                                ? 'top-full mt-3 slide-in-from-top-2' 
+                                : 'bottom-full mb-3 slide-in-from-bottom-2'
+                            }`}>
                                <div className="space-y-2">
                                   <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1.5">
                                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Institutional Ladder</span>

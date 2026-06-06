@@ -32,7 +32,21 @@ export async function initSnapshotCache() {
     console.log(`✅ Snapshot cache fully restored from Cloud (${allData.length} symbols)`);
   } catch (e: any) {
     console.error('❌ Failed to load snapshot cache from Supabase:', e.message);
-    snapshotCache = {};
+    try {
+      console.log('🔄 Attempting local fallback: loading from market_snapshot.json...');
+      const fallbackPath = path.resolve(process.cwd(), 'market_snapshot.json');
+      if (fs.existsSync(fallbackPath)) {
+        const fileContent = fs.readFileSync(fallbackPath, 'utf8');
+        snapshotCache = JSON.parse(fileContent);
+        console.log(`✅ Snapshot cache successfully restored from local fallback (${Object.keys(snapshotCache).length} symbols)`);
+      } else {
+        console.error('❌ Local fallback failed: market_snapshot.json does not exist');
+        snapshotCache = {};
+      }
+    } catch (localErr: any) {
+      console.error('❌ Failed to load snapshot cache from local file:', localErr.message);
+      snapshotCache = {};
+    }
   }
 }
 
