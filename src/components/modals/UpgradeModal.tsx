@@ -93,6 +93,12 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
       });
 
       const data = await safeJsonParse(response);
+      if (response.status === 401 || response.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
+        localStorage.removeItem('mb_token');
+        localStorage.removeItem('mb_user');
+        window.location.href = '/login';
+        return;
+      }
       if (response.ok && !data.error) {
         setIsSuccess(true);
       } else {

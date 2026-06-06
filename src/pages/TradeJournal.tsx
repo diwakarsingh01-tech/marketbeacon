@@ -41,6 +41,7 @@ const TradeJournalPage: React.FC = () => {
     entry_price: '',
     quantity: '',
     target_price: '',
+    stop_loss: '',
     level: 'A',
     entry_date: new Date().toISOString().split('T')[0],
     strategy: STRATEGIES[0].name,
@@ -80,6 +81,12 @@ const TradeJournalPage: React.FC = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await safeJsonParse(res);
+      if (res.status === 401 || res.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
+        localStorage.removeItem('mb_token');
+        localStorage.removeItem('mb_user');
+        window.location.href = '/login';
+        return;
+      }
       if (res.ok && !data.error) {
         setTrades(data);
         if (data.length > 0) fetchLivePrices(data.map((t: any) => t.symbol));
@@ -343,13 +350,19 @@ const TradeJournalPage: React.FC = () => {
     if (!newTrade.symbol) return;
     const token = localStorage.getItem('mb_token');
     const entryPrice = parseFloat(newTrade.entry_price);
-    const payload = { ...newTrade, entry_price: entryPrice, quantity: parseInt(newTrade.quantity), target_price: newTrade.target_price ? parseFloat(newTrade.target_price) : (entryPrice * 1.25) };
+    const payload = { 
+      ...newTrade, 
+      entry_price: entryPrice, 
+      quantity: parseInt(newTrade.quantity), 
+      target_price: newTrade.target_price ? parseFloat(newTrade.target_price) : (entryPrice * 1.25),
+      stop_loss: newTrade.stop_loss ? parseFloat(newTrade.stop_loss) : null
+    };
     try {
       const res = await fetch(`${API_URL}/api/trades`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) { 
         setShowAddModal(false); 
-        setNewTrade({ symbol: '', entry_price: '', quantity: '', target_price: '', level: 'A', entry_date: new Date().toISOString().split('T')[0], strategy: STRATEGIES[0].name, notes: '' }); 
+        setNewTrade({ symbol: '', entry_price: '', quantity: '', target_price: '', stop_loss: '', level: 'A', entry_date: new Date().toISOString().split('T')[0], strategy: STRATEGIES[0].name, notes: '' }); 
         setSymbolSearch(''); 
         fetchTrades(); 
       }
@@ -546,7 +559,7 @@ const TradeJournalPage: React.FC = () => {
                 <button onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"><X className="h-6 w-6" /></button>
              </div>
              
-             <form onSubmit={handleAddTrade} className="p-8 space-y-6 text-left">
+             <form onSubmit={handleAddTrade} className="p-8 space-y-6 text-left max-h-[70vh] overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-6">
                    <div className="col-span-2 relative">
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Instrument Symbol</label>
@@ -570,6 +583,7 @@ const TradeJournalPage: React.FC = () => {
                         type="number" 
                         step="0.05" 
                         required 
+                        placeholder="0.00"
                         value={newTrade.entry_price} 
                         onChange={(e) => setNewTrade({...newTrade, entry_price: e.target.value})} 
                         className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" 
@@ -581,8 +595,58 @@ const TradeJournalPage: React.FC = () => {
                       <input 
                         type="number" 
                         required 
+                        placeholder="0"
                         value={newTrade.quantity} 
                         onChange={(e) => setNewTrade({...newTrade, quantity: e.target.value})} 
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" 
+                      />
+                   </div>
+
+                   <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Target Price (Optional)</label>
+                      <input 
+                        type="number" 
+                        step="0.05" 
+                        placeholder="Defaults to Entry * 1.25"
+                        value={newTrade.target_price} 
+                        onChange={(e) => setNewTrade({...newTrade, target_price: e.target.value})} 
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" 
+                      />
+                   </div>
+
+                   <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Stop Loss (Optional)</label>
+                      <input 
+                        type="number" 
+                        step="0.05" 
+                        placeholder="Stop Loss level"
+                        value={newTrade.stop_loss} 
+                        onChange={(e) => setNewTrade({...newTrade, stop_loss: e.target.value})} 
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" 
+                      />
+                   </div>
+
+                   <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Entry Level</label>
+                      <select 
+                        value={newTrade.level} 
+                        onChange={(e) => setNewTrade({...newTrade, level: e.target.value})} 
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black appearance-none focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner"
+                      >
+                         <option value="A">Level A (Primary)</option>
+                         <option value="B">Level B (Secondary)</option>
+                         <option value="C">Level C (Tertiary)</option>
+                         <option value="D">Level D (Target Zone)</option>
+                      </select>
+                   </div>
+
+                   <div>
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Entry Date</label>
+                      <input 
+                        type="date" 
+                        required
+                        value={newTrade.entry_date} 
+                        onChange={(e) => setNewTrade({...newTrade, entry_date: e.target.value})} 
                         className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" 
                       />
                    </div>
@@ -596,6 +660,17 @@ const TradeJournalPage: React.FC = () => {
                       >
                          {STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                       </select>
+                   </div>
+
+                   <div className="col-span-2">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Transaction Notes</label>
+                      <textarea 
+                        placeholder="Log strategy details, logic parameters, or observations..."
+                        value={newTrade.notes} 
+                        onChange={(e) => setNewTrade({...newTrade, notes: e.target.value})} 
+                        rows={3}
+                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner font-sans resize-none" 
+                      />
                    </div>
                 </div>
                 

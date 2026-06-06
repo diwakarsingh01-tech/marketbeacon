@@ -50,6 +50,13 @@ const AdminPanel: React.FC = () => {
         fetch(`${API_URL}/api/admin/vouchers`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
 
+      if (uRes.status === 401 || uRes.status === 403 || rRes.status === 401 || rRes.status === 403 || vRes.status === 401 || vRes.status === 403) {
+        localStorage.removeItem('mb_token');
+        localStorage.removeItem('mb_user');
+        window.location.href = '/login';
+        return;
+      }
+
       if (uRes.ok) setUsers(await safeJsonParse(uRes) || []);
       if (rRes.ok) setRequests(await safeJsonParse(rRes) || []);
       if (vRes.ok) setVouchers(await safeJsonParse(vRes) || []);

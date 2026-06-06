@@ -32,7 +32,6 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
       items: [
         { icon: LayoutGrid, label: 'Alpha Hub', path: '/alpha-hub', desc: 'Main Terminal', tag: 'Alpha' },
         { icon: Zap, label: 'Screener', path: '/screener', desc: 'Real-time Matrix' },
-        { icon: TrendingUp, label: 'Public Audit', path: '/welcome', desc: 'Growth Insights' },
       ]
     },
     {
@@ -40,14 +39,13 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
       items: [
         { icon: Briefcase, label: 'Manager', path: '/portfolio', desc: 'Wealth Tracking' },
         { icon: BookOpen, label: 'Journal', path: '/trades', desc: 'Verified Ledger' },
-        { icon: Store, label: 'Marketplace', path: '/marketplace', desc: 'Edge Strategies' },
+        { icon: Store, label: 'Marketplace', path: '/marketplace', desc: 'Membership & Node Licenses' },
       ]
     },
     {
       title: 'System Access',
       items: [
         { icon: ShieldCheck, label: 'Education', path: '/education', desc: 'SOP Guides' },
-        { icon: CreditCard, label: 'Membership', path: '/pricing', desc: 'License Node' },
       ]
     }
   ];

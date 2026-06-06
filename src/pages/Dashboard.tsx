@@ -89,6 +89,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showBrokerHub, setShowBrokerHub] = useState(false);
   const [requiredTier, setRequiredTier] = useState<'pro' | 'alpha'>('pro');
+  const [showAddManualModal, setShowAddManualModal] = useState(false);
+  const [manualSymbol, setManualSymbol] = useState('');
+  const [manualQty, setManualQty] = useState('');
+  const [manualPrice, setManualPrice] = useState('');
 
   const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
   const [stockATHs, setStockATHs] = useState<Record<string, number>>({});
@@ -113,6 +117,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     try {
       const res = await fetch(`${API_URL}/api/trades`, { headers: { 'Authorization': `Bearer ${token}` } });
       const d = await safeJsonParse(res);
+      if (res.status === 401 || res.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
+        localStorage.removeItem('mb_token');
+        localStorage.removeItem('mb_user');
+        window.location.href = '/login';
+        return;
+      }
       if (res.ok && !d.error) setTrades(d || []);
     } catch (e) { console.error('Fetch Trades Error:', e); }
   }, []);
@@ -123,6 +133,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     try {
       const response = await fetch(`${API_URL}/api/watchlist`, { headers: { 'Authorization': `Bearer ${token}` } });
       const d = await safeJsonParse(response);
+      if (response.status === 401 || response.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
+        localStorage.removeItem('mb_token');
+        localStorage.removeItem('mb_user');
+        window.location.href = '/login';
+        return;
+      }
       if (response.ok && !d.error) setUserWatchlist(d || []);
     } catch (e) { console.error('Watchlist Error:', e); }
   }, []);
@@ -154,11 +170,17 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     } catch (e) { console.error('Update Error:', e); }
   };
 
-  const handleImportHoldings = async (holdings: any[]) => {
+  const handleImportHoldings = async (holdings: any[], mode: 'merge' | 'overwrite' = 'merge') => {
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     setIsRefreshing(true);
     try {
+      if (mode === 'overwrite') {
+        await fetch(`${API_URL}/api/watchlist`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
       for (const item of holdings) {
         await fetch(`${API_URL}/api/watchlist`, {
           method: 'POST',
@@ -175,6 +197,26 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       fetchWatchlist();
     } catch (e) { alert("Import failed."); }
     finally { setIsRefreshing(false); }
+  };
+
+  const handleAddManualHolding = async (symbol: string, quantity: number, buyPrice: number) => {
+    const token = localStorage.getItem('mb_token');
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_URL}/api/watchlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ symbol: symbol.toUpperCase().trim() })
+      });
+      if (response.ok) {
+        await fetch(`${API_URL}/api/watchlist/${symbol.toUpperCase().trim()}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ quantity, buy_price: buyPrice })
+        });
+        fetchWatchlist();
+      }
+    } catch (e) { console.error('Add Manual Holding Error:', e); }
   };
 
   useEffect(() => {
@@ -220,6 +262,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` }
       });
       const d = await safeJsonParse(response);
+      if (response.status === 401 || response.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
+        localStorage.removeItem('mb_token');
+        localStorage.removeItem('mb_user');
+        window.location.href = '/login';
+        return;
+      }
       if (response.ok && !d.error) {
           setData(d);
           const portfolioSymbols = [...(userWatchlist || []).map(w => w.symbol), ...(trades || []).map(t => t.symbol)];
@@ -235,6 +283,23 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const getTradesForTab = useCallback(() => {
+    // Portfolio tab handled separately first (so it doesn't require screener data to be loaded)
+    if (activeTab === 'portfolio') {
+      const combinedMap: Record<string, { quantity: number, buy_price: number }> = {};
+      (userWatchlist || []).forEach(w => { combinedMap[w.symbol] = { quantity: w.quantity || 0, buy_price: w.buy_price || 0 }; });
+      (trades || []).filter(t => t.status === 'OPEN').forEach(t => {
+        if (combinedMap[t.symbol]) {
+          const ex = combinedMap[t.symbol];
+          const nQty = ex.quantity + (t.quantity || 0);
+          if (nQty > 0) { ex.buy_price = ((ex.buy_price * ex.quantity) + (t.entry_price * t.quantity)) / nQty; ex.quantity = nQty; }
+        } else { combinedMap[t.symbol] = { quantity: t.quantity || 0, buy_price: t.entry_price || 0 }; }
+      });
+      return Object.keys(combinedMap).map(symbol => {
+        const base = data?.allStocks?.find((s: any) => s.symbol === symbol) || { symbol, marketCap: stockCaps[symbol] || 0, sector: stockSectors[symbol] || 'Manual', currentPrice: stockPrices[symbol] || 0 };
+        return { ...base, ...combinedMap[symbol] };
+      }).filter(s => s.quantity > 0);
+    }
+
     if (!data || !data.allStocks) return [];
     
     // Bifurcation Logic:
@@ -256,23 +321,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     if (activeTab === 'rejected') return rejected;
     if (activeTab === 'neutral') return neutral;
 
-    
-    // Portfolio tab handled separately
-    if (activeTab === 'portfolio') {
-      const combinedMap: Record<string, { quantity: number, buy_price: number }> = {};
-      (userWatchlist || []).forEach(w => { combinedMap[w.symbol] = { quantity: w.quantity || 0, buy_price: w.buy_price || 0 }; });
-      (trades || []).filter(t => t.status === 'OPEN').forEach(t => {
-        if (combinedMap[t.symbol]) {
-          const ex = combinedMap[t.symbol];
-          const nQty = ex.quantity + (t.quantity || 0);
-          if (nQty > 0) { ex.buy_price = ((ex.buy_price * ex.quantity) + (t.entry_price * t.quantity)) / nQty; ex.quantity = nQty; }
-        } else { combinedMap[t.symbol] = { quantity: t.quantity || 0, buy_price: t.entry_price || 0 }; }
-      });
-      return Object.keys(combinedMap).map(symbol => {
-        const base = data.allStocks.find((s: any) => s.symbol === symbol) || { symbol, marketCap: stockCaps[symbol] || 0, sector: stockSectors[symbol] || 'Manual', currentPrice: stockPrices[symbol] || 0 };
-        return { ...base, ...combinedMap[symbol] };
-      }).filter(s => s.quantity > 0);
-    }
     return [];
   }, [data, userWatchlist, activeTab, trades, stockPrices, stockCaps, stockSectors]);
 
@@ -310,6 +358,35 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       }
     };
   }, [userWatchlist, trades, stockPrices, stockCaps]);
+
+  const portfolioCount = useMemo(() => {
+    const combinedMap: Record<string, { quantity: number, buy_price: number }> = {};
+    (userWatchlist || []).forEach(w => { combinedMap[w.symbol] = { quantity: w.quantity || 0, buy_price: w.buy_price || 0 }; });
+    (trades || []).filter(t => t.status === 'OPEN').forEach(t => {
+      if (combinedMap[t.symbol]) {
+        const ex = combinedMap[t.symbol];
+        const nQty = ex.quantity + (t.quantity || 0);
+        if (nQty > 0) { ex.buy_price = ((ex.buy_price * ex.quantity) + (t.entry_price * t.quantity)) / nQty; ex.quantity = nQty; }
+      } else { combinedMap[t.symbol] = { quantity: t.quantity || 0, buy_price: t.entry_price || 0 }; }
+    });
+    return Object.keys(combinedMap).filter(symbol => combinedMap[symbol].quantity > 0).length;
+  }, [userWatchlist, trades]);
+
+  const openCount = useMemo(() => {
+    return (data?.allStocks || []).filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isBuyZone && r.isPass).length;
+  }, [data, activeBasket]);
+
+  const neutralCount = useMemo(() => {
+    return (data?.allStocks || []).filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isBuyZone === false && r.isPass).length;
+  }, [data, activeBasket]);
+
+  const rejectedCount = useMemo(() => {
+    return (data?.allStocks || []).filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isPass === false).length;
+  }, [data, activeBasket]);
+
+  const watchlistCount = useMemo(() => {
+    return (BASKETS[activeBasket] || []).length || 0;
+  }, [activeBasket]);
 
   const handleMasterExport = () => {
     if (!data?.allStocks?.length) return;
@@ -388,14 +465,22 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         
         <div className="flex flex-wrap items-center gap-4">
           {activeTab === 'portfolio' && (
-            <button 
-              onClick={() => setShowBrokerHub(true)} 
-              className="px-8 py-4 bg-slate-ink text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl flex items-center space-x-3 hover:bg-black transition-all active:scale-95 border border-white/5"
-              style={{ backgroundColor: 'var(--slate-ink)' }}
-            >
-              <Globe className="h-4 w-4 text-blue-500" />
-              <span>Connect Institutional Node</span>
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button 
+                onClick={() => setShowAddManualModal(true)} 
+                className="px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center space-x-2 hover:bg-slate-50 transition-all active:scale-95"
+              >
+                <span>+ Add Position</span>
+              </button>
+              <button 
+                onClick={() => setShowBrokerHub(true)} 
+                className="px-8 py-4 bg-slate-ink text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl flex items-center space-x-3 hover:bg-black transition-all active:scale-95 border border-white/5"
+                style={{ backgroundColor: 'var(--slate-ink)' }}
+              >
+                <Globe className="h-4 w-4 text-blue-500" />
+                <span>Connect Institutional Node</span>
+              </button>
+            </div>
           )}
 
           <div className="flex flex-col space-y-1.5">
@@ -450,39 +535,39 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         </div>
       </div>
 
-      {/* Portfolio Summary Removed for Discovery Focus */}
-
-      {/* Institutional Tab Controller */}
-      <div className="flex bg-slate-200/40 p-1.5 rounded-[1.5rem] md:rounded-[2.2rem] border border-slate-200/50 w-fit max-w-full overflow-x-auto no-scrollbar shadow-inner gap-1.5">
-         {[
-           { id: 'open', label: 'Qualified', count: data?.allStocks?.filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isBuyZone && r.isPass).length || 0 },
-           { id: 'neutral', label: 'Neutral', count: data?.allStocks?.filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isBuyZone === false && r.isPass).length || 0 },
-           { id: 'rejected', label: 'Rejected', count: data?.allStocks?.filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isPass === false).length || 0 },
-           { id: 'hold', label: 'Watchlist', count: (BASKETS[activeBasket] || []).length || 0 },
-         ].map(tab => (
-           <button 
-             key={tab.id} 
-             onClick={() => setActiveTab(tab.id as any)} 
-             className={`px-6 md:px-10 py-3.5 md:py-4 rounded-[1.2rem] md:rounded-[1.8rem] text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${
-               activeTab === tab.id 
-                 ? 'bg-white text-slate-900 shadow-xl border border-slate-100' 
-                 : 'text-slate-500 hover:text-slate-950 hover:bg-white/40'
-             }`}
-           >
-              <div className="flex items-center justify-center space-x-3 md:space-x-4">
-                 <span>{tab.label}</span>
-                 <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black ${
-                   activeTab === tab.id ? 'bg-slate-ink text-white' : 'bg-slate-200 text-slate-600'
-                 }`}>
-                    {tab.count}
-                 </span>
-              </div>
-              {activeTab === tab.id && (
-                <motion.div layoutId="activeTab" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-blue-600 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.8)]" />
-              )}
-           </button>
-         ))}
-      </div>
+      {/* Unified Portfolio Summary */}
+      {(activeTab === 'portfolio' || ((activeTab === 'hold' || activeTab === 'open') && portfolioSummary.totalInvested > 0)) && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-3 duration-500"
+        >
+          <div className="bg-slate-ink rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group border border-white/5" style={{ backgroundColor: 'var(--slate-ink)' }}>
+             <div className="absolute right-0 top-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-16 -mt-16 group-hover:bg-blue-600/20 transition-all" />
+             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest relative z-10 font-sans">Total Invested</span>
+             <h3 className="text-4xl font-black mt-3 tracking-tighter relative z-10 italic">₹{portfolioSummary.totalInvested.toLocaleString()}</h3>
+          </div>
+          <DashboardStat title="Valuation" value={`₹${portfolioSummary.totalCurrent.toLocaleString()}`} icon={TrendingUp} color="blue" />
+          <DashboardStat title="Absolute P&L" value={`${portfolioSummary.totalPnL >= 0 ? '+' : '-'}₹${Math.abs(portfolioSummary.totalPnL).toLocaleString()}`} icon={Activity} color={portfolioSummary.totalPnL >= 0 ? "emerald" : "rose"} />
+          
+          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-5">
+            <div className="flex justify-between items-center">
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-sans">Cap Architecture</span>
+               <PieChart className="h-4 w-4 text-slate-300" />
+            </div>
+            <div className="h-2 w-full flex rounded-full overflow-hidden bg-slate-50 shadow-inner">
+               <div className="h-full bg-slate-ink transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.large}%`, backgroundColor: 'var(--slate-ink)' }} />
+               <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.mid}%` }} />
+               <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.small}%` }} />
+            </div>
+            <div className="flex justify-between text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] italic">
+               <span>L: {portfolioSummary.capBreakdown.large.toFixed(0)}%</span>
+               <span>M: {portfolioSummary.capBreakdown.mid.toFixed(0)}%</span>
+               <span>S: {portfolioSummary.capBreakdown.small.toFixed(0)}%</span>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <AnimatePresence mode="wait">
         <motion.section 
@@ -522,7 +607,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                     onToggleWatchlist={handleToggleWatchlist}
                     onUpdateHolding={handleUpdateHolding}
                     activeTab={activeTab}
+                    setActiveTab={setActiveTab}
                     strategyId={strategyId}
+                    portfolioCount={portfolioCount}
+                    openCount={openCount}
+                    neutralCount={neutralCount}
+                    rejectedCount={rejectedCount}
+                    watchlistCount={watchlistCount}
                   />
                </div>
                {/* Institutional Border Highlight */}
@@ -533,6 +624,49 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       </AnimatePresence>
 
       <BrokerHub isOpen={showBrokerHub} onClose={() => setShowBrokerHub(false)} onImportComplete={handleImportHoldings} />
+
+      {showAddManualModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+                 <div className="space-y-1">
+                    <h3 className="text-xl font-black text-slate-900 uppercase italic leading-none">Add Asset Node</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Manual Portfolio Entry</p>
+                 </div>
+                 <button onClick={() => setShowAddManualModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"><X className="h-5 w-5" /></button>
+              </div>
+              <form onSubmit={async (e) => {
+                 e.preventDefault();
+                 if (!manualSymbol) return;
+                 const qty = parseInt(manualQty) || 0;
+                 const pr = parseFloat(manualPrice) || 0;
+                 await handleAddManualHolding(manualSymbol, qty, pr);
+                 setShowAddManualModal(false);
+                 setManualSymbol('');
+                 setManualQty('');
+                 setManualPrice('');
+              }} className="space-y-6 text-left">
+                 <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Stock Symbol</label>
+                    <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" />
+                 </div>
+                 <div className="grid grid-cols-2 gap-6">
+                    <div>
+                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
+                       <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" />
+                    </div>
+                    <div>
+                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Buy Price</label>
+                       <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" />
+                    </div>
+                 </div>
+                 <button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-black">
+                    Add to Portfolio
+                 </button>
+              </form>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

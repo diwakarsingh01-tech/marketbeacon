@@ -16,7 +16,7 @@ import Papa from 'papaparse';
 interface BrokerHubProps {
   isOpen: boolean;
   onClose: () => void;
-  onImportComplete: (holdings: any[]) => void;
+  onImportComplete: (holdings: any[], mode: 'merge' | 'overwrite') => void;
 }
 
 const BROKERS = [
@@ -39,6 +39,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
   const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'selection' | 'upload'>('selection');
+  const [importMode, setImportMode] = useState<'merge' | 'overwrite'>('merge');
 
   if (!isOpen) return null;
 
@@ -84,7 +85,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
             throw new Error("Could not detect holdings data. Please ensure the CSV has Symbol and Quantity columns.");
           }
 
-          onImportComplete(mappedHoldings);
+          onImportComplete(mappedHoldings, importMode);
           setStep('selection');
           onClose();
         } catch (err: any) {
@@ -144,12 +145,12 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-1 custom-scrollbar pb-2">
                     {BROKERS.map(broker => (
                        <button 
-                         key={broker.id}
-                         onClick={() => {
-                           setSelectedBroker(broker.id);
-                           setStep('upload');
-                         }}
-                         className="flex flex-col items-center justify-center p-4 rounded-3xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-600 hover:shadow-xl hover:shadow-blue-50 transition-all group aspect-square space-y-3 relative overflow-hidden"
+                          key={broker.id}
+                          onClick={() => {
+                            setSelectedBroker(broker.id);
+                            setStep('upload');
+                          }}
+                          className="flex flex-col items-center justify-center p-4 rounded-3xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-600 hover:shadow-xl hover:shadow-blue-50 transition-all group aspect-square space-y-3 relative overflow-hidden"
                        >
                           <div className="w-full h-10 flex items-center justify-center transition-transform group-hover:scale-110">
                              {broker.logo ? (
@@ -178,19 +179,40 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                  </div>
               </div>
            ) : (
-              <div className="flex-1 flex flex-col justify-center items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-500 py-4">
-                 <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-[1.5rem] flex items-center justify-center mb-5">
-                    <FileText className="h-8 w-8" />
-                 </div>
-                 
-                 <div className="space-y-2 mb-6">
-                    <h3 className="text-xl font-black text-slate-900 uppercase italic">{BROKERS.find(b => b.id === selectedBroker)?.name}</h3>
+              <div className="flex-1 flex flex-col justify-center items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-500 py-2">
+                 <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-[1.2rem] flex items-center justify-center mb-4">
+                    <FileText className="h-6 w-6" />
+                  </div>
+                  
+                  <div className="space-y-2 mb-6">
+                    <h3 className="text-xl font-black text-slate-900 uppercase italic leading-none">{BROKERS.find(b => b.id === selectedBroker)?.name}</h3>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-[240px] mx-auto leading-relaxed">
                        Drop your holdings CSV file here to start institutional audit.
                     </p>
                  </div>
 
                  <div className="w-full max-w-sm space-y-4">
+                    {/* Import Strategy Options */}
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col space-y-3">
+                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-left pl-1">Import Strategy</span>
+                       <div className="flex gap-3">
+                          <button 
+                            type="button"
+                            onClick={() => setImportMode('merge')}
+                            className={`flex-1 py-3 px-4 rounded-xl text-[9px] font-black uppercase border tracking-wider transition-all ${importMode === 'merge' ? 'bg-white border-blue-600 text-blue-600 shadow-sm' : 'bg-transparent border-slate-200 text-slate-500 hover:text-slate-700'}`}
+                          >
+                             Merge Portfolio
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => setImportMode('overwrite')}
+                            className={`flex-1 py-3 px-4 rounded-xl text-[9px] font-black uppercase border tracking-wider transition-all ${importMode === 'overwrite' ? 'bg-white border-rose-500 text-rose-500 shadow-sm' : 'bg-transparent border-slate-200 text-slate-500 hover:text-slate-700'}`}
+                          >
+                             Overwrite Portfolio
+                          </button>
+                       </div>
+                    </div>
+
                     <label className="relative block group cursor-pointer">
                        <input 
                          type="file" 

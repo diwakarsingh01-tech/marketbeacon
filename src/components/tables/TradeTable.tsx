@@ -14,7 +14,8 @@ import {
   Info as InfoIcon,
   Share2,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,11 +28,17 @@ interface TradeTableProps {
   sectorData?: Record<string, string>;
   isWatchlist?: boolean;
   activeTab?: string;
+  setActiveTab?: (tab: any) => void;
   userWatchlist?: string[];
   strategyId?: string;
   onToggleWatchlist?: (symbol: string) => void;
   onUpdateHolding?: (symbol: string, quantity: number, buyPrice: number) => void;
   onUpdateReview?: () => void;
+  portfolioCount?: number;
+  openCount?: number;
+  neutralCount?: number;
+  rejectedCount?: number;
+  watchlistCount?: number;
 }
 
 const CircularGauge = ({ value, size = 32, strokeWidth = 3 }: { value: number, size?: number, strokeWidth?: number }) => {
@@ -67,10 +74,33 @@ const getMarketCapTag = (cap: number, symbol: string) => {
 };
 
 const TradeTable: React.FC<TradeTableProps> = ({ 
-  trades, livePrices, athData, capData, sectorData, activeTab, userWatchlist, strategyId, onToggleWatchlist, onUpdateHolding 
+  trades, 
+  livePrices, 
+  athData, 
+  capData, 
+  sectorData, 
+  activeTab, 
+  setActiveTab,
+  userWatchlist, 
+  strategyId, 
+  onToggleWatchlist, 
+  onUpdateHolding,
+  portfolioCount,
+  openCount,
+  neutralCount,
+  rejectedCount,
+  watchlistCount
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showColumnSettings, setShowColumnSettings] = useState(false);
+
+  const tabs = useMemo(() => [
+    ...(activeTab === 'portfolio' || (portfolioCount || 0) > 0 ? [{ id: 'portfolio', label: 'Wealth Desk', count: portfolioCount || 0 }] : []),
+    { id: 'open', label: 'Qualified', count: openCount || 0 },
+    { id: 'neutral', label: 'Neutral', count: neutralCount || 0 },
+    { id: 'rejected', label: 'Rejected', count: rejectedCount || 0 },
+    { id: 'hold', label: 'Watchlist', count: watchlistCount || 0 },
+  ], [activeTab, portfolioCount, openCount, neutralCount, rejectedCount, watchlistCount]);
   
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     observation: true,
@@ -245,36 +275,61 @@ const TradeTable: React.FC<TradeTableProps> = ({
   return (
     <div className="space-y-6">
       {/* Search and Settings Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between bg-white/50 backdrop-blur-md px-6 py-5 rounded-3xl border border-slate-100 gap-6 shadow-sm">
-        <div className="relative w-full max-w-md">
-          <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Search Terminal Symbols..."
-            className="w-full bg-slate-50 border-2 border-transparent rounded-2xl pl-14 pr-6 py-3.5 text-[11px] font-black uppercase tracking-widest focus:bg-white focus:border-blue-500/20 focus:shadow-xl transition-all outline-none"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between bg-white/50 backdrop-blur-md px-6 py-4 rounded-[2rem] border border-slate-100 gap-4 shadow-sm">
+        <div className="flex flex-col md:flex-row items-center gap-4 flex-1">
+          {/* Search Input */}
+          <div className="relative w-full md:max-w-xs">
+            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search Symbols..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-11 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest focus:bg-white focus:border-blue-500/20 transition-all outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          {/* Compact Pill Tabs */}
+          {setActiveTab && (
+            <div className="flex flex-wrap items-center bg-slate-200/40 p-1 rounded-2xl border border-slate-200/50 gap-0.5 max-w-full overflow-x-auto no-scrollbar shadow-inner">
+               {tabs.map(tab => (
+                 <button
+                   key={tab.id}
+                   onClick={() => setActiveTab(tab.id as any)}
+                   className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+                     activeTab === tab.id 
+                       ? 'bg-white text-slate-900 shadow-md border border-slate-200/20' 
+                       : 'text-slate-500 hover:text-slate-900 hover:bg-white/20'
+                   }`}
+                 >
+                   <span>{tab.label}</span>
+                   <span className={`ml-1.5 px-2 py-0.5 bg-slate-200/80 text-slate-600 rounded-lg text-[8px] font-black ${activeTab === tab.id ? 'bg-slate-ink text-white' : ''}`} style={activeTab === tab.id ? { backgroundColor: 'var(--slate-ink)' } : {}}>
+                     {tab.count}
+                   </span>
+                 </button>
+               ))}
+            </div>
+          )}
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 shrink-0 justify-end w-full lg:w-auto">
           <button 
             onClick={handleExportCSV} 
-            className="flex items-center gap-3 px-8 py-3.5 bg-slate-INK text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-slate-900/10 group border border-white/5"
+            className="flex items-center gap-3 px-6 py-3 bg-slate-INK text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-900/10 group border border-white/5"
             style={{ backgroundColor: 'var(--slate-ink)' }}
           >
-            <DownloadIcon className="h-4 w-4 text-blue-500 group-hover:scale-110 transition-transform" />
-            <span>Export Matrix Audit</span>
+            <DownloadIcon className="h-3.5 w-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
+            <span>Export Matrix</span>
           </button>
           <button 
             onClick={() => setShowColumnSettings(!showColumnSettings)} 
-            className={`p-3.5 rounded-2xl border transition-all ${showColumnSettings ? 'bg-slate-ink text-white border-blue-500/30' : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50'}`}
+            className={`p-3 rounded-2xl border transition-all ${showColumnSettings ? 'bg-slate-ink text-white border-blue-500/30' : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50'}`}
             style={showColumnSettings ? { backgroundColor: 'var(--slate-ink)' } : {}}
           >
-            <SettingsIcon className="h-4.5 w-4.5" />
+            <SettingsIcon className="h-4 w-4" />
           </button>
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-5 py-3.5 rounded-2xl border border-slate-100 shadow-sm italic">
-            {filteredAndSortedTrades.length} Nodes Discovered
+          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-white px-4 py-3 rounded-2xl border border-slate-100 shadow-sm italic whitespace-nowrap">
+            {filteredAndSortedTrades.length} Nodes
           </div>
         </div>
       </div>
@@ -311,7 +366,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
                   <th className="px-8 py-7 text-right">CMP</th>
                   <th className="px-8 py-7 text-right">Invested Value</th>
                   <th className="px-8 py-7 text-right">Current Node</th>
-                  <th className="px-10 py-7 text-right">Yield %</th>
+                  <th className="px-8 py-7 text-right">Yield %</th>
+                  <th className="px-10 py-7 text-right">Audit</th>
                 </tr>
               ) : (
                 <tr className="bg-slate-50/50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 italic">
@@ -375,6 +431,28 @@ const TradeTable: React.FC<TradeTableProps> = ({
                             <span className={`px-4 py-1.5 rounded-xl font-black italic tracking-tighter ${pnl >= 0 ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'}`}>
                                 {pnl >= 0 ? '+' : ''}{invested > 0 ? ((pnl/invested)*100).toFixed(1) : '0.0'}% Yield
                             </span>
+                          </td>
+                          <td className="px-10 py-6 text-right">
+                            <div className="flex items-center justify-end space-x-4">
+                               <div className="flex flex-col items-end mr-1">
+                                  <span className={`text-[10px] font-black uppercase tracking-tighter italic ${trade.isPass !== false ? 'text-emerald-600' : 'text-orange-500'}`}>
+                                     {trade.isPass !== false ? 'Pass' : 'Obs'}
+                                  </span>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <div className="text-xs font-black text-slate-900 tracking-tighter">{trade.score || 0}</div>
+                                    <div className="w-1 h-1 rounded-full bg-slate-200" />
+                                    <span className="text-[6px] text-slate-400 uppercase font-black tracking-widest">Audit</span>
+                                  </div>
+                               </div>
+                               <div className="flex items-center gap-1">
+                                 <Link to={`/stock/${trade.symbol}`} className="p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-ink hover:text-white transition-all group/info">
+                                    <InfoIcon className="h-4 w-4" />
+                                 </Link>
+                                 <button onClick={(e) => { e.preventDefault(); if (window.confirm(`Remove ${trade.symbol} from portfolio?`)) onToggleWatchlist?.(trade.symbol); }} className="p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-600 hover:text-white transition-all">
+                                    <Trash2 className="h-4 w-4" />
+                                 </button>
+                               </div>
+                            </div>
                           </td>
                         </motion.tr>
                       );

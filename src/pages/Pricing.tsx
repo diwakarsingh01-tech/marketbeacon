@@ -47,6 +47,12 @@ const PricingPage: React.FC = () => {
       });
       
       const data = await safeJsonParse(res);
+      if (res.status === 401 || res.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
+        localStorage.removeItem('mb_token');
+        localStorage.removeItem('mb_user');
+        window.location.href = '/login';
+        return;
+      }
       if (res.ok && !data.error) {
         alert(`Voucher Applied! Access Level: ${data.tier.toUpperCase()} for 7 Days.`);
         window.location.href = '/screener'; 
