@@ -24,7 +24,8 @@ import {
   PieChart, 
   AlertCircle,
   Layers,
-  Search
+  Search,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
@@ -37,26 +38,32 @@ const API_URL = getApiUrl();
 
 // --- PREMIUM DASHBOARD COMPONENTS ---
 
-const DashboardStat = ({ title, value, icon: Icon, color = "blue" }: any) => {
-  const colors: any = {
-    blue: "text-blue-600 bg-blue-50 border-blue-100",
-    emerald: "text-emerald-600 bg-emerald-50 border-emerald-100",
-    amber: "text-amber-600 bg-amber-50 border-amber-100",
-    rose: "text-rose-600 bg-rose-50 border-rose-100"
+const DashboardStat = ({ title, value, icon: Icon, color = "blue", subtitle }: any) => {
+  const iconColors: any = {
+    blue: "text-blue-500 bg-blue-500/5 border-blue-500/10",
+    emerald: "text-emerald-500 bg-emerald-500/5 border-emerald-500/10",
+    rose: "text-rose-500 bg-rose-500/5 border-rose-500/10",
+    slate: "text-slate-500 bg-slate-500/5 border-slate-500/10",
+    amber: "text-amber-500 bg-amber-500/5 border-amber-500/10"
   };
 
   return (
     <motion.div 
-      whileHover={{ y: -2 }}
-      className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between"
+      whileHover={{ y: -1 }}
+      className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between min-h-[110px]"
     >
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-2.5 rounded-xl ${colors[color]} border`}>
-          <Icon className="h-4 w-4" />
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{title}</span>
+        <div className={`p-1.5 rounded-lg border ${iconColors[color]}`}>
+          <Icon className="h-3.5 w-3.5" />
         </div>
-        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{title}</span>
       </div>
-      <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic">{value}</h3>
+      <div className="space-y-0.5">
+        <h3 className="text-2xl font-black text-slate-950 tracking-tight italic font-sans">{value}</h3>
+        {subtitle && (
+          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{subtitle}</p>
+        )}
+      </div>
     </motion.div>
   );
 };
@@ -175,28 +182,50 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     if (!token) return;
     setIsRefreshing(true);
     try {
-      if (mode === 'overwrite') {
-        await fetch(`${API_URL}/api/watchlist`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+      const response = await fetch(`${API_URL}/api/watchlist/bulk`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ holdings, mode })
+      });
+      const resData = await safeJsonParse(response);
+      if (response.ok && !resData.error) {
+        alert(`Successfully imported ${holdings.length} holdings.`);
+        fetchWatchlist();
+      } else {
+        alert(`Import failed: ${resData.error || 'Server error'}`);
       }
-      for (const item of holdings) {
-        await fetch(`${API_URL}/api/watchlist`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ symbol: item.symbol })
-        });
-        await fetch(`${API_URL}/api/watchlist/${item.symbol}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ quantity: item.quantity, buy_price: item.buyPrice })
-        });
+    } catch (e) { 
+      console.error('Import holdings error:', e);
+      alert("Import failed."); 
+    } finally { 
+      setIsRefreshing(false); 
+    }
+  };
+
+  const handleClearPortfolio = async () => {
+    if (!window.confirm("Are you sure you want to remove all old details/positions from your Wealth Desk? This action cannot be undone.")) return;
+    const token = localStorage.getItem('mb_token');
+    if (!token) return;
+    setIsRefreshing(true);
+    try {
+      const response = await fetch(`${API_URL}/api/watchlist`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        alert("All old details removed successfully.");
+        fetchWatchlist();
+      } else {
+        alert("Failed to remove old details.");
       }
-      alert(`Imported ${holdings.length} holdings.`);
-      fetchWatchlist();
-    } catch (e) { alert("Import failed."); }
-    finally { setIsRefreshing(false); }
+    } catch (e) {
+      alert("Error removing old details.");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleAddManualHolding = async (symbol: string, quantity: number, buyPrice: number) => {
@@ -442,12 +471,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   }
 
   return (
-    <div className="flex-1 flex flex-col py-6 md:py-10 px-4 md:px-10 space-y-10 bg-[#f8fafc] overflow-y-auto no-scrollbar">
+    <div className="flex-1 flex flex-col py-4 md:py-6 px-4 md:px-8 space-y-6 bg-[#f8fafc] overflow-y-auto no-scrollbar">
       {/* Institutional Header (Safe-Guard Rule #9) */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-100 pb-10 gap-8">
-        <div className="space-y-5">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-100 pb-6 gap-6">
+        <div className="space-y-4">
            <div className="flex items-center space-x-3 text-slate-400">
-              <div className="w-10 h-10 bg-slate-ink text-white rounded-xl flex items-center justify-center shadow-2xl border border-white/5" style={{ backgroundColor: 'var(--slate-ink)' }}>
+              <div className="w-10 h-10 bg-slate-ink text-white rounded-xl flex items-center justify-center shadow-xl border border-white/5" style={{ backgroundColor: 'var(--slate-ink)' }}>
                  <Zap className="h-5 w-5 text-blue-500" />
               </div>
               <div className="flex flex-col">
@@ -455,81 +484,97 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">Real-time Terminal Monitor</span>
               </div>
            </div>
-           <div className="space-y-1">
-              <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">
+            <div className="space-y-1">
+              <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">
                 {activeTab === 'portfolio' ? 'Wealth Desk' : activeTab === 'hold' ? 'Watchlist' : 'Matrix Screener'}
               </h1>
-              <p className="text-[11px] font-bold text-blue-600 uppercase tracking-[0.2em] pl-1">{currentStrategy.name}</p>
+              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-[0.2em] pl-1">
+                {activeTab === 'portfolio' ? 'Custom Portfolio Asset Ledger' : currentStrategy.name}
+              </p>
            </div>
         </div>
         
         <div className="flex flex-wrap items-center gap-4">
           {activeTab === 'portfolio' && (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2.5">
+              <button 
+                onClick={handleClearPortfolio} 
+                className="px-4 py-2.5 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center space-x-1.5 hover:bg-rose-100/50 hover:border-rose-300 transition-all active:scale-95 animate-in fade-in"
+              >
+                <Trash2 className="h-4 w-4 text-rose-500" />
+                <span>Remove Old Details</span>
+              </button>
               <button 
                 onClick={() => setShowAddManualModal(true)} 
-                className="px-6 py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center space-x-2 hover:bg-slate-50 transition-all active:scale-95"
+                className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center space-x-1.5 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95"
               >
                 <span>+ Add Position</span>
               </button>
               <button 
                 onClick={() => setShowBrokerHub(true)} 
-                className="px-8 py-4 bg-slate-ink text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl flex items-center space-x-3 hover:bg-black transition-all active:scale-95 border border-white/5"
+                className="px-5 py-2.5 bg-slate-ink text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center space-x-2 hover:bg-black transition-all active:scale-95 border border-white/5"
                 style={{ backgroundColor: 'var(--slate-ink)' }}
               >
                 <Globe className="h-4 w-4 text-blue-500" />
-                <span>Connect Institutional Node</span>
+                <span>Upload New Details</span>
               </button>
             </div>
           )}
 
-          <div className="flex flex-col space-y-1.5">
-            <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] pl-2">Active Universe</span>
-            <div className="relative group">
-              <select 
-                value={activeBasket} 
-                onChange={(e) => setActiveBasket(e.target.value)} 
-                className="appearance-none bg-white border border-slate-200 rounded-2xl pl-6 pr-12 py-4 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-blue-500/30 transition-all min-w-[160px]"
-              >
-                {currentStrategy.baskets.map(b => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-              </select>
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                <ChevronRight className="w-4 h-4 rotate-90" />
+          {activeTab !== 'portfolio' && (
+            <>
+              <div className="flex flex-col space-y-1">
+                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] pl-1.5">Active Universe</span>
+                <div className="relative group">
+                  <select 
+                    value={activeBasket} 
+                    onChange={(e) => setActiveBasket(e.target.value)} 
+                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all min-w-[150px]"
+                  >
+                    {currentStrategy.baskets.map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <ChevronRight className="w-3.5 h-3.5 rotate-90" />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="flex flex-col space-y-1.5">
-            <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] pl-2">Model Matrix</span>
-            <div className="relative group">
-              <select 
-                value={strategyId} 
-                onChange={(e) => navigate(`?strategy=${e.target.value}`)} 
-                className="appearance-none bg-white border border-slate-200 rounded-2xl pl-6 pr-12 py-4 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-blue-500/30 transition-all min-w-[200px]"
-              >
-                {lockedStrategies.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                <ChevronRight className="w-4 h-4 rotate-90" />
+              <div className="flex flex-col space-y-1">
+                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] pl-1.5">Model Matrix</span>
+                <div className="relative group">
+                  <select 
+                    value={strategyId} 
+                    onChange={(e) => navigate(`?strategy=${e.target.value}`)} 
+                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all min-w-[180px]"
+                  >
+                    {lockedStrategies.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <ChevronRight className="w-3.5 h-3.5 rotate-90" />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="flex items-end h-full pb-0.5 pt-4 space-x-3">
-            <button 
-              onClick={handleMasterExport}
-              className="flex items-center space-x-3 px-8 py-4 bg-slate-950 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-slate-200/50 group border border-white/5"
-            >
-              <Download className="h-4 w-4 text-blue-500 group-hover:scale-110 transition-transform" />
-              <span>Export Audit</span>
-            </button>
+              <div className="flex items-end h-full pb-0.5 space-x-2">
+                <button 
+                  onClick={handleMasterExport}
+                  className="flex items-center space-x-2 px-5 py-2.5 bg-slate-950 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-md group border border-white/5"
+                >
+                  <Download className="h-4 w-4 text-blue-500 group-hover:scale-110 transition-transform" />
+                  <span>Export Audit</span>
+                </button>
+              </div>
+            </>
+          )}
+
+          <div className="flex items-end h-full pb-0.5 space-x-2">
             <button 
               onClick={() => fetchData(true)} 
-              className={`p-4 rounded-2xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
+              className={`p-2.5 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
             >
-              <RefreshCw className="h-5 w-5" />
+              <RefreshCw className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -542,30 +587,32 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           animate={{ opacity: 1, y: 0 }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-3 duration-500"
         >
-          <div className="bg-slate-ink rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group border border-white/5" style={{ backgroundColor: 'var(--slate-ink)' }}>
-             <div className="absolute right-0 top-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-16 -mt-16 group-hover:bg-blue-600/20 transition-all" />
-             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest relative z-10 font-sans">Total Invested</span>
-             <h3 className="text-4xl font-black mt-3 tracking-tighter relative z-10 italic">₹{portfolioSummary.totalInvested.toLocaleString()}</h3>
-          </div>
-          <DashboardStat title="Valuation" value={`₹${portfolioSummary.totalCurrent.toLocaleString()}`} icon={TrendingUp} color="blue" />
-          <DashboardStat title="Absolute P&L" value={`${portfolioSummary.totalPnL >= 0 ? '+' : '-'}₹${Math.abs(portfolioSummary.totalPnL).toLocaleString()}`} icon={Activity} color={portfolioSummary.totalPnL >= 0 ? "emerald" : "rose"} />
-          
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-5">
-            <div className="flex justify-between items-center">
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-sans">Cap Architecture</span>
-               <PieChart className="h-4 w-4 text-slate-300" />
-            </div>
-            <div className="h-2 w-full flex rounded-full overflow-hidden bg-slate-50 shadow-inner">
-               <div className="h-full bg-slate-ink transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.large}%`, backgroundColor: 'var(--slate-ink)' }} />
-               <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.mid}%` }} />
-               <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${portfolioSummary.capBreakdown.small}%` }} />
-            </div>
-            <div className="flex justify-between text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] italic">
-               <span>L: {portfolioSummary.capBreakdown.large.toFixed(0)}%</span>
-               <span>M: {portfolioSummary.capBreakdown.mid.toFixed(0)}%</span>
-               <span>S: {portfolioSummary.capBreakdown.small.toFixed(0)}%</span>
-            </div>
-          </div>
+          <DashboardStat 
+            title="Total Invested" 
+            value={`₹${portfolioSummary.totalInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+            icon={Wallet} 
+            color="slate" 
+          />
+          <DashboardStat 
+            title="Valuation" 
+            value={`₹${portfolioSummary.totalCurrent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+            icon={TrendingUp} 
+            color="blue" 
+          />
+          <DashboardStat 
+            title="Absolute P&L" 
+            value={`${portfolioSummary.totalPnL >= 0 ? '+' : '-'}₹${Math.abs(portfolioSummary.totalPnL).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+            icon={Activity} 
+            color={portfolioSummary.totalPnL >= 0 ? "emerald" : "rose"} 
+            subtitle={portfolioSummary.totalInvested > 0 ? `${((portfolioSummary.totalPnL / portfolioSummary.totalInvested) * 100).toFixed(2)}% PnL` : undefined}
+          />
+          <DashboardStat 
+            title="Cap Architecture" 
+            value={`L:${portfolioSummary.capBreakdown.large.toFixed(0)}% M:${portfolioSummary.capBreakdown.mid.toFixed(0)}% S:${portfolioSummary.capBreakdown.small.toFixed(0)}%`} 
+            icon={PieChart} 
+            color="amber" 
+            subtitle="Large / Mid / Small Cap Mix"
+          />
         </motion.div>
       )}
 
@@ -578,25 +625,25 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           className="flex-1 min-h-0"
         >
           {error ? (
-            <div className="bg-white rounded-[3.5rem] h-96 border-2 border-slate-100 flex flex-col items-center justify-center space-y-8 shadow-sm p-12">
-              <div className="p-8 bg-rose-500/10 border-2 border-rose-500/20 rounded-[2.5rem] text-rose-600 max-w-md text-center">
-                 <ShieldAlert className="h-12 w-12 mx-auto mb-6 animate-pulse" />
-                 <h2 className="text-xl font-black uppercase tracking-tighter mb-2 italic">Institutional Link Severed</h2>
-                 <p className="text-xs font-bold uppercase tracking-widest leading-relaxed opacity-80">{error}</p>
+            <div className="bg-white rounded-[2rem] h-96 border border-slate-100 flex flex-col items-center justify-center space-y-6 shadow-sm p-8">
+              <div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-600 max-w-md text-center">
+                 <ShieldAlert className="h-10 w-10 mx-auto mb-4 animate-pulse" />
+                 <h2 className="text-lg font-black uppercase tracking-tighter mb-2 italic">Institutional Link Severed</h2>
+                 <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed opacity-80">{error}</p>
               </div>
               <div className="flex items-center space-x-4">
                 <button 
                   onClick={() => { localStorage.removeItem('mb_api_override'); window.location.reload(); }} 
-                  className="px-12 py-5 bg-slate-ink text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-black transition-all active:scale-95 border border-white/5"
+                  className="px-8 py-3.5 bg-slate-ink text-white rounded-xl text-[10px] font-black uppercase tracking-[0.3em] shadow-lg hover:bg-black transition-all active:scale-95 border border-white/5"
                   style={{ backgroundColor: 'var(--slate-ink)' }}
                 >
                   Authorize Node Reset
                 </button>
-                <Link to="/connect" className="px-10 py-5 bg-white border-2 border-slate-100 text-slate-400 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] hover:text-slate-950 transition-all">Connectivity Hub</Link>
+                <Link to="/connect" className="px-6 py-3.5 bg-white border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:text-slate-950 transition-all">Connectivity Hub</Link>
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-2xl flex flex-col overflow-hidden h-full relative group/table">
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl flex flex-col overflow-hidden h-full relative group/table">
                <div className="flex-1 overflow-auto custom-scrollbar">
                   <TradeTable 
                     trades={getTradesForTab()} 
@@ -614,10 +661,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                     neutralCount={neutralCount}
                     rejectedCount={rejectedCount}
                     watchlistCount={watchlistCount}
+                    onAddPositionClick={() => setShowAddManualModal(true)}
+                    onConnectNodeClick={() => setShowBrokerHub(true)}
                   />
                </div>
                {/* Institutional Border Highlight */}
-               <div className="absolute inset-0 border-2 border-blue-600/0 group-hover/table:border-blue-600/5 rounded-[3.5rem] pointer-events-none transition-all duration-700" />
+               <div className="absolute inset-0 border border-blue-600/0 group-hover/table:border-blue-600/5 rounded-[2.5rem] pointer-events-none transition-all duration-700" />
             </div>
           )}
         </motion.section>
