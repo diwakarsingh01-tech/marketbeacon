@@ -494,14 +494,34 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         )}
                         {visibleColumns.fundamentals && (
                           <td className="px-10 py-6 text-right">
-                            <div className="flex items-center justify-end space-x-4">
+                            <div className="flex items-center justify-end space-x-5">
+                               {trade.peRatio > 0 && (
+                                 <div className="flex flex-col items-end">
+                                    {(() => {
+                                      const avgMedian = (Number(trade.peMedians?.pe3Y || 0) + Number(trade.peMedians?.pe5Y || 0)) / 2;
+                                      const isHigh = avgMedian > 0 && trade.peRatio > avgMedian;
+                                      return (
+                                        <>
+                                          <span className={`text-xs font-black italic ${isHigh ? 'text-rose-600 animate-pulse' : 'text-slate-600'}`}>{trade.peRatio?.toFixed(1)}</span>
+                                          <span className="text-[6px] font-black text-slate-400 uppercase tracking-widest">Current PE</span>
+                                        </>
+                                      );
+                                    })()}
+                                 </div>
+                               )}
                                <div className="flex flex-col items-end mr-1">
                                   <span className={`text-[10px] font-black uppercase tracking-tighter italic ${trade.isPass !== false ? 'text-emerald-600' : 'text-orange-500'}`}>
                                      {trade.isPass !== false ? 'Pass' : 'Obs'}
                                   </span>
-                                  <span className="text-[6px] font-bold text-slate-400 uppercase tracking-widest">Logic</span>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <div className="text-sm font-black text-slate-900 tracking-tighter">{trade.score || 0}</div>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                                    <span className="text-[7px] text-slate-400 uppercase font-black tracking-widest">Audit</span>
+                                  </div>
                                </div>
-                               <CircularGauge value={trade.score} />
+                               <Link to={`/stock/${trade.symbol}`} className="p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-ink hover:text-white transition-all group/info">
+                                  <InfoIcon className="h-4 w-4" />
+                               </Link>
                             </div>
                           </td>
                         )}
