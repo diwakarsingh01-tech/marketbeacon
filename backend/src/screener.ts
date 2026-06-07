@@ -382,5 +382,4 @@ export async function getDynamicBasket(): Promise<string[]> {
   console.log(`[BASKET] getDynamicBasket returning ${fallback.length} institutional fallback symbols.`);
   return fallback;
 }
-}
 
