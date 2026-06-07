@@ -373,8 +373,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     // 3. Neutral: !isBuyZone && isPass
     // 4. Watchlist: allStocks
     
-    const currentBasketStocks = BASKETS[activeBasket] || [];
-    const basketData = data.allStocks.filter((r: any) => currentBasketStocks.includes(r.symbol));
+    const currentBasketStocks = (BASKETS[activeBasket] || []).map(s => s.trim().toUpperCase());
+    const basketData = data.allStocks.filter((r: any) => {
+      const sym = (r.symbol || '').trim().toUpperCase();
+      // Support matching with or without .NS suffix for institutional robustness
+      return currentBasketStocks.includes(sym) || 
+             currentBasketStocks.includes(sym.replace('.NS', '')) ||
+             currentBasketStocks.some(b => b.replace('.NS', '') === sym);
+    });
 
     const open = basketData.filter((r: any) => r && r.isBuyZone && r.isPass);
     const rejected = basketData.filter((r: any) => r && !r.isPass);
@@ -438,15 +444,30 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   }, [userWatchlist, trades]);
 
   const openCount = useMemo(() => {
-    return (data?.allStocks || []).filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isBuyZone && r.isPass).length;
+    const basket = (BASKETS[activeBasket] || []).map(s => s.trim().toUpperCase());
+    return (data?.allStocks || []).filter((r: any) => {
+      const sym = (r.symbol || '').trim().toUpperCase();
+      const inBasket = basket.includes(sym) || basket.includes(sym.replace('.NS', '')) || basket.some(b => b.replace('.NS', '') === sym);
+      return inBasket && r.isBuyZone && r.isPass;
+    }).length;
   }, [data, activeBasket]);
 
   const neutralCount = useMemo(() => {
-    return (data?.allStocks || []).filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isBuyZone === false && r.isPass).length;
+    const basket = (BASKETS[activeBasket] || []).map(s => s.trim().toUpperCase());
+    return (data?.allStocks || []).filter((r: any) => {
+      const sym = (r.symbol || '').trim().toUpperCase();
+      const inBasket = basket.includes(sym) || basket.includes(sym.replace('.NS', '')) || basket.some(b => b.replace('.NS', '') === sym);
+      return inBasket && r.isBuyZone === false && r.isPass;
+    }).length;
   }, [data, activeBasket]);
 
   const rejectedCount = useMemo(() => {
-    return (data?.allStocks || []).filter((r: any) => (BASKETS[activeBasket] || []).includes(r.symbol) && r.isPass === false).length;
+    const basket = (BASKETS[activeBasket] || []).map(s => s.trim().toUpperCase());
+    return (data?.allStocks || []).filter((r: any) => {
+      const sym = (r.symbol || '').trim().toUpperCase();
+      const inBasket = basket.includes(sym) || basket.includes(sym.replace('.NS', '')) || basket.some(b => b.replace('.NS', '') === sym);
+      return inBasket && r.isPass === false;
+    }).length;
   }, [data, activeBasket]);
 
   const watchlistCount = useMemo(() => {
