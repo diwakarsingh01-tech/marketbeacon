@@ -25,6 +25,11 @@ export const runStrategyAnalysis = (stratId: string, snap: any, marketCap: numbe
         return { isBuyZone: false, reason: 'Basket Not Authorized' };
     }
 
+    // ⚡ Performance Hardening: Use pre-calculated results if available
+    if (snap.strategies && snap.strategies[stratId]) {
+        return snap.strategies[stratId];
+    }
+
     switch (stratId) {
         case 'ENVELOPE_LONG': return calculateEnvelope(snap.quotes);
         case 'ENVELOPE_SHORT': return processShortEnvelope(snap.quotes);
