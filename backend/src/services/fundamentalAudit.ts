@@ -132,7 +132,7 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
     (smartMoneyTotal < 30.0)
   );
 
-  const passThreshold = 50;
+  const passThreshold = 60;
   const isPass = (totalScore >= passThreshold) && !isHardReject;
 
   return {
