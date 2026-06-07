@@ -1,64 +1,34 @@
 {
   "active": [
     {
-      "symbol": "DABUR",
-      "stockName": "DABUR",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
+      "symbol": "BRITANNIA",
+      "stockName": "BRITANNIA",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
       "capType": "LARGE",
       "sector": "FMCG",
-      "currentPrice": 424.1499938964844,
-      "entryPrice": 437,
-      "entryTime": "2026-05-21T03:45:00.000Z",
-      "target": 649,
-      "roi": 48.51258581235698,
+      "currentPrice": 5120.5,
+      "entryPrice": 5777,
+      "entryTime": "2026-01-28",
+      "target": 6586,
+      "roi": 14.003808204950662,
       "score": 95,
-      "smartMoney": 94.69
+      "smartMoney": 85
     },
     {
-      "symbol": "HCLTECH",
-      "stockName": "HCLTECH",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
+      "symbol": "BAJAJFINSV",
+      "stockName": "BAJAJFINSV",
+      "strategy": "Envelope Long",
+      "basketSource": "Elite Basket",
       "capType": "LARGE",
-      "sector": "IT Services",
-      "currentPrice": 1154.699951171875,
-      "entryPrice": 1183,
-      "entryTime": "2026-05-27T03:45:00.000Z",
-      "target": 1669,
-      "roi": 41.08199492814877,
+      "sector": "NBFC",
+      "currentPrice": 1703.199951171875,
+      "entryPrice": 1733,
+      "entryTime": "2026-03-13",
+      "target": 2298,
+      "roi": 32.60242354298904,
       "score": 90,
-      "smartMoney": 95.32000000000001
-    },
-    {
-      "symbol": "COLPAL",
-      "stockName": "COLPAL",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
-      "capType": "LARGE",
-      "sector": "FMCG",
-      "currentPrice": 1999.5,
-      "entryPrice": 2087,
-      "entryTime": "2026-01-30T03:45:00.000Z",
-      "target": 2814,
-      "roi": 34.834690943938675,
-      "score": 90,
-      "smartMoney": 79.85
-    },
-    {
-      "symbol": "HAL",
-      "stockName": "HAL",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
-      "capType": "LARGE",
-      "sector": "General Research",
-      "currentPrice": 4216.89990234375,
-      "entryPrice": 4105,
-      "entryTime": "2026-05-18T03:45:00.000Z",
-      "target": 5507,
-      "roi": 34.153471376370284,
-      "score": 90,
-      "smartMoney": 92.28
+      "smartMoney": 77.71000000000001
     },
     {
       "symbol": "HINDUNILVR",
@@ -76,36 +46,6 @@
       "smartMoney": 88.33
     },
     {
-      "symbol": "ICICIGI",
-      "stockName": "ICICIGI",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
-      "capType": "LARGE",
-      "sector": "General Research",
-      "currentPrice": 1758,
-      "entryPrice": 1745,
-      "entryTime": "2026-04-30T03:45:00.000Z",
-      "target": 2293,
-      "roi": 31.40401146131806,
-      "score": 90,
-      "smartMoney": 92.97999999999999
-    },
-    {
-      "symbol": "OBEROIRLTY",
-      "stockName": "OBEROIRLTY",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
-      "capType": "LARGE",
-      "sector": "General Research",
-      "currentPrice": 1633.4000244140625,
-      "entryPrice": 1709,
-      "entryTime": "2026-05-06T03:45:00.000Z",
-      "target": 2245,
-      "roi": 31.363370392042135,
-      "score": 90,
-      "smartMoney": 97.71
-    },
-    {
       "symbol": "PIDILITIND",
       "stockName": "PIDILITIND",
       "strategy": "Envelope Short",
@@ -119,6 +59,21 @@
       "roi": 13.96426207809398,
       "score": 90,
       "smartMoney": 90.63
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "stockName": "BAJFINANCE",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
+      "capType": "LARGE",
+      "sector": "NBFC",
+      "currentPrice": 889.4000244140625,
+      "entryPrice": 955,
+      "entryTime": "2026-01-09",
+      "target": 1088,
+      "roi": 13.926701570680633,
+      "score": 90,
+      "smartMoney": 91.13999999999999
     },
     {
       "symbol": "TCS",
@@ -156,7 +111,7 @@
       "strategy": "Envelope Long",
       "basketSource": "Elite Basket",
       "capType": "LARGE",
-      "sector": "General Research",
+      "sector": "Consumer Durables",
       "currentPrice": 1150.5,
       "entryPrice": 1236,
       "entryTime": "2025-01-13",
@@ -166,27 +121,12 @@
       "smartMoney": 93.81
     },
     {
-      "symbol": "DMART",
-      "stockName": "DMART",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
-      "capType": "LARGE",
-      "sector": "General Research",
-      "currentPrice": 4144.2001953125,
-      "entryPrice": 4089,
-      "entryTime": "2026-06-02T03:45:00.000Z",
-      "target": 5449,
-      "roi": 33.25996576179995,
-      "score": 85,
-      "smartMoney": 92.28
-    },
-    {
       "symbol": "SBIN",
       "stockName": "SBIN",
       "strategy": "Envelope Short",
       "basketSource": "Elite Basket",
       "capType": "LARGE",
-      "sector": "General Research",
+      "sector": "Banking",
       "currentPrice": 977.7000122070312,
       "entryPrice": 973,
       "entryTime": "2026-05-11",
@@ -196,19 +136,19 @@
       "smartMoney": 93.04
     },
     {
-      "symbol": "HINDCOPPER",
-      "stockName": "HINDCOPPER",
+      "symbol": "DIXON",
+      "stockName": "DIXON",
       "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
+      "basketSource": "Quality Basket",
       "capType": "LARGE",
-      "sector": "General Research",
-      "currentPrice": 526.3499755859375,
-      "entryPrice": 529,
-      "entryTime": "2026-05-29T03:45:00.000Z",
-      "target": 760,
-      "roi": 43.66729678638941,
+      "sector": "Electronics Mfg",
+      "currentPrice": 11432,
+      "entryPrice": 11265,
+      "entryTime": "2026-06-03T03:45:00.000Z",
+      "target": 14916,
+      "roi": 32.41011984021305,
       "score": 80,
-      "smartMoney": 77.87
+      "smartMoney": 75.13
     },
     {
       "symbol": "COALINDIA",
@@ -216,7 +156,7 @@
       "strategy": "Envelope Short",
       "basketSource": "Elite Basket",
       "capType": "LARGE",
-      "sector": "General Research",
+      "sector": "Mining",
       "currentPrice": 472.29998779296875,
       "entryPrice": 469,
       "entryTime": "2024-10-25",
@@ -241,34 +181,49 @@
       "smartMoney": 84.19
     },
     {
-      "symbol": "SUPREMEIND",
-      "stockName": "SUPREMEIND",
+      "symbol": "GODREJCP",
+      "stockName": "GODREJCP",
       "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
+      "basketSource": "Quality Basket",
       "capType": "LARGE",
-      "sector": "General Research",
-      "currentPrice": 3602,
-      "entryPrice": 3663,
-      "entryTime": "2026-04-30T03:45:00.000Z",
-      "target": 5184,
-      "roi": 41.523341523341514,
+      "sector": "FMCG",
+      "currentPrice": 998,
+      "entryPrice": 1038,
+      "entryTime": "2026-05-18T03:45:00.000Z",
+      "target": 1420,
+      "roi": 36.80154142581888,
       "score": 75,
-      "smartMoney": 85.22
+      "smartMoney": 85
     },
     {
-      "symbol": "COROMANDEL",
-      "stockName": "COROMANDEL",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
+      "symbol": "NTPC",
+      "stockName": "NTPC",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
       "capType": "LARGE",
-      "sector": "General Research",
-      "currentPrice": 1796.800048828125,
-      "entryPrice": 1819,
-      "entryTime": "2026-05-22T03:45:00.000Z",
-      "target": 2503,
-      "roi": 37.60307861462342,
+      "sector": "Power",
+      "currentPrice": 361.6499938964844,
+      "entryPrice": 375,
+      "entryTime": "2024-11-14",
+      "target": 428,
+      "roi": 14.133333333333331,
       "score": 75,
-      "smartMoney": 87.56
+      "smartMoney": 96.77
+    },
+    {
+      "symbol": "BHARTIARTL",
+      "stockName": "BHARTIARTL",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
+      "capType": "LARGE",
+      "sector": "Telecom",
+      "currentPrice": 1798.199951171875,
+      "entryPrice": 1961,
+      "entryTime": "2026-01-28",
+      "target": 2236,
+      "roi": 14.023457419683826,
+      "score": 75,
+      "smartMoney": 97.19
     },
     {
       "symbol": "ASIANPAINT",
@@ -301,6 +256,21 @@
       "smartMoney": 83.97999999999999
     },
     {
+      "symbol": "POWERGRID",
+      "stockName": "POWERGRID",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
+      "capType": "LARGE",
+      "sector": "Power",
+      "currentPrice": 285.6499938964844,
+      "entryPrice": 311,
+      "entryTime": "2024-11-08",
+      "target": 355,
+      "roi": 14.147909967845651,
+      "score": 70,
+      "smartMoney": 96.41
+    },
+    {
       "symbol": "ICICIBANK",
       "stockName": "ICICIBANK",
       "strategy": "Envelope Short",
@@ -314,6 +284,96 @@
       "roi": 14.023494860499275,
       "score": 70,
       "smartMoney": 74.41999999999999
+    },
+    {
+      "symbol": "ULTRACEMCO",
+      "stockName": "ULTRACEMCO",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
+      "capType": "LARGE",
+      "sector": "Cement",
+      "currentPrice": 10912,
+      "entryPrice": 11799,
+      "entryTime": "2025-11-10",
+      "target": 13451,
+      "roi": 14.001186541232302,
+      "score": 70,
+      "smartMoney": 91.36
+    },
+    {
+      "symbol": "RELIANCE",
+      "stockName": "RELIANCE",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
+      "capType": "LARGE",
+      "sector": "Energy/Conglomerate",
+      "currentPrice": 1291,
+      "entryPrice": 1437,
+      "entryTime": "2026-01-19",
+      "target": 1638,
+      "roi": 13.987473903966595,
+      "score": 70,
+      "smartMoney": 89.13
+    },
+    {
+      "symbol": "CIPLA",
+      "stockName": "CIPLA",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
+      "capType": "LARGE",
+      "sector": "Pharma",
+      "currentPrice": 1401.300048828125,
+      "entryPrice": 1492,
+      "entryTime": "2024-10-25",
+      "target": 1700,
+      "roi": 13.941018766756041,
+      "score": 65,
+      "smartMoney": 83.47999999999999
+    },
+    {
+      "symbol": "ONGC",
+      "stockName": "ONGC",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Elite Basket",
+      "capType": "LARGE",
+      "sector": "Oil & Gas",
+      "currentPrice": 264.75,
+      "entryPrice": 254,
+      "entryTime": "2026-06-02T03:45:00.000Z",
+      "target": 338,
+      "roi": 33.07086614173229,
+      "score": 60,
+      "smartMoney": 86.16
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "stockName": "KOTAKBANK",
+      "strategy": "Bollinger Band",
+      "basketSource": "Elite Basket",
+      "capType": "LARGE",
+      "sector": "Banking",
+      "currentPrice": 377.45001220703125,
+      "entryPrice": 382,
+      "entryTime": "2026-03-09",
+      "target": 457,
+      "roi": 19.63350785340314,
+      "score": 55,
+      "smartMoney": 88.46
+    },
+    {
+      "symbol": "DRREDDY",
+      "stockName": "DRREDDY",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
+      "capType": "LARGE",
+      "sector": "Pharma",
+      "currentPrice": 1278.199951171875,
+      "entryPrice": 1270,
+      "entryTime": "2024-10-29",
+      "target": 1447,
+      "roi": 13.93700787401575,
+      "score": 55,
+      "smartMoney": 78.49
     },
     {
       "symbol": "HONAUT",
@@ -331,109 +391,139 @@
       "smartMoney": 90.02
     },
     {
-      "symbol": "LTTS",
-      "stockName": "LTTS",
+      "symbol": "BAYERCROP",
+      "stockName": "BAYERCROP",
       "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
+      "basketSource": "Quality Basket",
       "capType": "MID",
-      "sector": "Engineering Tech",
-      "currentPrice": 3212.699951171875,
-      "entryPrice": 3072,
-      "entryTime": "2026-03-30T03:45:00.000Z",
-      "target": 4290,
-      "roi": 39.6484375,
-      "score": 80,
-      "smartMoney": 92.07
+      "sector": "Agrochemicals",
+      "currentPrice": 4350.10009765625,
+      "entryPrice": 4394,
+      "entryTime": "2026-05-18T03:45:00.000Z",
+      "target": 5927,
+      "roi": 34.88848429676832,
+      "score": 95,
+      "smartMoney": 87.22
     },
     {
-      "symbol": "CONCOR",
-      "stockName": "CONCOR",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
+      "symbol": "KAJARIACER",
+      "stockName": "KAJARIACER",
+      "strategy": "Reverse Head and Shoulder + ABCD",
+      "basketSource": "Quality Basket",
       "capType": "MID",
-      "sector": "Logistics",
-      "currentPrice": 450.95001220703125,
-      "entryPrice": 471,
-      "entryTime": "2026-03-05T03:45:00.000Z",
-      "target": 625,
-      "roi": 32.69639065817409,
-      "score": 70,
-      "smartMoney": 92.89
-    },
-    {
-      "symbol": "PFIZER",
-      "stockName": "PFIZER",
-      "strategy": "Velocity Retest (20%)",
-      "basketSource": "Growth Basket",
-      "capType": "MID",
-      "sector": "Pharma",
-      "currentPrice": 4456.2998046875,
-      "entryPrice": 4405,
-      "entryTime": "2025-05-19",
-      "target": 5797,
-      "roi": 31.600454029511926,
-      "score": 70,
-      "smartMoney": 83.62
-    },
-    {
-      "symbol": "GLAXO",
-      "stockName": "GLAXO",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
-      "capType": "MID",
-      "sector": "Pharma",
-      "currentPrice": 2164.10009765625,
-      "entryPrice": 2150,
-      "entryTime": "2026-06-02T03:45:00.000Z",
-      "target": 2827,
-      "roi": 31.488372093023266,
-      "score": 70,
-      "smartMoney": 87.30000000000001
-    },
-    {
-      "symbol": "ZENSARTECH",
-      "stockName": "ZENSARTECH",
-      "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
-      "capType": "SMALL",
-      "sector": "IT Services",
-      "currentPrice": 484.8500061035156,
-      "entryPrice": 481,
-      "entryTime": "2026-06-01T03:45:00.000Z",
-      "target": 652,
-      "roi": 35.550935550935556,
+      "sector": "Ceramics",
+      "currentPrice": 1083.800048828125,
+      "entryPrice": 1151,
+      "entryTime": "2025-09-29T03:45:00.000Z",
+      "target": 1879,
+      "roi": 63.249348392702,
       "score": 90,
-      "smartMoney": 83.17999999999999
+      "smartMoney": 85.39
     },
     {
-      "symbol": "IEX",
-      "stockName": "IEX",
+      "symbol": "CAPLIPOINT",
+      "stockName": "CAPLIPOINT",
       "strategy": "Support and Resistance Strategy (S&R)",
-      "basketSource": "Growth Basket",
-      "capType": "SMALL",
-      "sector": "Energy Exchange",
-      "currentPrice": 122.37999725341797,
-      "entryPrice": 120,
-      "entryTime": "2026-05-27T03:45:00.000Z",
-      "target": 158,
-      "roi": 31.666666666666664,
-      "score": 85,
-      "smartMoney": 44.42
+      "basketSource": "Quality Basket",
+      "capType": "MID",
+      "sector": "Pharma",
+      "currentPrice": 2033.0999755859375,
+      "entryPrice": 1956,
+      "entryTime": "2025-10-24T03:45:00.000Z",
+      "target": 2548,
+      "roi": 30.265848670756657,
+      "score": 80,
+      "smartMoney": 78.86
     },
     {
-      "symbol": "SANOFI",
-      "stockName": "SANOFI",
-      "strategy": "Institutional Reset (67%)",
-      "basketSource": "Growth Basket",
-      "capType": "SMALL",
-      "sector": "Pharma",
-      "currentPrice": 3186.39990234375,
-      "entryPrice": 3186,
-      "entryTime": "2026-06-06",
-      "target": 7052,
-      "roi": 121.34337727558066,
+      "symbol": "AVANTIFEED",
+      "stockName": "AVANTIFEED",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Quality Basket",
+      "capType": "MID",
+      "sector": "Aqua Feed",
+      "currentPrice": 1110.5999755859375,
+      "entryPrice": 1126,
+      "entryTime": "2026-03-30T03:45:00.000Z",
+      "target": 1464,
+      "roi": 30.017761989342805,
       "score": 80,
-      "smartMoney": 87.17
+      "smartMoney": 57.68
+    },
+    {
+      "symbol": "FINCABLES",
+      "stockName": "FINCABLES",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Quality Basket",
+      "capType": "MID",
+      "sector": "Electricals",
+      "currentPrice": 1057.5,
+      "entryPrice": 1099,
+      "entryTime": "2024-11-27T03:45:00.000Z",
+      "target": 1504,
+      "roi": 36.85168334849864,
+      "score": 75,
+      "smartMoney": 61.92
+    },
+    {
+      "symbol": "ERIS",
+      "stockName": "ERIS",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Quality Basket",
+      "capType": "MID",
+      "sector": "Pharma",
+      "currentPrice": 1365.199951171875,
+      "entryPrice": 1370,
+      "entryTime": "2026-06-02T03:45:00.000Z",
+      "target": 1799,
+      "roi": 31.313868613138695,
+      "score": 60,
+      "smartMoney": 80.66
+    },
+    {
+      "symbol": "CERA",
+      "stockName": "CERA",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Quality Basket",
+      "capType": "SMALL",
+      "sector": "Sanitaryware",
+      "currentPrice": 5512.5,
+      "entryPrice": 5535,
+      "entryTime": "2026-06-01T03:45:00.000Z",
+      "target": 7355,
+      "roi": 32.88166214995483,
+      "score": 90,
+      "smartMoney": 82.78999999999999
+    },
+    {
+      "symbol": "TEAMLEASE",
+      "stockName": "TEAMLEASE",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Quality Basket",
+      "capType": "SMALL",
+      "sector": "Employment Services",
+      "currentPrice": 1385.300048828125,
+      "entryPrice": 1400,
+      "entryTime": "2026-06-02T03:45:00.000Z",
+      "target": 1879,
+      "roi": 34.21428571428571,
+      "score": 85,
+      "smartMoney": 87.47
+    },
+    {
+      "symbol": "TASTYBITE",
+      "stockName": "TASTYBITE",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Quality Basket",
+      "capType": "SMALL",
+      "sector": "Food Processing",
+      "currentPrice": 7854,
+      "entryPrice": 8174,
+      "entryTime": "2025-12-17T03:45:00.000Z",
+      "target": 10902,
+      "roi": 33.374113041350626,
+      "score": 85,
+      "smartMoney": 78.36
     },
     {
       "symbol": "VINATIORGA",
@@ -464,9 +554,156 @@
       "roi": 31.64983164983164,
       "score": 75,
       "smartMoney": 88.67999999999999
+    },
+    {
+      "symbol": "NIFTYBEES",
+      "stockName": "NIFTYBEES",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
+      "capType": "SMALL",
+      "sector": "Index ETF",
+      "currentPrice": 265.3599853515625,
+      "entryPrice": 283,
+      "entryTime": "2026-01-21",
+      "target": 323,
+      "roi": 14.134275618374549,
+      "score": 75,
+      "smartMoney": 0
+    },
+    {
+      "symbol": "BANKBEES",
+      "stockName": "BANKBEES",
+      "strategy": "Envelope Short",
+      "basketSource": "Elite Basket",
+      "capType": "SMALL",
+      "sector": "Banking ETF",
+      "currentPrice": 563.0800170898438,
+      "entryPrice": 593,
+      "entryTime": "2026-03-09",
+      "target": 676,
+      "roi": 13.99662731871838,
+      "score": 75,
+      "smartMoney": 0
+    },
+    {
+      "symbol": "TTKPRESTIG",
+      "stockName": "TTKPRESTIG",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Quality Basket",
+      "capType": "SMALL",
+      "sector": "Consumer Durables",
+      "currentPrice": 533.6500244140625,
+      "entryPrice": 544,
+      "entryTime": "2026-06-02T03:45:00.000Z",
+      "target": 791,
+      "roi": 45.404411764705884,
+      "score": 60,
+      "smartMoney": 92.84
+    },
+    {
+      "symbol": "SIS",
+      "stockName": "SIS",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Quality Basket",
+      "capType": "SMALL",
+      "sector": "Security Services",
+      "currentPrice": 417.04998779296875,
+      "entryPrice": 400,
+      "entryTime": "2026-05-25T03:45:00.000Z",
+      "target": 540,
+      "roi": 35.00000000000001,
+      "score": 60,
+      "smartMoney": 91.06
+    },
+    {
+      "symbol": "SFL",
+      "stockName": "SFL",
+      "strategy": "Support and Resistance Strategy (S&R)",
+      "basketSource": "Quality Basket",
+      "capType": "SMALL",
+      "sector": "Consumer Durables",
+      "currentPrice": 642.75,
+      "entryPrice": 648,
+      "entryTime": "2025-10-17T03:45:00.000Z",
+      "target": 867,
+      "roi": 33.796296296296305,
+      "score": 60,
+      "smartMoney": 90.39
     }
   ],
   "closed": [
+    {
+      "symbol": "RELIANCE",
+      "entryTime": "2024-12-20T03:45:00.000Z",
+      "exitDate": "2025-11-26T03:45:00.000Z",
+      "days": 341,
+      "roi": 30.39076677329884,
+      "score": 70
+    },
+    {
+      "symbol": "AXISBANK",
+      "entryTime": "2025-01-17T03:45:00.000Z",
+      "exitDate": "2025-11-24T03:45:00.000Z",
+      "days": 311,
+      "roi": 30.255793382213604,
+      "score": 65
+    },
+    {
+      "symbol": "BRITANNIA",
+      "entryTime": "2024-11-21T03:45:00.000Z",
+      "exitDate": "2025-09-04T03:45:00.000Z",
+      "days": 287,
+      "roi": 31.907936568929095,
+      "score": 95
+    },
+    {
+      "symbol": "ADANIPORTS",
+      "entryTime": "2024-11-21T03:45:00.000Z",
+      "exitDate": "2025-05-30T03:45:00.000Z",
+      "days": 190,
+      "roi": 30.758531204999827,
+      "score": 85
+    },
+    {
+      "symbol": "TATASTEEL",
+      "entryTime": "2024-11-14T03:45:00.000Z",
+      "exitDate": "2025-10-28T03:45:00.000Z",
+      "days": 348,
+      "roi": 31.946661252328834,
+      "score": 60
+    },
+    {
+      "symbol": "SHRIRAMFIN",
+      "entryTime": "2025-01-10T03:45:00.000Z",
+      "exitDate": "2025-03-20T03:45:00.000Z",
+      "days": 69,
+      "roi": 30.63909774436091,
+      "score": 95
+    },
+    {
+      "symbol": "FINCABLES",
+      "entryTime": "2024-03-12T03:45:00.000Z",
+      "exitDate": "2024-05-22T03:45:00.000Z",
+      "days": 71,
+      "roi": 32.646711130352045,
+      "score": 75
+    },
+    {
+      "symbol": "TASTYBITE",
+      "entryTime": "2024-04-16T03:45:00.000Z",
+      "exitDate": "2024-08-21T03:45:00.000Z",
+      "days": 127,
+      "roi": 33.1625727032614,
+      "score": 85
+    },
+    {
+      "symbol": "DIXON",
+      "entryTime": "2025-02-14T03:45:00.000Z",
+      "exitDate": "2025-09-16T03:45:00.000Z",
+      "days": 214,
+      "roi": 30.400335067568673,
+      "score": 80
+    },
     {
       "symbol": "KEI",
       "entryTime": "2024-11-18T03:45:00.000Z",
@@ -476,12 +713,44 @@
       "score": 85
     },
     {
+      "symbol": "ERIS",
+      "entryTime": "2025-01-27T03:45:00.000Z",
+      "exitDate": "2025-02-07T03:45:00.000Z",
+      "days": 11,
+      "roi": 30.075453661500752,
+      "score": 60
+    },
+    {
       "symbol": "ASTRAZEN",
       "entryTime": "2024-02-13T03:45:00.000Z",
       "exitDate": "2024-07-04T03:45:00.000Z",
       "days": 142,
       "roi": 40.10398212059707,
       "score": 95
+    },
+    {
+      "symbol": "AVANTIFEED",
+      "entryTime": "2024-10-07T03:45:00.000Z",
+      "exitDate": "2025-02-01T03:45:00.000Z",
+      "days": 117,
+      "roi": 31.127542183025536,
+      "score": 80
+    },
+    {
+      "symbol": "AVANTIFEED",
+      "entryTime": "2025-04-04T03:45:00.000Z",
+      "exitDate": "2026-02-03T03:45:00.000Z",
+      "days": 305,
+      "roi": 33.38890978423983,
+      "score": 80
+    },
+    {
+      "symbol": "AVANTIFEED",
+      "entryTime": "2026-03-23T03:45:00.000Z",
+      "exitDate": "2026-04-10T03:45:00.000Z",
+      "days": 18,
+      "roi": 33.452914798206265,
+      "score": 80
     },
     {
       "symbol": "LALPATHLAB",
@@ -498,6 +767,30 @@
       "days": 163,
       "roi": 32.868303888852424,
       "score": 90
+    },
+    {
+      "symbol": "MOTILALOFS",
+      "entryTime": "2024-03-13T03:45:00.000Z",
+      "exitDate": "2024-04-03T03:45:00.000Z",
+      "days": 21,
+      "roi": 30.63030681046721,
+      "score": 80
+    },
+    {
+      "symbol": "MOTILALOFS",
+      "entryTime": "2024-07-10T03:45:00.000Z",
+      "exitDate": "2024-08-21T03:45:00.000Z",
+      "days": 42,
+      "roi": 34.02544570165658,
+      "score": 80
+    },
+    {
+      "symbol": "MOTILALOFS",
+      "entryTime": "2025-01-17T03:45:00.000Z",
+      "exitDate": "2025-10-24T03:45:00.000Z",
+      "days": 280,
+      "roi": 31.32265158655356,
+      "score": 80
     },
     {
       "symbol": "3MINDIA",
@@ -554,611 +847,41 @@
       "days": 77,
       "roi": 30.387740415375063,
       "score": 95
-    },
-    {
-      "symbol": "3MINDIA",
-      "entryTime": "2024-03-15T03:45:00.000Z",
-      "exitDate": "2024-06-25T03:45:00.000Z",
-      "days": 102,
-      "roi": 30.095342256300974,
-      "score": 85
-    },
-    {
-      "symbol": "AUBANK",
-      "entryTime": "2024-02-08T03:45:00.000Z",
-      "exitDate": "2025-06-09T03:45:00.000Z",
-      "days": 487,
-      "roi": 31.396911965289064,
-      "score": 75
-    },
-    {
-      "symbol": "ASTRAZEN",
-      "entryTime": "2024-02-13T03:45:00.000Z",
-      "exitDate": "2024-07-04T03:45:00.000Z",
-      "days": 142,
-      "roi": 40.10398212059707,
-      "score": 95
-    },
-    {
-      "symbol": "AVANTIFEED",
-      "entryTime": "2024-10-07T03:45:00.000Z",
-      "exitDate": "2025-02-01T03:45:00.000Z",
-      "days": 117,
-      "roi": 31.127542183025536,
-      "score": 80
-    },
-    {
-      "symbol": "AVANTIFEED",
-      "entryTime": "2025-04-04T03:45:00.000Z",
-      "exitDate": "2026-02-03T03:45:00.000Z",
-      "days": 305,
-      "roi": 33.38890978423983,
-      "score": 80
-    },
-    {
-      "symbol": "AVANTIFEED",
-      "entryTime": "2026-03-23T03:45:00.000Z",
-      "exitDate": "2026-04-10T03:45:00.000Z",
-      "days": 18,
-      "roi": 33.452914798206265,
-      "score": 80
-    },
-    {
-      "symbol": "BSE",
-      "entryTime": "2024-07-05T03:45:00.000Z",
-      "exitDate": "2024-09-16T03:45:00.000Z",
-      "days": 73,
-      "roi": 43.804437404473575,
-      "score": 85
-    },
-    {
-      "symbol": "BSE",
-      "entryTime": "2025-03-03T03:45:00.000Z",
-      "exitDate": "2025-04-02T03:45:00.000Z",
-      "days": 30,
-      "roi": 30.29166584412819,
-      "score": 85
-    },
-    {
-      "symbol": "BSE",
-      "entryTime": "2025-08-26T03:45:00.000Z",
-      "exitDate": "2025-11-19T03:45:00.000Z",
-      "days": 85,
-      "roi": 31.549014677307063,
-      "score": 85
-    },
-    {
-      "symbol": "BAJAJCON",
-      "entryTime": "2024-11-12T03:45:00.000Z",
-      "exitDate": "2025-10-10T03:45:00.000Z",
-      "days": 332,
-      "roi": 30.520240986201806,
-      "score": 90
-    },
-    {
-      "symbol": "BANKBARODA",
-      "entryTime": "2025-01-13T03:45:00.000Z",
-      "exitDate": "2025-11-03T03:45:00.000Z",
-      "days": 294,
-      "roi": 34.709907074823796,
-      "score": 70
-    },
-    {
-      "symbol": "BERGEPAINT",
-      "entryTime": "2024-05-31T03:45:00.000Z",
-      "exitDate": "2024-09-04T03:45:00.000Z",
-      "days": 96,
-      "roi": 30.32608695652175,
-      "score": 90
-    },
-    {
-      "symbol": "BDL",
-      "entryTime": "2024-08-05T03:45:00.000Z",
-      "exitDate": "2025-05-13T03:45:00.000Z",
-      "days": 281,
-      "roi": 31.976286603230577,
-      "score": 80
-    },
-    {
-      "symbol": "BEL",
-      "entryTime": "2025-02-14T03:45:00.000Z",
-      "exitDate": "2025-05-13T03:45:00.000Z",
-      "days": 88,
-      "roi": 34.91112113668011,
-      "score": 95
-    },
-    {
-      "symbol": "BOSCHLTD",
-      "entryTime": "2025-01-29T03:45:00.000Z",
-      "exitDate": "2025-07-11T03:45:00.000Z",
-      "days": 163,
-      "roi": 32.868303888852424,
-      "score": 90
-    },
-    {
-      "symbol": "CARERATING",
-      "entryTime": "2024-08-06T03:45:00.000Z",
-      "exitDate": "2024-10-09T03:45:00.000Z",
-      "days": 64,
-      "roi": 31.635044119725976,
-      "score": 85
-    },
-    {
-      "symbol": "CARERATING",
-      "entryTime": "2025-02-14T03:45:00.000Z",
-      "exitDate": "2025-05-13T03:45:00.000Z",
-      "days": 88,
-      "roi": 33.801601225530106,
-      "score": 85
-    },
-    {
-      "symbol": "CGPOWER",
-      "entryTime": "2025-01-10T03:45:00.000Z",
-      "exitDate": "2026-04-24T03:45:00.000Z",
-      "days": 469,
-      "roi": 30.252231392514894,
-      "score": 80
-    },
-    {
-      "symbol": "CANBK",
-      "entryTime": "2024-10-25T03:45:00.000Z",
-      "exitDate": "2025-09-24T03:45:00.000Z",
-      "days": 334,
-      "roi": 32.16256990137405,
-      "score": 80
-    },
-    {
-      "symbol": "CENTRALBK",
-      "entryTime": "2024-03-13T03:45:00.000Z",
-      "exitDate": "2024-06-03T03:45:00.000Z",
-      "days": 82,
-      "roi": 34.935308796579335,
-      "score": 75
-    },
-    {
-      "symbol": "CUMMINSIND",
-      "entryTime": "2025-01-09T03:45:00.000Z",
-      "exitDate": "2025-09-10T03:45:00.000Z",
-      "days": 244,
-      "roi": 31.73556377674118,
-      "score": 95
-    },
-    {
-      "symbol": "DCBBANK",
-      "entryTime": "2024-03-13T03:45:00.000Z",
-      "exitDate": "2025-06-10T03:45:00.000Z",
-      "days": 454,
-      "roi": 31.924750008844228,
-      "score": 85
-    },
-    {
-      "symbol": "LALPATHLAB",
-      "entryTime": "2025-01-28T03:45:00.000Z",
-      "exitDate": "2025-08-19T03:45:00.000Z",
-      "days": 203,
-      "roi": 30.740691145695422,
-      "score": 90
-    },
-    {
-      "symbol": "EMAMILTD",
-      "entryTime": "2024-03-15T03:45:00.000Z",
-      "exitDate": "2024-05-30T03:45:00.000Z",
-      "days": 76,
-      "roi": 46.318406302123535,
-      "score": 75
-    },
-    {
-      "symbol": "ENGINERSIN",
-      "entryTime": "2024-02-12T03:45:00.000Z",
-      "exitDate": "2024-05-17T03:45:00.000Z",
-      "days": 95,
-      "roi": 31.173990569924293,
-      "score": 95
-    },
-    {
-      "symbol": "ENGINERSIN",
-      "entryTime": "2024-06-05T03:45:00.000Z",
-      "exitDate": "2024-07-08T03:45:00.000Z",
-      "days": 33,
-      "roi": 30.073798907039983,
-      "score": 95
-    },
-    {
-      "symbol": "ENDURANCE",
-      "entryTime": "2024-03-13T03:45:00.000Z",
-      "exitDate": "2024-05-17T03:45:00.000Z",
-      "days": 65,
-      "roi": 34.13659457567433,
-      "score": 90
-    },
-    {
-      "symbol": "ENDURANCE",
-      "entryTime": "2024-10-04T03:45:00.000Z",
-      "exitDate": "2025-07-01T03:45:00.000Z",
-      "days": 270,
-      "roi": 33.44784016383351,
-      "score": 90
-    },
-    {
-      "symbol": "FINCABLES",
-      "entryTime": "2024-03-12T03:45:00.000Z",
-      "exitDate": "2024-05-22T03:45:00.000Z",
-      "days": 71,
-      "roi": 32.646711130352045,
-      "score": 75
-    },
-    {
-      "symbol": "GICRE",
-      "entryTime": "2024-02-12T03:45:00.000Z",
-      "exitDate": "2024-12-17T03:45:00.000Z",
-      "days": 309,
-      "roi": 30.092321395348876,
-      "score": 75
-    },
-    {
-      "symbol": "GLAXO",
-      "entryTime": "2024-03-27T03:45:00.000Z",
-      "exitDate": "2024-05-23T03:45:00.000Z",
-      "days": 57,
-      "roi": 33.5248396000811,
-      "score": 70
-    },
-    {
-      "symbol": "GLAXO",
-      "entryTime": "2024-12-12T03:45:00.000Z",
-      "exitDate": "2025-04-24T03:45:00.000Z",
-      "days": 133,
-      "roi": 36.62600870518482,
-      "score": 70
-    },
-    {
-      "symbol": "GLENMARK",
-      "entryTime": "2025-02-14T03:45:00.000Z",
-      "exitDate": "2025-06-25T03:45:00.000Z",
-      "days": 131,
-      "roi": 30.682886980083634,
-      "score": 95
-    },
-    {
-      "symbol": "GILLETTE",
-      "entryTime": "2025-02-13T03:45:00.000Z",
-      "exitDate": "2025-06-06T03:45:00.000Z",
-      "days": 113,
-      "roi": 30.095400101907078,
-      "score": 90
-    },
-    {
-      "symbol": "GODFRYPHLP",
-      "entryTime": "2024-10-22T03:45:00.000Z",
-      "exitDate": "2025-04-24T03:45:00.000Z",
-      "days": 184,
-      "roi": 32.40105154520903,
-      "score": 85
-    },
-    {
-      "symbol": "GESHIP",
-      "entryTime": "2024-11-12T03:45:00.000Z",
-      "exitDate": "2026-03-12T03:45:00.000Z",
-      "days": 485,
-      "roi": 32.687344936578036,
-      "score": 95
-    },
-    {
-      "symbol": "HDFCAMC",
-      "entryTime": "2025-02-28T03:45:00.000Z",
-      "exitDate": "2025-05-16T03:45:00.000Z",
-      "days": 77,
-      "roi": 31.52164748726527,
-      "score": 95
-    },
-    {
-      "symbol": "HEROMOTOCO",
-      "entryTime": "2024-11-13T03:45:00.000Z",
-      "exitDate": "2025-11-18T03:45:00.000Z",
-      "days": 370,
-      "roi": 30.14425774196827,
-      "score": 95
-    },
-    {
-      "symbol": "HSCL",
-      "entryTime": "2024-03-13T03:45:00.000Z",
-      "exitDate": "2024-04-24T03:45:00.000Z",
-      "days": 42,
-      "roi": 34.47433336197132,
-      "score": 85
-    },
-    {
-      "symbol": "IFBIND",
-      "entryTime": "2024-05-29T03:45:00.000Z",
-      "exitDate": "2024-06-18T03:45:00.000Z",
-      "days": 20,
-      "roi": 30.38444939240246,
-      "score": 95
-    },
-    {
-      "symbol": "IFBIND",
-      "entryTime": "2024-10-29T03:45:00.000Z",
-      "exitDate": "2025-01-08T03:45:00.000Z",
-      "days": 71,
-      "roi": 32.36268583051491,
-      "score": 95
-    },
-    {
-      "symbol": "IFBIND",
-      "entryTime": "2025-01-29T03:45:00.000Z",
-      "exitDate": "2025-09-22T03:45:00.000Z",
-      "days": 236,
-      "roi": 30.19045673425631,
-      "score": 95
-    },
-    {
-      "symbol": "ITDC",
-      "entryTime": "2024-03-12T03:45:00.000Z",
-      "exitDate": "2024-06-14T03:45:00.000Z",
-      "days": 94,
-      "roi": 30.07688619353146,
-      "score": 70
-    },
-    {
-      "symbol": "JBCHEPHARM",
-      "entryTime": "2025-03-12T03:45:00.000Z",
-      "exitDate": "2026-02-16T03:45:00.000Z",
-      "days": 341,
-      "roi": 33.475137424441414,
-      "score": 95
-    },
-    {
-      "symbol": "JAMNAAUTO",
-      "entryTime": "2024-10-07T03:45:00.000Z",
-      "exitDate": "2026-02-13T03:45:00.000Z",
-      "days": 494,
-      "roi": 33.099343269260004,
-      "score": 85
-    },
-    {
-      "symbol": "JYOTHYLAB",
-      "entryTime": "2024-03-13T03:45:00.000Z",
-      "exitDate": "2024-07-24T03:45:00.000Z",
-      "days": 133,
-      "roi": 31.402485283181214,
-      "score": 80
-    },
-    {
-      "symbol": "KEI",
-      "entryTime": "2024-11-18T03:45:00.000Z",
-      "exitDate": "2026-02-23T03:45:00.000Z",
-      "days": 462,
-      "roi": 30.480635092078124,
-      "score": 85
-    },
-    {
-      "symbol": "KPRMILL",
-      "entryTime": "2025-01-27T03:45:00.000Z",
-      "exitDate": "2025-05-08T03:45:00.000Z",
-      "days": 101,
-      "roi": 36.97242543612831,
-      "score": 95
-    },
-    {
-      "symbol": "KRBL",
-      "entryTime": "2024-03-12T03:45:00.000Z",
-      "exitDate": "2025-06-04T03:45:00.000Z",
-      "days": 449,
-      "roi": 30.533289636500438,
-      "score": 75
-    },
-    {
-      "symbol": "KSCL",
-      "entryTime": "2024-10-07T03:45:00.000Z",
-      "exitDate": "2025-03-19T03:45:00.000Z",
-      "days": 163,
-      "roi": 34.821437928515934,
-      "score": 80
-    },
-    {
-      "symbol": "LTTS",
-      "entryTime": "2024-05-09T03:45:00.000Z",
-      "exitDate": "2024-08-29T03:45:00.000Z",
-      "days": 112,
-      "roi": 36.30478050637536,
-      "score": 80
-    },
-    {
-      "symbol": "MAHSCOOTER",
-      "entryTime": "2024-11-21T03:45:00.000Z",
-      "exitDate": "2025-03-27T03:45:00.000Z",
-      "days": 126,
-      "roi": 30.203882856424013,
-      "score": 75
-    },
-    {
-      "symbol": "NBCC",
-      "entryTime": "2024-02-13T03:45:00.000Z",
-      "exitDate": "2024-06-14T03:45:00.000Z",
-      "days": 122,
-      "roi": 30.787780359546858,
-      "score": 80
-    },
-    {
-      "symbol": "NATIONALUM",
-      "entryTime": "2025-01-13T03:45:00.000Z",
-      "exitDate": "2025-11-10T03:45:00.000Z",
-      "days": 301,
-      "roi": 35.51148558323216,
-      "score": 95
-    },
-    {
-      "symbol": "ORIENTCEM",
-      "entryTime": "2024-03-11T03:45:00.000Z",
-      "exitDate": "2024-06-27T03:45:00.000Z",
-      "days": 108,
-      "roi": 30.933699983008456,
-      "score": 95
-    },
-    {
-      "symbol": "ORIENTCEM",
-      "entryTime": "2024-09-25T03:45:00.000Z",
-      "exitDate": "2024-10-22T03:45:00.000Z",
-      "days": 27,
-      "roi": 37.46825651766665,
-      "score": 95
-    },
-    {
-      "symbol": "PERSISTENT",
-      "entryTime": "2025-04-03T03:45:00.000Z",
-      "exitDate": "2025-11-19T03:45:00.000Z",
-      "days": 230,
-      "roi": 32.30829943135127,
-      "score": 90
-    },
-    {
-      "symbol": "RADICO",
-      "entryTime": "2025-02-17T03:45:00.000Z",
-      "exitDate": "2025-05-05T03:45:00.000Z",
-      "days": 77,
-      "roi": 30.48271238495024,
-      "score": 90
-    },
-    {
-      "symbol": "RADICO",
-      "entryTime": "2026-02-27T03:45:00.000Z",
-      "exitDate": "2026-04-29T03:45:00.000Z",
-      "days": 61,
-      "roi": 31.156822041894692,
-      "score": 90
-    },
-    {
-      "symbol": "SBILIFE",
-      "entryTime": "2024-11-28T03:45:00.000Z",
-      "exitDate": "2025-06-26T03:45:00.000Z",
-      "days": 210,
-      "roi": 30.645391033873025,
-      "score": 90
-    },
-    {
-      "symbol": "SHARDACROP",
-      "entryTime": "2024-03-12T03:45:00.000Z",
-      "exitDate": "2024-06-18T03:45:00.000Z",
-      "days": 98,
-      "roi": 30.075076028888947,
-      "score": 95
-    },
-    {
-      "symbol": "SHARDACROP",
-      "entryTime": "2025-01-20T03:45:00.000Z",
-      "exitDate": "2025-06-12T03:45:00.000Z",
-      "days": 143,
-      "roi": 31.369423230064044,
-      "score": 95
-    },
-    {
-      "symbol": "SHARDACROP",
-      "entryTime": "2025-09-09T03:45:00.000Z",
-      "exitDate": "2026-02-02T03:45:00.000Z",
-      "days": 146,
-      "roi": 32.411921679456256,
-      "score": 95
-    },
-    {
-      "symbol": "SUZLON",
-      "entryTime": "2024-03-13T03:45:00.000Z",
-      "exitDate": "2024-05-24T03:45:00.000Z",
-      "days": 72,
-      "roi": 31.191437755883467,
-      "score": 70
-    },
-    {
-      "symbol": "TATAELXSI",
-      "entryTime": "2024-08-06T03:45:00.000Z",
-      "exitDate": "2024-08-27T03:45:00.000Z",
-      "days": 21,
-      "roi": 35.60334528076463,
-      "score": 90
-    },
-    {
-      "symbol": "TECHM",
-      "entryTime": "2025-04-04T03:45:00.000Z",
-      "exitDate": "2025-06-17T03:45:00.000Z",
-      "days": 74,
-      "roi": 30.587839340141066,
-      "score": 80
-    },
-    {
-      "symbol": "THYROCARE",
-      "entryTime": "2025-01-24T03:45:00.000Z",
-      "exitDate": "2025-05-23T03:45:00.000Z",
-      "days": 119,
-      "roi": 32.131749944192165,
-      "score": 80
-    },
-    {
-      "symbol": "THYROCARE",
-      "entryTime": "2026-02-02T03:45:00.000Z",
-      "exitDate": "2026-05-08T03:45:00.000Z",
-      "days": 95,
-      "roi": 32.84505209838691,
-      "score": 80
-    },
-    {
-      "symbol": "TIMETECHNO",
-      "entryTime": "2025-01-27T03:45:00.000Z",
-      "exitDate": "2025-07-17T03:45:00.000Z",
-      "days": 171,
-      "roi": 30.128199631907737,
-      "score": 80
-    },
-    {
-      "symbol": "TIMKEN",
-      "entryTime": "2024-03-11T03:45:00.000Z",
-      "exitDate": "2024-04-30T03:45:00.000Z",
-      "days": 50,
-      "roi": 30.73219918403143,
-      "score": 70
-    },
-    {
-      "symbol": "TRITURBINE",
-      "entryTime": "2024-11-11T03:45:00.000Z",
-      "exitDate": "2024-11-26T03:45:00.000Z",
-      "days": 15,
-      "roi": 41.5207539059671,
-      "score": 90
-    },
-    {
-      "symbol": "VENKEYS",
-      "entryTime": "2024-03-27T03:45:00.000Z",
-      "exitDate": "2024-06-19T03:45:00.000Z",
-      "days": 84,
-      "roi": 37.123272676274624,
-      "score": 70
-    },
-    {
-      "symbol": "ECLERX",
-      "entryTime": "2025-02-28T03:45:00.000Z",
-      "exitDate": "2025-06-10T03:45:00.000Z",
-      "days": 102,
-      "roi": 31.620739212247372,
-      "score": 95
     }
   ],
   "capStats": {
-    "LARGE": 21,
-    "MID": 5,
-    "SMALL": 5
+    "LARGE": 25,
+    "MID": 7,
+    "SMALL": 10
   },
   "sectorStats": {
     "FMCG": 4,
-    "IT Services": 4,
-    "General Research": 10,
+    "NBFC": 2,
     "Adhesives": 1,
-    "Banking": 2,
+    "IT Services": 2,
+    "Consumer Durables": 4,
+    "Banking": 4,
+    "Electronics Mfg": 1,
+    "Mining": 1,
+    "Power": 2,
+    "Telecom": 1,
     "Paints": 1,
+    "Cement": 1,
+    "Energy/Conglomerate": 1,
+    "Pharma": 4,
+    "Oil & Gas": 1,
     "Automation": 1,
-    "Engineering Tech": 1,
-    "Logistics": 1,
-    "Pharma": 3,
-    "Energy Exchange": 1,
+    "Agrochemicals": 1,
+    "Ceramics": 1,
+    "Aqua Feed": 1,
+    "Electricals": 1,
+    "Sanitaryware": 1,
+    "Employment Services": 1,
+    "Food Processing": 1,
     "Chemicals": 1,
-    "Consumer Durables": 1
+    "Index ETF": 1,
+    "Banking ETF": 1,
+    "Security Services": 1
   },
-  "updatedAt": "2026-06-06T17:38:18.837Z"
+  "updatedAt": "2026-06-07T05:41:07.066Z"
 }

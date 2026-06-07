@@ -347,7 +347,7 @@ const AlphaHubPage: React.FC = () => {
       </div>
 
       {/* MAIN DATA INTERFACE */}
-      <main className="flex-1 overflow-y-auto p-6 max-w-[1600px] mx-auto w-full space-y-8 pb-32 no-scrollbar">
+      <main className="flex-1 overflow-y-auto p-6 max-w-[1600px] mx-auto w-full space-y-8 pb-32 custom-scrollbar">
          
          {/* WHY ALPHA 40? INTRODUCTION BLOCK FOR NEW USERS */}
          <div className="bg-gradient-to-r from-blue-600/10 to-indigo-600/10 border border-blue-500/20 rounded-[2.5rem] p-6 md:p-8 flex flex-col lg:flex-row justify-between items-center gap-6 animate-in fade-in slide-in-from-bottom duration-500">
@@ -646,62 +646,75 @@ const AlphaHubPage: React.FC = () => {
                                 </div>
 
                                 <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                                   <div className="hidden md:block overflow-x-auto custom-scrollbar">
-                                      <table className="w-full text-left border-collapse min-w-[1000px]">
-                                         <thead>
-                                            <tr className="bg-slate-50 border-b border-slate-200 divide-x divide-slate-100">
-                                               <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500">Asset</th>
-                                               <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-center">Audit Score</th>
-                                               <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Target ROI</th>
-                                               <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500">Strategy</th>
-                                               <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Base Price</th>
-                                               <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">CMP (Diff)</th>
-                                               <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-right bg-blue-50/50 text-blue-600">Model Qty</th>
-                                               <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-right bg-blue-50/50 text-blue-600">Total Invest</th>
-                                               <th className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-center">Link</th>
-                                            </tr>
-                                         </thead>
-                                         <tbody className="divide-y divide-slate-100 font-mono">
-                                            {capStocks.map((stock: any) => {
-                                               const qty = calculateQuantity(stock);
-                                               const isDown = stock.currentPrice < stock.entryPrice;
-                                               return (
-                                                  <tr key={stock.symbol} className="hover:bg-slate-50/50 transition-all group divide-x divide-slate-50">
-                                                     <td className="px-5 py-4">
-                                                        <div className="flex flex-col font-sans">
-                                                           <span className="text-sm font-black text-slate-900 uppercase tracking-tighter group-hover:text-blue-600 transition-colors">{stock.symbol}</span>
-                                                           <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">{stock.sector}</span>
-                                                        </div>
-                                                     </td>
-                                                     <td className="px-5 py-4 text-center">
-                                                        <span className="px-2 py-1 bg-slate-900 text-white rounded-lg text-[9px] font-black font-mono shadow-sm">{stock.score} / 9</span>
-                                                     </td>
-                                                     <td className="px-5 py-4 text-right">
-                                                        <span className="text-sm font-black text-emerald-600">+{Number(stock.roi || 0).toFixed(1)}%</span>
-                                                     </td>
-                                                     <td className="px-5 py-4">
-                                                        <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[8px] font-black uppercase tracking-widest border border-slate-200/50">{stock.strategy}</span>
-                                                     </td>
-                                                     <td className="px-5 py-4 text-right font-black text-slate-500">₹{stock.entryPrice?.toLocaleString()}</td>
-                                                     <td className="px-5 py-4 text-right">
-                                                        <div className="flex flex-col items-end">
-                                                           <span className="text-slate-950 font-black">₹{stock.currentPrice?.toLocaleString()}</span>
-                                                           <span className={`text-[8px] font-black uppercase mt-0.5 leading-none ${isDown ? 'text-amber-600' : 'text-emerald-600'}`}>{isDown ? '-' : '+'}{Number(stock.windowPrc || 0).toFixed(2)}%</span>
-                                                        </div>
-                                                     </td>
-                                                     <td className="px-5 py-4 text-right text-blue-600 font-black bg-blue-50/20 text-sm underline decoration-blue-100">{qty}</td>
-                                                     <td className="px-5 py-4 text-right font-black bg-blue-50/20 text-slate-950">₹{Math.round(qty * (stock.currentPrice || 1)).toLocaleString()}</td>
-                                                     <td className="px-5 py-4 text-center">
-                                                        <Link to={`/stock/${stock.symbol}`} className="p-2 bg-slate-50 text-slate-400 hover:bg-slate-950 hover:text-white transition-all inline-flex items-center rounded-lg shadow-sm border border-slate-200">
-                                                           <ArrowUpRight className="h-3.5 w-3.5" />
-                                                        </Link>
-                                                     </td>
-                                                  </tr>
-                                               );
-                                            })}
-                                         </tbody>
-                                      </table>
-                                   </div>
+                                   <div className="hidden md:block overflow-hidden custom-scrollbar">
+                                       <table className="w-full text-left border-collapse table-fixed">
+                                          <thead>
+                                             <tr className="bg-slate-50 border-b border-slate-200">
+                                                <th className="w-[15%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500">Asset</th>
+                                                <th className="w-[8%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500 text-center">Score</th>
+                                                <th className="w-[10%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Target ROI</th>
+                                                <th className="w-[12%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500">Strategy</th>
+                                                <th className="w-[6%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500 text-center">Tranche</th>
+                                                <th className="w-[10%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Base Price</th>
+                                                <th className="w-[10%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Objective</th>
+                                                <th className="w-[10%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">CMP (Diff)</th>
+                                                <th className="w-[8%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-right bg-blue-50/50 text-blue-600">Qty</th>
+                                                <th className="w-[10%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-right bg-blue-50/50 text-blue-600">Total Invest</th>
+                                                <th className="w-[4%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-center">Link</th>
+                                             </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+                                             {capStocks.map((stock: any) => {
+                                                const qty = calculateQuantity(stock);
+                                                const isDown = stock.currentPrice < stock.entryPrice;
+                                                return (
+                                                   <tr key={stock.symbol} className="hover:bg-slate-50/50 transition-all group">
+                                                      <td className="px-3 py-3">
+                                                         <div className="flex flex-col font-sans">
+                                                            <span className="text-xs font-black text-slate-900 uppercase tracking-tighter group-hover:text-blue-600 transition-colors">{stock.symbol}</span>
+                                                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1 truncate">{stock.sector}</span>
+                                                         </div>
+                                                      </td>
+                                                      <td className="px-3 py-3 text-center">
+                                                         <span className="px-2 py-0.5 bg-slate-900 text-white rounded text-[9px] font-black font-mono shadow-sm">{stock.score}</span>
+                                                      </td>
+                                                      <td className="px-3 py-3 text-right">
+                                                         <span className="text-xs font-black text-emerald-600">+{Number(stock.roi || 0).toFixed(1)}%</span>
+                                                      </td>
+                                                      <td className="px-3 py-3">
+                                                         <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[8px] font-black uppercase tracking-widest border border-slate-200/50 truncate block text-center">{stock.strategy}</span>
+                                                      </td>
+                                                      <td className="px-3 py-3 text-center">
+                                                         <span className={`px-2 py-0.5 rounded text-[9px] font-black font-mono border ${
+                                                            stock.tranche === 'A' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                            stock.tranche === 'B' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                                            stock.tranche === 'C' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                                            'bg-rose-50 text-rose-600 border-rose-100'
+                                                         }`}>
+                                                            T-{stock.tranche || 'A'}
+                                                         </span>
+                                                      </td>
+                                                      <td className="px-3 py-3 text-right font-black text-slate-500">₹{stock.entryPrice?.toLocaleString()}</td>
+                                                      <td className="px-3 py-3 text-right font-black text-emerald-600">₹{stock.target?.toLocaleString(undefined, { maximumFractionDigits: 1 })}</td>
+                                                      <td className="px-3 py-3 text-right">
+                                                         <div className="flex flex-col items-end">
+                                                            <span className="text-slate-950 font-black">₹{stock.currentPrice?.toLocaleString()}</span>
+                                                            <span className={`text-[8px] font-black uppercase mt-0.5 leading-none ${isDown ? 'text-amber-600' : 'text-emerald-600'}`}>{isDown ? '-' : '+'}{Number(stock.windowPrc || 0).toFixed(2)}%</span>
+                                                         </div>
+                                                      </td>
+                                                      <td className="px-3 py-3 text-right text-blue-600 font-black bg-blue-50/20 text-xs underline decoration-blue-100">{qty}</td>
+                                                      <td className="px-3 py-3 text-right font-black bg-blue-50/20 text-slate-950">₹{Math.round(qty * (stock.currentPrice || 1)).toLocaleString()}</td>
+                                                      <td className="px-3 py-3 text-center">
+                                                         <Link to={`/stock/${stock.symbol}`} className="p-1 bg-slate-50 text-slate-400 hover:bg-slate-950 hover:text-white transition-all inline-flex items-center rounded-lg shadow-sm border border-slate-200">
+                                                            <ArrowUpRight className="h-3.5 w-3.5" />
+                                                         </Link>
+                                                      </td>
+                                                   </tr>
+                                                );
+                                             })}
+                                          </tbody>
+                                       </table>
+                                    </div>
                                    {/* Mobile Card List */}
                                    <div className="md:hidden divide-y divide-slate-100">
                                       {capStocks.map((stock: any) => {
@@ -714,7 +727,7 @@ const AlphaHubPage: React.FC = () => {
                                                      <div className="flex items-center gap-2">
                                                         <span className="text-sm font-black text-slate-900 font-mono uppercase">{stock.symbol}</span>
                                                         <span className="px-1.5 py-0.5 bg-slate-900 text-white rounded text-[7.5px] font-black font-mono">
-                                                           {stock.score}/9
+                                                           {stock.score}
                                                         </span>
                                                      </div>
                                                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mt-0.5">{stock.sector}</span>
@@ -728,10 +741,21 @@ const AlphaHubPage: React.FC = () => {
                                                </div>
                                                
                                                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100/60 text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">
-                                                  <div>
+                                                  <div className="flex-1">
                                                      <span className="text-[7.5px] text-slate-400 block mb-0.5">Strategy</span>
-                                                     <span className="text-slate-800 font-black truncate block leading-tight">{stock.strategy}</span>
+                                                     <div className="flex items-center gap-1.5">
+                                                        <span className="text-slate-800 font-black truncate block leading-tight">{stock.strategy}</span>
+                                                        <span className={`px-1 rounded-[4px] text-[7px] font-black font-mono border ${
+                                                            stock.tranche === 'A' ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' :
+                                                            stock.tranche === 'B' ? 'bg-blue-50 text-blue-600 border-blue-100/50' :
+                                                            stock.tranche === 'C' ? 'bg-amber-50 text-amber-600 border-amber-100/50' :
+                                                            'bg-rose-50 text-rose-600 border-rose-100/50'
+                                                         }`}>
+                                                            T-{stock.tranche || 'A'}
+                                                         </span>
+                                                     </div>
                                                   </div>
+
                                                   <div className="text-right">
                                                      <span className="text-[7.5px] text-slate-400 block mb-0.5">Target ROI</span>
                                                      <span className="text-emerald-600 font-black">+{Number(stock.roi || 0).toFixed(1)}%</span>
@@ -741,6 +765,10 @@ const AlphaHubPage: React.FC = () => {
                                                      <span className="text-slate-800 font-black">₹{stock.entryPrice?.toLocaleString()}</span>
                                                   </div>
                                                   <div className="text-right">
+                                                     <span className="text-[7.5px] text-slate-400 block mb-0.5">Objective</span>
+                                                     <span className="text-emerald-600 font-black">₹{stock.target?.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+                                                  </div>
+                                                  <div>
                                                      <span className="text-[7.5px] text-slate-400 block mb-0.5">Model Qty</span>
                                                      <span className="text-blue-600 font-black">{qty}</span>
                                                   </div>
@@ -808,37 +836,37 @@ const AlphaHubPage: React.FC = () => {
                         })()}
 
                         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                           <div className="hidden md:block overflow-x-auto custom-scrollbar">
-                             <table className="w-full text-left border-collapse min-w-[700px]">
-                                <thead>
-                                   <tr className="bg-slate-50 text-slate-500 border-b border-slate-200">
-                                      <th className="px-6 py-5 text-[9px] font-black uppercase tracking-widest italic">Exit Date</th>
-                                      <th className="px-6 py-5 text-[9px] font-black uppercase tracking-widest">Asset Ledger</th>
-                                      <th className="px-6 py-5 text-[9px] font-black uppercase tracking-widest text-right">Yield Realized</th>
-                                      <th className="px-6 py-5 text-[9px] font-black uppercase tracking-widest text-center">Duration</th>
-                                   </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 font-mono">
-                                   {(data?.closedTrades || []).slice(0, 40).map((trade: any) => (
-                                      <tr key={`${trade.symbol}-${trade.exitDate}`} className="hover:bg-slate-50 transition-all group">
-                                         <td className="px-6 py-5 text-[10px] font-black text-slate-400">{new Date(trade.exitDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                         <td className="px-6 py-5">
-                                            <div className="flex flex-col font-sans">
-                                               <span className="text-base font-black text-slate-900 uppercase tracking-tighter group-hover:text-emerald-600 transition-colors">{trade.symbol}</span>
-                                               <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest leading-none mt-1">{trade.sector}</span>
-                                            </div>
-                                         </td>
-                                         <td className="px-6 py-5 text-lg font-black text-right text-emerald-600">+{Number(trade.roi).toFixed(1)}%</td>
-                                         <td className="px-6 py-5 text-center">
-                                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-150 rounded-xl text-[9px] font-black text-slate-900 uppercase tracking-widest shadow-sm">
-                                               <Clock className="h-3.5 w-3.5 text-slate-400" />
-                                               {trade.days} Sessions
-                                            </div>
-                                         </td>
-                                      </tr>
-                                   ))}
-                                </tbody>
-                             </table>
+                           <div className="hidden md:block overflow-hidden">
+                              <table className="w-full text-left border-collapse table-fixed">
+                                 <thead>
+                                    <tr className="bg-slate-50 text-slate-500 border-b border-slate-200">
+                                       <th className="w-[25%] px-4 py-3.5 text-[9px] font-black uppercase tracking-widest italic">Exit Date</th>
+                                       <th className="w-[35%] px-4 py-3.5 text-[9px] font-black uppercase tracking-widest">Asset Ledger</th>
+                                       <th className="w-[20%] px-4 py-3.5 text-[9px] font-black uppercase tracking-widest text-right">Yield Realized</th>
+                                       <th className="w-[20%] px-4 py-3.5 text-[9px] font-black uppercase tracking-widest text-center">Duration</th>
+                                    </tr>
+                                 </thead>
+                                 <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+                                    {(data?.closedTrades || []).slice(0, 40).map((trade: any) => (
+                                       <tr key={`${trade.symbol}-${trade.exitDate}`} className="hover:bg-slate-50 transition-all group">
+                                          <td className="px-4 py-3 text-[10px] font-black text-slate-400">{new Date(trade.exitDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                          <td className="px-4 py-3">
+                                             <div className="flex flex-col font-sans">
+                                                <span className="text-xs font-black text-slate-900 uppercase tracking-tighter group-hover:text-emerald-600 transition-colors">{trade.symbol}</span>
+                                                <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest leading-none mt-1 truncate">{trade.sector}</span>
+                                             </div>
+                                          </td>
+                                          <td className="px-4 py-3 text-sm font-black text-right text-emerald-600">+{Number(trade.roi).toFixed(1)}%</td>
+                                          <td className="px-4 py-3 text-center">
+                                             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-150 rounded-xl text-[9px] font-black text-slate-900 uppercase tracking-widest shadow-sm">
+                                                <Clock className="h-3.5 w-3.5 text-slate-400" />
+                                                {trade.days} Sessions
+                                             </div>
+                                          </td>
+                                       </tr>
+                                    ))}
+                                 </tbody>
+                              </table>
                            </div>
                            {/* Mobile Card List for Booked Profits */}
                            <div className="md:hidden divide-y divide-slate-100">
