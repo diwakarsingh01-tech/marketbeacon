@@ -527,6 +527,38 @@ const HomePage: React.FC = () => {
                                  Access Full Strategy Matrix <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                                </Link>
                             </div>
+
+                            {/* Phase 3: HNI ABCD Tranche Visualizer */}
+                            <div className="mt-6 p-5 bg-blue-600/5 border border-blue-500/10 rounded-3xl space-y-4">
+                               <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                     <Layers className="h-3.5 w-3.5 text-blue-500" />
+                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-white">Institutional Entry Plan (HNI Edge)</h4>
+                                  </div>
+                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Cap: ₹10,00,000 (Sample)</span>
+                               </div>
+                               
+                               <div className="grid grid-cols-4 gap-2">
+                                  {[
+                                     { id: 'A', label: 'Tranche A', price: teaserData.abcd?.a?.price, weight: '25%' },
+                                     { id: 'B', label: 'Tranche B', price: teaserData.abcd?.b?.price, weight: '25%' },
+                                     { id: 'C', label: 'Tranche C', price: teaserData.abcd?.c?.price, weight: '25%' },
+                                     { id: 'D', label: 'Tranche D', price: teaserData.abcd?.d?.price, weight: '25%' },
+                                  ].map((t, idx) => (
+                                     <div key={idx} className="p-3 bg-slate-900/50 border border-white/5 rounded-2xl flex flex-col items-center text-center space-y-1">
+                                        <span className="text-[7px] font-black text-slate-500 uppercase">{t.label}</span>
+                                        <span className="text-[10px] font-black text-white italic">₹{t.price}</span>
+                                        <div className="w-full h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                                           <div className="h-full bg-blue-500" style={{ width: t.weight }} />
+                                        </div>
+                                        <span className="text-[7px] font-bold text-blue-400">Alloc: ₹2.5L</span>
+                                     </div>
+                                  ))}
+                               </div>
+                               <p className="text-[8px] text-slate-500 italic text-center font-bold">
+                                  "Institutional capital follows a laddered entry approach to maximize capital protection."
+                               </p>
+                            </div>
                          </div>
                       </div>
 
