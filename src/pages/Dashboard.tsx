@@ -315,7 +315,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     setIsRefreshing(true);
     setError(null);
     try {
-      const response = await fetch(`${API_URL}/api/backtest/audit?basket=${activeBasket}&strategy=${strategyId}`, {
+      const response = await fetch(`${API_URL}/api/backtest/audit?basket=${encodeURIComponent(activeBasket)}&strategy=${encodeURIComponent(strategyId)}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` }
       });
       const d = await safeJsonParse(response);
