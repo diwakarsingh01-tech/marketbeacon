@@ -1087,6 +1087,52 @@ app.delete('/api/admin/upgrade-requests/:id', authenticateToken, requireAdmin, a
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// --- Notifications & Feedback Reply ---
+app.get('/api/notifications', authenticateToken, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    const notes = await db.all(
+      'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20',
+      [req.user.id]
+    );
+    res.json(notes);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/notifications/:id/read', authenticateToken, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    await db.run('UPDATE notifications SET unread = 0 WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/feedback/:id/reply', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const { reply } = req.body;
+    const feedbackId = req.params.id;
+    const db = getDB();
+
+    // 1. Get feedback details to find the user
+    const feedback = await db.get('SELECT user_id, disposition FROM feedback WHERE id = ?', [feedbackId]);
+    if (!feedback) return res.status(404).json({ error: 'Feedback not found' });
+
+    // 2. Update feedback with reply
+    await db.run(
+      'UPDATE feedback SET reply_text = ?, replied_at = ? WHERE id = ?',
+      [reply, new Date().toISOString(), feedbackId]
+    );
+
+    // 3. Create notification for user
+    await db.run(
+      'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)',
+      [feedback.user_id, 'Feedback Resolved', `Admin replied to your ${feedback.disposition} report: "${reply}"`, 'audit']
+    );
+
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 const startServer = async () => {
   const PORT = Number(process.env.PORT) || 3001;
   try {

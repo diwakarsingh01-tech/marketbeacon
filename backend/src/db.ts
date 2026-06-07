@@ -87,6 +87,8 @@ export async function initDB() {
     'ALTER TABLE upgrade_requests ADD COLUMN billing_cycle TEXT DEFAULT "monthly"',
     'ALTER TABLE trades ADD COLUMN target_price REAL',
     'ALTER TABLE trades ADD COLUMN stop_loss REAL',
+    'ALTER TABLE feedback ADD COLUMN reply_text TEXT',
+    'ALTER TABLE feedback ADD COLUMN replied_at DATETIME',
     `CREATE TABLE IF NOT EXISTS vouchers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       code TEXT UNIQUE NOT NULL,
@@ -136,8 +138,23 @@ export async function initDB() {
       rating INTEGER,
       disposition TEXT,
       comment TEXT,
+      reply_text TEXT,
+      replied_at DATETIME,
       timestamp TEXT,
       url TEXT,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      type TEXT DEFAULT 'system',
+      unread BOOLEAN DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
