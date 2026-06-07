@@ -225,12 +225,7 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
       });
     }
 
-    let symbols: string[] = [];
-    if (basket === 'Growth Basket') {
-       symbols = await getDynamicBasket();
-    } else {
-       symbols = BASKETS[basket as string] || Array.from(new Set(Object.values(BASKETS).flat()));
-    }
+    const symbols = BASKETS[basket as string] || Array.from(new Set(Object.values(BASKETS).flat()));
 
     // Deduplicate and filter out index symbols
     const uniqueSymbols = Array.from(new Set(symbols)).filter(s => s && s !== '^NSEI');
