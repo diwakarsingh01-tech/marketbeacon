@@ -390,8 +390,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
     const open = finalDisplayData.filter((r: any) => r && r.isBuyZone && r.isPass);
     const rejected = finalDisplayData.filter((r: any) => r && !r.isPass && r.reason !== 'Audit Pending: Node Warming Up');
-    const neutral = finalDisplayData.filter((r: any) => r && !r.isBuyZone && r.isPass);
-    const pending = finalDisplayData.filter((r: any) => r && r.reason === 'Audit Pending: Node Warming Up');
+    const neutral = finalDisplayData.filter((r: any) => r && ( (!r.isBuyZone && r.isPass) || r.reason === 'Audit Pending: Node Warming Up' ));
     const watchlist = finalDisplayData; // Full institutional basket
 
     if (activeTab === 'hold') return watchlist; 
@@ -466,7 +465,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     return (data?.allStocks || []).filter((r: any) => {
       const sym = (r.symbol || '').trim().toUpperCase();
       const inBasket = basket.includes(sym) || basket.includes(sym.replace('.NS', '')) || basket.some(b => b.replace('.NS', '') === sym);
-      return inBasket && r.isBuyZone === false && r.isPass;
+      return inBasket && ( (r.isBuyZone === false && r.isPass) || r.reason === 'Audit Pending: Node Warming Up' );
     }).length;
   }, [data, activeBasket]);
 
