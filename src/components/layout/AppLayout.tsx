@@ -17,6 +17,14 @@ import {
 const AppLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(() => {
+    return localStorage.getItem('mb_sebi_banner_dismissed') === 'true';
+  });
+
+  const handleDismissBanner = () => {
+    setIsBannerDismissed(true);
+    localStorage.setItem('mb_sebi_banner_dismissed', 'true');
+  };
 
   const mobileNavItems = [
     { icon: LayoutGrid, label: 'Alpha', path: '/alpha-hub' },
@@ -44,9 +52,18 @@ const AppLayout: React.FC = () => {
         <TopNav onMenuClick={() => setIsSidebarOpen(true)} />
         
         {/* Sticky SEBI Compliance Banner */}
-        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-center text-[8.5px] md:text-[9.5px] font-black uppercase tracking-wider text-amber-600 flex items-center justify-center gap-2 relative z-30 shrink-0">
-          <span>⚠️ DISCLAIMER: We are NOT a SEBI-registered Investment Adviser or Research Analyst. MarketBeacon provides purely educational & mathematical tools. No content constitutes investment advice or recommendations.</span>
-        </div>
+        {!isBannerDismissed && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-center text-[7.5px] md:text-[9px] font-black uppercase tracking-wider text-amber-600 flex items-center justify-between gap-2 relative z-30 shrink-0 select-none">
+            <span className="flex-1 text-center pr-4">⚠️ DISCLAIMER: We are NOT a SEBI-registered Investment Adviser or Research Analyst. MarketBeacon provides purely educational & mathematical tools. No content constitutes investment advice or recommendations.</span>
+            <button 
+              onClick={handleDismissBanner}
+              className="p-1 rounded-md hover:bg-amber-500/20 text-amber-600 hover:text-amber-700 transition-colors cursor-pointer shrink-0 font-black text-[10px]"
+              title="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         
         {/* Page Content - Independent Scroll */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden relative flex flex-col no-scrollbar pb-16 md:pb-0">
