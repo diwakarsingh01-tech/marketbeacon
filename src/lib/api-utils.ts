@@ -48,7 +48,7 @@ export const getApiUrl = () => {
 
     // 2. Production Lockdown (Highest Priority)
     const isProduction = h.includes('marketbeaconpro.com') || h.includes('marketbeacon.vercel.app');
-    if (isProduction) return "https://marketbeacon.onrender.com";
+    if (isProduction) return "https://marketbeaconpro.com";
 
     // 3. Explicit Environment Variable (Local/Manual Override)
     if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
