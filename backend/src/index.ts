@@ -1140,7 +1140,13 @@ const startServer = async () => {
     await initSnapshotCache();
     initScreenerCron();
     setTimeout(precalculateAlpha40, 5000); 
-    app.listen(PORT, '0.0.0.0', () => console.log(`MarketBeacon Cloud Active on Port ${PORT}`));
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log('----------------------------------------------------');
+      console.log('🚀 MARKETBEACON PRO: PHASE 1 LAUNCH ACTIVE');
+      console.log(`🌐 Terminal Node Cloud Active on Port ${PORT}`);
+      console.log('🛡️  Institutional Safe-Guard: Standard Mode');
+      console.log('----------------------------------------------------');
+    });
   } catch (e) { console.error(e); }
 };
 
