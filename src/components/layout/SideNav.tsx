@@ -181,7 +181,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
         </div>
         
         <div className="text-center">
-           <p className="text-[8px] font-black text-slate-700 uppercase tracking-[0.3em]">MB-OS v14.0 secure</p>
+           <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em]">MB-PRO v18.0.8 SECURE</p>
         </div>
       </div>
     </aside>
