@@ -38,6 +38,47 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [voucherCode, setVoucherCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [voucherError, setVoucherError] = useState<string | null>(null);
+
+  const handleRedeemVoucher = async (codeToUse?: string) => {
+    const code = codeToUse || voucherCode;
+    if (!code.trim()) return;
+    setRedeeming(true);
+    setVoucherError(null);
+    try {
+      const token = localStorage.getItem('mb_token');
+      const response = await fetch(`${API_URL}/api/user/redeem-voucher`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ code: code.trim().toUpperCase() })
+      });
+      
+      const data = await safeJsonParse(response);
+      if (response.status === 401 || response.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
+        localStorage.removeItem('mb_token');
+        localStorage.removeItem('mb_user');
+        window.location.href = '/login';
+        return;
+      }
+      if (response.ok && !data.error) {
+        setIsSuccess(true);
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      } else {
+        setVoucherError(data.error || "Redemption failed.");
+      }
+    } catch (err) {
+      setVoucherError("Network error. Please try again.");
+    } finally {
+      setRedeeming(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -246,8 +287,46 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                   ))}
                </div>
 
-               <button 
-                 onClick={() => setStep('payment')}
+                {/* Voucher Section */}
+                <div className="border-t border-slate-100 pt-5 mt-2 space-y-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div className="text-left">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Have a Trial Voucher?</span>
+                      <span className="text-[8px] text-slate-450 uppercase tracking-wider block mt-0.5">Claim instant 7-day trial access</span>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => handleRedeemVoucher('ALPHA7')}
+                      disabled={redeeming}
+                      className="w-full sm:w-auto px-3.5 py-2 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-600 rounded-xl text-[8.5px] font-black uppercase tracking-widest transition-all active:scale-95 text-center shrink-0"
+                    >
+                      {redeeming ? '...' : 'Claim ALPHA7 Trial'}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="ENTER VOUCHER CODE"
+                      value={voucherCode}
+                      onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherError(null); }}
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none flex-1 focus:border-blue-600 transition-all placeholder:text-slate-300"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => handleRedeemVoucher()}
+                      disabled={redeeming || !voucherCode.trim()}
+                      className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-black transition-all disabled:opacity-40"
+                    >
+                      {redeeming ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                  {voucherError && (
+                    <p className="text-[9px] font-black uppercase tracking-widest text-rose-600 text-left pl-1">{voucherError}</p>
+                  )}
+                </div>
+
+                <button 
+                  onClick={() => setStep('payment')}
                  className="w-full py-4 md:py-5 bg-blue-600 text-white rounded-2xl md:rounded-3xl text-[11px] md:xs font-black uppercase tracking-[0.2em] flex items-center justify-center space-x-3 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-blue-200"
                >
                  <span>Secure Checkout</span>

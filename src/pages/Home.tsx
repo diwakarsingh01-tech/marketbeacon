@@ -136,34 +136,42 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     let active = true;
+    
+    // Clear immediately if less than 2 chars
+    if (searchQuery.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    const q = searchQuery.toUpperCase();
+    const filtered = ALL_SYMBOLS.filter(s => 
+      s.includes(q) || 
+      (q === 'SDFC' && s === 'HDFCBANK') || 
+      (q === 'HDFC' && s === 'HDFCBANK')
+    ).slice(0, 5);
+
+    // STEP 1: Show symbols immediately (Pre-populated)
+    const initialSuggestions = filtered.map(s => ({ symbol: s, strategies: [] }));
+    setSuggestions(initialSuggestions);
+
+    // STEP 2: Fetch strategy data in background
     const timeout = setTimeout(async () => {
-      if (searchQuery.length >= 2) {
-        const q = searchQuery.toUpperCase();
-        const filtered = ALL_SYMBOLS.filter(s => 
-          s.includes(q) || 
-          (q === 'SDFC' && s === 'HDFCBANK') || 
-          (q === 'HDFC' && s === 'HDFCBANK')
-        ).slice(0, 5);
-        
-        // Fetch strategies for filtered symbols concurrently
-        try {
-          const results = await Promise.all(filtered.map(async sym => {
-            try {
-              const res = await fetch(`${API_URL}/api/public/analysis/${sym}`);
-              const data = await safeJsonParse(res);
-              return { symbol: sym, strategies: data?.strategies || [] };
-            } catch (e) {
-              return { symbol: sym, strategies: [] }; // Fallback for single symbol failure
-            }
-          }));
-          if (active) setSuggestions(results);
-        } catch (err) {
-          if (active) setSuggestions(filtered.map(s => ({ symbol: s, strategies: [] })));
-        }
-      } else {
-        setSuggestions([]);
+      try {
+        const results = await Promise.all(filtered.map(async sym => {
+          try {
+            const res = await fetch(`${API_URL}/api/public/analysis/${sym}`);
+            if (!res.ok) throw new Error('Fetch failed');
+            const data = await safeJsonParse(res);
+            return { symbol: sym, strategies: data?.strategies || [] };
+          } catch (e) {
+            return { symbol: sym, strategies: [] };
+          }
+        }));
+        if (active) setSuggestions(results);
+      } catch (err) {
+        // Fallback already handled by STEP 1
       }
-    }, 300); // 300ms debounce
+    }, 400); // 400ms delay for background fetch to avoid jitter
 
     return () => {
       active = false;
@@ -351,11 +359,10 @@ const HomePage: React.FC = () => {
           <AnimatePresence>
             {suggestions.length > 0 && (
               <motion.div 
-                initial={{ opacity: 0, y: -10 }}
+                initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 w-full mt-2 bg-slate-900 border border-white/10 rounded-3xl overflow-hidden z-[70] shadow-2xl backdrop-blur-xl"
-                style={{ WebkitBackdropFilter: 'blur(24px)' }}
+                exit={{ opacity: 0, y: 5 }}
+                className="absolute top-full left-0 w-full mt-3 bg-[#0f172a] border border-white/10 rounded-3xl overflow-hidden z-[999] shadow-2xl"
               >
                 {suggestions.map((item) => (
                   <button
@@ -478,7 +485,7 @@ const HomePage: React.FC = () => {
             {["RELAXO", "TCS", "ITC"].map(sym => (
               <button 
                 key={sym} 
-                onClick={() => { setSearchSearchQuery(sym); }}
+                onClick={() => { handleSearch(undefined, sym); }}
                 className="text-[10px] font-black text-slate-500 hover:text-blue-400 transition-colors uppercase tracking-widest"
               >
                 {sym}
