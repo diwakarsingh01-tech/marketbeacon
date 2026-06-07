@@ -142,17 +142,38 @@ const authenticateToken = async (req: any, res: any, next: any) => {
 const getSnapshotFromCloud = async (symbols: string[]) => {
   try {
     if (!supabase) throw new Error('Supabase client not initialized');
-    const { data, error } = await supabase.from('market_data').select('*').in('symbol', symbols);
+    
+    // Multi-layer symbols (Institutional Hardening)
+    const normalizedSymbols = Array.from(new Set([
+       ...symbols,
+       ...symbols.map(s => s.includes('.') ? s : `${s}.NS`),
+       ...symbols.map(s => s.replace('.NS', ''))
+    ]));
+
+    const { data, error } = await supabase.from('market_data').select('*').in('symbol', normalizedSymbols);
     if (error) throw error;
-    return Object.fromEntries(data.map(row => [row.symbol, row.data]));
+    
+    const resultMap: Record<string, any> = {};
+    (data || []).forEach(row => {
+       resultMap[row.symbol] = row.data;
+       resultMap[row.symbol.replace('.NS', '')] = row.data; // Also index by base symbol
+    });
+
+    return resultMap;
   } catch (err: any) {
     console.warn(`⚠️ [Supabase Fallback] Query failed: ${err.message}. Serving from memory cache...`);
     const cache = getMarketSnapshot();
     const result: Record<string, any> = {};
+    const cacheKeys = Object.keys(cache);
+
     symbols.forEach(sym => {
-      if (cache[sym]) {
-        result[sym] = cache[sym];
+      const cleanSym = sym.trim().toUpperCase();
+      let snap = cache[cleanSym] || cache[`${cleanSym}.NS`];
+      if (!snap) {
+         const key = cacheKeys.find(k => k.replace('.NS', '') === cleanSym);
+         if (key) snap = cache[key];
       }
+      if (snap) result[cleanSym] = snap;
     });
     return result;
   }
@@ -205,20 +226,23 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
     }
 
     let symbols: string[] = [];
-    if (basket === 'Elite Basket') symbols = BASKETS['Elite Basket'];
-    else if (basket === 'Quality Basket') symbols = BASKETS['Quality Basket'];
-    else if (basket === 'Growth Basket') symbols = await getDynamicBasket();
-    else symbols = Array.from(new Set(Object.values(BASKETS).flat()));
+    if (basket === 'Growth Basket') {
+       symbols = await getDynamicBasket();
+    } else {
+       symbols = BASKETS[basket as string] || Array.from(new Set(Object.values(BASKETS).flat()));
+    }
 
-    // Deduplicate symbols to prevent duplicate rows in Screener
-    const uniqueSymbols = Array.from(new Set(symbols));
+    // Deduplicate and filter out index symbols
+    const uniqueSymbols = Array.from(new Set(symbols)).filter(s => s && s !== '^NSEI');
 
     const snapshot = await getSnapshotFromCloud(uniqueSymbols);
     const results = [];
     for (const sym of uniqueSymbols) {
-      const snap = snapshot[sym];
+      const cleanSym = sym.trim().toUpperCase();
+      const snap = snapshot[cleanSym] || snapshot[`${cleanSym}.NS`];
+      
       if (!snap) continue;
-      const audit = await validateBatch9(sym, snap, basket as string);
+      const audit = await validateBatch9(cleanSym, snap, basket as string);
       const strategyId = (selectedStrategyId as string) || 'SR_STRATEGY';
       const strategyData: any = runStrategyAnalysis(strategyId, snap, snap.quote.marketCap, basket as string);
       

@@ -348,7 +348,7 @@ export async function getDynamicBasket(): Promise<string[]> {
   }
 
   // Final Institutional Fallback (Growth Basket Core Universe)
-  return [
+  const fallback = [
     "RELIANCE", "HDFCBANK", "ICICIBANK", "SBIN", "TCS", "HINDUNILVR", "INFY", "SUNPHARMA", "MARUTI", "AXISBANK",
     "KOTAKBANK", "ITC", "ONGC", "ULTRACEMCO", "HCLTECH", "BEL", "COALINDIA", "HAL", "DMART", "NESTLEIND",
     "ASIANPAINT", "HINDZINC", "WIPRO", "EICHERMOT", "VBL", "DIVISLAB", "SOLARINDS", "IDEA", "CUMMINSIND", "BSE",
@@ -379,5 +379,8 @@ export async function getDynamicBasket(): Promise<string[]> {
     "BALMLAWRIE", "DCAL", "HERITGFOOD", "RAJESHEXPO", "TEAMLEASE", "JAICORPLTD", "HATHWAY", "NILKAMAL", "DELTACORP", "JAGRAN",
     "RUPA"
   ];
+  console.log(`[BASKET] getDynamicBasket returning ${fallback.length} institutional fallback symbols.`);
+  return fallback;
+}
 }
 
