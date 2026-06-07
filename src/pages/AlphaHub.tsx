@@ -671,7 +671,12 @@ const AlphaHubPage: React.FC = () => {
                                                    <tr key={stock.symbol} className="hover:bg-slate-50/50 transition-all group">
                                                       <td className="px-3 py-3">
                                                          <div className="flex flex-col font-sans">
-                                                            <span className="text-xs font-black text-slate-900 uppercase tracking-tighter group-hover:text-blue-600 transition-colors">{stock.symbol}</span>
+                                                            <div className="flex items-center gap-1.5">
+                                                               <span className="text-xs font-black text-slate-900 uppercase tracking-tighter group-hover:text-blue-600 transition-colors">{stock.symbol}</span>
+                                                               {stock.signalCount > 1 && (
+                                                                  <span className="px-1 py-0.5 bg-indigo-600 text-[6px] font-black text-white rounded uppercase leading-none shadow-lg shadow-indigo-600/20 animate-pulse">Super Signal</span>
+                                                               )}
+                                                            </div>
                                                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1 truncate">{stock.sector}</span>
                                                          </div>
                                                       </td>
@@ -726,6 +731,9 @@ const AlphaHubPage: React.FC = () => {
                                                   <div>
                                                      <div className="flex items-center gap-2">
                                                         <span className="text-sm font-black text-slate-900 font-mono uppercase">{stock.symbol}</span>
+                                                        {stock.signalCount > 1 && (
+                                                           <span className="px-1 py-0.5 bg-indigo-600 text-[6px] font-black text-white rounded uppercase leading-none animate-pulse">Super Signal</span>
+                                                        )}
                                                         <span className="px-1.5 py-0.5 bg-slate-900 text-white rounded text-[7.5px] font-black font-mono">
                                                            {stock.score}
                                                         </span>

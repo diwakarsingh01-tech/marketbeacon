@@ -102,7 +102,8 @@ export async function precalculateAlpha40() {
             }
           }
 
-          // 2. Active Signals Analysis
+          // 2. Active Signals Analysis (Multi-Strategy Selection)
+          const validSignals: any[] = [];
           for (const stratId of Object.keys(STRATEGY_BASKET_MAP)) {
             if (!STRATEGY_BASKET_MAP[stratId]?.includes(basketName)) continue;
             
@@ -123,7 +124,7 @@ export async function precalculateAlpha40() {
               entryTime = new Date(snap.quotes[0].date).toISOString().split('T')[0];
             }
 
-            active.push({ 
+            validSignals.push({ 
               symbol: sym, 
               stockName: sym,
               strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, 
@@ -139,7 +140,15 @@ export async function precalculateAlpha40() {
               score: audit.score, 
               smartMoney: audit.smartMoneyTotal 
             });
-            break; 
+          }
+
+          if (validSignals.length > 0) {
+            // Logic: Highest ROI strategy wins for this stock
+            const bestSignal = validSignals.sort((a, b) => b.roi - a.roi)[0];
+            active.push({
+               ...bestSignal,
+               signalCount: validSignals.length // Track how many strategies triggered
+            });
           }
         } catch (e) { }
       }
@@ -164,7 +173,22 @@ export async function precalculateAlpha40() {
     // --- INSTITUTIONAL ALLOCATION ENGINE ---
     const selectWithRules = (candidates: any[], targetCount: number, existingSectors: Record<string, number>) => {
       const selected: any[] = [];
-      const sorted = candidates.sort((a, b) => (b.score - a.score) || (b.roi - a.roi));
+      
+      // SORTING LOGIC: Multi-Signal Priority -> Latest Date -> High ROI
+      const sorted = candidates.sort((a, b) => {
+        // 1. Multi-signal stocks first
+        if ((b.signalCount > 1) !== (a.signalCount > 1)) {
+          return b.signalCount > 1 ? 1 : -1;
+        }
+        // 2. Latest Trigger Date next
+        const dateB = new Date(b.entryTime || 0).getTime();
+        const dateA = new Date(a.entryTime || 0).getTime();
+        if (dateB !== dateA) return dateB - dateA;
+        
+        // 3. Highest ROI fallback
+        return b.roi - a.roi;
+      });
+
       for (const s of sorted) {
         if (selected.length >= targetCount) break;
         const sector = s.sector || 'General';
