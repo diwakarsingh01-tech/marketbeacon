@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
+import { Confetti } from '../components/ui/Confetti';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
 const API_URL = getApiUrl();
@@ -21,6 +22,7 @@ const PricingPage: React.FC = () => {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [selectedTier, setSelectedTier] = useState<'pro' | 'alpha'>('pro');
+  const [showConfetti, setShowConfetti] = useState(false);
 
   React.useEffect(() => {
     const linkCanonical = document.createElement('link');
@@ -54,8 +56,10 @@ const PricingPage: React.FC = () => {
         return;
       }
       if (res.ok && !data.error) {
-        alert(`Voucher Applied! Access Level: ${data.tier.toUpperCase()} for 7 Days.`);
-        window.location.href = '/screener'; 
+        setShowConfetti(true);
+        setTimeout(() => {
+          window.location.href = '/screener'; 
+        }, 3000);
       } else {
         alert(data.error || "Voucher code not recognized");
       }
@@ -128,11 +132,38 @@ const PricingPage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-10 lg:p-16 max-w-7xl mx-auto space-y-8 md:space-y-12 pb-32 md:pb-16 font-sans min-h-screen overflow-y-auto">
+      {showConfetti && <Confetti />}
+      
       <div className="text-center space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Access Tiers</h1>
           <p className="text-slate-500 font-bold uppercase tracking-widest text-[8px] md:text-xs">Select your institutional environment</p>
         </div>
+
+        {/* 7-Day Trial Callout Banner */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2rem] p-6 text-white shadow-xl max-w-3xl mx-auto relative overflow-hidden text-left">
+          <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 blur-[60px] -mr-32 -mt-32 pointer-events-none" />
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 text-white flex items-center justify-center text-lg font-black shrink-0 border border-white/20 shadow-md animate-pulse">
+                7
+              </div>
+              <div>
+                <h4 className="text-xs md:text-sm font-black uppercase tracking-wider text-white">Free 7-Day Trial — Try All Features</h4>
+                <p className="text-[9px] md:text-[10px] font-bold text-blue-100 uppercase tracking-widest mt-1 leading-snug">
+                  Redeem code <span className="underline font-black text-white">ALPHA7</span> to unlock the complete Alpha Terminal & Strategy Matrix instantly.
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={() => { setVoucherCode('ALPHA7'); }}
+              className="w-full sm:w-auto px-5 py-3 bg-white text-blue-600 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg hover:scale-105 active:scale-95 transition-all shrink-0 text-center"
+            >
+              Apply ALPHA7
+            </button>
+          </div>
+        </div>
+
 
         {/* Pricing Toggle */}
         <div className="flex items-center justify-center space-x-4">

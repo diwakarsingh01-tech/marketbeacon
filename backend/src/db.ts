@@ -213,6 +213,21 @@ export async function initDB() {
   };
 
   console.log('✅ SQLite/Turso Integration Active!');
+
+  // Seed the ALPHA7 voucher code
+  try {
+    const existing = await db.get('SELECT id FROM vouchers WHERE code = ?', ['ALPHA7']);
+    if (!existing) {
+      await db.run(
+        'INSERT INTO vouchers (code, tier, duration_days, max_uses, current_uses, is_active) VALUES (?, ?, ?, ?, 0, 1)',
+        ['ALPHA7', 'alpha', 7, 10000]
+      );
+      console.log('🎁 Seeded ALPHA7 voucher (7-day trial of all features, 10000 uses).');
+    }
+  } catch (e: any) {
+    console.error('Failed to seed ALPHA7 voucher:', e.message);
+  }
+
   return db;
 }
 
