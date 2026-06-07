@@ -375,23 +375,31 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     // 4. Watchlist: allStocks
     
     const currentBasketStocks = (BASKETS[activeBasket] || []).map(s => s.trim().toUpperCase());
-    const basketData = data.allStocks.filter((r: any) => {
+    
+    // Institutional Robustness: Filter by basket but fallback to raw backend data if needed
+    const basketData = data.allStocks.map((r: any) => {
       const sym = (r.symbol || '').trim().toUpperCase();
-      // Support matching with or without .NS suffix for institutional robustness
-      return currentBasketStocks.includes(sym) || 
-             currentBasketStocks.includes(sym.replace('.NS', '')) ||
-             currentBasketStocks.some(b => b.replace('.NS', '') === sym);
-    });
+      const inLocalBasket = currentBasketStocks.includes(sym) || 
+                            currentBasketStocks.includes(sym.replace('.NS', '')) ||
+                            currentBasketStocks.some(b => b.replace('.NS', '') === sym);
+      return { ...r, inLocalBasket };
+    }).filter((r: any) => r.inLocalBasket || activeBasket === 'All Symbols');
 
-    const open = basketData.filter((r: any) => r && r.isBuyZone && r.isPass);
-    const rejected = basketData.filter((r: any) => r && !r.isPass);
-    const neutral = basketData.filter((r: any) => r && !r.isBuyZone && r.isPass);
-    const watchlist = basketData; // Full institutional basket
+    // If basket filtering results in 0 nodes but backend sent data, show backend data as fallback
+    const finalDisplayData = basketData.length > 0 ? basketData : data.allStocks;
+
+    const open = finalDisplayData.filter((r: any) => r && r.isBuyZone && r.isPass);
+    const rejected = finalDisplayData.filter((r: any) => r && !r.isPass && r.reason !== 'Audit Pending: Node Warming Up');
+    const neutral = finalDisplayData.filter((r: any) => r && !r.isBuyZone && r.isPass);
+    const pending = finalDisplayData.filter((r: any) => r && r.reason === 'Audit Pending: Node Warming Up');
+    const watchlist = finalDisplayData; // Full institutional basket
 
     if (activeTab === 'hold') return watchlist; 
     if (activeTab === 'open') return open;
     if (activeTab === 'rejected') return rejected;
     if (activeTab === 'neutral') return neutral;
+    // Show pending nodes in watchlist or relevant tab
+    if (activeTab === 'watchlist') return watchlist;
 
     return [];
   }, [data, userWatchlist, activeTab, trades, stockPrices, stockCaps, stockSectors]);

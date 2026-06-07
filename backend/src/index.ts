@@ -239,9 +239,32 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
     const results = [];
     for (const sym of uniqueSymbols) {
       const cleanSym = sym.trim().toUpperCase();
-      const snap = snapshot[cleanSym] || snapshot[`${cleanSym}.NS`];
+      let snap = snapshot[cleanSym] || snapshot[`${cleanSym}.NS`];
       
-      if (!snap) continue;
+      // Multi-layer lookup fallback
+      if (!snap) {
+         const keys = Object.keys(snapshot);
+         const key = keys.find(k => k.replace('.NS', '') === cleanSym);
+         if (key) snap = snapshot[key];
+      }
+
+      if (!snap) {
+         // Return placeholder node for symbols not yet in cache (Avoids 0 Nodes display)
+         results.push({
+            symbol: cleanSym,
+            entryPrice: 0,
+            target: 0,
+            currentPrice: 0,
+            isBuyZone: false,
+            isPass: false,
+            score: 0,
+            reason: 'Audit Pending: Node Warming Up',
+            sector: MANUAL_SECTOR_MAP[cleanSym] || 'General',
+            auditSegments: { profitability: { score: 0 }, safety: { score: 0 }, growth: { score: 0 }, efficiency: { score: 0 } }
+         });
+         continue;
+      }
+
       const audit = await validateBatch9(cleanSym, snap, basket as string);
       const strategyId = (selectedStrategyId as string) || 'SR_STRATEGY';
       const strategyData: any = runStrategyAnalysis(strategyId, snap, snap.quote.marketCap, basket as string);
@@ -1161,6 +1184,18 @@ app.post('/api/admin/feedback/:id/reply', authenticateToken, requireAdmin, async
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// --- INSTITUTIONAL WORKER: CACHE PRIMING ---
+const precalculateGrowth = async () => {
+  try {
+    const growthSymbols = await getDynamicBasket();
+    console.log(`👷 [WORKER] Priming Growth Basket Cache (${growthSymbols.length} symbols)...`);
+    await updateMarketSnapshot(growthSymbols);
+    console.log('✅ [WORKER] Growth Basket Cache Primed.');
+  } catch (e: any) {
+    console.error('❌ [WORKER] Growth Priming Failed:', e.message);
+  }
+};
+
 const startServer = async () => {
   const PORT = Number(process.env.PORT) || 3001;
   try {
@@ -1168,6 +1203,7 @@ const startServer = async () => {
     await initSnapshotCache();
     initScreenerCron();
     setTimeout(precalculateAlpha40, 5000); 
+    setTimeout(precalculateGrowth, 15000); // Prime growth basket shortly after startup
     app.listen(PORT, '0.0.0.0', () => {
       console.log('----------------------------------------------------');
       console.log('🚀 MARKETBEACON PRO: PHASE 1 LAUNCH ACTIVE');
