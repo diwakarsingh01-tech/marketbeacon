@@ -122,7 +122,7 @@ const HomePage: React.FC = () => {
   const [searchQuery, setSearchSearchQuery] = useState('');
   const [teaserData, setTeaserData] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [simStage, setSimStage] = useState<'A' | 'B' | 'C' | 'D'>('A');
   const navigate = useNavigate();
@@ -135,22 +135,41 @@ const HomePage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (searchQuery.length >= 2) {
-      const q = searchQuery.toUpperCase();
-      const filtered = ALL_SYMBOLS.filter(s => 
-        s.includes(q) || 
-        (q === 'SDFC' && s === 'HDFCBANK') || 
-        (q === 'HDFC' && s === 'HDFCBANK')
-      ).slice(0, 5);
-      setSuggestions(filtered);
-    } else {
-      setSuggestions([]);
-    }
-    // Auto-clear teaser if user starts typing a fresh query
-    if (teaserData && searchQuery !== teaserData.symbol) {
-       setTeaserData(null);
-    }
-  }, [searchQuery, ALL_SYMBOLS, teaserData]);
+    let active = true;
+    const timeout = setTimeout(async () => {
+      if (searchQuery.length >= 2) {
+        const q = searchQuery.toUpperCase();
+        const filtered = ALL_SYMBOLS.filter(s => 
+          s.includes(q) || 
+          (q === 'SDFC' && s === 'HDFCBANK') || 
+          (q === 'HDFC' && s === 'HDFCBANK')
+        ).slice(0, 5);
+        
+        // Fetch strategies for filtered symbols concurrently
+        try {
+          const results = await Promise.all(filtered.map(async sym => {
+            try {
+              const res = await fetch(`${API_URL}/api/public/analysis/${sym}`);
+              const data = await safeJsonParse(res);
+              return { symbol: sym, strategies: data?.strategies || [] };
+            } catch (e) {
+              return { symbol: sym, strategies: [] }; // Fallback for single symbol failure
+            }
+          }));
+          if (active) setSuggestions(results);
+        } catch (err) {
+          if (active) setSuggestions(filtered.map(s => ({ symbol: s, strategies: [] })));
+        }
+      } else {
+        setSuggestions([]);
+      }
+    }, 300); // 300ms debounce
+
+    return () => {
+      active = false;
+      clearTimeout(timeout);
+    };
+  }, [searchQuery, ALL_SYMBOLS, API_URL]);
 
   const handleReset = () => {
     setSearchSearchQuery('');
@@ -272,7 +291,7 @@ const HomePage: React.FC = () => {
 
         {/* Hero Search Bar (CDO Engagement Feature) */}
         <div className="max-w-2xl mx-auto mb-16 relative group">
-          <form onSubmit={(e) => handleSearch(e)} className="flex flex-col sm:flex-row p-2 bg-slate-900/50 backdrop-blur-2xl border-2 border-slate-800 rounded-[1.5rem] sm:rounded-[2.5rem] focus-within:border-blue-600/50 transition-all shadow-2xl relative gap-2 sm:gap-0">
+          <form onSubmit={(e) => handleSearch(e)} className="flex flex-col sm:flex-row p-2 bg-slate-900/50 backdrop-blur-2xl border-2 border-slate-800 rounded-[1.5rem] sm:rounded-[2.5rem] focus-within:border-blue-600/50 transition-all shadow-2xl relative gap-2 sm:gap-0" style={{ WebkitBackdropFilter: 'blur(40px)' }}>
             <div className="flex-1 flex items-center pl-4 sm:pl-6 gap-3 py-2 sm:py-0">
               <Search className="w-5 h-5 text-slate-500 shrink-0" />
               <input 
@@ -281,6 +300,11 @@ const HomePage: React.FC = () => {
                 className="bg-transparent border-none outline-none w-full text-xs sm:text-sm font-black uppercase tracking-widest text-white placeholder:text-slate-600"
                 value={searchQuery}
                 onChange={(e) => setSearchSearchQuery(e.target.value)}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                inputMode="search"
               />
               {searchQuery && (
                 <button 
@@ -292,7 +316,7 @@ const HomePage: React.FC = () => {
                 </button>
               )}
             </div>
-            <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-blue-600 text-white rounded-[1rem] sm:rounded-[2rem] font-black uppercase tracking-widest text-[10px] sm:text-xs hover:bg-blue-500 transition-all flex items-center justify-center gap-2">
+            <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-4 bg-blue-600 text-white rounded-[1rem] sm:rounded-[2rem] font-black uppercase tracking-widest text-[10px] sm:text-xs hover:bg-blue-500 transition-all flex items-center justify-center gap-2">
               {isSearching ? 'Auditing...' : 'Instant Audit'} <ChevronRight className="w-4 h-4" />
             </button>
           </form>
@@ -330,17 +354,36 @@ const HomePage: React.FC = () => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 w-full mt-2 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden z-[70] shadow-2xl"
+                className="absolute top-full left-0 w-full mt-2 bg-slate-900 border border-white/10 rounded-3xl overflow-hidden z-[70] shadow-2xl backdrop-blur-xl"
+                style={{ WebkitBackdropFilter: 'blur(24px)' }}
               >
-                {suggestions.map((sym) => (
+                {suggestions.map((item) => (
                   <button
-                    key={sym}
-                    onClick={() => handleSearch(undefined, sym)}
+                    key={item.symbol}
+                    onClick={() => handleSearch(undefined, item.symbol)}
                     className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-white/5 last:border-none group"
                   >
-                    <div className="flex items-center gap-3">
-                      <Zap className="w-4 h-4 text-blue-500 group-hover:animate-pulse" />
-                      <span className="text-sm font-black text-white uppercase tracking-widest">{sym}</span>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
+                        <Zap className="w-4 h-4 text-blue-500 group-hover:animate-pulse" />
+                        <span className="text-sm font-black text-white uppercase tracking-widest">{item.symbol}</span>
+                      </div>
+                      
+                      {/* Strategy Badges */}
+                      <div className="hidden sm:flex items-center gap-2">
+                        {item.strategies?.length > 0 ? (
+                          item.strategies.slice(0, 2).map((s: any, idx: number) => (
+                            <span key={idx} className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[7px] font-black text-blue-400 uppercase tracking-widest italic">
+                              {s.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest italic">Monitoring Node</span>
+                        )}
+                        {item.strategies?.length > 2 && (
+                          <span className="text-[7px] font-black text-slate-500 uppercase">+{item.strategies.length - 2}</span>
+                        )}
+                      </div>
                     </div>
                     <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic group-hover:text-blue-400">Institutional Node</span>
                   </button>

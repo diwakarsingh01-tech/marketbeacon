@@ -1035,7 +1035,7 @@ const AlphaHubPage: React.FC = () => {
                 {isDisclaimerExpanded && (
                   <div className="px-6 pb-8 md:px-8 md:pb-10 space-y-6 relative z-10 border-t border-white/5 pt-6 animate-in slide-in-from-top-2 duration-300">
                     <p className="text-[9.5px] md:text-[10px] text-slate-500 font-black leading-relaxed uppercase tracking-[0.1em] max-w-6xl">
-                       MarketBeacon (Batch 9 Engine) is an institutional-grade research and asset discovery terminal. All technical signals, portfolio weights, and fundamental scores are provided for educational and research purposes only. MarketBeacon is not a SEBI registered investment advisor. Stock market trading involves significant financial risk. Historical results do not guarantee future performance. No Stop-Loss approach is considered a high-risk methodology.
+                       Institutional protocol warning: MarketBeacon (Batch 9 Engine) is an institutional-grade research and asset discovery terminal. All technical signals, portfolio weights, and fundamental scores are provided for educational and research purposes only. MarketBeacon is not a SEBI registered investment advisor. Stock market trading involves significant financial risk. Historical results do not guarantee future performance. No Stop-Loss approach is considered a high-risk methodology.
                     </p>
                     <div className="pt-2 flex items-center gap-6 text-slate-600">
                        <div className="flex items-center gap-2">

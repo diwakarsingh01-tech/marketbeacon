@@ -137,7 +137,8 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300 overscroll-contain">
       {isSuccess && <Confetti />}
-      <div className="bg-white w-full max-w-5xl rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-y-auto max-h-[90vh] md:max-h-none flex flex-col md:flex-row animate-in zoom-in-95 duration-500 h-fit">
+      {/* Modal Main container */}
+      <div className="bg-white w-full max-w-5xl rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-y-auto max-h-[90vh] md:max-h-none flex flex-col-reverse md:flex-row animate-in zoom-in-95 duration-500 h-fit">
         
         {/* Left: Content/Marketing */}
         <div className={`md:w-5/12 p-8 md:p-12 text-white flex flex-col justify-between relative overflow-hidden ${currentTier.color} transition-colors duration-500 shrink-0`}>

@@ -53,9 +53,9 @@ const AppLayout: React.FC = () => {
         
         {/* Sticky SEBI Compliance Banner */}
         {!isBannerDismissed && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-center text-[7.5px] md:text-[9px] font-black uppercase tracking-wider text-amber-600 flex items-center justify-between gap-2 relative z-30 shrink-0 select-none">
-            <span className="flex-1 text-center pr-4">⚠️ DISCLAIMER: We are NOT a SEBI-registered Investment Adviser or Research Analyst. MarketBeacon provides purely educational & mathematical tools. No content constitutes investment advice or recommendations.</span>
-            <button 
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-1.5 md:py-2 text-center text-[7px] md:text-[9px] font-black uppercase tracking-wider text-amber-600 flex items-center justify-between gap-2 relative z-30 shrink-0 select-none">
+            <span className="flex-1 text-center pr-2 md:pr-4 leading-tight">⚠️ DISCLAIMER: We are NOT a SEBI-registered Investment Adviser or Research Analyst. MarketBeacon provides purely educational & mathematical tools. No content constitutes investment advice or recommendations.</span>
+            <button
               onClick={handleDismissBanner}
               className="p-1 rounded-md hover:bg-amber-500/20 text-amber-600 hover:text-amber-700 transition-colors cursor-pointer shrink-0 font-black text-[10px]"
               title="Dismiss"
