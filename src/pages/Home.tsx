@@ -597,6 +597,31 @@ const HomePage: React.FC = () => {
                          </div>
                       )}
                    </div>
+
+                   {/* Share Results (Safe-Guard Phase 2: Viral Trigger) */}
+                   <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                      <button 
+                        onClick={() => {
+                          const scoreTxt = (teaserData.score || 0).toFixed(0);
+                          const text = encodeURIComponent(`🚨 [Institutional Audit] ${teaserData.symbol} scored ${scoreTxt}/100 on MarketBeacon Pro! \n\nCheck the full FII/DII analysis here: https://marketbeaconpro.com/analysis/${teaserData.symbol}`);
+                          window.open(`https://wa.me/?text=${text}`, '_blank');
+                        }}
+                        className="flex-1 py-3.5 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/20 active:scale-95"
+                      >
+                        <Zap className="w-4 h-4 fill-current" /> Share on WhatsApp
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const scoreTxt = (teaserData.score || 0).toFixed(0);
+                          const text = encodeURIComponent(`🚨 [Institutional Audit] ${teaserData.symbol} scored ${scoreTxt}/100 on MarketBeacon Pro!`);
+                          const url = `https://marketbeaconpro.com/analysis/${teaserData.symbol}`;
+                          window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
+                        }}
+                        className="flex-1 py-3.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20 active:scale-95"
+                      >
+                        <TrendingUp className="w-4 h-4" /> Share on Telegram
+                      </button>
+                   </div>
                 </div>
               </motion.div>
             )}
@@ -1139,10 +1164,10 @@ const HomePage: React.FC = () => {
           </div>
           <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-white mb-4 leading-tight">
             Get Your Free<br />
-            <span className="text-blue-400">Institutional Starter Kit</span>
+            <span className="text-blue-400">Institutional Portfolio Checklist</span>
           </h2>
           <p className="text-slate-400 text-sm mb-8 max-w-md mx-auto leading-relaxed">
-            ABCD Tranche Zones for 25 Nifty 500 stocks + a 12-parameter Audit Checklist PDF. Delivered instantly to your inbox.
+            Download our 12-parameter Audit Checklist + ABCD Tranche Guide PDF. Join 31,402 traders using data over tips.
           </p>
           <EmailCapture />
           <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-5">
