@@ -22,5 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-\n# Backend specific\nbackend/market_snapshot.json\nbackend/marketbeacon.db\nbackend/nohup.out\nbackend/marketbeacon.db-shm\nbackend/marketbeacon.db-wal
+
+# Backend specific
+backend/market_snapshot.json
+backend/alpha_40_results.json
+backend/market_snapshot_backup.json
+backend/alpha_40_results_backup.json
+backend/marketbeacon.db
+backend/nohup.out
+backend/marketbeacon.db-shm
+backend/marketbeacon.db-wal
 .env
