@@ -127,6 +127,7 @@ export async function precalculateAlpha40() {
               symbol: sym, 
               stockName: sym,
               strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, 
+              tranche: sd?.tranche || 'A',
               basketSource: basketName, 
               capType, 
               sector: (MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General').trim(),

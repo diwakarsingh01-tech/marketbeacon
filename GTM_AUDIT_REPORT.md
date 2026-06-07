@@ -1,59 +1,106 @@
-# MarketBeacon: Go-To-Market (GTM) Audit Report
-**Certification Date:** May 17, 2026
-**Auditor:** Senior System Architect (20+ Years Exp.)
-**Status:** 🟢 CERTIFIED FOR LIVE DISTRIBUTION
+# 🛡️ GTM Master Audit Report
 
-## Executive Summary
-The MarketBeacon institutional terminal has undergone a rigorous structural and algorithmic audit. All critical risk boundaries have been tested against synthetic and historical data. The system is now certified to provide accurate institutional research signals without risk of technical failure or data corruption during financial decision-making.
+**Date:** 7/6/2026, 11:10:50 am
+**Total Symbols:** 348
+**Institutional Pass:** 297
+**Anomalies Detected:** 39
 
----
+## ⚠️ Critical Fundamental Anomalies
+*Pattern exists but fundamentals are disqualified (Debt/Pledge/SM).* 
 
-## 1. Algorithmic Precision Audit
+| Symbol | Score | Reason | Active Patterns |
+| :--- | :--- | :--- | :--- |
+| TVSMOTOR | 75 | Failed Hard Reject Criteria | ENVELOPE_SHORT, SMA_BCD |
+| JUBLFOOD | 65 | Failed Hard Reject Criteria | ENVELOPE_SHORT, SMA_BCD, SR_STRATEGY |
+| RVNL | 45 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| IRCON | 45 | Low Institutional Score | ENVELOPE_LONG, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| ZENTEC | 45 | Low Institutional Score | ENVELOPE_SHORT, SR_STRATEGY |
+| ICICIPRULI | 45 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD |
+| RAJESHEXPO | 45 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW |
+| APOLLOTYRE | 45 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SR_STRATEGY |
+| CARBORUNIV | 45 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, SR_STRATEGY |
+| DLF | 45 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, SR_STRATEGY |
+| FINPIPE | 45 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| HEG | 45 | Low Institutional Score | ENVELOPE_SHORT, SR_STRATEGY |
+| LINDEINDIA | 45 | Low Institutional Score | ENVELOPE_SHORT, SR_STRATEGY |
+| MMTC | 45 | Low Institutional Score | SR_STRATEGY |
+| LUXIND | 45 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, SMA_BCD, SR_STRATEGY |
+| MAHSEAMLES | 45 | Low Institutional Score | ENVELOPE_SHORT, SR_STRATEGY |
+| NCC | 45 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| RALLIS | 45 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, SR_STRATEGY, TWENTY_RALLY_RETEST |
+| THOMASCOOK | 45 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| VOLTAS | 45 | Low Institutional Score | SMA_BCD, SR_STRATEGY |
+| SYMPHONY | 40 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, SMA_BCD, 52W_HIGH_LOW |
+| BALMLAWRIE | 40 | Failed Hard Reject Criteria | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| GHCL | 40 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| GUJALKALI | 40 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SR_STRATEGY |
+| JINDALSAW | 40 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT |
+| MOIL | 40 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SR_STRATEGY |
+| PCJEWELLER | 40 | Low Institutional Score | ENVELOPE_SHORT, SR_STRATEGY |
+| PIIND | 40 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| PARAGMILK | 40 | Low Institutional Score | SR_STRATEGY |
+| RELINFRA | 40 | Failed Hard Reject Criteria | ENVELOPE_LONG, ENVELOPE_SHORT, SMA_BCD, 52W_HIGH_LOW |
+| GNFC | 35 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| GREAVESCOT | 35 | Low Institutional Score | SR_STRATEGY |
+| PRAJIND | 35 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW |
+| RUPA | 35 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| ZEEL | 35 | Low Institutional Score | SR_STRATEGY |
+| JAGRAN | 30 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, SR_STRATEGY |
+| KNRCON | 30 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| VIPIND | 25 | Failed Hard Reject Criteria | ENVELOPE_SHORT, BOLLINGER, SMA_BCD, SR_STRATEGY, RHS_ABCD, TWENTY_RALLY_RETEST |
+| DELTACORP | 25 | Low Institutional Score | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
 
-### **Velocity Retest (Support Retest Logic)**
-*   **Time-Decay Check:** Verified that signals are strictly invalidated after 251 trading days (1 year). 
-*   **Candle Integrity:** Confirmed that consecutive green candle sequences are calculated using raw price data to match Pine Script institutional standards.
-*   **Result:** 🟢 **PASS**
+## 🟢 Top Institutional Grade Nodes (High Score)
 
-### **Deep Recovery Audit (67% Reset)**
-*   **Threshold Enforcement:** Verified that the >= 66% drawdown floor is strictly enforced.
-*   **Fundamental Guardrail:** Confirmed that stocks only qualify if they show improving PAT/Sales during the reset cycle.
-*   **Result:** 🟢 **PASS**
-
----
-
-## 2. Risk Mitigation Engine Audit
-
-### **Portfolio Asset Allocation**
-*   **4-Tier Bifurcation:** Verified that Market Cap classification accurately maps to the institutional matrix:
-    *   Large Cap: > 20,000 Cr (Threshold corrected from 100k Cr to 20k Cr).
-    *   Mid Cap: 5,000 - 20,000 Cr.
-    *   Small Cap: 1,000 - 5,000 Cr.
-*   **ABCD Gapping:** Confirmed Large Caps use 10% steps, while Mid/Small use 15% steps.
-*   **Result:** 🟢 **PASS**
-
-### **Sector Overexposure**
-*   **Concentration Alert:** Verified that any sector exceeding the 20% safety threshold is flagged with an 'OVEREXPOSED' warning.
-*   **Result:** 🟢 **PASS**
-
----
-
-## 3. Business & Security Hardening
-
-### **Subscription Lifecycle**
-*   **Calendar Month Expiry:** Upgraded from fixed 30-day expiry to true Calendar Month logic (same date next month).
-*   **Auto-Downgrade:** Verified that the `authenticateToken` middleware automatically reverts expired users to the 'Free' tier.
-*   **Result:** 🟢 **PASS**
-
-### **Admin Command Center**
-*   **Privilege Guard:** Verified that Admin routes are strictly protected and cannot be bypassed via client-side injection.
-*   **Result:** 🟢 **PASS**
-
----
-
-## 4. Final System Health
-*   **Memory Footprint:** 🟢 Optimized (Ghost processes killed, tool-cache wiped).
-*   **Build Integrity:** 🟢 Successful (`npm run build` Exit Code 0).
-*   **Terminology Compliance:** 🟢 SEBI Standardized ('Target' -> 'Model Obj.', 'Stop Loss' -> 'Risk Baseline').
-
-**Recommendation:** The platform is ready for public distribution and institutional use. 🚀🛡️📈
+| Symbol | Score | Smart Money | Active Patterns |
+| :--- | :--- | :--- | :--- |
+| BAJAJ-AUTO | 95 | 78.2% | Watchlist |
+| DABUR | 95 | 94.7% | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, 52W_HIGH_LOW, SR_STRATEGY |
+| HDFCAMC | 95 | 91.2% | ENVELOPE_SHORT |
+| HONAUT | 95 | 90.0% | ENVELOPE_SHORT, 52W_HIGH_LOW, SR_STRATEGY |
+| BAYERCROP | 95 | 87.2% | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| ASTRAZEN | 95 | 83.6% | ENVELOPE_SHORT |
+| HEROMOTOCO | 95 | 90.6% | ENVELOPE_SHORT, SMA_BCD |
+| POLYCAB | 95 | 87.7% | Watchlist |
+| MCX | 95 | 80.4% | Watchlist |
+| APLAPOLLO | 95 | 81.8% | ENVELOPE_SHORT |
+| ABB | 95 | 92.5% | ENVELOPE_SHORT |
+| AJANTPHARM | 95 | 92.9% | Watchlist |
+| ALKEM | 95 | 82.7% | ENVELOPE_SHORT, SMA_BCD |
+| BEL | 95 | 90.7% | ENVELOPE_SHORT |
+| BRITANNIA | 95 | 85.0% | ENVELOPE_SHORT, BOLLINGER |
+| CUMMINSIND | 95 | 91.2% | Watchlist |
+| ENGINERSIN | 95 | 73.2% | Watchlist |
+| GLENMARK | 95 | 86.3% | Watchlist |
+| GESHIP | 95 | 73.8% | Watchlist |
+| GPPL | 95 | 81.1% | ENVELOPE_LONG, ENVELOPE_SHORT, SR_STRATEGY |
+| ICRA | 95 | 84.3% | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| IFBIND | 95 | 82.0% | ENVELOPE_LONG, ENVELOPE_SHORT, SR_STRATEGY |
+| ORIENTCEM | 95 | 79.3% | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| JBCHEPHARM | 95 | 86.5% | Watchlist |
+| IPCALAB | 95 | 92.5% | Watchlist |
+| KPRMILL | 95 | 93.6% | Watchlist |
+| LUPIN | 95 | 93.9% | Watchlist |
+| NATIONALUM | 95 | 84.3% | Watchlist |
+| SHARDACROP | 95 | 89.1% | ENVELOPE_SHORT, SR_STRATEGY |
+| TRENT | 95 | 74.8% | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| ECLERX | 95 | 90.3% | ENVELOPE_LONG, ENVELOPE_SHORT, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| TMCV | 95 | 79.2% | Watchlist |
+| SHRIRAMFIN | 95 | 95.1% | Watchlist |
+| GILLETTE | 90 | 88.6% | ENVELOPE_LONG, ENVELOPE_SHORT, SR_STRATEGY |
+| PAGEIND | 90 | 94.4% | ENVELOPE_LONG, ENVELOPE_SHORT, SMA_BCD, 52W_HIGH_LOW |
+| INFY | 90 | 86.0% | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW |
+| HINDUNILVR | 90 | 88.3% | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, 52W_HIGH_LOW, SR_STRATEGY |
+| PIDILITIND | 90 | 90.6% | ENVELOPE_SHORT, SMA_BCD |
+| ICICIGI | 90 | 93.0% | ENVELOPE_SHORT, BOLLINGER, SMA_BCD, SR_STRATEGY |
+| HCLTECH | 90 | 95.3% | ENVELOPE_LONG, ENVELOPE_SHORT, BOLLINGER, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| BERGEPAINT | 90 | 91.4% | ENVELOPE_SHORT, BOLLINGER, SMA_BCD |
+| COLPAL | 90 | 79.8% | ENVELOPE_LONG, ENVELOPE_SHORT, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| BAJFINANCE | 90 | 91.1% | ENVELOPE_SHORT, SMA_BCD |
+| CERA | 90 | 82.8% | ENVELOPE_LONG, ENVELOPE_SHORT, SMA_BCD, 52W_HIGH_LOW, SR_STRATEGY |
+| OFSS | 90 | 89.6% | ENVELOPE_SHORT |
+| KAJARIACER | 90 | 85.4% | ENVELOPE_LONG, ENVELOPE_SHORT, SR_STRATEGY, RHS_ABCD |
+| LALPATHLAB | 90 | 91.8% | Watchlist |
+| BOSCHLTD | 90 | 92.8% | Watchlist |
+| RADICO | 90 | 85.2% | Watchlist |
+| HAL | 90 | 92.3% | ENVELOPE_SHORT, SMA_BCD, SR_STRATEGY |

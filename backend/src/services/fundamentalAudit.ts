@@ -21,9 +21,27 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   const promoter = safeParse(sh.promoter) || 0;
   const smartMoneyTotal = promoter + fii + dii;
   
-  const sector = MANUAL_SECTOR_MAP[symbol] || scr.industry || 'General';
-  const isFinance = ['Banking', 'Finance', 'Banking ETF'].includes(sector);
-  const isETF = ['Index ETF', 'Banking ETF'].includes(sector);
+  const rawSector = MANUAL_SECTOR_MAP[symbol] || scr.industry || 'General';
+  const sector = rawSector.trim();
+  
+  // Robust classification
+  const isFinance = [
+    'Banking', 'Finance', 'Banking ETF', 'NBFC', 'Financial Services', 
+    'Asset Management', 'Exchange/Depository', 'Financial Infrastructure'
+  ].includes(sector) || symbol === 'SHRIRAMFIN' || sector.toLowerCase().includes('finance') || sector.toLowerCase().includes('nbfc');
+  
+  const isETF = ['Index ETF', 'Banking ETF'].includes(sector) || symbol.endsWith('BEES');
+  
+  const isCapitalIntensive = [
+    'EPC/Infra', 'Automobile', 'Infrastructure', 'Power', 'Steel', 'Telecom', 
+    'Cement', 'Metal', 'Engineering', 'Industrial/Power', 'Utilities'
+  ].includes(sector) || 
+  ['LT', 'BHARTIARTL', 'M&M', 'TMCV', 'ADANIPORTS', 'ADANIENT', 'JSWSTEEL', 'TATASTEEL', 'NTPC', 'POWERGRID'].includes(symbol) ||
+  sector.toLowerCase().includes('infra') || 
+  sector.toLowerCase().includes('power') || 
+  sector.toLowerCase().includes('steel') || 
+  sector.toLowerCase().includes('telecom') || 
+  sector.toLowerCase().includes('auto');
 
   // --- INSTITUTIONAL HARDENING: TTM VS ATH ---
   const currentSales = safeParse(scr.currentSales);
@@ -68,14 +86,15 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   profitabilityQuality.score = profScore;
 
   let safetyScore = 0;
+  const debtLimit = isFinance ? 8.0 : (isCapitalIntensive ? 2.0 : 1.0);
   const balanceSheetSafety = {
     score: 0, max: 25,
     checks: [
-      { label: 'Debt/Equity', value: debtToEquity.toFixed(2), pass: debtToEquity <= (isFinance ? 8.0 : 0.2) },
+      { label: 'Debt/Equity', value: debtToEquity.toFixed(2), pass: debtToEquity <= debtLimit },
       { label: 'Promoter Pledge', value: `${pledged}%`, pass: pledged < 2 }
     ]
   };
-  if (debtToEquity <= (isFinance ? 8.0 : 0.2)) safetyScore += 15;
+  if (debtToEquity <= debtLimit) safetyScore += 15;
   if (pledged < 2) safetyScore += 10;
   balanceSheetSafety.score = safetyScore;
 
@@ -107,18 +126,20 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
 
   const totalScore = Math.min(100, Math.max(0, profScore + safetyScore + growthScore + instScore));
 
-  const smThreshold = (basketName === 'Growth Basket' ? 40 : 70);
   const isHardReject = !isETF && (
-    (debtToEquity > (isFinance ? 8.0 : 0.2)) || 
+    (debtToEquity > debtLimit) || 
     (pledged >= 5) || 
-    (smartMoneyTotal < (smThreshold * 0.95))
+    (smartMoneyTotal < 30.0)
   );
 
+  const passThreshold = 50;
+  const isPass = (totalScore >= passThreshold) && !isHardReject;
+
   return {
-    isPass: (totalScore >= 70) && !isHardReject,
+    isPass,
     score: totalScore,
     smartMoneyTotal,
-    reason: isHardReject ? 'Failed Hard Reject Criteria' : (totalScore < 70 ? 'Low Institutional Score' : 'Institutional Pass'),
+    reason: isHardReject ? 'Failed Hard Reject Criteria' : (totalScore < passThreshold ? 'Low Institutional Score' : 'Institutional Pass'),
     profitabilityQuality,
     balanceSheetSafety,
     growthQuality,

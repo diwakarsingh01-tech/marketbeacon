@@ -156,10 +156,22 @@ export async function fetchScreenerData(symbol: string) {
     const currentPrice = getRatio('Current Price');
     const marketCap = (getRatio('Market Cap') || getRatio('MarketCap')) * 10000000;
     let industry = 'General Research';
-    const breadcrumbText = $('.company-ratios .breadcrumb').text().trim();
-    if (breadcrumbText) {
-      const parts = breadcrumbText.split('\n').map(p => p.trim()).filter(p => p && p !== '/' && p.length > 2);
-      if (parts.length > 0) industry = parts[parts.length - 1];
+    const peerSector = $('#peers p.sub a[title="Sector"]').first().text().trim();
+    const peerBroadIndustry = $('#peers p.sub a[title="Broad Industry"]').first().text().trim();
+    const peerIndustry = $('#peers p.sub a[title="Industry"]').first().text().trim();
+    
+    if (peerSector) {
+      industry = peerSector;
+    } else if (peerBroadIndustry) {
+      industry = peerBroadIndustry;
+    } else if (peerIndustry) {
+      industry = peerIndustry;
+    } else {
+      const breadcrumbText = $('.company-ratios .breadcrumb').text().trim();
+      if (breadcrumbText) {
+        const parts = breadcrumbText.split('\n').map(p => p.trim()).filter(p => p && p !== '/' && p.length > 2);
+        if (parts.length > 0) industry = parts[parts.length - 1];
+      }
     }
     const promHistory = getShareholdingHistory('Promoter') || getShareholdingHistory('Promoters');
     const fiiHistory = getShareholdingHistory('FII') || getShareholdingHistory('Foreign');
