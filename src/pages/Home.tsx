@@ -21,13 +21,17 @@ import {
   X,
   Gift,
   CheckCircle,
-  Mail
+  Mail,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { BASKETS } from '../data/stocks';
 import BrandLogo from '../components/brand/BrandLogo';
 import SiteFooter from '../components/layout/SiteFooter';
+import { useAuth } from '../context/AuthContext';
+import UpgradeModal from '../components/modals/UpgradeModal';
+import { Confetti } from '../components/ui/Confetti';
 
 const API_URL = getApiUrl();
 
@@ -126,6 +130,49 @@ const HomePage: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [simStage, setSimStage] = useState<'A' | 'B' | 'C' | 'D'>('A');
   const navigate = useNavigate();
+
+  const { user } = useAuth();
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [voucherCode, setVoucherCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [voucherError, setVoucherError] = useState<string | null>(null);
+
+  const isProOrAbove = user?.tier === 'pro' || user?.tier === 'alpha';
+
+  const handleRedeemVoucher = async () => {
+    if (!voucherCode.trim()) return;
+    if (!user) {
+      setVoucherError('Please log in first to redeem a voucher code.');
+      return;
+    }
+    setRedeeming(true);
+    setVoucherError(null);
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ code: voucherCode.trim().toUpperCase() })
+      });
+      const result = await safeJsonParse(res);
+      if (res.ok && !result.error) {
+        setShowConfetti(true);
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      } else {
+        setVoucherError(result.error || 'Invalid voucher code.');
+      }
+    } catch (e) {
+      setVoucherError('Network error. Please try again.');
+    } finally {
+      setRedeeming(false);
+    }
+  };
 
   // Unified Institutional Symbol List
   const ALL_SYMBOLS = useMemo(() => {
@@ -428,53 +475,127 @@ const HomePage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                         <div className={`text-5xl font-black italic ${teaserData.score >= 80 ? 'text-emerald-400' : 'text-blue-400'}`}>{(teaserData.score || 0).toFixed(0)}</div>
+                         <div className={`text-5xl font-black italic ${teaserData.score >= 80 ? 'text-emerald-400' : 'text-blue-400'}`}>
+                           {isProOrAbove ? (teaserData.score || 0).toFixed(0) : '🔒'}
+                         </div>
                          <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Audit Score</div>
                       </div>
                    </div>
 
-                   <div className="grid grid-cols-3 gap-4">
-                      {[
-                        { label: 'Smart Money', val: `${(teaserData.smartMoney || 0).toFixed(1)}%`, icon: TrendingUp },
-                        { label: 'Alpha Target', val: `+${teaserData.upside}%`, icon: Target },
-                        { label: 'Risk Profile', val: teaserData.risk, icon: ShieldCheck },
-                      ].map((stat, i) => (
-                        <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
-                           <stat.icon className="h-4 w-4 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
-                           <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">{stat.label}</p>
-                           <p className="text-sm font-black text-white italic">{stat.val}</p>
-                        </div>
-                      ))}
-                   </div>
-
-                   <div className="pt-4 space-y-4">
-                      <div className="flex flex-wrap gap-2">
-                        {teaserData.strategies?.length > 0 ? (
-                           teaserData.strategies.map((s: any, i: number) => (
-                              <div key={i} className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-2xl hover:border-blue-500/50 transition-all group">
-                                 <Zap className="w-3 h-3 text-blue-500 group-hover:animate-pulse" />
-                                 <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{s.name} Entry</span>
+                   <div className="relative">
+                      {/* Premium Stats Grid & Strategies (Blurred for Free users) */}
+                      <div className={`space-y-6 transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-30' : ''}`}>
+                         <div className="grid grid-cols-3 gap-4">
+                            {[
+                              { label: 'Smart Money', val: `${(teaserData.smartMoney || 0).toFixed(1)}%`, icon: TrendingUp },
+                              { label: 'Alpha Target', val: `+${teaserData.upside}%`, icon: Target },
+                              { label: 'Risk Profile', val: teaserData.risk, icon: ShieldCheck },
+                            ].map((stat, i) => (
+                              <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
+                                 <stat.icon className="h-4 w-4 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
+                                 <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">{stat.label}</p>
+                                 <p className="text-sm font-black text-white italic">{stat.val}</p>
                               </div>
-                           ))
-                        ) : (
-                           <div className="px-4 py-2 bg-slate-900/50 border border-slate-800/50 rounded-2xl italic">
-                              <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Monitoring for Institutional Entry</span>
-                           </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center justify-between border-t border-white/5 pt-4">
-                         <div className="flex items-center gap-2">
-                            <ShieldCheck className="w-4 h-4 text-slate-600" />
-                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em]">Verified by Institutional Matrix v12.0</span>
+                            ))}
                          </div>
-                         <Link 
-                           to={`/analysis/${teaserData.symbol}`}
-                           className="flex items-center gap-2 text-[10px] font-black text-blue-400 hover:text-white transition-colors uppercase tracking-widest group"
-                         >
-                           Access Full Strategy Matrix <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                         </Link>
+
+                         <div className="pt-4 space-y-4">
+                            <div className="flex flex-wrap gap-2">
+                              {teaserData.strategies?.length > 0 ? (
+                                 teaserData.strategies.map((s: any, i: number) => (
+                                    <div key={i} className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-2xl hover:border-blue-500/50 transition-all group">
+                                       <Zap className="w-3 h-3 text-blue-500 group-hover:animate-pulse" />
+                                       <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{s.name} Entry</span>
+                                    </div>
+                                 ))
+                              ) : (
+                                 <div className="px-4 py-2 bg-slate-900/50 border border-slate-800/50 rounded-2xl italic">
+                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Monitoring for Institutional Entry</span>
+                                 </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between border-t border-white/5 pt-4">
+                               <div className="flex items-center gap-2">
+                                  <ShieldCheck className="w-4 h-4 text-slate-600" />
+                                  <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em]">Verified by Institutional Matrix v12.0</span>
+                               </div>
+                               <Link 
+                                 to={`/analysis/${teaserData.symbol}`}
+                                 className="flex items-center gap-2 text-[10px] font-black text-blue-400 hover:text-white transition-colors uppercase tracking-widest group"
+                               >
+                                 Access Full Strategy Matrix <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                               </Link>
+                            </div>
+                         </div>
                       </div>
+
+                      {/* Lock overlay for Free users */}
+                      {!isProOrAbove && (
+                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/40 backdrop-blur-[2px] rounded-3xl p-4 text-center">
+                            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+                               <div className="mx-auto w-10 h-10 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500 animate-pulse">
+                                  <Lock className="w-4 h-4" />
+                               </div>
+                               <div className="space-y-1">
+                                  <h4 className="text-xs font-black uppercase tracking-widest text-white">PRO STRATEGY MATRIX LOCKED</h4>
+                                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                                     Smart money details, upside targets, and strategy entry points for <span className="text-blue-400 font-bold">{teaserData.symbol}</span> require a Pro Execution tier license.
+                                  </p>
+                               </div>
+
+                               <div className="flex flex-col gap-2 pt-2">
+                                  {user ? (
+                                     <button 
+                                       onClick={() => setShowUpgrade(true)}
+                                       className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all flex items-center justify-center gap-1.5"
+                                     >
+                                        Unlock with Pro Execution
+                                     </button>
+                                  ) : (
+                                     <Link 
+                                       to="/login"
+                                       className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all text-center"
+                                     >
+                                        Sign In to Unlock
+                                     </Link>
+                                  )}
+                               </div>
+
+                               <div className="border-t border-slate-800 pt-3.5 space-y-2.5">
+                                  <div className="flex gap-1.5">
+                                     <input 
+                                       type="text" 
+                                       placeholder="Enter voucher (ALPHA7)..."
+                                       value={voucherCode}
+                                       onChange={(e) => setVoucherCode(e.target.value)}
+                                       className="flex-1 bg-slate-950 border border-slate-800 px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-white outline-none focus:border-blue-500"
+                                     />
+                                     <button
+                                       onClick={handleRedeemVoucher}
+                                       disabled={redeeming}
+                                       className="px-4 py-2 bg-white text-slate-950 hover:bg-slate-100 disabled:bg-slate-900 disabled:text-slate-700 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                                     >
+                                        {redeeming ? '...' : 'Apply'}
+                                     </button>
+                                  </div>
+                                  {voucherError && (
+                                     <p className="text-[9px] font-black text-rose-500 uppercase tracking-wider">{voucherError}</p>
+                                  )}
+                                  <button 
+                                     type="button"
+                                     onClick={() => {
+                                        setVoucherCode('ALPHA7');
+                                        setVoucherError(null);
+                                     }}
+                                     className="text-[8px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
+                                  >
+                                     Apply ALPHA7 (7-Day Trial)
+                                  </button>
+                               </div>
+                            </div>
+                         </div>
+                      )}
                    </div>
                 </div>
               </motion.div>
@@ -1140,6 +1261,14 @@ const HomePage: React.FC = () => {
           </svg>
         </a>
       </div>
+
+      <UpgradeModal 
+        isOpen={showUpgrade} 
+        onClose={() => setShowUpgrade(false)} 
+        requiredTier="pro" 
+        userEmail={user?.email} 
+      />
+      {showConfetti && <Confetti />}
 
     </div>
   );

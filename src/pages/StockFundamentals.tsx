@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
-  Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight 
+  Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight, Lock, Gift, Sparkles
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { useAuth } from '../context/AuthContext';
+import UpgradeModal from '../components/modals/UpgradeModal';
+import { Confetti } from '../components/ui/Confetti';
 
 const API_URL = getApiUrl();
 
@@ -11,6 +14,46 @@ const StockFundamentalsPage: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  const { user } = useAuth();
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [voucherCode, setVoucherCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [voucherError, setVoucherError] = useState<string | null>(null);
+
+  const handleRedeemVoucher = async () => {
+    if (!voucherCode.trim()) return;
+    setRedeeming(true);
+    setVoucherError(null);
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ code: voucherCode.trim().toUpperCase() })
+      });
+      const result = await safeJsonParse(res);
+      if (res.ok && !result.error) {
+        setShowConfetti(true);
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      } else {
+        setVoucherError(result.error || 'Invalid voucher code.');
+      }
+    } catch (e) {
+      setVoucherError('Network error. Please try again.');
+    } finally {
+      setRedeeming(false);
+    }
+  };
+
+  const userTier = user?.tier || 'free';
+  const isProOrAbove = userTier === 'pro' || userTier === 'alpha';
 
   useEffect(() => {
     const fetchFundamentals = async () => {
@@ -53,7 +96,7 @@ const StockFundamentalsPage: React.FC = () => {
   const isPEOvervalued = peRatio > avgMedian && avgMedian > 0;
 
   return (
-    <div className="flex-1 flex flex-col font-sans text-slate-800 bg-[#f8fafc] lg:h-screen lg:overflow-hidden overflow-y-auto pb-24 md:pb-0">
+    <div className="flex-1 flex flex-col font-sans text-slate-800 bg-[#f8fafc] lg:h-screen lg:overflow-hidden overflow-y-auto pb-24 md:pb-0 relative">
       
       {/* COMPACT HEADER */}
       <div className="bg-white border-b border-slate-200 py-3.5 shadow-sm sticky top-0 z-10">
@@ -82,7 +125,10 @@ const StockFundamentalsPage: React.FC = () => {
                </div>
                <div className="h-8 w-px bg-slate-200" />
                <div className="text-right">
-                  <div className="text-2xl font-black tracking-tighter text-slate-900 leading-none">{score.toFixed(0)}<span className="text-xs text-slate-300 ml-0.5">/100</span></div>
+                  <div className="text-2xl font-black tracking-tighter text-slate-900 leading-none">
+                     {isProOrAbove ? score.toFixed(0) : '🔒'}
+                     <span className="text-xs text-slate-300 ml-0.5">/100</span>
+                  </div>
                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Audit Score</span>
                </div>
             </div>
@@ -90,9 +136,9 @@ const StockFundamentalsPage: React.FC = () => {
       </div>
 
       {/* FIT-TO-SCREEN CONTENT */}
-      <main className="max-w-[1600px] mx-auto w-full flex-1 lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-4 p-6">
+      <main className="max-w-[1600px] mx-auto w-full flex-1 lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-4 p-6 relative">
         
-        <div className="lg:col-span-8 space-y-4 lg:overflow-y-auto pr-2 no-scrollbar">
+        <div className={`lg:col-span-8 space-y-4 lg:overflow-y-auto pr-2 no-scrollbar transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Market Cap</span>
@@ -154,7 +200,7 @@ const StockFundamentalsPage: React.FC = () => {
           </section>
         </div>
 
-        <div className="lg:col-span-4 space-y-4 h-full">
+        <div className={`lg:col-span-4 space-y-4 h-full transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-6">
               <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center">
                 <Target className="h-4 w-4 mr-2" /> Valuation & Ownership
@@ -210,7 +256,89 @@ const StockFundamentalsPage: React.FC = () => {
               </div>
            </div>
         </div>
+
+        {/* Lock Overlay */}
+        {!isProOrAbove && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/10 backdrop-blur-[4px] p-6 rounded-2xl">
+            <div className="bg-slate-950 text-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-slate-800 text-center space-y-6 animate-in fade-in zoom-in-95 duration-200">
+               <div className="mx-auto w-14 h-14 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500 animate-pulse">
+                  <Lock className="w-6 h-6" />
+               </div>
+               
+               <div className="space-y-2">
+                  <h3 className="text-xl font-black uppercase tracking-tight text-white italic">PRO LICENSE REQUIRED</h3>
+                  <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                     Unlock deep fundamental analysis, institutional quality audits, valuation models, and active strategy indicators for <span className="text-blue-400 font-black">{symbol}</span>.
+                  </p>
+               </div>
+
+               <div className="space-y-3 pt-2">
+                  <button 
+                    onClick={() => setShowUpgrade(true)}
+                    className="w-full py-4 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-500 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2"
+                  >
+                     <Sparkles className="w-4 h-4 text-blue-200" /> Upgrade to Pro Execution
+                  </button>
+                  
+                  <Link 
+                    to="/license-desk"
+                    className="block text-[10px] font-black text-slate-400 hover:text-white transition-colors uppercase tracking-widest"
+                  >
+                     Compare Plans & Pricing
+                  </Link>
+               </div>
+
+               <div className="border-t border-slate-800 pt-6 space-y-4">
+                  <div className="space-y-1">
+                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Have a Coupon or Voucher Code?</span>
+                     <p className="text-[10px] text-slate-400">Redeem code for a 7-day free trial of all premium features.</p>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                     <input 
+                       type="text" 
+                       placeholder="Enter voucher (e.g. ALPHA7)..."
+                       value={voucherCode}
+                       onChange={(e) => setVoucherCode(e.target.value)}
+                       className="flex-1 bg-slate-900 border border-slate-700 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-white outline-none focus:border-blue-500"
+                     />
+                     <button
+                       onClick={handleRedeemVoucher}
+                       disabled={redeeming}
+                       className="px-5 py-3 bg-white text-slate-950 hover:bg-slate-100 disabled:bg-slate-800 disabled:text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                     >
+                       {redeeming ? 'Applying...' : 'Apply'}
+                     </button>
+                  </div>
+
+                  {voucherError && (
+                     <p className="text-[10px] font-black text-rose-500 uppercase tracking-wider">{voucherError}</p>
+                  )}
+
+                  <button 
+                     type="button"
+                     onClick={() => {
+                        setVoucherCode('ALPHA7');
+                        setVoucherError(null);
+                     }}
+                     className="text-[9px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
+                  >
+                     Quick Apply: ALPHA7 (7-Day Free Trial)
+                  </button>
+               </div>
+            </div>
+          </div>
+        )}
       </main>
+
+      {showConfetti && <Confetti />}
+      
+      <UpgradeModal 
+        isOpen={showUpgrade} 
+        onClose={() => setShowUpgrade(false)} 
+        requiredTier="pro" 
+        userEmail={user?.email} 
+      />
     </div>
   );
 };
