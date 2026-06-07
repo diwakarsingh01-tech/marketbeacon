@@ -751,8 +751,125 @@ const TradeTable: React.FC<TradeTableProps> = ({
               const isStarred = userWatchlist?.includes(trade.symbol);
               const capTag = getMarketCapTag(trade.marketCap, trade.symbol);
               const isExpanded = expandedSymbol === trade.symbol;
-              
-              // 1-day Change percent estimate from live prices
+
+              if (activeTab === 'portfolio') {
+                const invested = (trade.quantity || 0) * (trade.buy_price || 0);
+                const currentVal = (trade.quantity || 0) * (trade.livePrice || 0);
+                const pnl = currentVal - invested;
+                const yieldPercent = invested > 0 ? (pnl / invested) * 100 : 0;
+                const isPnlPositive = pnl >= 0;
+
+                return (
+                  <motion.div 
+                     key={trade.symbol} 
+                     initial={{ opacity: 0, y: 10 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     transition={{ delay: Math.min(idx * 0.03, 0.3) }}
+                     className="bg-white rounded-[1.25rem] border border-slate-100/80 shadow-md shadow-slate-100 overflow-hidden"
+                  >
+                     {/* Clickable Header Area */}
+                     <div 
+                        onClick={() => setExpandedSymbol(isExpanded ? null : trade.symbol)}
+                        className="p-4 flex items-center justify-between cursor-pointer active:bg-slate-50 transition-colors"
+                     >
+                        {/* Left: Symbol & Details */}
+                        <div className="flex items-center space-x-3">
+                           <div className="flex flex-col">
+                              <div className="flex items-center space-x-2">
+                                 <span className="text-sm font-black text-slate-900 tracking-tight font-mono uppercase">{trade.symbol}</span>
+                                 <span className={`px-1.5 py-0.5 rounded-[0.25rem] text-[6.5px] font-black border tracking-wider leading-none ${capTag.class}`}>{capTag.label}</span>
+                              </div>
+                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</span>
+                           </div>
+                        </div>
+                        
+                        {/* Right: CMP & Yield */}
+                        <div className="flex items-center space-x-3">
+                           <div className="text-right flex flex-col items-end">
+                              <span className="text-sm font-extrabold text-slate-900 font-mono">₹{trade.livePrice?.toLocaleString()}</span>
+                              <span className={`text-[8.5px] font-black font-mono leading-none mt-1.5 px-1.5 py-0.5 rounded ${isPnlPositive ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/45' : 'bg-rose-50 text-rose-600 border border-rose-100/45'}`}>
+                                 {isPnlPositive ? '+' : ''}{yieldPercent.toFixed(1)}% Yield
+                              </span>
+                           </div>
+                           <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                        </div>
+                     </div>
+
+                     {/* Quick Info (Always Visible: Edit controls for portfolio) */}
+                     <div className="px-4 pb-3 flex items-center justify-between border-b border-slate-50 gap-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[8.5px] font-black text-slate-450 uppercase tracking-wider">Qty:</span>
+                          <input 
+                            type="number" 
+                            defaultValue={trade.quantity || 0} 
+                            onClick={(e) => e.stopPropagation()}
+                            onBlur={(e) => onUpdateHolding?.(trade.symbol, parseInt(e.target.value) || 0, trade.buy_price || 0)} 
+                            className="w-12 bg-slate-50 border border-slate-200 rounded-lg text-center font-mono font-bold py-0.5 text-[10px] outline-none focus:bg-white focus:border-blue-600 transition-all shadow-sm" 
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[8.5px] font-black text-slate-450 uppercase tracking-wider">Avg:</span>
+                          <input 
+                            type="number" 
+                            defaultValue={trade.buy_price || 0} 
+                            onClick={(e) => e.stopPropagation()}
+                            onBlur={(e) => onUpdateHolding?.(trade.symbol, trade.quantity || 0, parseFloat(e.target.value) || 0)} 
+                            className="w-16 bg-slate-50 border border-slate-200 rounded-lg text-right pr-1 font-mono font-bold py-0.5 text-[10px] outline-none focus:bg-white focus:border-blue-600 transition-all shadow-sm" 
+                          />
+                        </div>
+                        <div className="text-[9.5px] font-black text-slate-500 uppercase tracking-wider font-mono">
+                          Net: ₹{currentVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </div>
+                     </div>
+
+                     {/* Expanded Details Section */}
+                     {isExpanded && (
+                        <div className="p-4 bg-slate-50/40 border-t border-slate-50 space-y-4 animate-in slide-in-from-top-1 duration-200">
+                           {/* Core Metrics Grid */}
+                           <div className="grid grid-cols-3 gap-2">
+                              <div className="bg-white p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
+                                 <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Invested</span>
+                                 <span className="text-xs font-black font-mono text-slate-900">₹{invested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
+                                 <span className="text-[7.5px] font-black text-slate-455 uppercase tracking-widest leading-none mb-1">Current Val</span>
+                                 <span className="text-xs font-black font-mono text-slate-900">₹{currentVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                              </div>
+                              <div className="bg-white p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
+                                 <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total PnL</span>
+                                 <span className={`text-xs font-black font-mono ${isPnlPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                    {isPnlPositive ? '+' : ''}₹{pnl.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                 </span>
+                              </div>
+                           </div>
+
+                           {/* Audit / Score row */}
+                           <div className="flex items-center justify-between bg-white px-3 py-2.5 rounded-[0.75rem] border border-slate-100/80 shadow-sm text-[10px]">
+                              <div className="flex items-center space-x-1.5">
+                                 {trade.isPass !== false ? (
+                                    <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[7.5px] font-black">PASS</span>
+                                 ) : (
+                                    <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded text-[7.5px] font-black">OBS</span>
+                                 )}
+                                 <span className="font-extrabold text-slate-700">Audit Score:</span>
+                                 <span className="font-black text-slate-900">{trade.score || 0}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Link to={`/stock/${trade.symbol}`} className="p-1.5 bg-slate-50 text-slate-400 rounded-lg hover:bg-slate-ink hover:text-white transition-all shrink-0">
+                                   <InfoIcon className="h-3.5 w-3.5" />
+                                </Link>
+                                <button onClick={(e) => { e.preventDefault(); if (window.confirm(`Remove ${trade.symbol} from portfolio?`)) onToggleWatchlist?.(trade.symbol); }} className="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:bg-rose-600 hover:text-white transition-all">
+                                   <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                           </div>
+                        </div>
+                     )}
+                  </motion.div>
+                );
+              }
+
+              // Normal Strategy Tab View
               const changePercent = trade.change || 0;
               const isPositive = changePercent >= 0;
 
@@ -794,16 +911,15 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
                    {/* Quick Info (Always Visible: ABCD ladder & status) */}
                    <div className="px-4 pb-3 flex items-center justify-between border-b border-slate-50">
-                      {/* ABCD indicators */}
                       {visibleColumns.abcd ? (
                          <div className="flex items-center space-x-1">
                             {['a', 'b', 'c', 'd'].map((l) => {
                               const levelObj = trade.abcd?.[l];
                               const levelVal = typeof levelObj === 'object' ? levelObj.price : (typeof trade.abcd?.[l] === 'number' ? trade.abcd[l] : 0);
                               const isActive = (trade.livePrice || 0) <= levelVal && levelVal > 0;
-                              const levelColor = l === 'a' ? (isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-blue-50/50 text-blue-300 border-blue-100/40') :
-                                               (l === 'b' || l === 'c') ? (isActive ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50/50 text-indigo-300 border-indigo-100/40') :
-                                               (isActive ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-50/50 text-emerald-300 border-emerald-100/40');
+                              const levelColor = l === 'a' ? (isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-blue-50/50 text-blue-300 border-blue-100/45') :
+                                               (l === 'b' || l === 'c') ? (isActive ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50/50 text-indigo-300 border-indigo-100/45') :
+                                               (isActive ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-50/50 text-emerald-300 border-emerald-100/45');
 
                               return (
                                 <div key={l} className={`w-5 h-5 rounded-[0.35rem] flex items-center justify-center text-[7px] font-black border transition-all ${levelColor} ${isActive ? 'scale-105 font-black opacity-100' : 'opacity-40'}`}>
@@ -816,7 +932,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
                          <div className="text-[9px] font-bold text-slate-400">Institutional Strategy</div>
                       )}
 
-                      {/* Strategy Floor Status */}
                       <div className="flex items-center gap-1.5">
                          {trade.isBuyZone ? (
                             <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-full text-[8px] font-black">STRATEGY FLOOR</span>
@@ -864,7 +979,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                             </div>
                          </div>
 
-                         {/* Audit / PE / Score row */}
+                         {/* Audit / Score row */}
                          <div className="flex items-center justify-between bg-white px-3 py-2.5 rounded-[0.75rem] border border-slate-100/80 shadow-sm text-[10px]">
                             <div className="flex items-center space-x-1.5">
                                {trade.isPass !== false ? (
