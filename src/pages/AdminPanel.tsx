@@ -94,6 +94,22 @@ const AdminPanel: React.FC = () => {
     } catch (e) { alert("Approval Logic Failed."); }
   };
 
+  const handleDeleteItem = async (type: 'feedback' | 'vouchers' | 'upgrade-requests', id: number) => {
+    if (!window.confirm(`Are you sure you want to delete this ${type.replace('-requests', '')}? This action is permanent.`)) return;
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${API_URL}/api/admin/${type}/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        await fetchData();
+      } else {
+        alert("Failed to delete item.");
+      }
+    } catch (e) { alert("Delete operation failed."); }
+  };
+
   const handleUpdateUser = async (userId: number, data: any) => {
     const token = localStorage.getItem('mb_token');
     try {
@@ -295,7 +311,13 @@ const AdminPanel: React.FC = () => {
                         </div>
                      </td>
                      <td className="px-8 py-6 text-right">
-                        {/* Controls can be added here */}
+                        <button 
+                          onClick={() => handleDeleteItem('vouchers', v.id)}
+                          className="p-2.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                          title="Delete Voucher"
+                        >
+                           <Trash2 className="h-4 w-4" />
+                        </button>
                      </td>
                    </tr>
                  ))
@@ -408,7 +430,13 @@ const AdminPanel: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-8 py-6 text-right">
-                         {/* Action can be added here */}
+                         <button 
+                           onClick={() => handleDeleteItem('feedback', f.id)}
+                           className="p-2.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                           title="Delete Feedback"
+                         >
+                            <Trash2 className="h-4 w-4" />
+                         </button>
                       </td>
                     </tr>
                   ))
@@ -444,14 +472,23 @@ const AdminPanel: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      {req.status === 'pending' && (
+                      <div className="flex items-center justify-end space-x-2">
+                        {req.status === 'pending' && (
+                          <button 
+                            onClick={() => handleApprove(req.id)}
+                            className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md active:scale-95"
+                          >
+                            Approve Upgrade
+                          </button>
+                        )}
                         <button 
-                          onClick={() => handleApprove(req.id)}
-                          className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md active:scale-95"
+                           onClick={() => handleDeleteItem('upgrade-requests', req.id)}
+                           className="p-2.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                           title="Delete Request"
                         >
-                          Approve Upgrade
+                           <Trash2 className="h-4 w-4" />
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                  ))

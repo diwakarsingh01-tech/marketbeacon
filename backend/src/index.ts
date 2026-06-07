@@ -1062,6 +1062,31 @@ app.get('/api/admin/feedback', authenticateToken, requireAdmin, async (req: any,
 
 
 
+// --- Admin Management Endpoints ---
+app.delete('/api/admin/feedback/:id', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    await db.run('DELETE FROM feedback WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/vouchers/:id', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    await db.run('DELETE FROM vouchers WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/upgrade-requests/:id', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    await db.run('DELETE FROM upgrade_requests WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 const startServer = async () => {
   const PORT = Number(process.env.PORT) || 3001;
   try {
