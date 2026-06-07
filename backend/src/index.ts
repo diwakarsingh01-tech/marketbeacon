@@ -354,6 +354,25 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     const capCr = (snap.quote?.marketCap || 0) / 10000000;
     const basketType = capCr >= 20000 ? 'LARGE' : (capCr >= 5000 ? 'MID' : 'SMALL');
 
+    // Extract ABCD levels for the primary strategy
+    const primaryStrat = qualified[0];
+    let abcd = null;
+    if (primaryStrat) {
+      const sRes: any = runStrategyAnalysis(primaryStrat.id, snap, snap.quote.marketCap, 'Elite Basket');
+      abcd = sRes?.abcd;
+    }
+
+    // Fallback ABCD levels if none provided
+    if (!abcd) {
+       const lastPrice = snap.quotes[snap.quotes.length - 1].close;
+       abcd = {
+          a: { price: Math.round(lastPrice), date: new Date().toISOString() },
+          b: { price: Math.round(lastPrice * 0.90), date: '' },
+          c: { price: Math.round(lastPrice * 0.81), date: '' },
+          d: { price: Math.round(lastPrice * 0.73), date: '' }
+       };
+    }
+
     res.json({ 
       symbol, 
       score: audit.score, 
@@ -362,7 +381,8 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
       smartMoney: audit.smartMoneyTotal || 0,
       upside: maxUpside,
       basket: basketType,
-      risk: audit.score >= 80 ? 'LOW' : (audit.score >= 70 ? 'MODERATE' : 'HIGH')
+      risk: audit.score >= 80 ? 'LOW' : (audit.score >= 70 ? 'MODERATE' : 'HIGH'),
+      abcd
     });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
