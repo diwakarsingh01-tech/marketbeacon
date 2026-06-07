@@ -26,6 +26,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import UpgradeModal from '../components/modals/UpgradeModal';
+import { Confetti } from '../components/ui/Confetti';
 import { useAuth } from '../context/AuthContext';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -138,6 +139,41 @@ const AlphaHubPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isDisclaimerExpanded, setIsDisclaimerExpanded] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [voucherCode, setVoucherCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [voucherError, setVoucherError] = useState<string | null>(null);
+
+  const handleRedeemVoucher = async () => {
+    if (!voucherCode.trim()) return;
+    setRedeeming(true);
+    setVoucherError(null);
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ code: voucherCode.trim().toUpperCase() })
+      });
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) {
+        setShowConfetti(true);
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      } else {
+        setVoucherError(data.error || 'Invalid voucher code.');
+      }
+    } catch (e) {
+      setVoucherError('Network error. Please try again.');
+    } finally {
+      setRedeeming(false);
+    }
+  };
+
   const { user } = useAuth();
   
   const [totalCapital, setTotalCapital] = useState<number>(500000); // Standard default of 5 Lakhs
@@ -270,9 +306,10 @@ const AlphaHubPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc] text-slate-900 overflow-hidden relative">
+      {showConfetti && <Confetti />}
       
       {error === 'ALPHA_REQUIRED' ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-700">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-700 max-w-2xl mx-auto">
            <div className="w-24 h-24 bg-blue-600/10 border border-blue-500/20 rounded-[2rem] flex items-center justify-center shadow-2xl relative">
               <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full animate-pulse" />
               <Lock className="h-10 w-10 text-blue-600 relative z-10" />
@@ -283,16 +320,53 @@ const AlphaHubPage: React.FC = () => {
                  The Alpha 40 Desk is a high-performance portfolio engine reserved for <span className="text-blue-600">Institutional Alpha</span> subscribers.
               </p>
            </div>
-           <div className="flex flex-col sm:flex-row items-center gap-4">
+           <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
               <button 
                 onClick={() => setShowUpgradeModal(true)}
-                className="px-10 py-5 bg-blue-600 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-blue-700 transition-all active:scale-95"
+                className="px-10 py-5 bg-blue-600 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-blue-700 transition-all active:scale-95 w-full sm:w-auto"
               >
                 Unlock Alpha Access
               </button>
-              <Link to="/screener" className="px-8 py-5 bg-white border-2 border-slate-100 text-slate-400 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] hover:text-slate-900 transition-all">
+              <Link to="/screener" className="px-8 py-5 bg-white border-2 border-slate-100 text-slate-400 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] hover:text-slate-900 transition-all w-full sm:w-auto text-center">
                 Return to Screener
               </Link>
+           </div>
+
+           {/* Voucher promotion / input box */}
+           <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm w-full space-y-4 text-center">
+             <div className="text-left space-y-1">
+               <h4 className="text-[10px] font-black uppercase text-slate-900 tracking-wider">Have a Trial Voucher?</h4>
+               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Enter code below to unlock Alpha access instantly</p>
+             </div>
+
+             {/* Promo shortcut button */}
+             <button 
+               onClick={() => { setVoucherCode('ALPHA7'); setVoucherError(null); }}
+               className="w-full py-2.5 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all active:scale-95"
+             >
+               Use Code: ALPHA7 (7 Days Free)
+             </button>
+
+             <div className="flex items-center gap-2">
+               <input 
+                 type="text" 
+                 placeholder="VOUCHER CODE"
+                 value={voucherCode}
+                 onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherError(null); }}
+                 className="bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest outline-none flex-1 focus:border-blue-600 transition-all placeholder:text-slate-300"
+               />
+               <button 
+                 onClick={handleRedeemVoucher}
+                 disabled={redeeming || !voucherCode.trim()}
+                 className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50"
+               >
+                 {redeeming ? '...' : 'Apply'}
+               </button>
+             </div>
+
+             {voucherError && (
+               <p className="text-[9px] font-black uppercase tracking-widest text-rose-600 text-left pl-1">{voucherError}</p>
+             )}
            </div>
         </div>
       ) : (

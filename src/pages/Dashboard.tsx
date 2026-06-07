@@ -765,13 +765,20 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                        <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" />
                     </div>
                  </div>
-                 <button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-black">
-                    Add to Portfolio
-                 </button>
-              </form>
-           </div>
-        </div>
-      )}
+                  <button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-black">
+                     Add to Portfolio
+                  </button>
+               </form>
+            </div>
+         </div>
+       )}
+
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)} 
+        requiredTier={requiredTier}
+        userEmail={user?.email}
+      />
     </div>
   );
 };

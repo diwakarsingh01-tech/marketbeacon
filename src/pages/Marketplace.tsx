@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
+import { Confetti } from '../components/ui/Confetti';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
 const API_URL = getApiUrl();
@@ -66,6 +67,7 @@ const MembershipPage: React.FC = () => {
   const [redeeming, setRedeeming] = useState(false);
   const [voucherStatus, setVoucherStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [voucherMsg, setVoucherMsg] = useState('');
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const userTier = (user as any)?.tier || 'free';
   const isActive = (tier: string) => {
@@ -116,7 +118,8 @@ const MembershipPage: React.FC = () => {
       if (res.ok && !data.error) {
         setVoucherStatus('success');
         setVoucherMsg(`✅ ${data.tier?.toUpperCase()} access activated for 7 days!`);
-        setTimeout(() => window.location.reload(), 2000);
+        setShowConfetti(true);
+        setTimeout(() => window.location.reload(), 3500);
       } else {
         setVoucherStatus('error');
         setVoucherMsg(data.error || 'Invalid voucher code.');
@@ -141,6 +144,7 @@ const MembershipPage: React.FC = () => {
 
   return (
     <div className="bg-[#f8fafc] font-sans min-h-screen overflow-y-auto pb-24">
+      {showConfetti && <Confetti />}
 
       {/* ── HERO ── */}
       <div className="relative overflow-hidden bg-slate-950 px-4 md:px-12 pt-8 pb-8 text-white">
@@ -426,12 +430,27 @@ const MembershipPage: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
+        </div>        {/* ── VOUCHER SECTION ── */}
+        <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm space-y-6">
+          {/* Promo Banner for ALPHA7 */}
+          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-sm font-black shrink-0 shadow-md">7</div>
+              <div className="text-left">
+                <p className="text-[10px] font-black uppercase text-indigo-950 tracking-wider">Free 7-Day Alpha Trial Offer</p>
+                <p className="text-[8.5px] font-bold text-indigo-600 uppercase tracking-widest mt-0.5 leading-snug">Unlock all premium strategies, patterns, and the Alpha Hub instantly with code <span className="underline font-black text-indigo-800">ALPHA7</span></p>
+              </div>
+            </div>
+            <button 
+              onClick={() => { setVoucherCode('ALPHA7'); setVoucherStatus('idle'); }}
+              className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm active:scale-95 transition-all shrink-0 text-center"
+            >
+              Apply ALPHA7
+            </button>
+          </div>
 
-        {/* ── VOUCHER SECTION ── */}
-        <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="space-y-1">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pt-4 border-t border-slate-50">
+            <div className="space-y-1 text-left">
               <div className="flex items-center gap-2">
                 <Gift className="h-4 w-4 text-indigo-500" />
                 <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Have a Voucher Code?</span>
@@ -461,6 +480,7 @@ const MembershipPage: React.FC = () => {
               </motion.button>
             </div>
           </div>
+
           <AnimatePresence>
             {voucherMsg && (
               <motion.p
