@@ -344,8 +344,38 @@ const HomePage: React.FC = () => {
         </h1>
         <p className="text-base md:text-xl font-black text-blue-300/80 uppercase tracking-[0.25em] mb-10">Now In Your Hands.</p>
 
+        {/* Grand Launch Promo Banner (Phase 3) */}
+        <div className="max-w-2xl mx-auto mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <div className="relative group cursor-pointer overflow-hidden p-[1px] bg-gradient-to-r from-blue-600 via-indigo-400 to-emerald-400 rounded-2xl shadow-xl shadow-blue-900/20">
+            <div className="bg-slate-950/90 backdrop-blur-xl rounded-[15px] px-6 py-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500">
+                  <Zap className="w-5 h-5 fill-current animate-pulse" />
+                </div>
+                <div className="text-left">
+                  <h4 className="text-[11px] font-black text-white uppercase tracking-widest leading-none mb-1">Grand Alpha Launch Live</h4>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Get 7-Day Institutional Access for <span className="text-emerald-400">FREE</span></p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                   setVoucherCode('ALPHA7');
+                   const el = document.getElementById('search-anchor');
+                   el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95"
+              >
+                Claim Now
+              </button>
+            </div>
+            <div className="absolute top-0 right-0 p-1">
+               <div className="px-1.5 py-0.5 bg-emerald-500 text-white text-[6px] font-black uppercase rounded-bl-lg animate-bounce">Live</div>
+            </div>
+          </div>
+        </div>
+
         {/* Hero Search Bar (CDO Engagement Feature) */}
-        <div className="max-w-2xl mx-auto mb-16 relative group">
+        <div id="search-anchor" className="max-w-2xl mx-auto mb-16 relative group">
           <form onSubmit={(e) => handleSearch(e)} className="flex flex-col sm:flex-row p-2 bg-slate-900/50 backdrop-blur-2xl border-2 border-slate-800 rounded-[1.5rem] sm:rounded-[2.5rem] focus-within:border-blue-600/50 transition-all shadow-2xl relative gap-2 sm:gap-0" style={{ WebkitBackdropFilter: 'blur(40px)' }}>
             <div className="flex-1 flex items-center pl-4 sm:pl-6 gap-3 py-2 sm:py-0">
               <Search className="w-5 h-5 text-slate-500 shrink-0" />
