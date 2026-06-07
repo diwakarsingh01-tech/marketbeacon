@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Activity, LogOut, User, Store, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck } from 'lucide-react';
+import { Activity, LogOut, User, Store, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BASKETS } from '../../data/stocks';
 import BrandLogo from '../brand/BrandLogo';
@@ -88,6 +88,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const navigate = useNavigate();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -259,6 +260,14 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
              );
            })}
         </div>
+        {/* Mobile Search Trigger Button */}
+        <button 
+          onClick={() => setShowMobileSearch(true)}
+          className="p-2.5 text-slate-400 hover:text-slate-900 lg:hidden hover:bg-slate-50 rounded-xl transition-all"
+          title="Search Stocks"
+        >
+          <Search className="h-5 w-5" />
+        </button>
 
         <div className="relative">
           <button 
@@ -393,6 +402,68 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           )}
         </div>
       </div>
+
+      {/* Mobile Search Overlay */}
+      {showMobileSearch && (
+        <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-3">
+            <form onSubmit={handleSearch} className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                autoFocus
+                placeholder="Search stock..."
+                className="w-full bg-slate-50 border border-slate-100 py-3 pl-11 pr-4 rounded-xl text-xs font-black uppercase tracking-widest text-slate-950 outline-none focus:border-blue-600 focus:bg-white transition-all shadow-inner"
+                value={searchQuery}
+                onChange={onSearchChange}
+              />
+            </form>
+            <button 
+              onClick={() => {
+                setShowMobileSearch(false);
+                setSearchQuery('');
+                setSuggestions([]);
+              }}
+              className="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100/50 rounded-xl transition-all"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Suggestions List in mobile view */}
+          {suggestions.length > 0 && (
+            <div className="mt-3 bg-white border border-slate-100/85 rounded-2xl shadow-2xl overflow-y-auto max-h-[70vh] p-1.5 space-y-0.5 z-[130] animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="p-2.5 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center rounded-t-xl">
+                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Match Suggestions</span>
+              </div>
+              {suggestions.map((sym) => {
+                const fullName = COMPANY_NAMES[sym.toUpperCase()] || 'NSE Equity Asset';
+                return (
+                  <button
+                    key={sym}
+                    onClick={() => {
+                      selectStock(sym);
+                      setShowMobileSearch(false);
+                    }}
+                    className="w-full flex items-center justify-between px-3.5 py-3 hover:bg-slate-50 rounded-xl transition-all text-left group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 shrink-0">
+                         <Zap className="h-3.5 w-3.5 text-blue-600" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                         <span className="text-xs font-black text-slate-900 tracking-tighter leading-none">{sym}</span>
+                         <span className="text-[8px] font-medium text-slate-400 truncate mt-1.5 uppercase tracking-wider">{fullName}</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-300 transform group-hover:translate-x-0.5 transition-all" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </nav>
   );
 };
