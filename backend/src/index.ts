@@ -199,7 +199,7 @@ app.post('/api/auth/google', async (req, res) => {
     const role = ['diwakarsingh01.tech@gmail.com', 'admin@marketbeacon.com'].includes(email) ? 'admin' : 'user';
     const tier = role === 'admin' ? 'alpha' : 'free';
     if (!user) {
-      const result = await db.run('INSERT INTO users (name, email, role, tier) VALUES (?, ?, ?, ?)', [payload.name, email, role, tier]);
+      const result = await db.run('INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)', [payload.name, email, 'GOOGLE_AUTH', role, tier]);
       user = { id: result.lastID, email, role, tier };
     }
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
