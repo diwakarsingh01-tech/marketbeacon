@@ -408,13 +408,10 @@ export function calculateTwentyRallyRetest(quotes: Quote[]) {
 }
 
 /**
- * UTILITY: ABCD Level Calculation (Legacy Fallback)
+ * UTILITY: ABCD Level Calculation (Institutional 10% Model)
  */
-export function calculateABCDLevels(anchorPrice: number, marketCap: number) {
-  const capCr = marketCap / 10000000;
-  let gap = 0.15; // Default 15%
-  if (capCr >= 20000) gap = 0.10;
-  else if (capCr < 5000) gap = 0.20;
+export function calculateABCDLevels(anchorPrice: number, marketCap: number = 0) {
+  const gap = 0.10; // Forced 10% institutional step
   return { 
     a: { price: anchorPrice, label: "A" }, 
     b: { price: Math.round(anchorPrice * (1 - gap)), label: "B" }, 
