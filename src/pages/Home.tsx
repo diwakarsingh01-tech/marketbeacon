@@ -1295,6 +1295,13 @@ const HomePage: React.FC = () => {
       />
       {showConfetti && <Confetti />}
 
+      {/* Deployment Verification Tag */}
+      <div className="fixed bottom-4 right-4 z-[100] opacity-20 hover:opacity-100 transition-opacity">
+        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">
+          Build: v18.0.8-PRO-RENDER-VERIFY
+        </span>
+      </div>
+
     </div>
   );
 };
