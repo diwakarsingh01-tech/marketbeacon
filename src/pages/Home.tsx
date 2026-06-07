@@ -272,13 +272,13 @@ const HomePage: React.FC = () => {
 
         {/* Hero Search Bar (CDO Engagement Feature) */}
         <div className="max-w-2xl mx-auto mb-16 relative group">
-          <form onSubmit={(e) => handleSearch(e)} className="flex p-2 bg-slate-900/50 backdrop-blur-2xl border-2 border-slate-800 rounded-[2.5rem] focus-within:border-blue-600/50 transition-all shadow-2xl relative">
-            <div className="flex-1 flex items-center pl-6 gap-3">
-              <Search className="w-5 h-5 text-slate-500" />
+          <form onSubmit={(e) => handleSearch(e)} className="flex flex-col sm:flex-row p-2 bg-slate-900/50 backdrop-blur-2xl border-2 border-slate-800 rounded-[1.5rem] sm:rounded-[2.5rem] focus-within:border-blue-600/50 transition-all shadow-2xl relative gap-2 sm:gap-0">
+            <div className="flex-1 flex items-center pl-4 sm:pl-6 gap-3 py-2 sm:py-0">
+              <Search className="w-5 h-5 text-slate-500 shrink-0" />
               <input 
                 type="text" 
-                placeholder="Enter stock symbol (e.g. RELAXO, TCS)..." 
-                className="bg-transparent border-none outline-none w-full text-sm font-black uppercase tracking-widest text-white placeholder:text-slate-600"
+                placeholder="Enter stock symbol (e.g. TCS)..." 
+                className="bg-transparent border-none outline-none w-full text-xs sm:text-sm font-black uppercase tracking-widest text-white placeholder:text-slate-600"
                 value={searchQuery}
                 onChange={(e) => setSearchSearchQuery(e.target.value)}
               />
@@ -292,12 +292,10 @@ const HomePage: React.FC = () => {
                 </button>
               )}
             </div>
-            <button type="submit" disabled={isSearching} className="px-8 py-4 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-xs hover:bg-blue-500 transition-all flex items-center gap-2">
+            <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 bg-blue-600 text-white rounded-[1rem] sm:rounded-[2rem] font-black uppercase tracking-widest text-[10px] sm:text-xs hover:bg-blue-500 transition-all flex items-center justify-center gap-2">
               {isSearching ? 'Auditing...' : 'Instant Audit'} <ChevronRight className="w-4 h-4" />
             </button>
           </form>
-
-          {/* SEARCH ERROR ALERT (Institutional Style) */}
           <AnimatePresence>
             {searchError && (
               <motion.div 

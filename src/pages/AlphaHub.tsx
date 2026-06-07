@@ -18,7 +18,9 @@ import {
   ChevronRight,
   AlertCircle,
   Sparkles,
-  ArrowDown
+  ArrowDown,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -135,6 +137,7 @@ const AlphaHubPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [isDisclaimerExpanded, setIsDisclaimerExpanded] = useState(false);
   const { user } = useAuth();
   
   const [totalCapital, setTotalCapital] = useState<number>(500000); // Standard default of 5 Lakhs
@@ -939,33 +942,44 @@ const AlphaHubPage: React.FC = () => {
                      </div>
                   </div>
                )}
+                  {/* REGULATORY DISCLAIMER */}
+          <footer className="pt-12 border-t-2 border-slate-200">
+             <div className="bg-slate-950 rounded-[1.5rem] md:rounded-[2.5rem] border-4 border-slate-900 overflow-hidden relative">
+                <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-emerald-500/5 blur-[120px] -ml-[250px] -mt-[250px] pointer-events-none" />
+                
+                <button 
+                  onClick={() => setIsDisclaimerExpanded(!isDisclaimerExpanded)}
+                  className="w-full flex items-center justify-between p-6 md:p-8 text-white relative z-10 hover:bg-white/5 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                     <ShieldCheck className="h-5 w-5 text-emerald-400 shrink-0" />
+                     <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] italic">Institutional Integrity & Regulatory Protocol</span>
+                  </div>
+                  {isDisclaimerExpanded ? <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />}
+                </button>
+                
+                {isDisclaimerExpanded && (
+                  <div className="px-6 pb-8 md:px-8 md:pb-10 space-y-6 relative z-10 border-t border-white/5 pt-6 animate-in slide-in-from-top-2 duration-300">
+                    <p className="text-[9.5px] md:text-[10px] text-slate-500 font-black leading-relaxed uppercase tracking-[0.1em] max-w-6xl">
+                       MarketBeacon (Batch 9 Engine) is an institutional-grade research and asset discovery terminal. All technical signals, portfolio weights, and fundamental scores are provided for educational and research purposes only. MarketBeacon is not a SEBI registered investment advisor. Stock market trading involves significant financial risk. Historical results do not guarantee future performance. No Stop-Loss approach is considered a high-risk methodology.
+                    </p>
+                    <div className="pt-2 flex items-center gap-6 text-slate-600">
+                       <div className="flex items-center gap-2">
+                          <Lock className="h-3 w-3" />
+                          <span className="text-[8px] font-black uppercase tracking-widest">End-to-End Encryption Active</span>
+                       </div>
+                       <div className="flex items-center gap-2">
+                          <Database className="h-3 w-3" />
+                          <span className="text-[8px] font-black uppercase tracking-widest">Distributed Ledger Verified</span>
+                       </div>
+                    </div>
+                  </div>
+                )}
+             </div>
+          </footer>
 
             </div>
          </div>
-
-         {/* REGULATORY DISCLAIMER */}
-         <footer className="pt-12 border-t-2 border-slate-200">
-            <div className="bg-slate-950 p-8 md:p-12 rounded-[2.5rem] space-y-6 border-4 border-slate-900 relative overflow-hidden">
-               <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-emerald-500/5 blur-[120px] -ml-[250px] -mt-[250px]" />
-               <div className="relative z-10 flex items-center gap-4 text-white">
-                  <ShieldCheck className="h-6 w-6 text-emerald-400" />
-                  <span className="text-[12px] font-black uppercase tracking-[0.3em] italic">Institutional Integrity & Regulatory Protocol</span>
-               </div>
-               <p className="relative z-10 text-[10px] text-slate-500 font-black leading-relaxed uppercase tracking-[0.1em] max-w-6xl">
-                  MarketBeacon (Batch 9 Engine) is an institutional-grade research and asset discovery terminal. All technical signals, portfolio weights, and fundamental scores are provided for educational and research purposes only. MarketBeacon is not a SEBI registered investment advisor. Stock market trading involves significant financial risk. Historical results do not guarantee future performance. No Stop-Loss approach is considered a high-risk methodology.
-               </p>
-               <div className="relative z-10 pt-2 flex items-center gap-6 text-slate-600">
-                  <div className="flex items-center gap-2">
-                     <Lock className="h-3 w-3" />
-                     <span className="text-[8px] font-black uppercase tracking-widest">End-to-End Encryption Active</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                     <Database className="h-3 w-3" />
-                     <span className="text-[8px] font-black uppercase tracking-widest">Distributed Ledger Verified</span>
-                  </div>
-               </div>
-            </div>
-         </footer>
        </main>
 
        {/* Floating Mobile Scroll helper */}
