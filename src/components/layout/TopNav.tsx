@@ -12,56 +12,6 @@ const API_URL = getApiUrl();
 // Build a flat list of unique stocks for search
 const ALL_STOCKS = Array.from(new Set(Object.values(BASKETS).flat())).sort();
 
-const COMPANY_NAMES: Record<string, string> = {
-  RELAXO: 'Relaxo Footwears Limited',
-  TCS: 'Tata Consultancy Services Limited',
-  HDFCBANK: 'HDFC Bank Limited',
-  INFY: 'Infosys Limited',
-  ITC: 'ITC Limited',
-  BAJAJ_AUTO: 'Bajaj Auto Limited',
-  WIPRO: 'Wipro Limited',
-  HCLTECH: 'HCL Technologies Limited',
-  TITAN: 'Titan Company Limited',
-  SANOFI: 'Sanofi India Limited',
-  COLPAL: 'Colgate-Palmolive (India) Limited',
-  DABUR: 'Dabur India Limited',
-};
-
-const SIMULATED_NOTIFICATIONS = [
-  {
-    id: 1,
-    title: 'Alpha Signal Triggered',
-    message: 'RELAXO entered strict 5% Buy Zone (SMA-BCD Stacking). Entry: ₹854.50.',
-    time: '2 mins ago',
-    type: 'signal',
-    unread: true
-  },
-  {
-    id: 2,
-    title: 'Audit Upgrade',
-    message: 'HDFC BANK Batch-9 audit score upgraded from 82 to 90 (PASS).',
-    time: '15 mins ago',
-    type: 'audit',
-    unread: true
-  },
-  {
-    id: 3,
-    title: 'Target Objective Met',
-    message: 'TCS completed Cup & Handle breakout at ₹4,120. Net Yield: +15.4%.',
-    time: '2 hours ago',
-    type: 'target',
-    unread: false
-  },
-  {
-    id: 4,
-    title: 'System Node Sync',
-    message: 'Worker completed full scan of 336 symbols. Snapshot cache refreshed.',
-    time: '4 hours ago',
-    type: 'system',
-    unread: false
-  }
-];
-
 interface TopNavProps {
   onMenuClick?: () => void;
 }
@@ -70,7 +20,33 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState(SIMULATED_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/notifications`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` }
+      });
+      const data = await safeJsonParse(res);
+      if (res.ok && !data.error) setNotifications(data || []);
+    } catch (e) { console.error('Notifications fetch failed'); }
+  }, []);
+
+  useEffect(() => {
+    if (user) fetchNotifications();
+  }, [user, fetchNotifications]);
+
+  const markAsRead = async (id: number) => {
+    try {
+      const res = await fetch(`${API_URL}/api/notifications/${id}/read`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` }
+      });
+      if (res.ok) {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: 0 } : n));
+      }
+    } catch (e) { }
+  };
   const [indices, setIndices] = useState<any[]>([]);
   const [marketStatus, setMarketStatus] = useState('CLOSED');
   const [searchQuery, setSearchQuery] = useState('');
@@ -127,6 +103,16 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
     const interval = setInterval(fetchIndices, 60000);
     return () => clearInterval(interval);
   }, [fetchIndices]);
+
+  const getTimeAgo = (ts: string) => {
+    const diff = Date.now() - new Date(ts).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return new Date(ts).toLocaleDateString();
+  };
 
   return (
     <nav className="h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex items-center justify-between px-4 md:px-10 sticky top-0 z-[100] shadow-sm transition-all duration-300">
@@ -259,7 +245,11 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Alerts</span>
                   {notifications.some(n => n.unread) && (
                     <button 
-                      onClick={() => setNotifications(p => p.map(n => ({ ...n, unread: false })))}
+                      onClick={() => {
+                        notifications.forEach(n => {
+                          if (n.unread) markAsRead(n.id);
+                        });
+                      }}
                       className="text-[8px] font-black text-blue-600 hover:text-blue-800 uppercase tracking-widest"
                     >
                       Mark all read
@@ -267,32 +257,42 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                   )}
                </div>
                <div className="max-h-80 overflow-y-auto no-scrollbar space-y-1">
-                 {notifications.map((n) => (
-                   <div 
-                     key={n.id} 
-                     className={`p-3 rounded-2xl flex items-start gap-3 transition-all hover:bg-slate-50 relative ${n.unread ? 'bg-blue-50/20' : ''}`}
-                   >
-                     {n.unread && (
-                       <div className="w-1.5 h-1.5 bg-blue-600 rounded-full absolute top-5 right-4" />
-                     )}
-                     <div className={`p-2 rounded-xl mt-0.5 ${
-                       n.type === 'signal' ? 'bg-blue-50 text-blue-600' :
-                       n.type === 'audit' ? 'bg-amber-50 text-amber-600' :
-                       n.type === 'target' ? 'bg-emerald-50 text-emerald-600' :
-                       'bg-slate-100 text-slate-500'
-                     }`}>
-                       {n.type === 'signal' ? <Zap className="h-3.5 w-3.5" /> :
-                        n.type === 'audit' ? <ShieldCheck className="h-3.5 w-3.5" /> :
-                        n.type === 'target' ? <TrendingUp className="h-3.5 w-3.5" /> :
-                        <Activity className="h-3.5 w-3.5" />}
-                     </div>
-                     <div className="flex-1 min-w-0 pr-2">
-                       <p className="text-[11px] font-black text-slate-900 tracking-tight leading-none mb-1">{n.title}</p>
-                       <p className="text-[9px] font-medium text-slate-500 leading-relaxed break-words">{n.message}</p>
-                       <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest mt-1 block">{n.time}</span>
-                     </div>
+                 {notifications.length === 0 ? (
+                   <div className="py-12 text-center flex flex-col items-center space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center">
+                         <Bell className="h-5 w-5 text-slate-200" />
+                      </div>
+                      <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No New Alerts</span>
                    </div>
-                 ))}
+                 ) : (
+                   notifications.map((n) => (
+                     <div 
+                       key={n.id} 
+                       onClick={() => n.unread && markAsRead(n.id)}
+                       className={`p-3 rounded-2xl flex items-start gap-3 transition-all hover:bg-slate-50 relative cursor-pointer ${n.unread ? 'bg-blue-50/20' : ''}`}
+                     >
+                       {n.unread && (
+                         <div className="w-1.5 h-1.5 bg-blue-600 rounded-full absolute top-5 right-4" />
+                       )}
+                       <div className={`p-2 rounded-xl mt-0.5 ${
+                         n.type === 'signal' ? 'bg-blue-50 text-blue-600' :
+                         n.type === 'audit' ? 'bg-amber-50 text-amber-600' :
+                         n.type === 'target' ? 'bg-emerald-50 text-emerald-600' :
+                         'bg-slate-100 text-slate-500'
+                       }`}>
+                         {n.type === 'signal' ? <Zap className="h-3.5 w-3.5" /> :
+                          n.type === 'audit' ? <ShieldCheck className="h-3.5 w-3.5" /> :
+                          n.type === 'target' ? <TrendingUp className="h-3.5 w-3.5" /> :
+                          <Activity className="h-3.5 w-3.5" />}
+                       </div>
+                       <div className="flex-1 min-w-0 pr-2">
+                         <p className="text-[11px] font-black text-slate-900 tracking-tight leading-none mb-1">{n.title}</p>
+                         <p className="text-[9px] font-medium text-slate-500 leading-relaxed break-words">{n.message}</p>
+                         <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
+                       </div>
+                     </div>
+                   ))
+                 )}
                </div>
             </div>
           )}

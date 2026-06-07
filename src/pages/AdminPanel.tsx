@@ -20,7 +20,9 @@ import {
   Power,
   Gift,
   MessageSquare,
-  Star
+  Star,
+  Send,
+  X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
@@ -40,6 +42,10 @@ const AdminPanel: React.FC = () => {
   // Modals
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
+  const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
+  const [replyText, setReplyText] = useState('');
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isAddVoucherModalOpen, setIsAddVoucherModalOpen] = useState(false);
 
@@ -108,6 +114,30 @@ const AdminPanel: React.FC = () => {
         alert("Failed to delete item.");
       }
     } catch (e) { alert("Delete operation failed."); }
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedFeedback || !replyText.trim()) return;
+    setIsSubmittingReply(true);
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${API_URL}/api/admin/feedback/${selectedFeedback.id}/reply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reply: replyText })
+      });
+      if (res.ok) {
+        setReplyText('');
+        setIsReplyModalOpen(false);
+        await fetchData();
+      } else {
+        alert("Failed to send reply.");
+      }
+    } catch (e) { alert("Reply failed."); }
+    finally { setIsSubmittingReply(false); }
   };
 
   const handleUpdateUser = async (userId: number, data: any) => {
@@ -427,16 +457,34 @@ const AdminPanel: React.FC = () => {
                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
                              {new Date(f.timestamp).toLocaleString()}
                            </span>
+                           {f.reply_text && (
+                             <div className="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+                                <span className="text-[7.5px] font-black text-emerald-600 uppercase block mb-1">Admin Resolution:</span>
+                                <p className="text-[11px] font-medium text-slate-700 leading-tight italic">"{f.reply_text}"</p>
+                                <span className="text-[7px] text-slate-400 mt-1 block uppercase">{new Date(f.replied_at).toLocaleString()}</span>
+                             </div>
+                           )}
                         </div>
                       </td>
                       <td className="px-8 py-6 text-right">
-                         <button 
-                           onClick={() => handleDeleteItem('feedback', f.id)}
-                           className="p-2.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
-                           title="Delete Feedback"
-                         >
-                            <Trash2 className="h-4 w-4" />
-                         </button>
+                         <div className="flex items-center justify-end space-x-2">
+                            {!f.reply_text && (
+                              <button 
+                                onClick={() => { setSelectedFeedback(f); setIsReplyModalOpen(true); }}
+                                className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-xl transition-all active:scale-90"
+                                title="Reply to Feedback"
+                              >
+                                 <MessageSquare className="h-4 w-4" />
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => handleDeleteItem('feedback', f.id)}
+                              className="p-2.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                              title="Delete Feedback"
+                            >
+                               <Trash2 className="h-4 w-4" />
+                            </button>
+                         </div>
                       </td>
                     </tr>
                   ))
@@ -871,6 +919,60 @@ const AdminPanel: React.FC = () => {
                     <ArrowRight className="h-4 w-4" />
                  </button>
               </form>
+           </div>
+        </div>
+      )}
+      {/* ── FEEDBACK REPLY MODAL ── */}
+      {isReplyModalOpen && selectedFeedback && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
+           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsReplyModalOpen(false)} />
+           <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden">
+              <div className="px-8 py-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                 <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
+                       <MessageSquare className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                       <h3 className="text-lg font-black text-slate-900 leading-none italic uppercase tracking-tighter">Feedback Resolution</h3>
+                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Replying to {selectedFeedback.user_name}</p>
+                    </div>
+                 </div>
+                 <button onClick={() => setIsReplyModalOpen(false)} className="p-2.5 hover:bg-slate-100 rounded-xl transition-all">
+                    <X className="h-5 w-5 text-slate-400" />
+                 </button>
+              </div>
+
+              <div className="p-8 space-y-6">
+                 <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                    <span className="text-[8px] font-black text-blue-600 uppercase block mb-1.5 tracking-widest">Original Report:</span>
+                    <p className="text-xs text-slate-700 font-medium leading-relaxed italic">"{selectedFeedback.comment}"</p>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Admin Resolution Statement</label>
+                    <textarea 
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Explain the fix or resolution steps taken..."
+                      className="w-full h-32 bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-xs font-medium focus:bg-white focus:border-blue-600 transition-all outline-none shadow-inner resize-none"
+                    />
+                 </div>
+
+                 <button 
+                   onClick={handleSendReply}
+                   disabled={isSubmittingReply || !replyText.trim()}
+                   className="w-full py-5 bg-slate-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95 disabled:bg-slate-200 flex items-center justify-center space-x-2"
+                 >
+                    {isSubmittingReply ? (
+                      <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        <span>Dispatch Resolution</span>
+                      </>
+                    )}
+                 </button>
+              </div>
            </div>
         </div>
       )}
