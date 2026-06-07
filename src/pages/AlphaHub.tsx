@@ -253,7 +253,7 @@ const AlphaHubPage: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && error !== 'ALPHA_REQUIRED') {
     return (
       <div className="p-10 text-center space-y-6 flex flex-col items-center justify-center min-h-screen bg-white">
          <div className="p-8 rounded-3xl border-2 border-red-100 max-w-xl shadow-sm">

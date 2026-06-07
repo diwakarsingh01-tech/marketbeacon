@@ -1026,18 +1026,21 @@ app.post('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any
 });
 
 // --- Feedback Endpoints ---
-app.post('/api/feedback', authenticateToken, async (req: any, res) => {
+app.post('/api/feedback', authenticateToken, async (req: any, res: any) => {
   try {
     const { rating, disposition, comment, timestamp, url } = req.body;
     const userId = req.user.id;
     const db = getDB();
     
+    console.log(`📝 [FEEDBACK] Logging for user ${userId}: ${disposition} (${rating}/5)`);
+
     await db.run(
       'INSERT INTO feedback (user_id, rating, disposition, comment, timestamp, url) VALUES (?, ?, ?, ?, ?, ?)',
       [userId, rating, disposition, comment, timestamp || new Date().toISOString(), url || '']
     );
     res.json({ success: true, message: 'Feedback logged successfully' });
   } catch (e: any) {
+    console.error('🔥 [FEEDBACK ERROR]:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
