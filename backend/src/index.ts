@@ -231,6 +231,10 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
         d: { price: Math.round(basePrice * 0.73), date: '' }
       };
 
+      // Recovery Leeway: Relax pass threshold for high-drawdown / retest recovery plays
+      const passThreshold = ['SIXTY_SEVEN_FUNDA', 'TWENTY_RALLY_RETEST'].includes(strategyId) ? 40 : 50;
+      const finalPass = audit.isPass || (audit.score >= passThreshold && !audit.reason.includes('Hard Reject'));
+
       results.push({
         symbol: sym,
         entryTime: strategyData?.triggerDate || snap.quotes[snap.quotes.length-1].date,
@@ -238,7 +242,7 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
         target: strategyData?.target || 0,
         currentPrice: snap.quotes[snap.quotes.length - 1].close,
         isBuyZone: !!strategyData?.isBuyZone,
-        isPass: audit.isPass,
+        isPass: finalPass,
         score: audit.score,
         abcd: abcdLevels,
         sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
