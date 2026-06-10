@@ -284,6 +284,7 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
         target: strategyData?.target || 0,
         currentPrice: snap.quotes[snap.quotes.length - 1].close,
         isBuyZone: !!strategyData?.isBuyZone,
+        reason: strategyData?.status || 'Pattern Not Found',
         isPass: finalPass,
         score: audit.score,
         abcd: abcdLevels,
