@@ -159,7 +159,7 @@ const getSnapshotFromCloud = async (symbols: string[]) => {
 app.get('/api/health', (req, res) => res.json({ 
   status: 'active', 
   node: 'Turbo-Local-Production', 
-  version: '14.1.1-PRO-FIX-TARGET',
+  version: '18.0.8-PRO',
   verify: 'Alpha Target data binding resolved — Supabase dependency removed',
   timestamp: new Date().toISOString()
 }));
