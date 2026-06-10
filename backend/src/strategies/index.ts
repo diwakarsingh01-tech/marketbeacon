@@ -286,33 +286,162 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
 }
 
 /**
- * STRATEGY 6: Supply-Demand Core (Institutional S/R)
+ * STRATEGY 6: Supply-Demand Core (WM Swing - Institutional Locked)
+ * Strict B-T-B-T-B sequencing with 2.2% merge tolerance and 30% conservative band gap.
  */
 export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
-  if (!quotes || quotes.length < 252) return { isBuyZone: false };
-  const tolerance = 0.05, currentPrice = quotes[quotes.length - 1].close, pivots: any[] = [];
-  for (let i = 2; i < quotes.length - 2; i++) {
-    if (quotes[i].low < quotes[i-1].low && quotes[i].low < quotes[i-2].low && quotes[i].low < quotes[i+1].low && quotes[i].low < quotes[i+2].low) pivots.push({ price: quotes[i].low, type: 'support', idx: i, date: quotes[i].date });
-    if (quotes[i].high > quotes[i-1].high && quotes[i].high > quotes[i-2].high && quotes[i].high > quotes[i+1].high && quotes[i].high > quotes[i+2].high) pivots.push({ price: quotes[i].high, type: 'resistance', idx: i, date: quotes[i].date });
-  }
-  const clusterZones = (t: string) => {
-    const zones: any[] = [];
-    for (const p of pivots.filter(x => x.type === t)) {
-      let f = false; for (const z of zones) { if (Math.abs(p.price - z.mid) / z.mid <= 0.05) { z.pivots.push(p); z.mid = z.pivots.reduce((a:any, b:any) => a + b.price, 0) / z.pivots.length; f = true; break; } }
-      if (!f) zones.push({ mid: p.price, pivots: [p] });
+  const max_lookback_bars = 1100;
+  if (!quotes || quotes.length < 50) return { isBuyZone: false };
+
+  // Calculate ATR
+  const getATR = (qs: Quote[], period: number = 14) => {
+    const tr = [0];
+    for (let i = 1; i < qs.length; i++) {
+      const hl = qs[i].high - qs[i].low;
+      const hc = Math.abs(qs[i].high - qs[i-1].close);
+      const lc = Math.abs(qs[i].low - qs[i-1].close);
+      tr.push(Math.max(hl, hc, lc));
     }
-    return zones;
+    const atr = new Array(qs.length).fill(0);
+    let sum = 0;
+    for (let i = 1; i <= period && i < tr.length; i++) sum += tr[i];
+    if (tr.length > period) atr[period] = sum / period;
+    for (let i = period + 1; i < tr.length; i++) {
+      atr[i] = (atr[i-1] * (period - 1) + tr[i]) / period;
+    }
+    return atr;
   };
-  const supportZones = clusterZones('support'), resistanceZones = clusterZones('resistance');
-  const activeS = supportZones.filter(z => Math.abs(currentPrice - z.mid) / z.mid <= tolerance);
-  for (const sl of activeS) {
-    const overhead = resistanceZones.filter(rl => rl.mid >= sl.mid * 1.30);
-    if (overhead.length > 0 && sl.pivots.length >= 3) {
-      const rl = overhead.sort((a, b) => a.mid - b.mid)[0];
-      return { isBuyZone: Math.abs(currentPrice - sl.mid) / sl.mid <= 0.07, entryPrice: Math.round(sl.mid), target: Math.round(rl.mid), currentPrice: Math.round(currentPrice), triggerDate: sl.pivots.sort((a:any,b:any)=>a.idx-b.idx)[sl.pivots.length-1].date, isLocked: true };
+
+  const swing_lookback = 3;
+  const currentIdx = quotes.length - 1;
+  const currentPrice = quotes[currentIdx].close;
+  const startIdx = Math.max(swing_lookback, quotes.length - max_lookback_bars);
+  
+  const swingLows: any[] = [];
+  const swingHighs: any[] = [];
+
+  for (let i = startIdx; i < quotes.length - swing_lookback; i++) {
+    let isLow = true;
+    let isHigh = true;
+    for (let j = i - swing_lookback; j <= i + swing_lookback; j++) {
+      if (j === i) continue;
+      if (quotes[j].low <= quotes[i].low) isLow = false;
+      if (quotes[j].high >= quotes[i].high) isHigh = false;
+    }
+    if (isLow) swingLows.push({ price: quotes[i].low, idx: i, date: quotes[i].date });
+    if (isHigh) swingHighs.push({ price: quotes[i].high, idx: i, date: quotes[i].date });
+  }
+
+  const level_tolerance_pct = 2.2; // Institutional Tolerance
+  const cluster_levels = (points: any[]) => {
+    const clusters: any[] = [];
+    for (const p of points) {
+      let added = false;
+      for (const c of clusters) {
+        if (Math.abs(p.price - c.mean) / c.mean <= level_tolerance_pct / 100) {
+          c.points.push(p);
+          c.mean = c.points.reduce((sum: number, pt: any) => sum + pt.price, 0) / c.points.length;
+          added = true;
+          break;
+        }
+      }
+      if (!added) {
+        clusters.push({ mean: p.price, points: [p] });
+      }
+    }
+    return clusters;
+  };
+
+  const supportClusters = cluster_levels(swingLows);
+  const resistanceClusters = cluster_levels(swingHighs);
+
+  for (const S of supportClusters) {
+    if (S.points.length < 3) continue;
+
+    const supportPoints = S.points.sort((a: any, b: any) => a.idx - b.idx);
+    const supportFloor = Math.min(...S.points.map(p => p.price));
+    const supportCeiling = Math.max(...S.points.map(p => p.price));
+    
+    for (let i = 0; i <= supportPoints.length - 3; i++) {
+      const B1 = supportPoints[i];
+      const B2 = supportPoints[i + 1];
+      const B3 = supportPoints[i + 2];
+
+      if (currentIdx - B3.idx > 120) continue; 
+
+      for (const R of resistanceClusters) {
+        if (R.points.length < 2) continue;
+
+        const targetPrice = Math.min(...R.points.map(p => p.price));
+        const gap = (targetPrice / supportFloor) - 1;
+        
+        const tops = R.points.sort((a:any, b:any) => a.idx - b.idx);
+        const T1 = tops.find((t: any) => t.idx > B1.idx && t.idx < B2.idx);
+        const T2 = tops.find((t: any) => t.idx > B2.idx && t.idx < B3.idx);
+
+        if (T1 && T2) {
+           let entryIndex = -1;
+           let consecutiveCount = 0;
+           for (let j = B3.idx + 1; j <= currentIdx; j++) {
+             if (quotes[j].close > quotes[j-1].close && quotes[j].low > quotes[j-1].low) {
+               consecutiveCount++;
+             } else {
+               consecutiveCount = 0;
+             }
+             if (consecutiveCount >= 2) {
+               entryIndex = j;
+               break;
+             }
+           }
+
+           if (entryIndex !== -1) {
+             const entryPrice = quotes[entryIndex].close;
+             const atrArr = getATR(quotes, 14);
+             const atr = atrArr[entryIndex] || 0;
+             const SL = Math.min(supportFloor, quotes[entryIndex].low) - 0.5 * atr;
+             const RRR = (targetPrice - entryPrice) / (entryPrice - SL);
+
+             // ABCD Tranche Integration
+             const abcd = calculateABCDLevels(supportCeiling);
+             let activeTr = 'NONE';
+             
+             // Strict +/- 2% Range Check for each Tranche
+             if (Math.abs(currentPrice - abcd.a.price) / abcd.a.price <= 0.02) activeTr = 'A';
+             else if (Math.abs(currentPrice - abcd.b.price) / abcd.b.price <= 0.02) activeTr = 'B';
+             else if (Math.abs(currentPrice - abcd.c.price) / abcd.c.price <= 0.02) activeTr = 'C';
+             else if (Math.abs(currentPrice - abcd.d.price) / abcd.d.price <= 0.02) activeTr = 'D';
+
+             const isGapValid = gap >= 0.30;
+             const isQualified = activeTr !== 'NONE';
+             const isObservation = !isQualified && currentPrice <= supportCeiling * 1.15;
+
+             if (isGapValid && (isQualified || isObservation)) {
+               const triggerDateObj = quotes[entryIndex].date;
+               const triggerDate = typeof triggerDateObj === 'string' ? triggerDateObj : (triggerDateObj as any).toISOString();
+               
+               return { 
+                 isBuyZone: true, 
+                 status: isQualified ? "QUALIFIED" : "OBSERVATION",
+                 tranche: activeTr,
+                 abcd: abcd,
+                 entryPrice: Math.round(entryPrice), 
+                 target: Math.round(targetPrice), 
+                 currentPrice: Math.round(currentPrice), 
+                 triggerDate: triggerDate.split('T')[0], 
+                 isLocked: true,
+                 touches: S.points.length,
+                 upside: ((targetPrice / currentPrice - 1) * 100).toFixed(1) + "%",
+                 rrr: RRR.toFixed(2),
+                 stopLoss: Math.round(SL),
+                 structure: "B-T-B-T-B"
+               };
+             }
+           }
+        }
+      }
     }
   }
-  return { isBuyZone: false };
+  return { isBuyZone: false, status: "REJECT" };
 }
 
 /**
