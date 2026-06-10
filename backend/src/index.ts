@@ -277,13 +277,18 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
       const passThreshold = 60;
       const finalPass = audit.score >= passThreshold && !audit.reason.includes('Hard Reject');
 
+      // Bifurcation Logic Alignment
+      const isStrategyQualified = strategyData?.status === 'QUALIFIED';
+      const isStrategyObservation = strategyData?.status === 'OBSERVATION';
+
       results.push({
         symbol: sym,
         entryTime: strategyData?.triggerDate || snap.quotes[snap.quotes.length-1].date,
         entryPrice: strategyData?.entryPrice || 0,
         target: strategyData?.target || 0,
         currentPrice: snap.quotes[snap.quotes.length - 1].close,
-        isBuyZone: !!strategyData?.isBuyZone,
+        isBuyZone: isStrategyQualified, // Strictly QUALIFIED for the 'Open' tab
+        isObservation: isStrategyObservation,
         reason: strategyData?.status || 'Pattern Not Found',
         isPass: finalPass,
         score: audit.score,

@@ -57,9 +57,9 @@ export const getApiUrl = () => {
     const isLocal = h === 'localhost' || h === '127.0.0.1' || h.startsWith('192.') || h.startsWith('10.') || h.startsWith('172.') || h.endsWith('.local');
     if (isLocal) return `${p}//${h}:3001`;
 
-    return "https://marketbeacon.onrender.com";
+    return "https://marketbeaconpro.com";
   } catch (e) {
     console.error('🛡️ [Safe-Guard] API URL Resolution failed, using fallback.');
-    return "https://marketbeacon.onrender.com";
+    return "https://marketbeaconpro.com";
   }
 };
