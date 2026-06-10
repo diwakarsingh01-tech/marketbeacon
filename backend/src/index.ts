@@ -21,7 +21,7 @@ import {
 import { validateBatch9 } from './services/fundamentalAudit.js';
 import { runStrategyAnalysis } from './services/strategyService.js';
 import { precalculateAlpha40, getAlpha40Cache } from './services/worker.js';
-import { supabase, initDB, getDB } from './db.js';
+import { initDB, getDB } from './db.js';
 
 dotenv.config();
 
@@ -140,50 +140,27 @@ const authenticateToken = async (req: any, res: any, next: any) => {
 };
 
 const getSnapshotFromCloud = async (symbols: string[]) => {
-  try {
-    if (!supabase) throw new Error('Supabase client not initialized');
-    
-    // Multi-layer symbols (Institutional Hardening)
-    const normalizedSymbols = Array.from(new Set([
-       ...symbols,
-       ...symbols.map(s => s.includes('.') ? s : `${s}.NS`),
-       ...symbols.map(s => s.replace('.NS', ''))
-    ]));
+  const cache = getMarketSnapshot();
+  const result: Record<string, any> = {};
+  const cacheKeys = Object.keys(cache);
 
-    const { data, error } = await supabase.from('market_data').select('*').in('symbol', normalizedSymbols);
-    if (error) throw error;
-    
-    const resultMap: Record<string, any> = {};
-    (data || []).forEach(row => {
-       resultMap[row.symbol] = row.data;
-       resultMap[row.symbol.replace('.NS', '')] = row.data; // Also index by base symbol
-    });
-
-    return resultMap;
-  } catch (err: any) {
-    console.warn(`⚠️ [Supabase Fallback] Query failed: ${err.message}. Serving from memory cache...`);
-    const cache = getMarketSnapshot();
-    const result: Record<string, any> = {};
-    const cacheKeys = Object.keys(cache);
-
-    symbols.forEach(sym => {
-      const cleanSym = sym.trim().toUpperCase();
-      let snap = cache[cleanSym] || cache[`${cleanSym}.NS`];
-      if (!snap) {
-         const key = cacheKeys.find(k => k.replace('.NS', '') === cleanSym);
-         if (key) snap = cache[key];
-      }
-      if (snap) result[cleanSym] = snap;
-    });
-    return result;
-  }
+  symbols.forEach(sym => {
+    const cleanSym = sym.trim().toUpperCase();
+    let snap = cache[cleanSym] || cache[`${cleanSym}.NS`];
+    if (!snap) {
+      const key = cacheKeys.find(k => k.replace('.NS', '') === cleanSym);
+      if (key) snap = cache[key];
+    }
+    if (snap) result[cleanSym] = snap;
+  });
+  return result;
 };
 
 app.get('/api/health', (req, res) => res.json({ 
   status: 'active', 
-  node: 'Supabase-Cloud-Production', 
+  node: 'Turbo-Local-Production', 
   version: '14.1.1-PRO-FIX-TARGET',
-  verify: 'Alpha Target data binding resolved',
+  verify: 'Alpha Target data binding resolved — Supabase dependency removed',
   timestamp: new Date().toISOString()
 }));
 
