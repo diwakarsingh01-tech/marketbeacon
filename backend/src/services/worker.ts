@@ -3,6 +3,7 @@ import { validateBatch9 } from './fundamentalAudit.js';
 import { runStrategyAnalysis } from './strategyService.js';
 import { STRATEGIES, BASKETS, MANUAL_SECTOR_MAP } from '../index.js';
 import { supabase } from '../db.js';
+import { notifyAllUsers } from './notificationService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -140,6 +141,14 @@ export async function precalculateAlpha40() {
               score: audit.score, 
               smartMoney: audit.smartMoneyTotal 
             });
+
+            // 📢 UNIVERSAL AUTOMATED NOTIFICATION: ALL BASKETS & STRATEGIES
+            if (sd?.status === 'QUALIFIED') {
+               const stratName = STRATEGIES.find(s => s.id === stratId)?.name || stratId;
+               const title = `🚨 ${basketName}: ${sym}`;
+               const message = `${sym} has QUALIFIED for ${stratName} (Tranche ${sd.tranche || 'A'}). Target: ${Math.round(target)}.`;
+               notifyAllUsers(title, message, 'audit');
+            }
           }
 
           if (validSignals.length > 0) {
@@ -255,13 +264,6 @@ export async function getAlpha40Cache() {
     console.warn(`⚠️ [Alpha-40 Cache] Failed to load cache from disk fallback: ${err.message}`);
   }
 
-  // Database fallback
-  try {
-    const { data, error } = await supabase.from('system_cache').select('data').eq('key', 'alpha_40_results').single();
-    if (!error && data && data.data) {
-      localAlpha40Cache = data.data;
-      return data.data;
-    }
-  } catch (e) { }
+  console.warn('⚠️ [Alpha-40 Cache] No cache found in memory or on disk.');
   return null;
 }

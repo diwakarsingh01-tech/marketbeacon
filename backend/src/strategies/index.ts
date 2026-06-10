@@ -367,7 +367,8 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
       const B2 = supportPoints[i + 1];
       const B3 = supportPoints[i + 2];
 
-      if (currentIdx - B3.idx > 120) continue; 
+      // Institutional Window: 1 Year (252 bars)
+      if (currentIdx - B3.idx > 252) continue; 
 
       for (const R of resistanceClusters) {
         if (R.points.length < 2) continue;
@@ -405,12 +406,14 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
              const abcd = calculateABCDLevels(supportCeiling);
              let activeTr = 'NONE';
              
-             // Strict +/- 2% Range Check for each Tranche
-             if (Math.abs(currentPrice - abcd.a.price) / abcd.a.price <= 0.02) activeTr = 'A';
-             else if (Math.abs(currentPrice - abcd.b.price) / abcd.b.price <= 0.02) activeTr = 'B';
-             else if (Math.abs(currentPrice - abcd.c.price) / abcd.c.price <= 0.02) activeTr = 'C';
-             else if (Math.abs(currentPrice - abcd.d.price) / abcd.d.price <= 0.02) activeTr = 'D';
+             // Strict +/- 2.2% Range Check for each Tranche
+             const tolerance = 0.022;
+             if (Math.abs(currentPrice - abcd.a.price) / abcd.a.price <= tolerance) activeTr = 'A';
+             else if (Math.abs(currentPrice - abcd.b.price) / abcd.b.price <= tolerance) activeTr = 'B';
+             else if (Math.abs(currentPrice - abcd.c.price) / abcd.c.price <= tolerance) activeTr = 'C';
+             else if (Math.abs(currentPrice - abcd.d.price) / abcd.d.price <= tolerance) activeTr = 'D';
 
+             // STRICT RULE: 30% Gap Mandatory
              const isGapValid = gap >= 0.30;
              const isQualified = activeTr !== 'NONE';
              const isObservation = !isQualified && currentPrice <= supportCeiling * 1.15;
@@ -446,11 +449,15 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
 
 /**
  * STRATEGY 7: Dynamic Reversal (Parallel Symmetric RHS)
+ * Rules: 30% ATH Drawdown + 30% Pattern Depth + 30% Target
  */
 export function calculateRHS(quotes: Quote[]) {
   if (!quotes || quotes.length < 400) return { isBuyZone: false };
   const currentPrice = quotes[quotes.length - 1].close, ath = Math.max(...quotes.map(q => q.high)), dr = ((ath - currentPrice) / ath) * 100;
+  
+  // Rule 1: 30% ATH Drawdown
   if (dr < 30) return { isBuyZone: false };
+  
   const window = 15, lows: any[] = [], highs: any[] = [];
   for (let i = window; i < quotes.length - window; i++) {
     const lS = quotes.slice(i - window, i + window + 1).map(q => q.low), hS = quotes.slice(i - window, i + window + 1).map(q => q.high);
@@ -463,10 +470,20 @@ export function calculateRHS(quotes: Quote[]) {
       const s1 = s1A[s1A.length - 1], s2 = s2A[0];
       const peaks = highs.filter(h => h.idx > head.idx && h.idx < s2.idx);
       if (peaks.length > 0) {
-        const neckline = peaks[0], corr = ((neckline.price - s2.price) / neckline.price) * 100;
-        if (corr >= 8 && corr <= 18 && (neckline.price - head.price) / neckline.price >= 0.30) {
+        const neckline = peaks[0];
+        
+        // Rule 2: 30% Pattern Depth (Neckline to Head)
+        const depth = (neckline.price - head.price) / neckline.price;
+        if (depth < 0.30) continue;
+
+        const corr = ((neckline.price - s2.price) / neckline.price) * 100;
+        if (corr >= 8 && corr <= 18) {
           const target = neckline.price + (neckline.price - head.price);
-          if ((target / s2.price) - 1 >= 0.30 && Math.abs(currentPrice - s2.price) / s2.price <= 0.07) return { isBuyZone: true, entryPrice: Math.round(s2.price), target: Math.round(target), currentPrice: Math.round(currentPrice), triggerDate: s2.date, correction: corr.toFixed(1), isLocked: true };
+          
+          // Rule 3: 30% Target Upside Gap
+          if ((target / s2.price) - 1 >= 0.30 && Math.abs(currentPrice - s2.price) / s2.price <= 0.07) {
+            return { isBuyZone: true, entryPrice: Math.round(s2.price), target: Math.round(target), currentPrice: Math.round(currentPrice), triggerDate: s2.date, correction: corr.toFixed(1), isLocked: true };
+          }
         }
       }
     }
@@ -476,11 +493,15 @@ export function calculateRHS(quotes: Quote[]) {
 
 /**
  * STRATEGY 8: Structural Pivot (Cup & Handle)
+ * Rules: 30% ATH Drawdown + 30% Pattern Depth + 30% Target
  */
 export function calculateCupHandle(quotes: Quote[]) { 
   if (!quotes || quotes.length < 400) return { isBuyZone: false };
   const currentPrice = quotes[quotes.length - 1].close, ath = Math.max(...quotes.map(q => q.high)), dr = ((ath - currentPrice) / ath) * 100;
+  
+  // Rule 1: 30% ATH Drawdown
   if (dr < 30) return { isBuyZone: false };
+  
   const window = 15, lows: any[] = [], highs: any[] = [];
   for (let i = window; i < quotes.length - window; i++) {
     const lS = quotes.slice(i - window, i + window + 1).map(q => q.low), hS = quotes.slice(i - window, i + window + 1).map(q => q.high);
@@ -495,11 +516,18 @@ export function calculateCupHandle(quotes: Quote[]) {
         const cupLows = lows.filter(l => l.idx > rim1.idx && l.idx < rim2.idx);
         if (cupLows.length > 0) {
           const bottom = cupLows.reduce((p, c) => c.price < p.price ? c : p);
+          
+          // Rule 2: 30% Pattern Depth (Rim to Bottom)
           if (bottom.price < rim1.price * 0.70) {
             const handleLows = lows.filter(l => l.idx > rim2.idx && l.idx <= quotes.length - 1);
             if (handleLows.length > 0) {
               const handleLow = handleLows.reduce((p, c) => c.price < p.price ? c : p), corr = ((rim2.price - handleLow.price) / rim2.price) * 100;
-              if (corr >= 7 && corr <= 20 && (rim2.price + (rim2.price - bottom.price)) / currentPrice - 1 >= 0.30 && Math.abs(currentPrice - handleLow.price) / handleLow.price <= 0.10) return { isBuyZone: true, entryPrice: Math.round(handleLow.price), target: Math.round(rim2.price + (rim2.price - bottom.price)), currentPrice: Math.round(currentPrice), triggerDate: handleLow.date, correction: corr.toFixed(1), isLocked: true };
+              
+              const target = rim2.price + (rim2.price - bottom.price);
+              // Rule 3: 30% Target Upside Gap
+              if (corr >= 7 && corr <= 20 && (target / currentPrice) - 1 >= 0.30 && Math.abs(currentPrice - handleLow.price) / handleLow.price <= 0.10) {
+                return { isBuyZone: true, entryPrice: Math.round(handleLow.price), target: Math.round(target), currentPrice: Math.round(currentPrice), triggerDate: handleLow.date, correction: corr.toFixed(1), isLocked: true };
+              }
             }
           }
         }
@@ -549,3 +577,25 @@ export function calculateABCDLevels(anchorPrice: number, marketCap: number = 0) 
     gap: Math.round(gap * 100) 
   };
 }
+
+/**
+ * GLOBAL MANDATE: Hard Reject Audit
+ * Enforces D/E <= 1.0 and Smart Money >= 70%
+ */
+export function checkInstitutionalMandates(screenerData: any) {
+  if (!screenerData) return { passed: true }; // Defensive fallback if no data
+  
+  const de = screenerData.netDebtToEquity || 0;
+  const sm = screenerData.smartMoneyTotal || 0;
+  const mcapCr = (screenerData.marketCap || 0) / 10000000;
+
+  const reasons = [];
+  if (de > 1.0) reasons.push(`D/E High (${de.toFixed(2)})`);
+  if (sm < 70 && mcapCr > 1000) reasons.push(`SM Low (${sm.toFixed(1)}%)`); // 70% SM floor for Large/Mid caps
+  
+  return {
+    passed: reasons.length === 0,
+    reasons
+  };
+}
+

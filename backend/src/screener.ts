@@ -6,7 +6,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { fileURLToPath } from 'url';
 import { NIFTY_500 } from './universe.js';
-import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateRHS, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest } from './strategies/index.js';
+import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateRHS, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest, checkInstitutionalMandates } from './strategies/index.js';
 import { supabase } from './db.js';
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
@@ -14,52 +14,32 @@ const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 let snapshotCache: Record<string, any> = {};
 
 export async function initSnapshotCache() {
-  try {
-    if (!supabase) throw new Error('Supabase client not initialized');
-    console.log('📦 Loading Market Snapshot from Supabase (Batched)...');
-    const { count, error: countError } = await supabase.from('market_data').select('*', { count: 'exact', head: true });
-    if (countError) throw countError;
-    const total = count || 0;
-    const batchSize = 50;
-    let allData: any[] = [];
-    for (let i = 0; i < total; i += batchSize) {
-      const { data, error } = await supabase.from('market_data').select('*').range(i, i + batchSize - 1);
-      if (error) throw error;
-      if (data) allData = [...allData, ...data];
+  console.log('📦 Loading Market Snapshot from local market_snapshot.json...');
+  const pathsToTry = [
+    path.resolve(process.cwd(), 'market_snapshot.json'),
+    path.resolve(process.cwd(), 'backend', 'market_snapshot.json'),
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../market_snapshot.json'),
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../market_snapshot.json'),
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../market_snapshot.json')
+  ];
+  let loaded = false;
+  for (const p of pathsToTry) {
+    if (fs.existsSync(p)) {
+      console.log(`💾 Found market_snapshot.json at: ${p}`);
+      try {
+        const fileContent = fs.readFileSync(p, 'utf8');
+        snapshotCache = JSON.parse(fileContent);
+        console.log(`✅ Snapshot cache restored from local file (${Object.keys(snapshotCache).length} symbols)`);
+        loaded = true;
+      } catch (parseErr: any) {
+        console.error(`❌ Failed to parse market_snapshot.json: ${parseErr.message}`);
+      }
+      break;
     }
+  }
+  if (!loaded) {
+    console.error('❌ market_snapshot.json not found in any searched paths');
     snapshotCache = {};
-    allData.forEach(row => { snapshotCache[row.symbol] = row.data; });
-    console.log(`✅ Snapshot cache fully restored from Cloud (${allData.length} symbols)`);
-  } catch (e: any) {
-    console.error('❌ Failed to load snapshot cache from Supabase:', e.message);
-    try {
-      console.log('🔄 Attempting local fallback: loading from market_snapshot.json...');
-      const pathsToTry = [
-        path.resolve(process.cwd(), 'market_snapshot.json'),
-        path.resolve(process.cwd(), 'backend', 'market_snapshot.json'),
-        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../market_snapshot.json'),
-        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../market_snapshot.json'),
-        path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../market_snapshot.json')
-      ];
-      let loaded = false;
-      for (const p of pathsToTry) {
-        if (fs.existsSync(p)) {
-          console.log(`💾 Found market_snapshot.json at: ${p}`);
-          const fileContent = fs.readFileSync(p, 'utf8');
-          snapshotCache = JSON.parse(fileContent);
-          console.log(`✅ Snapshot cache successfully restored from local fallback (${Object.keys(snapshotCache).length} symbols)`);
-          loaded = true;
-          break;
-        }
-      }
-      if (!loaded) {
-        console.error('❌ Local fallback failed: market_snapshot.json does not exist in any searched paths');
-        snapshotCache = {};
-      }
-    } catch (localErr: any) {
-      console.error('❌ Failed to load snapshot cache from local file:', localErr.message);
-      snapshotCache = {};
-    }
   }
 }
 
@@ -274,13 +254,28 @@ export async function updateMarketSnapshot(symbols: string[]) {
         if (!history || !history.quotes) throw new Error('No history');
         const quotes = (history.quotes || []).filter((q: any) => q.close && q.low && q.high);
         const marketCap = quote.marketCap || screenerData?.marketCap || 0;
-        const strategies = {
+        
+        // GLOBAL HARD MANDATE AUDIT
+        const audit = checkInstitutionalMandates(screenerData);
+        
+        const rawStrategies = {
           'ENVELOPE_LONG': calculateEnvelope(quotes), 'ENVELOPE_SHORT': processShortEnvelope(quotes),
           'BOLLINGER': calculateBollingerBand(quotes), '52W_HIGH_LOW': calculate52WeekStrategy(quotes),
           'CUP_HANDLE_ABCD': calculateCupHandle(quotes), 'RHS_ABCD': calculateRHS(quotes),
           'SMA_BCD': calculateSMAStacking(quotes), 'SR_STRATEGY': calculateSRStrategy(quotes),
           'SIXTY_SEVEN_FUNDA': calculateSixtySevenFunda(quotes, screenerData), 'TWENTY_RALLY_RETEST': calculateTwentyRallyRetest(quotes)
         };
+
+        // If audit fails, wipe strategy signals but keep data for "Observation" or research
+        const strategies: any = {};
+        Object.entries(rawStrategies).forEach(([key, res]: [string, any]) => {
+          if (!audit.passed && res?.isBuyZone) {
+            strategies[key] = { isBuyZone: false, status: "REJECTED", reason: audit.reasons.join(', ') };
+          } else {
+            strategies[key] = res;
+          }
+        });
+
         const finalData = {
           quotes: quotes.slice(-600), 
           quote: {
@@ -320,19 +315,12 @@ export function initScreenerCron() {
 export function getMarketSnapshot(): Record<string, any> { return snapshotCache; }
 export async function getDynamicBasket(): Promise<string[]> {
   try {
-    if (!supabase) throw new Error('Supabase client not initialized');
-    const { data, error } = await supabase.from('system_cache').select('data').eq('key', 'dynamic_growth_basket').single();
-    if (!error && data && Array.isArray(data.data)) return data.data;
-    if (error) throw error;
-  } catch (e: any) {
-    console.warn(`⚠️ [Supabase Fallback] Failed to fetch dynamic growth basket: ${e.message}. Using local fallback...`);
-  }
-  try {
     const pathsToTry = [
       path.resolve(process.cwd(), 'dynamic_basket.json'),
       path.resolve(process.cwd(), 'backend', 'dynamic_basket.json'),
       path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dynamic_basket.json'),
-      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dynamic_basket.json')
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dynamic_basket.json'),
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../dynamic_basket.json')
     ];
     for (const p of pathsToTry) {
       if (fs.existsSync(p)) {
@@ -341,10 +329,13 @@ export async function getDynamicBasket(): Promise<string[]> {
         if (Array.isArray(parsed)) {
           return parsed;
         }
+        if (Array.isArray(parsed?.data)) {
+          return parsed.data;
+        }
       }
     }
   } catch (localErr: any) {
-    console.error('❌ Failed to load dynamic growth basket from local file:', localErr.message);
+    console.warn(`⚠️ [Dynamic Basket] Local fallback failed: ${localErr.message}`);
   }
 
   // Final Institutional Fallback (Growth Basket Core Universe)
