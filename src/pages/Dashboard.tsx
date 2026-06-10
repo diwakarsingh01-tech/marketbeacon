@@ -389,8 +389,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const finalDisplayData = basketData.length > 0 ? basketData : data.allStocks;
 
     const open = finalDisplayData.filter((r: any) => r && r.isBuyZone && r.isPass);
-    const rejected = finalDisplayData.filter((r: any) => r && !r.isPass && r.reason !== 'Audit Pending: Node Warming Up');
-    const neutral = finalDisplayData.filter((r: any) => r && ( (!r.isBuyZone && r.isPass) || r.reason === 'Audit Pending: Node Warming Up' ));
+    const rejected = finalDisplayData.filter((r: any) => r && !r.isPass && r.reason !== 'Audit Pending: Node Warming Up' && r.reason !== 'QUALIFIED' && r.reason !== 'OBSERVATION');
+    const neutral = finalDisplayData.filter((r: any) => r && ( r.isObservation || (!r.isBuyZone && r.isPass) || r.reason === 'Audit Pending: Node Warming Up' ));
     const watchlist = finalDisplayData; // Full institutional basket
 
     if (activeTab === 'hold') return watchlist; 

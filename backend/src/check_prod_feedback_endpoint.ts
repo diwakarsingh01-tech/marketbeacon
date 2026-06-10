@@ -7,7 +7,7 @@ async function check() {
   
   console.log('Querying production /api/admin/feedback...');
   try {
-    const response = await axios.get('https://marketbeacon.onrender.com/api/admin/feedback', {
+    const response = await axios.get('https://marketbeaconpro.com/api/admin/feedback', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
