@@ -711,26 +711,36 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                     })()}
                                  </div>
                                )}
-                               <div className="flex items-center justify-end gap-2 font-sans">
-                                 {trade.isPass !== false ? (
-                                   <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-full text-[9px] font-black tracking-wide shrink-0">
-                                     <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                                     PASS
-                                   </div>
-                                 ) : (
-                                   <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-full text-[9px] font-black tracking-wide shrink-0">
-                                     <span className="w-1 h-1 rounded-full bg-amber-500" />
-                                     OBS
-                                   </div>
-                                 )}
-                                 <div className="flex flex-col items-end min-w-[32px]">
-                                   <span className="text-xs font-black text-slate-900 leading-none">{trade.score || 0}</span>
-                                   <span className="text-[7px] text-slate-400 font-extrabold uppercase tracking-widest mt-0.5">Audit</span>
-                                 </div>
-                               </div>
-                               <Link to={`/stock/${trade.symbol}`} className="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:bg-slate-ink hover:text-white transition-all shrink-0">
-                                  <InfoIcon className="h-3.5 w-3.5" />
-                               </Link>
+                                <div className="flex items-center justify-end gap-2 font-sans">
+                                  {trade.isPass !== false ? (
+                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-full text-[9px] font-black tracking-wide shrink-0">
+                                      <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                                      PASS
+                                    </div>
+                                  ) : (
+                                    <div className="relative group/reason">
+                                      <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-full text-[9px] font-black tracking-wide shrink-0 cursor-help">
+                                        <span className="w-1 h-1 rounded-full bg-amber-500" />
+                                        OBS
+                                      </div>
+                                      {trade.reason && trade.reason !== 'Institutional Audit Active' && (
+                                        <div className="absolute right-0 top-full mt-1.5 z-[300] hidden group-hover/reason:block bg-slate-950 text-white shadow-2xl rounded-xl p-3 animate-in fade-in duration-200 min-w-[200px] max-w-[260px]">
+                                          <div className="flex flex-col gap-1">
+                                            <span className="text-[7px] font-black text-amber-400 uppercase tracking-widest">Rejection Reason</span>
+                                            <span className="text-[10px] font-medium text-white/90 leading-relaxed">{trade.reason}</span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  <div className="flex flex-col items-end min-w-[32px]">
+                                    <span className="text-xs font-black text-slate-900 leading-none">{trade.score || 0}</span>
+                                    <span className="text-[7px] text-slate-400 font-extrabold uppercase tracking-widest mt-0.5">Audit</span>
+                                  </div>
+                                </div>
+                                <Link to={`/stock/${trade.symbol}`} className="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:bg-slate-ink hover:text-white transition-all shrink-0">
+                                   <InfoIcon className="h-3.5 w-3.5" />
+                                </Link>
                             </div>
                           </td>
                         )}
@@ -980,23 +990,31 @@ const TradeTable: React.FC<TradeTableProps> = ({
                          </div>
 
                          {/* Audit / Score row */}
-                         <div className="flex items-center justify-between bg-white px-3 py-2.5 rounded-[0.75rem] border border-slate-100/80 shadow-sm text-[10px]">
-                            <div className="flex items-center space-x-1.5">
-                               {trade.isPass !== false ? (
-                                  <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[7.5px] font-black">PASS</span>
-                               ) : (
-                                  <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded text-[7.5px] font-black">OBS</span>
+                          <div className="flex items-center justify-between bg-white px-3 py-2.5 rounded-[0.75rem] border border-slate-100/80 shadow-sm text-[10px]">
+                             <div className="flex items-center space-x-1.5">
+                                {trade.isPass !== false ? (
+                                   <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[7.5px] font-black">PASS</span>
+                                ) : (
+                                   <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded text-[7.5px] font-black">OBS</span>
+                                )}
+                                <span className="font-extrabold text-slate-700">Audit Score:</span>
+                                <span className="font-black text-slate-900">{trade.score || 0}</span>
+                             </div>
+                             <div className="flex items-center gap-2">
+                               {trade.peRatio > 0 && (
+                                  <div className="flex items-center space-x-1 font-mono">
+                                     <span className="font-extrabold text-slate-400 uppercase text-[8px] tracking-wider">PE:</span>
+                                     <span className="font-black text-slate-900">{trade.peRatio?.toFixed(1)}</span>
+                                  </div>
                                )}
-                               <span className="font-extrabold text-slate-700">Audit Score:</span>
-                               <span className="font-black text-slate-900">{trade.score || 0}</span>
+                             </div>
+                          </div>
+                          {trade.isPass === false && trade.reason && trade.reason !== 'Institutional Audit Active' && (
+                            <div className="bg-amber-50/50 border border-amber-200/50 rounded-[0.75rem] px-3 py-2 text-[9px]">
+                              <span className="font-black text-amber-700 uppercase tracking-wider text-[7px]">Reason: </span>
+                              <span className="font-medium text-amber-800">{trade.reason}</span>
                             </div>
-                            {trade.peRatio > 0 && (
-                               <div className="flex items-center space-x-1 font-mono">
-                                  <span className="font-extrabold text-slate-400 uppercase text-[8px] tracking-wider">PE:</span>
-                                  <span className="font-black text-slate-900">{trade.peRatio?.toFixed(1)}</span>
-                               </div>
-                            )}
-                         </div>
+                          )}
 
                          {/* Action Buttons */}
                          <div className="flex items-center gap-2 pt-1">
