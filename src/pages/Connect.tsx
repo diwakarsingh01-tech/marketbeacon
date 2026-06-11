@@ -86,7 +86,7 @@ const ConnectivityHub: React.FC = () => {
 
             <div className="space-y-4">
               <h1 className="text-4xl font-black tracking-tight uppercase italic leading-tight">Connectivity<br />Monitor</h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em]">Institutional Diagnostic Hub</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.4em]">Institutional Diagnostic Hub</p>
             </div>
 
             <div className={`p-6 rounded-[2rem] border transition-all duration-500 ${
@@ -105,7 +105,7 @@ const ConnectivityHub: React.FC = () => {
                    <RefreshCw className="h-6 w-6 animate-spin" />}
                 </div>
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Node Status</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Node Status</span>
                   <h3 className="text-xl font-black uppercase tracking-tighter italic">
                     {status === 'online' ? 'Connected' : status === 'offline' ? 'Disconnected' : 'Syncing...'}
                   </h3>
@@ -143,12 +143,12 @@ const ConnectivityHub: React.FC = () => {
             <div className="space-y-4">
               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Active URL</span>
+                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Active URL</span>
                   <span className="text-xs font-black text-slate-900 select-all">{apiUrl}</span>
                 </div>
                 {latency && (
                   <div className="text-right">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Latency</span>
+                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Latency</span>
                     <span className="text-xs font-black text-emerald-600 block">{latency}ms</span>
                   </div>
                 )}
@@ -183,7 +183,7 @@ const ConnectivityHub: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               {diagnosticData && Object.entries(diagnosticData).map(([key, val]) => (
                 <div key={key} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-50 flex flex-col space-y-1">
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{key}</span>
+                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{key}</span>
                   <span className="text-[10px] font-black text-slate-600 truncate">{String(val)}</span>
                 </div>
               ))}
@@ -194,7 +194,7 @@ const ConnectivityHub: React.FC = () => {
           <div className="mt-auto pt-8 border-t border-slate-100 flex items-center justify-between">
             <button 
               onClick={handleReset}
-              className="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-600 transition-colors"
+              className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-rose-600 transition-colors"
             >
               Reset to Institutional Defaults
             </button>

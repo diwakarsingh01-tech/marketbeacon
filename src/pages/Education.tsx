@@ -5,8 +5,9 @@ import {
   Info, Layers, BarChart3, Calendar, AlertTriangle, Zap,
   MapPin, LayoutGrid, Briefcase, BookMarked, Store,
   LineChart, Activity, BarChart2, RefreshCw, Upload,
-  FileText, PieChart, Search, Eye, Lock, Compass
+  FileText, PieChart, Search, Eye, Lock, Compass, Home
 } from 'lucide-react';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA: STRATEGIES (exact names from the platform)
@@ -32,8 +33,8 @@ const strategies = [
         body: 'D/E Ratio ≤ 0.2 (BFSI exempt). Pledged Shares < 2%. PE Ratio ≤ Industry Median. Consistent revenue & profit growth verified TTM.'
       },
       {
-        heading: 'Entry Window Rule',
-        body: 'Upside capped at 2% from entry — price must be at or near the research level. Drawdowns allowed up to -30% with ABCD averaging.'
+        heading: 'Research Window Rule',
+        body: 'Move capped at 2% from reference — price must be at or near the research level. Drawdowns allowed up to -30% with ABCD averaging.'
       },
       {
         heading: 'Sector Hardening',
@@ -41,7 +42,7 @@ const strategies = [
       },
       {
         heading: 'ABCD Tranche Averaging',
-        body: 'A → First entry. B → -10%. C → -20%. D → -30%. Each tranche equal weight. Full position at D.'
+        body: 'A → First tranche. B → -10%. C → -20%. D → -30%. Each tranche equal weight. Full allocation at D.'
       }
     ],
     guardrail: 'Never skip the fundamental audit. A low-priced stock with weak fundamentals is a trap, not an opportunity.'
@@ -54,15 +55,15 @@ const strategies = [
     icon: Activity,
     color: 'blue',
     category: 'Alpha Strategy',
-    tagline: 'Identify proven support zones where price has historically reversed. Enter demand, exit supply.',
+    tagline: 'Identify proven support zones where price has historically reversed. Demand zone, supply zone.',
     sections: [
       {
-        heading: 'Entry Logic',
-        body: 'Price revisits a historically validated support zone (multi-touch confirmation). Entry on the 2nd or 3rd retest of the level.'
+        heading: 'Research Logic',
+        body: 'Price revisits a historically validated support zone (multi-touch confirmation). Research on the 2nd or 3rd retest of the level.'
       },
       {
         heading: 'Model Objective',
-        body: 'Target is the next identified resistance zone. Minimum upside threshold: 20% from entry.'
+        body: 'Objective is the next identified resistance zone. Minimum projected move: 20% from entry.'
       },
       {
         heading: 'Qualification',
@@ -70,7 +71,7 @@ const strategies = [
       },
       {
         heading: 'Risk Management',
-        body: 'Stop loss placed 3–5% below the support zone. If price closes below the zone, trade is invalidated.'
+        body: 'Risk guard placed 3–5% below the support zone. If price closes below the zone, trade is invalidated.'
       }
     ],
     guardrail: 'A support zone that breaks decisively becomes resistance. Never average into a broken support.'
@@ -86,12 +87,12 @@ const strategies = [
     tagline: 'Stocks that have corrected 67%+ from their ATH with intact fundamentals offer asymmetric risk-reward.',
     sections: [
       {
-        heading: 'Entry Trigger',
+        heading: 'Research Trigger',
         body: 'Drawdown ≥ 66% from All-Time High. Fundamental score must still be ≥ 70/100. Institutional holding > 75%.'
       },
       {
         heading: 'Model Objective',
-        body: 'Return to previous ATH. This typically represents a 200%+ recovery opportunity from the reset zone.'
+        body: 'Recovery to previous ATH. This typically represents a 200%+ recovery opportunity from the reset zone.'
       },
       {
         heading: 'Validation Checks',
@@ -107,20 +108,20 @@ const strategies = [
   {
     id: 'velocity_retest',
     name: 'Velocity Retest (20%)',
-    subtitle: 'High-Momentum Retest Entry',
+    subtitle: 'High-Momentum Retest Research',
     tier: 'alpha',
     icon: Zap,
     color: 'indigo',
     category: 'Alpha Strategy',
-    tagline: 'Stocks that rallied 20%+ from a base, then pulled back to retest the rally origin — offering a precision re-entry.',
+    tagline: 'Stocks that rallied 20%+ from a base, then pulled back to retest the rally origin — offering a precision re-test.',
     sections: [
       {
         heading: 'Setup Identification',
         body: 'Stock rallied ≥ 20% from a base (Rally Start Low) within 12 months. Price now retests the Rally Start Low within the same 12-month window.'
       },
       {
-        heading: 'Entry Condition',
-        body: 'Entry valid only if the original rally started below the 200 DMA (deep demand confirmation). Retest within 5% of Rally Start Low.'
+        heading: 'Research Condition',
+        body: 'Research valid only if the original rally started below the 200 DMA (deep demand confirmation). Retest within 5% of Rally Start Low.'
       },
       {
         heading: 'Model Objective',
@@ -149,15 +150,15 @@ const strategies = [
       },
       {
         heading: 'BCD Averaging Integration',
-        body: 'B → Entry at SMA 20. C → Entry at SMA 50. D → Entry at SMA 200. Equal weight each tranche.'
+        body: 'B → Level at SMA 20. C → Level at SMA 50. D → Level at SMA 200. Equal weight each tranche.'
       },
       {
         heading: 'Model Objective',
-        body: 'Full structural reversal back above SMA 20. Minimum 15% move expected. Ideal target is prior resistance.'
+        body: 'Full structural reversal back above SMA 20. Minimum 15% historical move. Model objective is prior resistance.'
       },
       {
         heading: 'Confirmation',
-        body: 'Requires fundamental audit score ≥ 70. Volume must expand at the D-level entry to confirm institutional accumulation.'
+        body: 'Requires fundamental audit score ≥ 70. Volume must expand at the D-level reference to confirm institutional accumulation.'
       }
     ],
     guardrail: 'Bearish stacking without fundamental support is a falling knife. Always confirm fundamentals first.'
@@ -182,14 +183,14 @@ const strategies = [
       },
       {
         heading: 'ABCD at Right Shoulder',
-        body: 'A → Start of right shoulder. B/C/D → If shoulder deepens, average down. Entry at neckline retest post-breakout is ideal.'
+        body: 'A → Start of right shoulder. B/C/D → If shoulder deepens, average down. Research at neckline retest post-breakout is ideal.'
       },
       {
         heading: 'Model Objective',
-        body: 'Pattern height added to neckline breakout point. Typically 25–40% move from optimal entry.'
+        body: 'Pattern height added to neckline breakout point. Typically 25–40% move from optimal level.'
       }
     ],
-    guardrail: 'Pattern fails if right shoulder goes lower than the head. Exit immediately if this happens post-entry.'
+    guardrail: 'Pattern fails if right shoulder goes lower than the head. Close immediately if this happens post-entry.'
   },
   {
     id: 'cup_handle',
@@ -210,12 +211,12 @@ const strategies = [
         body: 'Tight consolidation in upper 30% of cup depth. Handle depth ≤ 15% from cup lip. Low-volume drift is ideal.'
       },
       {
-        heading: 'ABCD Entry Optimisation',
-        body: 'A → Handle entry. B/C/D → If handle dips below midpoint, average into the base. Ideal entry = handle breakout point.'
+        heading: 'ABCD Level Optimisation',
+        body: 'A → Handle entry. B/C/D → If handle dips below midpoint, average into the base. Ideal level = handle breakout point.'
       },
       {
         heading: 'Model Objective',
-        body: 'Cup depth added to breakout point. E.g., if cup base was ₹100 and lip ₹140 — target is ₹140 + ₹40 = ₹180.'
+        body: 'Cup depth added to breakout point. E.g., if cup base was ₹100 and lip ₹140 — objective is ₹140 + ₹40 = ₹180.'
       }
     ],
     guardrail: 'A V-shaped recovery is not a cup — skip it. Only smooth, gradual U-shaped bases qualify.'
@@ -231,7 +232,7 @@ const strategies = [
     tagline: 'Mean reversion from annual price extremes. Elite bluechips frequently rebound from 52-week lows.',
     sections: [
       {
-        heading: 'Entry at 52-Week Low',
+        heading: 'Research at 52-Week Low',
         body: 'Price touches or falls within 3% of the 52-week statistical low. Fundamental integrity must be verified (score ≥ 70).'
       },
       {
@@ -257,15 +258,15 @@ const strategies = [
     icon: BarChart3,
     color: 'emerald',
     category: 'Free Strategy',
-    tagline: 'Mean reversion model using statistical volatility bands. Price at the lower band with low volatility = entry signal.',
+    tagline: 'Mean reversion model using statistical volatility bands. Price at the lower band with low volatility = research indication.',
     sections: [
       {
-        heading: 'Lower Band Entry',
+        heading: 'Lower Band Research',
         body: 'Price touches or closes at the lower Bollinger Band (2 standard deviations below 20-period MA). Low Band Width preferred.'
       },
       {
         heading: 'Band Width Squeeze',
-        body: 'Low volatility squeeze (narrow bands) before entry confirms the setup. Expansion after squeeze drives the move.'
+        body: 'Low volatility squeeze (narrow bands) before research confirms the setup. Expansion after squeeze drives the move.'
       },
       {
         heading: 'Model Objective',
@@ -273,7 +274,7 @@ const strategies = [
       },
       {
         heading: 'Risk Control',
-        body: 'Stop loss: Close below lower band by > 1%. If price walks the lower band for 3+ sessions, exit and reassess.'
+        body: 'Stop loss: Close below lower band by > 1%. If price walks the lower band for 3+ sessions, close and reassess.'
       }
     ],
     guardrail: 'In a strong downtrend, price can "walk" the lower band for weeks. Always wait for the squeeze confirmation.'
@@ -289,7 +290,7 @@ const strategies = [
     tagline: 'Identifies statistical lower deviation from a moving average — marking institutional demand zones for long entries.',
     sections: [
       {
-        heading: 'Entry Signal',
+        heading: 'Research Indication',
         body: 'Price touches or closes near the lower envelope boundary (typically 10–15% deviation below MA). Confirms institutional demand zone.'
       },
       {
@@ -318,12 +319,12 @@ const strategies = [
     tagline: 'Participation model for stocks in strong uptrends. Entry near the secondary regression line (EMA 200) during pullbacks.',
     sections: [
       {
-        heading: 'Entry Signal',
+        heading: 'Research Indication',
         body: 'Price pulls back to the EMA 200 or secondary regression line in a confirmed uptrend (higher highs and higher lows structure).'
       },
       {
         heading: 'Model Objective',
-        body: '+14% recovery move from entry. Target is the upper envelope boundary — the momentum continuation zone.'
+        body: '+14% recovery move from reference. Objective is the upper envelope boundary — the momentum continuation zone.'
       },
       {
         heading: 'Stock Criteria',
@@ -331,7 +332,7 @@ const strategies = [
       },
       {
         heading: 'Risk Control',
-        body: 'Stop loss: Close below EMA 200. If the uptrend structure breaks (lower low formation), exit immediately.'
+        body: 'Stop loss: Close below EMA 200. If the uptrend structure breaks (lower low formation), close immediately.'
       }
     ],
     guardrail: 'This is a momentum continuation strategy, not a reversal play. Only use in confirmed uptrends.'
@@ -385,11 +386,11 @@ const tourSections = [
     features: [
       'Upload New Details — import broker CSV (merge or overwrite)',
       'Remove Old Details — clear the entire ledger',
-      'Add Position manually — symbol, qty, buy price',
+      'Add manually — symbol, qty, price',
       'Live CMP pulled automatically for each holding',
       'P&L, Invested Value, Valuation calculated in real time',
       'Cap Architecture breakdown (Large / Mid / Small %)',
-      'Edit quantity or buy price inline in the table'
+      'Edit quantity or price inline in the table'
     ]
   },
   {
@@ -398,10 +399,10 @@ const tourSections = [
     path: '/trades',
     icon: BookMarked,
     color: 'amber',
-    description: 'A verified trade ledger. Log every trade entry and exit with strategy, level, notes. Close trades to record exits. Re-open if needed. Full CSV import/export.',
+    description: 'A verified trade ledger. Log every research note with model, level, notes. Close notes to record outcome. Re-open if needed. Full CSV import/export.',
     features: [
-      'Log open trades with entry price, date, strategy, target',
-      'Close a trade → records exit price and P&L automatically',
+      'Log open notes with price, date, model, objective',
+      'Close a note → records price and outcome automatically',
       'Re-open closed trades if exit was premature',
       'Bulk import trades via CSV template download',
       'Delete individual or bulk trades',
@@ -418,8 +419,8 @@ const tourSections = [
     description: 'Deep-dive into any stock. Full institutional audit — financials, ABCD ladder status, DFH%, sector, market cap, scoring breakdown. Click any stock in the screener to access.',
     features: [
       'Institutional audit score (0–100) with breakdown',
-      'Current strategy classification for this stock',
-      'ABCD tranche status and next entry levels',
+      'Current model classification for this stock',
+      'ABCD tranche status and next levels',
       'DFH% (Distance from High) — how far from ATH',
       'Sector, market cap, and fundamental ratios',
       'Links to Screener.in and NSE for deeper research'
@@ -488,7 +489,12 @@ const EducationPage: React.FC = () => {
 
   return (
     <div className="bg-[#f8fafc] min-h-screen font-sans overflow-y-auto pb-20">
-      <div className="px-4 md:px-10 py-6 md:py-10 max-w-7xl mx-auto space-y-8">
+      <div className="px-4 md:px-8 lg:px-10 py-6 md:py-10 max-w-7xl mx-auto space-y-8">
+
+        <Breadcrumbs items={[
+          { label: 'Resources', href: '/' },
+          { label: 'Education Center' }
+        ]} />
 
         {/* ── HEADER ── */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-100 pb-6">
@@ -500,7 +506,7 @@ const EducationPage: React.FC = () => {
               <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
                 Education Center
               </h1>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mt-1">
                 Strategy Guides · Platform Tour · Institutional Knowledge
               </p>
             </div>
@@ -511,7 +517,7 @@ const EducationPage: React.FC = () => {
             <button
               onClick={() => setMainTab('strategies')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                mainTab === 'strategies' ? 'bg-slate-900 text-white shadow' : 'text-slate-400 hover:text-slate-700'
+                mainTab === 'strategies' ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
               <BookOpen className="h-3.5 w-3.5" />
@@ -520,7 +526,7 @@ const EducationPage: React.FC = () => {
             <button
               onClick={() => setMainTab('tour')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                mainTab === 'tour' ? 'bg-slate-900 text-white shadow' : 'text-slate-400 hover:text-slate-700'
+                mainTab === 'tour' ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
               <Compass className="h-3.5 w-3.5" />
@@ -680,7 +686,7 @@ const EducationPage: React.FC = () => {
                           <t.icon className={`h-4 w-4 ${isActive ? c.text : 'text-slate-400'}`} />
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.path}</p>
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.path}</p>
                           <p className={`text-[12px] font-black uppercase tracking-tight ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>
                             {t.name}
                           </p>
@@ -708,7 +714,7 @@ const EducationPage: React.FC = () => {
                           <div className={`px-8 py-6 border-b border-slate-100 ${c.bg}`}>
                             <div className="flex items-start justify-between gap-4">
                               <div className="space-y-1">
-                                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{activeTourItem.path}</span>
+                                <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">{activeTourItem.path}</span>
                                 <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
                                   {activeTourItem.name}
                                 </h2>
@@ -723,7 +729,7 @@ const EducationPage: React.FC = () => {
                           </div>
 
                           <div className="p-8 space-y-3">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                               <Eye className="h-3 w-3" /> What You Can Do Here
                             </p>
                             {activeTourItem.features.map((feature, i) => (

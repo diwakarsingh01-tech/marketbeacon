@@ -13,6 +13,22 @@ export async function createNotification(userId: number, title: string, message:
   }
 }
 
+export async function notifyAdmins(title: string, message: string, type: 'audit' | 'system' | 'trade' = 'system') {
+  try {
+    const db = getDB();
+    const admins = await db.all('SELECT id FROM users WHERE role = ? AND is_active = 1', ['admin']);
+    for (const admin of admins) {
+      await db.run(
+        'INSERT INTO notifications (user_id, title, message, type, unread) VALUES (?, ?, ?, ?, 1)',
+        [admin.id, title, message, type]
+      );
+    }
+    console.log(`🔔 [NOTIFICATION] Admin notification sent to ${admins.length} admins: ${title}`);
+  } catch (e: any) {
+    console.error(`❌ [NOTIFICATION ERROR] Admin notify failed: ${e.message}`);
+  }
+}
+
 export async function notifyAllUsers(title: string, message: string, type: 'audit' | 'system' | 'trade' = 'system') {
   try {
     const db = getDB();

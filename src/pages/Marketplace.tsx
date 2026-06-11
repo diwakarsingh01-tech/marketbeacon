@@ -41,14 +41,14 @@ const TrustStat = ({ value, label, icon: Icon }: any) => (
     </div>
     <div className="text-left">
       <div className="text-lg font-black text-white tracking-tighter leading-none">{value}</div>
-      <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 leading-tight">{label}</div>
+      <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 leading-tight">{label}</div>
     </div>
   </motion.div>
 );
 
 const FeatureRow = ({ feature, included }: { feature: string; included: boolean }) => (
   <div className={`flex items-center space-x-3 py-2.5 border-b border-slate-50 ${included ? '' : 'opacity-40'}`}>
-    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${included ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${included ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
       {included ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
     </div>
     <span className="text-[10px] font-bold text-slate-700 tracking-tight leading-snug">{feature}</span>
@@ -184,7 +184,7 @@ const MembershipPage: React.FC = () => {
                 Trading Edge
               </span>
             </h1>
-            <p className="mt-2 text-slate-400 text-xs md:text-sm font-medium max-w-lg mx-auto leading-relaxed">
+            <p className="mt-2 text-slate-500 text-xs md:text-sm font-medium max-w-lg mx-auto leading-relaxed">
               Institutional-grade research tools for educational purposes. Audit Scores + ABCD Tranche Zones — powerful data to empower your own research. Not investment advice.
             </p>
           </motion.div>
@@ -227,7 +227,7 @@ const MembershipPage: React.FC = () => {
 
         {/* ── BILLING TOGGLE ── */}
         <div className="flex flex-col items-center space-y-3">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Billing Period</p>
+          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Billing Period</p>
           <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 shadow-sm gap-1">
             {(['monthly', 'yearly'] as const).map(period => (
               <button
@@ -236,7 +236,7 @@ const MembershipPage: React.FC = () => {
                 className={`relative px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                   billing === period
                     ? 'bg-slate-900 text-white shadow-lg'
-                    : 'text-slate-400 hover:text-slate-700'
+                    : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 {period}
@@ -266,22 +266,22 @@ const MembershipPage: React.FC = () => {
             <div className="space-y-1 mb-6">
               <Badge color="blue">Free</Badge>
               <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic mt-2">Institutional<br/>Free</h3>
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Start exploring without commitment</p>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Start exploring without commitment</p>
             </div>
             <div className="flex items-baseline gap-1 mb-6">
               <span className="text-5xl font-black text-slate-900 tracking-tighter">₹0</span>
-              <span className="text-slate-400 text-xs font-bold">/ forever</span>
+              <span className="text-slate-500 text-xs font-bold">/ forever</span>
             </div>
             <div className="flex-1 space-y-0 mb-6">
               {allFeatures.slice(0, 6).map(([label, free]) => (
                 <FeatureRow key={label as string} feature={label as string} included={!!free} />
               ))}
-              <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest pt-2 pl-1 italic">+ {allFeatures.length - 6} more features locked</p>
+              <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest pt-2 pl-1 italic">+ {allFeatures.length - 6} more features locked</p>
             </div>
             <div className={`w-full py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center border-2 ${
               userTier === 'free'
                 ? 'border-slate-900 bg-slate-900 text-white'
-                : 'border-slate-200 text-slate-400 cursor-default'
+                : 'border-slate-200 text-slate-500 cursor-default'
             }`}>
               {userTier === 'free' ? '✓ Your Current Plan' : 'Downgrade Not Available'}
             </div>
@@ -302,14 +302,14 @@ const MembershipPage: React.FC = () => {
                 )}
               </div>
               <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic mt-2">Pro<br/>Execution</h3>
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Structural patterns &amp; all strategies</p>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Structural patterns &amp; all strategies</p>
             </div>
             <div className="flex items-baseline gap-1 mb-1">
               <span className="text-5xl font-black text-slate-900 tracking-tighter">₹{priceMonthly('pro')}</span>
-              <span className="text-slate-400 text-xs font-bold">/mo</span>
+              <span className="text-slate-500 text-xs font-bold">/mo</span>
             </div>
             {billing === 'yearly' && (
-              <p className="text-[9px] text-slate-400 font-bold mb-5">Billed ₹{prices.pro.yearly}/yr</p>
+              <p className="text-[9px] text-slate-500 font-bold mb-5">Billed ₹{prices.pro.yearly}/yr</p>
             )}
             <div className="flex-1 space-y-0 mb-6 mt-4">
               {allFeatures.slice(0, 12).map(([label, , pro]) => (
@@ -351,7 +351,7 @@ const MembershipPage: React.FC = () => {
                 )}
               </div>
               <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mt-2">Alpha<br/>Priority</h3>
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Full institutional terminal access</p>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Full institutional terminal access</p>
             </div>
 
             <div className="flex items-baseline gap-1 mb-1 relative z-10">
@@ -394,14 +394,14 @@ const MembershipPage: React.FC = () => {
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-8 py-6 border-b border-slate-100">
             <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter italic">Full Feature Comparison</h2>
-            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1">Every strategy unlocked per tier</p>
+            <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">Every strategy unlocked per tier</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-slate-100">
-                  <th className="px-8 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Feature</th>
-                  <th className="px-6 py-4 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Free</th>
+                  <th className="px-8 py-4 text-left text-[9px] font-black text-slate-500 uppercase tracking-widest">Feature</th>
+                  <th className="px-6 py-4 text-center text-[9px] font-black text-slate-500 uppercase tracking-widest">Free</th>
                   <th className="px-6 py-4 text-center text-[9px] font-black text-blue-600 uppercase tracking-widest bg-blue-50/30">Pro</th>
                   <th className="px-6 py-4 text-center text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50/30">Alpha</th>
                 </tr>
@@ -455,7 +455,7 @@ const MembershipPage: React.FC = () => {
                 <Gift className="h-4 w-4 text-indigo-500" />
                 <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Have a Voucher Code?</span>
               </div>
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Redeem for instant trial access — no payment needed</p>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Redeem for instant trial access — no payment needed</p>
             </div>
             <div className="flex items-center gap-3 w-full md:w-auto">
               <div className={`flex items-center bg-slate-50 border-2 rounded-2xl px-4 py-2.5 gap-3 flex-1 md:w-72 transition-all ${
@@ -497,7 +497,7 @@ const MembershipPage: React.FC = () => {
         <div className="space-y-6">
           <div className="text-center">
             <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">How Activation Works</h2>
-            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1">Simple 3-step process. Live within 15 minutes.</p>
+            <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">Simple 3-step process. Live within 15 minutes.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -514,7 +514,7 @@ const MembershipPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">{title}</h3>
-                  <p className="text-[10px] text-slate-400 font-medium mt-1 leading-relaxed">{desc}</p>
+                  <p className="text-[10px] text-slate-500 font-medium mt-1 leading-relaxed">{desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -534,7 +534,7 @@ const MembershipPage: React.FC = () => {
                 <span className="text-[9px] font-black uppercase tracking-[0.4em]">Corporate / Fund Access</span>
               </div>
               <h3 className="text-3xl md:text-4xl font-black tracking-tighter uppercase italic">Need a Custom<br/>Deployment?</h3>
-              <p className="text-slate-400 text-sm max-w-md leading-relaxed">
+              <p className="text-slate-500 text-sm max-w-md leading-relaxed">
                 Multiple seats, API access, or fund-level reporting? Contact us for an enterprise node.
               </p>
             </div>
@@ -560,7 +560,7 @@ const MembershipPage: React.FC = () => {
         </div>
 
         {/* Footer note */}
-        <p className="text-center text-[8px] text-slate-400 font-black uppercase tracking-widest pb-4">
+        <p className="text-center text-[8px] text-slate-500 font-black uppercase tracking-widest pb-4">
           MarketBeacon Terminal v14.0 · Institutional Hub · AES-256 Encrypted · India's Research OS
         </p>
       </div>

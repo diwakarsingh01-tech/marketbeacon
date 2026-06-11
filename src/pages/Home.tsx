@@ -32,6 +32,7 @@ import SiteFooter from '../components/layout/SiteFooter';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
+import SEO from '../components/SEO';
 
 const API_URL = getApiUrl();
 
@@ -72,7 +73,7 @@ const EmailCapture: React.FC = () => {
           <CheckCircle className="w-8 h-8 text-emerald-400" />
         </div>
         <h4 className="text-lg font-black text-white tracking-tight">Starter Kit Sent!</h4>
-        <p className="text-slate-400 text-sm max-w-xs mx-auto">
+        <p className="text-slate-500 text-sm max-w-xs mx-auto">
           Check your inbox for the ABCD Tranche Zones + Audit Checklist PDF.
         </p>
       </div>
@@ -90,7 +91,7 @@ const EmailCapture: React.FC = () => {
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder="your@email.com"
-            className="w-full pl-11 pr-4 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full pl-11 pr-4 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500 transition-colors"
             required
           />
         </div>
@@ -98,7 +99,7 @@ const EmailCapture: React.FC = () => {
           id="segment-lead-capture"
           value={segment}
           onChange={e => setSegment(e.target.value)}
-          className="px-4 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-sm text-slate-300 focus:outline-none focus:border-blue-500 transition-colors appearance-none"
+          className="px-4 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-sm text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500 transition-colors appearance-none"
         >
           <option value="retail">Retail Trader</option>
           <option value="advisor">Sub-broker / Advisor</option>
@@ -265,13 +266,13 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    document.title = "MarketBeacon Pro | Institutional Stock Research Tool India";
     // Pillar #8: Pre-emptive Server Warm-up (Mitigate Cold Starts)
     fetch(`${API_URL}/api/health`).catch(() => {/* Silent fail */});
   }, []);
 
   return (
     <div className="min-h-screen bg-slate-950 font-sans text-slate-100 overflow-x-hidden selection:bg-blue-500/30">
+      <SEO title="Best Stock Analysis Tool India" description="India's #1 Institutional Audit Score for Nifty 500 stocks. ABCD Tranche Logic, FII DII trends & real-time screening. For educational purposes only." />
       {/* Live Trust Ticker (Safe-Guard Rule #7) */}
       <div className="bg-blue-600 py-2 overflow-hidden whitespace-nowrap border-b border-blue-500 relative z-[60]">
         <div className="flex animate-marquee items-center gap-12">
@@ -311,10 +312,10 @@ const HomePage: React.FC = () => {
            <BrandLogo variant="dark" size={30} />
         </Link>
         <div className="hidden md:flex items-center space-x-6">
-           <Link to="/blog" className="text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-colors">
+           <Link to="/blog" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors">
              Blog
            </Link>
-           <Link to="/license-desk" className="text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-colors">
+           <Link to="/license-desk" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors">
              Pricing
            </Link>
            <div className="flex items-center space-x-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
@@ -325,7 +326,7 @@ const HomePage: React.FC = () => {
         </div>
         {/* Mobile nav */}
         <div className="flex md:hidden items-center gap-3">
-          <Link to="/blog" className="text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-colors">Blog</Link>
+          <Link to="/blog" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors">Blog</Link>
           <Link to="/login" className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Login</Link>
         </div>
       </nav>
@@ -354,7 +355,7 @@ const HomePage: React.FC = () => {
                 </div>
                 <div className="text-left">
                   <h4 className="text-[11px] font-black text-white uppercase tracking-widest leading-none mb-1">Grand Alpha Launch Live</h4>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Get 7-Day Institutional Access for <span className="text-emerald-400">FREE</span></p>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Get 7-Day Institutional Access for <span className="text-emerald-400">FREE</span></p>
                 </div>
               </div>
               <button 
@@ -382,7 +383,7 @@ const HomePage: React.FC = () => {
               <input 
                 type="text" 
                 placeholder="Enter stock symbol (e.g. TCS)..." 
-                className="bg-transparent border-none outline-none w-full text-xs sm:text-sm font-black uppercase tracking-widest text-white placeholder:text-slate-600"
+                className="bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none w-full text-xs sm:text-sm font-black uppercase tracking-widest text-white placeholder:text-slate-600"
                 value={searchQuery}
                 onChange={(e) => setSearchSearchQuery(e.target.value)}
                 autoComplete="off"
@@ -601,7 +602,7 @@ const HomePage: React.FC = () => {
                                </div>
                                <div className="space-y-1">
                                   <h4 className="text-xs font-black uppercase tracking-widest text-white">PRO STRATEGY MATRIX LOCKED</h4>
-                                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                                  <p className="text-[10px] text-slate-500 leading-relaxed">
                                      Smart money details, upside targets, and strategy entry points for <span className="text-blue-400 font-bold">{teaserData.symbol}</span> require a Pro Execution tier license.
                                   </p>
                                </div>
@@ -631,7 +632,7 @@ const HomePage: React.FC = () => {
                                        placeholder="Enter voucher (ALPHA7)..."
                                        value={voucherCode}
                                        onChange={(e) => setVoucherCode(e.target.value)}
-                                       className="flex-1 bg-slate-950 border border-slate-800 px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-white outline-none focus:border-blue-500"
+                                       className="flex-1 bg-slate-950 border border-slate-800 px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500"
                                      />
                                      <button
                                        onClick={handleRedeemVoucher}
@@ -702,7 +703,7 @@ const HomePage: React.FC = () => {
           </div>
         </div>
         
-        <p className="text-lg md:text-xl font-medium text-slate-400 max-w-2xl mx-auto leading-relaxed mb-6 px-4">
+        <p className="text-lg md:text-xl font-medium text-slate-500 max-w-2xl mx-auto leading-relaxed mb-6 px-4">
            100-point Institutional Audit Score + ABCD Tranche Laddering — the same framework used by institutional desks, now available for educational research. Free to try.
         </p>
 
@@ -719,12 +720,12 @@ const HomePage: React.FC = () => {
           <div className="flex -space-x-3">
             {[1,2,3,4].map(i => (
               <div key={i} className="w-10 h-10 rounded-full border-4 border-slate-950 bg-slate-800 overflow-hidden shadow-xl">
-                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+10}`} alt="Active trader on MarketBeacon Pro" />
+                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+10}`} alt="Active trader on MarketBeacon Pro" loading="lazy" decoding="async" />
               </div>
             ))}
             <div className="w-10 h-10 rounded-full border-4 border-slate-950 bg-blue-600 flex items-center justify-center text-[9px] font-black text-white shadow-xl">+30K</div>
           </div>
-          <p className="text-xs font-bold text-slate-400">Trusted by <span className="text-white font-black">30,000+</span> retail traders &amp; advisors</p>
+          <p className="text-xs font-bold text-slate-500">Trusted by <span className="text-white font-black">30,000+</span> retail traders &amp; advisors</p>
         </div>
       </header>
 
@@ -743,8 +744,8 @@ const HomePage: React.FC = () => {
               </div>
               <div className="mb-2 text-[9px] font-black text-blue-400 uppercase tracking-[0.3em]">Retail Trader</div>
               <h3 className="text-xl font-black text-white tracking-tighter mb-3">Portfolio: ₹5L – ₹50L</h3>
-              <p className="text-slate-400 text-sm leading-relaxed flex-1 mb-6">
-                "Mujhe nahi pata kab buy karna hai, kab exit." — ABCD Tranche System se institutional logic milega. Kabhi ek hi price pe sab nahi daalna padega.
+              <p className="text-slate-500 text-sm leading-relaxed flex-1 mb-6">
+                "I never knew when to research entry vs wait for confirmation. — The ABCD Tranche system gives institutional clarity."
               </p>
               <div className="space-y-2 mb-8">
                 {['100-Point Audit Score Free', 'ABCD Entry Zones', 'Live Screener Access'].map(f => (
@@ -771,8 +772,8 @@ const HomePage: React.FC = () => {
               </div>
               <div className="mb-2 text-[9px] font-black text-emerald-400 uppercase tracking-[0.3em]">Sub-broker / Advisor</div>
               <h3 className="text-xl font-black text-white tracking-tighter mb-3">Client Portfolio Manager</h3>
-              <p className="text-slate-400 text-sm leading-relaxed flex-1 mb-6">
-                "Clients ko har trade justify karna padta hai." — Audit Score se aap har recommendation ko data se defend kar sakte ho. Zero guesswork.
+              <p className="text-slate-500 text-sm leading-relaxed flex-1 mb-6">
+                "I need to justify every research note to clients. — The Audit Score helps me back every call with data."
               </p>
               <div className="space-y-2 mb-8">
                 {['Audit Trail per Trade', 'Client-Ready Data Reports', 'Educational Research Framework'].map(f => (
@@ -796,7 +797,7 @@ const HomePage: React.FC = () => {
               </div>
               <div className="mb-2 text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">HNI / Family Office</div>
               <h3 className="text-xl font-black text-white tracking-tighter mb-3">Portfolio: ₹50L+</h3>
-              <p className="text-slate-400 text-sm leading-relaxed flex-1 mb-6">
+              <p className="text-slate-500 text-sm leading-relaxed flex-1 mb-6">
                 "Risk management weak hai, capital protect nahi ho raha." — Tranche Laddering se capital systematic way mein deploy hota hai. No emotional decisions.
               </p>
               <div className="space-y-2 mb-8">
@@ -830,7 +831,7 @@ const HomePage: React.FC = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {[
-                    { title: 'Portfolio Growth', val: '+42.8%', desc: 'Avg. growth per Alpha signal', col: 'md:col-span-2' },
+                    { title: 'Portfolio Growth', val: '+42.8%', desc: 'Avg. move per Alpha alert', col: 'md:col-span-2' },
                     { title: 'Audit Accuracy', val: '99.4%', desc: 'Batch-9 Validation Rate', col: 'md:col-span-1' },
                     { title: 'Alpha Gain', val: '1.8x', desc: 'Vs Nifty 50 Benchmark', col: 'md:col-span-1' },
                     { title: 'Smart Money Filter', val: '70%+', desc: 'Institutional Hard Reject Rule', col: 'md:col-span-1' },
@@ -855,7 +856,7 @@ const HomePage: React.FC = () => {
               <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Interactive Audit Simulator</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-black tracking-tighter leading-none uppercase italic">Visualizing the <br /><span className="text-blue-500">ABCD Tranche</span> Ladder</h2>
-            <p className="text-slate-400 text-sm leading-relaxed">
+            <p className="text-slate-500 text-sm leading-relaxed">
               Institutional capital doesn't enter stocks all at once. They build positions in tranches to absorb market volatility. Click each stage to see how our algorithms ladder your entry.
             </p>
             
@@ -867,7 +868,7 @@ const HomePage: React.FC = () => {
                   className={`py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
                     simStage === stage
                       ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-850'
+                      : 'bg-slate-900 border-slate-800 text-slate-500 hover:bg-slate-850'
                   }`}
                 >
                   Stage {stage}
@@ -892,7 +893,7 @@ const HomePage: React.FC = () => {
                 {simStage === 'D' && "Stage D: Breakout / Target Realization"}
               </h3>
               
-              <p className="text-xs text-slate-400 leading-relaxed font-mono">
+              <p className="text-xs text-slate-500 leading-relaxed font-mono">
                 {simStage === 'A' && "Algorithm registers initial institutional activity at key support floors. A safe 25% initial position tranche is cleared for audit."}
                 {simStage === 'B' && "Volatile swings sweep minor stops. Buy limit triggers average-down protection, adding 25% volume at a 10% lower basis."}
                 {simStage === 'C' && "The final accumulation block triggers. 35% capacity is locked at the historical value floor, stabilizing the net holding yields."}
@@ -958,7 +959,7 @@ const HomePage: React.FC = () => {
                      <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Free Institutional Education</span>
                   </div>
                   <h2 className="text-5xl md:text-6xl font-black tracking-tighter leading-none">Master the <br /><span className="text-blue-500">12 Proprietary</span> Strategies.</h2>
-                  <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-md">
+                  <p className="text-slate-500 text-lg font-medium leading-relaxed max-w-md">
                      Don't just follow triggers. Understand the institutional logic behind every setup—from SMA-ABCD Stacking to the 67% ATH Reset Cycle.
                   </p>
                   <Link to="/education" className="inline-flex items-center px-8 py-4 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-500 hover:text-white transition-all">
@@ -1018,7 +1019,7 @@ const HomePage: React.FC = () => {
               "@type": "Review",
               "author": { "@type": "Person", "name": "Priya M." },
               "reviewRating": { "@type": "Rating", "ratingValue": "5" },
-              "reviewBody": "As a sub-broker, the Audit Score gives me a defensible reason for every recommendation to clients."
+              "reviewBody": "As a sub-broker, the Audit Score gives me a defensible reason for every research assessment to clients."
             }
           ]
         })}
@@ -1054,7 +1055,7 @@ const HomePage: React.FC = () => {
                 role: 'Sub-broker, Mumbai',
                 avatar: 7,
                 stars: 5,
-                text: '"As a sub-broker, every recommendation needs to be justified. The 100-point Audit Score gives me a defensible, data-backed reason for every stock I suggest. My clients trust me more now."',
+                text: '"As a sub-broker, every research note needs to be justified. The 100-point Audit Score gives me a defensible, data-backed reason for every stock I suggest. My clients trust me more now."',
                 stat: 'Research Tool Framework',
                 statColor: 'text-blue-400',
               },
@@ -1228,7 +1229,7 @@ const HomePage: React.FC = () => {
             Get Your Free<br />
             <span className="text-blue-400">Institutional Portfolio Checklist</span>
           </h2>
-          <p className="text-slate-400 text-sm mb-8 max-w-md mx-auto leading-relaxed">
+          <p className="text-slate-500 text-sm mb-8 max-w-md mx-auto leading-relaxed">
             Download our 12-parameter Audit Checklist + ABCD Tranche Guide PDF. Join 31,402 traders using data over tips.
           </p>
           <EmailCapture />
@@ -1268,7 +1269,7 @@ const HomePage: React.FC = () => {
                  <button 
                    type="button"
                    onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                   className="w-full px-8 py-6 flex items-center justify-between hover:bg-white/5 transition-all text-left outline-none"
+                   className="w-full px-8 py-6 flex items-center justify-between hover:bg-white/5 transition-all text-left outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none"
                  >
                     <span className="text-sm font-black text-white uppercase tracking-wider">{faq.q}</span>
                     <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform duration-305 ${openFaq === idx ? 'rotate-90 text-blue-500' : ''}`} />
@@ -1279,7 +1280,7 @@ const HomePage: React.FC = () => {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="px-8 pb-6 text-xs text-slate-400 font-mono leading-relaxed"
+                        className="px-8 pb-6 text-xs text-slate-500 font-mono leading-relaxed"
                       >
                          {faq.a}
                       </motion.div>
@@ -1295,7 +1296,7 @@ const HomePage: React.FC = () => {
          <div className="max-w-4xl mx-auto bg-gradient-to-br from-blue-600 to-indigo-700 p-1 rounded-[3.5rem] shadow-2xl">
             <div className="bg-slate-950 rounded-[3.4rem] px-10 py-20 flex flex-col items-center">
                <h3 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 px-4">Ready to stop guessing?</h3>
-               <p className="text-slate-400 font-medium text-lg mb-10 max-w-xl">Join 31,402 traders who upgraded their strategy with MarketBeacon Pro. Free to start.</p>
+               <p className="text-slate-500 font-medium text-lg mb-10 max-w-xl">Join 31,402 traders who upgraded their strategy with MarketBeacon Pro. Free to start.</p>
                <div className="flex flex-col sm:flex-row items-center gap-4">
                  <Link to="/login" className="px-12 py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-base hover:scale-105 transition-all">
                     Launch Terminal Free

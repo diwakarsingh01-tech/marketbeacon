@@ -118,3 +118,12 @@
     border-radius: 10px;
   }
 }
+
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+  nav, footer, button, .no-print { display: none !important; }
+  table { font-size: 10px; }
+  th, td { padding: 4px 8px; border: 1px solid #ccc; }
+}

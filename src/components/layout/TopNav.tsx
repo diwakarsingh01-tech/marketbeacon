@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Activity, LogOut, User, Store, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -86,7 +86,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   const [indices, setIndices] = useState<any[]>([]);
   const [marketStatus, setMarketStatus] = useState('CLOSED');
   const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const navigate = useNavigate();
@@ -100,15 +100,37 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
     }
   };
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    return () => debounceRef.current && clearTimeout(debounceRef.current);
+  }, []);
+
   const onSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearchQuery(val);
-    if (val.length >= 1) {
-      const filtered = ALL_STOCKS.filter(s => 
-        s.toLowerCase().includes(val.toLowerCase())
-      ).slice(0, 8);
-      setSuggestions(filtered);
-      setShowSuggestions(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (val.length >= 2) {
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 5000);
+          const res = await fetch(`${API_URL}/api/search/stock?q=${encodeURIComponent(val)}`, { signal: controller.signal });
+          clearTimeout(timeout);
+          const data = await safeJsonParse(res);
+          if (res.ok && data?.results) {
+            setSuggestions(data.results.slice(0, 8));
+            setShowSuggestions(true);
+            return;
+          }
+        } catch {}
+        // Fallback: local filter if API fails
+        const local = ALL_STOCKS.filter(s => s.toLowerCase().includes(val.toLowerCase())).slice(0, 8);
+        if (local.length > 0) {
+          setSuggestions(local.map(s => ({ symbol: s, baskets: [], strategies: [] })));
+          setShowSuggestions(true);
+        }
+      }, 300);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -120,6 +142,12 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
     setSearchQuery('');
     setSuggestions([]);
     setShowSuggestions(false);
+  };
+
+  const basketColors: Record<string, string> = {
+    'Elite Basket': 'bg-purple-100 text-purple-700 border-purple-200',
+    'Quality Basket': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    'Growth Basket': 'bg-blue-100 text-blue-700 border-blue-200'
   };
 
   const fetchIndices = useCallback(async () => {
@@ -188,7 +216,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           <input 
             type="text" 
             placeholder="Smart Search (e.g. RELAXO, TCS)..." 
-            className="w-full bg-blue-50/5 border-2 border-blue-500/10 py-3.5 pl-12 pr-16 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-950 outline-none hover:border-blue-500/25 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/5 focus:shadow-2xl focus:shadow-blue-500/10 transition-all duration-300"
+            className="w-full bg-blue-50/5 border-2 border-blue-500/10 py-3.5 pl-12 pr-16 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none hover:border-blue-500/25 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/5 focus:shadow-2xl focus:shadow-blue-500/10 transition-all duration-300"
             value={searchQuery}
             onChange={onSearchChange}
             onFocus={() => searchQuery.length >= 1 && setShowSuggestions(true)}
@@ -204,34 +232,41 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         {showSuggestions && suggestions.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-2.5 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100/80 overflow-hidden z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="p-3 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest px-2">Institutional Match</span>
-               <span className="text-[7px] font-bold text-slate-450 uppercase tracking-widest px-2">Press Enter</span>
+               <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest px-2">Institutional Match</span>
+               <span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest px-2">Press Enter</span>
             </div>
             <div className="max-h-80 overflow-y-auto overflow-x-hidden no-scrollbar p-1.5 space-y-0.5">
-              {suggestions.map((sym) => {
-                const fullName = COMPANY_NAMES[sym.toUpperCase()] || 'NSE Equity Asset';
-                return (
-                  <button
-                    key={sym}
-                    onClick={() => selectStock(sym)}
-                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 rounded-xl transition-all group text-left border border-transparent hover:border-slate-100"
-                  >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 group-hover:bg-white group-hover:border-blue-200 transition-all shrink-0">
-                         <Zap className="h-3.5 w-3.5 text-blue-600 group-hover:scale-110 transition-transform" />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                         <span className="text-sm font-black text-slate-900 tracking-tighter leading-none">{sym}</span>
-                         <span className="text-[8.5px] font-medium text-slate-400 truncate mt-1.5 uppercase tracking-wider">{fullName}</span>
-                      </div>
+              {suggestions.map((stock) => (
+                <button
+                  key={stock.symbol}
+                  onClick={() => selectStock(stock.symbol)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 rounded-xl transition-all group text-left border border-transparent hover:border-slate-100"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 group-hover:bg-white group-hover:border-blue-200 transition-all shrink-0">
+                       <Zap className="h-3.5 w-3.5 text-blue-600 group-hover:scale-110 transition-transform" />
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="opacity-0 group-hover:opacity-100 text-[8px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded-md transition-all">Select Node</span>
-                      <ChevronRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-blue-500 transform group-hover:translate-x-0.5 transition-all" />
+                    <div className="flex flex-col min-w-0">
+                       <span className="text-sm font-black text-slate-900 tracking-tighter leading-none">{stock.symbol}</span>
+                       <span className="flex flex-wrap gap-1 mt-1">
+                         {stock.baskets?.map((b: string) => (
+                           <span key={b} className={`text-[7px] font-black px-1.5 py-0.5 rounded-md border ${basketColors[b] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                             {b.replace(' Basket', '')}
+                           </span>
+                         ))}
+                       </span>
                     </div>
-                  </button>
-                );
-              })}
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+                    {stock.strategies?.slice(0, 2).map((s: any) => (
+                      <span key={s.id} className="text-[7px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                        {s.id.slice(0, 8)}
+                      </span>
+                    ))}
+                    <ChevronRight className="h-3 w-3 text-slate-300 group-hover:text-blue-500 transform group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -246,7 +281,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
              return (
               <div key={idx.name} className="flex flex-col items-start space-y-1">
                  <div className="flex items-center space-x-3">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">{idx.name}</span>
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">{idx.name}</span>
                     <span className={`text-[11px] font-black font-mono leading-none ${idx.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                        {idx.price ? idx.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                     </span>
@@ -263,7 +298,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         {/* Mobile Search Trigger Button */}
         <button 
           onClick={() => setShowMobileSearch(true)}
-          className="p-2.5 text-slate-400 hover:text-slate-900 lg:hidden hover:bg-slate-50 rounded-xl transition-all"
+          className="p-3 text-slate-500 hover:text-slate-900 lg:hidden hover:bg-slate-50 rounded-xl transition-all"
           title="Search Stocks"
         >
           <Search className="h-5 w-5" />
@@ -275,7 +310,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
               setShowNotifications(!showNotifications);
               setShowUserMenu(false);
             }}
-            className={`relative p-2.5 rounded-xl transition-all hidden sm:flex ${showNotifications ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50'}`}
+            className={`relative p-2.5 rounded-xl transition-all hidden sm:flex ${showNotifications ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
           >
             <Bell className="h-5 w-5" />
             {notifications.some(n => n.unread) && (
@@ -287,7 +322,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           {showNotifications && (
             <div className="absolute right-0 top-full mt-3 w-80 md:w-96 bg-white rounded-[1.8rem] shadow-2xl border border-slate-100 p-3 z-[110] animate-in zoom-in-95 duration-200">
                <div className="px-4 py-3 border-b border-slate-50 flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Alerts</span>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">System Alerts</span>
                   {notifications.some(n => n.unread) && (
                     <button 
                       onClick={() => {
@@ -333,7 +368,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                        <div className="flex-1 min-w-0 pr-2">
                          <p className="text-[11px] font-black text-slate-900 tracking-tight leading-none mb-1">{n.title}</p>
                          <p className="text-[9px] font-medium text-slate-500 leading-relaxed break-words">{n.message}</p>
-                         <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
+                         <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
                        </div>
                      </div>
                    ))
@@ -377,7 +412,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
               {showUserMenu && (
                 <div className="absolute right-0 top-full mt-3 w-56 bg-white rounded-[1.8rem] shadow-2xl border border-slate-100 p-2.5 z-[100] animate-in zoom-in-95 duration-200">
                    <div className="px-4 py-3 border-b border-slate-50 mb-1">
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Account Identity</p>
+                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Account Identity</p>
                       <p className="text-xs font-black text-slate-900 truncate">{user?.email}</p>
                    </div>
                    <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 rounded-2xl transition-all group">
@@ -405,7 +440,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
       {/* Mobile Search Overlay */}
       {showMobileSearch && (
-        <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300">
+        <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
           <div className="flex items-center gap-3">
             <form onSubmit={handleSearch} className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -413,7 +448,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 type="text"
                 autoFocus
                 placeholder="Search stock..."
-                className="w-full bg-slate-50 border border-slate-100 py-3 pl-11 pr-4 rounded-xl text-xs font-black uppercase tracking-widest text-slate-950 outline-none focus:border-blue-600 focus:bg-white transition-all shadow-inner"
+                className="w-full bg-slate-50 border border-slate-100 py-3 pl-11 pr-4 rounded-xl text-xs font-black uppercase tracking-widest text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-600 focus:bg-white transition-all shadow-inner"
                 value={searchQuery}
                 onChange={onSearchChange}
               />
@@ -424,7 +459,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 setSearchQuery('');
                 setSuggestions([]);
               }}
-              className="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100/50 rounded-xl transition-all"
+              className="p-3 text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 rounded-xl transition-all"
             >
               <X className="h-5 w-5" />
             </button>
@@ -434,32 +469,42 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           {suggestions.length > 0 && (
             <div className="mt-3 bg-white border border-slate-100/85 rounded-2xl shadow-2xl overflow-y-auto max-h-[70vh] p-1.5 space-y-0.5 z-[130] animate-in fade-in slide-in-from-top-1 duration-200">
               <div className="p-2.5 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center rounded-t-xl">
-                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Match Suggestions</span>
+                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Match Suggestions</span>
               </div>
-              {suggestions.map((sym) => {
-                const fullName = COMPANY_NAMES[sym.toUpperCase()] || 'NSE Equity Asset';
-                return (
-                  <button
-                    key={sym}
-                    onClick={() => {
-                      selectStock(sym);
-                      setShowMobileSearch(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3.5 py-3 hover:bg-slate-50 rounded-xl transition-all text-left group"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 shrink-0">
-                         <Zap className="h-3.5 w-3.5 text-blue-600" />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                         <span className="text-xs font-black text-slate-900 tracking-tighter leading-none">{sym}</span>
-                         <span className="text-[8px] font-medium text-slate-400 truncate mt-1.5 uppercase tracking-wider">{fullName}</span>
-                      </div>
+              {suggestions.map((stock) => (
+                <button
+                  key={stock.symbol}
+                  onClick={() => {
+                    selectStock(stock.symbol);
+                    setShowMobileSearch(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-slate-50 rounded-xl transition-all text-left group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 shrink-0">
+                       <Zap className="h-3.5 w-3.5 text-blue-600" />
                     </div>
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-300 transform group-hover:translate-x-0.5 transition-all" />
-                  </button>
-                );
-              })}
+                    <div className="flex flex-col min-w-0">
+                       <span className="text-xs font-black text-slate-900 tracking-tighter leading-none">{stock.symbol}</span>
+                       <span className="flex flex-wrap gap-1 mt-1">
+                         {stock.baskets?.map((b: string) => (
+                           <span key={b} className={`text-[6px] font-black px-1 py-0.5 rounded-sm border ${basketColors[b] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                             {b.replace(' Basket', '')}
+                           </span>
+                         ))}
+                       </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {stock.strategies?.slice(0, 1).map((s: any) => (
+                      <span key={s.id} className="text-[6px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-sm">
+                        {s.id.slice(0, 8)}
+                      </span>
+                    ))}
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
+                  </div>
+                </button>
+              ))}
             </div>
           )}
         </div>

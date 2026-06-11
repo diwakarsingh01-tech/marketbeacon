@@ -12,6 +12,8 @@ import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { toast } from 'sonner';
+import SEO from '../components/SEO';
 
 const API_URL = getApiUrl();
 
@@ -61,10 +63,10 @@ const PricingPage: React.FC = () => {
           window.location.href = '/screener'; 
         }, 3000);
       } else {
-        alert(data.error || "Voucher code not recognized");
+        toast(data.error || "Voucher code not recognized");
       }
     } catch (e) {
-      alert("Network timeout. Check your connection.");
+      toast("Network timeout. Check your connection.");
     } finally {
       setRedeemning(false);
     }
@@ -132,6 +134,7 @@ const PricingPage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-10 lg:p-16 max-w-7xl mx-auto space-y-8 md:space-y-12 pb-32 md:pb-16 font-sans min-h-screen overflow-y-auto">
+      <SEO title="Pricing & License Desk" description="MarketBeacon Pro pricing plans — Free, Pro and Alpha tiers. Institutional stock research tools for every trader." />
       {showConfetti && <Confetti />}
       
       <div className="text-center space-y-6">
@@ -167,7 +170,7 @@ const PricingPage: React.FC = () => {
 
         {/* Pricing Toggle */}
         <div className="flex items-center justify-center space-x-4">
-           <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'monthly' ? 'text-slate-900' : 'text-slate-400'}`}>Monthly</span>
+           <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'monthly' ? 'text-slate-900' : 'text-slate-500'}`}>Monthly</span>
            <button 
              onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
              className="w-14 h-7 bg-slate-100 rounded-full relative p-1 transition-all border border-slate-200"
@@ -175,7 +178,7 @@ const PricingPage: React.FC = () => {
               <div className={`h-5 w-5 bg-blue-600 rounded-full transition-all shadow-md ${billingPeriod === 'yearly' ? 'translate-x-7' : 'translate-x-0'}`} />
            </button>
            <div className="flex items-center space-x-2">
-              <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'yearly' ? 'text-blue-600' : 'text-slate-400'}`}>Yearly</span>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${billingPeriod === 'yearly' ? 'text-blue-600' : 'text-slate-500'}`}>Yearly</span>
               <span className="bg-emerald-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter animate-pulse">Save ~33%</span>
            </div>
         </div>
@@ -194,7 +197,7 @@ const PricingPage: React.FC = () => {
               )}
               
               <div className="flex items-center space-x-3 mb-4 md:mb-6">
-                <div className={`p-2 md:p-3 rounded-xl md:rounded-2xl ${tier.featured ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}`}>
+                <div className={`p-2 md:p-3 rounded-xl md:rounded-2xl ${tier.featured ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-500'}`}>
                   <Icon className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
                 <h3 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tight">{tier.name}</h3>
@@ -203,9 +206,9 @@ const PricingPage: React.FC = () => {
               <div className="mb-4 md:mb-6">
                 <div className="flex items-baseline space-x-1">
                   <span className="text-3xl md:text-4xl font-black text-slate-900">{currentPrice}</span>
-                  <span className="text-slate-400 font-bold text-xs md:text-sm">/{tier.period}</span>
+                  <span className="text-slate-500 font-bold text-xs md:text-sm">/{tier.period}</span>
                 </div>
-                <p className="text-[9px] md:text-[11px] font-bold text-slate-400 mt-1 md:mt-2 leading-relaxed uppercase">{tier.desc}</p>
+                <p className="text-[9px] md:text-[11px] font-bold text-slate-500 mt-1 md:mt-2 leading-relaxed uppercase">{tier.desc}</p>
               </div>
 
               <div className="space-y-3 md:space-y-4 mb-6 md:mb-10">
@@ -256,7 +259,7 @@ const PricingPage: React.FC = () => {
       </div>
 
       {billingPeriod === 'yearly' && (
-        <p className="text-[8px] md:text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">* Yearly plans are billed annually. Savings calculated against monthly rate.</p>
+        <p className="text-[8px] md:text-[10px] text-center text-slate-500 font-bold uppercase tracking-widest">* Yearly plans are billed annually. Savings calculated against monthly rate.</p>
       )}
 
       {/* Corporate Promotional Banner */}
@@ -268,7 +271,7 @@ const PricingPage: React.FC = () => {
               <span className="text-[9px] font-black uppercase tracking-[0.4em]">Enterprise Hub</span>
             </div>
             <h3 className="text-xl md:text-4xl font-black tracking-tighter uppercase italic leading-tight text-white">Corporate Research</h3>
-            <p className="text-[10px] md:text-lg text-slate-400 font-medium leading-relaxed">
+            <p className="text-[10px] md:text-lg text-slate-500 font-medium leading-relaxed">
               Zero-latency institutional nodes. Request a custom deployment for your fund.
             </p>
             <button 

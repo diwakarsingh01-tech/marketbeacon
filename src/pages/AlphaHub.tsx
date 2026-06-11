@@ -29,6 +29,7 @@ import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import { useAuth } from '../context/AuthContext';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import SEO from '../components/SEO';
 
 const API_URL = getApiUrl();
 
@@ -75,7 +76,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl shadow-2xl space-y-3">
-        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-800 pb-2">{label}</p>
+        <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-800 pb-2">{label}</p>
         {payload.map((entry: any, index: number) => {
            const initial = entry.payload.initialCapital || 1;
            const roi = (((entry.value / initial) - 1) * 100).toFixed(1);
@@ -306,6 +307,7 @@ const AlphaHubPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc] text-slate-900 overflow-hidden relative">
+      <SEO title="Alpha Portfolio" description="Institutional-grade portfolio allocation model. Track active signals, capital deployment, and sector exposure across Elite, Quality & Growth baskets." />
       {showConfetti && <Confetti />}
       
       {error === 'ALPHA_REQUIRED' ? (
@@ -327,7 +329,7 @@ const AlphaHubPage: React.FC = () => {
               >
                 Unlock Alpha Access
               </button>
-              <Link to="/screener" className="px-8 py-5 bg-white border-2 border-slate-100 text-slate-400 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] hover:text-slate-900 transition-all w-full sm:w-auto text-center">
+              <Link to="/screener" className="px-8 py-5 bg-white border-2 border-slate-100 text-slate-500 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] hover:text-slate-900 transition-all w-full sm:w-auto text-center">
                 Return to Screener
               </Link>
            </div>
@@ -336,7 +338,7 @@ const AlphaHubPage: React.FC = () => {
            <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm w-full space-y-4 text-center">
              <div className="text-left space-y-1">
                <h4 className="text-[10px] font-black uppercase text-slate-900 tracking-wider">Have a Trial Voucher?</h4>
-               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Enter code below to unlock Alpha access instantly</p>
+               <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Enter code below to unlock Alpha access instantly</p>
              </div>
 
              {/* Promo shortcut button */}
@@ -353,7 +355,7 @@ const AlphaHubPage: React.FC = () => {
                  placeholder="VOUCHER CODE"
                  value={voucherCode}
                  onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherError(null); }}
-                 className="bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest outline-none flex-1 focus:border-blue-600 transition-all placeholder:text-slate-300"
+                 className="bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none flex-1 focus:border-blue-600 transition-all placeholder:text-slate-300"
                />
                <button 
                  onClick={handleRedeemVoucher}
@@ -416,7 +418,7 @@ const AlphaHubPage: React.FC = () => {
                   <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Auth Level: <span className="text-blue-600 font-bold">Alpha Hub Unlocked</span></span>
                </div>
             </div>
-            <div className="flex items-center gap-2 text-slate-400">
+            <div className="flex items-center gap-2 text-slate-500">
                <Clock className="h-3 w-3" />
                <span className="text-[9px] font-black uppercase tracking-widest">Live Node Pulse Active</span>
             </div>
@@ -446,21 +448,21 @@ const AlphaHubPage: React.FC = () => {
                   <CheckCircle2 className="h-4.5 w-4.5 text-blue-600 shrink-0" />
                   <div>
                      <span className="text-slate-900 block font-black text-xs leading-none">42.5% CAGR</span>
-                     <span className="text-[8px] text-slate-400">Backtested Yield</span>
+                     <span className="text-[8px] text-slate-500">Backtested Yield</span>
                   </div>
                </div>
                <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4.5 w-4.5 text-blue-600 shrink-0" />
                   <div>
                      <span className="text-slate-900 block font-black text-xs leading-none">Live Sizer</span>
-                     <span className="text-[8px] text-slate-400">Tailored allocations</span>
+                     <span className="text-[8px] text-slate-500">Tailored allocations</span>
                   </div>
                </div>
                <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4.5 w-4.5 text-blue-600 shrink-0" />
                   <div>
                      <span className="text-slate-900 block font-black text-xs leading-none">Direct Desk</span>
-                     <span className="text-[8px] text-slate-400">Zero lock-in fees</span>
+                     <span className="text-[8px] text-slate-500">Zero lock-in fees</span>
                   </div>
                </div>
             </div>
@@ -494,7 +496,7 @@ const AlphaHubPage: React.FC = () => {
                               className={`py-2 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${
                                  totalCapital === cap 
                                     ? 'bg-blue-600 text-white shadow-md' 
-                                    : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                                    : 'bg-slate-900 border border-slate-800 text-slate-500 hover:text-white hover:border-slate-700'
                               }`}
                            >
                               ₹{(cap / 100000).toFixed(0)}L
@@ -535,14 +537,14 @@ const AlphaHubPage: React.FC = () => {
                                   setTotalCapital(0);
                                 }
                               }}
-                              className="bg-transparent text-sm font-black text-white font-mono text-right w-24 outline-none focus:text-blue-400 transition-colors"
+                              className="bg-transparent text-sm font-black text-white font-mono text-right w-24 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:text-blue-400 transition-colors"
                            />
                         </div>
                      </div>
                   </div>
 
                   {/* Sizer Details */}
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-900 text-slate-400 text-[8.5px] font-black uppercase tracking-widest font-mono">
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-900 text-slate-500 text-[8.5px] font-black uppercase tracking-widest font-mono">
                      <div className="space-y-1">
                         <span className="text-slate-500 block text-[7px]">Avg Budget/Stock</span>
                         <span className="text-white text-xs">₹{Math.round(totalCapital / 40).toLocaleString('en-IN')}</span>
@@ -564,18 +566,18 @@ const AlphaHubPage: React.FC = () => {
 
                {/* 2. Cap Architecture Meter Card */}
                <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm space-y-4">
-                  <div className="flex justify-between items-center text-slate-400">
+                  <div className="flex justify-between items-center text-slate-500">
                      <span className="text-[9px] font-black uppercase tracking-widest">Cap Architecture Breakdown</span>
                      <PieChart className="h-4 w-4" />
                   </div>
                   <div className="flex items-center justify-between">
                      <div className="space-y-0.5">
                        <div className="text-xl font-black text-slate-950 italic leading-none">
-                          {data?.summary?.large || 0}<span className="text-[9px] text-slate-400 not-italic">L</span> • 
-                          {data?.summary?.mid || 0}<span className="text-[9px] text-slate-400 not-italic">M</span> • 
-                          {data?.summary?.small || 0}<span className="text-[9px] text-slate-400 not-italic">S</span>
+                          {data?.summary?.large || 0}<span className="text-[9px] text-slate-500 not-italic">L</span> • 
+                          {data?.summary?.mid || 0}<span className="text-[9px] text-slate-500 not-italic">M</span> • 
+                          {data?.summary?.small || 0}<span className="text-[9px] text-slate-500 not-italic">S</span>
                        </div>
-                       <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Rule 50-30-20 Enforced</p>
+                       <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">Rule 50-30-20 Enforced</p>
                      </div>
                      <CircularGauge value={Math.round(((data?.summary?.total || 0)/50)*100)} size={38} strokeWidth={4} />
                   </div>
@@ -589,12 +591,12 @@ const AlphaHubPage: React.FC = () => {
                {/* 3. Static Precision Lock & Hardening Readouts */}
                <div className="grid grid-cols-2 gap-4">
                   <div className="p-5 bg-white border border-slate-200 rounded-2xl space-y-1">
-                     <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest block">Entry Target Lock</span>
+                     <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest block">Level Lock</span>
                      <span className="text-sm font-black text-slate-900 block leading-none">2.00% Limit</span>
                      <span className="text-[7px] font-bold text-emerald-600 uppercase tracking-wider block">Purge Engine Active</span>
                   </div>
                   <div className="p-5 bg-white border border-slate-200 rounded-2xl space-y-1">
-                     <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest block">Sector Hardening</span>
+                     <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest block">Sector Hardening</span>
                      <span className="text-sm font-black text-slate-900 block leading-none">20% Exposure</span>
                      <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider block">Max Allocation Cap</span>
                   </div>
@@ -615,24 +617,24 @@ const AlphaHubPage: React.FC = () => {
                   <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 w-full sm:w-auto">
                      <button 
                         onClick={() => setActiveTab('active')}
-                        className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-white text-slate-950 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-700'}`}
+                        className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-white text-slate-950 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
                      >
                         Alpha Portfolio ({data?.stocks?.length || 0})
                      </button>
                      <button 
                         onClick={() => setActiveTab('analytics')}
-                        className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'analytics' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+                        className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'analytics' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                      >
                         Backtest Analytics
                      </button>
                      <button 
                         onClick={() => setActiveTab('closed')}
-                        className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'closed' ? 'bg-white text-slate-950 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-700'}`}
+                        className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'closed' ? 'bg-white text-slate-950 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
                      >
                         Booked Profits
                      </button>
                   </div>
-                  <div className="hidden md:flex items-center gap-2 text-slate-400">
+                  <div className="hidden md:flex items-center gap-2 text-slate-500">
                      <Activity className="h-4 w-4 shrink-0" />
                      <span className="text-[8px] font-black uppercase tracking-widest leading-none">Desk Mode: {activeTab === 'active' ? 'Replicable Holdings' : activeTab === 'analytics' ? 'CAGR Backtest' : 'Booked Yields'}</span>
                   </div>
@@ -652,7 +654,7 @@ const AlphaHubPage: React.FC = () => {
                           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-emerald-600/10 opacity-40"></div>
                           <div className="z-10 w-full md:w-5/12 space-y-4">
                              <h3 className="text-xl font-black uppercase italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 leading-none">Alpha 40 vs Benchmark</h3>
-                             <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider leading-relaxed">
+                             <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider leading-relaxed">
                                 Historical backtesting (2019-2025) demonstrates the institutional Alpha-40 methodology capturing deep structural reversals to consistently outperform traditional indices.
                              </p>
                              <div className="flex flex-col gap-2.5 text-xs font-black uppercase tracking-widest pt-2">
@@ -719,7 +721,7 @@ const AlphaHubPage: React.FC = () => {
                                       {cap} Tier Engine
                                    </div>
                                    <div className="h-px flex-1 bg-slate-200" />
-                                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{capStocks.length} Assets</span>
+                                   <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{capStocks.length} Assets</span>
                                 </div>
 
                                 <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -729,7 +731,7 @@ const AlphaHubPage: React.FC = () => {
                                              <tr className="bg-slate-50 border-b border-slate-200">
                                                 <th className="w-[15%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500">Asset</th>
                                                 <th className="w-[8%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500 text-center">Score</th>
-                                                <th className="w-[10%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Target ROI</th>
+                                                <th className="w-[10%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Model Objective</th>
                                                 <th className="w-[12%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500">Strategy</th>
                                                 <th className="w-[6%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500 text-center">Tranche</th>
                                                 <th className="w-[10%] px-3 py-3.5 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Base Price</th>
@@ -751,10 +753,10 @@ const AlphaHubPage: React.FC = () => {
                                                             <div className="flex items-center gap-1.5">
                                                                <span className="text-xs font-black text-slate-900 uppercase tracking-tighter group-hover:text-blue-600 transition-colors">{stock.symbol}</span>
                                                                {stock.signalCount > 1 && (
-                                                                  <span className="px-1 py-0.5 bg-indigo-600 text-[6px] font-black text-white rounded uppercase leading-none shadow-lg shadow-indigo-600/20 animate-pulse">Super Signal</span>
+                                                                  <span className="px-1 py-0.5 bg-indigo-600 text-[6px] font-black text-white rounded uppercase leading-none shadow-lg shadow-indigo-600/20 animate-pulse">High Priority</span>
                                                                )}
                                                             </div>
-                                                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1 truncate">{stock.sector}</span>
+                                                            <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1 truncate">{stock.sector}</span>
                                                          </div>
                                                       </td>
                                                       <td className="px-3 py-3 text-center">
@@ -787,7 +789,7 @@ const AlphaHubPage: React.FC = () => {
                                                       <td className="px-3 py-3 text-right text-blue-600 font-black bg-blue-50/20 text-xs underline decoration-blue-100">{qty}</td>
                                                       <td className="px-3 py-3 text-right font-black bg-blue-50/20 text-slate-950">₹{Math.round(qty * (stock.currentPrice || 1)).toLocaleString()}</td>
                                                       <td className="px-3 py-3 text-center">
-                                                         <Link to={`/stock/${stock.symbol}`} className="p-1 bg-slate-50 text-slate-400 hover:bg-slate-950 hover:text-white transition-all inline-flex items-center rounded-lg shadow-sm border border-slate-200">
+                                                         <Link to={`/stock/${stock.symbol}`} className="p-1 bg-slate-50 text-slate-500 hover:bg-slate-950 hover:text-white transition-all inline-flex items-center rounded-lg shadow-sm border border-slate-200">
                                                             <ArrowUpRight className="h-3.5 w-3.5" />
                                                          </Link>
                                                       </td>
@@ -809,13 +811,13 @@ const AlphaHubPage: React.FC = () => {
                                                      <div className="flex items-center gap-2">
                                                         <span className="text-sm font-black text-slate-900 font-mono uppercase">{stock.symbol}</span>
                                                         {stock.signalCount > 1 && (
-                                                           <span className="px-1 py-0.5 bg-indigo-600 text-[6px] font-black text-white rounded uppercase leading-none animate-pulse">Super Signal</span>
+                                                           <span className="px-1 py-0.5 bg-indigo-600 text-[6px] font-black text-white rounded uppercase leading-none animate-pulse">High Priority</span>
                                                         )}
                                                         <span className="px-1.5 py-0.5 bg-slate-900 text-white rounded text-[7.5px] font-black font-mono">
                                                            {stock.score}
                                                         </span>
                                                      </div>
-                                                     <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mt-0.5">{stock.sector}</span>
+                                                     <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest block mt-0.5">{stock.sector}</span>
                                                   </div>
                                                   <div className="text-right">
                                                      <span className="text-sm font-black text-slate-900 font-mono block">₹{stock.currentPrice?.toLocaleString()}</span>
@@ -827,7 +829,7 @@ const AlphaHubPage: React.FC = () => {
                                                
                                                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100/60 text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">
                                                   <div className="flex-1">
-                                                     <span className="text-[7.5px] text-slate-400 block mb-0.5">Strategy</span>
+                                                     <span className="text-[7.5px] text-slate-500 block mb-0.5">Strategy</span>
                                                      <div className="flex items-center gap-1.5">
                                                         <span className="text-slate-800 font-black truncate block leading-tight">{stock.strategy}</span>
                                                         <span className={`px-1 rounded-[4px] text-[7px] font-black font-mono border ${
@@ -842,26 +844,26 @@ const AlphaHubPage: React.FC = () => {
                                                   </div>
 
                                                   <div className="text-right">
-                                                     <span className="text-[7.5px] text-slate-400 block mb-0.5">Target ROI</span>
+                                                     <span className="text-[7.5px] text-slate-500 block mb-0.5">Target ROI</span>
                                                      <span className="text-emerald-600 font-black">+{Number(stock.roi || 0).toFixed(1)}%</span>
                                                   </div>
                                                   <div>
-                                                     <span className="text-[7.5px] text-slate-400 block mb-0.5">Base Price</span>
+                                                     <span className="text-[7.5px] text-slate-500 block mb-0.5">Base Price</span>
                                                      <span className="text-slate-800 font-black">₹{stock.entryPrice?.toLocaleString()}</span>
                                                   </div>
                                                   <div className="text-right">
-                                                     <span className="text-[7.5px] text-slate-400 block mb-0.5">Objective</span>
+                                                     <span className="text-[7.5px] text-slate-500 block mb-0.5">Objective</span>
                                                      <span className="text-emerald-600 font-black">₹{stock.target?.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
                                                   </div>
                                                   <div>
-                                                     <span className="text-[7.5px] text-slate-400 block mb-0.5">Model Qty</span>
+                                                     <span className="text-[7.5px] text-slate-500 block mb-0.5">Model Qty</span>
                                                      <span className="text-blue-600 font-black">{qty}</span>
                                                   </div>
                                                </div>
                                                
                                                <div className="pt-3 border-t border-slate-100/60 flex items-center justify-between">
                                                   <div>
-                                                     <span className="text-[7.5px] text-slate-400 block mb-0.5">Total Invest</span>
+                                                     <span className="text-[7.5px] text-slate-500 block mb-0.5">Total Invest</span>
                                                      <span className="text-slate-900 font-black font-mono">₹{Math.round(qty * (stock.currentPrice || 1)).toLocaleString()}</span>
                                                   </div>
                                                   <Link to={`/stock/${stock.symbol}`} className="flex items-center gap-1 px-3 py-1.5 bg-slate-950 text-white rounded-lg text-[8px] font-black uppercase tracking-widest shadow-sm active:scale-95 transition-all">
@@ -901,19 +903,19 @@ const AlphaHubPage: React.FC = () => {
                                           type="text" 
                                           value={totalCapital.toLocaleString()} 
                                           onChange={(e) => setTotalCapital(Number(e.target.value.replace(/,/g, '')) || 0)}
-                                          className="text-xl font-black bg-transparent outline-none w-full text-white placeholder-slate-700"
+                                          className="text-xl font-black bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none w-full text-white placeholder-slate-700"
                                        />
                                     </div>
                                  </div>
                                  <div className="bg-emerald-600 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden group">
                                     <div className="relative z-10">
-                                       <span className="text-[8px] font-black uppercase tracking-widest text-emerald-100 mb-2 block">Output Profit</span>
+                                       <span className="text-[8px] font-black uppercase tracking-widest text-emerald-100 mb-2 block">Model Output</span>
                                        <div className="text-xl font-black font-mono tracking-tighter">+₹{bookedOutput.toLocaleString()}</div>
                                     </div>
                                     <CheckCircle2 className="absolute top-0 right-0 p-4 h-16 w-16 opacity-10 group-hover:rotate-12 transition-transform duration-700" />
                                  </div>
                                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">Yield Realized</span>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-2">Yield Realized</span>
                                     <div className="text-xl font-black text-emerald-600 font-mono tracking-tighter">+{avgRoi.toFixed(1)}%</div>
                                  </div>
                               </div>
@@ -934,7 +936,7 @@ const AlphaHubPage: React.FC = () => {
                                  <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
                                     {(data?.closedTrades || []).slice(0, 40).map((trade: any) => (
                                        <tr key={`${trade.symbol}-${trade.exitDate}`} className="hover:bg-slate-50 transition-all group">
-                                          <td className="px-4 py-3 text-[10px] font-black text-slate-400">{new Date(trade.exitDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                          <td className="px-4 py-3 text-[10px] font-black text-slate-500">{new Date(trade.exitDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                                           <td className="px-4 py-3">
                                              <div className="flex flex-col font-sans">
                                                 <span className="text-xs font-black text-slate-900 uppercase tracking-tighter group-hover:text-emerald-600 transition-colors">{trade.symbol}</span>
@@ -963,7 +965,7 @@ const AlphaHubPage: React.FC = () => {
                                           <span className="text-[8px] font-bold text-blue-600 uppercase tracking-widest block mt-0.5">{trade.sector}</span>
                                        </div>
                                        <div className="text-right">
-                                          <span className="text-[7.5px] text-slate-400 block mb-0.5 uppercase font-bold">Exit Date</span>
+                                          <span className="text-[7.5px] text-slate-500 block mb-0.5 uppercase font-bold">Exit Date</span>
                                           <span className="text-[10px] font-black text-slate-900 font-mono">
                                              {new Date(trade.exitDate).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
                                           </span>
@@ -972,14 +974,14 @@ const AlphaHubPage: React.FC = () => {
                                     
                                     <div className="flex justify-between items-center pt-3 border-t border-slate-100/60">
                                        <div>
-                                          <span className="text-[7.5px] text-slate-400 block mb-0.5 uppercase font-bold">Duration</span>
+                                          <span className="text-[7.5px] text-slate-500 block mb-0.5 uppercase font-bold">Duration</span>
                                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-lg text-[9px] font-black text-slate-900 uppercase tracking-widest">
                                              <Clock className="h-3 w-3 text-slate-400" />
                                              {trade.days} Sessions
                                           </span>
                                        </div>
                                        <div className="text-right">
-                                          <span className="text-[7.5px] text-slate-400 block mb-0.5 uppercase font-bold">Yield Realized</span>
+                                          <span className="text-[7.5px] text-slate-500 block mb-0.5 uppercase font-bold">Yield Realized</span>
                                           <span className="text-lg font-black text-emerald-600 font-mono">+{Number(trade.roi).toFixed(1)}%</span>
                                        </div>
                                     </div>
@@ -1005,10 +1007,10 @@ const AlphaHubPage: React.FC = () => {
                            const percentage = ((count / (data?.summary?.total || 1)) * 100).toFixed(1);
                            return (
                               <div key={sector} className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
-                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block truncate">{sector}</span>
+                                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest block truncate">{sector}</span>
                                  <div className="flex justify-between items-baseline">
                                     <span className="text-lg font-black text-slate-900 font-mono leading-none">{percentage}%</span>
-                                    <span className="text-[9px] font-bold text-slate-400 font-mono">({count})</span>
+                                    <span className="text-[9px] font-bold text-slate-500 font-mono">({count})</span>
                                  </div>
                               </div>
                            );
@@ -1033,7 +1035,7 @@ const AlphaHubPage: React.FC = () => {
                 </button>
                 
                 {isDisclaimerExpanded && (
-                  <div className="px-6 pb-8 md:px-8 md:pb-10 space-y-6 relative z-10 border-t border-white/5 pt-6 animate-in slide-in-from-top-2 duration-300">
+                  <div className="px-4 md:px-8 lg:px-10 pb-8 md:pb-10 space-y-6 relative z-10 border-t border-white/5 pt-6 animate-in slide-in-from-top-2 duration-300">
                     <p className="text-[9.5px] md:text-[10px] text-slate-500 font-black leading-relaxed uppercase tracking-[0.1em] max-w-6xl">
                        Institutional protocol warning: MarketBeacon (Batch 9 Engine) is an institutional-grade research and asset discovery terminal. All technical signals, portfolio weights, and fundamental scores are provided for educational and research purposes only. MarketBeacon is not a SEBI registered investment advisor. Stock market trading involves significant financial risk. Historical results do not guarantee future performance. No Stop-Loss approach is considered a high-risk methodology.
                     </p>

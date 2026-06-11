@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface TradeTableProps {
   trades: any[];
@@ -54,7 +55,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
       {searchTerm ? (
         <>
           <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">No Matching Nodes</h3>
-          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide leading-relaxed mb-5">
+          <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide leading-relaxed mb-5">
             We couldn't find any assets matching "{searchTerm}". Try refining your search query.
           </p>
           <button 
@@ -67,7 +68,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
       ) : activeTab === 'portfolio' ? (
         <>
           <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">Wealth Desk is Empty</h3>
-          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide leading-relaxed mb-5">
+          <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide leading-relaxed mb-5">
             No institutional assets are currently active in your portfolio ledger. Upload new details or enter assets manually to begin monitoring.
           </p>
           <div className="flex flex-wrap items-center gap-3">
@@ -97,7 +98,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
       ) : activeTab === 'hold' ? (
         <>
           <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">Watchlist is Empty</h3>
-          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide leading-relaxed mb-5">
+          <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide leading-relaxed mb-5">
             Your real-time watch matrix contains zero tracked nodes. Add symbols from the screener to start tracking.
           </p>
           {onGoToScreener && (
@@ -112,10 +113,10 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
       ) : (
         <>
           <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">No Screener Matches Detected</h3>
-          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide leading-relaxed mb-2">
+          <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide leading-relaxed mb-2">
             No institutional assets in the current basket match the selected criteria.
           </p>
-          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">
+          <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic">
             Check other filters or matrices for active setups.
           </p>
         </>
@@ -179,6 +180,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showColumnSettings, setShowColumnSettings] = useState(false);
   const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
 
   const visibleTabs = useMemo(() => {
     if (activeTab === 'portfolio' || activeTab === 'hold') {
@@ -245,7 +248,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
   const handleExportCSV = () => {
     if (!filteredAndSortedTrades.length) return;
-    const headers = ['Symbol', 'Observation', 'Strategy', 'Sector', 'Market Cap', 'Entry A (Base)', 'CMP', 'ATH', 'Target (Objective)', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
+    const headers = ['Symbol', 'Observation', 'Strategy', 'Sector', 'Market Cap', 'Level A (Base)', 'CMP', 'ATH', 'Model Objective', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
     const rows = filteredAndSortedTrades.map(t => [
       t.symbol,
       t.entryTime || '-',
@@ -289,7 +292,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
     
     if (method === 'copy') {
       navigator.clipboard.writeText(text);
-      alert(`Research for ${trade.symbol} copied to clipboard! Ready to paste.`);
+      toast(`Research for ${trade.symbol} copied to clipboard! Ready to paste.`);
     } else {
       const url = `https://t.me/share/url?url=https://marketbeacon.pro&text=${encodeURIComponent(text)}`;
       window.open(url, '_blank');
@@ -357,6 +360,15 @@ const TradeTable: React.FC<TradeTableProps> = ({
     return result;
   }, [trades, searchTerm, sortConfig, livePrices, athData, capData, sectorData]);
 
+  useEffect(() => {
+    setPage(0);
+  }, [searchTerm, activeTab, strategyId]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredAndSortedTrades.length / rowsPerPage));
+  const paginatedTrades = filteredAndSortedTrades.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+
+  const goToPage = (p: number) => setPage(Math.max(0, Math.min(totalPages - 1, p)));
+
   const SortIcon = ({ column }: { column: string }) => {
     if (sortConfig?.key !== column) return <FilterIcon className="h-2.5 w-2.5 ml-1 opacity-20" />;
     return sortConfig.direction === 'asc' ? <ChevronUpIcon className="h-2.5 w-2.5 ml-1 text-blue-600" /> : <ChevronDownIcon className="h-2.5 w-2.5 ml-1 text-blue-600" />;
@@ -373,7 +385,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
             <input 
               type="text" 
               placeholder="Search Symbols..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-11 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest focus:bg-white focus:border-blue-500/20 transition-all outline-none"
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-11 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest focus:bg-white focus:border-blue-500/20 transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -416,13 +428,13 @@ const TradeTable: React.FC<TradeTableProps> = ({
           </button>
           <button 
             onClick={() => setShowColumnSettings(!showColumnSettings)} 
-            className={`p-2.5 rounded-2xl border transition-all ${showColumnSettings ? 'bg-slate-ink text-white border-blue-500/30' : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50'}`}
+            className={`p-2.5 rounded-2xl border transition-all ${showColumnSettings ? 'bg-slate-ink text-white border-blue-500/30' : 'bg-white text-slate-500 border-slate-100 hover:bg-slate-50'}`}
             style={showColumnSettings ? { backgroundColor: 'var(--slate-ink)' } : {}}
           >
             <SettingsIcon className="h-4 w-4" />
           </button>
-          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-slate-100 shadow-sm italic whitespace-nowrap">
-            {filteredAndSortedTrades.length} Nodes
+          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-slate-100 shadow-sm italic whitespace-nowrap">
+            {page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, filteredAndSortedTrades.length)} of {filteredAndSortedTrades.length} Nodes
           </div>
         </div>
       </div>
@@ -438,7 +450,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
              <button 
                 key={key} 
                 onClick={() => setVisibleColumns(p => ({...p, [key]: !isVisible}))} 
-                className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${isVisible ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-50 text-slate-400 border border-slate-100 hover:bg-slate-100'}`}
+                className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${isVisible ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-50 text-slate-500 border border-slate-100 hover:bg-slate-100'}`}
              >
                 {key}
              </button>
@@ -449,12 +461,12 @@ const TradeTable: React.FC<TradeTableProps> = ({
       <div className="hidden md:block border border-slate-100 rounded-[1.5rem] bg-white shadow-2xl overflow-hidden relative">
         <div className="overflow-x-auto custom-scrollbar min-h-[300px]">
           <table className="w-full text-left border-collapse min-w-[1200px]">
-            <thead>
+            <thead className="sticky top-0 z-10">
               {activeTab === 'portfolio' ? (
-                <tr className="bg-slate-50/50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 italic">
+                <tr className="bg-white text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 italic">
                   <th className="px-6 py-3.5 text-left">Asset Node</th>
                   <th className="px-4 py-3.5 text-center">Qty</th>
-                  <th className="px-4 py-3.5 text-right">Entry Base</th>
+                  <th className="px-4 py-3.5 text-right">Level Base</th>
                   <th className="px-4 py-3.5 text-right">CMP</th>
                   <th className="px-4 py-3.5 text-right">Invested Value</th>
                   <th className="px-4 py-3.5 text-right">Current Node</th>
@@ -462,7 +474,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                   <th className="px-6 py-3.5 text-right">Audit</th>
                 </tr>
               ) : (
-                <tr className="bg-slate-50/50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 italic">
+                <tr className="bg-white text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 italic">
                   {visibleColumns.observation && <th className="px-6 py-3.5 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('entryTime')}><div className="flex items-center gap-1">Obs <SortIcon column="entryTime" /></div></th>}
                   {visibleColumns.symbol && <th className="px-4 py-3.5 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('symbol')}><div className="flex items-center gap-1">Asset Node <SortIcon column="symbol" /></div></th>}
                   {visibleColumns.marketCap && <th className="px-4 py-3.5 cursor-pointer hover:text-blue-600 transition-colors text-center" onClick={() => handleSort('marketCap')}><div className="flex items-center justify-center gap-1">Tier <SortIcon column="marketCap" /></div></th>}
@@ -493,7 +505,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                 </tr>
               ) : (
                 <AnimatePresence>
-                  {filteredAndSortedTrades.map((trade, idx) => {
+                  {paginatedTrades.map((trade, idx) => {
                     const capTag = getMarketCapTag(trade.marketCap, trade.symbol);
                     const isStarred = userWatchlist?.includes(trade.symbol);
                     const ath = athData?.[trade.symbol] || trade.ath || 0;
@@ -517,7 +529,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                               </button>
                               <div className="flex flex-col font-sans">
                                  <span className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
-                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</span>
+                                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1">{trade.sector}</span>
                               </div>
                             </div>
                           </td>
@@ -526,7 +538,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                               type="number" 
                               defaultValue={trade.quantity || 0} 
                               onBlur={(e) => onUpdateHolding?.(trade.symbol, parseInt(e.target.value) || 0, trade.buy_price || 0)} 
-                              className="w-16 bg-slate-50/50 border border-slate-200 rounded-lg text-center font-mono font-bold py-1 px-1.5 text-xs outline-none focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 hover:border-slate-300 transition-all shadow-sm" 
+                              className="w-16 bg-slate-50/50 border border-slate-200 rounded-lg text-center font-mono font-bold py-1 px-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 hover:border-slate-300 transition-all shadow-sm" 
                             />
                           </td>
                           <td className="px-4 py-2.5 text-right">
@@ -534,11 +546,11 @@ const TradeTable: React.FC<TradeTableProps> = ({
                               type="number" 
                               defaultValue={trade.buy_price || 0} 
                               onBlur={(e) => onUpdateHolding?.(trade.symbol, trade.quantity || 0, parseFloat(e.target.value) || 0)} 
-                              className="w-24 bg-slate-50/50 border border-slate-200 rounded-lg text-right font-mono font-bold py-1 px-2 text-xs outline-none focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 hover:border-slate-300 transition-all shadow-sm" 
+                              className="w-24 bg-slate-50/50 border border-slate-200 rounded-lg text-right font-mono font-bold py-1 px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 hover:border-slate-300 transition-all shadow-sm" 
                             />
                           </td>
                           <td className="px-4 py-2.5 text-right text-blue-600 font-bold italic">₹{trade.livePrice?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                          <td className="px-4 py-2.5 text-right text-slate-400 font-medium opacity-80">₹{invested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-500 font-medium opacity-80">₹{invested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                           <td className="px-4 py-2.5 text-right text-slate-900 font-bold">₹{currentVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                           <td className="px-4 py-2.5 text-right">
                             <span className={`px-2.5 py-1 rounded-lg font-black text-[9px] italic tracking-tighter ${pnl >= 0 ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/10' : 'bg-rose-500/10 text-rose-600 border border-rose-500/10'}`}>
@@ -565,10 +577,10 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                  </div>
                                </div>
                                <div className="flex items-center gap-1 shrink-0">
-                                 <Link to={`/stock/${trade.symbol}`} className="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:bg-slate-ink hover:text-white transition-all shrink-0">
-                                    <InfoIcon className="h-3.5 w-3.5" />
-                                 </Link>
-                                 <button onClick={(e) => { e.preventDefault(); if (window.confirm(`Remove ${trade.symbol} from portfolio?`)) onToggleWatchlist?.(trade.symbol); }} className="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:bg-rose-600 hover:text-white transition-all">
+                                  <Link to={`/stock/${trade.symbol}`} className="p-2.5 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-ink hover:text-white transition-all shrink-0">
+                                     <InfoIcon className="h-3.5 w-3.5" />
+                                  </Link>
+                                  <button onClick={(e) => { e.preventDefault(); if (window.confirm(`Remove ${trade.symbol} from portfolio?`)) onToggleWatchlist?.(trade.symbol); }} className="p-2.5 rounded-lg bg-slate-50 text-slate-500 hover:bg-rose-600 hover:text-white transition-all">
                                     <Trash2 className="h-3.5 w-3.5" />
                                  </button>
                                </div>
@@ -587,7 +599,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         className="hover:bg-slate-50 group transition-all font-black text-[11px] divide-x divide-slate-50"
                       >
                         {visibleColumns.observation && (
-                          <td className="px-6 py-2.5 text-[9px] text-slate-400 font-bold uppercase whitespace-nowrap italic">
+                          <td className="px-6 py-2.5 text-[9px] text-slate-500 font-bold uppercase whitespace-nowrap italic">
                             {(() => {
                               if (!trade.entryTime || trade.entryTime === '-') return '-';
                               const d = new Date(trade.entryTime);
@@ -609,11 +621,11 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                </button>
                                 <div className="flex flex-col font-sans">
                                    <span className="text-sm font-black text-slate-950 group-hover:text-blue-600 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
-                                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</span>
+                                   <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1">{trade.sector}</span>
                                  </div>
                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-auto pr-2 shrink-0">
-                                  <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Share2 className="h-3 w-3" /></button>
-                                  <Link to={`/stock/${trade.symbol}`} className="p-1.5 bg-slate-50 text-slate-400 rounded-lg hover:bg-slate-ink hover:text-white transition-all"><ExternalLink className="h-3 w-3" /></Link>
+                                   <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Share2 className="h-3 w-3" /></button>
+                                   <Link to={`/stock/${trade.symbol}`} className="p-2.5 bg-slate-50 text-slate-500 rounded-lg hover:bg-slate-ink hover:text-white transition-all"><ExternalLink className="h-3 w-3" /></Link>
                                </div>
                             </div>
                           </td>
@@ -659,7 +671,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                     return (
                                       <div key={l} className="flex justify-between items-center text-[10px]">
                                         <div className="flex flex-col text-left">
-                                          <span className={`font-black ${l === 'a' ? 'text-blue-400' : l === 'd' ? 'text-emerald-400' : 'text-slate-400'}`}>Entry {l.toUpperCase()}</span>
+                                          <span className={`font-black ${l === 'a' ? 'text-blue-400' : l === 'd' ? 'text-emerald-400' : 'text-slate-500'}`}>Level {l.toUpperCase()}</span>
                                           {date && <span className="text-[7px] text-slate-500 font-bold uppercase">{date}</span>}
                                         </div>
                                         <span className="font-bold text-white italic">₹{price?.toLocaleString()}</span>
@@ -670,9 +682,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
                             </div>
                           </td>
                         )}
-                        {visibleColumns.basePrice && <td className="px-4 py-2.5 text-right text-slate-400 font-semibold italic">₹{trade.entryPrice?.toLocaleString()}</td>}
+                        {visibleColumns.basePrice && <td className="px-4 py-2.5 text-right text-slate-500 font-semibold italic">₹{trade.entryPrice?.toLocaleString()}</td>}
                         {visibleColumns.cmp && <td className="px-4 py-2.5 text-right text-blue-600 font-bold italic bg-slate-50/50 shadow-inner">₹{trade.livePrice?.toLocaleString()}</td>}
-                        {visibleColumns.dfh && <td className="px-4 py-2.5 text-right text-slate-400 font-medium opacity-80 italic">{trade.dfh?.toFixed(1)}%</td>}
+                        {visibleColumns.dfh && <td className="px-4 py-2.5 text-right text-slate-500 font-medium opacity-80 italic">{trade.dfh?.toFixed(1)}%</td>}
                         {visibleColumns.objective && <td className="px-4 py-2.5 text-right text-fuchsia-600 font-bold font-mono">₹{trade.target?.toLocaleString()}</td>}
                         {visibleColumns.roi && (
                           <td className="px-4 py-2.5 text-right">
@@ -690,7 +702,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                 <span className="text-xs font-bold text-orange-600 italic">
                                    {trade.entryPrice > 0 ? (((trade.livePrice - trade.entryPrice)/trade.entryPrice) * 100).toFixed(1) : '0.0'}%
                                 </span>
-                                <span className="text-[7px] text-slate-400 uppercase font-black tracking-widest mt-0.5">Entry Window</span>
+                                <span className="text-[7px] text-slate-400 uppercase font-black tracking-widest mt-0.5">Level Window</span>
                              </div>
                           </td>
                         )}
@@ -732,7 +744,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                     <span className="text-[7px] text-slate-400 font-extrabold uppercase tracking-widest mt-0.5">Audit</span>
                                   </div>
                                 </div>
-                                <Link to={`/stock/${trade.symbol}`} className="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:bg-slate-ink hover:text-white transition-all shrink-0">
+                                <Link to={`/stock/${trade.symbol}`} className="p-2.5 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-ink hover:text-white transition-all shrink-0">
                                    <InfoIcon className="h-3.5 w-3.5" />
                                 </Link>
                             </div>
@@ -751,7 +763,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
       {/* Mobile Card View (Safe-Guard Rule #10: Smart Insight Cards) */}
       <div className="md:hidden space-y-3 px-2">
          <AnimatePresence>
-            {filteredAndSortedTrades.map((trade, idx) => {
+             {paginatedTrades.map((trade, idx) => {
               const isStarred = userWatchlist?.includes(trade.symbol);
               const capTag = getMarketCapTag(trade.marketCap, trade.symbol);
               const isExpanded = expandedSymbol === trade.symbol;
@@ -783,7 +795,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                  <span className="text-sm font-black text-slate-900 tracking-tight font-mono uppercase">{trade.symbol}</span>
                                  <span className={`px-1.5 py-0.5 rounded-[0.25rem] text-[6.5px] font-black border tracking-wider leading-none ${capTag.class}`}>{capTag.label}</span>
                               </div>
-                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</span>
+                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">{trade.sector}</span>
                            </div>
                         </div>
                         
@@ -808,7 +820,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                             defaultValue={trade.quantity || 0} 
                             onClick={(e) => e.stopPropagation()}
                             onBlur={(e) => onUpdateHolding?.(trade.symbol, parseInt(e.target.value) || 0, trade.buy_price || 0)} 
-                            className="w-12 bg-slate-50 border border-slate-200 rounded-lg text-center font-mono font-bold py-0.5 text-[10px] outline-none focus:bg-white focus:border-blue-600 transition-all shadow-sm" 
+                            className="w-12 bg-slate-50 border border-slate-200 rounded-lg text-center font-mono font-bold py-0.5 text-[10px] outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:bg-white focus:border-blue-600 transition-all shadow-sm" 
                           />
                         </div>
                         <div className="flex items-center space-x-2">
@@ -818,7 +830,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                             defaultValue={trade.buy_price || 0} 
                             onClick={(e) => e.stopPropagation()}
                             onBlur={(e) => onUpdateHolding?.(trade.symbol, trade.quantity || 0, parseFloat(e.target.value) || 0)} 
-                            className="w-16 bg-slate-50 border border-slate-200 rounded-lg text-right pr-1 font-mono font-bold py-0.5 text-[10px] outline-none focus:bg-white focus:border-blue-600 transition-all shadow-sm" 
+                            className="w-16 bg-slate-50 border border-slate-200 rounded-lg text-right pr-1 font-mono font-bold py-0.5 text-[10px] outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:bg-white focus:border-blue-600 transition-all shadow-sm" 
                           />
                         </div>
                         <div className="text-[9.5px] font-black text-slate-500 uppercase tracking-wider font-mono">
@@ -832,7 +844,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                            {/* Core Metrics Grid */}
                            <div className="grid grid-cols-3 gap-2">
                               <div className="bg-white p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
-                                 <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Invested</span>
+                                 <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Invested</span>
                                  <span className="text-xs font-black font-mono text-slate-900">₹{invested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                               </div>
                               <div className="bg-white p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
@@ -840,7 +852,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                  <span className="text-xs font-black font-mono text-slate-900">₹{currentVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                               </div>
                               <div className="bg-white p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
-                                 <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total PnL</span>
+                                 <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Total PnL</span>
                                  <span className={`text-xs font-black font-mono ${isPnlPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
                                     {isPnlPositive ? '+' : ''}₹{pnl.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                  </span>
@@ -859,10 +871,10 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                  <span className="font-black text-slate-900">{trade.score || 0}</span>
                               </div>
                               <div className="flex items-center gap-1.5">
-                                <Link to={`/stock/${trade.symbol}`} className="p-1.5 bg-slate-50 text-slate-400 rounded-lg hover:bg-slate-ink hover:text-white transition-all shrink-0">
+                                <Link to={`/stock/${trade.symbol}`} className="p-1.5 bg-slate-50 text-slate-500 rounded-lg hover:bg-slate-ink hover:text-white transition-all shrink-0">
                                    <InfoIcon className="h-3.5 w-3.5" />
                                 </Link>
-                                <button onClick={(e) => { e.preventDefault(); if (window.confirm(`Remove ${trade.symbol} from portfolio?`)) onToggleWatchlist?.(trade.symbol); }} className="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:bg-rose-600 hover:text-white transition-all">
+                                <button onClick={(e) => { e.preventDefault(); if (window.confirm(`Remove ${trade.symbol} from portfolio?`)) onToggleWatchlist?.(trade.symbol); }} className="p-1.5 rounded-lg bg-slate-50 text-slate-500 hover:bg-rose-600 hover:text-white transition-all">
                                    <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               </div>
@@ -897,7 +909,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                <span className="text-sm font-black text-slate-900 tracking-tight font-mono uppercase">{trade.symbol}</span>
                                <span className={`px-1.5 py-0.5 rounded-[0.25rem] text-[6.5px] font-black border tracking-wider leading-none ${capTag.class}`}>{capTag.label}</span>
                             </div>
-                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</span>
+                            <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">{trade.sector}</span>
                          </div>
                       </div>
                       
@@ -933,14 +945,14 @@ const TradeTable: React.FC<TradeTableProps> = ({
                             })}
                          </div>
                       ) : (
-                         <div className="text-[9px] font-bold text-slate-400">Institutional Strategy</div>
+                         <div className="text-[9px] font-bold text-slate-500">Institutional Strategy</div>
                       )}
 
                       <div className="flex items-center gap-1.5">
                          {trade.isBuyZone ? (
                             <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-full text-[8px] font-black">STRATEGY FLOOR</span>
                          ) : (
-                            <span className="px-2 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-full text-[8px] font-black">OUT OF RANGE</span>
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-500 border border-slate-200 rounded-full text-[8px] font-black">OUT OF RANGE</span>
                          )}
                       </div>
                    </div>
@@ -951,7 +963,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                          {/* ABCD Prices */}
                          {visibleColumns.abcd && trade.abcd && (
                             <div className="bg-white p-3 rounded-[0.75rem] border border-slate-100/80 space-y-1.5 shadow-sm">
-                               <div className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-1 mb-1">Entry Tranche Target Levels</div>
+                               <div className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-50 pb-1 mb-1">Research Levels</div>
                                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                                   {['a', 'b', 'c', 'd'].map((l) => {
                                      const levelObj = trade.abcd?.[l];
@@ -970,7 +982,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                          {/* Core Metrics Grid */}
                          <div className="grid grid-cols-3 gap-2">
                             <div className="bg-white p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
-                               <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Obs Base</span>
+                               <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Obs Base</span>
                                <span className="text-xs font-black font-mono text-slate-900">₹{trade.entryPrice?.toLocaleString()}</span>
                             </div>
                             <div className="bg-white p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
@@ -997,7 +1009,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                              <div className="flex items-center gap-2">
                                {trade.peRatio > 0 && (
                                   <div className="flex items-center space-x-1 font-mono">
-                                     <span className="font-extrabold text-slate-400 uppercase text-[8px] tracking-wider">PE:</span>
+                                     <span className="font-extrabold text-slate-500 uppercase text-[8px] tracking-wider">PE:</span>
                                      <span className="font-black text-slate-900">{trade.peRatio?.toFixed(1)}</span>
                                   </div>
                                )}
@@ -1048,10 +1060,65 @@ const TradeTable: React.FC<TradeTableProps> = ({
                 </motion.div>
               );
             })}
-         </AnimatePresence>
-      </div>
-    </div>
-  );
-};
+          </AnimatePresence>
+       </div>
+
+      {/* Pagination Controls */}
+      {filteredAndSortedTrades.length > rowsPerPage && (
+        <div className="flex items-center justify-between px-6 py-4 bg-white/50 backdrop-blur-md rounded-[2rem] border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Rows</span>
+            <select
+              value={rowsPerPage}
+              onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
+              className="bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-black uppercase tracking-widest px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none"
+            >
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => goToPage(page - 1)}
+              disabled={page === 0}
+              className="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 bg-white text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-all"
+            >
+              Prev
+            </button>
+            {(() => {
+              const pages = [];
+              const startPage = Math.max(0, page - 2);
+              const endPage = Math.min(totalPages - 1, page + 2);
+              if (startPage > 0) pages.push(<button key={0} onClick={() => goToPage(0)} className="px-3 py-2 text-[10px] font-black rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">1</button>);
+              if (startPage > 1) pages.push(<span key="start-dots" className="px-1 text-slate-300 text-[10px] font-black">...</span>);
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => goToPage(i)}
+                    className={`px-3 py-2 text-[10px] font-black rounded-xl border transition-all ${page === i ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+                  >
+                    {i + 1}
+                  </button>
+                );
+              }
+              if (endPage < totalPages - 2) pages.push(<span key="end-dots" className="px-1 text-slate-300 text-[10px] font-black">...</span>);
+              if (endPage < totalPages - 1) pages.push(<button key={totalPages - 1} onClick={() => goToPage(totalPages - 1)} className="px-3 py-2 text-[10px] font-black rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all">{totalPages}</button>);
+              return pages;
+            })()}
+            <button
+              onClick={() => goToPage(page + 1)}
+              disabled={page >= totalPages - 1}
+              className="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 bg-white text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-all"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+     </div>
+   );
+ };
 
 export default TradeTable;

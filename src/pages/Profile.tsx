@@ -71,13 +71,13 @@ const ProfilePage: React.FC = () => {
     <div className="flex-1 flex flex-col items-center justify-center min-h-screen space-y-4">
        <ShieldCheck className="h-12 w-12 text-slate-200" />
        <h2 className="text-xl font-black text-slate-900 uppercase italic">Profile Unavailable</h2>
-       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Please try logging in again</p>
+       <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Please try logging in again</p>
        <button onClick={logout} className="px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Logout</button>
     </div>
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-10 space-y-6 md:space-y-8 overflow-y-auto font-sans bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-8 lg:px-10 space-y-6 md:space-y-8 overflow-y-auto font-sans bg-[#f8fafc]">
       
       {/* 1. Profile Hero Section */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-8 border-b border-slate-200 pb-10">
@@ -96,7 +96,7 @@ const ProfilePage: React.FC = () => {
                  <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter uppercase italic">{profileData.name}</h1>
                  <span className="px-3 py-1 bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-amber-500/20">PRO Member</span>
               </div>
-              <p className="text-[10px] md:text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center space-x-2">
+              <p className="text-[10px] md:text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center space-x-2">
                  <Clock className="h-3 w-3" />
                  <span>Member Since: {new Date(profileData.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span>
               </p>
@@ -106,7 +106,7 @@ const ProfilePage: React.FC = () => {
         <div className="flex items-center space-x-3 md:space-x-4 w-full md:w-auto justify-center">
            <button 
              onClick={() => window.location.reload()}
-             className="p-3 md:p-4 bg-white border border-slate-200 rounded-xl md:rounded-2xl text-slate-400 hover:text-blue-600 hover:border-blue-100 transition-all shadow-sm"
+             className="p-3 md:p-4 bg-white border border-slate-200 rounded-xl md:rounded-2xl text-slate-500 hover:text-blue-600 hover:border-blue-100 transition-all shadow-sm"
            >
               <RefreshCw className="h-5 w-5" />
            </button>
@@ -124,7 +124,7 @@ const ProfilePage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
          <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200 shadow-sm relative overflow-hidden group">
             <Activity className="absolute right-6 top-6 h-5 w-5 md:h-6 md:w-6 text-blue-100 group-hover:text-blue-500 transition-colors" />
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Lifetime Trades</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Lifetime Trades</p>
             <h3 className="text-2xl md:text-3xl font-black text-slate-900">{profileData.stats.totalTrades}</h3>
             <div className="mt-4 h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
                <div className="h-full bg-blue-600 rounded-full" style={{ width: '70%' }} />
@@ -141,7 +141,7 @@ const ProfilePage: React.FC = () => {
          </div>
 
          <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200 shadow-sm">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Exposure</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Active Exposure</p>
             <h3 className="text-2xl md:text-3xl font-black text-slate-900">{profileData.stats.openTrades}</h3>
             <p className="text-[9px] font-bold text-blue-500 uppercase mt-2 tracking-widest flex items-center">
                <Briefcase className="h-2.5 w-2.5 mr-1" />
@@ -151,7 +151,7 @@ const ProfilePage: React.FC = () => {
 
          <div className="bg-slate-900 rounded-[2rem] p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
             <Trophy className="absolute right-6 top-6 h-6 w-6 opacity-20" />
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Research Accuracy</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Research Accuracy</p>
             <h3 className="text-2xl md:text-3xl font-black text-indigo-400">68.4%</h3>
             <p className="text-[9px] font-bold uppercase mt-2 italic opacity-50">Institutional Model Metric</p>
          </div>
@@ -170,7 +170,7 @@ const ProfilePage: React.FC = () => {
                   <div className="flex items-center justify-between py-4 border-b border-slate-50">
                      <div className="space-y-1">
                         <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Data Density</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Optimize workspace for professional screen size</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase">Optimize workspace for professional screen size</p>
                      </div>
                      <div className="w-12 h-6 bg-blue-600 rounded-full p-1 flex items-center justify-end cursor-pointer">
                         <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
@@ -180,7 +180,7 @@ const ProfilePage: React.FC = () => {
                   <div className="flex items-center justify-between py-4 border-b border-slate-50">
                      <div className="space-y-1">
                         <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Default Objective %</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Automatic profit objective for new research</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase">Automatic profit objective for new research</p>
                      </div>
                      <select className="bg-slate-50 border-none rounded-xl px-4 py-2 text-xs font-black focus:ring-1 focus:ring-blue-500/20 appearance-none">
                         <option>25.0%</option>
@@ -192,7 +192,7 @@ const ProfilePage: React.FC = () => {
                   <div className="flex items-center justify-between py-4 border-b border-slate-50">
                      <div className="space-y-1">
                         <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Global Currency</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Set base denomination for all ledgers</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase">Set base denomination for all ledgers</p>
                      </div>
                      <span className="text-xs font-black text-slate-900 px-4 py-2 bg-slate-50 rounded-xl">INR (₹)</span>
                   </div>
@@ -268,7 +268,7 @@ const ProfilePage: React.FC = () => {
             </div>
 
             <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-10">
-               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Subscription Node</h3>
+               <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Subscription Node</h3>
                <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100 flex items-center justify-between">
                   <div className="space-y-1">
                      <p className="text-xs font-black text-blue-900 uppercase tracking-tight">Enterprise Access</p>
@@ -282,7 +282,7 @@ const ProfilePage: React.FC = () => {
 
       <footer className="py-8 border-t border-slate-200 opacity-40 flex items-center justify-between shrink-0">
          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">MarketBeacon Terminal v4.5-PRO • Privacy Guard Active</p>
-         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Global Security Hash: 0X4F-TERM-SEC</p>
+         <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Global Security Hash: 0X4F-TERM-SEC</p>
       </footer>
     </div>
   );

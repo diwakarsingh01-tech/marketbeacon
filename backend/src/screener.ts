@@ -37,6 +37,24 @@ export async function initSnapshotCache() {
       break;
     }
   }
+  // Patch peMedians fallback for stocks with missing data
+  if (loaded && snapshotCache) {
+    let patched = 0;
+    for (const [sym, data] of Object.entries(snapshotCache)) {
+      const screener = (data as any)?.screener;
+      if (screener) {
+        const med = screener.peMedians;
+        if ((!med || (!med.pe3Y && !med.pe5Y)) && (screener.peRatio || 0) > 0) {
+          if (!med) screener.peMedians = {};
+          screener.peMedians.pe3Y = screener.peMedians.pe3Y || screener.peRatio;
+          screener.peMedians.pe5Y = screener.peMedians.pe5Y || screener.peRatio;
+          patched++;
+        }
+      }
+    }
+    if (patched > 0) console.log(`🔧 Patched peMedians for ${patched} symbols (fallback to current PE)`);
+  }
+
   if (!loaded) {
     console.error('❌ market_snapshot.json not found in any searched paths');
     snapshotCache = {};
@@ -176,15 +194,28 @@ export async function fetchScreenerData(symbol: string) {
     const calculatedPE = currentEPS > 0 ? (currentPrice / currentEPS) : (getRatio('Stock P/E') || 45);
 
     const peMedians: any = {};
-    $(`.company-ratios #top-ratios li, #ratios li`).each((i, el) => {
-      const text = $(el).text().toLowerCase();
-      if (text.includes('median p/e') || text.includes('median pe')) {
-         const valEl = $(el).find('.value');
-         const val = parseFloat((valEl.find('.number').length > 0 ? valEl.find('.number').text() : valEl.text()).replace(/,/g, ''));
-         if (text.includes('3years') || text.includes('3 yrs')) peMedians.pe3Y = val;
-         if (text.includes('5years') || text.includes('5 yrs')) peMedians.pe5Y = val;
-      }
-    });
+    // Try multiple selectors for Screener.in "Median P/E" data
+    const ratioSelectors = ['#top-ratios li', '#ratios li', '.company-ratios li', '.flex-list li', 'ul li'];
+    for (const sel of ratioSelectors) {
+      $(sel).each((i, el) => {
+        const text = $(el).text().toLowerCase().replace(/\s+/g, ' ');
+        if (text.includes('median p/e') || text.includes('median pe') || text.includes('medianp/e') || text.includes('medianpe')) {
+          const valEl = $(el).find('.value, .number, span.number');
+          const raw = (valEl.length > 0 ? valEl.first().text() : $(el).text().replace(/[^0-9.]/g, '')).trim().replace(/,/g, '');
+          const val = parseFloat(raw);
+          if (!isNaN(val) && val > 0) {
+            if (text.includes('3 year') || text.includes('3 yr') || text.includes('3y') || text.includes('3years') || text.includes('3 yrs')) peMedians.pe3Y = val;
+            if (text.includes('5 year') || text.includes('5 yr') || text.includes('5y') || text.includes('5years') || text.includes('5 yrs')) peMedians.pe5Y = val;
+          }
+        }
+      });
+      if (peMedians.pe3Y || peMedians.pe5Y) break;
+    }
+    // Fallback: derive peMedians from current PE if scraping failed
+    if (!peMedians.pe3Y && !peMedians.pe5Y && calculatedPE > 0) {
+      peMedians.pe3Y = calculatedPE;
+      peMedians.pe5Y = calculatedPE;
+    }
 
     const borrowings = getAnnualTableData('balance-sheet', 'Borrowings');
     const shareCapital = getAnnualTableData('balance-sheet', 'Share Capital');
@@ -266,7 +297,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
           'SIXTY_SEVEN_FUNDA': calculateSixtySevenFunda(quotes, screenerData), 'TWENTY_RALLY_RETEST': calculateTwentyRallyRetest(quotes)
         };
 
-        // If audit fails, wipe strategy signals but keep data for "Observation" or research
+        // If audit fails, wipe strategy signals but keep data for "Monitor" or research
         const strategies: any = {};
         Object.entries(rawStrategies).forEach(([key, res]: [string, any]) => {
           if (!audit.passed && res?.isBuyZone) {

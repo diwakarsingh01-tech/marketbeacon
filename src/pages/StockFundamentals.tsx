@@ -7,6 +7,7 @@ import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 
 const API_URL = getApiUrl();
 
@@ -76,7 +77,7 @@ const StockFundamentalsPage: React.FC = () => {
 
   const formatCr = (val: any) => {
     const n = Number(val);
-    if (isNaN(n) || n === 0) return 'N/A';
+    if (isNaN(n) || n === 0) return '—';
     return `₹ ${(n / 10000000).toLocaleString(undefined, { maximumFractionDigits: 0 })} Cr.`;
   };
 
@@ -92,8 +93,11 @@ const StockFundamentalsPage: React.FC = () => {
   ];
 
   const peRatio = Number(data?.peRatio || 0);
-  const avgMedian = (Number(data?.peMedians?.pe3Y || 0) + Number(data?.peMedians?.pe5Y || 0)) / 2;
-  const isPEOvervalued = peRatio > avgMedian && avgMedian > 0;
+  const pe3Y = Number(data?.peMedians?.pe3Y || 0);
+  const pe5Y = Number(data?.peMedians?.pe5Y || 0);
+  const avgMedian = (pe3Y + pe5Y) / 2;
+  const hasMedian = avgMedian > 0;
+  const isPEOvervalued = peRatio > avgMedian && hasMedian;
 
   return (
     <div className="flex-1 flex flex-col font-sans text-slate-800 bg-[#f8fafc] lg:h-screen lg:overflow-hidden overflow-y-auto pb-24 md:pb-0 relative">
@@ -103,7 +107,7 @@ const StockFundamentalsPage: React.FC = () => {
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center space-x-6">
               <div className="space-y-0.5">
-                 <div className="flex items-center space-x-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                 <div className="flex items-center space-x-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">
                     <Link to="/alpha-hub" className="hover:text-blue-600">Alpha Hub</Link>
                     <ChevronRight className="h-2 w-2" />
                     <span className="text-slate-900">{symbol}</span>
@@ -129,31 +133,36 @@ const StockFundamentalsPage: React.FC = () => {
                      {isProOrAbove ? score.toFixed(0) : '🔒'}
                      <span className="text-xs text-slate-300 ml-0.5">/100</span>
                   </div>
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Audit Score</span>
+                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Audit Score</span>
                </div>
             </div>
         </div>
       </div>
 
       {/* FIT-TO-SCREEN CONTENT */}
-      <main className="max-w-[1600px] mx-auto w-full flex-1 lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-4 p-6 relative">
-        
+      <main className="max-w-[1600px] mx-auto w-full flex-1 lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-4 px-4 md:px-8 lg:px-10 py-6 relative">
+        <div className="col-span-full">
+          <Breadcrumbs items={[
+            { label: 'Screener', href: '/screener' },
+            { label: symbol }
+          ]} />
+        </div>
         <div className={`lg:col-span-8 space-y-4 lg:overflow-y-auto pr-2 no-scrollbar transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Market Cap</span>
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Market Cap</span>
                 <p className="text-lg font-black text-slate-900 leading-tight">{formatCr(data?.marketCap)}</p>
              </div>
              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Profitability (ROE)</span>
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Profitability (ROE)</span>
                 <p className="text-lg font-black text-slate-900 leading-tight">{data?.returnOnEquity ? `${Number(data.returnOnEquity).toFixed(1)}%` : '-'}</p>
              </div>
              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Efficiency (ROCE)</span>
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Efficiency (ROCE)</span>
                 <p className="text-lg font-black text-slate-900 leading-tight">{data?.roce ? `${Number(data.roce).toFixed(1)}%` : '-'}</p>
              </div>
              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between h-24">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Debt-To-Equity</span>
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Debt-To-Equity</span>
                 <p className={`text-lg font-black leading-tight ${Number(data?.netDebtToEquity) > 0.2 ? 'text-red-600' : 'text-slate-900'}`}>{Number(data?.netDebtToEquity).toFixed(2)}</p>
              </div>
           </div>
@@ -161,13 +170,13 @@ const StockFundamentalsPage: React.FC = () => {
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
              <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-900">
                 <span>Institutional Audit Matrix</span>
-                <span className="text-slate-400">{audit?.reason}</span>
+                <span className="text-slate-500">{audit?.reason}</span>
              </div>
              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                 {weightedSegments.map((segment) => segment.data && (
                   <div key={segment.id} className="space-y-2">
                     <div className="flex items-center justify-between border-b border-slate-50 pb-1">
-                      <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center">
+                      <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center">
                         {segment.icon} {segment.label}
                       </h3>
                       <span className="text-[9px] font-black text-slate-900">{segment.data.score}/{segment.data.max}</span>
@@ -193,7 +202,7 @@ const StockFundamentalsPage: React.FC = () => {
                { label: 'Beta', value: Number(data?.beta)?.toFixed(2) }
              ].map((item, i) => (
                <div key={i} className="space-y-0.5">
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
+                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
                   <p className="text-xs font-black text-slate-900 uppercase leading-none">{item.value}</p>
                </div>
              ))}
@@ -202,20 +211,25 @@ const StockFundamentalsPage: React.FC = () => {
 
         <div className={`lg:col-span-4 space-y-4 h-full transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-6">
-              <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center">
+              <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center">
                 <Target className="h-4 w-4 mr-2" /> Valuation & Ownership
               </h3>
               <div className="space-y-4">
                  <div className="grid grid-cols-2 gap-3">
                     <div className={`p-4 rounded-xl border ${isPEOvervalued ? 'bg-rose-50 border-rose-100' : 'bg-slate-50 border-slate-100'}`}>
-                       <p className={`text-[7px] font-black uppercase ${isPEOvervalued ? 'text-rose-400' : 'text-slate-400'}`}>Current PE</p>
+                       <p className={`text-[7px] font-black uppercase ${isPEOvervalued ? 'text-rose-400' : 'text-slate-500'}`}>Current PE</p>
                        <p className={`text-lg font-black leading-none ${isPEOvervalued ? 'text-rose-600' : 'text-slate-900'}`}>{peRatio.toFixed(1)}</p>
                     </div>
                     <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 text-center">
-                       <p className="text-[7px] font-black text-slate-500 uppercase">Avg Median (3Y/5Y)</p>
-                       <p className="text-lg font-black text-white leading-none">
-                          {avgMedian > 0 ? avgMedian.toFixed(1) : 'N/A'}
-                       </p>
+                        <p className="text-[7px] font-black text-slate-500 uppercase">Median P/E (3Y / 5Y)</p>
+                        <p className="text-lg font-black text-white leading-none font-mono">
+                           {hasMedian ? `${avgMedian.toFixed(1)}x` : '—'}
+                        </p>
+                        {hasMedian && (
+                           <p className="text-[6px] text-slate-500 leading-tight mt-0.5">
+                              3Y: {pe3Y.toFixed(1)}x &middot; 5Y: {pe5Y.toFixed(1)}x
+                           </p>
+                        )}
                     </div>
                  </div>
                  
@@ -267,7 +281,7 @@ const StockFundamentalsPage: React.FC = () => {
                
                <div className="space-y-2">
                   <h3 className="text-xl font-black uppercase tracking-tight text-white italic">PRO LICENSE REQUIRED</h3>
-                  <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                  <p className="text-xs text-slate-500 font-medium leading-relaxed">
                      Unlock deep fundamental analysis, institutional quality audits, valuation models, and active strategy indicators for <span className="text-blue-400 font-black">{symbol}</span>.
                   </p>
                </div>
@@ -282,7 +296,7 @@ const StockFundamentalsPage: React.FC = () => {
                   
                   <Link 
                     to="/license-desk"
-                    className="block text-[10px] font-black text-slate-400 hover:text-white transition-colors uppercase tracking-widest"
+                    className="block text-[10px] font-black text-slate-500 hover:text-white transition-colors uppercase tracking-widest"
                   >
                      Compare Plans & Pricing
                   </Link>
@@ -291,7 +305,7 @@ const StockFundamentalsPage: React.FC = () => {
                <div className="border-t border-slate-800 pt-6 space-y-4">
                   <div className="space-y-1">
                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Have a Coupon or Voucher Code?</span>
-                     <p className="text-[10px] text-slate-400">Redeem code for a 7-day free trial of all premium features.</p>
+                     <p className="text-[10px] text-slate-500">Redeem code for a 7-day free trial of all premium features.</p>
                   </div>
                   
                   <div className="flex gap-2">

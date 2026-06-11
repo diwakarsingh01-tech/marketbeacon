@@ -102,7 +102,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500 max-h-[90vh]">
         
         {/* Header: Unified Brand Side */}
@@ -115,7 +115,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                  </div>
                  <div>
                     <h2 className="text-xl font-black tracking-tight uppercase italic leading-none">Broker Hub</h2>
-                    <p className="text-slate-400 text-[8px] font-black uppercase tracking-[0.3em] mt-1">Institutional Import</p>
+                    <p className="text-slate-500 text-[8px] font-black uppercase tracking-[0.3em] mt-1">Institutional Import</p>
                  </div>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white">
@@ -139,7 +139,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
               <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
                  <div className="mb-6">
                     <h3 className="text-lg font-black text-slate-900 uppercase italic leading-none">Select Broker</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Choose your environment to import holdings</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2">Choose your environment to import holdings</p>
                  </div>
 
                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-1 custom-scrollbar pb-2">
@@ -154,20 +154,21 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                        >
                           <div className="w-full h-10 flex items-center justify-center transition-transform group-hover:scale-110">
                              {broker.logo ? (
-                               <img 
-                                 src={broker.logo} 
-                                 alt={broker.name} 
-                                 className="max-w-[75%] max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
+                                <img 
+                                  src={broker.logo} 
+                                  alt={broker.name} 
+                                  loading="lazy" decoding="async"
+                                  className="max-w-[75%] max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
                                  onError={(e) => {
                                    (e.target as any).style.display = 'none';
                                    const fallback = document.createElement('div');
-                                   fallback.className = `w-10 h-10 rounded-xl ${broker.color} flex items-center justify-center font-black text-slate-400 uppercase text-xs`;
+                                   fallback.className = `w-10 h-10 rounded-xl ${broker.color} flex items-center justify-center font-black text-slate-500 uppercase text-xs`;
                                    fallback.innerText = broker.name[0];
                                    (e.target as any).parentElement.appendChild(fallback);
                                  }}
                                />
                              ) : (
-                               <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                               <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
                                  <Database className="h-5 w-5" />
                                </div>
                              )}
@@ -186,7 +187,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                   
                   <div className="space-y-2 mb-6">
                     <h3 className="text-xl font-black text-slate-900 uppercase italic leading-none">{BROKERS.find(b => b.id === selectedBroker)?.name}</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-[240px] mx-auto leading-relaxed">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest max-w-[240px] mx-auto leading-relaxed">
                        Drop your holdings CSV file here to start institutional audit.
                     </p>
                  </div>
@@ -194,7 +195,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                  <div className="w-full max-w-sm space-y-4">
                     {/* Import Strategy Options */}
                     <div className="flex flex-col space-y-2 text-left">
-                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Import Strategy</span>
+                       <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">Import Strategy</span>
                        <div className="grid grid-cols-1 gap-2.5">
                           {/* Merge Option */}
                           <button 
@@ -213,7 +214,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                             </div>
                             <div className="flex flex-col">
                               <span className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Merge Portfolio</span>
-                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 leading-normal">
+                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 leading-normal">
                                 Keep current positions and merge the newly uploaded holdings.
                               </span>
                             </div>
@@ -236,7 +237,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                             </div>
                             <div className="flex flex-col">
                               <span className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Remove Old & Upload New</span>
-                              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 leading-normal">
+                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 leading-normal">
                                 Delete all existing positions and upload new holdings.
                               </span>
                             </div>
