@@ -721,18 +721,10 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                       PASS
                                     </div>
                                   ) : (
-                                    <div className="relative group/reason">
-                                      <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-full text-[9px] font-black tracking-wide shrink-0 cursor-help">
-                                        <span className="w-1 h-1 rounded-full bg-amber-500" />
-                                        OBS
-                                      </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="px-2 py-0.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-[7px] font-black tracking-wide shrink-0">REJECT</span>
                                       {trade.reason && (
-                                        <div className="absolute right-0 top-full mt-1.5 z-[300] hidden group-hover/reason:block bg-slate-950 text-white shadow-2xl rounded-xl p-3 animate-in fade-in duration-200 min-w-[200px] max-w-[260px]">
-                                          <div className="flex flex-col gap-1">
-                                            <span className="text-[7px] font-black text-amber-400 uppercase tracking-widest">Rejection Reason</span>
-                                            <span className="text-[10px] font-medium text-white/90 leading-relaxed">{trade.reason}</span>
-                                          </div>
-                                        </div>
+                                        <span className="text-[7px] font-medium text-red-500 uppercase tracking-wider max-w-[140px] truncate leading-tight">{trade.reason}</span>
                                       )}
                                     </div>
                                   )}
