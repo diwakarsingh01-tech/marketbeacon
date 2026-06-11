@@ -13,8 +13,8 @@ export const runStrategyAnalysis = (stratId: string, snap: any, marketCap: numbe
         'BOLLINGER': ['Elite Basket'],
         '52W_HIGH_LOW': ['Elite Basket'],
         'SMA_BCD': ['Elite Basket', 'Quality Basket'],
-        'RHS_ABCD': ['Elite Basket', 'Quality Basket'],
-        'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket'],
+        'RHS_ABCD': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
+        'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
         'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
         'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
         'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket']
@@ -23,11 +23,6 @@ export const runStrategyAnalysis = (stratId: string, snap: any, marketCap: numbe
     const allowed = authorizedBaskets[stratId] || [];
     if (basketName !== 'ALL' && !allowed.includes(basketName)) {
         return { isBuyZone: false, reason: 'Basket Not Authorized' };
-    }
-
-    // ⚡ Performance Hardening: Use pre-calculated results if available
-    if (snap.strategies && snap.strategies[stratId]) {
-        return snap.strategies[stratId];
     }
 
     switch (stratId) {
