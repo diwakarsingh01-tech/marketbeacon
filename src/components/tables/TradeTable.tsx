@@ -610,9 +610,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                 <div className="flex flex-col font-sans">
                                    <span className="text-sm font-black text-slate-950 group-hover:text-blue-600 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
                                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</span>
-                                   {trade.isPass === false && (
-                                     <span className="text-[7px] font-bold text-red-500 uppercase tracking-wider mt-0.5 leading-tight">{trade.reason || 'No reason provided'}</span>
-                                   )}
                                  </div>
                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-auto pr-2 shrink-0">
                                   <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Share2 className="h-3 w-3" /></button>
@@ -721,9 +718,13 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                       PASS
                                     </div>
                                   ) : (
-                                    <div className="flex items-center gap-1 max-w-[240px]">
+                                    <div className="flex items-center gap-1.5">
                                       <span className="px-2 py-0.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-[7px] font-black tracking-wide shrink-0">REJECT</span>
-                                      <span className="text-[8px] font-bold text-amber-700 uppercase tracking-wider leading-tight">{trade.reason || 'Rejection reason unavailable'}</span>
+                                      <span className="text-[8px] font-bold text-amber-700 leading-tight max-w-[180px]">
+                                        {trade.reason === 'Pattern Not Found' 
+                                          ? 'Score: ' + (trade.score || 0) + '/60' 
+                                          : trade.reason || 'Score: ' + (trade.score || 0) + '/60'}
+                                      </span>
                                     </div>
                                   )}
                                   <div className="flex flex-col items-end min-w-[32px]">
@@ -1005,7 +1006,11 @@ const TradeTable: React.FC<TradeTableProps> = ({
                           {trade.isPass === false && (
                             <div className="bg-amber-50/50 border border-amber-200/50 rounded-[0.75rem] px-3 py-2 text-[9px]">
                               <span className="font-black text-amber-700 uppercase tracking-wider text-[7px]">Reason: </span>
-                              <span className="font-medium text-amber-800">{trade.reason || 'No reason provided'}</span>
+                              <span className="font-medium text-amber-800">
+                                {trade.reason === 'Pattern Not Found'
+                                  ? 'Score ' + (trade.score || 0) + '/60 - Audit threshold not met'
+                                  : trade.reason || 'Score ' + (trade.score || 0) + '/60 - Audit threshold not met'}
+                              </span>
                             </div>
                           )}
 
