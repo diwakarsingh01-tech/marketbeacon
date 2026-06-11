@@ -607,10 +607,13 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-all active:scale-90 shrink-0">
                                   <StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current text-amber-400' : ''}`} />
                                </button>
-                               <div className="flex flex-col font-sans">
-                                  <span className="text-sm font-black text-slate-950 group-hover:text-blue-600 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
-                                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</span>
-                                </div>
+                                <div className="flex flex-col font-sans">
+                                   <span className="text-sm font-black text-slate-950 group-hover:text-blue-600 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
+                                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</span>
+                                   {trade.isPass === false && trade.reason && (
+                                     <span className="text-[7px] font-medium text-amber-600 uppercase tracking-wider mt-0.5 leading-tight max-w-[180px] truncate">{trade.reason}</span>
+                                   )}
+                                 </div>
                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-auto pr-2 shrink-0">
                                   <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Share2 className="h-3 w-3" /></button>
                                   <Link to={`/stock/${trade.symbol}`} className="p-1.5 bg-slate-50 text-slate-400 rounded-lg hover:bg-slate-ink hover:text-white transition-all"><ExternalLink className="h-3 w-3" /></Link>
@@ -732,9 +735,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                         </div>
                                       )}
                                     </div>
-                                  )}
-                                  {trade.isPass === false && trade.reason && (
-                                    <span className="text-[7px] font-medium text-amber-600/70 uppercase tracking-wider max-w-[120px] truncate hidden 2xl:inline">{trade.reason}</span>
                                   )}
                                   <div className="flex flex-col items-end min-w-[32px]">
                                     <span className="text-xs font-black text-slate-900 leading-none">{trade.score || 0}</span>
