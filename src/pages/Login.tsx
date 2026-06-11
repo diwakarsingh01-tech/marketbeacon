@@ -81,7 +81,7 @@ const LoginPage: React.FC = () => {
            </div>
            <div className="space-y-1 pt-4">
               <h1 className="text-3xl font-black text-slate-900 uppercase italic leading-none">Identity Audit</h1>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Complete your institutional profile</p>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Complete your institutional profile</p>
            </div>
         </div>
         <form className="space-y-8 relative z-10" onSubmit={async (e) => {
@@ -99,7 +99,7 @@ const LoginPage: React.FC = () => {
           finally { setLoading(false); }
         }}>
            <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] block pl-1">Full Legal Name</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] block pl-1">Full Legal Name</label>
               <input type="text" placeholder="Ex: Diwakar Singh" className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl px-8 py-5 text-sm font-black focus:bg-white focus:border-slate-900 transition-all outline-none" value={userName} onChange={(e) => setUserName(e.target.value)} required autoFocus />
            </div>
            <button type="submit" disabled={loading} className="w-full py-6 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center space-x-3 transition-all hover:bg-black">
@@ -136,7 +136,7 @@ const LoginPage: React.FC = () => {
                 <div className="flex -space-x-2">
                   {[1,2,3].map(i => (
                     <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden">
-                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+20}`} alt="User" />
+                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+20}`} alt="User" loading="lazy" decoding="async" />
                     </div>
                   ))}
                 </div>

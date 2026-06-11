@@ -71,7 +71,7 @@ export async function precalculateAlpha40() {
           const capType = capCr >= 45000 ? 'LARGE' : (capCr >= 15000 ? 'MID' : 'SMALL');
           const last = snap.quotes[snap.quotes.length - 1];
 
-          // 1. Closed Trades Simulation (Historical Profit Booking)
+          // 1. Closed simulation (historical data)
           let peak = 0;
           let inDrawdown = false;
           let simEntry = 0;
@@ -146,7 +146,7 @@ export async function precalculateAlpha40() {
             if (sd?.status === 'QUALIFIED') {
                const stratName = STRATEGIES.find(s => s.id === stratId)?.name || stratId;
                const title = `🚨 ${basketName}: ${sym}`;
-               const message = `${sym} has QUALIFIED for ${stratName} (Tranche ${sd.tranche || 'A'}). Target: ${Math.round(target)}.`;
+               const message = `${sym} has triggered for ${stratName} (Tranche ${sd.tranche || 'A'}). Objective: ${Math.round(target)}.`;
                notifyAllUsers(title, message, 'audit');
             }
           }

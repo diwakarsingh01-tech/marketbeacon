@@ -3,6 +3,8 @@ import { Link, useParams, Navigate } from 'react-router-dom';
 import { ArrowLeft, Clock, ShieldCheck, TrendingUp, BarChart2, BookOpen, ArrowRight, ChevronRight } from 'lucide-react';
 import BrandLogo from '../components/brand/BrandLogo';
 import SiteFooter from '../components/layout/SiteFooter';
+import SEO from '../components/SEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 
 // ── Article Content Database ──────────────────────────────────────────────────
 
@@ -179,7 +181,6 @@ const BlogArticlePage: React.FC = () => {
 
   useEffect(() => {
     if (article) {
-      document.title = `${article.title} | MarketBeacon Pro Blog`;
       // Update meta description
       let metaDesc = document.querySelector('meta[name="description"]');
       if (!metaDesc) {
@@ -196,13 +197,14 @@ const BlogArticlePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
+      <SEO title={article.title} description={article.metaDescription} url={`/blog/${slug}`} />
       {/* Navigation */}
       <nav className="border-b border-slate-800/60 px-6 md:px-10 py-5 flex items-center justify-between backdrop-blur-md bg-slate-950/80 sticky top-0 z-50">
         <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <BrandLogo variant="dark" size={28} />
         </Link>
         <div className="flex items-center gap-4">
-          <Link to="/blog" className="text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-colors hidden md:flex items-center gap-1.5">
+          <Link to="/blog" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors hidden md:flex items-center gap-1.5">
             <ArrowLeft className="w-3 h-3" /> All Articles
           </Link>
           <Link
@@ -213,6 +215,13 @@ const BlogArticlePage: React.FC = () => {
           </Link>
         </div>
       </nav>
+
+      <div className="max-w-[780px] mx-auto w-full px-6 md:px-10 mt-6">
+        <Breadcrumbs items={[
+          { label: 'Blog', href: '/blog' },
+          { label: article?.title || slug }
+        ]} />
+      </div>
 
       {/* Article Header */}
       <header className="py-16 px-6 md:px-10 max-w-[780px] mx-auto">
@@ -231,7 +240,7 @@ const BlogArticlePage: React.FC = () => {
         <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight mb-6">
           {article.title}
         </h1>
-        <p className="text-slate-400 text-sm leading-relaxed border-t border-slate-800 pt-6">
+        <p className="text-slate-500 text-sm leading-relaxed border-t border-slate-800 pt-6">
           MarketBeacon Pro Research Team · Published for educational and informational purposes. Not investment advice.
         </p>
       </header>

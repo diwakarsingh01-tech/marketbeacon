@@ -25,7 +25,7 @@ const GlobalFooter: React.FC = () => {
 
             {/* Column 2: Core Terminal */}
             <div className="space-y-3">
-              <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Core Terminal</h4>
+              <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Core Terminal</h4>
               <ul className="space-y-2 text-[10px] font-black text-slate-600 uppercase tracking-wider">
                 <li><Link to="/alpha-hub" className="hover:text-blue-600 transition-colors flex items-center gap-1.5"><Layers className="h-3 w-3" /> Alpha Hub</Link></li>
                 <li><Link to="/screener" className="hover:text-blue-600 transition-colors flex items-center gap-1.5"><Zap className="h-3 w-3 text-amber-500" /> Screener Matrix</Link></li>
@@ -34,7 +34,7 @@ const GlobalFooter: React.FC = () => {
 
             {/* Column 3: Portfolio Desk */}
             <div className="space-y-3">
-              <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Portfolio Desk</h4>
+              <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Portfolio Desk</h4>
               <ul className="space-y-2 text-[10px] font-black text-slate-600 uppercase tracking-wider">
                 <li><Link to="/portfolio" className="hover:text-blue-600 transition-colors flex items-center gap-1.5">Wealth Manager</Link></li>
                 <li><Link to="/trades" className="hover:text-blue-600 transition-colors flex items-center gap-1.5"><BookOpen className="h-3 w-3" /> Verified Ledger</Link></li>
@@ -44,7 +44,7 @@ const GlobalFooter: React.FC = () => {
 
             {/* Column 4: Links & Channels */}
             <div className="space-y-3">
-              <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">External Link</h4>
+              <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">External Link</h4>
               <ul className="space-y-2 text-[10px] font-black text-slate-600 uppercase tracking-wider">
                 <li><a href="https://t.me/Marketbeconpro" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors inline-flex items-center gap-1">Telegram Alerts <ArrowUpRight className="h-3 w-3 text-slate-400" /></a></li>
                 <li><button onClick={() => setLegalModal({ open: true, type: 'policy' })} className="hover:text-blue-600 transition-colors text-left">Legal Protocol</button></li>
@@ -74,7 +74,7 @@ const GlobalFooter: React.FC = () => {
                   <p>
                      Institutional protocol warning: MarketBeacon (Batch 9 Engine) is an institutional-grade research and asset discovery terminal. All technical signals, portfolio weights, and fundamental scores are provided for educational and research purposes only. MarketBeacon is not a SEBI registered investment advisor. Stock market trading involves significant financial risk. Historical results do not guarantee future performance. No Stop-Loss approach is considered a high-risk methodology.
                   </p>
-                  <p className="text-[9px] md:text-[9.5px] text-slate-400 leading-normal lowercase first-letter:uppercase">
+                  <p className="text-[9px] md:text-[9.5px] text-slate-500 leading-normal lowercase first-letter:uppercase">
                      Consult a certified financial professional before making any real money investments.
                   </p>
                 </div>
@@ -83,7 +83,7 @@ const GlobalFooter: React.FC = () => {
           </div>
 
           {/* Bottom Row */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-widest">
              <div className="flex items-center gap-2">
                 <Lock className="h-3.5 w-3.5 text-slate-300" />
                 <span>Distributed Ledger Verified © 2026</span>

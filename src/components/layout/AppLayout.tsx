@@ -82,10 +82,10 @@ const AppLayout: React.FC = () => {
             to={item.path}
             className={({ isActive }) => `
               flex flex-col items-center justify-center flex-1 py-1 transition-all duration-300
-              ${isActive ? 'text-blue-500' : 'text-slate-400 hover:text-white'}
+              ${isActive ? 'text-blue-500' : 'text-slate-500 hover:text-white'}
             `}
           >
-            <item.icon className="h-4.5 w-4.5 mb-1" />
+            <item.icon className="h-5 w-5 mb-1" />
             <span className="text-[7.5px] font-black uppercase tracking-widest leading-none">{item.label}</span>
           </NavLink>
         ))}

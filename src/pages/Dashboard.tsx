@@ -33,6 +33,8 @@ import BrokerHub from '../components/modals/BrokerHub';
 import LegalModal from '../components/modals/LegalModal';
 
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { toast } from 'sonner';
+import SEO from '../components/SEO';
 
 const API_URL = getApiUrl();
 
@@ -53,7 +55,7 @@ const DashboardStat = ({ title, value, icon: Icon, color = "blue", subtitle }: a
       className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between min-h-[110px]"
     >
       <div className="flex justify-between items-center mb-3">
-        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{title}</span>
+        <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">{title}</span>
         <div className={`p-1.5 rounded-lg border ${iconColors[color]}`}>
           <Icon className="h-3.5 w-3.5" />
         </div>
@@ -220,14 +222,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       });
       const resData = await safeJsonParse(response);
       if (response.ok && !resData.error) {
-        alert(`Successfully imported ${holdings.length} holdings.`);
+        toast(`Successfully imported ${holdings.length} holdings.`);
         fetchWatchlist();
       } else {
-        alert(`Import failed: ${resData.error || 'Server error'}`);
+        toast(`Import failed: ${resData.error || 'Server error'}`);
       }
     } catch (e) { 
       console.error('Import holdings error:', e);
-      alert("Import failed."); 
+      toast("Import failed."); 
     } finally { 
       setIsRefreshing(false); 
     }
@@ -244,13 +246,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
-        alert("All old details removed successfully.");
+        toast("All old details removed successfully.");
         fetchWatchlist();
       } else {
-        alert("Failed to remove old details.");
+        toast("Failed to remove old details.");
       }
     } catch (e) {
-      alert("Error removing old details.");
+      toast("Error removing old details.");
     } finally {
       setIsRefreshing(false);
     }
@@ -484,7 +486,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const handleMasterExport = () => {
     if (!data?.allStocks?.length) return;
-    const headers = ['Symbol', 'Observation', 'Strategy', 'Sector', 'Market Cap', 'Entry A (Base)', 'CMP', 'ATH', 'Target (Objective)', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
+    const headers = ['Symbol', 'Observation', 'Strategy', 'Sector', 'Market Cap', 'Level A (Base)', 'CMP', 'ATH', 'Model Objective', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
     const rows = data.allStocks.map((t: any) => {
       const ath = stockATHs[t.symbol] || t.ath || 0;
       const gap = t.entryPrice > 0 ? (((t.currentPrice - t.entryPrice)/t.entryPrice) * 100).toFixed(2) : '0.00';
@@ -516,7 +518,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   if (!data && isRefreshing) {
     return (
-      <div className="flex-1 flex flex-col py-6 md:py-10 px-4 md:px-10 space-y-10 bg-[#f8fafc] animate-in fade-in duration-500">
+      <div className="flex-1 flex flex-col py-6 md:py-10 px-4 md:px-8 lg:px-10 space-y-10 bg-[#f8fafc] animate-in fade-in duration-500">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-100 pb-10 gap-8">
            <div className="space-y-4">
               <div className="w-48 h-8 bg-slate-200 rounded-xl animate-pulse" />
@@ -537,16 +539,17 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   return (
     <div className="flex-1 flex flex-col py-4 md:py-6 px-4 md:px-8 space-y-6 bg-[#f8fafc] overflow-y-auto no-scrollbar">
+      <SEO title="Stock Screener" description="Real-time stock screener with Institutional Audit Scores, ABCD entry levels, and multi-strategy analysis for Nifty 500." />
       {/* Institutional Header (Safe-Guard Rule #9) */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-100 pb-6 gap-6">
         <div className="space-y-4">
-           <div className="flex items-center space-x-3 text-slate-400">
+           <div className="flex items-center space-x-3 text-slate-500">
               <div className="w-10 h-10 bg-slate-ink text-white rounded-xl flex items-center justify-center shadow-xl border border-white/5" style={{ backgroundColor: 'var(--slate-ink)' }}>
                  <Zap className="h-5 w-5 text-blue-500" />
               </div>
               <div className="flex flex-col">
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] leading-none">Matrix Node</span>
-                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">Real-time Terminal Monitor</span>
+                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Real-time Terminal Monitor</span>
               </div>
            </div>
             <div className="space-y-1">
@@ -565,7 +568,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               <div className="grid grid-cols-3 gap-2.5 w-full md:flex md:w-auto">
                 <button 
                   onClick={handleClearPortfolio} 
-                  className="px-4 py-2.5 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center space-x-1.5 hover:bg-rose-100/50 hover:border-rose-300 transition-all active:scale-95 animate-in fade-in"
+                  className="px-4 py-3 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center space-x-1.5 hover:bg-rose-100/50 hover:border-rose-300 transition-all active:scale-95 animate-in fade-in"
                 >
                   <Trash2 className="h-4 w-4 text-rose-500" />
                   <span className="hidden sm:inline">Remove Old Details</span>
@@ -573,13 +576,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                 </button>
                 <button 
                   onClick={() => setShowAddManualModal(true)} 
-                  className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center space-x-1.5 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95"
+                  className="px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center space-x-1.5 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95"
                 >
                   <span>+ Add</span>
                 </button>
                 <button 
                   onClick={() => setShowBrokerHub(true)} 
-                  className="px-5 py-2.5 bg-slate-ink text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center space-x-2 hover:bg-black transition-all active:scale-95 border border-white/5"
+                  className="px-5 py-3 bg-slate-ink text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center space-x-2 hover:bg-black transition-all active:scale-95 border border-white/5"
                   style={{ backgroundColor: 'var(--slate-ink)' }}
                 >
                   <Globe className="h-4 w-4 text-blue-500" />
@@ -604,7 +607,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                   <select 
                     value={activeBasket} 
                     onChange={(e) => setActiveBasket(e.target.value)} 
-                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all w-full md:min-w-[150px]"
+                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all w-full md:min-w-[150px]"
                   >
                     {currentStrategy.baskets.map(b => (
                       <option key={b} value={b}>{b}</option>
@@ -630,7 +633,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                       }
                       navigate(`?strategy=${e.target.value}`);
                     }} 
-                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all w-full md:min-w-[180px]"
+                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all w-full md:min-w-[180px]"
                   >
                     {lockedStrategies.map(s => (
                       <option key={s.id} value={s.id}>
@@ -769,7 +772,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                        <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                      </div>
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] animate-pulse">
                        Scanning Institutional Matrix
                      </p>
                    </div>
@@ -790,7 +793,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
                  <div className="space-y-1">
                     <h3 className="text-xl font-black text-slate-900 uppercase italic leading-none">Add Asset Node</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Manual Portfolio Entry</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1.5">Manual Portfolio Entry</p>
                  </div>
                  <button onClick={() => setShowAddManualModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"><X className="h-5 w-5" /></button>
               </div>
@@ -806,17 +809,17 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                  setManualPrice('');
               }} className="space-y-6 text-left">
                  <div>
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Stock Symbol</label>
-                    <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" />
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Stock Symbol</label>
+                    <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
                  </div>
                  <div className="grid grid-cols-2 gap-6">
                     <div>
-                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
-                       <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" />
+                       <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
+                       <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
                     </div>
                     <div>
-                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Buy Price</label>
-                       <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none shadow-inner" />
+                       <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Buy Price</label>
+                       <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
                     </div>
                  </div>
                   <button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-black">

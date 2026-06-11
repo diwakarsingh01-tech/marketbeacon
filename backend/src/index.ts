@@ -23,6 +23,8 @@ import { validateBatch9 } from './services/fundamentalAudit.js';
 import { runStrategyAnalysis } from './services/strategyService.js';
 import { precalculateAlpha40, getAlpha40Cache } from './services/worker.js';
 import { initDB, getDB } from './db.js';
+import { notifyAdmins } from './services/notificationService.js';
+import { runHealthCheck, runAndNotifyHealthCheck } from './services/healthCheck.js';
 
 dotenv.config();
 
@@ -161,7 +163,7 @@ app.get('/api/health', (req, res) => res.json({
   status: 'active', 
   node: 'Turbo-Local-Production', 
   version: '18.0.8-PRO',
-  verify: 'Alpha Target data binding resolved — Supabase dependency removed',
+  verify: 'Alpha data binding resolved — Supabase dependency removed',
   timestamp: new Date().toISOString()
 }));
 
@@ -1190,6 +1192,84 @@ app.post('/api/admin/feedback/:id/reply', authenticateToken, requireAdmin, async
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// --- STOCK SEARCH (basket + strategy qualification) ---
+app.get('/api/search/stock', async (req: any, res: any) => {
+  try {
+    const query = ((req.query.q || '') as string).toUpperCase().trim();
+    if (!query || query.length < 1) return res.json({ results: [] });
+
+    const snap = getMarketSnapshot();
+    const matchedSymbols = new Set<string>();
+    const basketMap: Record<string, string[]> = {};
+    for (const [basket, symbols] of Object.entries(BASKETS)) {
+      const found = symbols.filter(s => s.includes(query));
+      if (found.length > 0) {
+        for (const s of found) {
+          matchedSymbols.add(s);
+          if (!basketMap[s]) basketMap[s] = [];
+          basketMap[s].push(basket);
+        }
+      }
+    }
+
+    const results = Array.from(matchedSymbols).slice(0, 10).map(sym => {
+      const stockSnap = snap[sym];
+      const strategies: any[] = [];
+      if (stockSnap?.strategies) {
+        for (const [key, val] of Object.entries(stockSnap.strategies)) {
+          if (typeof val === 'object' && val !== null && (val as any).isBuyZone) {
+            const stratName = STRATEGIES.find(s => s.id === key)?.name || key;
+            strategies.push({ id: key, name: stratName, status: (val as any).status || 'ACTIVE' });
+          }
+        }
+      }
+      let peMedians = stockSnap?.screener?.peMedians || {};
+      // Fallback: if peMedians empty, use current PE ratio
+      if (!peMedians.pe3Y && !peMedians.pe5Y) {
+        const pe = stockSnap?.quote?.pe || 0;
+        if (pe > 0) peMedians = { pe3Y: pe, pe5Y: pe };
+      }
+      return {
+        symbol: sym,
+        baskets: basketMap[sym] || [],
+        strategies,
+        price: stockSnap?.quote?.regularMarketPrice || 0,
+        change: stockSnap?.quote?.regularMarketChangePercent || 0,
+        peMedians
+      };
+    });
+
+    res.json({ results });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// --- SYSTEM HEALTH CHECK ---
+app.get('/api/admin/health-check', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const report = await runHealthCheck();
+    res.json(report);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/health-check/run', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const report = await runHealthCheck();
+    const failCount = report.results.filter(r => r.status === 'fail').length;
+    const warnCount = report.results.filter(r => r.status === 'warn').length;
+    const passCount = report.results.filter(r => r.status === 'pass').length;
+    await notifyAdmins(
+      failCount > 0
+        ? `System Health: ${failCount} failure(s)`
+        : warnCount > 0
+          ? `System Health: Passed with ${warnCount} warning(s)`
+          : `System Health: All systems operational`,
+      `Manual health check at ${report.timestamp}\nPass: ${passCount} | Warn: ${warnCount} | Fail: ${failCount}`,
+      'system'
+    );
+    res.json({ ...report, notified: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 // --- INSTITUTIONAL WORKER: CACHE PRIMING ---
 const precalculateGrowth = async () => {
   try {
@@ -1211,6 +1291,9 @@ const startServer = async () => {
 
     // 8:30 PM IST - Daily Alpha-40 institutional recalculation
     cron.schedule('30 20 * * *', precalculateAlpha40);
+
+    // 7:00 PM IST - Daily system health check (after market close)
+    cron.schedule('0 19 * * *', runAndNotifyHealthCheck);
 
     setTimeout(precalculateAlpha40, 5000); // Warm cache on boot
     setTimeout(precalculateGrowth, 15000); // Prime growth basket shortly after startup

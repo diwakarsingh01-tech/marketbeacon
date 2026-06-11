@@ -24,6 +24,9 @@ import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
+import { toast } from 'sonner';
+import SEO from '../components/SEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 
 const API_URL = getApiUrl();
 
@@ -92,10 +95,9 @@ const PublicAnalysisPage: React.FC = () => {
 
   useEffect(() => {
     if (data) {
-      document.title = `${symbol} Fundamental Audit & Price Target | MarketBeacon Pro`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
-        metaDesc.setAttribute('content', `Get the institutional 100-point audit for ${symbol}. Audit Score: ${(data.score || 0).toFixed(0)}, Smart Money: ${(data.smartMoney || 0).toFixed(1)}%, Target Upside: +${data.upside}%. Verified logic by MarketBeacon Pro.`);
+        metaDesc.setAttribute('content', `Get the institutional 100-point audit for ${symbol}. Audit Score: ${(data.score || 0).toFixed(0)}, Smart Money: ${(data.smartMoney || 0).toFixed(1)}%, Model Projection: +${data.upside}%. Verified logic by MarketBeacon Pro.`);
       }
 
       const updateOG = (property: string, content: string) => {
@@ -163,7 +165,7 @@ const PublicAnalysisPage: React.FC = () => {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+      toast('Link copied to clipboard!');
     }
   };
 
@@ -185,6 +187,7 @@ const PublicAnalysisPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-cyan-500/30 font-sans">
+      <SEO title={`${symbol} Fundamental Audit`} description={`Research analysis for ${symbol} — Audit Score, peer comparison & key metrics.`} url={`/analysis/${symbol}`} />
       {/* Visual Design Layer */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-5%] right-[-5%] w-[40%] h-[40%] bg-blue-600/5 blur-[120px] rounded-full" />
@@ -199,7 +202,7 @@ const PublicAnalysisPage: React.FC = () => {
           </Link>
           <button 
             onClick={handleShare}
-            className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+            className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-500 hover:text-white hover:bg-white/10 transition-all"
           >
             <Share2 className="w-5 h-5" />
           </button>
@@ -207,6 +210,12 @@ const PublicAnalysisPage: React.FC = () => {
       </nav>
 
       <main className="relative z-10 max-w-5xl mx-auto px-6 py-20 space-y-16">
+        <div className="mb-6">
+          <Breadcrumbs items={[
+            { label: 'Home', href: '/' },
+            { label: `${symbol} Analysis` }
+          ]} />
+        </div>
         <div className={`space-y-16 transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
           
           {/* HERO SECTION */}
@@ -243,7 +252,7 @@ const PublicAnalysisPage: React.FC = () => {
             </div>
 
             <div className="p-10 bg-[#0f172a]/40 backdrop-blur-2xl border border-white/5 rounded-[3rem] space-y-3">
-               <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Growth Target</span>
+               <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Growth Objective</span>
                <div className="text-7xl font-black text-indigo-400 italic tracking-tighter">+{data.upside}%</div>
                <div className="flex items-center gap-2">
                   <Target className="w-4 h-4 text-indigo-400" />
@@ -263,7 +272,7 @@ const PublicAnalysisPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest pl-2">Detected Logic Entry</span>
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest pl-2">Logic Zone</span>
               <div className="space-y-4">
                 {data.strategies?.length > 0 ? (
                   data.strategies.map((strat: any, i: number) => (
@@ -280,7 +289,7 @@ const PublicAnalysisPage: React.FC = () => {
                 ) : (
                   <div className="p-10 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-center flex-col space-y-4 text-center">
                     <Clock className="w-10 h-10 text-slate-700" />
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Monitoring for institutional entry point...</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Monitoring for institutional activity...</p>
                   </div>
                 )}
               </div>
@@ -351,7 +360,7 @@ const PublicAnalysisPage: React.FC = () => {
                
                <div className="space-y-2">
                   <h3 className="text-xl font-black uppercase tracking-tight text-white italic">PRO ANALYSIS LOCKED</h3>
-                  <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                  <p className="text-xs text-slate-500 font-medium leading-relaxed">
                      Detailed institutional stock reports, full fundamental scores, holding structures, and active strategy triggers for <span className="text-cyan-400 font-black">{symbol}</span> are locked.
                   </p>
                </div>
@@ -384,7 +393,7 @@ const PublicAnalysisPage: React.FC = () => {
                <div className="border-t border-white/5 pt-6 space-y-4">
                   <div className="space-y-1">
                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Have a Coupon or Voucher Code?</span>
-                     <p className="text-[10px] text-slate-400">Redeem code for a 7-day free trial of all premium features.</p>
+                     <p className="text-[10px] text-slate-500">Redeem code for a 7-day free trial of all premium features.</p>
                   </div>
                   
                   <div className="flex gap-2">

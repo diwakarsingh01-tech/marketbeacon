@@ -3,25 +3,25 @@
 
   <!-- ── PRIORITY 1: Core Landing Pages ── -->
   <url>
-    <loc>https://marketbeacon.pro</loc>
+    <loc>https://marketbeaconpro.com</loc>
     <lastmod>2026-06-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://marketbeacon.pro/login</loc>
+    <loc>https://marketbeaconpro.com/login</loc>
     <lastmod>2026-06-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://marketbeacon.pro/license-desk</loc>
+    <loc>https://marketbeaconpro.com/license-desk</loc>
     <lastmod>2026-06-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://marketbeacon.pro/pricing</loc>
+    <loc>https://marketbeaconpro.com/pricing</loc>
     <lastmod>2026-06-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -29,66 +29,66 @@
 
   <!-- ── PRIORITY 2: Blog / Content (SEO Content Moat) ── -->
   <url>
-    <loc>https://marketbeacon.pro/blog</loc>
+    <loc>https://marketbeaconpro.com/blog</loc>
     <lastmod>2026-06-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://marketbeacon.pro/blog/abcd-tranche-laddering-guide</loc>
+    <loc>https://marketbeaconpro.com/blog/abcd-tranche-laddering-guide</loc>
     <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://marketbeacon.pro/blog/what-is-sebi-compliant-stock-screener</loc>
+    <loc>https://marketbeaconpro.com/blog/what-is-sebi-compliant-stock-screener</loc>
     <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://marketbeacon.pro/blog/how-to-trade-like-fii-dii-india</loc>
+    <loc>https://marketbeaconpro.com/blog/how-to-trade-like-fii-dii-india</loc>
     <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://marketbeacon.pro/blog/institutional-audit-score-explained</loc>
+    <loc>https://marketbeaconpro.com/blog/institutional-audit-score-explained</loc>
     <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- ── PRIORITY 3: Stock Analysis Pages (Internal Links) ── -->
-  <url><loc>https://marketbeacon.pro/analysis/RELAXO</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/TCS</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/HDFCBANK</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/INFY</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/ITC</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/BAJAJ-AUTO</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/SANOFI</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/COLPAL</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/DABUR</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/WIPRO</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/HCLTECH</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/TITAN</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/NESTLEIND</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/MARUTI</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/ASIANPAINT</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/BHARTIARTL</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/SUNPHARMA</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/PIDILITIND</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/HINDUNILVR</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/KOTAKBANK</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/ICICIBANK</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/AXISBANK</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/LT</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/WIPRO</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/TECHM</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/DRREDDY</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/CIPLA</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/DIVISLAB</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/HAVELLS</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
-  <url><loc>https://marketbeacon.pro/analysis/VOLTAS</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/RELAXO</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/TCS</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/HDFCBANK</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/INFY</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/ITC</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/BAJAJ-AUTO</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/SANOFI</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/COLPAL</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/DABUR</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/WIPRO</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/HCLTECH</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/TITAN</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/NESTLEIND</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/MARUTI</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/ASIANPAINT</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/BHARTIARTL</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/SUNPHARMA</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/PIDILITIND</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/HINDUNILVR</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/KOTAKBANK</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/ICICIBANK</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/AXISBANK</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/LT</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/WIPRO</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/TECHM</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/DRREDDY</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/CIPLA</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/DIVISLAB</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/HAVELLS</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://marketbeaconpro.com/analysis/VOLTAS</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
 
 </urlset>

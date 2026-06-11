@@ -27,6 +27,7 @@ interface UpgradeModalProps {
 
 import { safeJsonParse, getApiUrl } from '../../lib/api-utils';
 import { Confetti } from '../ui/Confetti';
+import { toast } from 'sonner';
 
 const API_URL = getApiUrl();
 
@@ -120,7 +121,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
 
     // Client-side Validation: Must be 12 digits
     if (!/^\d{12}$/.test(transactionId)) {
-      alert("Invalid Transaction ID. Please enter the 12-digit UTR number provided by your UPI app.");
+      toast("Invalid Transaction ID. Please enter the 12-digit UTR number provided by your UPI app.");
       return;
     }
     
@@ -150,10 +151,10 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
       if (response.ok && !data.error) {
         setIsSuccess(true);
       } else {
-        alert(data.error || "Submission failed.");
+        toast(data.error || "Submission failed.");
       }
     } catch (err) {
-      alert("Network Error. Please try again or contact support.");
+      toast("Network Error. Please try again or contact support.");
     } finally {
       setIsSubmitting(false);
     }
@@ -176,7 +177,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
   const upiLink = `upi://pay?pa=${upiId}&pn=MarketBeacon&am=${amountVal}&cu=INR&tn=MB_${selectedTier.toUpperCase()}_${billingCycle.toUpperCase()}`;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300 overscroll-contain">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300 overscroll-contain" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       {isSuccess && <Confetti />}
       {/* Modal Main container */}
       <div className="bg-white w-full max-w-5xl rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-y-auto max-h-[90vh] md:max-h-none flex flex-col-reverse md:flex-row animate-in zoom-in-95 duration-500 h-fit">
@@ -252,13 +253,13 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                   <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 w-fit relative">
                      <button 
                        onClick={() => setBillingCycle('monthly')}
-                       className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all z-10 ${billingCycle === 'monthly' ? 'text-blue-600' : 'text-slate-400'}`}
+                       className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all z-10 ${billingCycle === 'monthly' ? 'text-blue-600' : 'text-slate-500'}`}
                      >
                         Monthly
                      </button>
                      <button 
                        onClick={() => setBillingCycle('yearly')}
-                       className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all z-10 ${billingCycle === 'yearly' ? 'text-blue-600' : 'text-slate-400'}`}
+                       className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all z-10 ${billingCycle === 'yearly' ? 'text-blue-600' : 'text-slate-500'}`}
                      >
                         Yearly (-33%)
                      </button>
@@ -277,11 +278,11 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                      >
                        <div className="space-y-1">
                          <span className="text-[11px] md:text-xs font-black text-slate-900 uppercase tracking-tight">{t.name}</span>
-                         <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">{id === 'pro' ? 'Structural Patterns' : 'Full Institutional Access'}</p>
+                         <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">{id === 'pro' ? 'Structural Patterns' : 'Full Institutional Access'}</p>
                        </div>
                        <div className="text-right">
                          <span className="text-lg md:text-xl font-black text-slate-900 block">{billingCycle === 'monthly' ? t.monthly : t.yearly}</span>
-                         <span className="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase">{billingCycle}</span>
+                         <span className="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase">{billingCycle}</span>
                        </div>
                      </button>
                   ))}
@@ -291,7 +292,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                 <div className="border-t border-slate-100 pt-5 mt-2 space-y-3">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <div className="text-left">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Have a Trial Voucher?</span>
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Have a Trial Voucher?</span>
                       <span className="text-[8px] text-slate-450 uppercase tracking-wider block mt-0.5">Claim instant 7-day trial access</span>
                     </div>
                     <button 
@@ -340,32 +341,32 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                      <span className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Step 2: Transfer Confirmation</span>
                      <h3 className="text-xl md:text-2xl font-black text-slate-900 uppercase italic">Scan & Pay via UPI</h3>
                   </div>
-                  <button onClick={() => setStep('plan')} className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase hover:text-slate-900">Change Plan</button>
+                  <button onClick={() => setStep('plan')} className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase hover:text-slate-900">Change Plan</button>
                </div>
 
                <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 p-6 md:p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
                   <div className="w-40 h-40 md:w-44 md:h-44 bg-white p-3 rounded-2xl shadow-inner flex items-center justify-center border border-slate-200 relative group shrink-0">
-                     <img src="/qr-code.png" className="w-full h-full object-contain" alt="Payment QR" />
+                     <img src="/qr-code.png" className="w-full h-full object-contain" alt="Payment QR" loading="lazy" decoding="async" />
                      <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
                         <span className="text-[10px] font-black text-slate-900 uppercase text-center px-4">Scan QR to Pay</span>
                      </div>
                   </div>
                   <div className="space-y-4 flex-1 text-center md:text-left w-full">
                      <div className="space-y-1">
-                        <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest block">Fixed Plan Amount ({billingCycle})</span>
+                        <span className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest block">Fixed Plan Amount ({billingCycle})</span>
                         <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm w-fit mx-auto md:mx-0">
                            <p className="text-3xl md:text-4xl font-black text-blue-600 tracking-tighter">{currentPrice}</p>
                         </div>
                      </div>
 
                      <div className="space-y-1.5">
-                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Or transfer to UPI ID</span>
+                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Or transfer to UPI ID</span>
                        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-2.5 max-w-sm mx-auto md:mx-0">
                          <span className="text-[10px] font-mono font-black text-slate-900 select-all tracking-tight">{upiId}</span>
                          <button 
                            type="button" 
                            onClick={handleCopyUPI} 
-                           className={`p-1.5 rounded-lg transition-all ${copied ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
+                           className={`p-1.5 rounded-lg transition-all ${copied ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-600'}`}
                          >
                            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                          </button>
@@ -386,7 +387,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                <form onSubmit={handleSubmitTransaction} className="space-y-4">
                   <div className="space-y-1">
                      <div className="flex justify-between items-center pl-1">
-                       <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest block">Transaction UTR (12 Digits)</label>
+                       <label className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest block">Transaction UTR (12 Digits)</label>
                        {transactionId && (
                          <span className={`text-[8px] font-black uppercase tracking-wider ${/^\d{12}$/.test(transactionId) ? 'text-emerald-600' : 'text-rose-500'}`}>
                            {/^\d{12}$/.test(transactionId) ? '✓ Valid UTR' : `${transactionId.length} / 12 Digits`}
@@ -410,7 +411,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                            }`}
                         />
                      </div>
-                     <p className="text-[8px] font-medium text-slate-400 pl-1 leading-relaxed uppercase">
+                     <p className="text-[8px] font-medium text-slate-500 pl-1 leading-relaxed uppercase">
                        Find the 12-digit UTR/Ref number in your Google Pay, PhonePe, or Paytm receipt.
                      </p>
                   </div>
@@ -452,7 +453,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                               <span className="h-1 w-1 rounded-full bg-emerald-500" />
                               <span>User {act.name} activated {act.plan}</span>
                            </div>
-                           <span className="text-slate-400 font-normal">{act.time}</span>
+                           <span className="text-slate-500 font-normal">{act.time}</span>
                         </div>
                      ))}
                   </div>

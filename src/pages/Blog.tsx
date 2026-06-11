@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Clock, BookOpen, TrendingUp, ShieldCheck, BarChart2, ChevronRight } from 'lucide-react';
 import BrandLogo from '../components/brand/BrandLogo';
 import SiteFooter from '../components/layout/SiteFooter';
+import SEO from '../components/SEO';
 
 const ARTICLES = [
   {
@@ -58,14 +59,14 @@ const ARTICLES = [
 const BlogPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      {/* SEO Head */}
+      <SEO title="Stock Market Research Blog" description="Learn institutional research methods, ABCD Tranche strategy, and market analysis. Educational content for Indian stock market investors." />
       {/* Navigation */}
       <nav className="border-b border-slate-800/60 px-6 md:px-10 py-5 flex items-center justify-between backdrop-blur-md bg-slate-950/80 sticky top-0 z-50">
         <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <BrandLogo variant="dark" size={28} />
         </Link>
         <div className="flex items-center gap-4">
-          <Link to="/" className="text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-colors hidden md:block">
+          <Link to="/" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors hidden md:block">
             ← Back to Home
           </Link>
           <Link
@@ -86,7 +87,7 @@ const BlogPage: React.FC = () => {
         <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white mb-6 leading-none">
           Institutional <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">Insights.</span>
         </h1>
-        <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+        <p className="text-slate-500 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
           Learn the strategies, systems, and logic behind institutional trading — explained simply for retail traders and advisors.
         </p>
       </header>
@@ -110,7 +111,7 @@ const BlogPage: React.FC = () => {
               <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white leading-tight group-hover:text-blue-300 transition-colors">
                 {ARTICLES[0].title}
               </h2>
-              <p className="text-slate-400 text-sm leading-relaxed">{ARTICLES[0].excerpt}</p>
+              <p className="text-slate-500 text-sm leading-relaxed">{ARTICLES[0].excerpt}</p>
               <div className="flex items-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                 <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" />{ARTICLES[0].readTime}</span>
                 <span>{ARTICLES[0].date}</span>

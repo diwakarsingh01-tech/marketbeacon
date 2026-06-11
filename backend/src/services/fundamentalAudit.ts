@@ -77,7 +77,7 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
     checks: [
       { label: 'ROE Quality', value: `${roe}%`, pass: roe >= (isFinance ? 12 : 15) },
       { label: 'ROCE Efficiency', value: `${roce}%`, pass: roce >= (isFinance ? 10 : 15) },
-      { label: 'TTM vs ATH Profit', value: profitPass ? 'PASSED' : 'RECOVERY', pass: profitPass }
+      { label: 'TTM vs ATH Net Income', value: profitPass ? 'PASSED' : 'RECOVERY', pass: profitPass }
     ]
   };
   if (roe >= (isFinance ? 12 : 15)) profScore += 10;

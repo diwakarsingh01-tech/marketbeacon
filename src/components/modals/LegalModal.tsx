@@ -11,7 +11,7 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-500 max-h-[85vh]">
         
         {/* Header */}
@@ -26,7 +26,7 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type }) => {
                     <h2 className="text-xl font-black tracking-tight uppercase italic leading-none">
                        {type === 'risk' ? 'Risk Disclosure' : 'Legal Policy'}
                     </h2>
-                    <p className="text-slate-400 text-[8px] font-black uppercase tracking-[0.3em] mt-1">Regulatory Governance</p>
+                    <p className="text-slate-500 text-[8px] font-black uppercase tracking-[0.3em] mt-1">Regulatory Governance</p>
                  </div>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white">
@@ -102,7 +102,7 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type }) => {
 
         {/* Footer */}
         <div className="p-6 bg-slate-50 border-t border-slate-100 text-center shrink-0">
-           <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">MarketBeacon Compliance v4.5 • Secure Document</p>
+           <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em]">MarketBeacon Compliance v4.5 • Secure Document</p>
         </div>
       </div>
     </div>

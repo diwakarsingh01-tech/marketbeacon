@@ -176,7 +176,7 @@ const StrategyGuide: React.FC<StrategyGuideProps> = ({ strategyId }) => {
           </div>
           <div>
             <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase italic">{guide.title}</h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Logic: {guide.description}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Logic: {guide.description}</p>
           </div>
         </div>
       </div>
@@ -184,11 +184,11 @@ const StrategyGuide: React.FC<StrategyGuideProps> = ({ strategyId }) => {
       <div className="p-8 space-y-8">
         {/* Setup Steps */}
         <div className="space-y-4">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block">Setup Requirements</span>
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">Setup Requirements</span>
           <div className="grid gap-3">
             {guide.setup.map((step, i) => (
               <div key={i} className="flex items-start space-x-3 group">
-                <div className="h-5 w-5 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
+                <div className="h-5 w-5 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
                   {i + 1}
                 </div>
                 <p className="text-xs font-bold text-slate-600 leading-relaxed">{step}</p>
@@ -197,12 +197,12 @@ const StrategyGuide: React.FC<StrategyGuideProps> = ({ strategyId }) => {
           </div>
         </div>
 
-        {/* Entry/Exit Cards */}
+        {/* Level/Close Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-5 bg-blue-50 rounded-3xl border border-blue-100 space-y-2">
             <div className="flex items-center space-x-2 text-blue-600">
               <ChevronRight className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Entry</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">Research</span>
             </div>
             <p className="text-xs font-black text-blue-900 leading-normal">{guide.entry}</p>
           </div>
@@ -218,7 +218,7 @@ const StrategyGuide: React.FC<StrategyGuideProps> = ({ strategyId }) => {
           <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-2">
             <div className="flex items-center space-x-2 text-slate-600">
               <ShieldAlert className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Risk Baseline</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">Risk Guard</span>
             </div>
             <p className="text-xs font-black text-slate-900 leading-normal">{guide.stopLoss}</p>
           </div>

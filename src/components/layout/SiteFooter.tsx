@@ -40,7 +40,7 @@ const SiteFooter: React.FC = () => {
             <Link to="/" className="inline-block hover:opacity-80 transition-opacity">
               <BrandLogo variant="dark" size={32} />
             </Link>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
+            <p className="text-slate-500 text-sm leading-relaxed max-w-xs">
               India's institutional-grade stock research tool. ABCD Tranche Laddering + 100-point Audit Score. For educational & research purposes. Not investment advice.
             </p>
             {/* Trust badges */}
@@ -86,7 +86,7 @@ const SiteFooter: React.FC = () => {
                   <li key={item.label}>
                     <Link
                       to={item.to}
-                      className="text-[12px] font-medium text-slate-400 hover:text-white transition-colors"
+                      className="text-[12px] font-medium text-slate-500 hover:text-white transition-colors"
                     >
                       {item.label}
                     </Link>

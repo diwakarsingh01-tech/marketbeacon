@@ -2,10 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, ArrowLeft } from 'lucide-react';
 import BrandLogo from '../components/brand/BrandLogo';
+import SEO from '../components/SEO';
 
 const PrivacyPolicyPage: React.FC = () => {
   React.useEffect(() => {
-    document.title = 'Privacy Policy | MarketBeacon Pro';
     window.scrollTo(0, 0);
   }, []);
 
@@ -54,12 +54,13 @@ const PrivacyPolicyPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
+      <SEO title="Privacy Policy" description="MarketBeacon Pro privacy policy and terms of use for our stock research platform." />
       {/* Nav */}
       <nav className="border-b border-slate-800/60 px-6 md:px-10 py-5 flex items-center justify-between bg-slate-950/80 sticky top-0 z-50 backdrop-blur-md">
         <Link to="/" className="hover:opacity-80 transition-opacity">
           <BrandLogo variant="dark" size={28} />
         </Link>
-        <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-colors">
+        <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors">
           <ArrowLeft className="w-3 h-3" /> Back to Home
         </Link>
       </nav>
@@ -71,7 +72,7 @@ const PrivacyPolicyPage: React.FC = () => {
           <span className="text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">Educational Tool · Not Investment Advice</span>
         </div>
         <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-4">Privacy Policy</h1>
-        <p className="text-slate-400 text-sm">Effective Date: June 06, 2026 · MarketBeacon Technologies</p>
+        <p className="text-slate-500 text-sm">Effective Date: June 06, 2026 · MarketBeacon Technologies</p>
         <p className="text-slate-500 text-sm mt-3 leading-relaxed max-w-xl">
           We believe in full transparency. This policy explains exactly what data we collect, how we use it, and your rights — in plain language.
         </p>
@@ -85,7 +86,7 @@ const PrivacyPolicyPage: React.FC = () => {
               <h2 className="text-base font-black text-white mb-4 tracking-tight">{s.title}</h2>
               <div className="space-y-2">
                 {s.body.split('\n').map((line, j) => (
-                  <p key={j} className={`text-sm leading-relaxed ${line.startsWith('•') ? 'text-slate-300 pl-4' : 'text-slate-400'}`}>
+                  <p key={j} className={`text-sm leading-relaxed ${line.startsWith('•') ? 'text-slate-300 pl-4' : 'text-slate-500'}`}>
                     {line}
                   </p>
                 ))}
