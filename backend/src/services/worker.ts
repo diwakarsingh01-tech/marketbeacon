@@ -202,7 +202,7 @@ export async function precalculateAlpha40() {
         if (selected.length >= targetCount) break;
         const sector = s.sector || 'General';
         const sectorCount = existingSectors[sector] || 0;
-        if (sectorCount < 10) {
+        if (sectorCount < 8) {
           selected.push(s);
           existingSectors[sector] = sectorCount + 1;
         }
@@ -211,9 +211,9 @@ export async function precalculateAlpha40() {
     };
 
     const sectorUsage: Record<string, number> = {};
-    const finalLarge = selectWithRules(allActive.filter(s => s.capType === 'LARGE'), 25, sectorUsage);
-    const finalMid = selectWithRules(allActive.filter(s => s.capType === 'MID'), 15, sectorUsage);
-    const finalSmall = selectWithRules(allActive.filter(s => s.capType === 'SMALL'), 10, sectorUsage);
+    const finalLarge = selectWithRules(allActive.filter(s => s.capType === 'LARGE'), 20, sectorUsage);
+    const finalMid = selectWithRules(allActive.filter(s => s.capType === 'MID'), 12, sectorUsage);
+    const finalSmall = selectWithRules(allActive.filter(s => s.capType === 'SMALL'), 8, sectorUsage);
     const finalActive = [...finalLarge, ...finalMid, ...finalSmall];
 
     const results = {
