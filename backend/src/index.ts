@@ -11,6 +11,7 @@ import compression from 'compression';
 import etag from 'etag';
 import YahooFinanceClass from 'yahoo-finance2';
 const yahooFinance = new (YahooFinanceClass as any)({ suppressNotices: ['yahooSurvey'] });
+import cron from 'node-cron';
 import { 
   initScreenerCron, 
   updateMarketSnapshot, 
@@ -255,8 +256,15 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
       const finalPass = audit.score >= passThreshold && !audit.reason.includes('Hard Reject');
 
       // Bifurcation Logic Alignment
-      const isStrategyQualified = strategyData?.status === 'QUALIFIED';
-      const isStrategyObservation = strategyData?.status === 'OBSERVATION';
+      // Use the strategy's native isBuyZone (most strategies set this directly)
+      // and upgrade status: ENVELOPE_LONG/BOLLINGER etc don't set 'status' field
+      const strategyIsBuyZone = strategyData?.isBuyZone === true;
+      const strategyObservation = strategyData?.status === 'OBSERVATION';
+      
+      // Reason: prefer fundamental audit reason when failing, strategy status when passing
+      const displayReason = strategyData?.status 
+        ? strategyData.status 
+        : (strategyIsBuyZone ? 'QUALIFIED' : 'Pattern Not Found - ' + audit.reason);
 
       results.push({
         symbol: sym,
@@ -264,9 +272,9 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
         entryPrice: strategyData?.entryPrice || 0,
         target: strategyData?.target || 0,
         currentPrice: snap.quotes[snap.quotes.length - 1].close,
-        isBuyZone: isStrategyQualified, // Strictly QUALIFIED for the 'Open' tab
-        isObservation: isStrategyObservation,
-        reason: strategyData?.status || 'Pattern Not Found',
+        isBuyZone: strategyIsBuyZone,
+        isObservation: strategyObservation,
+        reason: displayReason,
         isPass: finalPass,
         score: audit.score,
         abcd: abcdLevels,
@@ -1200,7 +1208,11 @@ const startServer = async () => {
     await initDB();
     await initSnapshotCache();
     initScreenerCron();
-    setTimeout(precalculateAlpha40, 5000); 
+
+    // 8:30 PM IST - Daily Alpha-40 institutional recalculation
+    cron.schedule('30 20 * * *', precalculateAlpha40);
+
+    setTimeout(precalculateAlpha40, 5000); // Warm cache on boot
     setTimeout(precalculateGrowth, 15000); // Prime growth basket shortly after startup
     app.listen(PORT, '0.0.0.0', () => {
       console.log('----------------------------------------------------');

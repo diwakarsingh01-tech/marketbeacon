@@ -298,18 +298,34 @@ export async function updateMarketSnapshot(symbols: string[]) {
     }));
     await new Promise(resolve => setTimeout(resolve, 2000));
   }
+
+  // Persist snapshot to local file so data survives server restart
+  try {
+    const snapshotPath = path.resolve(process.cwd(), 'market_snapshot.json');
+    fs.writeFileSync(snapshotPath, JSON.stringify(snapshotCache, null, 2), 'utf-8');
+    console.log(`💾 [SNAPSHOT] Persisted ${Object.keys(snapshotCache).length} symbols to disk.`);
+  } catch (e: any) {
+    console.error(`⚠️ [SNAPSHOT] Failed to persist snapshot to disk: ${e.message}`);
+  }
+
   console.log(`💎 [SNAPSHOT] Success! Market data synced to Cloud.`);
 }
 
 export function initScreenerCron() {
+  // 2:30 AM - Wealth basket dynamic growth audit
   cron.schedule('30 2 * * *', () => runScreener());
-  cron.schedule('0 11 * * *', async () => {
+
+  // 6:00 PM IST - Full market snapshot update (after market close, low latency)
+  cron.schedule('0 18 * * *', async () => {
     const elite = ['TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'RELIANCE', 'KOTAKBANK', 'AXISBANK', 'SBIN', 'LT', 'ITC', 'HINDUNILVR', 'ASIANPAINT', 'TITAN', 'BAJFINANCE', 'BAJAJFINSV', 'BHARTIARTL', 'M&M', 'MARUTI', 'TMCV', 'SUNPHARMA', 'DRREDDY', 'CIPLA', 'ULTRACEMCO', 'NESTLEIND', 'BRITANNIA', 'ADANIPORTS', 'ADANIENT', 'JSWSTEEL', 'TATASTEEL', 'NTPC', 'ONGC', 'POWERGRID', 'COALINDIA', 'SHRIRAMFIN', 'APOLLOHOSP', 'PIDILITIND', 'HAVELLS', 'EICHERMOT', 'NIFTYBEES', 'BANKBEES'];
     const quality = ['RELAXO', 'FINCABLES', 'SYMPHONY', 'TEAMLEASE', 'SFL', 'RAJESHEXPO', 'CERA', 'TASTYBITE', 'HONAUT', 'SIS', 'VGUARD', 'SUNTV', 'OFSS', 'BAYERCROP', 'TTKPRESTIG', 'VIPIND', 'JCHAC', 'KAJARIACER', 'VINATIORGA', 'CAPLIPOINT', 'GODREJCP', 'FINEORG', 'DIXON', 'KEI', 'ERIS', 'ASTRAZEN', 'AVANTIFEED', 'PGHL', 'LALPATHLAB', 'BOSCHLTD', 'MOTILALOFS', '3MINDIA', 'UJJIVANSFB', 'TVSMOTOR', 'HEROMOTOCO', 'RADICO', 'EICHERMOT', 'POLYCAB', 'MCX'];
     const growth = await getDynamicBasket();
     const all = elite.concat(quality, growth, ['^NSEI']);
     await updateMarketSnapshot(Array.from(new Set(all)));
   });
+
+  // Alpha-40 institutional recalculation is scheduled in index.ts (8:30 PM IST)
+  // to avoid circular dependency between screener.ts and worker.ts
 }
 
 export function getMarketSnapshot(): Record<string, any> { return snapshotCache; }
