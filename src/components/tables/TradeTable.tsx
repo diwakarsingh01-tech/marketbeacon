@@ -553,15 +553,15 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                      <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
                                      PASS
                                    </div>
-                                 ) : (
-                                   <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-full text-[9px] font-black tracking-wide shrink-0">
-                                     <span className="w-1 h-1 rounded-full bg-amber-500" />
-                                     OBS
-                                   </div>
-                                 )}
-                                 <div className="flex flex-col items-end min-w-[32px]">
-                                   <span className="text-xs font-black text-slate-900 leading-none">{trade.score || 0}</span>
-                                   <span className="text-[7px] text-slate-400 font-extrabold uppercase tracking-widest mt-0.5">Audit</span>
+                                  ) : (
+                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-[9px] font-black tracking-wide shrink-0">
+                                      <span className="w-1 h-1 rounded-full bg-red-500" />
+                                      REJECT
+                                    </div>
+                                  )}
+                                  <div className="flex flex-col items-end min-w-[32px]">
+                                    <span className="text-xs font-black text-slate-900 leading-none">{trade.score || 0}</span>
+                                    <span className="text-[7px] text-slate-400 font-extrabold uppercase tracking-widest mt-0.5">Audit</span>
                                  </div>
                                </div>
                                <div className="flex items-center gap-1 shrink-0">
@@ -610,8 +610,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                 <div className="flex flex-col font-sans">
                                    <span className="text-sm font-black text-slate-950 group-hover:text-blue-600 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
                                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">{trade.sector}</span>
-                                   {trade.isPass === false && trade.reason && (
-                                     <span className="text-[7px] font-medium text-amber-600 uppercase tracking-wider mt-0.5 leading-tight max-w-[180px] truncate">{trade.reason}</span>
+                                   {trade.isPass === false && (
+                                     <span className="text-[7px] font-bold text-red-500 uppercase tracking-wider mt-0.5 leading-tight">{trade.reason || 'No reason provided'}</span>
                                    )}
                                  </div>
                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-auto pr-2 shrink-0">
@@ -721,11 +721,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                       PASS
                                     </div>
                                   ) : (
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 max-w-[240px]">
                                       <span className="px-2 py-0.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-[7px] font-black tracking-wide shrink-0">REJECT</span>
-                                      {trade.reason && (
-                                        <span className="text-[7px] font-medium text-amber-600 uppercase tracking-wider leading-tight">{trade.reason}</span>
-                                      )}
+                                      <span className="text-[8px] font-bold text-amber-700 uppercase tracking-wider leading-tight">{trade.reason || 'Rejection reason unavailable'}</span>
                                     </div>
                                   )}
                                   <div className="flex flex-col items-end min-w-[32px]">
@@ -854,8 +852,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                  {trade.isPass !== false ? (
                                     <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[7.5px] font-black">PASS</span>
                                  ) : (
-                                    <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded text-[7.5px] font-black">OBS</span>
-                                 )}
+                                     <span className="px-1.5 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded text-[7.5px] font-black">REJECT</span>
+                                )}
                                  <span className="font-extrabold text-slate-700">Audit Score:</span>
                                  <span className="font-black text-slate-900">{trade.score || 0}</span>
                               </div>
@@ -989,10 +987,10 @@ const TradeTable: React.FC<TradeTableProps> = ({
                              <div className="flex items-center space-x-1.5">
                                 {trade.isPass !== false ? (
                                    <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[7.5px] font-black">PASS</span>
-                                ) : (
-                                   <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded text-[7.5px] font-black">OBS</span>
-                                )}
-                                <span className="font-extrabold text-slate-700">Audit Score:</span>
+                                 ) : (
+                                    <span className="px-1.5 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded text-[7.5px] font-black">REJECT</span>
+                                 )}
+                                 <span className="font-extrabold text-slate-700">Audit Score:</span>
                                 <span className="font-black text-slate-900">{trade.score || 0}</span>
                              </div>
                              <div className="flex items-center gap-2">
@@ -1004,10 +1002,10 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                )}
                              </div>
                           </div>
-                          {trade.isPass === false && trade.reason && (
+                          {trade.isPass === false && (
                             <div className="bg-amber-50/50 border border-amber-200/50 rounded-[0.75rem] px-3 py-2 text-[9px]">
                               <span className="font-black text-amber-700 uppercase tracking-wider text-[7px]">Reason: </span>
-                              <span className="font-medium text-amber-800">{trade.reason}</span>
+                              <span className="font-medium text-amber-800">{trade.reason || 'No reason provided'}</span>
                             </div>
                           )}
 
