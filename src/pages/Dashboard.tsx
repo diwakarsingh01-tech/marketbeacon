@@ -750,6 +750,31 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                     onConnectNodeClick={() => setShowBrokerHub(true)}
                   />
                </div>
+               {/* Refreshing Overlay */}
+               {isRefreshing && data && (
+                 <motion.div 
+                   initial={{ opacity: 0 }}
+                   animate={{ opacity: 1 }}
+                   exit={{ opacity: 0 }}
+                   className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-[2.5rem]"
+                 >
+                   <div className="flex flex-col items-center space-y-4">
+                     <div className="relative w-16 h-16">
+                       <div className="absolute inset-0 border-4 border-slate-100 rounded-full" />
+                       <div className="absolute inset-0 border-4 border-transparent border-t-blue-600 rounded-full animate-spin" />
+                       <div className="absolute inset-0 border-4 border-transparent border-b-emerald-400 rounded-full animate-spin" style={{ animationDuration: '0.8s', transform: 'rotate(180deg)' }} />
+                     </div>
+                     <div className="flex items-center space-x-2">
+                       <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                       <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                       <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                     </div>
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">
+                       Scanning Institutional Matrix
+                     </p>
+                   </div>
+                 </motion.div>
+               )}
                {/* Institutional Border Highlight */}
                <div className="absolute inset-0 border border-blue-600/0 group-hover/table:border-blue-600/5 rounded-[2.5rem] pointer-events-none transition-all duration-700" />
             </div>
