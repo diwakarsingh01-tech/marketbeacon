@@ -724,7 +724,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                     <div className="flex items-center gap-1">
                                       <span className="px-2 py-0.5 bg-red-50 text-red-600 border border-red-200 rounded-full text-[7px] font-black tracking-wide shrink-0">REJECT</span>
                                       {trade.reason && (
-                                        <span className="text-[7px] font-medium text-red-500 uppercase tracking-wider max-w-[140px] truncate leading-tight">{trade.reason}</span>
+                                        <span className="text-[7px] font-medium text-amber-600 uppercase tracking-wider leading-tight">{trade.reason}</span>
                                       )}
                                     </div>
                                   )}
