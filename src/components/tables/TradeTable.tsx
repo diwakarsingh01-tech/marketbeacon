@@ -723,7 +723,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                         <span className="w-1 h-1 rounded-full bg-amber-500" />
                                         OBS
                                       </div>
-                                      {trade.reason && trade.reason !== 'Institutional Audit Active' && (
+                                      {trade.reason && (
                                         <div className="absolute right-0 top-full mt-1.5 z-[300] hidden group-hover/reason:block bg-slate-950 text-white shadow-2xl rounded-xl p-3 animate-in fade-in duration-200 min-w-[200px] max-w-[260px]">
                                           <div className="flex flex-col gap-1">
                                             <span className="text-[7px] font-black text-amber-400 uppercase tracking-widest">Rejection Reason</span>
@@ -732,6 +732,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                         </div>
                                       )}
                                     </div>
+                                  )}
+                                  {trade.isPass === false && trade.reason && (
+                                    <span className="text-[7px] font-medium text-amber-600/70 uppercase tracking-wider max-w-[120px] truncate hidden 2xl:inline">{trade.reason}</span>
                                   )}
                                   <div className="flex flex-col items-end min-w-[32px]">
                                     <span className="text-xs font-black text-slate-900 leading-none">{trade.score || 0}</span>
@@ -1009,7 +1012,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                )}
                              </div>
                           </div>
-                          {trade.isPass === false && trade.reason && trade.reason !== 'Institutional Audit Active' && (
+                          {trade.isPass === false && trade.reason && (
                             <div className="bg-amber-50/50 border border-amber-200/50 rounded-[0.75rem] px-3 py-2 text-[9px]">
                               <span className="font-black text-amber-700 uppercase tracking-wider text-[7px]">Reason: </span>
                               <span className="font-medium text-amber-800">{trade.reason}</span>
