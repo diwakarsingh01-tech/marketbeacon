@@ -7,6 +7,9 @@ import BrandLogo from '../brand/BrandLogo';
 const GlobalFooter: React.FC = () => {
   const [legalModal, setLegalModal] = useState<{ open: boolean, type: 'policy' | 'risk' }>({ open: false, type: 'policy' });
   const [isDisclaimerExpanded, setIsDisclaimerExpanded] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+  const toggleSection = (key: string) => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
 
   return (
     <>
@@ -25,8 +28,11 @@ const GlobalFooter: React.FC = () => {
 
             {/* Column 2: Core Terminal */}
             <div className="space-y-3">
-              <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Core Terminal</h4>
-              <ul className="space-y-2 text-[10px] font-black text-slate-600 uppercase tracking-wider">
+              <button onClick={() => toggleSection('core')} className="w-full flex items-center justify-between md:cursor-default">
+                <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Core Terminal</h4>
+                <span className="md:hidden text-slate-400">{expandedSections.core ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
+              </button>
+              <ul className={`space-y-2 text-[10px] font-black text-slate-600 uppercase tracking-wider overflow-hidden transition-all duration-300 md:max-h-none ${expandedSections.core ? 'max-h-96' : 'max-h-0 md:max-h-none'}`}>
                 <li><Link to="/alpha-hub" className="hover:text-blue-600 transition-colors flex items-center gap-1.5"><Layers className="h-3 w-3" /> Alpha Hub</Link></li>
                 <li><Link to="/screener" className="hover:text-blue-600 transition-colors flex items-center gap-1.5"><Zap className="h-3 w-3 text-amber-500" /> Screener Matrix</Link></li>
               </ul>
@@ -34,8 +40,11 @@ const GlobalFooter: React.FC = () => {
 
             {/* Column 3: Portfolio Desk */}
             <div className="space-y-3">
-              <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Portfolio Desk</h4>
-              <ul className="space-y-2 text-[10px] font-black text-slate-600 uppercase tracking-wider">
+              <button onClick={() => toggleSection('portfolio')} className="w-full flex items-center justify-between md:cursor-default">
+                <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Portfolio Desk</h4>
+                <span className="md:hidden text-slate-400">{expandedSections.portfolio ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
+              </button>
+              <ul className={`space-y-2 text-[10px] font-black text-slate-600 uppercase tracking-wider overflow-hidden transition-all duration-300 md:max-h-none ${expandedSections.portfolio ? 'max-h-96' : 'max-h-0 md:max-h-none'}`}>
                 <li><Link to="/portfolio" className="hover:text-blue-600 transition-colors flex items-center gap-1.5">Wealth Manager</Link></li>
                 <li><Link to="/trades" className="hover:text-blue-600 transition-colors flex items-center gap-1.5"><BookOpen className="h-3 w-3" /> Verified Ledger</Link></li>
                 <li><Link to="/license-desk" className="hover:text-blue-600 transition-colors flex items-center gap-1.5">License Desk</Link></li>
@@ -44,9 +53,13 @@ const GlobalFooter: React.FC = () => {
 
             {/* Column 4: Links & Channels */}
             <div className="space-y-3">
-              <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">External Link</h4>
-              <ul className="space-y-2 text-[10px] font-black text-slate-600 uppercase tracking-wider">
-                <li><a href="https://t.me/Marketbeconpro" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors inline-flex items-center gap-1">Telegram Alerts <ArrowUpRight className="h-3 w-3 text-slate-400" /></a></li>
+              <button onClick={() => toggleSection('external')} className="w-full flex items-center justify-between md:cursor-default">
+                <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">External Link</h4>
+                <span className="md:hidden text-slate-400">{expandedSections.external ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
+              </button>
+              <ul className={`space-y-2 text-[10px] font-black text-slate-600 uppercase tracking-wider overflow-hidden transition-all duration-300 md:max-h-none ${expandedSections.external ? 'max-h-96' : 'max-h-0 md:max-h-none'}`}>
+                <li><a href="https://t.me/asktoceo" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors inline-flex items-center gap-1">Telegram Alerts <ArrowUpRight className="h-3 w-3 text-slate-400" /></a></li>
+                <li><a href="https://wa.me/919251180183" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 transition-colors inline-flex items-center gap-1">WhatsApp <ArrowUpRight className="h-3 w-3 text-slate-400" /></a></li>
                 <li><button onClick={() => setLegalModal({ open: true, type: 'policy' })} className="hover:text-blue-600 transition-colors text-left">Legal Protocol</button></li>
                 <li><button onClick={() => setLegalModal({ open: true, type: 'risk' })} className="hover:text-blue-600 transition-colors text-left">Risk Disclaimers</button></li>
               </ul>

@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Globe, 
-  ShieldCheck, 
-  Activity, 
   RefreshCw, 
   Database, 
   Wifi, 
   WifiOff, 
   Server,
   Terminal,
-  ChevronRight,
-  CheckCircle2,
-  AlertCircle
+  ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getApiUrl } from '../lib/api-utils';

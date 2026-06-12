@@ -25,6 +25,7 @@ import { precalculateAlpha40, getAlpha40Cache } from './services/worker.js';
 import { initDB, getDB } from './db.js';
 import { notifyAdmins } from './services/notificationService.js';
 import { runHealthCheck, runAndNotifyHealthCheck } from './services/healthCheck.js';
+import { scheduleAuditCron } from './cron/auditScheduler.js';
 
 dotenv.config();
 
@@ -166,6 +167,43 @@ app.get('/api/health', (req, res) => res.json({
   verify: 'Alpha data binding resolved — Supabase dependency removed',
   timestamp: new Date().toISOString()
 }));
+
+app.post('/api/leads', async (req, res) => {
+  try {
+    const { email, segment } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'Invalid email' });
+    }
+    const db = getDB();
+    await db.run('INSERT INTO leads (email, segment) VALUES (?, ?)', [email.trim().toLowerCase(), segment || 'retail']);
+    res.json({ success: true });
+  } catch (err: any) {
+    if (err?.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.json({ success: true, duplicate: true });
+    }
+    console.error('Lead capture error:', err);
+    res.status(500).json({ error: 'Failed to save lead' });
+  }
+});
+
+// --- Waitlist ---
+app.post('/api/waitlist', async (req, res) => {
+  try {
+    const { name, email, phone, tier_requested } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email required' });
+    }
+    const db = getDB();
+    await db.run('INSERT INTO waitlist (name, email, phone, tier_requested) VALUES (?, ?, ?, ?)', [name.trim(), email.trim().toLowerCase(), phone || null, tier_requested || 'alpha']);
+    res.json({ success: true, message: 'You are on the waiting list. We will notify you when a slot opens.' });
+  } catch (err: any) {
+    if (err?.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.json({ success: true, duplicate: true, message: 'Already on waitlist!' });
+    }
+    console.error('Waitlist error:', err);
+    res.status(500).json({ error: 'Failed to join waitlist' });
+  }
+});
 
 app.post('/api/auth/google', async (req, res) => {
   try {
@@ -457,6 +495,64 @@ const requireAdmin = (req: any, res: any, next: any) => {
   if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
   next();
 };
+
+// --- Admin: Waitlist ---
+app.get('/api/admin/waitlist', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = (page - 1) * limit;
+    const status = req.query.status as string;
+    let sql = 'SELECT * FROM waitlist';
+    let countSql = 'SELECT COUNT(*) as total FROM waitlist';
+    const params: any[] = [];
+    if (status && ['pending', 'approved', 'rejected'].includes(status)) {
+      sql += ' WHERE status = ?';
+      countSql += ' WHERE status = ?';
+      params.push(status);
+    }
+    sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+    const [rows, countResult] = await Promise.all([
+      db.all(sql, params),
+      db.get(countSql, status && ['pending', 'approved', 'rejected'].includes(status) ? [status] : [])
+    ]);
+    res.json({ data: rows, total: (countResult as any)?.total || 0, page, limit });
+  } catch (err) {
+    console.error('Admin waitlist error:', err);
+    res.status(500).json({ error: 'Failed to fetch waitlist' });
+  }
+});
+
+app.post('/api/admin/waitlist/:id/approve', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    const entry = await db.get('SELECT * FROM waitlist WHERE id = ?', [req.params.id]);
+    if (!entry) return res.status(404).json({ error: 'Entry not found' });
+    if ((entry as any).status !== 'pending') return res.status(400).json({ error: 'Already processed' });
+    const code = `WL${String((entry as any).id).padStart(4, '0')}${Date.now().toString(36).slice(-3).toUpperCase()}`;
+    const tier = (entry as any).tier_requested || 'alpha';
+    const duration = req.body.duration_days || 7;
+    await db.run('INSERT INTO vouchers (code, tier, duration_days, max_uses, current_uses) VALUES (?, ?, ?, 1, 0)', [code, tier, duration]);
+    await db.run('UPDATE waitlist SET status = ?, voucher_code = ? WHERE id = ?', ['approved', code, req.params.id]);
+    res.json({ success: true, voucher_code: code, tier, duration_days: duration });
+  } catch (err) {
+    console.error('Waitlist approve error:', err);
+    res.status(500).json({ error: 'Failed to approve' });
+  }
+});
+
+app.post('/api/admin/waitlist/:id/reject', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    await db.run('UPDATE waitlist SET status = ? WHERE id = ?', ['rejected', req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Waitlist reject error:', err);
+    res.status(500).json({ error: 'Failed to reject' });
+  }
+});
 
 app.get('/api/market-indices', async (req, res) => {
   try {
@@ -967,7 +1063,7 @@ app.get('/api/stock-prices', async (req, res) => {
       return { 
         symbol: s, 
         price: lastQuote?.close || snap.quote?.regularMarketPrice || 0, 
-        ath: snap.quote?.fiftyTwoWeekHigh || 0, 
+        ath: snap.quotes ? Math.round(Math.max(...snap.quotes.map((q: any) => q.high || 0))) : snap.quote?.fiftyTwoWeekHigh || 0, 
         marketCap: snap.quote?.marketCap || 0, 
         sector: MANUAL_SECTOR_MAP[s] || snap.screener?.industry || 'General',
         change: snap.quote?.regularMarketChangePercent || 0
@@ -1282,6 +1378,47 @@ const precalculateGrowth = async () => {
   }
 };
 
+// --- ADMIN: Audit endpoints ---
+import { runAuditEngine } from './services/audit/engine.js';
+import fs from 'fs';
+import path from 'path';
+
+app.get('/api/admin/audit/latest', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const reportPath = path.resolve(process.cwd(), 'audit_reports', `${today}.json`);
+    if (fs.existsSync(reportPath)) {
+      const report = JSON.parse(fs.readFileSync(reportPath, 'utf-8'));
+      return res.json({
+        date: report.date,
+        status: report.status,
+        summary: report.summary,
+        changes: report.changes,
+        checks: report.checks.filter((c: any) => c.status !== 'pass'),
+        reportUrl: `/admin/audit/${today}`
+      });
+    }
+    res.json({ message: 'No audit run today yet. Run /api/admin/audit/run to trigger.' });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/audit/run', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const report = await runAuditEngine(BASKETS);
+    res.json({ status: report.status, date: report.date, summary: report.summary });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/audit/:date', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const reportPath = path.resolve(process.cwd(), 'audit_reports', `${req.params.date}.json`);
+    if (fs.existsSync(reportPath)) {
+      return res.json(JSON.parse(fs.readFileSync(reportPath, 'utf-8')));
+    }
+    res.status(404).json({ error: 'Report not found' });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 const startServer = async () => {
   const PORT = Number(process.env.PORT) || 3001;
   try {
@@ -1297,6 +1434,7 @@ const startServer = async () => {
 
     setTimeout(precalculateAlpha40, 5000); // Warm cache on boot
     setTimeout(precalculateGrowth, 15000); // Prime growth basket shortly after startup
+    scheduleAuditCron(BASKETS);
     app.listen(PORT, '0.0.0.0', () => {
       console.log('----------------------------------------------------');
       console.log('🚀 MARKETBEACON PRO: PHASE 1 LAUNCH ACTIVE');

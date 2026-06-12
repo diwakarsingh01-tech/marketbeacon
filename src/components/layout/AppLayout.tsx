@@ -5,6 +5,7 @@ import TopNav from './TopNav';
 import GlobalFooter from './Footer';
 
 import FeedbackModal from '../ui/FeedbackModal';
+import InstallPrompt from '../InstallPrompt';
 import { 
   MessageSquarePlus, 
   LayoutGrid, 
@@ -102,6 +103,7 @@ const AppLayout: React.FC = () => {
            Institutional Signal Feedback
         </div>
       </button>
+      <InstallPrompt />
       <FeedbackModal 
         isOpen={isFeedbackOpen} 
         onClose={() => setIsFeedbackOpen(false)} 

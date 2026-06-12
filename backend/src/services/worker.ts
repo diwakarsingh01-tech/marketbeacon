@@ -4,6 +4,7 @@ import { runStrategyAnalysis } from './strategyService.js';
 import { STRATEGIES, BASKETS, MANUAL_SECTOR_MAP } from '../index.js';
 import { supabase } from '../db.js';
 import { notifyAllUsers } from './notificationService.js';
+import { sendSignalNotification } from './telegramNotifier.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -41,7 +42,7 @@ try {
 const STRATEGY_BASKET_MAP: Record<string, string[]> = {
   'ENVELOPE_LONG': ['Elite Basket'], 'ENVELOPE_SHORT': ['Elite Basket'], 'BOLLINGER': ['Elite Basket'],
   'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket'], 'RHS_ABCD': ['Elite Basket', 'Quality Basket'],
-  'SMA_ABCD': ['Elite Basket', 'Quality Basket'], '52W_HIGH_LOW': ['Elite Basket'],
+  'SMA_BCD': ['Elite Basket', 'Quality Basket'], '52W_HIGH_LOW': ['Elite Basket'],
   'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
   'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
   'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket']
@@ -120,6 +121,17 @@ export async function precalculateAlpha40() {
             if (isMovingUp && priceDeviation > 20.0) continue; 
             else if (!isMovingUp && priceDeviation > 30.0) continue;
 
+            // Sector-aware D/E mandate check
+            const de = snap.screener?.netDebtToEquity || 0;
+            const sectorName = (MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General').trim();
+            const isFinance = ['Banking', 'Finance', 'Banking ETF', 'NBFC', 'Financial Services', 'Asset Management', 'Exchange/Depository', 'Financial Infrastructure'].includes(sectorName)
+              || sectorName.toLowerCase().includes('finance') || sectorName.toLowerCase().includes('nbfc');
+            const isCapIntensive = ['EPC/Infra', 'Automobile', 'Infrastructure', 'Power', 'Steel', 'Telecom', 'Cement', 'Metal', 'Engineering', 'Industrial/Power', 'Utilities'].includes(sectorName)
+              || ['LT', 'BHARTIARTL', 'M&M', 'ADANIPORTS', 'ADANIENT', 'JSWSTEEL', 'TATASTEEL', 'NTPC', 'POWERGRID', 'TMCV'].includes(sym)
+              || sectorName.toLowerCase().includes('infra') || sectorName.toLowerCase().includes('steel') || sectorName.toLowerCase().includes('telecom') || sectorName.toLowerCase().includes('auto');
+            const debtLimit = isFinance ? 8.0 : (isCapIntensive ? 2.0 : 1.0);
+            if (de > debtLimit) continue;
+
             let entryTime = sd?.triggerDate;
             if (!entryTime && snap.quotes.length > 0) {
               entryTime = new Date(snap.quotes[0].date).toISOString().split('T')[0];
@@ -132,7 +144,7 @@ export async function precalculateAlpha40() {
               tranche: sd?.tranche || 'A',
               basketSource: basketName, 
               capType, 
-              sector: (MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General').trim(),
+              sector: sectorName,
               currentPrice: last.close, 
               entryPrice: entry, 
               entryTime,
@@ -148,6 +160,8 @@ export async function precalculateAlpha40() {
                const title = `🚨 ${basketName}: ${sym}`;
                const message = `${sym} has triggered for ${stratName} (Tranche ${sd.tranche || 'A'}). Objective: ${Math.round(target)}.`;
                notifyAllUsers(title, message, 'audit');
+               // Send detailed signal to Telegram DM
+               sendSignalNotification(sym, stratName, basketName, entry, target, sd?.tranche || 'A').catch(() => {});
             }
           }
 
@@ -233,12 +247,14 @@ export async function precalculateAlpha40() {
       console.error('⚠️ [Alpha-40 Cache] Failed to write cache to disk:', e.message);
     }
 
-    // Save to Supabase system_cache
-    await supabase.from('system_cache').upsert({
-      key: 'alpha_40_results',
-      data: results,
-      updated_at: new Date().toISOString()
-    });
+    // Save to Supabase system_cache (skip if Supabase not configured)
+    if (supabase) {
+      await supabase.from('system_cache').upsert({
+        key: 'alpha_40_results',
+        data: results,
+        updated_at: new Date().toISOString()
+      });
+    }
 
     console.log(`✅ [WORKER] Alpha-40 Cloud Cache Updated. Mix: ${finalLarge.length}L / ${finalMid.length}M / ${finalSmall.length}S`);
   } catch (e: any) {

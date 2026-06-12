@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
-  Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight, Lock, Gift, Sparkles
+  Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight, Lock, Sparkles
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { useAuth } from '../context/AuthContext';

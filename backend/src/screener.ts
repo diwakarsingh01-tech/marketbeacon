@@ -72,23 +72,28 @@ export async function fetchScreenerData(symbol: string) {
   let lastError: any = null;
   
   for (const url of urls) {
-    try {
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-      const response = await axios.get(url, {
-        headers: { 
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Referer': 'https://www.screener.in/'
-        },
-        timeout: 10000
-      });
-      data = response.data;
-      break; 
-    } catch (e: any) {
-      lastError = e;
-      if (e.response?.status !== 404) {
-        break; 
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const delay = Math.random() * 1000 + 1000 + (attempt * 3000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        const response = await axios.get(url, {
+          headers: { 
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://www.screener.in/'
+          },
+          timeout: 15000
+        });
+        data = response.data;
+        break;
+      } catch (e: any) {
+        lastError = e;
+        if (e.response?.status === 404) break;
+        if (attempt < 2) {
+          console.warn(`⚠️ [Screener] ${cleanSymbol} attempt ${attempt + 1} failed (${e.message}), retrying...`);
+        }
       }
     }
+    if (data) break;
   }
   
   if (!data) {
@@ -275,19 +280,19 @@ export async function updateMarketSnapshot(symbols: string[]) {
       try {
         const symbol = baseSymbol.includes('.') ? baseSymbol : `${baseSymbol}.NS`;
         const period1 = new Date();
-        period1.setFullYear(period1.getFullYear() - 5);
+        period1.setFullYear(period1.getFullYear() - 20);
         const [history, quote, summary, screenerData] = await Promise.all([
           yahooFinance.chart(symbol, { period1: period1.toISOString().split('T')[0], interval: '1d' as any }),
           yahooFinance.quote(symbol),
           yahooFinance.quoteSummary(symbol, { modules: ['financialData', 'defaultKeyStatistics', 'summaryDetail'] }).catch(() => null),
-          fetchScreenerData(baseSymbol)
+          fetchScreenerData(baseSymbol).catch((e) => { console.warn(`⚠️ Screener data unavailable for ${baseSymbol}: ${e.message}`); return null; })
         ]);
         if (!history || !history.quotes) throw new Error('No history');
         const quotes = (history.quotes || []).filter((q: any) => q.close && q.low && q.high);
         const marketCap = quote.marketCap || screenerData?.marketCap || 0;
         
         // GLOBAL HARD MANDATE AUDIT
-        const audit = checkInstitutionalMandates(screenerData);
+        const audit = checkInstitutionalMandates(screenerData, baseSymbol);
         
         const rawStrategies = {
           'ENVELOPE_LONG': calculateEnvelope(quotes), 'ENVELOPE_SHORT': processShortEnvelope(quotes),
@@ -308,7 +313,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
         });
 
         const finalData = {
-          quotes: quotes.slice(-600), 
+          quotes: quotes, // Full 5-year daily data from Yahoo Finance
           quote: {
             marketCap, regularMarketPrice: quote.regularMarketPrice || (quotes.length > 0 ? quotes[quotes.length - 1].close : 0),
             regularMarketChangePercent: quote.regularMarketChangePercent || 0,
@@ -343,8 +348,8 @@ export async function updateMarketSnapshot(symbols: string[]) {
 }
 
 export function initScreenerCron() {
-  // 2:30 AM - Wealth basket dynamic growth audit
-  cron.schedule('30 2 * * *', () => runScreener());
+  // Sunday 2:30 AM - Wealth basket dynamic growth audit (weekly)
+  cron.schedule('30 2 * * 0', () => runScreener());
 
   // 6:00 PM IST - Full market snapshot update (after market close, low latency)
   cron.schedule('0 18 * * *', async () => {

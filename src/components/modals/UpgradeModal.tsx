@@ -5,16 +5,11 @@ import {
   Zap, 
   ChevronRight, 
   Check, 
-  CreditCard,
-  QrCode,
   Send,
   MessageSquare,
-  Calendar,
-  Clock,
   Copy,
   Smartphone,
   ExternalLink,
-  AlertCircle,
   Sparkles
 } from 'lucide-react';
 
@@ -162,7 +157,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
 
   const openWhatsApp = () => {
     const text = `Hi Admin, I have paid ${currentPrice} for MarketBeacon ${currentTier.name} (${billingCycle}). My Email: ${userEmail}. Transaction ID: ${transactionId || 'Pending Verification'}`;
-    window.open(`https://wa.me/917056633633?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://wa.me/919251180183?text=${encodeURIComponent(text)}`, '_blank');
   };
   
   const upiId = "diwakarsingh01.tech@okaxis";

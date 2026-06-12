@@ -4,10 +4,6 @@ import {
   Target, 
   Zap, 
   Info,
-  TrendingUp,
-  BarChart3,
-  Calendar,
-  Layers,
   ChevronRight
 } from 'lucide-react';
 
@@ -76,7 +72,7 @@ const STRATEGY_DETAILS: Record<string, {
     target: 'Model Objective is the 52-week statistical high.',
     proTip: 'Elite bluechips frequently rebound from annual support levels.'
   },
-  'SMA_ABCD': {
+  'SMA_BCD': {
     title: 'Quantum Stacking',
     description: 'A risk-managed research model using convergence levels near moving averages.',
     setup: [

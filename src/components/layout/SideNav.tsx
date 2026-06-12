@@ -10,7 +10,6 @@ import {
   Terminal,
   LayoutGrid,
   ChevronRight,
-  TrendingUp,
   Settings,
   HelpCircle
 } from 'lucide-react';
@@ -116,25 +115,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
           </div>
         ))}
 
-        {/* Telegram Community Button */}
-        <div className="px-3 pt-4">
-           <a 
-             href="https://t.me/Marketbeconpro" 
-             target="_blank" 
-             rel="noopener noreferrer"
-             className="outline-none flex flex-col p-4 bg-gradient-to-br from-blue-600/10 to-indigo-600/5 hover:from-blue-600/15 hover:to-indigo-600/10 border border-blue-500/20 hover:border-blue-500/40 rounded-2xl group transition-all shadow-md relative overflow-hidden focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 blur-2xl rounded-full pointer-events-none" />
-            <div className="flex items-center justify-between mb-3 relative z-10">
-               <div className="p-1.5 bg-blue-600/20 border border-blue-500/30 rounded-lg text-blue-400 group-hover:scale-105 transition-transform">
-                  <TrendingUp className="h-3.5 w-3.5" />
-               </div>
-               <span className="bg-emerald-500/15 border border-emerald-500/30 text-[7px] font-black text-emerald-400 px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">Join Live</span>
-            </div>
-            <span className="text-[10px] font-black text-white uppercase tracking-wider relative z-10">Alpha Community</span>
-            <span className="text-[8px] font-semibold text-slate-500 uppercase tracking-widest mt-1 relative z-10 group-hover:text-blue-400 transition-colors">Real-time alerts</span>
-          </a>
-        </div>
+        <div className="flex-1" />
 
         {isAdmin && (
           <div className="pt-4 border-t border-white/[0.03]">

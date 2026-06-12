@@ -8,8 +8,7 @@ import {
   AlertCircle, 
   Check,
   Globe,
-  Database,
-  RefreshCw
+  Database
 } from 'lucide-react';
 import Papa from 'papaparse';
 

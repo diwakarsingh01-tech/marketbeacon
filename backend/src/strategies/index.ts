@@ -413,12 +413,15 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
              else if (Math.abs(currentPrice - abcd.c.price) / abcd.c.price <= tolerance) activeTr = 'C';
              else if (Math.abs(currentPrice - abcd.d.price) / abcd.d.price <= tolerance) activeTr = 'D';
 
-             // STRICT RULE: 30% Gap Mandatory
-             const isGapValid = gap >= 0.30;
-             const isQualified = activeTr !== 'NONE';
-             const isObservation = !isQualified && currentPrice <= supportCeiling * 1.15;
+              // STRICT RULE: 30% Gap Mandatory (support floor → target)
+              const isGapValid = gap >= 0.30;
+              // STRICT RULE: Entry → Target must also be ≥ 30%
+              const entryTargetGap = (targetPrice / entryPrice) - 1;
+              const isEntryTargetGapValid = entryTargetGap >= 0.30;
+              const isQualified = activeTr !== 'NONE';
+              const isObservation = !isQualified && currentPrice <= supportCeiling * 1.15;
 
-             if (isGapValid && (isQualified || isObservation)) {
+              if (isGapValid && isEntryTargetGapValid && (isQualified || isObservation)) {
                const triggerDateObj = quotes[entryIndex].date;
                const triggerDate = typeof triggerDateObj === 'string' ? triggerDateObj : (triggerDateObj as any).toISOString();
                
@@ -542,9 +545,27 @@ export function calculateCupHandle(quotes: Quote[]) {
  */
 export function calculateSixtySevenFunda(quotes: Quote[], data: any) {
   if (!quotes || quotes.length < 250) return { isBuyZone: false };
-  const currentPrice = quotes[quotes.length - 1].close, ath = Math.max(...quotes.map(q => q.high)), dr = ((ath - currentPrice) / ath) * 100;
+  const latestIdx = quotes.length - 1;
+  const currentPrice = quotes[latestIdx].close;
+
+  // Find ATH and its index
+  let ath = 0, athIdx = 0;
+  for (let i = 0; i < quotes.length; i++) {
+    if (quotes[i].high > ath) { ath = quotes[i].high; athIdx = i; }
+  }
+
+  const dr = ((ath - currentPrice) / ath) * 100;
   if (parseFloat(data?.dividendYield || 0) < 1.0 || dr < 66.5) return { isBuyZone: false };
-  return { isBuyZone: true, entryPrice: Math.round(currentPrice), target: Math.round(ath * 0.67), currentPrice: Math.round(currentPrice), triggerDate: new Date().toISOString().split('T')[0], drawdown: dr.toFixed(1), isLocked: true };
+
+  // Target depends on ATH recency
+  // If ATH was within last 252 trading days → 67% gain from entry
+  // If ATH was > 252 trading days ago → 100% gain from entry
+  const barsSinceATH = latestIdx - athIdx;
+  const targetMultiplier = barsSinceATH <= 252 ? 1.67 : 2.0;
+  const entry = Math.round(currentPrice);
+  const target = Math.round(entry * targetMultiplier);
+
+  return { isBuyZone: true, entryPrice: entry, target, currentPrice: Math.round(currentPrice), triggerDate: new Date().toISOString().split('T')[0], drawdown: dr.toFixed(1), isLocked: true };
 }
 
 /**
@@ -582,17 +603,26 @@ export function calculateABCDLevels(anchorPrice: number, marketCap: number = 0) 
  * GLOBAL MANDATE: Hard Reject Audit
  * Enforces D/E <= 1.0 and Smart Money >= 70%
  */
-export function checkInstitutionalMandates(screenerData: any) {
+export function checkInstitutionalMandates(screenerData: any, symbol: string = '') {
   if (!screenerData) return { passed: true }; // Defensive fallback if no data
-  
+
   const de = screenerData.netDebtToEquity || 0;
   const sm = screenerData.smartMoneyTotal || 0;
   const mcapCr = (screenerData.marketCap || 0) / 10000000;
+  const sector = (screenerData.industry || '').trim();
+
+  const isFinance = ['Banking', 'Finance', 'Banking ETF', 'NBFC', 'Financial Services', 'Asset Management', 'Exchange/Depository', 'Financial Infrastructure'].includes(sector)
+    || sector.toLowerCase().includes('finance') || sector.toLowerCase().includes('nbfc');
+  const isCapitalIntensive = ['EPC/Infra', 'Automobile', 'Infrastructure', 'Power', 'Steel', 'Telecom', 'Cement', 'Metal', 'Engineering', 'Industrial/Power', 'Utilities'].includes(sector)
+    || ['LT', 'BHARTIARTL', 'M&M', 'ADANIPORTS', 'ADANIENT', 'JSWSTEEL', 'TATASTEEL', 'NTPC', 'POWERGRID', 'TMCV'].includes(symbol)
+    || sector.toLowerCase().includes('infra') || sector.toLowerCase().includes('steel') || sector.toLowerCase().includes('telecom') || sector.toLowerCase().includes('auto');
+
+  const debtLimit = isFinance ? 8.0 : (isCapitalIntensive ? 2.0 : 1.0);
 
   const reasons = [];
-  if (de > 1.0) reasons.push(`D/E High (${de.toFixed(2)})`);
-  if (sm < 70 && mcapCr > 1000) reasons.push(`SM Low (${sm.toFixed(1)}%)`); // 70% SM floor for Large/Mid caps
-  
+  if (de > debtLimit) reasons.push(`D/E High (${de.toFixed(2)})`);
+  if (sm < 70 && mcapCr > 1000) reasons.push(`SM Low (${sm.toFixed(1)}%)`);
+
   return {
     passed: reasons.length === 0,
     reasons

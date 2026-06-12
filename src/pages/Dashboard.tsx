@@ -2,29 +2,19 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import TradeTable from '../components/tables/TradeTable';
-import StrategyGuide from '../components/StrategyGuide';
 import { BASKETS, STRATEGIES } from '../data/stocks';
 import { 
   Download, 
   ChevronRight, 
-  Target, 
-  ShieldCheck, 
   RefreshCw, 
   TrendingUp, 
   Wallet, 
-  BookOpen, 
   X, 
-  Lock, 
   ShieldAlert, 
-  Check, 
   Zap, 
   Globe, 
   Activity, 
-  Database, 
   PieChart, 
-  AlertCircle,
-  Layers,
-  Search,
   Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -115,7 +105,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     if (isScreenerRoute && tab === 'portfolio') return; // screener can't show portfolio
     setActiveTab(tab);
   };
-  const [showGuide, setShowGuide] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showBrokerHub, setShowBrokerHub] = useState(false);
   const [requiredTier, setRequiredTier] = useState<'pro' | 'alpha'>('pro');
@@ -656,6 +645,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                   <span>Export Audit</span>
                 </button>
                 
+                <Link 
+                  to="/alpha-hub"
+                  className="flex-1 md:flex-initial flex items-center justify-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md group"
+                >
+                  <Zap className="h-4 w-4 text-yellow-300 group-hover:scale-110 transition-transform" />
+                  <span>Alpha Hub</span>
+                </Link>
+
                 <button 
                   onClick={() => fetchData(true)} 
                   className={`p-2.5 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all shrink-0 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}

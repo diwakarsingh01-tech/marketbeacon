@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Zap, ShieldCheck, Lock, Unlock, ChevronRight, Activity,
-  Check, Shield, Gift, ArrowUpRight, Star, TrendingUp,
-  Users, Clock, Flame, Target, BarChart2, BookOpen,
-  PieChart, AlertCircle, Sparkles, Crown, Bolt, X, ArrowLeft
+  Zap, ShieldCheck, ChevronRight,
+  Check, Shield, Gift, ArrowUpRight, TrendingUp,
+  Clock, Flame, Target, BarChart2,
+  Crown, X, ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
@@ -195,8 +195,8 @@ const MembershipPage: React.FC = () => {
             className="grid grid-cols-2 md:grid-cols-4 gap-3"
           >
             <TrustStat value="336+" label="Tracked Symbols" icon={BarChart2} />
-            <TrustStat value="10+" label="Proven Strategies" icon={Target} />
-            <TrustStat value="12+" label="Strategy Models" icon={TrendingUp} />
+            <TrustStat value="10" label="Proven Strategies" icon={Target} />
+            <TrustStat value="10" label="Strategy Models" icon={TrendingUp} />
             <TrustStat value="15 min" label="Access Activation" icon={Clock} />
           </motion.div>
         </div>
@@ -541,7 +541,7 @@ const MembershipPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 shrink-0">
               <motion.button
                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                onClick={() => window.open('https://wa.me/917056633633?text=Hi%20Admin,%20I%20am%20interested%20in%20a%20Corporate%20Deployment%20for%20my%20fund.', '_blank')}
+                onClick={() => window.open('https://wa.me/919251180183?text=Hi%20Admin,%20I%20am%20interested%20in%20a%20Corporate%20Deployment%20for%20my%20fund.', '_blank')}
                 className="px-8 py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-3"
               >
                 <span>WhatsApp Admin</span>
@@ -549,7 +549,7 @@ const MembershipPage: React.FC = () => {
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                onClick={() => window.open('https://t.me/Marketbeconpro', '_blank')}
+                onClick={() => window.open('https://t.me/asktoceo', '_blank')}
                 className="px-8 py-4 bg-white/10 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest border border-white/20 hover:bg-white/20 transition-all flex items-center justify-center gap-3"
               >
                 <span>Join Telegram</span>

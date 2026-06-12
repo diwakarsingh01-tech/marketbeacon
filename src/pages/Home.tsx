@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, 
@@ -52,15 +52,24 @@ const EmailCapture: React.FC = () => {
     }
     setSubmitting(true);
     setError('');
-    // Store locally — wire to backend/Mailchimp later
     try {
-      const leads = JSON.parse(localStorage.getItem('mb_leads') || '[]');
-      leads.push({ email: email.trim(), segment, ts: new Date().toISOString() });
-      localStorage.setItem('mb_leads', JSON.stringify(leads));
-      await new Promise(r => setTimeout(r, 800)); // Simulate async
+      const res = await fetch(`${API_URL}/api/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), segment })
+      });
+      if (!res.ok) throw new Error('Failed to save');
       setSubmitted(true);
     } catch {
-      setError('Something went wrong. Please try again.');
+      // Fallback: save locally if backend unavailable
+      try {
+        const leads = JSON.parse(localStorage.getItem('mb_leads') || '[]');
+        leads.push({ email: email.trim(), segment, ts: new Date().toISOString() });
+        localStorage.setItem('mb_leads', JSON.stringify(leads));
+        setSubmitted(true);
+      } catch {
+        setError('Something went wrong. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -128,6 +137,9 @@ const HomePage: React.FC = () => {
   const [teaserData, setTeaserData] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [simStage, setSimStage] = useState<'A' | 'B' | 'C' | 'D'>('A');
   const navigate = useNavigate();
@@ -138,6 +150,7 @@ const HomePage: React.FC = () => {
   const [voucherCode, setVoucherCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
   const [voucherError, setVoucherError] = useState<string | null>(null);
+  const [openVoucherModal, setOpenVoucherModal] = useState(false);
 
   const isProOrAbove = user?.tier === 'pro' || user?.tier === 'alpha';
 
@@ -188,6 +201,7 @@ const HomePage: React.FC = () => {
     // Clear immediately if less than 2 chars
     if (searchQuery.length < 2) {
       setSuggestions([]);
+      setSelectedIndex(-1);
       return;
     }
 
@@ -201,6 +215,8 @@ const HomePage: React.FC = () => {
     // STEP 1: Show symbols immediately (Pre-populated)
     const initialSuggestions = filtered.map(s => ({ symbol: s, strategies: [] }));
     setSuggestions(initialSuggestions);
+    setSelectedIndex(-1);
+    itemRefs.current = [];
 
     // STEP 2: Fetch strategy data in background
     const timeout = setTimeout(async () => {
@@ -231,6 +247,7 @@ const HomePage: React.FC = () => {
     setSearchSearchQuery('');
     setTeaserData(null);
     setSuggestions([]);
+    setSelectedIndex(-1);
   };
 
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -274,7 +291,7 @@ const HomePage: React.FC = () => {
     <div className="min-h-screen bg-slate-950 font-sans text-slate-100 overflow-x-hidden selection:bg-blue-500/30">
       <SEO title="Best Stock Analysis Tool India" description="India's #1 Institutional Audit Score for Nifty 500 stocks. ABCD Tranche Logic, FII DII trends & real-time screening. For educational purposes only." />
       {/* Live Trust Ticker (Safe-Guard Rule #7) */}
-      <div className="bg-blue-600 py-2 overflow-hidden whitespace-nowrap border-b border-blue-500 relative z-[60]">
+      <div className="bg-blue-600 py-2 overflow-hidden whitespace-nowrap border-b border-blue-500 relative">
         <div className="flex animate-marquee items-center gap-12">
           {[
             "RELAXO: Qualified with 92/100",
@@ -307,7 +324,7 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="fixed top-10 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 px-6 md:px-10 py-4 flex items-center justify-between">
+      <nav className="sticky top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 px-6 md:px-10 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center transition-all hover:opacity-90 active:scale-95">
            <BrandLogo variant="dark" size={30} />
         </Link>
@@ -332,60 +349,47 @@ const HomePage: React.FC = () => {
       </nav>
 
       {/* Hero Section */}
-      <header className="pt-64 pb-32 px-6 md:px-10 max-w-[1440px] mx-auto text-center relative">
+      <header className="pt-24 md:pt-36 pb-16 md:pb-32 px-6 md:px-10 max-w-[1440px] mx-auto text-center relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-96 bg-blue-600/10 blur-[120px] pointer-events-none" />
 
-        <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-950/50 backdrop-blur-sm rounded-full border border-blue-900 mb-10">
-           <ShieldCheck className="h-4 w-4 text-blue-400" />
-           <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">For Educational & Research Purposes Only · Not Investment Advice</span>
-        </div>
-        
-        <h1 className="text-5xl md:text-[8rem] font-black tracking-tighter leading-[0.85] text-white mb-6 drop-shadow-2xl">
-           THE SYSTEM <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">FII/DII USE.</span>
-        </h1>
-        <p className="text-base md:text-xl font-black text-blue-300/80 uppercase tracking-[0.25em] mb-10">Now In Your Hands.</p>
-
-        {/* Grand Launch Promo Banner (Phase 3) */}
-        <div className="max-w-2xl mx-auto mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-          <div className="relative group cursor-pointer overflow-hidden p-[1px] bg-gradient-to-r from-blue-600 via-indigo-400 to-emerald-400 rounded-2xl shadow-xl shadow-blue-900/20">
-            <div className="bg-slate-950/90 backdrop-blur-xl rounded-[15px] px-6 py-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500">
-                  <Zap className="w-5 h-5 fill-current animate-pulse" />
-                </div>
-                <div className="text-left">
-                  <h4 className="text-[11px] font-black text-white uppercase tracking-widest leading-none mb-1">Grand Alpha Launch Live</h4>
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Get 7-Day Institutional Access for <span className="text-emerald-400">FREE</span></p>
-                </div>
-              </div>
-              <button 
-                onClick={() => {
-                   setVoucherCode('ALPHA7');
-                   const el = document.getElementById('search-anchor');
-                   el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95"
-              >
-                Claim Now
-              </button>
-            </div>
-            <div className="absolute top-0 right-0 p-1">
-               <div className="px-1.5 py-0.5 bg-emerald-500 text-white text-[6px] font-black uppercase rounded-bl-lg animate-bounce">Live</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Hero Search Bar (CDO Engagement Feature) */}
-        <div id="search-anchor" className="max-w-2xl mx-auto mb-16 relative group">
-          <form onSubmit={(e) => handleSearch(e)} className="flex flex-col sm:flex-row p-2 bg-slate-900/50 backdrop-blur-2xl border-2 border-slate-800 rounded-[1.5rem] sm:rounded-[2.5rem] focus-within:border-blue-600/50 transition-all shadow-2xl relative gap-2 sm:gap-0" style={{ WebkitBackdropFilter: 'blur(40px)' }}>
-            <div className="flex-1 flex items-center pl-4 sm:pl-6 gap-3 py-2 sm:py-0">
-              <Search className="w-5 h-5 text-slate-500 shrink-0" />
+        {/* Hero Search Bar — Top, Like Google Search */}
+        <div id="search-anchor" className="max-w-2xl mx-auto mb-8 md:mb-12 relative group">
+          <form onSubmit={(e) => handleSearch(e)} className="flex flex-col sm:flex-row p-1.5 md:p-2 bg-slate-900/50 backdrop-blur-2xl border-2 border-slate-800 rounded-[1.25rem] sm:rounded-[2.5rem] focus-within:border-blue-600/50 transition-all shadow-2xl relative gap-1.5 sm:gap-0" style={{ WebkitBackdropFilter: 'blur(40px)' }}>
+            <div className="flex-1 flex items-center pl-3 md:pl-6 gap-2 md:gap-3 py-1.5 md:py-0">
+              <Search className="w-4 h-4 md:w-5 md:h-5 text-slate-500 shrink-0" />
               <input 
                 type="text" 
-                placeholder="Enter stock symbol (e.g. TCS)..." 
-                className="bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none w-full text-xs sm:text-sm font-black uppercase tracking-widest text-white placeholder:text-slate-600"
+                placeholder="Enter stock symbol..." 
+                className="bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none w-full text-[10px] md:text-sm font-black uppercase tracking-widest text-white placeholder:text-slate-600"
                 value={searchQuery}
-                onChange={(e) => setSearchSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchSearchQuery(e.target.value);
+                  setSelectedIndex(-1);
+                }}
+                onKeyDown={(e) => {
+                  if (suggestions.length === 0) return;
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setSelectedIndex(prev => {
+                      const next = prev < suggestions.length - 1 ? prev + 1 : 0;
+                      itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
+                      return next;
+                    });
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setSelectedIndex(prev => {
+                      const next = prev > 0 ? prev - 1 : suggestions.length - 1;
+                      itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
+                      return next;
+                    });
+                  } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                    e.preventDefault();
+                    handleSearch(undefined, suggestions[selectedIndex].symbol);
+                  } else if (e.key === 'Escape') {
+                    setSuggestions([]);
+                    setSelectedIndex(-1);
+                  }
+                }}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -396,14 +400,14 @@ const HomePage: React.FC = () => {
                 <button 
                   type="button" 
                   onClick={handleReset}
-                  className="p-2 mr-2 text-slate-500 hover:text-white transition-colors"
+                  className="p-1 md:p-2 mr-1 md:mr-2 text-slate-500 hover:text-white transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3 md:w-4 md:h-4" />
                 </button>
               )}
             </div>
-            <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-4 bg-blue-600 text-white rounded-[1rem] sm:rounded-[2rem] font-black uppercase tracking-widest text-[10px] sm:text-xs hover:bg-blue-500 transition-all flex items-center justify-center gap-2">
-              {isSearching ? 'Auditing...' : 'Instant Audit'} <ChevronRight className="w-4 h-4" />
+            <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-4 sm:px-8 py-2 sm:py-4 bg-blue-600 text-white rounded-[0.75rem] sm:rounded-[2rem] font-black uppercase tracking-widest text-[9px] sm:text-xs hover:bg-blue-500 transition-all flex items-center justify-center gap-1.5 sm:gap-2">
+              {isSearching ? 'Auditing...' : 'Fundamentals Audit'} <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           </form>
           <AnimatePresence>
@@ -424,7 +428,7 @@ const HomePage: React.FC = () => {
                   </div>
                 </div>
                 <button 
-                  onClick={() => window.open(`https://wa.me/917056633633?text=Request%20Symbol:%20${searchQuery}`, '_blank')}
+                  onClick={() => window.open(`https://wa.me/919251180183?text=Request%20Symbol:%20${searchQuery}`, '_blank')}
                   className="px-6 py-2 bg-white text-slate-950 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-500 hover:text-white transition-all whitespace-nowrap"
                 >
                   Request Addition
@@ -437,16 +441,19 @@ const HomePage: React.FC = () => {
           <AnimatePresence>
             {suggestions.length > 0 && (
               <motion.div 
+                ref={suggestionsRef}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
                 className="absolute top-full left-0 w-full mt-3 bg-[#0f172a] border border-white/10 rounded-3xl overflow-hidden z-[999] shadow-2xl"
               >
-                {suggestions.map((item) => (
+                {suggestions.map((item, idx) => (
                   <button
                     key={item.symbol}
+                    ref={el => { itemRefs.current[idx] = el; }}
+                    onMouseEnter={() => setSelectedIndex(idx)}
                     onClick={() => handleSearch(undefined, item.symbol)}
-                    className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-white/5 last:border-none group"
+                    className={`w-full px-6 py-4 flex items-center justify-between transition-colors border-b border-white/5 last:border-none group ${idx === selectedIndex ? 'bg-blue-600/20' : 'hover:bg-white/5'}`}
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-3">
@@ -476,8 +483,10 @@ const HomePage: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
 
-          {/* INSTANT TEASER AUDIT CARD (Safe-Guard Rule #11) */}
+        {/* Live Trust Ticker (Audit Results) */}
+        <div className="mb-8 md:mb-10">
           <AnimatePresence>
             {teaserData && (
               <motion.div 
@@ -667,7 +676,7 @@ const HomePage: React.FC = () => {
                         onClick={() => {
                           const scoreTxt = (teaserData.score || 0).toFixed(0);
                           const text = encodeURIComponent(`🚨 [Institutional Audit] ${teaserData.symbol} scored ${scoreTxt}/100 on MarketBeacon Pro! \n\nCheck the full FII/DII analysis here: https://marketbeaconpro.com/analysis/${teaserData.symbol}`);
-                          window.open(`https://wa.me/?text=${text}`, '_blank');
+                          window.open(`https://wa.me/919251180183?text=${text}`, '_blank');
                         }}
                         className="flex-1 py-3.5 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/20 active:scale-95"
                       >
@@ -688,46 +697,87 @@ const HomePage: React.FC = () => {
                 </div>
               </motion.div>
             )}
-          </AnimatePresence>
-
-          <div className="flex justify-center gap-4 mt-6">
-            {["RELAXO", "TCS", "ITC"].map(sym => (
-              <button 
-                key={sym} 
-                onClick={() => { handleSearch(undefined, sym); }}
-                className="text-[10px] font-black text-slate-500 hover:text-blue-400 transition-colors uppercase tracking-widest"
-              >
-                {sym}
-              </button>
-            ))}
+           </AnimatePresence>
           </div>
+
+        {/* Brand Heading */}
+        <div className="inline-flex items-center space-x-2 px-3 py-1.5 md:px-4 md:py-2 bg-blue-950/50 backdrop-blur-sm rounded-full border border-blue-900 mb-4 md:mb-8">
+           <ShieldCheck className="h-3 w-3 md:h-4 md:w-4 text-blue-400" />
+           <span className="text-[7px] md:text-[10px] font-black text-blue-400 uppercase tracking-widest">For Educational & Research Purposes Only</span>
         </div>
         
-        <p className="text-lg md:text-xl font-medium text-slate-500 max-w-2xl mx-auto leading-relaxed mb-6 px-4">
-           100-point Institutional Audit Score + ABCD Tranche Laddering — the same framework used by institutional desks, now available for educational research. Free to try.
+        <h1 className="text-3xl md:text-[6rem] font-black tracking-tighter leading-[0.85] text-white mb-3 md:mb-6 drop-shadow-2xl">
+           THE SYSTEM <br className="hidden sm:block" /><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">FII/DII USE.</span>
+        </h1>
+        <p className="text-sm md:text-xl font-black text-blue-300/80 uppercase tracking-[0.25em] mb-5 md:mb-10">Now In Your Hands.</p>
+
+        {/* Grand Launch Promo Banner */}
+        <div className="max-w-2xl mx-auto mb-6 md:mb-10">
+          <div className="relative group cursor-pointer overflow-hidden p-[1px] bg-gradient-to-r from-blue-600 via-indigo-400 to-emerald-400 rounded-2xl shadow-xl shadow-blue-900/20">
+            <div className="bg-slate-950/90 backdrop-blur-xl rounded-[15px] px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 md:gap-4">
+              <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500 shrink-0">
+                  <Zap className="w-4 h-4 md:w-5 md:h-5 fill-current animate-pulse" />
+                </div>
+                <div className="text-left min-w-0">
+                  <h4 className="text-[9px] md:text-[11px] font-black text-white uppercase tracking-widest leading-none mb-0.5 md:mb-1 truncate">Grand Alpha Launch Live</h4>
+                  <p className="text-[7px] md:text-[9px] font-bold text-slate-500 uppercase tracking-widest truncate">Free 7-Day Institutional Access</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                   setOpenVoucherModal(true);
+                }}
+                className="px-3 md:px-5 py-1.5 md:py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0"
+              >
+                Claim Now
+              </button>
+            </div>
+            <div className="absolute top-0 right-0 p-1">
+               <div className="px-1 py-0.5 bg-emerald-500 text-white text-[5px] md:text-[6px] font-black uppercase rounded-bl-lg animate-bounce">Live</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Symbols */}
+        <div className="flex justify-center gap-3 md:gap-4 mb-4 md:mb-6">
+          {["RELAXO", "TCS", "ITC"].map(sym => (
+            <button 
+              key={sym} 
+              onClick={() => { handleSearch(undefined, sym); }}
+              className="text-[8px] md:text-[10px] font-black text-slate-500 hover:text-blue-400 transition-colors uppercase tracking-widest"
+            >
+              {sym}
+            </button>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <p className="text-xs md:text-lg font-medium text-slate-500 max-w-2xl mx-auto leading-relaxed mb-4 md:mb-6 px-4">
+          100-point Institutional Audit Score + ABCD Tranche Laddering — the same framework used by institutional desks. Free to try.
         </p>
 
-        <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-10">
-          <Link to="/login" className="w-full md:w-auto inline-flex items-center justify-center px-10 py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-blue-500 hover:scale-105 transition-all shadow-2xl shadow-blue-900/40">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4 mb-6 md:mb-10">
+          <Link to="/login" className="w-full md:w-auto inline-flex items-center justify-center px-6 md:px-10 py-3 md:py-5 bg-blue-600 text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm hover:bg-blue-500 hover:scale-105 transition-all shadow-2xl shadow-blue-900/40">
              Start Free — No Card Needed
           </Link>
-          <Link to="/license-desk" className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-white/10 transition-all">
-            View Pricing <ChevronRight className="w-4 h-4" />
+          <Link to="/license-desk" className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-5 bg-white/5 border border-white/10 text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm hover:bg-white/10 transition-all">
+            View Pricing <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
           </Link>
         </div>
 
-        <div className="flex items-center justify-center gap-6 mb-6">
-          <div className="flex -space-x-3">
+        <div className="flex items-center justify-center gap-4 md:gap-6 mb-6 md:mb-10">
+          <div className="flex -space-x-2 md:-space-x-3">
             {[1,2,3,4].map(i => (
-              <div key={i} className="w-10 h-10 rounded-full border-4 border-slate-950 bg-slate-800 overflow-hidden shadow-xl">
+              <div key={i} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 md:border-4 border-slate-950 bg-slate-800 overflow-hidden shadow-xl">
                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+10}`} alt="Active trader on MarketBeacon Pro" loading="lazy" decoding="async" />
               </div>
             ))}
-            <div className="w-10 h-10 rounded-full border-4 border-slate-950 bg-blue-600 flex items-center justify-center text-[9px] font-black text-white shadow-xl">+30K</div>
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 md:border-4 border-slate-950 bg-blue-600 flex items-center justify-center text-[7px] md:text-[9px] font-black text-white shadow-xl">+30K</div>
           </div>
-          <p className="text-xs font-bold text-slate-500">Trusted by <span className="text-white font-black">30,000+</span> retail traders &amp; advisors</p>
+          <p className="text-[9px] md:text-xs font-bold text-slate-500">Trusted by <span className="text-white font-black">30,000+</span> traders</p>
         </div>
-      </header>
+        </header>
 
       {/* ── PHASE 1: 3 ICP SEGMENT CARDS ── */}
       <section aria-label="Who is MarketBeacon Pro for" className="py-20 px-6 md:px-10 border-y border-slate-800/60 bg-slate-900/20">
@@ -811,7 +861,7 @@ const HomePage: React.FC = () => {
                 ))}
               </div>
               <button
-                onClick={() => window.open('https://wa.me/917056633633?text=Hi%20Admin,%20I%20am%20interested%20in%20Alpha%20Access%20for%20my%20HNI%20portfolio.', '_blank')}
+                onClick={() => window.open('https://wa.me/919251180183?text=Hi%20Admin,%20I%20am%20interested%20in%20Alpha%20Access%20for%20my%20HNI%20portfolio.', '_blank')}
                 className="w-full py-3.5 bg-amber-600/80 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-amber-500 transition-colors"
               >
                 Contact for Alpha
@@ -1302,7 +1352,7 @@ const HomePage: React.FC = () => {
                     Launch Terminal Free
                  </Link>
                  <a
-                   href="https://wa.me/917056633633?text=Hi%20Admin,%20I%20want%20to%20know%20more%20about%20MarketBeacon%20Pro."
+                   href="https://wa.me/919251180183?text=Hi%20Admin,%20I%20want%20to%20know%20more%20about%20MarketBeacon%20Pro."
                    target="_blank"
                    rel="noopener noreferrer"
                    className="px-10 py-5 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-base hover:bg-emerald-500 hover:scale-105 transition-all"
@@ -1320,7 +1370,7 @@ const HomePage: React.FC = () => {
 
       {/* Floating WhatsApp Button (Desktop) */}
       <a
-        href="https://wa.me/917056633633?text=Hi%20Admin,%20I%20want%20to%20know%20more%20about%20MarketBeacon%20Pro."
+        href="https://wa.me/919251180183?text=Hi%20Admin,%20I%20want%20to%20know%20more%20about%20MarketBeacon%20Pro."
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
@@ -1338,7 +1388,7 @@ const HomePage: React.FC = () => {
            Start Free
         </Link>
         <a
-          href="https://wa.me/917056633633?text=Hi%20Admin,%20I%20want%20to%20know%20more%20about%20MarketBeacon%20Pro."
+          href="https://wa.me/919251180183?text=Hi%20Admin,%20I%20want%20to%20know%20more%20about%20MarketBeacon%20Pro."
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center w-12 py-3.5 bg-emerald-600 text-white rounded-xl shadow-xl"
