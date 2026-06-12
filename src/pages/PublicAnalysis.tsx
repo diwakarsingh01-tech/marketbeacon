@@ -2,16 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import BrandLogo from '../components/brand/BrandLogo';
 import { 
-  ShieldCheck, 
-  TrendingUp, 
-  BarChart2, 
   Share2, 
   Globe, 
-  ChevronRight,
   Target,
   ArrowUpRight,
   Info,
-  ExternalLink,
   Lock,
   Zap,
   BadgeCheck,

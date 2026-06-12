@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Activity, LogOut, User, Store, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X } from 'lucide-react';
+import { Activity, LogOut, User, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BASKETS } from '../../data/stocks';
 import BrandLogo from '../brand/BrandLogo';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { safeJsonParse, getApiUrl } from '../../lib/api-utils';
 
@@ -267,10 +268,10 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                   </div>
                 </button>
               ))}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
       {/* Right: Actions & User */}
       <div className="flex items-center space-x-3 md:space-x-6 shrink-0">
@@ -310,17 +311,33 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
               setShowNotifications(!showNotifications);
               setShowUserMenu(false);
             }}
-            className={`relative p-2.5 rounded-xl transition-all hidden sm:flex ${showNotifications ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+            className={`relative p-2.5 rounded-xl transition-all flex ${showNotifications ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
           >
-            <Bell className="h-5 w-5" />
+            <Bell className={`h-5 w-5 ${notifications.some(n => n.unread) ? 'animate-[ring_2s_ease-in-out_infinite]' : ''}`} />
+            <AnimatePresence>
             {notifications.some(n => n.unread) && (
-              <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+              <motion.div 
+                key="badge"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" 
+              />
             )}
+            </AnimatePresence>
           </button>
 
           {/* Notifications Dropdown */}
+          <AnimatePresence>
           {showNotifications && (
-            <div className="absolute right-0 top-full mt-3 w-80 md:w-96 bg-white rounded-[1.8rem] shadow-2xl border border-slate-100 p-3 z-[110] animate-in zoom-in-95 duration-200">
+            <motion.div 
+              initial={{ opacity: 0, y: -8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.96 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              className="absolute right-0 top-full mt-3 w-80 md:w-96 bg-white rounded-[1.8rem] shadow-2xl border border-slate-100 p-3 z-[110] max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:w-auto"
+            >
                <div className="px-4 py-3 border-b border-slate-50 flex items-center justify-between mb-2">
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">System Alerts</span>
                   {notifications.some(n => n.unread) && (
@@ -335,25 +352,42 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                       Mark all read
                     </button>
                   )}
-               </div>
-               <div className="max-h-80 overflow-y-auto no-scrollbar space-y-1">
-                 {notifications.length === 0 ? (
-                   <div className="py-12 text-center flex flex-col items-center space-y-3">
-                      <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center">
-                         <Bell className="h-5 w-5 text-slate-200" />
-                      </div>
-                      <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No New Alerts</span>
-                   </div>
-                 ) : (
-                   notifications.map((n) => (
-                     <div 
-                       key={n.id} 
-                       onClick={() => n.unread && markAsRead(n.id)}
-                       className={`p-3 rounded-2xl flex items-start gap-3 transition-all hover:bg-slate-50 relative cursor-pointer ${n.unread ? 'bg-blue-50/20' : ''}`}
-                     >
+                </div>
+                <div className="max-h-80 overflow-y-auto no-scrollbar space-y-1">
+                  {notifications.length === 0 ? (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="py-12 text-center flex flex-col items-center space-y-3"
+                    >
+                       <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center">
+                          <Bell className="h-5 w-5 text-slate-200" />
+                       </div>
+                       <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No New Alerts</span>
+                    </motion.div>
+                  ) : (
+                    notifications.map((n, i) => (
+                      <motion.div 
+                        key={n.id} 
+                        layout
+                        initial={{ opacity: 0, x: -12 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2, delay: i * 0.03, ease: 'easeOut' }}
+                        onClick={() => n.unread && markAsRead(n.id)}
+                        className={`p-3 rounded-2xl flex items-start gap-3 transition-all hover:bg-slate-50 relative cursor-pointer ${n.unread ? 'bg-blue-50/20' : ''}`}
+                      >
+                       <AnimatePresence>
                        {n.unread && (
-                         <div className="w-1.5 h-1.5 bg-blue-600 rounded-full absolute top-5 right-4" />
+                         <motion.div 
+                           key="unread-dot"
+                           initial={{ scale: 0 }}
+                           animate={{ scale: 1 }}
+                           exit={{ scale: 0, opacity: 0 }}
+                           transition={{ duration: 0.2 }}
+                           className="w-1.5 h-1.5 bg-blue-600 rounded-full absolute top-5 right-4" 
+                         />
                        )}
+                       </AnimatePresence>
                        <div className={`p-2 rounded-xl mt-0.5 ${
                          n.type === 'signal' ? 'bg-blue-50 text-blue-600' :
                          n.type === 'audit' ? 'bg-amber-50 text-amber-600' :
@@ -368,23 +402,37 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                        <div className="flex-1 min-w-0 pr-2">
                          <p className="text-[11px] font-black text-slate-900 tracking-tight leading-none mb-1">{n.title}</p>
                          <p className="text-[9px] font-medium text-slate-500 leading-relaxed break-words">{n.message}</p>
-                         <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
-                       </div>
-                     </div>
-                   ))
-                 )}
-               </div>
-            </div>
-          )}
-        </div>
+                          <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                </div>
+             </motion.div>
+           )}
+           </AnimatePresence>
+         </div>
 
         <a 
-          href="https://t.me/Marketbeconpro" 
+          href="https://wa.me/919251180183" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl transition-all shadow-sm border border-emerald-100 flex items-center space-x-2 group"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 group-hover:scale-110 transition-transform">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">WhatsApp</span>
+        </a>
+        <a 
+          href="https://t.me/asktoceo" 
           target="_blank" 
           rel="noopener noreferrer"
           className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-sm border border-blue-100 flex items-center space-x-2 group"
         >
-          <TrendingUp className="h-4 w-4 group-hover:scale-110 transition-transform" />
+          <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 group-hover:scale-110 transition-transform">
+            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+          </svg>
           <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">Join Community</span>
         </a>
 

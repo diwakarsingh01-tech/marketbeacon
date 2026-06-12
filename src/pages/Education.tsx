@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Target, TrendingUp, ShieldCheck, ChevronRight,
-  Info, Layers, BarChart3, Calendar, AlertTriangle, Zap,
-  MapPin, LayoutGrid, Briefcase, BookMarked, Store,
-  LineChart, Activity, BarChart2, RefreshCw, Upload,
-  FileText, PieChart, Search, Eye, Lock, Compass, Home
+  Layers, BarChart3, Calendar, AlertTriangle, Zap,
+  LayoutGrid, Briefcase, BookMarked, Store,
+  LineChart, Activity, RefreshCw,
+  FileText, Search, Eye, Compass
 } from 'lucide-react';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
-import { ArrowLeft, Clock, ShieldCheck, TrendingUp, BarChart2, BookOpen, ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Clock, ShieldCheck, ArrowRight, ChevronRight } from 'lucide-react';
 import BrandLogo from '../components/brand/BrandLogo';
 import SiteFooter from '../components/layout/SiteFooter';
 import SEO from '../components/SEO';

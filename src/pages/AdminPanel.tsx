@@ -9,15 +9,12 @@ import {
   CreditCard,
   RefreshCw,
   Search,
-  Filter,
-  MoreVertical,
   Trash2,
   Calendar,
   ShieldAlert,
   UserPlus,
   ArrowRight,
   Settings2,
-  Power,
   Gift,
   MessageSquare,
   Star,
@@ -36,8 +33,9 @@ const AdminPanel: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [vouchers, setVouchers] = useState<any[]>([]);
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
+  const [waitlist, setWaitlist] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users' | 'vouchers' | 'feedback'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users' | 'vouchers' | 'feedback' | 'waitlist'>('pending');
   const [search, setSearch] = useState('');
   
   // Modals
@@ -54,14 +52,15 @@ const AdminPanel: React.FC = () => {
     setIsLoading(true);
     const token = localStorage.getItem('mb_token');
     try {
-      const [uRes, rRes, vRes, fRes] = await Promise.all([
+      const [uRes, rRes, vRes, fRes, wRes] = await Promise.all([
         fetch(`${API_URL}/api/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`${API_URL}/api/admin/upgrade-requests`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`${API_URL}/api/admin/vouchers`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/admin/feedback`, { headers: { 'Authorization': `Bearer ${token}` } })
+        fetch(`${API_URL}/api/admin/feedback`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/api/admin/waitlist?status=pending`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
 
-      if (uRes.status === 401 || uRes.status === 403 || rRes.status === 401 || rRes.status === 403 || vRes.status === 401 || vRes.status === 403 || fRes.status === 401 || fRes.status === 403) {
+      if (uRes.status === 401 || uRes.status === 403 || rRes.status === 401 || rRes.status === 403 || vRes.status === 401 || vRes.status === 403 || fRes.status === 401 || fRes.status === 403 || wRes.status === 401) {
         localStorage.removeItem('mb_token');
         localStorage.removeItem('mb_user');
         window.location.href = '/login';
@@ -72,6 +71,10 @@ const AdminPanel: React.FC = () => {
       if (rRes.ok) setRequests(await safeJsonParse(rRes) || []);
       if (vRes.ok) setVouchers(await safeJsonParse(vRes) || []);
       if (fRes.ok) setFeedbacks(await safeJsonParse(fRes) || []);
+      if (wRes.ok) {
+        const wData = await safeJsonParse(wRes);
+        setWaitlist(wData?.data || []);
+      }
     } catch (e) {
       console.error("Admin fetch failed:", e);
     } finally {
@@ -174,6 +177,56 @@ const AdminPanel: React.FC = () => {
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) fetchData();
     } catch (e) { toast("Network error"); }
+  };
+
+  const fetchWaitlist = useCallback(async () => {
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${API_URL}/api/admin/waitlist?status=pending`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await safeJsonParse(res);
+        setWaitlist(data?.data || []);
+      }
+    } catch (e) { console.error('Fetch waitlist error:', e); }
+  }, []);
+
+  const handleApproveWaitlist = async (entryId: number) => {
+    if (!window.confirm('Approve this user and generate a unique voucher code?')) return;
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${API_URL}/api/admin/waitlist/${entryId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ duration_days: 7 })
+      });
+      const data = await safeJsonParse(res);
+      if (res.ok && data.voucher_code) {
+        toast(`✅ Voucher generated: ${data.voucher_code} (${data.tier}, ${data.duration_days} days)`);
+        fetchWaitlist();
+      } else {
+        toast('Error: ' + (data.error || 'Failed to approve'));
+      }
+    } catch (e) { toast('Approval failed'); }
+  };
+
+  const handleRejectWaitlist = async (entryId: number) => {
+    if (!window.confirm('Reject this waitlist entry?')) return;
+    const token = localStorage.getItem('mb_token');
+    try {
+      const res = await fetch(`${API_URL}/api/admin/waitlist/${entryId}/reject`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        toast('Entry rejected');
+        fetchWaitlist();
+      }
+    } catch (e) { toast('Reject failed'); }
   };
 
   const filteredRequests = (requests || []).filter(r => {
@@ -279,6 +332,13 @@ const AdminPanel: React.FC = () => {
             >
               <MessageSquare className="h-4 w-4" />
               <span>Feedback ({feedbacks.length})</span>
+            </button>
+            <button 
+              onClick={() => { setActiveTab('waitlist'); fetchWaitlist(); }}
+              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'waitlist' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-500'}`}
+            >
+              <UserPlus className="h-4 w-4" />
+              <span>Waitlist ({waitlist.length})</span>
             </button>
          </div>
          
@@ -718,6 +778,61 @@ const AdminPanel: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* 3b. Waitlist Tab */}
+      {activeTab === 'waitlist' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">
+              Waitlist <span className="text-purple-600">({waitlist.length} pending)</span>
+            </h3>
+            <button
+              onClick={fetchWaitlist}
+              className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          </div>
+          {waitlist.length === 0 ? (
+            <div className="text-center py-16 text-slate-400">
+              <UserPlus className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <p className="text-xs font-bold uppercase tracking-widest">No pending waitlist entries</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {waitlist.map((entry: any) => (
+                <div key={entry.id} className="bg-white border border-slate-100 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-sm font-black text-slate-900">{entry.name}</span>
+                    <div className="flex items-center space-x-3 text-[10px] font-bold text-slate-500">
+                      <span>{entry.email}</span>
+                      {entry.phone && <span>• {entry.phone}</span>}
+                      <span>• {entry.tier_requested}</span>
+                      <span>• {new Date(entry.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleApproveWaitlist(entry.id)}
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-sm flex items-center space-x-1.5"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span>Approve & Generate Code</span>
+                    </button>
+                    <button
+                      onClick={() => handleRejectWaitlist(entry.id)}
+                      className="p-2 text-slate-300 hover:text-rose-600 transition-colors"
+                      title="Reject"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 4. Manage User Modal */}
       {isManageModalOpen && selectedUser && (
