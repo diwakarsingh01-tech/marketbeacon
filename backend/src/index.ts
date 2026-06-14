@@ -459,6 +459,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       fiftyTwoWeekHigh: snap.quote?.fiftyTwoWeekHigh,
       beta: snap.quote?.beta,
       shareholding: audit.metrics,
+      strategies: snap.strategies || {},
       audit: {
         score: audit.score,
         reason: audit.reason,
@@ -1073,6 +1074,50 @@ app.get('/api/stock-prices', async (req, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/stock-history', async (req, res) => {
+  try {
+    const { symbol } = req.query;
+    if (!symbol) return res.status(400).json({ error: 'Symbol required' });
+    const sym = (symbol as string).trim().toUpperCase();
+    const snapshot = await getSnapshotFromCloud([sym]);
+    const snap = snapshot[sym];
+    if (!snap) return res.status(404).json({ error: 'Asset data unavailable' });
+    
+    const history = (snap.quotes || []).map((q: any) => {
+      let timeStr = '';
+      if (q.date) {
+        if (typeof q.date === 'string') {
+          timeStr = q.date.split('T')[0];
+        } else if (q.date instanceof Date) {
+          timeStr = q.date.toISOString().split('T')[0];
+        } else if (typeof q.date.toISOString === 'function') {
+          timeStr = q.date.toISOString().split('T')[0];
+        } else {
+          timeStr = String(q.date).split('T')[0];
+        }
+      } else {
+        timeStr = q.time || q.timestamp;
+      }
+      return {
+        time: timeStr,
+        open: q.open,
+        high: q.high,
+        low: q.low,
+        close: q.close,
+        volume: q.volume
+      };
+    });
+    
+    res.json({
+      symbol: sym,
+      history
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
     const db = getDB();
@@ -1114,6 +1159,15 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: 
     await db.run('DELETE FROM users WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/refresh-alpha', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    res.json({ status: 'calculating...' });
+    await precalculateAlpha40();
+  } catch (e: any) {
+    console.error('❌ [Admin] Refresh Alpha-40 failed:', e.message);
+  }
 });
 
 app.get('/api/admin/upgrade-requests', authenticateToken, requireAdmin, async (req: any, res) => {
