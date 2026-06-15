@@ -46,7 +46,11 @@ export async function sendTelegramMessage(
       });
       if (!response.ok) {
         const err = await response.text();
-        console.error(`❌ [TELEGRAM] Failed to send to ${id}: ${err}`);
+        if (err.includes('Forbidden: bot can\'t initiate conversation')) {
+          console.warn(`⚠️ [TELEGRAM] User ${id} hasn't started the bot yet. Skipping.`);
+        } else {
+          console.error(`❌ [TELEGRAM] Failed to send to ${id}: ${err}`);
+        }
         allOk = false;
       } else {
         console.log(`✅ [TELEGRAM] Message sent to ${id}`);

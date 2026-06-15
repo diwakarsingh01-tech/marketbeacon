@@ -32,28 +32,28 @@ const API_URL = getApiUrl();
 
 const DashboardStat = ({ title, value, icon: Icon, color = "blue", subtitle }: any) => {
   const iconColors: any = {
-    blue: "text-blue-500 bg-blue-500/5 border-blue-500/10",
-    emerald: "text-emerald-500 bg-emerald-500/5 border-emerald-500/10",
-    rose: "text-rose-500 bg-rose-500/5 border-rose-500/10",
-    slate: "text-slate-500 bg-slate-500/5 border-slate-500/10",
-    amber: "text-amber-500 bg-amber-500/5 border-amber-500/10"
+    blue: "text-blue-500 bg-blue-500/10 border-blue-500/30",
+    emerald: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30",
+    rose: "text-rose-500 bg-rose-500/10 border-rose-500/30",
+    slate: "text-slate-400 bg-slate-500/10 border-slate-500/30",
+    amber: "text-amber-400 bg-amber-500/10 border-amber-500/30"
   };
 
   return (
     <motion.div 
-      whileHover={{ y: -1 }}
-      className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between min-h-[110px]"
+      whileHover={{ y: -2, scale: 1.02 }}
+      className="bg-zinc-950 border border-zinc-800 rounded-xl p-5 flex flex-col justify-between min-h-[110px] transition-all duration-200 hover:border-zinc-700 hover:shadow-lg hover:shadow-black/50"
     >
       <div className="flex justify-between items-center mb-3">
-        <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">{title}</span>
-        <div className={`p-1.5 rounded-lg border ${iconColors[color]}`}>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{title}</span>
+        <div className={`p-1.5 rounded-lg border ${iconColors[color]} backdrop-blur-sm`}>
           <Icon className="h-3.5 w-3.5" />
         </div>
       </div>
       <div className="space-y-0.5">
-        <h3 className="text-2xl font-black text-slate-950 tracking-tight italic font-sans">{value}</h3>
+        <h3 className="text-2xl font-black text-white tracking-tight font-mono">{value}</h3>
         {subtitle && (
-          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{subtitle}</p>
+          <p className="text-[8px] font-semibold text-slate-500 uppercase tracking-widest">{subtitle}</p>
         )}
       </div>
     </motion.div>
@@ -91,11 +91,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const isScreenerRoute = location.pathname === '/screener';
 
   const currentStrategy = STRATEGIES.find(s => s.id === strategyId) || STRATEGIES[0];
-  const lockedStrategies = STRATEGIES.filter(s => s.isLocked);
 
   const [data, setData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeBasket, setActiveBasket] = useState<string>(currentStrategy.baskets[0]);
+  
+  const lockedStrategies = STRATEGIES.filter(s => s.isLocked && s.baskets.includes(activeBasket));
+
   const [activeTab, setActiveTab] = useState<'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral'>(defaultTab);
 
   // Locked tab setter — prevents screener route from ever showing portfolio tab & vice versa
@@ -141,7 +143,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     try {
-      const res = await fetch(`${API_URL}/api/trades`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const authHeader = `Bearer ${token}`;
+      const res = await fetch(`${API_URL}/api/trades`, { headers: { 'Authorization': authHeader } });
       const d = await safeJsonParse(res);
       if (res.status === 401 || res.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
         localStorage.removeItem('mb_token');
@@ -157,7 +160,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     try {
-      const response = await fetch(`${API_URL}/api/watchlist`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const authHeader = `Bearer ${token}`;
+      const response = await fetch(`${API_URL}/api/watchlist`, { headers: { 'Authorization': authHeader } });
       const d = await safeJsonParse(response);
       if (response.status === 401 || response.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
         localStorage.removeItem('mb_token');
@@ -230,9 +234,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     if (!token) return;
     setIsRefreshing(true);
     try {
+      const authHeader = `Bearer ${token}`;
       const response = await fetch(`${API_URL}/api/watchlist`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': authHeader }
       });
       if (response.ok) {
         toast("All old details removed successfully.");
@@ -251,15 +256,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     try {
+      const authHeader = `Bearer ${token}`;
       const response = await fetch(`${API_URL}/api/watchlist`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
         body: JSON.stringify({ symbol: symbol.toUpperCase().trim() })
       });
       if (response.ok) {
         await fetch(`${API_URL}/api/watchlist/${symbol.toUpperCase().trim()}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
           body: JSON.stringify({ quantity, buy_price: buyPrice })
         });
         fetchWatchlist();
@@ -306,8 +312,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     setIsRefreshing(true);
     setError(null);
     try {
+      const authHeader = `Bearer ${localStorage.getItem('mb_token')}`;
       const response = await fetch(`${API_URL}/api/backtest/audit?basket=${encodeURIComponent(activeBasket)}&strategy=${encodeURIComponent(strategyId)}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` }
+        headers: { 'Authorization': authHeader }
       });
       const d = await safeJsonParse(response);
       
@@ -507,51 +514,51 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   if (!data && isRefreshing) {
     return (
-      <div className="flex-1 flex flex-col py-6 md:py-10 px-4 md:px-8 lg:px-10 space-y-10 bg-[#f8fafc] animate-in fade-in duration-500">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-100 pb-10 gap-8">
+      <div className="flex-1 flex flex-col py-8 md:py-12 px-6 md:px-10 space-y-8 bg-black animate-in fade-in duration-500">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-zinc-800 pb-8 gap-8">
            <div className="space-y-4">
-              <div className="w-48 h-8 bg-slate-200 rounded-xl animate-pulse" />
-              <div className="w-64 h-12 bg-slate-200 rounded-2xl animate-pulse" />
+              <div className="w-64 h-10 bg-zinc-800 rounded-xl animate-pulse" />
+              <div className="w-96 h-14 bg-zinc-800 rounded-2xl animate-pulse" />
            </div>
            <div className="flex gap-4">
-              <div className="w-32 h-12 bg-slate-200 rounded-2xl animate-pulse" />
-              <div className="w-32 h-12 bg-slate-200 rounded-2xl animate-pulse" />
+              <div className="w-40 h-14 bg-zinc-800 rounded-2xl animate-pulse" />
+              <div className="w-40 h-14 bg-zinc-800 rounded-2xl animate-pulse" />
            </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-           {[1,2,3,4].map(i => <div key={i} className="h-32 bg-white rounded-[2.5rem] border border-slate-100 animate-pulse" />)}
+           {[1,2,3,4].map(i => <div key={i} className="h-40 bg-zinc-950 rounded-2xl border border-zinc-800 animate-pulse" />)}
         </div>
-        <div className="h-96 bg-white rounded-[3.5rem] border border-slate-100 animate-pulse" />
+        <div className="h-96 bg-zinc-950 rounded-3xl border border-zinc-800 animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col py-4 md:py-6 px-4 md:px-8 space-y-6 bg-[#f8fafc] overflow-y-auto no-scrollbar">
+    <div className="flex-1 flex flex-col py-6 md:py-8 px-6 md:px-10 space-y-8 bg-black overflow-y-auto no-scrollbar terminal-scan">
       <SEO title="Stock Screener" description="Real-time stock screener with Institutional Audit Scores, ABCD entry levels, and multi-strategy analysis for Nifty 500." />
       {/* Institutional Header (Safe-Guard Rule #9) */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-slate-100 pb-6 gap-6">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-zinc-800 pb-8 gap-8">
         <div className="space-y-4">
-           <div className="flex items-center space-x-3 text-slate-500">
-              <div className="w-10 h-10 bg-slate-ink text-white rounded-xl flex items-center justify-center shadow-xl border border-white/5" style={{ backgroundColor: 'var(--slate-ink)' }}>
-                 <Zap className="h-5 w-5 text-blue-500" />
+           <div className="flex items-center space-x-3 text-slate-400">
+              <div className="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-xl flex items-center justify-center shadow-xl border border-blue-500/30">
+                 <Zap className="h-5 w-5 text-blue-400" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] leading-none">Matrix Node</span>
-                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Real-time Terminal Monitor</span>
+                 <span className="text-[10px] font-bold uppercase tracking-[0.4em] leading-none text-blue-400">Matrix Node</span>
+                 <span className="text-[8px] font-semibold text-slate-500 uppercase tracking-widest mt-1 italic">Real-time Terminal Monitor</span>
               </div>
            </div>
             <div className="space-y-1">
-              <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">
-                {isPortfolioRoute ? 'Wealth Desk' : isMarketRoute ? 'Market Watch' : 'Matrix Screener'}
-              </h1>
-              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-[0.2em] pl-1">
-                {isPortfolioRoute ? 'Custom Portfolio Asset Ledger' : currentStrategy.name}
-              </p>
-           </div>
+               <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none">
+                 {isPortfolioRoute ? 'Wealth Desk' : isMarketRoute ? 'Market Watch' : 'Matrix Screener'}
+               </h1>
+               <p className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] pl-1">
+                 {isPortfolioRoute ? 'Custom Portfolio Asset Ledger' : currentStrategy.name}
+               </p>
+            </div>
         </div>
         
-        <div className="flex flex-col md:flex-row md:items-end gap-4 w-full lg:w-auto">
+        <div className="flex flex-col md:flex-row md:items-end gap-5 w-full lg:w-auto">
           {isPortfolioRoute && (
             <div className="flex items-center gap-2.5 w-full md:w-auto">
               <div className="grid grid-cols-3 gap-2.5 w-full md:flex md:w-auto">
@@ -565,7 +572,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                 </button>
                 <button 
                   onClick={() => setShowAddManualModal(true)} 
-                  className="px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center space-x-1.5 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95"
+                  className="px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center space-x-1.5 hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] hover:border-blue-500/40 transition-all active:scale-95"
                 >
                   <span>+ Add</span>
                 </button>
@@ -581,7 +588,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               </div>
               <button 
                 onClick={() => fetchData(true)} 
-                className={`p-2.5 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all shrink-0 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
+                className={`p-2.5 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-tertiary)] shadow-sm hover:bg-[var(--bg-secondary)] transition-all shrink-0 ${isRefreshing ? 'animate-spin text-blue-500' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
@@ -591,14 +598,24 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           {!isPortfolioRoute && (
             <div className="grid grid-cols-2 md:flex md:flex-row md:items-end gap-3.5 w-full md:w-auto">
               <div className="flex flex-col space-y-1">
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] pl-1.5">Active Universe</span>
+                <span className="text-[8px] font-black text-[var(--text-tertiary)] uppercase tracking-[0.2em] pl-1.5">Active Universe</span>
                 <div className="relative group">
                   <select 
                     value={activeBasket} 
-                    onChange={(e) => setActiveBasket(e.target.value)} 
-                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all w-full md:min-w-[150px]"
+                    onChange={(e) => {
+                      const newBasket = e.target.value;
+                      setActiveBasket(newBasket);
+                      const supportsNewBasket = STRATEGIES.find(s => s.id === strategyId)?.baskets.includes(newBasket);
+                      if (!supportsNewBasket) {
+                        const firstAvailable = STRATEGIES.find(s => s.isLocked && s.baskets.includes(newBasket));
+                        if (firstAvailable) {
+                          navigate(`?strategy=${firstAvailable.id}`);
+                        }
+                      }
+                    }} 
+                    className="appearance-none bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500/50 shadow-sm cursor-pointer hover:border-blue-500/40 hover:text-[var(--text-primary)] transition-all w-full md:min-w-[150px]"
                   >
-                    {currentStrategy.baskets.map(b => (
+                    {['Elite Basket', 'Quality Basket', 'Growth Basket'].map(b => (
                       <option key={b} value={b}>{b}</option>
                     ))}
                   </select>
@@ -609,7 +626,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               </div>
 
               <div className="flex flex-col space-y-1">
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] pl-1.5">Model Matrix</span>
+                <span className="text-[8px] font-black text-[var(--text-tertiary)] uppercase tracking-[0.2em] pl-1.5">Model Matrix</span>
                 <div className="relative group">
                   <select 
                     value={strategyId} 
@@ -622,7 +639,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                       }
                       navigate(`?strategy=${e.target.value}`);
                     }} 
-                    className="appearance-none bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-sm cursor-pointer hover:border-slate-300 transition-all w-full md:min-w-[180px]"
+                    className="appearance-none bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500/50 shadow-sm cursor-pointer hover:border-blue-500/40 hover:text-[var(--text-primary)] transition-all w-full md:min-w-[180px]"
                   >
                     {lockedStrategies.map(s => (
                       <option key={s.id} value={s.id}>
@@ -639,7 +656,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               <div className="flex items-center gap-2.5 col-span-2 md:col-span-1 w-full md:w-auto md:pb-0.5">
                 <button 
                   onClick={handleMasterExport}
-                  className="flex-1 md:flex-initial flex items-center justify-center space-x-2 px-5 py-2.5 bg-slate-950 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-md group border border-white/5"
+                  className="flex-1 md:flex-initial flex items-center justify-center space-x-2 px-5 py-2.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--bg-secondary)] transition-all shadow-md group border border-[var(--border-primary)]"
                 >
                   <Download className="h-4 w-4 text-blue-500 group-hover:scale-110 transition-transform" />
                   <span>Export Audit</span>
@@ -655,7 +672,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
                 <button 
                   onClick={() => fetchData(true)} 
-                  className={`p-2.5 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all shrink-0 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-400'}`}
+                  className={`p-2.5 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-tertiary)] shadow-sm hover:bg-[var(--bg-secondary)] transition-all shrink-0 ${isRefreshing ? 'animate-spin text-blue-500' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
                 >
                   <RefreshCw className="h-4 w-4" />
                 </button>
@@ -676,13 +693,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
             title="Total Invested" 
             value={`₹${portfolioSummary.totalInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
             icon={Wallet} 
-            color="slate" 
+            color="blue" 
           />
           <DashboardStat 
             title="Valuation" 
             value={`₹${portfolioSummary.totalCurrent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
             icon={TrendingUp} 
-            color="blue" 
+            color="emerald" 
           />
           <DashboardStat 
             title="Absolute P&L" 
@@ -702,97 +719,100 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       )}
 
       <AnimatePresence mode="wait">
-        <motion.section 
-          key={activeTab + activeBasket}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          className="flex-1 min-h-0"
-        >
-          {error ? (
-            <div className="bg-white rounded-[2rem] h-96 border border-slate-100 flex flex-col items-center justify-center space-y-6 shadow-sm p-8">
-              <div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-600 max-w-md text-center">
-                 <ShieldAlert className="h-10 w-10 mx-auto mb-4 animate-pulse" />
-                 <h2 className="text-lg font-black uppercase tracking-tighter mb-2 italic">Institutional Link Severed</h2>
-                 <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed opacity-80">{error}</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <button 
-                  onClick={() => { localStorage.removeItem('mb_api_override'); window.location.reload(); }} 
-                  className="px-8 py-3.5 bg-slate-ink text-white rounded-xl text-[10px] font-black uppercase tracking-[0.3em] shadow-lg hover:bg-black transition-all active:scale-95 border border-white/5"
-                  style={{ backgroundColor: 'var(--slate-ink)' }}
-                >
-                  Authorize Node Reset
-                </button>
-                <Link to="/connect" className="px-6 py-3.5 bg-white border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:text-slate-950 transition-all">Connectivity Hub</Link>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl flex flex-col overflow-hidden h-full relative group/table">
-               <div className="flex-1 overflow-auto custom-scrollbar">
-                  <TradeTable 
-                    trades={getTradesForTab()} 
-                    livePrices={stockPrices} 
-                    athData={stockATHs}
-                    capData={stockCaps}
-                    userWatchlist={(userWatchlist || []).map(w => w.symbol)}
-                    onToggleWatchlist={handleToggleWatchlist}
-                    onUpdateHolding={handleUpdateHolding}
-                    activeTab={activeTab}
-                    setActiveTab={handleSetActiveTab}
-                    strategyId={strategyId}
-                    portfolioCount={portfolioCount}
-                    openCount={openCount}
-                    neutralCount={neutralCount}
-                    rejectedCount={rejectedCount}
-                    watchlistCount={watchlistCount}
-                    onAddPositionClick={() => setShowAddManualModal(true)}
-                    onConnectNodeClick={() => setShowBrokerHub(true)}
-                  />
+         <motion.section 
+           key={activeTab + activeBasket}
+           initial={{ opacity: 0, x: 20 }}
+           animate={{ opacity: 1, x: 0 }}
+           exit={{ opacity: 0, x: -20 }}
+           className="flex-1 min-h-0"
+         >
+           {error ? (
+             <div className="bg-zinc-950 border border-zinc-800 rounded-3xl h-96 flex flex-col items-center justify-center space-y-6 shadow-2xl p-8 backdrop-blur-sm">
+               <div className="p-6 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 max-w-md text-center">
+                  <ShieldAlert className="h-10 w-10 mx-auto mb-4 animate-pulse" />
+                  <h2 className="text-lg font-black uppercase tracking-tighter mb-2 italic">Institutional Link Severed</h2>
+                  <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed opacity-80">{error}</p>
                </div>
-               {/* Refreshing Overlay */}
-               {isRefreshing && data && (
-                 <motion.div 
-                   initial={{ opacity: 0 }}
-                   animate={{ opacity: 1 }}
-                   exit={{ opacity: 0 }}
-                   className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-[2.5rem]"
+               <div className="flex items-center space-x-4">
+                 <button 
+                   onClick={() => { localStorage.removeItem('mb_api_override'); window.location.reload(); }} 
+                   className="px-8 py-3.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.3em] shadow-lg hover:bg-blue-500 transition-all active:scale-95"
                  >
-                   <div className="flex flex-col items-center space-y-4">
-                     <div className="relative w-16 h-16">
-                       <div className="absolute inset-0 border-4 border-slate-100 rounded-full" />
-                       <div className="absolute inset-0 border-4 border-transparent border-t-blue-600 rounded-full animate-spin" />
-                       <div className="absolute inset-0 border-4 border-transparent border-b-emerald-400 rounded-full animate-spin" style={{ animationDuration: '0.8s', transform: 'rotate(180deg)' }} />
-                     </div>
-                     <div className="flex items-center space-x-2">
-                       <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                       <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                       <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                     </div>
-                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] animate-pulse">
-                       Scanning Institutional Matrix
-                     </p>
-                   </div>
-                 </motion.div>
-               )}
-               {/* Institutional Border Highlight */}
-               <div className="absolute inset-0 border border-blue-600/0 group-hover/table:border-blue-600/5 rounded-[2.5rem] pointer-events-none transition-all duration-700" />
-            </div>
-          )}
-        </motion.section>
-      </AnimatePresence>
+                   Authorize Node Reset
+                 </button>
+                 <Link to="/connect" className="px-6 py-3.5 bg-zinc-800 border border-slate-700 text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:text-white transition-all">Connectivity Hub</Link>
+               </div>
+             </div>
+           ) : (
+             <div className="bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden h-full relative group/table backdrop-blur-sm">
+                <div className="flex-1 overflow-auto custom-scrollbar">
+                   <TradeTable 
+                     trades={getTradesForTab()} 
+                     livePrices={stockPrices} 
+                     athData={stockATHs}
+                     capData={stockCaps}
+                     userWatchlist={(userWatchlist || []).map(w => w.symbol)}
+                     onToggleWatchlist={handleToggleWatchlist}
+                     onUpdateHolding={handleUpdateHolding}
+                     activeTab={activeTab}
+                     setActiveTab={handleSetActiveTab}
+                     strategyId={strategyId}
+                     portfolioCount={portfolioCount}
+                     openCount={openCount}
+                     neutralCount={neutralCount}
+                     rejectedCount={rejectedCount}
+                     watchlistCount={watchlistCount}
+                     onAddPositionClick={() => setShowAddManualModal(true)}
+                     onConnectNodeClick={() => setShowBrokerHub(true)}
+                   />
+                </div>
+                {/* Refreshing Overlay */}
+                {isRefreshing && data && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-10 rounded-3xl"
+                  >
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="relative w-16 h-16">
+                        <div className="absolute inset-0 border-4 border-zinc-800 rounded-full" />
+                        <div className="absolute inset-0 border-4 border-transparent border-t-blue-500 rounded-full animate-spin" />
+                        <div className="absolute inset-0 border-4 border-transparent border-b-emerald-500 rounded-full animate-spin" style={{ animationDuration: '0.8s', transform: 'rotate(180deg)' }} />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] animate-pulse">
+                        Scanning Institutional Matrix
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+                {/* Institutional Border Highlight */}
+                <div className="absolute inset-0 border border-blue-600/0 group-hover/table:border-blue-600/20 rounded-3xl pointer-events-none transition-all duration-700" />
+             </div>
+           )}
+         </motion.section>
+       </AnimatePresence>
 
-      <BrokerHub isOpen={showBrokerHub} onClose={() => setShowBrokerHub(false)} onImportComplete={handleImportHoldings} />
+       <BrokerHub isOpen={showBrokerHub} onClose={() => setShowBrokerHub(false)} onImportComplete={handleImportHoldings} />
 
       {showAddManualModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-           <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+           <motion.div 
+             initial={{ scale: 0.95, opacity: 0 }}
+             animate={{ scale: 1, opacity: 1 }}
+             className="bg-zinc-950 w-full max-w-md rounded-3xl shadow-2xl p-8 border border-zinc-800"
+           >
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-4 mb-6">
                  <div className="space-y-1">
-                    <h3 className="text-xl font-black text-slate-900 uppercase italic leading-none">Add Asset Node</h3>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1.5">Manual Portfolio Entry</p>
+                    <h3 className="text-xl font-black text-white uppercase italic leading-none">Add Asset Node</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Manual Portfolio Entry</p>
                  </div>
-                 <button onClick={() => setShowAddManualModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"><X className="h-5 w-5" /></button>
+                 <button onClick={() => setShowAddManualModal(false)} className="p-2 text-slate-400 hover:text-white hover:bg-zinc-800 rounded-full transition-all"><X className="h-5 w-5" /></button>
               </div>
               <form onSubmit={async (e) => {
                  e.preventDefault();
@@ -806,34 +826,34 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                  setManualPrice('');
               }} className="space-y-6 text-left">
                  <div>
-                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Stock Symbol</label>
-                    <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Stock Symbol</label>
+                    <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-black border-2 border-zinc-800 rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-zinc-950 transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-white placeholder:text-slate-600" />
                  </div>
                  <div className="grid grid-cols-2 gap-6">
                     <div>
-                       <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
-                       <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
+                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
+                       <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-black border-2 border-zinc-800 rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-zinc-950 transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-white placeholder:text-slate-600" />
                     </div>
                     <div>
-                       <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Buy Price</label>
-                       <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
+                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Buy Price</label>
+                       <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-black border-2 border-zinc-800 rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-zinc-950 transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-white placeholder:text-slate-600" />
                     </div>
                  </div>
-                  <button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-black">
+                  <button type="submit" className="w-full py-5 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-blue-500">
                      Add to Portfolio
                   </button>
                </form>
-            </div>
+            </motion.div>
          </div>
-       )}
+        )}
 
-      <UpgradeModal 
-        isOpen={showUpgradeModal} 
-        onClose={() => setShowUpgradeModal(false)} 
-        requiredTier={requiredTier}
-        userEmail={user?.email}
-      />
-    </div>
-  );
-};
-export default DashboardPage;
+       <UpgradeModal 
+         isOpen={showUpgradeModal} 
+         onClose={() => setShowUpgradeModal(false)} 
+         requiredTier={requiredTier}
+         userEmail={user?.email}
+       />
+     </div>
+   );
+ };
+ export default DashboardPage;

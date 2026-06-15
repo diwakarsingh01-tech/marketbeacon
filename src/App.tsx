@@ -27,6 +27,8 @@ const BlogPage = lazy(() => import('./pages/Blog'));
 const BlogArticlePage = lazy(() => import('./pages/BlogArticle'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicy'));
 const NotFoundPage = lazy(() => import('./pages/NotFound'));
+const ChartsTerminalPage = lazy(() => import('./pages/ChartsTerminal'));
+const ScreenerVerifyPage = lazy(() => import('./pages/ScreenerVerify'));
 
 // Institutional Loading Skeleton
 const PageLoader = () => (
@@ -64,6 +66,7 @@ function AnimatedRoutes() {
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<PrivacyPolicyPage />} />
         <Route path="/marketplace" element={<Navigate to="/license-desk" replace />} />
+        <Route path="/charts" element={<ChartsTerminalPage />} />
 
         {/* Authenticated SaaS Platform */}
         <Route 
@@ -75,6 +78,7 @@ function AnimatedRoutes() {
         >
           <Route path="/alpha-hub" element={<AlphaHubPage />} />
           <Route path="/screener" element={<DashboardPage key="screener" defaultTab="open" />} />
+          <Route path="/screener-verify" element={<ScreenerVerifyPage />} />
           <Route path="/market" element={<DashboardPage key="market" defaultTab="hold" />} />
           <Route path="/portfolio" element={<DashboardPage key="portfolio" defaultTab="portfolio" />} />
           <Route path="/trades" element={<TradeJournalPage />} />

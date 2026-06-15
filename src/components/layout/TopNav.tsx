@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Activity, LogOut, User, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X } from 'lucide-react';
+import { Activity, LogOut, User, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BASKETS } from '../../data/stocks';
 import BrandLogo from '../brand/BrandLogo';
@@ -84,6 +84,16 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
       }
     } catch (e) { }
   };
+  const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
+    return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'dark';
+  });
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setThemeState(next);
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('mb_theme', next);
+  };
+
   const [indices, setIndices] = useState<any[]>([]);
   const [marketStatus, setMarketStatus] = useState('CLOSED');
   const [searchQuery, setSearchQuery] = useState('');
@@ -146,9 +156,9 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   };
 
   const basketColors: Record<string, string> = {
-    'Elite Basket': 'bg-purple-100 text-purple-700 border-purple-200',
-    'Quality Basket': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    'Growth Basket': 'bg-blue-100 text-blue-700 border-blue-200'
+    'Elite Basket': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    'Quality Basket': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    'Growth Basket': 'bg-blue-500/10 text-blue-400 border-blue-500/20'
   };
 
   const fetchIndices = useCallback(async () => {
@@ -181,12 +191,12 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   };
 
   return (
-    <nav className="h-20 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex items-center justify-between px-4 md:px-10 sticky top-0 z-[100] shadow-sm transition-all duration-300">
+    <nav className="h-20 bg-[var(--bg-primary)]/80 backdrop-blur-xl border-b border-[var(--border-primary)] flex items-center justify-between px-4 md:px-10 sticky top-0 z-[100] shadow-sm transition-all duration-300">
       {/* Left: Menu (Mobile) & Market Pulse Status (Desktop) */}
       <div className="flex items-center space-x-4 shrink-0">
         <button 
           onClick={onMenuClick}
-          className="p-2.5 -ml-2 text-slate-500 hover:text-slate-900 md:hidden hover:bg-slate-50 rounded-xl transition-all"
+          className="p-2.5 -ml-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] md:hidden hover:bg-[var(--bg-tertiary)] rounded-xl transition-all"
         >
           <Menu className="h-6 w-6" />
         </button>
@@ -201,7 +211,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         {/* Desktop-only Pulse Status */}
         <div className="hidden md:flex flex-col h-8 justify-center">
           <div className="flex items-center space-x-2">
-             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Pulse Status</span>
+             <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">Pulse Status</span>
              <div className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
           </div>
           <span className="text-[7px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">{marketStatus} Mode</span>
@@ -217,41 +227,41 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           <input 
             type="text" 
             placeholder="Smart Search (e.g. RELAXO, TCS)..." 
-            className="w-full bg-blue-50/5 border-2 border-blue-500/10 py-3.5 pl-12 pr-16 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none hover:border-blue-500/25 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/5 focus:shadow-2xl focus:shadow-blue-500/10 transition-all duration-300"
+            className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] py-3.5 pl-12 pr-16 rounded-2xl text-xs font-black uppercase tracking-widest text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none hover:border-blue-500/40 focus:bg-[var(--bg-elevated)] focus:border-blue-500/40 focus:shadow-2xl focus:shadow-black/50 transition-all duration-300"
             value={searchQuery}
             onChange={onSearchChange}
             onFocus={() => searchQuery.length >= 1 && setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1.5 px-2 py-1 bg-white border border-slate-200 rounded-md pointer-events-none opacity-50 shadow-sm">
-            <Command className="h-2.5 w-2.5 text-slate-500" />
-            <span className="text-[8px] font-black text-slate-500">K</span>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1.5 px-2 py-1 bg-zinc-800 border border-zinc-700 rounded-md pointer-events-none opacity-50 shadow-sm">
+            <Command className="h-2.5 w-2.5 text-zinc-400" />
+            <span className="text-[8px] font-black text-zinc-400">K</span>
           </div>
         </form>
 
         {/* Suggestions Dropdown */}
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2.5 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100/80 overflow-hidden z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="p-3 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-               <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest px-2">Institutional Match</span>
-               <span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest px-2">Press Enter</span>
+          <div className="absolute top-full left-0 right-0 mt-2.5 bg-zinc-950 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-zinc-800 overflow-hidden z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="p-3 border-b border-zinc-800 bg-black flex justify-between items-center">
+               <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest px-2">Institutional Match</span>
+               <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-widest px-2">Press Enter</span>
             </div>
             <div className="max-h-80 overflow-y-auto overflow-x-hidden no-scrollbar p-1.5 space-y-0.5">
               {suggestions.map((stock) => (
                 <button
                   key={stock.symbol}
                   onClick={() => selectStock(stock.symbol)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 rounded-xl transition-all group text-left border border-transparent hover:border-slate-100"
+                  className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-zinc-900 rounded-xl transition-all group text-left border border-transparent hover:border-zinc-800"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 group-hover:bg-white group-hover:border-blue-200 transition-all shrink-0">
+                    <div className="p-2 bg-zinc-900 rounded-lg border border-zinc-800 group-hover:bg-black group-hover:border-blue-500/30 transition-all shrink-0">
                        <Zap className="h-3.5 w-3.5 text-blue-600 group-hover:scale-110 transition-transform" />
                     </div>
                     <div className="flex flex-col min-w-0">
-                       <span className="text-sm font-black text-slate-900 tracking-tighter leading-none">{stock.symbol}</span>
+                       <span className="text-sm font-black text-white tracking-tighter leading-none">{stock.symbol}</span>
                        <span className="flex flex-wrap gap-1 mt-1">
                          {stock.baskets?.map((b: string) => (
-                           <span key={b} className={`text-[7px] font-black px-1.5 py-0.5 rounded-md border ${basketColors[b] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                           <span key={b} className={`text-[7px] font-black px-1.5 py-0.5 rounded-md border ${basketColors[b] || 'bg-zinc-900 text-zinc-400 border-zinc-700'}`}>
                              {b.replace(' Basket', '')}
                            </span>
                          ))}
@@ -276,13 +286,13 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
       {/* Right: Actions & User */}
       <div className="flex items-center space-x-3 md:space-x-6 shrink-0">
         {/* Indices Bar (Sleeker version) */}
-        <div className="hidden xl:flex items-center space-x-8 pr-6 border-r border-slate-100">
+        <div className="hidden xl:flex items-center space-x-8 pr-6 border-r border-zinc-800">
            {Array.isArray(indices) && indices.slice(0, 2).map((idx) => {
              const athDiff = idx.ath && idx.price ? ((idx.ath - idx.price) / idx.ath) * 100 : 0;
              return (
               <div key={idx.name} className="flex flex-col items-start space-y-1">
                  <div className="flex items-center space-x-3">
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">{idx.name}</span>
+                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">{idx.name}</span>
                     <span className={`text-[11px] font-black font-mono leading-none ${idx.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                        {idx.price ? idx.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                     </span>
@@ -299,10 +309,18 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         {/* Mobile Search Trigger Button */}
         <button 
           onClick={() => setShowMobileSearch(true)}
-          className="p-3 text-slate-500 hover:text-slate-900 lg:hidden hover:bg-slate-50 rounded-xl transition-all"
+          className="p-3 text-zinc-500 hover:text-white lg:hidden hover:bg-zinc-800 rounded-xl transition-all"
           title="Search Stocks"
         >
           <Search className="h-5 w-5" />
+        </button>
+
+        <button
+          onClick={toggleTheme}
+          className="p-2.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </button>
 
         <div className="relative">
@@ -311,7 +329,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
               setShowNotifications(!showNotifications);
               setShowUserMenu(false);
             }}
-            className={`relative p-2.5 rounded-xl transition-all flex ${showNotifications ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+            className={`relative p-2.5 rounded-xl transition-all flex ${showNotifications ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'}`}
           >
             <Bell className={`h-5 w-5 ${notifications.some(n => n.unread) ? 'animate-[ring_2s_ease-in-out_infinite]' : ''}`} />
             <AnimatePresence>
@@ -336,10 +354,10 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="absolute right-0 top-full mt-3 w-80 md:w-96 bg-white rounded-[1.8rem] shadow-2xl border border-slate-100 p-3 z-[110] max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:w-auto"
+              className="absolute right-0 top-full mt-3 w-80 md:w-96 bg-zinc-950 rounded-[1.8rem] shadow-2xl border border-zinc-800 p-3 z-[110] max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:w-auto"
             >
-               <div className="px-4 py-3 border-b border-slate-50 flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">System Alerts</span>
+               <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">System Alerts</span>
                   {notifications.some(n => n.unread) && (
                     <button 
                       onClick={() => {
@@ -360,7 +378,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                       animate={{ opacity: 1 }}
                       className="py-12 text-center flex flex-col items-center space-y-3"
                     >
-                       <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center">
+                       <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center">
                           <Bell className="h-5 w-5 text-slate-200" />
                        </div>
                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No New Alerts</span>
@@ -374,7 +392,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.2, delay: i * 0.03, ease: 'easeOut' }}
                         onClick={() => n.unread && markAsRead(n.id)}
-                        className={`p-3 rounded-2xl flex items-start gap-3 transition-all hover:bg-slate-50 relative cursor-pointer ${n.unread ? 'bg-blue-50/20' : ''}`}
+                        className={`p-3 rounded-2xl flex items-start gap-3 transition-all hover:bg-zinc-800 relative cursor-pointer ${n.unread ? 'bg-blue-50/20' : ''}`}
                       >
                        <AnimatePresence>
                        {n.unread && (
@@ -392,7 +410,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                          n.type === 'signal' ? 'bg-blue-50 text-blue-600' :
                          n.type === 'audit' ? 'bg-amber-50 text-amber-600' :
                          n.type === 'target' ? 'bg-emerald-50 text-emerald-600' :
-                         'bg-slate-100 text-slate-500'
+                         'bg-zinc-800 text-zinc-500'
                        }`}>
                          {n.type === 'signal' ? <Zap className="h-3.5 w-3.5" /> :
                           n.type === 'audit' ? <ShieldCheck className="h-3.5 w-3.5" /> :
@@ -400,9 +418,9 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                           <Activity className="h-3.5 w-3.5" />}
                        </div>
                        <div className="flex-1 min-w-0 pr-2">
-                         <p className="text-[11px] font-black text-slate-900 tracking-tight leading-none mb-1">{n.title}</p>
-                         <p className="text-[9px] font-medium text-slate-500 leading-relaxed break-words">{n.message}</p>
-                          <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
+                         <p className="text-[11px] font-black text-white tracking-tight leading-none mb-1">{n.title}</p>
+                         <p className="text-[9px] font-medium text-zinc-500 leading-relaxed break-words">{n.message}</p>
+                          <span className="text-[7.5px] font-black text-zinc-500 uppercase tracking-widest mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
                         </div>
                       </motion.div>
                     ))
@@ -441,8 +459,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
             <>
               <button 
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center space-x-3 p-1.5 pr-4 bg-slate-ink hover:bg-slate-900 transition-all rounded-[1.2rem] group"
-                style={{ backgroundColor: 'var(--slate-ink)' }}
+                className="flex items-center space-x-3 p-1.5 pr-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-all rounded-[1.2rem] group border border-[var(--border-primary)]"
               >
                 <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg shadow-blue-500/20 group-hover:rotate-6 transition-transform">
                    {user?.name?.[0].toUpperCase()}
@@ -451,19 +468,19 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                    <span className="text-[10px] font-black text-white uppercase tracking-widest leading-none">{user?.name}</span>
                    <div className="flex items-center space-x-1.5 mt-1">
                       <div className={`w-1.5 h-1.5 rounded-full ${(user as any)?.tier === 'alpha' ? 'bg-blue-400 animate-pulse' : 'bg-slate-400'}`} />
-                      <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">{(user as any)?.tier || 'Free'} Node</span>
+                      <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">{(user as any)?.tier || 'Free'} Node</span>
                    </div>
                 </div>
               </button>
 
               {/* User Dropdown */}
               {showUserMenu && (
-                <div className="absolute right-0 top-full mt-3 w-56 bg-white rounded-[1.8rem] shadow-2xl border border-slate-100 p-2.5 z-[100] animate-in zoom-in-95 duration-200">
-                   <div className="px-4 py-3 border-b border-slate-50 mb-1">
-                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Account Identity</p>
-                      <p className="text-xs font-black text-slate-900 truncate">{user?.email}</p>
+                <div className="absolute right-0 top-full mt-3 w-56 bg-zinc-950 rounded-[1.8rem] shadow-2xl border border-zinc-800 p-2.5 z-[100] animate-in zoom-in-95 duration-200">
+                   <div className="px-4 py-3 border-b border-zinc-800 mb-1">
+                      <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Account Identity</p>
+                      <p className="text-xs font-black text-white truncate">{user?.email}</p>
                    </div>
-                   <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 rounded-2xl transition-all group">
+                   <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center justify-between px-4 py-3 hover:bg-zinc-800 rounded-2xl transition-all group">
                       <div className="flex items-center space-x-3">
                         <User className="h-4 w-4 text-slate-400 group-hover:text-blue-600" />
                         <span className="text-xs font-black text-slate-600 uppercase tracking-widest">My Profile</span>
@@ -479,7 +496,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
             </>
           ) : (
             <div className="flex items-center space-x-4">
-               <Link to="/login" className="text-[11px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-950 transition-colors">Login</Link>
+               <Link to="/login" className="text-[11px] font-black uppercase tracking-widest text-zinc-500 hover:text-slate-950 transition-colors">Login</Link>
                <Link to="/login" className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:scale-105 transition-all">Launch</Link>
             </div>
           )}
@@ -488,7 +505,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
       {/* Mobile Search Overlay */}
       {showMobileSearch && (
-        <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
+        <div className="absolute inset-0 bg-black/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
           <div className="flex items-center gap-3">
             <form onSubmit={handleSearch} className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -496,7 +513,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 type="text"
                 autoFocus
                 placeholder="Search stock..."
-                className="w-full bg-slate-50 border border-slate-100 py-3 pl-11 pr-4 rounded-xl text-xs font-black uppercase tracking-widest text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-600 focus:bg-white transition-all shadow-inner"
+                className="w-full bg-zinc-900 border border-zinc-800 py-3 pl-11 pr-4 rounded-xl text-xs font-black uppercase tracking-widest text-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-zinc-700 focus:bg-black transition-all shadow-inner"
                 value={searchQuery}
                 onChange={onSearchChange}
               />
@@ -507,7 +524,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 setSearchQuery('');
                 setSuggestions([]);
               }}
-              className="p-3 text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 rounded-xl transition-all"
+              className="p-3 text-zinc-500 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-all"
             >
               <X className="h-5 w-5" />
             </button>
@@ -515,9 +532,9 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
           {/* Suggestions List in mobile view */}
           {suggestions.length > 0 && (
-            <div className="mt-3 bg-white border border-slate-100/85 rounded-2xl shadow-2xl overflow-y-auto max-h-[70vh] p-1.5 space-y-0.5 z-[130] animate-in fade-in slide-in-from-top-1 duration-200">
-              <div className="p-2.5 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center rounded-t-xl">
-                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Match Suggestions</span>
+            <div className="mt-3 bg-zinc-950 border border-zinc-800/85 rounded-2xl shadow-2xl overflow-y-auto max-h-[70vh] p-1.5 space-y-0.5 z-[130] animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="p-2.5 border-b border-zinc-800 bg-zinc-800/50 flex justify-between items-center rounded-t-xl">
+                 <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Match Suggestions</span>
               </div>
               {suggestions.map((stock) => (
                 <button
@@ -526,17 +543,17 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                     selectStock(stock.symbol);
                     setShowMobileSearch(false);
                   }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-slate-50 rounded-xl transition-all text-left group"
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-zinc-800 rounded-xl transition-all text-left group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 shrink-0">
+                    <div className="p-2 bg-zinc-800 rounded-lg border border-zinc-800 shrink-0">
                        <Zap className="h-3.5 w-3.5 text-blue-600" />
                     </div>
                     <div className="flex flex-col min-w-0">
-                       <span className="text-xs font-black text-slate-900 tracking-tighter leading-none">{stock.symbol}</span>
+                       <span className="text-xs font-black text-white tracking-tighter leading-none">{stock.symbol}</span>
                        <span className="flex flex-wrap gap-1 mt-1">
                          {stock.baskets?.map((b: string) => (
-                           <span key={b} className={`text-[6px] font-black px-1 py-0.5 rounded-sm border ${basketColors[b] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                           <span key={b} className={`text-[6px] font-black px-1 py-0.5 rounded-sm border ${basketColors[b] || 'bg-zinc-900 text-zinc-400 border-zinc-700'}`}>
                              {b.replace(' Basket', '')}
                            </span>
                          ))}

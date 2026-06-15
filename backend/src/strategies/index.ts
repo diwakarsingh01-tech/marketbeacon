@@ -332,7 +332,7 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
     if (isHigh) swingHighs.push({ price: quotes[i].high, idx: i, date: quotes[i].date });
   }
 
-  const level_tolerance_pct = 2.2; // Institutional Tolerance
+  const level_tolerance_pct = 5.0; // Per MEMORY.md (Institutional Standard)
   const cluster_levels = (points: any[]) => {
     const clusters: any[] = [];
     for (const p of points) {
@@ -395,9 +395,9 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
              }
            }
 
-           if (entryIndex !== -1) {
-             const entryPrice = quotes[entryIndex].close;
-             const atrArr = getATR(quotes, 14);
+             if (entryIndex !== -1) {
+               const entryPrice = quotes[entryIndex].close;
+               const atrArr = getATR(quotes, 14);
              const atr = atrArr[entryIndex] || 0;
              const SL = Math.min(supportFloor, quotes[entryIndex].low) - 0.5 * atr;
              const RRR = (targetPrice - entryPrice) / (entryPrice - SL);
@@ -406,8 +406,8 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
              const abcd = calculateABCDLevels(supportCeiling);
              let activeTr = 'NONE';
              
-             // Strict +/- 2.2% Range Check for each Tranche
-             const tolerance = 0.022;
+             // Strict +/- 5.0% Range Check for each Tranche (Per MEMORY.md)
+             const tolerance = 0.05; 
              if (Math.abs(currentPrice - abcd.a.price) / abcd.a.price <= tolerance) activeTr = 'A';
              else if (Math.abs(currentPrice - abcd.b.price) / abcd.b.price <= tolerance) activeTr = 'B';
              else if (Math.abs(currentPrice - abcd.c.price) / abcd.c.price <= tolerance) activeTr = 'C';
@@ -484,7 +484,9 @@ export function calculateRHS(quotes: Quote[]) {
           const target = neckline.price + (neckline.price - head.price);
           
           // Rule 3: 30% Target Upside Gap
-          if ((target / s2.price) - 1 >= 0.30 && Math.abs(currentPrice - s2.price) / s2.price <= 0.07) {
+          const targetGap = (target / s2.price) - 1;
+          const priceDist = Math.abs(currentPrice - s2.price) / s2.price;
+          if (targetGap >= 0.30 && priceDist <= 0.07) {
             return { isBuyZone: true, entryPrice: Math.round(s2.price), target: Math.round(target), currentPrice: Math.round(currentPrice), triggerDate: s2.date, correction: corr.toFixed(1), isLocked: true };
           }
         }
@@ -555,7 +557,7 @@ export function calculateSixtySevenFunda(quotes: Quote[], data: any) {
   }
 
   const dr = ((ath - currentPrice) / ath) * 100;
-  if (parseFloat(data?.dividendYield || 0) < 1.0 || dr < 66.5) return { isBuyZone: false };
+  if (parseFloat(data?.dividendYield || 0) < 1.0 || dr < 33.0) return { isBuyZone: false };
 
   // Target depends on ATH recency
   // If ATH was within last 252 trading days → 67% gain from entry

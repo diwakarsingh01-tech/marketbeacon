@@ -351,65 +351,85 @@ const HomePage: React.FC = () => {
       {/* Hero Section */}
       <header className="pt-24 md:pt-36 pb-16 md:pb-32 px-6 md:px-10 max-w-[1440px] mx-auto text-center relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-96 bg-blue-600/10 blur-[120px] pointer-events-none" />
+        
+        {/* 3D Floating Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-20 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl animate-pulse" />
+          <div className="absolute top-40 right-32 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        </div>
 
-        {/* Hero Search Bar — Top, Like Google Search */}
-        <div id="search-anchor" className="max-w-2xl mx-auto mb-8 md:mb-12 relative group">
-          <form onSubmit={(e) => handleSearch(e)} className="flex flex-col sm:flex-row p-1.5 md:p-2 bg-slate-900/50 backdrop-blur-2xl border-2 border-slate-800 rounded-[1.25rem] sm:rounded-[2.5rem] focus-within:border-blue-600/50 transition-all shadow-2xl relative gap-1.5 sm:gap-0" style={{ WebkitBackdropFilter: 'blur(40px)' }}>
-            <div className="flex-1 flex items-center pl-3 md:pl-6 gap-2 md:gap-3 py-1.5 md:py-0">
-              <Search className="w-4 h-4 md:w-5 md:h-5 text-slate-500 shrink-0" />
-              <input 
-                type="text" 
-                placeholder="Enter stock symbol..." 
-                className="bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none w-full text-[10px] md:text-sm font-black uppercase tracking-widest text-white placeholder:text-slate-600"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchSearchQuery(e.target.value);
-                  setSelectedIndex(-1);
-                }}
-                onKeyDown={(e) => {
-                  if (suggestions.length === 0) return;
-                  if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    setSelectedIndex(prev => {
-                      const next = prev < suggestions.length - 1 ? prev + 1 : 0;
-                      itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
-                      return next;
-                    });
-                  } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    setSelectedIndex(prev => {
-                      const next = prev > 0 ? prev - 1 : suggestions.length - 1;
-                      itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
-                      return next;
-                    });
-                  } else if (e.key === 'Enter' && selectedIndex >= 0) {
-                    e.preventDefault();
-                    handleSearch(undefined, suggestions[selectedIndex].symbol);
-                  } else if (e.key === 'Escape') {
-                    setSuggestions([]);
+          {/* Hero Search Bar — Top, Like Google Search */}
+          <div id="search-anchor" className="max-w-2xl mx-auto mb-8 md:mb-12 relative group">
+            <form onSubmit={(e) => handleSearch(e)} className="flex flex-col sm:flex-row p-1.5 md:p-2 bg-slate-900/80 backdrop-blur-3xl border-2 border-slate-700 rounded-[1.25rem] sm:rounded-[2.5rem] focus-within:border-blue-500/70 focus-within:bg-slate-900/90 transition-all shadow-2xl shadow-blue-900/20 relative gap-1.5 sm:gap-0 transform group-hover:scale-[1.02] transition-all duration-300">
+              <div className="flex-1 flex items-center pl-3 md:pl-6 gap-2 md:gap-3 py-1.5 md:py-0">
+                <div className="relative">
+                  <Search className="w-4 h-4 md:w-5 md:h-5 text-slate-400 group-focus-within:text-blue-400 transition-colors shrink-0" />
+                  {searchQuery && (
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                  )}
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Enter stock symbol..." 
+                  className="bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none w-full text-[10px] md:text-sm font-black uppercase tracking-widest text-white placeholder:text-slate-500"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchSearchQuery(e.target.value);
                     setSelectedIndex(-1);
-                  }
-                }}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-                inputMode="search"
-              />
-              {searchQuery && (
-                <button 
-                  type="button" 
-                  onClick={handleReset}
-                  className="p-1 md:p-2 mr-1 md:mr-2 text-slate-500 hover:text-white transition-colors"
-                >
-                  <X className="w-3 h-3 md:w-4 md:h-4" />
-                </button>
-              )}
-            </div>
-            <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-4 sm:px-8 py-2 sm:py-4 bg-blue-600 text-white rounded-[0.75rem] sm:rounded-[2rem] font-black uppercase tracking-widest text-[9px] sm:text-xs hover:bg-blue-500 transition-all flex items-center justify-center gap-1.5 sm:gap-2">
-              {isSearching ? 'Auditing...' : 'Fundamentals Audit'} <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-            </button>
-          </form>
+                  }}
+                  onKeyDown={(e) => {
+                    if (suggestions.length === 0) return;
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setSelectedIndex(prev => {
+                        const next = prev < suggestions.length - 1 ? prev + 1 : 0;
+                        itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
+                        return next;
+                      });
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      setSelectedIndex(prev => {
+                        const next = prev > 0 ? prev - 1 : suggestions.length - 1;
+                        itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
+                        return next;
+                      });
+                    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                      e.preventDefault();
+                      handleSearch(undefined, suggestions[selectedIndex].symbol);
+                    } else if (e.key === 'Escape') {
+                      setSuggestions([]);
+                      setSelectedIndex(-1);
+                    }
+                  }}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  inputMode="search"
+                />
+                {searchQuery && (
+                  <button 
+                    type="button" 
+                    onClick={handleReset}
+                    className="p-1 md:p-2 mr-1 md:mr-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-all"
+                  >
+                    <X className="w-3 h-3 md:w-4 md:h-4" />
+                  </button>
+                )}
+              </div>
+              <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-4 sm:px-8 py-2 sm:py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-[0.75rem] sm:rounded-[2rem] font-black uppercase tracking-widest text-[9px] sm:text-xs hover:from-blue-500 hover:to-blue-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-xl shadow-blue-900/30 transform group-hover:scale-105 transition-all duration-300">
+                {isSearching ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Auditing...
+                  </span>
+                ) : (
+                  <><span className="hidden sm:inline">Fundamentals Audit</span>
+                  <span className="sm:hidden">Audit</span>
+                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" /></>
+                )}
+              </button>
+            </form>
           <AnimatePresence>
             {searchError && (
               <motion.div 
@@ -493,211 +513,238 @@ const HomePage: React.FC = () => {
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="mt-8 p-1 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-[2.5rem] shadow-2xl"
+                className="mt-8 p-1 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-[2.5rem] shadow-2xl shadow-blue-900/30 relative overflow-hidden"
               >
-                <div className="bg-slate-950 rounded-[2.4rem] p-8 text-left space-y-6 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-[80px] -mr-24 -mt-24" />
+                {/* 3D Glow Effects */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-indigo-600/20 animate-pulse" style={{ animationDuration: '3s' }} />
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-y-6" />
+                
+                <div className="bg-slate-950 rounded-[2.4rem] p-8 text-left space-y-6 relative overflow-hidden border border-white/10">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[80px] -mr-32 -mt-32" />
+                   <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-600/10 blur-[60px] -ml-24 -mb-24" />
                    
                    <div className="flex justify-between items-start">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                           <h3 className="text-3xl font-black text-white italic tracking-tighter">{teaserData.symbol}</h3>
-                           <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-lg text-[9px] font-black text-blue-400 uppercase tracking-widest italic">{teaserData.basket} Node</span>
-                        </div>
-                        <div className="flex items-center gap-2 pt-1">
-                           {teaserData.isPass && (
-                              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                                 <BadgeCheck className="w-3.5 h-3.5 text-emerald-400" />
-                                 <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Qualified on Fundamentals</span>
-                              </div>
-                           )}
-                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">Institutional Audit Pass</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                         <div className={`text-5xl font-black italic ${teaserData.score >= 80 ? 'text-emerald-400' : 'text-blue-400'}`}>
-                           {isProOrAbove ? (teaserData.score || 0).toFixed(0) : '🔒'}
+                         <div className="flex items-center gap-3">
+                            <h3 className="text-3xl font-black text-white italic tracking-tighter">{teaserData.symbol}</h3>
+                            <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-lg text-[9px] font-black text-blue-400 uppercase tracking-widest italic">{teaserData.basket} Node</span>
+                            {teaserData.isPass && (
+                              <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-[7px] font-black text-emerald-400 uppercase tracking-widest">
+                                BULLISH
+                              </span>
+                            )}
                          </div>
-                         <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Audit Score</div>
-                      </div>
-                   </div>
-
-                   <div className="relative">
-                      {/* Premium Stats Grid & Strategies (Blurred for Free users) */}
-                      <div className={`space-y-6 transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-30' : ''}`}>
-                         <div className="grid grid-cols-3 gap-4">
-                            {[
-                              { label: 'Smart Money', val: `${(teaserData.smartMoney || 0).toFixed(1)}%`, icon: TrendingUp },
-                              { label: 'Alpha Target', val: `+${teaserData.upside}%`, icon: Target },
-                              { label: 'Risk Profile', val: teaserData.risk, icon: ShieldCheck },
-                            ].map((stat, i) => (
-                              <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-colors group">
-                                 <stat.icon className="h-4 w-4 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
-                                 <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">{stat.label}</p>
-                                 <p className="text-sm font-black text-white italic">{stat.val}</p>
-                              </div>
-                            ))}
-                         </div>
-
-                         <div className="pt-4 space-y-4">
-                            <div className="flex flex-wrap gap-2">
-                              {teaserData.strategies?.length > 0 ? (
-                                 teaserData.strategies.map((s: any, i: number) => (
-                                    <div key={i} className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-2xl hover:border-blue-500/50 transition-all group">
-                                       <Zap className="w-3 h-3 text-blue-500 group-hover:animate-pulse" />
-                                       <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{s.name} Entry</span>
-                                    </div>
-                                 ))
-                              ) : (
-                                 <div className="px-4 py-2 bg-slate-900/50 border border-slate-800/50 rounded-2xl italic">
-                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Monitoring for Institutional Entry</span>
-                                 </div>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center justify-between border-t border-white/5 pt-4">
-                               <div className="flex items-center gap-2">
-                                  <ShieldCheck className="w-4 h-4 text-slate-600" />
-                                  <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em]">Verified by Institutional Matrix v12.0</span>
+                         <div className="flex items-center gap-2 pt-1">
+                            {teaserData.isPass && (
+                               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                                  <BadgeCheck className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Qualified on Fundamentals</span>
                                </div>
-                               <Link 
-                                 to={`/analysis/${teaserData.symbol}`}
-                                 className="flex items-center gap-2 text-[10px] font-black text-blue-400 hover:text-white transition-colors uppercase tracking-widest group"
-                               >
-                                 Access Full Strategy Matrix <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                               </Link>
-                            </div>
+                            )}
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">Institutional Audit Pass</p>
+                         </div>
+                       </div>
+                       <div className="text-right">
+                          <div className={`text-5xl font-black italic ${teaserData.score >= 80 ? 'text-emerald-400' : 'text-blue-400'} relative`}>
+                            {isProOrAbove ? (teaserData.score || 0).toFixed(0) : '🔒'}
+                            {teaserData.score >= 80 && (
+                              <span className="absolute -top-2 -right-2 text-[10px] font-black text-emerald-500 uppercase tracking-wider">BUY</span>
+                            )}
+                          </div>
+                          <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Audit Score</div>
+                       </div>
+                    </div>
 
-                            {/* Phase 3: HNI ABCD Tranche Visualizer */}
-                            <div className="mt-6 p-5 bg-blue-600/5 border border-blue-500/10 rounded-3xl space-y-4">
-                               <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                     <Layers className="h-3.5 w-3.5 text-blue-500" />
-                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-white">Institutional Entry Plan (HNI Edge)</h4>
+                    <div className="relative">
+                       {/* Premium Stats Grid & Strategies (Blurred for Free users) */}
+                       <div className={`space-y-6 transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-30' : ''}`}>
+                          <div className="grid grid-cols-3 gap-4">
+                             {[
+                               { label: 'Smart Money', val: `${(teaserData.smartMoney || 0).toFixed(1)}%`, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                               { label: 'Alpha Target', val: `+${teaserData.upside}%`, icon: Target, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                               { label: 'Risk Profile', val: teaserData.risk, icon: ShieldCheck, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+                             ].map((stat, i) => (
+                               <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all group hover:scale-105 hover:border-blue-500/30">
+                                  <div className={`p-2 ${stat.bg} rounded-xl w-fit mb-2 group-hover:scale-110 transition-transform`}>
+                                    <stat.icon className={`h-4 w-4 ${stat.color} group-hover:text-white transition-colors`} />
                                   </div>
-                                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Cap: ₹10,00,000 (Sample)</span>
+                                  <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1 group-hover:text-slate-300 transition-colors">{stat.label}</p>
+                                  <p className={`text-sm font-black text-white italic ${stat.color} group-hover:text-white transition-colors`}>{stat.val}</p>
                                </div>
-                               
-                               <div className="grid grid-cols-4 gap-2">
-                                  {[
-                                     { id: 'A', label: 'Tranche A', price: teaserData.abcd?.a?.price, weight: '25%' },
-                                     { id: 'B', label: 'Tranche B', price: teaserData.abcd?.b?.price, weight: '25%' },
-                                     { id: 'C', label: 'Tranche C', price: teaserData.abcd?.c?.price, weight: '25%' },
-                                     { id: 'D', label: 'Tranche D', price: teaserData.abcd?.d?.price, weight: '25%' },
-                                  ].map((t, idx) => (
-                                     <div key={idx} className="p-3 bg-slate-900/50 border border-white/5 rounded-2xl flex flex-col items-center text-center space-y-1">
-                                        <span className="text-[7px] font-black text-slate-500 uppercase">{t.label}</span>
-                                        <span className="text-[10px] font-black text-white italic">₹{t.price}</span>
-                                        <div className="w-full h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
-                                           <div className="h-full bg-blue-500" style={{ width: t.weight }} />
-                                        </div>
-                                        <span className="text-[7px] font-bold text-blue-400">Alloc: ₹2.5L</span>
+                             ))}
+                          </div>
+
+                          <div className="pt-4 space-y-4">
+                             <div className="flex flex-wrap gap-2">
+                               {teaserData.strategies?.length > 0 ? (
+                                  teaserData.strategies.map((s: any, i: number) => (
+                                     <div key={i} className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-2xl hover:border-blue-500/50 transition-all group hover:scale-105 hover:bg-blue-500/5">
+                                        <Zap className="w-3 h-3 text-blue-500 group-hover:animate-pulse" />
+                                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest group-hover:text-blue-400 transition-colors">{s.name} Entry</span>
+                                        {i === 0 && (
+                                          <span className="text-[6px] font-black text-emerald-500 uppercase tracking-wider ml-1">PRIMARY</span>
+                                        )}
                                      </div>
-                                  ))}
-                               </div>
-                               <p className="text-[8px] text-slate-500 italic text-center font-bold">
-                                  "Institutional capital follows a laddered entry approach to maximize capital protection."
-                               </p>
-                            </div>
-                         </div>
-                      </div>
-
-                      {/* Lock overlay for Free users */}
-                      {!isProOrAbove && (
-                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/40 backdrop-blur-[2px] rounded-3xl p-4 text-center">
-                            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-                               <div className="mx-auto w-10 h-10 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500 animate-pulse">
-                                  <Lock className="w-4 h-4" />
-                               </div>
-                               <div className="space-y-1">
-                                  <h4 className="text-xs font-black uppercase tracking-widest text-white">PRO STRATEGY MATRIX LOCKED</h4>
-                                  <p className="text-[10px] text-slate-500 leading-relaxed">
-                                     Smart money details, upside targets, and strategy entry points for <span className="text-blue-400 font-bold">{teaserData.symbol}</span> require a Pro Execution tier license.
-                                  </p>
-                               </div>
-
-                               <div className="flex flex-col gap-2 pt-2">
-                                  {user ? (
-                                     <button 
-                                       onClick={() => setShowUpgrade(true)}
-                                       className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all flex items-center justify-center gap-1.5"
-                                     >
-                                        Unlock with Pro Execution
-                                     </button>
-                                  ) : (
-                                     <Link 
-                                       to="/login"
-                                       className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all text-center"
-                                     >
-                                        Sign In to Unlock
-                                     </Link>
-                                  )}
-                               </div>
-
-                               <div className="border-t border-slate-800 pt-3.5 space-y-2.5">
-                                  <div className="flex gap-1.5">
-                                     <input 
-                                       type="text" 
-                                       placeholder="Enter voucher (ALPHA7)..."
-                                       value={voucherCode}
-                                       onChange={(e) => setVoucherCode(e.target.value)}
-                                       className="flex-1 bg-slate-950 border border-slate-800 px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500"
-                                     />
-                                     <button
-                                       onClick={handleRedeemVoucher}
-                                       disabled={redeeming}
-                                       className="px-4 py-2 bg-white text-slate-950 hover:bg-slate-100 disabled:bg-slate-900 disabled:text-slate-700 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
-                                     >
-                                        {redeeming ? '...' : 'Apply'}
-                                     </button>
+                                  ))
+                               ) : (
+                                  <div className="px-4 py-2 bg-slate-900/50 border border-slate-800/50 rounded-2xl italic">
+                                     <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Monitoring for Institutional Entry</span>
                                   </div>
-                                  {voucherError && (
-                                     <p className="text-[9px] font-black text-rose-500 uppercase tracking-wider">{voucherError}</p>
-                                  )}
-                                  <button 
-                                     type="button"
-                                     onClick={() => {
-                                        setVoucherCode('ALPHA7');
-                                        setVoucherError(null);
-                                     }}
-                                     className="text-[8px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
-                                  >
-                                     Apply ALPHA7 (7-Day Trial)
-                                  </button>
-                               </div>
-                            </div>
-                         </div>
-                      )}
-                   </div>
+                               )}
+                             </div>
+                             
+                             <div className="flex items-center justify-between border-t border-white/5 pt-4">
+                                <div className="flex items-center gap-2">
+                                   <ShieldCheck className="w-4 h-4 text-slate-600" />
+                                   <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em]">Verified by Institutional Matrix v12.0</span>
+                                </div>
+                                <Link 
+                                  to={`/analysis/${teaserData.symbol}`}
+                                  className="flex items-center gap-2 text-[10px] font-black text-blue-400 hover:text-white transition-all uppercase tracking-widest group"
+                                >
+                                  Access Full Strategy Matrix <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                </Link>
+                             </div>
 
-                   {/* Share Results (Safe-Guard Phase 2: Viral Trigger) */}
-                   <div className="pt-4 flex flex-col sm:flex-row gap-3">
-                      <button 
-                        onClick={() => {
-                          const scoreTxt = (teaserData.score || 0).toFixed(0);
-                          const text = encodeURIComponent(`🚨 [Institutional Audit] ${teaserData.symbol} scored ${scoreTxt}/100 on MarketBeacon Pro! \n\nCheck the full FII/DII analysis here: https://marketbeaconpro.com/analysis/${teaserData.symbol}`);
-                          window.open(`https://wa.me/919251180183?text=${text}`, '_blank');
-                        }}
-                        className="flex-1 py-3.5 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/20 active:scale-95"
-                      >
-                        <Zap className="w-4 h-4 fill-current" /> Share on WhatsApp
-                      </button>
-                      <button 
-                        onClick={() => {
-                          const scoreTxt = (teaserData.score || 0).toFixed(0);
-                          const text = encodeURIComponent(`🚨 [Institutional Audit] ${teaserData.symbol} scored ${scoreTxt}/100 on MarketBeacon Pro!`);
-                          const url = `https://marketbeaconpro.com/analysis/${teaserData.symbol}`;
-                          window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
-                        }}
-                        className="flex-1 py-3.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20 active:scale-95"
-                      >
-                        <TrendingUp className="w-4 h-4" /> Share on Telegram
-                      </button>
-                   </div>
-                </div>
-              </motion.div>
-            )}
-           </AnimatePresence>
+                             {/* Phase 3: HNI ABCD Tranche Visualizer */}
+                             <div className="mt-6 p-5 bg-blue-600/5 border border-blue-500/10 rounded-3xl space-y-4 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl" />
+                                <div className="flex items-center justify-between relative z-10">
+                                   <div className="flex items-center gap-2">
+                                      <Layers className="h-3.5 w-3.5 text-blue-500" />
+                                      <h4 className="text-[10px] font-black uppercase tracking-widest text-white">Institutional Entry Plan (HNI Edge)</h4>
+                                   </div>
+                                   <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Cap: ₹10,00,000 (Sample)</span>
+                                </div>
+                                
+                                <div className="grid grid-cols-4 gap-2 relative z-10">
+                                   {[
+                                      { id: 'A', label: 'Tranche A', price: teaserData.abcd?.a?.price, weight: '25%', status: 'active', color: 'bg-emerald-500' },
+                                      { id: 'B', label: 'Tranche B', price: teaserData.abcd?.b?.price, weight: '25%', status: 'pending', color: 'bg-blue-500' },
+                                      { id: 'C', label: 'Tranche C', price: teaserData.abcd?.c?.price, weight: '25%', status: 'pending', color: 'bg-slate-500' },
+                                      { id: 'D', label: 'Tranche D', price: teaserData.abcd?.d?.price, weight: '25%', status: 'locked', color: 'bg-slate-700' },
+                                   ].map((t, idx) => (
+                                      <div key={idx} className="p-3 bg-slate-900/50 border border-white/5 rounded-2xl flex flex-col items-center text-center space-y-1 relative group hover:scale-105 transition-all">
+                                         <span className="text-[7px] font-black text-slate-500 uppercase">{t.label}</span>
+                                         <span className="text-[10px] font-black text-white italic">{t.price}</span>
+                                         <div className="w-full h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                                            <div className={`h-full ${t.color} rounded-full transition-all duration-1000`} style={{ width: t.weight }} />
+                                         </div>
+                                         <span className={`text-[7px] font-bold mt-1 ${t.status === 'active' ? 'text-emerald-400' : t.status === 'pending' ? 'text-blue-400' : 'text-slate-500'}`}>Alloc: ₹2.5L</span>
+                                         {t.status === 'active' && (
+                                           <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                                         )}
+                                      </div>
+                                   ))}
+                                </div>
+                                <p className="text-[8px] text-slate-500 italic text-center font-bold relative z-10">
+                                   "Institutional capital follows a laddered entry approach to maximize capital protection."
+                                </p>
+                             </div>
+                          </div>
+                       </div>
+
+                       {/* Lock overlay for Free users */}
+                       {!isProOrAbove && (
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/40 backdrop-blur-[2px] rounded-3xl p-4 text-center">
+                             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl -mr-16 -mt-16" />
+                                <div className="mx-auto w-10 h-10 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500 animate-pulse relative z-10">
+                                   <Lock className="w-4 h-4" />
+                                </div>
+                                <div className="space-y-1 relative z-10">
+                                   <h4 className="text-xs font-black uppercase tracking-widest text-white">PRO STRATEGY MATRIX LOCKED</h4>
+                                   <p className="text-[10px] text-slate-500 leading-relaxed">
+                                      Smart money details, upside targets, and strategy entry points for <span className="text-blue-400 font-bold">{teaserData.symbol}</span> require a Pro Execution tier license.
+                                   </p>
+                                </div>
+
+                                <div className="flex flex-col gap-2 pt-2 relative z-10">
+                                   {user ? (
+                                      <button 
+                                        onClick={() => setShowUpgrade(true)}
+                                        className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all flex items-center justify-center gap-1.5 relative overflow-hidden group"
+                                      >
+                                         <span className="relative z-10">Unlock with Pro Execution</span>
+                                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                                      </button>
+                                   ) : (
+                                      <Link 
+                                        to="/login"
+                                        className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all text-center relative overflow-hidden group"
+                                      >
+                                         <span className="relative z-10">Sign In to Unlock</span>
+                                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                                      </Link>
+                                   )}
+                                </div>
+
+                                <div className="border-t border-slate-800 pt-3.5 space-y-2.5 relative z-10">
+                                   <div className="flex gap-1.5">
+                                      <input 
+                                        type="text" 
+                                        placeholder="Enter voucher (ALPHA7)..."
+                                        value={voucherCode}
+                                        onChange={(e) => setVoucherCode(e.target.value)}
+                                        className="flex-1 bg-slate-950 border border-slate-800 px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500"
+                                      />
+                                      <button
+                                        onClick={handleRedeemVoucher}
+                                        disabled={redeeming}
+                                        className="px-4 py-2 bg-white text-slate-950 hover:bg-slate-100 disabled:bg-slate-900 disabled:text-slate-700 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                                      >
+                                         {redeeming ? '...' : 'Apply'}
+                                      </button>
+                                   </div>
+                                   {voucherError && (
+                                      <p className="text-[9px] font-black text-rose-500 uppercase tracking-wider">{voucherError}</p>
+                                   )}
+                                   <button 
+                                      type="button"
+                                      onClick={() => {
+                                         setVoucherCode('ALPHA7');
+                                         setVoucherError(null);
+                                      }}
+                                      className="text-[8px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
+                                   >
+                                      Apply ALPHA7 (7-Day Trial)
+                                   </button>
+                                </div>
+                             </div>
+                          </div>
+                       )}
+                    </div>
+
+                    {/* Share Results (Safe-Guard Phase 2: Viral Trigger) */}
+                    <div className="pt-4 flex flex-col sm:flex-row gap-3 relative z-10">
+                       <button 
+                         onClick={() => {
+                           const scoreTxt = (teaserData.score || 0).toFixed(0);
+                           const text = encodeURIComponent(`🚨 [Institutional Audit] ${teaserData.symbol} scored ${scoreTxt}/100 on MarketBeacon Pro! \n\nCheck the full FII/DII analysis here: https://marketbeaconpro.com/analysis/${teaserData.symbol}`);
+                           window.open(`https://wa.me/919251180183?text=${text}`, '_blank');
+                         }}
+                         className="flex-1 py-3.5 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/20 active:scale-95 relative overflow-hidden group"
+                       >
+                         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                         <Zap className="w-4 h-4 fill-current relative z-10" /> <span className="relative z-10">Share on WhatsApp</span>
+                       </button>
+                       <button 
+                         onClick={() => {
+                           const scoreTxt = (teaserData.score || 0).toFixed(0);
+                           const text = encodeURIComponent(`🚨 [Institutional Audit] ${teaserData.symbol} scored ${scoreTxt}/100 on MarketBeacon Pro!`);
+                           const url = `https://marketbeaconpro.com/analysis/${teaserData.symbol}`;
+                           window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
+                         }}
+                         className="flex-1 py-3.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20 active:scale-95 relative overflow-hidden group"
+                       >
+                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                         <TrendingUp className="w-4 h-4 relative z-10" /> <span className="relative z-10">Share on Telegram</span>
+                       </button>
+                    </div>
+                 </div>
+               </motion.div>
+             )}
+            </AnimatePresence>
           </div>
 
         {/* Brand Heading */}
@@ -780,35 +827,46 @@ const HomePage: React.FC = () => {
         </header>
 
       {/* ── PHASE 1: 3 ICP SEGMENT CARDS ── */}
-      <section aria-label="Who is MarketBeacon Pro for" className="py-20 px-6 md:px-10 border-y border-slate-800/60 bg-slate-900/20">
-        <div className="max-w-[1200px] mx-auto">
+      <section aria-label="Who is MarketBeacon Pro for" className="py-20 px-6 md:px-10 border-y border-slate-800/60 bg-slate-900/20 relative overflow-hidden">
+        {/* 3D Background Effects */}
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/5 via-transparent to-emerald-600/5 pointer-events-none" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="max-w-[1200px] mx-auto relative">
           <div className="text-center mb-14">
             <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.4em] mb-3">Kiske Liye Hai?</p>
             <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-white">Aapki Category <span className="text-blue-400">Kaunsi Hai?</span></h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Segment 1: Retail Trader */}
-            <div className="group relative bg-slate-900/60 border border-slate-800 rounded-[2rem] p-8 hover:border-blue-500/50 transition-all hover:-translate-y-1 flex flex-col">
-              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl w-fit mb-6">
-                <TrendingUp className="h-6 w-6 text-blue-400" />
+            <div className="group relative bg-slate-900/80 border border-slate-700 rounded-[2rem] p-8 hover:border-blue-500/60 transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/10 flex flex-col backdrop-blur-sm">
+              <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-2xl w-fit mb-6 group-hover:bg-blue-500/20 transition-colors">
+                <TrendingUp className="h-6 w-6 text-blue-400 group-hover:text-blue-300 transition-colors" />
               </div>
-              <div className="mb-2 text-[9px] font-black text-blue-400 uppercase tracking-[0.3em]">Retail Trader</div>
-              <h3 className="text-xl font-black text-white tracking-tighter mb-3">Portfolio: ₹5L – ₹50L</h3>
-              <p className="text-slate-500 text-sm leading-relaxed flex-1 mb-6">
+              <div className="mb-2 text-[9px] font-black text-blue-400 uppercase tracking-[0.3em] group-hover:text-blue-300 transition-colors">Retail Trader</div>
+              <h3 className="text-xl font-black text-white tracking-tighter mb-3 group-hover:text-blue-100 transition-colors">Portfolio: ₹5L – ₹50L</h3>
+              <p className="text-slate-400 text-sm leading-relaxed flex-1 mb-6 group-hover:text-slate-300 transition-colors">
                 "I never knew when to research entry vs wait for confirmation. — The ABCD Tranche system gives institutional clarity."
               </p>
               <div className="space-y-2 mb-8">
-                {['100-Point Audit Score Free', 'ABCD Entry Zones', 'Live Screener Access'].map(f => (
-                  <div key={f} className="flex items-center gap-2 text-xs text-slate-300">
-                    <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
+                {['100-Point Audit Score Free', 'ABCD Entry Zones', 'Live Screener Access'].map((f, index) => (
+                  <div key={f} className="flex items-center gap-2 text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
+                    <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 group-hover:bg-blue-500/30 transition-colors">
                       <ShieldCheck className="w-2.5 h-2.5 text-blue-400" />
                     </div>
-                    {f}
+                    <span className="relative">
+                      {f}
+                      {index === 0 && (
+                        <span className="absolute -top-1 -right-1 text-[6px] font-black text-emerald-500 uppercase tracking-wider">NEW</span>
+                      )}
+                    </span>
                   </div>
                 ))}
               </div>
-              <Link to="/login" className="w-full py-3.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-blue-500 transition-colors">
-                Start Free Trial
+              <Link to="/login" className="w-full py-3.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/25 transition-all relative overflow-hidden group">
+                <span className="relative z-10">Start Free Trial</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
               </Link>
             </div>
 
@@ -817,54 +875,66 @@ const HomePage: React.FC = () => {
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-1 rounded-full text-[8px] font-black uppercase tracking-widest whitespace-nowrap shadow-lg">
                 Most Popular
               </div>
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl w-fit mb-6 mt-2">
-                <Users className="h-6 w-6 text-emerald-400" />
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl w-fit mb-6 mt-2 group-hover:bg-emerald-500/20 transition-colors">
+                <Users className="h-6 w-6 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
               </div>
-              <div className="mb-2 text-[9px] font-black text-emerald-400 uppercase tracking-[0.3em]">Sub-broker / Advisor</div>
-              <h3 className="text-xl font-black text-white tracking-tighter mb-3">Client Portfolio Manager</h3>
-              <p className="text-slate-500 text-sm leading-relaxed flex-1 mb-6">
+              <div className="mb-2 text-[9px] font-black text-emerald-400 uppercase tracking-[0.3em] group-hover:text-emerald-300 transition-colors">Sub-broker / Advisor</div>
+              <h3 className="text-xl font-black text-white tracking-tighter mb-3 group-hover:text-emerald-100 transition-colors">Client Portfolio Manager</h3>
+              <p className="text-slate-400 text-sm leading-relaxed flex-1 mb-6 group-hover:text-slate-300 transition-colors">
                 "I need to justify every research note to clients. — The Audit Score helps me back every call with data."
               </p>
               <div className="space-y-2 mb-8">
-                {['Audit Trail per Trade', 'Client-Ready Data Reports', 'Educational Research Framework'].map(f => (
-                  <div key={f} className="flex items-center gap-2 text-xs text-slate-300">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                {['Audit Trail per Trade', 'Client-Ready Data Reports', 'Educational Research Framework'].map((f, index) => (
+                  <div key={f} className="flex items-center gap-2 text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
+                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 group-hover:bg-emerald-500/30 transition-colors">
                       <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
                     </div>
-                    {f}
+                    <span className="relative">
+                      {f}
+                      {index === 1 && (
+                        <span className="absolute -top-1 -right-1 text-[6px] font-black text-amber-500 uppercase tracking-wider">PRO</span>
+                      )}
+                    </span>
                   </div>
                 ))}
               </div>
-              <Link to="/license-desk" className="w-full py-3.5 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-emerald-500 transition-colors">
-                Get Pro Access
+              <Link to="/license-desk" className="w-full py-3.5 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/25 transition-all relative overflow-hidden group">
+                <span className="relative z-10">Get Pro Access</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
               </Link>
             </div>
 
             {/* Segment 3: HNI / Family Office */}
             <div className="group relative bg-slate-900/60 border border-amber-500/30 rounded-[2rem] p-8 hover:border-amber-400/50 transition-all hover:-translate-y-1 flex flex-col">
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl w-fit mb-6">
-                <BarChart2 className="h-6 w-6 text-amber-400" />
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl w-fit mb-6 group-hover:bg-amber-500/20 transition-colors">
+                <BarChart2 className="h-6 w-6 text-amber-400 group-hover:text-amber-300 transition-colors" />
               </div>
-              <div className="mb-2 text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">HNI / Family Office</div>
-              <h3 className="text-xl font-black text-white tracking-tighter mb-3">Portfolio: ₹50L+</h3>
-              <p className="text-slate-500 text-sm leading-relaxed flex-1 mb-6">
+              <div className="mb-2 text-[9px] font-black text-amber-400 uppercase tracking-[0.3em] group-hover:text-amber-300 transition-colors">HNI / Family Office</div>
+              <h3 className="text-xl font-black text-white tracking-tighter mb-3 group-hover:text-amber-100 transition-colors">Portfolio: ₹50L+</h3>
+              <p className="text-slate-400 text-sm leading-relaxed flex-1 mb-6 group-hover:text-slate-300 transition-colors">
                 "Risk management weak hai, capital protect nahi ho raha." — Tranche Laddering se capital systematic way mein deploy hota hai. No emotional decisions.
               </p>
               <div className="space-y-2 mb-8">
-                {['Full Alpha Hub Access', 'Priority Alpha Strategy Triggers', 'Custom Enterprise Node'].map(f => (
-                  <div key={f} className="flex items-center gap-2 text-xs text-slate-300">
-                    <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                {['Full Alpha Hub Access', 'Priority Alpha Strategy Triggers', 'Custom Enterprise Node'].map((f, index) => (
+                  <div key={f} className="flex items-center gap-2 text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
+                    <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 group-hover:bg-amber-500/30 transition-colors">
                       <ShieldCheck className="w-2.5 h-2.5 text-amber-400" />
                     </div>
-                    {f}
+                    <span className="relative">
+                      {f}
+                      {index === 2 && (
+                        <span className="absolute -top-1 -right-1 text-[6px] font-black text-emerald-500 uppercase tracking-wider">EXCLUSIVE</span>
+                      )}
+                    </span>
                   </div>
                 ))}
               </div>
               <button
                 onClick={() => window.open('https://wa.me/919251180183?text=Hi%20Admin,%20I%20am%20interested%20in%20Alpha%20Access%20for%20my%20HNI%20portfolio.', '_blank')}
-                className="w-full py-3.5 bg-amber-600/80 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-amber-500 transition-colors"
+                className="w-full py-3.5 bg-amber-600/80 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-amber-500 hover:shadow-lg hover:shadow-amber-500/25 transition-all relative overflow-hidden group"
               >
-                Contact for Alpha
+                <span className="relative z-10">Contact for Alpha</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-500 to-amber-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
               </button>
             </div>
           </div>

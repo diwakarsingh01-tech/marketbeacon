@@ -102,9 +102,17 @@ export async function runHealthCheck(): Promise<{ results: HealthResult[]; passe
 
   await measure(results, 'Data Freshness', async () => {
     const snap = getMarketSnapshot();
-    const timestamps = Object.values(snap).map((s: any) => s?.quote?.regularMarketTime).filter(Boolean);
-    if (timestamps.length === 0) return { status: 'warn', detail: 'No timestamps found in snapshot' };
-    const latest = Math.max(...timestamps);
+    const timestamps = Object.values(snap)
+      .map((s: any) => {
+        const val = s?.quote?.regularMarketTime;
+        if (!val) return null;
+        const date = new Date(typeof val === 'number' && val < 10000000000 ? val * 1000 : val);
+        return isNaN(date.getTime()) ? null : date.getTime();
+      })
+      .filter((t): t is number => t !== null);
+
+    if (timestamps.length === 0) return { status: 'warn', detail: 'No valid timestamps found in snapshot' };
+    const latest = Math.max(...timestamps) / 1000;
     const ageHours = (Date.now() / 1000 - latest) / 3600;
     if (ageHours > 24) return { status: 'warn', detail: `Oldest data ${Math.round(ageHours)}h old` };
     return { status: 'pass', detail: `Latest data ${Math.round(ageHours * 10) / 10}h old` };
