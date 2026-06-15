@@ -4,6 +4,17 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
 import App from './App.tsx'
 
+// Initialize theme from localStorage
+(() => {
+  const saved = localStorage.getItem('mb_theme');
+  if (saved === 'light' || saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', saved);
+  } else {
+    // Default to dark
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+
 console.log('🚀 [MarketBeacon] Terminal Initializing...');
 
 const container = document.getElementById('root');

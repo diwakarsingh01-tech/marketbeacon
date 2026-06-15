@@ -72,23 +72,28 @@ export async function fetchScreenerData(symbol: string) {
   let lastError: any = null;
   
   for (const url of urls) {
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        const delay = Math.random() * 1000 + 1000 + (attempt * 3000);
+        const delay = Math.random() * 2000 + 1000 + (attempt * 5000); // Increased delay
         await new Promise(resolve => setTimeout(resolve, delay));
         const response = await axios.get(url, {
           headers: { 
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Referer': 'https://www.screener.in/'
           },
-          timeout: 15000
+          timeout: 20000
         });
         data = response.data;
         break;
       } catch (e: any) {
         lastError = e;
         if (e.response?.status === 404) break;
-        if (attempt < 2) {
+        if (e.response?.status === 429) {
+          console.warn(`🚨 [Screener] ${cleanSymbol} hit 429 (Rate Limit), attempt ${attempt + 1}. Backing off...`);
+          await new Promise(resolve => setTimeout(resolve, 10000 * (attempt + 1))); // Extra backoff for 429
+          continue;
+        }
+        if (attempt < 4) {
           console.warn(`⚠️ [Screener] ${cleanSymbol} attempt ${attempt + 1} failed (${e.message}), retrying...`);
         }
       }
@@ -317,6 +322,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
           quote: {
             marketCap, regularMarketPrice: quote.regularMarketPrice || (quotes.length > 0 ? quotes[quotes.length - 1].close : 0),
             regularMarketChangePercent: quote.regularMarketChangePercent || 0,
+            regularMarketTime: Math.floor(new Date(quote.regularMarketTime || Date.now()).getTime() / 1000),
             fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh || Math.max(...quotes.slice(-252).map(q => q.high)),
             fiftyTwoWeekLow: quote.fiftyTwoWeekLow || Math.min(...quotes.slice(-252).map(q => q.low)),
             pe: summary?.summaryDetail?.trailingPE || screenerData?.peRatio || 0,
