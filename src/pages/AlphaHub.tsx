@@ -356,7 +356,7 @@ const AlphaHubPage: React.FC = () => {
   // ALPHA_REQUIRED state (show upgrade prompt)
   if (error === 'ALPHA_REQUIRED') {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+      <div className="flex flex-col min-h-screen bg-[var(--bg-primary)]">
         <SEO title="Alpha Portfolio — Access Required" description="Unlock the Alpha 40 Desk to access pre-built strategy baskets and model portfolios." />
         {showConfetti && <Confetti />}
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-700 max-w-2xl mx-auto">
@@ -428,12 +428,12 @@ const AlphaHubPage: React.FC = () => {
 
   // --- MAIN PAGE CONTENT (authenticated, data loaded)
   return (
-    <div className="flex flex-col min-h-screen bg-[#0A0D12] text-[var(--text-primary)]">
+    <div className="flex flex-col min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <SEO title="Alpha Desk — Rules-Based Strategy Portfolios" description="Enter your investment amount and get a rules-based stock allocation with full entry/exit details. SIP and lump sum supported. Backtested performance up to 20 years." />
       {showConfetti && <Confetti />}
 
       {/* HEADER BAR */}
-      <header className="bg-[#0F1520] border-b border-[var(--border-primary)] px-4 md:px-6 py-4 sticky top-0 z-50">
+      <header className="bg-[var(--bg-secondary)] border-b border-[var(--border-primary)] px-4 md:px-6 py-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[var(--bg-primary)] rounded-xl flex items-center justify-center shadow-sm border border-[var(--border-primary)]">
@@ -460,7 +460,7 @@ const AlphaHubPage: React.FC = () => {
       <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full pb-32 space-y-6">
 
         {/* STICKY STEP INDICATOR BAR */}
-        <div className="sticky top-[73px] z-40 bg-[#0A0D12]/95 backdrop-blur-md border border-[var(--border-primary)] py-3.5 px-6 shadow-2xl w-full rounded-2xl flex items-center justify-center gap-0 max-w-xl mx-auto">
+        <div className="sticky top-[73px] z-40 bg-[var(--bg-primary)]/95 backdrop-blur-md border border-[var(--border-primary)] py-3.5 px-6 shadow-2xl w-full rounded-2xl flex items-center justify-center gap-0 max-w-xl mx-auto">
           {[
             { step: 1, label: 'Amount' },
             { step: 2, label: 'Stocks' },
@@ -526,7 +526,7 @@ const AlphaHubPage: React.FC = () => {
             </div>
 
             {/* INVESTMENT CALCULATOR */}
-            <div id="calculator-section" className="bg-[#0F1520] border border-[var(--border-primary)] rounded-3xl p-6 shadow-xl space-y-6">
+            <div id="calculator-section" className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-3xl p-6 shadow-xl space-y-6">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded text-[7px] font-black uppercase tracking-widest">Step 1</span>
@@ -785,7 +785,7 @@ const AlphaHubPage: React.FC = () => {
                   className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border transition-all ${
                     filterBasket === 'all'
                       ? 'bg-blue-600 text-[var(--text-primary)] border-blue-600 shadow-md'
-                      : 'bg-[#0F1520] text-[var(--text-tertiary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
+                      : 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
                   }`}
                 >
                   All Baskets
@@ -797,7 +797,7 @@ const AlphaHubPage: React.FC = () => {
                     className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border transition-all ${
                       filterBasket === b.id
                         ? 'bg-blue-600 text-[var(--text-primary)] border-blue-600 shadow-md'
-                        : 'bg-[#0F1520] text-[var(--text-tertiary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
+                        : 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
                     }`}
                   >
                     {b.name} ({b.count})
@@ -806,7 +806,7 @@ const AlphaHubPage: React.FC = () => {
               </div>
 
               {/* Desktop Stock Table */}
-              <div className="hidden md:block bg-[#0F1520] border border-[var(--border-primary)] rounded-2xl overflow-hidden shadow-2xl">
+              <div className="hidden md:block bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl overflow-hidden shadow-2xl">
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse">
                     <thead>
@@ -905,7 +905,7 @@ const AlphaHubPage: React.FC = () => {
                     const grade = stock.tranche?.toUpperCase();
                     const validGrade = grade && ['A', 'B', 'C', 'D'].includes(grade) ? grade : 'NONE';
                     return (
-                      <div key={stock.symbol} className="bg-[#0F1520] border border-[var(--border-primary)] rounded-xl overflow-hidden shadow-sm">
+                      <div key={stock.symbol} className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl overflow-hidden shadow-sm">
                         <button
                           onClick={() => setExpandedStock(isExpanded ? null : stock.symbol)}
                           className="w-full text-left p-4 space-y-2.5 active:bg-[var(--bg-tertiary)] transition-colors"
@@ -1018,7 +1018,7 @@ const AlphaHubPage: React.FC = () => {
                     className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
                       perfYears === y
                         ? 'bg-blue-600 text-[var(--text-primary)] border-blue-600 shadow-md shadow-blue-500/10'
-                        : 'bg-[#0F1520] text-[var(--text-muted)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
+                        : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
                     }`}
                   >
                     {y === 20 ? 'Max' : `${y}Y`}
@@ -1027,7 +1027,7 @@ const AlphaHubPage: React.FC = () => {
               </div>
 
               {/* Performance Metrics Card */}
-              <div className="bg-[#0F1520] border border-[var(--border-primary)] rounded-[2rem] p-6 md:p-8 text-[var(--text-secondary)] shadow-2xl relative overflow-hidden">
+              <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[2rem] p-6 md:p-8 text-[var(--text-secondary)] shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full pointer-events-none" />
 
                 <div className="relative z-10 space-y-6">
@@ -1085,10 +1085,10 @@ const AlphaHubPage: React.FC = () => {
                             <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                        <XAxis dataKey="year" stroke="#475569" fontSize={9} tickLine={false} axisLine={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" vertical={false} />
+                        <XAxis dataKey="year" stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} />
                         <YAxis
-                          stroke="#475569"
+                          stroke="var(--text-muted)"
                           fontSize={9}
                           tickLine={false}
                           axisLine={false}
@@ -1178,7 +1178,7 @@ const AlphaHubPage: React.FC = () => {
             </div>
 
             {/* DISCLAIMERS */}
-            <div className="bg-[#0F1520] border border-[var(--border-primary)] rounded-[2rem] overflow-hidden shadow-sm">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[2rem] overflow-hidden shadow-sm">
               <button
                 onClick={() => setShowDisclaimer(!showDisclaimer)}
                 className="w-full flex items-center justify-between p-5 md:p-6 text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]/40 transition-colors text-left"
