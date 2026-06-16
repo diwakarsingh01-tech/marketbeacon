@@ -496,7 +496,7 @@ const ScreenerVerify: React.FC = () => {
 
     return (
       <div className="relative pt-6 pb-2 px-1">
-        <div className="h-1.5 w-full bg-slate-800 rounded-full relative">
+        <div className="h-1.5 w-full bg-[var(--bg-tertiary)] rounded-full relative">
           {/* Shaded Buy Zone */}
           <div 
             className="absolute h-full bg-emerald-500/30 rounded-full"
@@ -515,7 +515,7 @@ const ScreenerVerify: React.FC = () => {
           style={{ left: `${bottomPct}%`, transform: 'translateX(-50%)' }}
         >
           <div className="h-4 w-1 bg-slate-600" />
-          <span className="text-[8px] font-black text-slate-500 mt-1">FLOOR (₹{Math.round(bottom)})</span>
+          <span className="text-[8px] font-black text-[var(--text-muted)] mt-1">FLOOR (₹{Math.round(bottom)})</span>
         </div>
 
         <div 
@@ -542,7 +542,7 @@ const ScreenerVerify: React.FC = () => {
           <div className="px-2 py-0.5 rounded bg-blue-600 text-[8px] font-black text-[var(--text-primary)] shadow-md">
             ₹{Math.round(price)}
           </div>
-          <div className="w-2.5 h-2.5 rounded-full bg-white border-2 border-blue-600 mt-0.5" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[var(--bg-primary)] border-2 border-blue-600 mt-0.5" />
         </div>
       </div>
     );
@@ -558,13 +558,13 @@ const ScreenerVerify: React.FC = () => {
 
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
-      theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'
+      theme === 'dark' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)]' : 'bg-[var(--bg-secondary)] text-slate-800'
     }`}>
       <SEO title="Trust Screener Matrix" description="Verify technical strategy signals with live TradingView interactive chart overlays." />
 
       {/* Main Header */}
       <header className={`border-b px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 ${
-        theme === 'dark' ? 'bg-slate-900/60 border-[var(--border-primary)]/80' : 'bg-white border-slate-200/80 shadow-sm'
+        theme === 'dark' ? 'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
       }`}>
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center gap-3 group">
@@ -577,19 +577,19 @@ const ScreenerVerify: React.FC = () => {
               }`}>
                 MarketBeacon <span className="text-blue-500">Trust Matrix</span>
               </h1>
-              <p className="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest">Screener Verification Workspace</p>
+              <p className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Screener Verification Workspace</p>
             </div>
           </Link>
         </div>
 
         {/* Global Strategy Picker */}
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest hidden sm:inline">Scanner Model:</span>
+          <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest hidden sm:inline">Scanner Model:</span>
           <select
             value={strategyId}
             onChange={(e) => setStrategyId(e.target.value)}
             className={`px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider border outline-none ${
-              theme === 'dark' ? 'bg-slate-950 border-[var(--border-primary)] text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
+              theme === 'dark' ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-secondary)]' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-slate-700'
             }`}
           >
             {Object.entries(STRATEGY_NAMES).map(([key, name]) => (
@@ -601,7 +601,7 @@ const ScreenerVerify: React.FC = () => {
           <button
             onClick={toggleTheme}
             className={`p-2.5 rounded-xl border transition-colors ${
-              theme === 'dark' ? 'bg-slate-950 border-[var(--border-primary)] text-slate-300 hover:bg-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              theme === 'dark' ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)] text-slate-600 hover:bg-[var(--bg-secondary)]'
             }`}
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -617,15 +617,15 @@ const ScreenerVerify: React.FC = () => {
           
           {/* Card 1: Strategy rules */}
           <div className={`p-5 rounded-3xl border ${
-            theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
           }`}>
             <div className="flex items-center gap-2 mb-3 border-b border-[var(--border-primary)]/60 pb-2">
               <Layers className="h-4 w-4 text-blue-500" />
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Scanner Entry Rules</span>
+              <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest">Scanner Entry Rules</span>
             </div>
             <ul className="space-y-2">
               {(STRATEGY_RULES[strategyId] || []).map((rule, idx) => (
-                <li key={idx} className="flex gap-2 text-xs text-slate-400 leading-relaxed">
+                <li key={idx} className="flex gap-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
                   <CheckCircle2 className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
                   <span>{rule}</span>
                 </li>
@@ -635,10 +635,10 @@ const ScreenerVerify: React.FC = () => {
 
           {/* Card 2: Matching stocks list */}
           <div className={`p-5 rounded-3xl border flex flex-col ${
-            theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
           }`}>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Scanned Matches</span>
+              <span className="text-[10px] font-extrabold text-[var(--text-tertiary)] uppercase tracking-widest">Scanned Matches</span>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 {filteredStocks.length} Stocks
               </span>
@@ -646,9 +646,9 @@ const ScreenerVerify: React.FC = () => {
 
             {/* Search filter */}
             <div className={`flex items-center rounded-xl border px-3 py-1.5 mb-3 ${
-              theme === 'dark' ? 'bg-slate-950 border-[var(--border-primary)]' : 'bg-slate-50 border-slate-200'
+              theme === 'dark' ? 'bg-[var(--bg-primary)] border-[var(--border-primary)]' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)]'
             }`}>
-              <Search className="h-3.5 w-3.5 text-slate-500 mr-2" />
+              <Search className="h-3.5 w-3.5 text-[var(--text-muted)] mr-2" />
               <input
                 type="text"
                 placeholder="Filter symbol..."
@@ -659,7 +659,7 @@ const ScreenerVerify: React.FC = () => {
             </div>
 
             {loadingList ? (
-              <div className="py-12 text-center text-slate-500 space-y-2">
+              <div className="py-12 text-center text-[var(--text-muted)] space-y-2">
                 <RefreshCw className="h-5 w-5 animate-spin mx-auto text-blue-500" />
                 <p className="text-[10px] font-bold uppercase tracking-wider">Loading Screener...</p>
               </div>
@@ -672,12 +672,12 @@ const ScreenerVerify: React.FC = () => {
                     className={`w-full flex items-center justify-between p-3 rounded-2xl border text-left transition-all ${
                       symbol === item.symbol
                         ? (theme === 'dark' ? 'bg-blue-600/10 border-blue-500/40 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-600')
-                        : (theme === 'dark' ? 'bg-slate-950/40 border-slate-900/60 hover:border-[var(--border-primary)]' : 'bg-slate-50 border-slate-100 hover:border-slate-200')
+                        : (theme === 'dark' ? 'bg-[var(--bg-primary)]/40 border-slate-900/60 hover:border-[var(--border-primary)]' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] hover:border-[var(--border-primary)]')
                     }`}
                   >
                     <div>
                       <span className="text-xs font-black block">{item.symbol}</span>
-                      <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider truncate block max-w-[150px]">
+                      <span className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-wider truncate block max-w-[150px]">
                         {item.reason}
                       </span>
                     </div>
@@ -686,14 +686,14 @@ const ScreenerVerify: React.FC = () => {
                         BUY ZONE
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-slate-800 border border-slate-700 text-slate-500">
+                      <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)]">
                         HOLD
                       </span>
                     )}
                   </button>
                 ))}
                 {filteredStocks.length === 0 && (
-                  <div className="py-12 text-center text-xs text-slate-500 uppercase tracking-wider font-bold">
+                  <div className="py-12 text-center text-xs text-[var(--text-muted)] uppercase tracking-wider font-bold">
                     No matching scanner setups
                   </div>
                 )}
@@ -705,13 +705,13 @@ const ScreenerVerify: React.FC = () => {
         {/* Center Column (Interactive Chart and Deep Links) */}
         <section className="lg:col-span-2 space-y-6">
           <div className={`p-5 rounded-3xl border flex flex-col ${
-            theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
           }`}>
             
             {/* Chart controls */}
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black tracking-wider uppercase text-slate-400">TradingView Verified Chart</span>
+                <span className="text-xs font-black tracking-wider uppercase text-[var(--text-tertiary)]">TradingView Verified Chart</span>
                 {loadingDetail && <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />}
               </div>
 
@@ -719,7 +719,7 @@ const ScreenerVerify: React.FC = () => {
               <div className="flex gap-2">
                 {/* Timeframes */}
                 <div className={`flex rounded-xl p-0.5 border ${
-                  theme === 'dark' ? 'bg-slate-950 border-[var(--border-primary)]/80' : 'bg-slate-100 border-slate-200'
+                  theme === 'dark' ? 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80' : 'bg-slate-100 border-[var(--border-primary)]'
                 }`}>
                   {['15m', '1H', '4H', '1D'].map((tf) => (
                     <button
@@ -727,8 +727,8 @@ const ScreenerVerify: React.FC = () => {
                       onClick={() => setTimeframe(tf)}
                       className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase transition-all ${
                         timeframe === tf
-                          ? (theme === 'dark' ? 'bg-slate-800 text-[var(--text-primary)]' : 'bg-white text-slate-800 shadow-sm')
-                          : 'text-slate-500 hover:text-slate-400'
+                          ? (theme === 'dark' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'bg-[var(--bg-primary)] text-slate-800 shadow-sm')
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-tertiary)]'
                       }`}
                     >
                       {tf}
@@ -738,14 +738,14 @@ const ScreenerVerify: React.FC = () => {
 
                 {/* Candles vs line */}
                 <div className={`flex rounded-xl p-0.5 border ${
-                  theme === 'dark' ? 'bg-slate-950 border-[var(--border-primary)]/80' : 'bg-slate-100 border-slate-200'
+                  theme === 'dark' ? 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80' : 'bg-slate-100 border-[var(--border-primary)]'
                 }`}>
                   <button
                     onClick={() => setChartType('candles')}
                     className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-all ${
                       chartType === 'candles'
-                        ? (theme === 'dark' ? 'bg-slate-800 text-[var(--text-primary)]' : 'bg-white text-slate-800 shadow-sm')
-                        : 'text-slate-500 hover:text-slate-400'
+                        ? (theme === 'dark' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'bg-[var(--bg-primary)] text-slate-800 shadow-sm')
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-tertiary)]'
                     }`}
                   >
                     Candles
@@ -754,8 +754,8 @@ const ScreenerVerify: React.FC = () => {
                     onClick={() => setChartType('line')}
                     className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-all ${
                       chartType === 'line'
-                        ? (theme === 'dark' ? 'bg-slate-800 text-[var(--text-primary)]' : 'bg-white text-slate-800 shadow-sm')
-                        : 'text-slate-500 hover:text-slate-400'
+                        ? (theme === 'dark' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'bg-[var(--bg-primary)] text-slate-800 shadow-sm')
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-tertiary)]'
                     }`}
                   >
                     Line
@@ -768,12 +768,12 @@ const ScreenerVerify: React.FC = () => {
             <div 
               ref={chartContainerRef} 
               className={`w-full rounded-2xl overflow-hidden border ${
-                theme === 'dark' ? 'border-[var(--border-primary)]/60 bg-slate-950' : 'border-slate-200 bg-white'
+                theme === 'dark' ? 'border-[var(--border-primary)]/60 bg-[var(--bg-primary)]' : 'border-[var(--border-primary)] bg-[var(--bg-primary)]'
               }`}
               style={{ minHeight: '440px' }}
             >
               {historyData.length === 0 && !loadingDetail && (
-                <div className="flex flex-col items-center justify-center h-[440px] text-slate-500">
+                <div className="flex flex-col items-center justify-center h-[440px] text-[var(--text-muted)]">
                   <Info className="h-8 w-8 mb-2 text-slate-600" />
                   <p className="text-xs font-black uppercase tracking-widest">No candlestick records available</p>
                 </div>
@@ -783,8 +783,8 @@ const ScreenerVerify: React.FC = () => {
             {/* Deep link verification bar */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 border-t border-[var(--border-primary)]/50 pt-4">
               <div>
-                <span className="text-[8px] font-extrabold uppercase tracking-widest text-slate-500">Validation Verification Path</span>
-                <p className="text-[10px] font-bold text-slate-400 mt-0.5">Validate these overlays directly inside your native TradingView charts.</p>
+                <span className="text-[8px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]">Validation Verification Path</span>
+                <p className="text-[10px] font-bold text-[var(--text-tertiary)] mt-0.5">Validate these overlays directly inside your native TradingView charts.</p>
               </div>
               <a
                 href={getTvDeepLink()}
@@ -804,17 +804,17 @@ const ScreenerVerify: React.FC = () => {
           
           {/* Card 1: SVG Confidence Dial */}
           <div className={`p-5 rounded-3xl border ${
-            theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
           }`}>
             <div className="flex justify-between items-center border-b border-[var(--border-primary)]/60 pb-3 mb-4">
-              <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Verification conviction</span>
+              <span className="text-[9px] font-extrabold text-[var(--text-tertiary)] uppercase tracking-widest">Verification conviction</span>
               <span className={`px-2 py-0.5 rounded-full text-[8px] font-black tracking-wider uppercase border border-current/20 ${confidence.bg} ${confidence.color}`}>
                 {confidence.level}
               </span>
             </div>
 
             {/* The SVG Gauge */}
-            <div className="flex flex-col items-center justify-center py-4 border border-[var(--border-primary)]/40 rounded-2xl bg-slate-950/20">
+            <div className="flex flex-col items-center justify-center py-4 border border-[var(--border-primary)]/40 rounded-2xl bg-[var(--bg-primary)]/20">
               <svg viewBox="0 0 100 55" className="w-36 h-20">
                 <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#1e293b" strokeWidth="8" strokeLinecap="round" />
                 <path 
@@ -836,13 +836,13 @@ const ScreenerVerify: React.FC = () => {
                 </defs>
                 <text x="50" y="45" textAnchor="middle" className="text-lg font-black fill-current" style={{ fill: theme === 'dark' ? '#fff' : '#0f172a' }}>{confidence.score}%</text>
               </svg>
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-2">CONFIDENCE SCORE</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-2">CONFIDENCE SCORE</span>
             </div>
 
             {/* Range progression slider */}
             {fundamentals && activeStrategy && (
               <div className="mt-5 space-y-2">
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Range Progression State</span>
+                <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest block">Range Progression State</span>
                 {renderRangeSlider()}
               </div>
             )}
@@ -850,41 +850,41 @@ const ScreenerVerify: React.FC = () => {
 
           {/* Card 2: Strategy metrics */}
           <div className={`p-5 rounded-3xl border ${
-            theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
           }`}>
             <div className="flex items-center gap-2 mb-4 border-b border-[var(--border-primary)]/60 pb-3">
               <Target className="h-4 w-4 text-blue-500" />
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Institutional Targets</span>
+              <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest">Institutional Targets</span>
             </div>
 
             {loadingDetail || !fundamentals || !activeStrategy ? (
-              <div className="py-6 text-center text-xs text-slate-500">Gathering statistics...</div>
+              <div className="py-6 text-center text-xs text-[var(--text-muted)]">Gathering statistics...</div>
             ) : (
               <div className="space-y-3.5">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">Safe Entry Target:</span>
+                  <span className="text-[var(--text-tertiary)] font-medium">Safe Entry Target:</span>
                   <span className="font-extrabold text-emerald-400">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</span>
                 </div>
                 
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">Profit Booking Target:</span>
+                  <span className="text-[var(--text-tertiary)] font-medium">Profit Booking Target:</span>
                   <span className="font-extrabold text-blue-400">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</span>
                 </div>
 
                 <div className="flex justify-between items-center text-xs border-t border-[var(--border-primary)]/60 pt-3">
-                  <span className="text-slate-400 font-medium">Current Stock Price:</span>
+                  <span className="text-[var(--text-tertiary)] font-medium">Current Stock Price:</span>
                   <span className="font-extrabold">₹ {Number(fundamentals.price).toLocaleString('en-IN')}</span>
                 </div>
 
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">Risk/Reward Ratio:</span>
+                  <span className="text-[var(--text-tertiary)] font-medium">Risk/Reward Ratio:</span>
                   <span className="font-extrabold text-blue-400">
                     1 : {((Number(activeStrategy.target || 0) - Number(activeStrategy.entryPrice || 0)) / Math.max(1, (Number(activeStrategy.entryPrice || 0) * 0.05))).toFixed(1)}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">Fund. Audit Score:</span>
+                  <span className="text-[var(--text-tertiary)] font-medium">Fund. Audit Score:</span>
                   <span className={`font-extrabold ${fundamentals.audit?.score >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
                     {fundamentals.audit?.score || 0} / 100
                   </span>

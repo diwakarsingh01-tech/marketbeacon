@@ -35,7 +35,7 @@ const DashboardStat = ({ title, value, icon: Icon, color = "blue", subtitle }: a
     blue: "text-blue-500 bg-blue-500/10 border-blue-500/30",
     emerald: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30",
     rose: "text-rose-500 bg-rose-500/10 border-rose-500/30",
-    slate: "text-slate-400 bg-slate-500/10 border-slate-500/30",
+    slate: "text-[var(--text-tertiary)] bg-slate-500/10 border-slate-500/30",
     amber: "text-amber-400 bg-amber-500/10 border-amber-500/30"
   };
 
@@ -45,7 +45,7 @@ const DashboardStat = ({ title, value, icon: Icon, color = "blue", subtitle }: a
       className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between min-h-[110px] transition-all duration-200 hover:border-[var(--border-secondary)] hover:shadow-lg hover:shadow-black/50"
     >
       <div className="flex justify-between items-center mb-3">
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{title}</span>
+        <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">{title}</span>
         <div className={`p-1.5 rounded-lg border ${iconColors[color]} backdrop-blur-sm`}>
           <Icon className="h-3.5 w-3.5" />
         </div>
@@ -53,7 +53,7 @@ const DashboardStat = ({ title, value, icon: Icon, color = "blue", subtitle }: a
       <div className="space-y-0.5">
         <h3 className="text-2xl font-black text-[var(--text-primary)] tracking-tight font-mono">{value}</h3>
         {subtitle && (
-          <p className="text-[8px] font-semibold text-slate-500 uppercase tracking-widest">{subtitle}</p>
+          <p className="text-[8px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">{subtitle}</p>
         )}
       </div>
     </motion.div>
@@ -539,13 +539,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       {/* Institutional Header (Safe-Guard Rule #9) */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-[var(--border-primary)] pb-8 gap-8">
         <div className="space-y-4">
-           <div className="flex items-center space-x-3 text-slate-400">
+           <div className="flex items-center space-x-3 text-[var(--text-tertiary)]">
               <div className="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-xl flex items-center justify-center shadow-xl border border-blue-500/30">
                  <Zap className="h-5 w-5 text-blue-400" />
               </div>
               <div className="flex flex-col">
                  <span className="text-[10px] font-bold uppercase tracking-[0.4em] leading-none text-blue-400">Matrix Node</span>
-                 <span className="text-[8px] font-semibold text-slate-500 uppercase tracking-widest mt-1 italic">Real-time Terminal Monitor</span>
+                 <span className="text-[8px] font-semibold text-[var(--text-muted)] uppercase tracking-widest mt-1 italic">Real-time Terminal Monitor</span>
               </div>
            </div>
             <div className="space-y-1">
@@ -619,7 +619,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                       <option key={b} value={b}>{b}</option>
                     ))}
                   </select>
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-tertiary)]">
                     <ChevronRight className="w-3.5 h-3.5 rotate-90" />
                   </div>
                 </div>
@@ -647,7 +647,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                       </option>
                     ))}
                   </select>
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-tertiary)]">
                     <ChevronRight className="w-3.5 h-3.5 rotate-90" />
                   </div>
                 </div>
@@ -740,7 +740,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                  >
                    Authorize Node Reset
                  </button>
-                 <Link to="/connect" className="px-6 py-3.5 bg-[var(--bg-tertiary)] border border-slate-700 text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:text-[var(--text-primary)] transition-all">Connectivity Hub</Link>
+                 <Link to="/connect" className="px-6 py-3.5 bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-secondary)] rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:text-[var(--text-primary)] transition-all">Connectivity Hub</Link>
                </div>
              </div>
            ) : (
@@ -785,7 +785,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                         <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                         <span className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] animate-pulse">
+                      <p className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.3em] animate-pulse">
                         Scanning Institutional Matrix
                       </p>
                     </div>
@@ -810,9 +810,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               <div className="flex items-center justify-between border-b border-[var(--border-primary)] pb-4 mb-6">
                  <div className="space-y-1">
                     <h3 className="text-xl font-black text-[var(--text-primary)] uppercase italic leading-none">Add Asset Node</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Manual Portfolio Entry</p>
+                    <p className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest mt-1.5">Manual Portfolio Entry</p>
                  </div>
-                 <button onClick={() => setShowAddManualModal(false)} className="p-2 text-slate-400 hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"><X className="h-5 w-5" /></button>
+                 <button onClick={() => setShowAddManualModal(false)} className="p-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"><X className="h-5 w-5" /></button>
               </div>
               <form onSubmit={async (e) => {
                  e.preventDefault();
@@ -826,16 +826,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                  setManualPrice('');
               }} className="space-y-6 text-left">
                  <div>
-                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Stock Symbol</label>
+                    <label className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest ml-1 mb-2 block">Stock Symbol</label>
                     <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-slate-600" />
                  </div>
                  <div className="grid grid-cols-2 gap-6">
                     <div>
-                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
+                       <label className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
                        <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-slate-600" />
                     </div>
                     <div>
-                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Buy Price</label>
+                       <label className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest ml-1 mb-2 block">Buy Price</label>
                        <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-slate-600" />
                     </div>
                  </div>
