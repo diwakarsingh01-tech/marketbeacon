@@ -81,8 +81,8 @@ const EmailCapture: React.FC = () => {
         <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
           <CheckCircle className="w-8 h-8 text-emerald-400" />
         </div>
-        <h4 className="text-lg font-black text-white tracking-tight">Starter Kit Sent!</h4>
-        <p className="text-slate-500 text-sm max-w-xs mx-auto">
+        <h4 className="text-lg font-black text-[var(--text-primary)] tracking-tight">Starter Kit Sent!</h4>
+        <p className="text-[var(--text-muted)] text-sm max-w-xs mx-auto">
           Check your inbox for the ABCD Tranche Zones + Audit Checklist PDF.
         </p>
       </div>
@@ -93,14 +93,14 @@ const EmailCapture: React.FC = () => {
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-md mx-auto">
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
           <input
             id="email-lead-capture"
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder="your@email.com"
-            className="w-full pl-11 pr-4 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500 transition-colors"
+            className="w-full pl-11 pr-4 py-4 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-2xl text-sm text-[var(--text-primary)] placeholder-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500 transition-colors"
             required
           />
         </div>
@@ -108,7 +108,7 @@ const EmailCapture: React.FC = () => {
           id="segment-lead-capture"
           value={segment}
           onChange={e => setSegment(e.target.value)}
-          className="px-4 py-4 bg-slate-900 border border-slate-700 rounded-2xl text-sm text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500 transition-colors appearance-none"
+          className="px-4 py-4 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-2xl text-sm text-[var(--text-secondary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500 transition-colors appearance-none"
         >
           <option value="retail">Retail Trader</option>
           <option value="advisor">Sub-broker / Advisor</option>
@@ -120,7 +120,7 @@ const EmailCapture: React.FC = () => {
         id="email-lead-submit"
         type="submit"
         disabled={submitting}
-        className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-2xl font-black uppercase tracking-widest text-sm transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 shadow-xl shadow-blue-900/30"
+        className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-[var(--text-primary)] rounded-2xl font-black uppercase tracking-widest text-sm transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 shadow-xl shadow-blue-900/30"
       >
         {submitting ? (
           <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending...</span>
@@ -288,7 +288,7 @@ const HomePage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 font-sans text-slate-100 overflow-x-hidden selection:bg-blue-500/30">
+    <div className="min-h-screen bg-[var(--bg-primary)] font-sans text-[var(--text-primary)] overflow-x-hidden selection:bg-blue-500/30">
       <SEO title="Best Stock Analysis Tool India" description="India's #1 Institutional Audit Score for Nifty 500 stocks. ABCD Tranche Logic, FII DII trends & real-time screening. For educational purposes only." />
       {/* Live Trust Ticker (Safe-Guard Rule #7) */}
       <div className="bg-blue-600 py-2 overflow-hidden whitespace-nowrap border-b border-blue-500 relative">
@@ -301,7 +301,7 @@ const HomePage: React.FC = () => {
             "ITC: Zero-Debt High-SM Qualified",
             "BAJAJ AUTO: 52W High Momentum",
           ].map((text, i) => (
-            <div key={i} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white">
+            <div key={i} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
               <ShieldCheck className="w-3 h-3" />
               <span>{text}</span>
             </div>
@@ -315,7 +315,7 @@ const HomePage: React.FC = () => {
             "ITC: Zero-Debt High-SM Qualified",
             "BAJAJ AUTO: 52W High Momentum",
           ].map((text, i) => (
-            <div key={`d-${i}`} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white opacity-80">
+            <div key={`d-${i}`} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)] opacity-80">
               <ShieldCheck className="w-3 h-3" />
               <span>{text}</span>
             </div>
@@ -324,27 +324,27 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="sticky top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 px-6 md:px-10 py-4 flex items-center justify-between">
+      <nav className="sticky top-0 w-full z-50 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border-primary)] px-6 md:px-10 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center transition-all hover:opacity-90 active:scale-95">
            <BrandLogo variant="dark" size={30} />
         </Link>
         <div className="hidden md:flex items-center space-x-6">
-           <Link to="/blog" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors">
+           <Link to="/blog" className="text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-widest transition-colors">
              Blog
            </Link>
-           <Link to="/license-desk" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors">
+           <Link to="/license-desk" className="text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-widest transition-colors">
              Pricing
            </Link>
            <div className="flex items-center space-x-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">31,402 Active Traders</span>
            </div>
-           <Link to="/login" className="px-6 py-2.5 bg-white text-slate-950 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-all">Launch Terminal</Link>
+           <Link to="/login" className="px-6 py-2.5 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-xl text-xs font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-all">Launch Terminal</Link>
         </div>
         {/* Mobile nav */}
         <div className="flex md:hidden items-center gap-3">
-          <Link to="/blog" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors">Blog</Link>
-          <Link to="/login" className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Login</Link>
+          <Link to="/blog" className="text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-widest transition-colors">Blog</Link>
+          <Link to="/login" className="px-4 py-2 bg-blue-600 text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest">Login</Link>
         </div>
       </nav>
 
@@ -361,10 +361,10 @@ const HomePage: React.FC = () => {
 
           {/* Hero Search Bar — Top, Like Google Search */}
           <div id="search-anchor" className="max-w-2xl mx-auto mb-8 md:mb-12 relative group">
-            <form onSubmit={(e) => handleSearch(e)} className="flex flex-col sm:flex-row p-1.5 md:p-2 bg-slate-900/80 backdrop-blur-3xl border-2 border-slate-700 rounded-[1.25rem] sm:rounded-[2.5rem] focus-within:border-blue-500/70 focus-within:bg-slate-900/90 transition-all shadow-2xl shadow-blue-900/20 relative gap-1.5 sm:gap-0 transform group-hover:scale-[1.02] transition-all duration-300">
+            <form onSubmit={(e) => handleSearch(e)} className="flex flex-col sm:flex-row p-1.5 md:p-2 bg-[var(--bg-secondary)]/80 backdrop-blur-3xl border-2 border-[var(--border-secondary)] rounded-[1.25rem] sm:rounded-[2.5rem] focus-within:border-blue-500/70 focus-within:bg-[var(--bg-secondary)]/90 transition-all shadow-2xl shadow-blue-900/20 relative gap-1.5 sm:gap-0 transform group-hover:scale-[1.02] transition-all duration-300">
               <div className="flex-1 flex items-center pl-3 md:pl-6 gap-2 md:gap-3 py-1.5 md:py-0">
                 <div className="relative">
-                  <Search className="w-4 h-4 md:w-5 md:h-5 text-slate-400 group-focus-within:text-blue-400 transition-colors shrink-0" />
+                  <Search className="w-4 h-4 md:w-5 md:h-5 text-[var(--text-tertiary)] group-focus-within:text-blue-400 transition-colors shrink-0" />
                   {searchQuery && (
                     <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                   )}
@@ -372,7 +372,7 @@ const HomePage: React.FC = () => {
                 <input 
                   type="text" 
                   placeholder="Enter stock symbol..." 
-                  className="bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none w-full text-[10px] md:text-sm font-black uppercase tracking-widest text-white placeholder:text-slate-500"
+                  className="bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none w-full text-[10px] md:text-sm font-black uppercase tracking-widest text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchSearchQuery(e.target.value);
@@ -412,13 +412,13 @@ const HomePage: React.FC = () => {
                   <button 
                     type="button" 
                     onClick={handleReset}
-                    className="p-1 md:p-2 mr-1 md:mr-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-all"
+                    className="p-1 md:p-2 mr-1 md:mr-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"
                   >
                     <X className="w-3 h-3 md:w-4 md:h-4" />
                   </button>
                 )}
               </div>
-              <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-4 sm:px-8 py-2 sm:py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-[0.75rem] sm:rounded-[2rem] font-black uppercase tracking-widest text-[9px] sm:text-xs hover:from-blue-500 hover:to-blue-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-xl shadow-blue-900/30 transform group-hover:scale-105 transition-all duration-300">
+              <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-4 sm:px-8 py-2 sm:py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-[var(--text-primary)] rounded-[0.75rem] sm:rounded-[2rem] font-black uppercase tracking-widest text-[9px] sm:text-xs hover:from-blue-500 hover:to-blue-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-xl shadow-blue-900/30 transform group-hover:scale-105 transition-all duration-300">
                 {isSearching ? (
                   <span className="flex items-center gap-2">
                     <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Auditing...
@@ -443,13 +443,13 @@ const HomePage: React.FC = () => {
                     <X className="w-5 h-5 text-rose-500" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs font-black text-white uppercase tracking-widest italic">{searchError}</p>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">We only audit Nifty 500 & Alpha 40 symbols currently.</p>
+                    <p className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest italic">{searchError}</p>
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest leading-relaxed">We only audit Nifty 500 & Alpha 40 symbols currently.</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => window.open(`https://wa.me/919251180183?text=Request%20Symbol:%20${searchQuery}`, '_blank')}
-                  className="px-6 py-2 bg-white text-slate-950 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-500 hover:text-white transition-all whitespace-nowrap"
+                  className="px-6 py-2 bg-[var(--bg-primary)] text-[var(--text-primary)] text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-500 hover:text-[var(--text-primary)] transition-all whitespace-nowrap"
                 >
                   Request Addition
                 </button>
@@ -473,12 +473,12 @@ const HomePage: React.FC = () => {
                     ref={el => { itemRefs.current[idx] = el; }}
                     onMouseEnter={() => setSelectedIndex(idx)}
                     onClick={() => handleSearch(undefined, item.symbol)}
-                    className={`w-full px-6 py-4 flex items-center justify-between transition-colors border-b border-white/5 last:border-none group ${idx === selectedIndex ? 'bg-blue-600/20' : 'hover:bg-white/5'}`}
+                    className={`w-full px-6 py-4 flex items-center justify-between transition-colors border-b border-white/5 last:border-none group ${idx === selectedIndex ? 'bg-blue-600/20' : 'hover:bg-[var(--bg-primary)]/5'}`}
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-3">
                         <Zap className="w-4 h-4 text-blue-500 group-hover:animate-pulse" />
-                        <span className="text-sm font-black text-white uppercase tracking-widest">{item.symbol}</span>
+                        <span className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">{item.symbol}</span>
                       </div>
                       
                       {/* Strategy Badges */}
@@ -493,11 +493,11 @@ const HomePage: React.FC = () => {
                           <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest italic">Monitoring Node</span>
                         )}
                         {item.strategies?.length > 2 && (
-                          <span className="text-[7px] font-black text-slate-500 uppercase">+{item.strategies.length - 2}</span>
+                          <span className="text-[7px] font-black text-[var(--text-muted)] uppercase">+{item.strategies.length - 2}</span>
                         )}
                       </div>
                     </div>
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic group-hover:text-blue-400">Institutional Node</span>
+                    <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest italic group-hover:text-blue-400">Institutional Node</span>
                   </button>
                 ))}
               </motion.div>
@@ -519,14 +519,14 @@ const HomePage: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-indigo-600/20 animate-pulse" style={{ animationDuration: '3s' }} />
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-y-6" />
                 
-                <div className="bg-slate-950 rounded-[2.4rem] p-8 text-left space-y-6 relative overflow-hidden border border-white/10">
+                <div className="bg-[var(--bg-primary)] rounded-[2.4rem] p-8 text-left space-y-6 relative overflow-hidden border border-white/10">
                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[80px] -mr-32 -mt-32" />
                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-600/10 blur-[60px] -ml-24 -mb-24" />
                    
                    <div className="flex justify-between items-start">
                       <div className="space-y-1">
                          <div className="flex items-center gap-3">
-                            <h3 className="text-3xl font-black text-white italic tracking-tighter">{teaserData.symbol}</h3>
+                            <h3 className="text-3xl font-black text-[var(--text-primary)] italic tracking-tighter">{teaserData.symbol}</h3>
                             <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-lg text-[9px] font-black text-blue-400 uppercase tracking-widest italic">{teaserData.basket} Node</span>
                             {teaserData.isPass && (
                               <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-[7px] font-black text-emerald-400 uppercase tracking-widest">
@@ -541,7 +541,7 @@ const HomePage: React.FC = () => {
                                   <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Qualified on Fundamentals</span>
                                </div>
                             )}
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">Institutional Audit Pass</p>
+                            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest italic">Institutional Audit Pass</p>
                          </div>
                        </div>
                        <div className="text-right">
@@ -551,7 +551,7 @@ const HomePage: React.FC = () => {
                               <span className="absolute -top-2 -right-2 text-[10px] font-black text-emerald-500 uppercase tracking-wider">BUY</span>
                             )}
                           </div>
-                          <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Audit Score</div>
+                          <div className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Audit Score</div>
                        </div>
                     </div>
 
@@ -564,12 +564,12 @@ const HomePage: React.FC = () => {
                                { label: 'Alpha Target', val: `+${teaserData.upside}%`, icon: Target, color: 'text-blue-400', bg: 'bg-blue-500/10' },
                                { label: 'Risk Profile', val: teaserData.risk, icon: ShieldCheck, color: 'text-amber-400', bg: 'bg-amber-500/10' },
                              ].map((stat, i) => (
-                               <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all group hover:scale-105 hover:border-blue-500/30">
+                               <div key={i} className="p-4 bg-[var(--bg-primary)]/5 border border-white/5 rounded-2xl hover:bg-[var(--bg-primary)]/10 transition-all group hover:scale-105 hover:border-blue-500/30">
                                   <div className={`p-2 ${stat.bg} rounded-xl w-fit mb-2 group-hover:scale-110 transition-transform`}>
-                                    <stat.icon className={`h-4 w-4 ${stat.color} group-hover:text-white transition-colors`} />
+                                    <stat.icon className={`h-4 w-4 ${stat.color} group-hover:text-[var(--text-primary)] transition-colors`} />
                                   </div>
-                                  <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1 group-hover:text-slate-300 transition-colors">{stat.label}</p>
-                                  <p className={`text-sm font-black text-white italic ${stat.color} group-hover:text-white transition-colors`}>{stat.val}</p>
+                                  <p className="text-[7px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 group-hover:text-[var(--text-secondary)] transition-colors">{stat.label}</p>
+                                  <p className={`text-sm font-black text-[var(--text-primary)] italic ${stat.color} group-hover:text-[var(--text-primary)] transition-colors`}>{stat.val}</p>
                                </div>
                              ))}
                           </div>
@@ -578,16 +578,16 @@ const HomePage: React.FC = () => {
                              <div className="flex flex-wrap gap-2">
                                {teaserData.strategies?.length > 0 ? (
                                   teaserData.strategies.map((s: any, i: number) => (
-                                     <div key={i} className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-2xl hover:border-blue-500/50 transition-all group hover:scale-105 hover:bg-blue-500/5">
+                                     <div key={i} className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl hover:border-blue-500/50 transition-all group hover:scale-105 hover:bg-blue-500/5">
                                         <Zap className="w-3 h-3 text-blue-500 group-hover:animate-pulse" />
-                                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest group-hover:text-blue-400 transition-colors">{s.name} Entry</span>
+                                        <span className="text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-widest group-hover:text-blue-400 transition-colors">{s.name} Entry</span>
                                         {i === 0 && (
                                           <span className="text-[6px] font-black text-emerald-500 uppercase tracking-wider ml-1">PRIMARY</span>
                                         )}
                                      </div>
                                   ))
                                ) : (
-                                  <div className="px-4 py-2 bg-slate-900/50 border border-slate-800/50 rounded-2xl italic">
+                                  <div className="px-4 py-2 bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)]/50 rounded-2xl italic">
                                      <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Monitoring for Institutional Entry</span>
                                   </div>
                                )}
@@ -600,7 +600,7 @@ const HomePage: React.FC = () => {
                                 </div>
                                 <Link 
                                   to={`/analysis/${teaserData.symbol}`}
-                                  className="flex items-center gap-2 text-[10px] font-black text-blue-400 hover:text-white transition-all uppercase tracking-widest group"
+                                  className="flex items-center gap-2 text-[10px] font-black text-blue-400 hover:text-[var(--text-primary)] transition-all uppercase tracking-widest group"
                                 >
                                   Access Full Strategy Matrix <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                                 </Link>
@@ -612,9 +612,9 @@ const HomePage: React.FC = () => {
                                 <div className="flex items-center justify-between relative z-10">
                                    <div className="flex items-center gap-2">
                                       <Layers className="h-3.5 w-3.5 text-blue-500" />
-                                      <h4 className="text-[10px] font-black uppercase tracking-widest text-white">Institutional Entry Plan (HNI Edge)</h4>
+                                      <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">Institutional Entry Plan (HNI Edge)</h4>
                                    </div>
-                                   <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Cap: ₹10,00,000 (Sample)</span>
+                                   <span className="text-[7px] font-black text-[var(--text-muted)] uppercase tracking-widest">Cap: ₹10,00,000 (Sample)</span>
                                 </div>
                                 
                                 <div className="grid grid-cols-4 gap-2 relative z-10">
@@ -624,20 +624,20 @@ const HomePage: React.FC = () => {
                                       { id: 'C', label: 'Tranche C', price: teaserData.abcd?.c?.price, weight: '25%', status: 'pending', color: 'bg-slate-500' },
                                       { id: 'D', label: 'Tranche D', price: teaserData.abcd?.d?.price, weight: '25%', status: 'locked', color: 'bg-slate-700' },
                                    ].map((t, idx) => (
-                                      <div key={idx} className="p-3 bg-slate-900/50 border border-white/5 rounded-2xl flex flex-col items-center text-center space-y-1 relative group hover:scale-105 transition-all">
-                                         <span className="text-[7px] font-black text-slate-500 uppercase">{t.label}</span>
-                                         <span className="text-[10px] font-black text-white italic">{t.price}</span>
-                                         <div className="w-full h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                                      <div key={idx} className="p-3 bg-[var(--bg-secondary)]/50 border border-white/5 rounded-2xl flex flex-col items-center text-center space-y-1 relative group hover:scale-105 transition-all">
+                                         <span className="text-[7px] font-black text-[var(--text-muted)] uppercase">{t.label}</span>
+                                         <span className="text-[10px] font-black text-[var(--text-primary)] italic">{t.price}</span>
+                                         <div className="w-full h-1 bg-[var(--bg-tertiary)] rounded-full mt-1 overflow-hidden">
                                             <div className={`h-full ${t.color} rounded-full transition-all duration-1000`} style={{ width: t.weight }} />
                                          </div>
-                                         <span className={`text-[7px] font-bold mt-1 ${t.status === 'active' ? 'text-emerald-400' : t.status === 'pending' ? 'text-blue-400' : 'text-slate-500'}`}>Alloc: ₹2.5L</span>
+                                         <span className={`text-[7px] font-bold mt-1 ${t.status === 'active' ? 'text-emerald-400' : t.status === 'pending' ? 'text-blue-400' : 'text-[var(--text-muted)]'}`}>Alloc: ₹2.5L</span>
                                          {t.status === 'active' && (
                                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                                          )}
                                       </div>
                                    ))}
                                 </div>
-                                <p className="text-[8px] text-slate-500 italic text-center font-bold relative z-10">
+                                <p className="text-[8px] text-[var(--text-muted)] italic text-center font-bold relative z-10">
                                    "Institutional capital follows a laddered entry approach to maximize capital protection."
                                 </p>
                              </div>
@@ -646,15 +646,15 @@ const HomePage: React.FC = () => {
 
                        {/* Lock overlay for Free users */}
                        {!isProOrAbove && (
-                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/40 backdrop-blur-[2px] rounded-3xl p-4 text-center">
-                             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative overflow-hidden">
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--bg-primary)]/40 backdrop-blur-[2px] rounded-3xl p-4 text-center">
+                             <div className="bg-[var(--bg-secondary)]/90 border border-[var(--border-primary)] rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl -mr-16 -mt-16" />
                                 <div className="mx-auto w-10 h-10 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500 animate-pulse relative z-10">
                                    <Lock className="w-4 h-4" />
                                 </div>
                                 <div className="space-y-1 relative z-10">
-                                   <h4 className="text-xs font-black uppercase tracking-widest text-white">PRO STRATEGY MATRIX LOCKED</h4>
-                                   <p className="text-[10px] text-slate-500 leading-relaxed">
+                                   <h4 className="text-xs font-black uppercase tracking-widest text-[var(--text-primary)]">PRO STRATEGY MATRIX LOCKED</h4>
+                                   <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
                                       Smart money details, upside targets, and strategy entry points for <span className="text-blue-400 font-bold">{teaserData.symbol}</span> require a Pro Execution tier license.
                                    </p>
                                 </div>
@@ -663,7 +663,7 @@ const HomePage: React.FC = () => {
                                    {user ? (
                                       <button 
                                         onClick={() => setShowUpgrade(true)}
-                                        className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all flex items-center justify-center gap-1.5 relative overflow-hidden group"
+                                        className="w-full py-2.5 bg-blue-600 text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all flex items-center justify-center gap-1.5 relative overflow-hidden group"
                                       >
                                          <span className="relative z-10">Unlock with Pro Execution</span>
                                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
@@ -671,7 +671,7 @@ const HomePage: React.FC = () => {
                                    ) : (
                                       <Link 
                                         to="/login"
-                                        className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all text-center relative overflow-hidden group"
+                                        className="w-full py-2.5 bg-blue-600 text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all text-center relative overflow-hidden group"
                                       >
                                          <span className="relative z-10">Sign In to Unlock</span>
                                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
@@ -679,19 +679,19 @@ const HomePage: React.FC = () => {
                                    )}
                                 </div>
 
-                                <div className="border-t border-slate-800 pt-3.5 space-y-2.5 relative z-10">
+                                <div className="border-t border-[var(--border-primary)] pt-3.5 space-y-2.5 relative z-10">
                                    <div className="flex gap-1.5">
                                       <input 
                                         type="text" 
                                         placeholder="Enter voucher (ALPHA7)..."
                                         value={voucherCode}
                                         onChange={(e) => setVoucherCode(e.target.value)}
-                                        className="flex-1 bg-slate-950 border border-slate-800 px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500"
+                                        className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500"
                                       />
                                       <button
                                         onClick={handleRedeemVoucher}
                                         disabled={redeeming}
-                                        className="px-4 py-2 bg-white text-slate-950 hover:bg-slate-100 disabled:bg-slate-900 disabled:text-slate-700 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                                        className="px-4 py-2 bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-slate-100 disabled:bg-[var(--bg-secondary)] disabled:text-slate-700 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
                                       >
                                          {redeeming ? '...' : 'Apply'}
                                       </button>
@@ -723,7 +723,7 @@ const HomePage: React.FC = () => {
                            const text = encodeURIComponent(`🚨 [Institutional Audit] ${teaserData.symbol} scored ${scoreTxt}/100 on MarketBeacon Pro! \n\nCheck the full FII/DII analysis here: https://marketbeaconpro.com/analysis/${teaserData.symbol}`);
                            window.open(`https://wa.me/919251180183?text=${text}`, '_blank');
                          }}
-                         className="flex-1 py-3.5 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/20 active:scale-95 relative overflow-hidden group"
+                         className="flex-1 py-3.5 bg-emerald-600 text-[var(--text-primary)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/20 active:scale-95 relative overflow-hidden group"
                        >
                          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
                          <Zap className="w-4 h-4 fill-current relative z-10" /> <span className="relative z-10">Share on WhatsApp</span>
@@ -735,7 +735,7 @@ const HomePage: React.FC = () => {
                            const url = `https://marketbeaconpro.com/analysis/${teaserData.symbol}`;
                            window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
                          }}
-                         className="flex-1 py-3.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20 active:scale-95 relative overflow-hidden group"
+                         className="flex-1 py-3.5 bg-blue-600 text-[var(--text-primary)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20 active:scale-95 relative overflow-hidden group"
                        >
                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
                          <TrendingUp className="w-4 h-4 relative z-10" /> <span className="relative z-10">Share on Telegram</span>
@@ -753,7 +753,7 @@ const HomePage: React.FC = () => {
            <span className="text-[7px] md:text-[10px] font-black text-blue-400 uppercase tracking-widest">For Educational & Research Purposes Only</span>
         </div>
         
-        <h1 className="text-3xl md:text-[6rem] font-black tracking-tighter leading-[0.85] text-white mb-3 md:mb-6 drop-shadow-2xl">
+        <h1 className="text-3xl md:text-[6rem] font-black tracking-tighter leading-[0.85] text-[var(--text-primary)] mb-3 md:mb-6 drop-shadow-2xl">
            THE SYSTEM <br className="hidden sm:block" /><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">FII/DII USE.</span>
         </h1>
         <p className="text-sm md:text-xl font-black text-blue-300/80 uppercase tracking-[0.25em] mb-5 md:mb-10">Now In Your Hands.</p>
@@ -761,27 +761,27 @@ const HomePage: React.FC = () => {
         {/* Grand Launch Promo Banner */}
         <div className="max-w-2xl mx-auto mb-6 md:mb-10">
           <div className="relative group cursor-pointer overflow-hidden p-[1px] bg-gradient-to-r from-blue-600 via-indigo-400 to-emerald-400 rounded-2xl shadow-xl shadow-blue-900/20">
-            <div className="bg-slate-950/90 backdrop-blur-xl rounded-[15px] px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 md:gap-4">
+            <div className="bg-[var(--bg-primary)]/90 backdrop-blur-xl rounded-[15px] px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 md:gap-4">
               <div className="flex items-center gap-2 md:gap-4 min-w-0">
                 <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500 shrink-0">
                   <Zap className="w-4 h-4 md:w-5 md:h-5 fill-current animate-pulse" />
                 </div>
                 <div className="text-left min-w-0">
-                  <h4 className="text-[9px] md:text-[11px] font-black text-white uppercase tracking-widest leading-none mb-0.5 md:mb-1 truncate">Grand Alpha Launch Live</h4>
-                  <p className="text-[7px] md:text-[9px] font-bold text-slate-500 uppercase tracking-widest truncate">Free 7-Day Institutional Access</p>
+                  <h4 className="text-[9px] md:text-[11px] font-black text-[var(--text-primary)] uppercase tracking-widest leading-none mb-0.5 md:mb-1 truncate">Grand Alpha Launch Live</h4>
+                  <p className="text-[7px] md:text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest truncate">Free 7-Day Institutional Access</p>
                 </div>
               </div>
               <button 
                 onClick={() => {
                    setOpenVoucherModal(true);
                 }}
-                className="px-3 md:px-5 py-1.5 md:py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0"
+                className="px-3 md:px-5 py-1.5 md:py-2.5 bg-blue-600 hover:bg-blue-500 text-[var(--text-primary)] rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0"
               >
                 Claim Now
               </button>
             </div>
             <div className="absolute top-0 right-0 p-1">
-               <div className="px-1 py-0.5 bg-emerald-500 text-white text-[5px] md:text-[6px] font-black uppercase rounded-bl-lg animate-bounce">Live</div>
+               <div className="px-1 py-0.5 bg-emerald-500 text-[var(--text-primary)] text-[5px] md:text-[6px] font-black uppercase rounded-bl-lg animate-bounce">Live</div>
             </div>
           </div>
         </div>
@@ -792,7 +792,7 @@ const HomePage: React.FC = () => {
             <button 
               key={sym} 
               onClick={() => { handleSearch(undefined, sym); }}
-              className="text-[8px] md:text-[10px] font-black text-slate-500 hover:text-blue-400 transition-colors uppercase tracking-widest"
+              className="text-[8px] md:text-[10px] font-black text-[var(--text-muted)] hover:text-blue-400 transition-colors uppercase tracking-widest"
             >
               {sym}
             </button>
@@ -800,15 +800,15 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* CTA */}
-        <p className="text-xs md:text-lg font-medium text-slate-500 max-w-2xl mx-auto leading-relaxed mb-4 md:mb-6 px-4">
+        <p className="text-xs md:text-lg font-medium text-[var(--text-muted)] max-w-2xl mx-auto leading-relaxed mb-4 md:mb-6 px-4">
           100-point Institutional Audit Score + ABCD Tranche Laddering — the same framework used by institutional desks. Free to try.
         </p>
 
         <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4 mb-6 md:mb-10">
-          <Link to="/login" className="w-full md:w-auto inline-flex items-center justify-center px-6 md:px-10 py-3 md:py-5 bg-blue-600 text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm hover:bg-blue-500 hover:scale-105 transition-all shadow-2xl shadow-blue-900/40">
+          <Link to="/login" className="w-full md:w-auto inline-flex items-center justify-center px-6 md:px-10 py-3 md:py-5 bg-blue-600 text-[var(--text-primary)] rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm hover:bg-blue-500 hover:scale-105 transition-all shadow-2xl shadow-blue-900/40">
              Start Free — No Card Needed
           </Link>
-          <Link to="/license-desk" className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-5 bg-white/5 border border-white/10 text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm hover:bg-white/10 transition-all">
+          <Link to="/license-desk" className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-5 bg-[var(--bg-primary)]/5 border border-white/10 text-[var(--text-primary)] rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm hover:bg-[var(--bg-primary)]/10 transition-all">
             View Pricing <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
           </Link>
         </div>
@@ -816,18 +816,18 @@ const HomePage: React.FC = () => {
         <div className="flex items-center justify-center gap-4 md:gap-6 mb-6 md:mb-10">
           <div className="flex -space-x-2 md:-space-x-3">
             {[1,2,3,4].map(i => (
-              <div key={i} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 md:border-4 border-slate-950 bg-slate-800 overflow-hidden shadow-xl">
+              <div key={i} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 md:border-4 border-slate-950 bg-[var(--bg-tertiary)] overflow-hidden shadow-xl">
                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+10}`} alt="Active trader on MarketBeacon Pro" loading="lazy" decoding="async" />
               </div>
             ))}
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 md:border-4 border-slate-950 bg-blue-600 flex items-center justify-center text-[7px] md:text-[9px] font-black text-white shadow-xl">+30K</div>
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 md:border-4 border-slate-950 bg-blue-600 flex items-center justify-center text-[7px] md:text-[9px] font-black text-[var(--text-primary)] shadow-xl">+30K</div>
           </div>
-          <p className="text-[9px] md:text-xs font-bold text-slate-500">Trusted by <span className="text-white font-black">30,000+</span> traders</p>
+          <p className="text-[9px] md:text-xs font-bold text-[var(--text-muted)]">Trusted by <span className="text-[var(--text-primary)] font-black">30,000+</span> traders</p>
         </div>
         </header>
 
       {/* ── PHASE 1: 3 ICP SEGMENT CARDS ── */}
-      <section aria-label="Who is MarketBeacon Pro for" className="py-20 px-6 md:px-10 border-y border-slate-800/60 bg-slate-900/20 relative overflow-hidden">
+      <section aria-label="Who is MarketBeacon Pro for" className="py-20 px-6 md:px-10 border-y border-[var(--border-primary)]/60 bg-[var(--bg-secondary)]/20 relative overflow-hidden">
         {/* 3D Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-b from-blue-600/5 via-transparent to-emerald-600/5 pointer-events-none" />
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -836,22 +836,22 @@ const HomePage: React.FC = () => {
         <div className="max-w-[1200px] mx-auto relative">
           <div className="text-center mb-14">
             <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.4em] mb-3">Kiske Liye Hai?</p>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-white">Aapki Category <span className="text-blue-400">Kaunsi Hai?</span></h2>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--text-primary)]">Aapki Category <span className="text-blue-400">Kaunsi Hai?</span></h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Segment 1: Retail Trader */}
-            <div className="group relative bg-slate-900/80 border border-slate-700 rounded-[2rem] p-8 hover:border-blue-500/60 transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/10 flex flex-col backdrop-blur-sm">
+            <div className="group relative bg-[var(--bg-secondary)]/80 border border-[var(--border-secondary)] rounded-[2rem] p-8 hover:border-blue-500/60 transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/10 flex flex-col backdrop-blur-sm">
               <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-2xl w-fit mb-6 group-hover:bg-blue-500/20 transition-colors">
                 <TrendingUp className="h-6 w-6 text-blue-400 group-hover:text-blue-300 transition-colors" />
               </div>
               <div className="mb-2 text-[9px] font-black text-blue-400 uppercase tracking-[0.3em] group-hover:text-blue-300 transition-colors">Retail Trader</div>
-              <h3 className="text-xl font-black text-white tracking-tighter mb-3 group-hover:text-blue-100 transition-colors">Portfolio: ₹5L – ₹50L</h3>
-              <p className="text-slate-400 text-sm leading-relaxed flex-1 mb-6 group-hover:text-slate-300 transition-colors">
+              <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-blue-100 transition-colors">Portfolio: ₹5L – ₹50L</h3>
+              <p className="text-[var(--text-tertiary)] text-sm leading-relaxed flex-1 mb-6 group-hover:text-[var(--text-secondary)] transition-colors">
                 "I never knew when to research entry vs wait for confirmation. — The ABCD Tranche system gives institutional clarity."
               </p>
               <div className="space-y-2 mb-8">
                 {['100-Point Audit Score Free', 'ABCD Entry Zones', 'Live Screener Access'].map((f, index) => (
-                  <div key={f} className="flex items-center gap-2 text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
+                  <div key={f} className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)] transition-colors">
                     <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 group-hover:bg-blue-500/30 transition-colors">
                       <ShieldCheck className="w-2.5 h-2.5 text-blue-400" />
                     </div>
@@ -864,28 +864,28 @@ const HomePage: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <Link to="/login" className="w-full py-3.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/25 transition-all relative overflow-hidden group">
+              <Link to="/login" className="w-full py-3.5 bg-blue-600 text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/25 transition-all relative overflow-hidden group">
                 <span className="relative z-10">Start Free Trial</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
               </Link>
             </div>
 
             {/* Segment 2: Sub-broker / Advisor */}
-            <div className="group relative bg-slate-900/60 border border-emerald-500/40 rounded-[2rem] p-8 hover:border-emerald-400/60 transition-all hover:-translate-y-1 flex flex-col">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-1 rounded-full text-[8px] font-black uppercase tracking-widest whitespace-nowrap shadow-lg">
+            <div className="group relative bg-[var(--bg-secondary)]/60 border border-emerald-500/40 rounded-[2rem] p-8 hover:border-emerald-400/60 transition-all hover:-translate-y-1 flex flex-col">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-[var(--text-primary)] px-4 py-1 rounded-full text-[8px] font-black uppercase tracking-widest whitespace-nowrap shadow-lg">
                 Most Popular
               </div>
               <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl w-fit mb-6 mt-2 group-hover:bg-emerald-500/20 transition-colors">
                 <Users className="h-6 w-6 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
               </div>
               <div className="mb-2 text-[9px] font-black text-emerald-400 uppercase tracking-[0.3em] group-hover:text-emerald-300 transition-colors">Sub-broker / Advisor</div>
-              <h3 className="text-xl font-black text-white tracking-tighter mb-3 group-hover:text-emerald-100 transition-colors">Client Portfolio Manager</h3>
-              <p className="text-slate-400 text-sm leading-relaxed flex-1 mb-6 group-hover:text-slate-300 transition-colors">
+              <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-emerald-100 transition-colors">Client Portfolio Manager</h3>
+              <p className="text-[var(--text-tertiary)] text-sm leading-relaxed flex-1 mb-6 group-hover:text-[var(--text-secondary)] transition-colors">
                 "I need to justify every research note to clients. — The Audit Score helps me back every call with data."
               </p>
               <div className="space-y-2 mb-8">
                 {['Audit Trail per Trade', 'Client-Ready Data Reports', 'Educational Research Framework'].map((f, index) => (
-                  <div key={f} className="flex items-center gap-2 text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
+                  <div key={f} className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)] transition-colors">
                     <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 group-hover:bg-emerald-500/30 transition-colors">
                       <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
                     </div>
@@ -898,25 +898,25 @@ const HomePage: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <Link to="/license-desk" className="w-full py-3.5 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/25 transition-all relative overflow-hidden group">
+              <Link to="/license-desk" className="w-full py-3.5 bg-emerald-600 text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/25 transition-all relative overflow-hidden group">
                 <span className="relative z-10">Get Pro Access</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
               </Link>
             </div>
 
             {/* Segment 3: HNI / Family Office */}
-            <div className="group relative bg-slate-900/60 border border-amber-500/30 rounded-[2rem] p-8 hover:border-amber-400/50 transition-all hover:-translate-y-1 flex flex-col">
+            <div className="group relative bg-[var(--bg-secondary)]/60 border border-amber-500/30 rounded-[2rem] p-8 hover:border-amber-400/50 transition-all hover:-translate-y-1 flex flex-col">
               <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl w-fit mb-6 group-hover:bg-amber-500/20 transition-colors">
                 <BarChart2 className="h-6 w-6 text-amber-400 group-hover:text-amber-300 transition-colors" />
               </div>
               <div className="mb-2 text-[9px] font-black text-amber-400 uppercase tracking-[0.3em] group-hover:text-amber-300 transition-colors">HNI / Family Office</div>
-              <h3 className="text-xl font-black text-white tracking-tighter mb-3 group-hover:text-amber-100 transition-colors">Portfolio: ₹50L+</h3>
-              <p className="text-slate-400 text-sm leading-relaxed flex-1 mb-6 group-hover:text-slate-300 transition-colors">
+              <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-amber-100 transition-colors">Portfolio: ₹50L+</h3>
+              <p className="text-[var(--text-tertiary)] text-sm leading-relaxed flex-1 mb-6 group-hover:text-[var(--text-secondary)] transition-colors">
                 "Risk management weak hai, capital protect nahi ho raha." — Tranche Laddering se capital systematic way mein deploy hota hai. No emotional decisions.
               </p>
               <div className="space-y-2 mb-8">
                 {['Full Alpha Hub Access', 'Priority Alpha Strategy Triggers', 'Custom Enterprise Node'].map((f, index) => (
-                  <div key={f} className="flex items-center gap-2 text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
+                  <div key={f} className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)] transition-colors">
                     <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 group-hover:bg-amber-500/30 transition-colors">
                       <ShieldCheck className="w-2.5 h-2.5 text-amber-400" />
                     </div>
@@ -931,7 +931,7 @@ const HomePage: React.FC = () => {
               </div>
               <button
                 onClick={() => window.open('https://wa.me/919251180183?text=Hi%20Admin,%20I%20am%20interested%20in%20Alpha%20Access%20for%20my%20HNI%20portfolio.', '_blank')}
-                className="w-full py-3.5 bg-amber-600/80 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-amber-500 hover:shadow-lg hover:shadow-amber-500/25 transition-all relative overflow-hidden group"
+                className="w-full py-3.5 bg-amber-600/80 text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-amber-500 hover:shadow-lg hover:shadow-amber-500/25 transition-all relative overflow-hidden group"
               >
                 <span className="relative z-10">Contact for Alpha</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-500 to-amber-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
@@ -942,11 +942,11 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Social Proof (Bento Grid) */}
-      <section id="proof" className="py-24 px-6 md:px-10 border-y border-slate-800 bg-slate-900/30">
+      <section id="proof" className="py-24 px-6 md:px-10 border-y border-[var(--border-primary)] bg-[var(--bg-secondary)]/30">
          <div className="max-w-[1440px] mx-auto">
             <div className="text-center mb-20">
                <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-4">Proven Institutional Results</h2>
-               <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-sm">Real-time Performance Verification</p>
+               <p className="text-[var(--text-muted)] font-bold uppercase tracking-[0.2em] text-sm">Real-time Performance Verification</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -957,10 +957,10 @@ const HomePage: React.FC = () => {
                     { title: 'Smart Money Filter', val: '70%+', desc: 'Institutional Hard Reject Rule', col: 'md:col-span-1' },
                     { title: 'Trusted By', val: '31K+', desc: 'Retail & Institutional Traders', col: 'md:col-span-3' },
                 ].map((item, i) => (
-                    <div key={i} className={`bg-slate-900/80 backdrop-blur-sm p-10 rounded-[2.5rem] border border-slate-800 hover:border-blue-500/50 transition-all group ${item.col}`}>
-                        <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4 group-hover:text-blue-400 transition-colors">{item.title}</div>
-                        <div className="text-5xl font-black text-white mb-3 tracking-tighter">{item.val}</div>
-                        <div className="text-sm text-slate-500 font-medium">{item.desc}</div>
+                    <div key={i} className={`bg-[var(--bg-secondary)]/80 backdrop-blur-sm p-10 rounded-[2.5rem] border border-[var(--border-primary)] hover:border-blue-500/50 transition-all group ${item.col}`}>
+                        <div className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest mb-4 group-hover:text-blue-400 transition-colors">{item.title}</div>
+                        <div className="text-5xl font-black text-[var(--text-primary)] mb-3 tracking-tighter">{item.val}</div>
+                        <div className="text-sm text-[var(--text-muted)] font-medium">{item.desc}</div>
                     </div>
                 ))}
             </div>
@@ -976,7 +976,7 @@ const HomePage: React.FC = () => {
               <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Interactive Audit Simulator</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-black tracking-tighter leading-none uppercase italic">Visualizing the <br /><span className="text-blue-500">ABCD Tranche</span> Ladder</h2>
-            <p className="text-slate-500 text-sm leading-relaxed">
+            <p className="text-[var(--text-muted)] text-sm leading-relaxed">
               Institutional capital doesn't enter stocks all at once. They build positions in tranches to absorb market volatility. Click each stage to see how our algorithms ladder your entry.
             </p>
             
@@ -987,8 +987,8 @@ const HomePage: React.FC = () => {
                   onClick={() => setSimStage(stage)}
                   className={`py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
                     simStage === stage
-                      ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20'
-                      : 'bg-slate-900 border-slate-800 text-slate-500 hover:bg-slate-850'
+                      ? 'bg-blue-600 border-blue-500 text-[var(--text-primary)] shadow-lg shadow-blue-500/20'
+                      : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)]'
                   }`}
                 >
                   Stage {stage}
@@ -997,23 +997,23 @@ const HomePage: React.FC = () => {
             </div>
           </div>
           
-          <div className="lg:col-span-7 bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8 md:p-10 relative overflow-hidden flex flex-col justify-between min-h-[300px]">
+          <div className="lg:col-span-7 bg-[var(--bg-secondary)]/40 border border-[var(--border-primary)] rounded-[2.5rem] p-8 md:p-10 relative overflow-hidden flex flex-col justify-between min-h-[300px]">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[80px] -mr-32 -mt-32 pointer-events-none" />
             
             <div className="space-y-4 text-left">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em]">Tranche Allocation</span>
+                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em]">Tranche Allocation</span>
                 <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest bg-blue-500/10 px-2 py-0.5 rounded">Active Matrix</span>
               </div>
               
-              <h3 className="text-xl font-black uppercase text-white italic tracking-tight">
+              <h3 className="text-xl font-black uppercase text-[var(--text-primary)] italic tracking-tight">
                 {simStage === 'A' && "Stage A: Base Price Floor Establishment"}
                 {simStage === 'B' && "Stage B: Pullback Accumulation Sweep"}
                 {simStage === 'C' && "Stage C: Hard Value Floor Validation"}
                 {simStage === 'D' && "Stage D: Breakout / Target Realization"}
               </h3>
               
-              <p className="text-xs text-slate-500 leading-relaxed font-mono">
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed font-mono">
                 {simStage === 'A' && "Algorithm registers initial institutional activity at key support floors. A safe 25% initial position tranche is cleared for audit."}
                 {simStage === 'B' && "Volatile swings sweep minor stops. Buy limit triggers average-down protection, adding 25% volume at a 10% lower basis."}
                 {simStage === 'C' && "The final accumulation block triggers. 35% capacity is locked at the historical value floor, stabilizing the net holding yields."}
@@ -1021,12 +1021,12 @@ const HomePage: React.FC = () => {
               </p>
             </div>
             
-            <div className="pt-6 border-t border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-mono text-[9px] text-slate-500 uppercase">
+            <div className="pt-6 border-t border-[var(--border-primary)] flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-mono text-[9px] text-[var(--text-muted)] uppercase">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Simulation Active</span>
               </div>
-              <span className="text-[9px] font-black text-slate-300 font-mono uppercase tracking-widest">
+              <span className="text-[9px] font-black text-[var(--text-secondary)] font-mono uppercase tracking-widest">
                 {simStage === 'A' && "Alloc: 25% | Gap: 0%"}
                 {simStage === 'B' && "Alloc: 50% | Gap: -10%"}
                 {simStage === 'C' && "Alloc: 85% | Gap: -18%"}
@@ -1042,9 +1042,9 @@ const HomePage: React.FC = () => {
          <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
             <div className="space-y-4">
                <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Trending Institutional Audits</h2>
-               <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Recently Analyzed High-Score Assets</p>
+               <p className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-xs">Recently Analyzed High-Score Assets</p>
             </div>
-            <Link to="/login" className="flex items-center gap-2 text-blue-500 font-black uppercase tracking-widest text-xs hover:text-white transition-colors">
+            <Link to="/login" className="flex items-center gap-2 text-blue-500 font-black uppercase tracking-widest text-xs hover:text-[var(--text-primary)] transition-colors">
                View All 500+ Assets <ArrowRight className="w-4 h-4" />
             </Link>
          </div>
@@ -1054,14 +1054,14 @@ const HomePage: React.FC = () => {
                <Link 
                 key={sym} 
                 to={`/analysis/${sym}`}
-                className="group p-6 bg-slate-900/50 border border-slate-800 rounded-3xl hover:border-blue-500/50 transition-all hover:-translate-y-1"
+                className="group p-6 bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-3xl hover:border-blue-500/50 transition-all hover:-translate-y-1"
                >
                   <div className="flex justify-between items-start mb-4">
                      <Zap className="w-4 h-4 text-blue-500 group-hover:animate-pulse" />
                      <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded italic">QUALIFIED</span>
                   </div>
-                  <div className="text-xl font-black text-white italic tracking-tighter mb-1">{sym}</div>
-                  <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Audit Matrix Active</div>
+                  <div className="text-xl font-black text-[var(--text-primary)] italic tracking-tighter mb-1">{sym}</div>
+                  <div className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Audit Matrix Active</div>
                </Link>
             ))}
          </div>
@@ -1069,7 +1069,7 @@ const HomePage: React.FC = () => {
 
       {/* Pillar #5: Conversion Tunnel (Education) */}
       <section className="py-24 px-6 md:px-10 max-w-[1440px] mx-auto">
-         <div className="bg-slate-900/50 border border-slate-800 rounded-[3.5rem] p-12 overflow-hidden relative group">
+         <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-[3.5rem] p-12 overflow-hidden relative group">
             <div className="absolute right-0 top-0 w-96 h-96 bg-blue-600/5 blur-[100px] -mr-48 -mt-48 transition-all group-hover:bg-blue-600/10" />
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
@@ -1079,10 +1079,10 @@ const HomePage: React.FC = () => {
                      <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Free Institutional Education</span>
                   </div>
                   <h2 className="text-5xl md:text-6xl font-black tracking-tighter leading-none">Master the <br /><span className="text-blue-500">12 Proprietary</span> Strategies.</h2>
-                  <p className="text-slate-500 text-lg font-medium leading-relaxed max-w-md">
+                  <p className="text-[var(--text-muted)] text-lg font-medium leading-relaxed max-w-md">
                      Don't just follow triggers. Understand the institutional logic behind every setup—from SMA-ABCD Stacking to the 67% ATH Reset Cycle.
                   </p>
-                  <Link to="/education" className="inline-flex items-center px-8 py-4 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-500 hover:text-white transition-all">
+                  <Link to="/education" className="inline-flex items-center px-8 py-4 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-500 hover:text-[var(--text-primary)] transition-all">
                      Explore Knowledge Base <ChevronRight className="ml-2 w-4 h-4" />
                   </Link>
                </div>
@@ -1094,10 +1094,10 @@ const HomePage: React.FC = () => {
                      { title: '14% Envelope', desc: 'Institutional demand floors', icon: ShieldCheck },
                      { title: 'Bollinger Sqz', desc: 'Volatility breakout matrix', icon: Activity },
                   ].map((item, i) => (
-                     <div key={i} className="p-6 bg-slate-950 rounded-3xl border border-slate-800 hover:border-blue-500/30 transition-all">
+                     <div key={i} className="p-6 bg-[var(--bg-primary)] rounded-3xl border border-[var(--border-primary)] hover:border-blue-500/30 transition-all">
                         <item.icon className="h-6 w-6 text-blue-500 mb-4" />
-                        <h4 className="text-sm font-black text-white uppercase tracking-widest mb-1">{item.title}</h4>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{item.desc}</p>
+                        <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-1">{item.title}</h4>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{item.desc}</p>
                      </div>
                   ))}
                </div>
@@ -1146,17 +1146,17 @@ const HomePage: React.FC = () => {
       </script>
 
       {/* ── TESTIMONIALS SECTION ── */}
-      <section aria-label="Trader testimonials and reviews" className="py-24 px-6 md:px-10 border-t border-slate-800/50">
+      <section aria-label="Trader testimonials and reviews" className="py-24 px-6 md:px-10 border-t border-[var(--border-primary)]/50">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full mb-6">
               <span className="text-amber-400 text-sm">★★★★★</span>
               <span className="text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">4.9 / 5 from 1,280 traders</span>
             </div>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-white mb-4">
+            <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--text-primary)] mb-4">
               Traders Who Switched to <span className="text-blue-400">Institutional Logic</span>
             </h2>
-            <p className="text-slate-500 text-sm max-w-lg mx-auto">From retail traders to advisors — here's what MarketBeacon Pro users say.</p>
+            <p className="text-[var(--text-muted)] text-sm max-w-lg mx-auto">From retail traders to advisors — here's what MarketBeacon Pro users say.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1216,21 +1216,21 @@ const HomePage: React.FC = () => {
                 statColor: 'text-emerald-400',
               },
             ].map((t, i) => (
-              <div key={i} className="bg-slate-900/50 border border-slate-800 rounded-[2rem] p-7 flex flex-col gap-5 hover:border-slate-700 transition-all">
+              <div key={i} className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-[2rem] p-7 flex flex-col gap-5 hover:border-[var(--border-secondary)] transition-all">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-[var(--bg-tertiary)] border-2 border-[var(--border-secondary)] overflow-hidden shrink-0">
                       <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${t.avatar}`} alt={t.name} loading="lazy" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-black text-white">{t.name}</p>
-                      <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{t.role}</p>
+                      <p className="text-[11px] font-black text-[var(--text-primary)]">{t.name}</p>
+                      <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t.role}</p>
                     </div>
                   </div>
                   <div className="text-amber-400 text-xs tracking-tight">{'★'.repeat(t.stars)}</div>
                 </div>
-                <p className="text-slate-300 text-sm leading-relaxed flex-1 italic">{t.text}</p>
-                <div className="pt-3 border-t border-slate-800">
+                <p className="text-[var(--text-secondary)] text-sm leading-relaxed flex-1 italic">{t.text}</p>
+                <div className="pt-3 border-t border-[var(--border-primary)]">
                   <span className={`text-[9px] font-black uppercase tracking-widest ${t.statColor}`}>{t.stat}</span>
                 </div>
               </div>
@@ -1240,21 +1240,21 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* ── VS COMPARISON SECTION ── */}
-      <section aria-label="MarketBeacon Pro vs other stock screeners" className="py-20 px-6 md:px-10 border-t border-slate-800/50 bg-slate-900/20">
+      <section aria-label="MarketBeacon Pro vs other stock screeners" className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50 bg-[var(--bg-secondary)]/20">
         <div className="max-w-[900px] mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-white mb-3">
+            <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)] mb-3">
               Why Traders Switch to <span className="text-blue-400">MarketBeacon Pro</span>
             </h2>
-            <p className="text-slate-500 text-sm">vs. generic screeners and news-based platforms</p>
+            <p className="text-[var(--text-muted)] text-sm">vs. generic screeners and news-based platforms</p>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 rounded-[2rem] overflow-hidden">
+          <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-[2rem] overflow-hidden">
             {/* Header */}
-            <div className="grid grid-cols-3 border-b border-slate-800">
-              <div className="p-5 text-[9px] font-black text-slate-500 uppercase tracking-widest">Feature</div>
-              <div className="p-5 text-center border-x border-slate-800">
-                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Other Screeners</p>
+            <div className="grid grid-cols-3 border-b border-[var(--border-primary)]">
+              <div className="p-5 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Feature</div>
+              <div className="p-5 text-center border-x border-[var(--border-primary)]">
+                <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Other Screeners</p>
                 <p className="text-[8px] text-slate-600 mt-0.5">(Screener.in, Charts)</p>
               </div>
               <div className="p-5 text-center bg-blue-600/5">
@@ -1273,9 +1273,9 @@ const HomePage: React.FC = () => {
               ['PE Percentile vs 5-Year History', false, true],
               ['Institutional Strategy Triggers (12 models)', false, true],
             ].map(([feature, others, mb], i) => (
-              <div key={i} className={`grid grid-cols-3 border-b border-slate-800/50 last:border-none ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}>
-                <div className="px-5 py-4 text-[11px] font-bold text-slate-300">{feature as string}</div>
-                <div className="px-5 py-4 text-center border-x border-slate-800/50">
+              <div key={i} className={`grid grid-cols-3 border-b border-[var(--border-primary)]/50 last:border-none ${i % 2 === 0 ? '' : 'bg-[var(--bg-primary)]/[0.01]'}`}>
+                <div className="px-5 py-4 text-[11px] font-bold text-[var(--text-secondary)]">{feature as string}</div>
+                <div className="px-5 py-4 text-center border-x border-[var(--border-primary)]/50">
                   {others === true
                     ? <span className="text-emerald-500 text-sm">✓</span>
                     : others === false
@@ -1293,7 +1293,7 @@ const HomePage: React.FC = () => {
           <div className="text-center mt-8">
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-500 hover:scale-105 transition-all shadow-xl shadow-blue-900/30"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-[var(--text-primary)] rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-500 hover:scale-105 transition-all shadow-xl shadow-blue-900/30"
             >
               Try Institutional Screener Free <ChevronRight className="w-4 h-4" />
             </Link>
@@ -1302,14 +1302,14 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* ── BLOG TEASER ── */}
-      <section className="py-20 px-6 md:px-10 border-t border-slate-800/50">
+      <section className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50">
         <div className="max-w-[1100px] mx-auto">
           <div className="flex flex-col md:flex-row items-end justify-between mb-10 gap-4">
             <div>
               <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.4em] mb-2">Knowledge Base</p>
-              <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-white">Learn the Institutional <span className="text-blue-400">Edge</span></h2>
+              <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)]">Learn the Institutional <span className="text-blue-400">Edge</span></h2>
             </div>
-            <Link to="/blog" className="flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors shrink-0">
+            <Link to="/blog" className="flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-[var(--text-primary)] transition-colors shrink-0">
               All Articles <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -1322,12 +1322,12 @@ const HomePage: React.FC = () => {
               <Link
                 key={a.slug}
                 to={`/blog/${a.slug}`}
-                className="group bg-slate-900/50 border border-slate-800 rounded-[1.5rem] p-6 flex flex-col gap-4 hover:border-slate-600 hover:-translate-y-1 transition-all"
+                className="group bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-[1.5rem] p-6 flex flex-col gap-4 hover:border-slate-600 hover:-translate-y-1 transition-all"
               >
                 <span className={`self-start px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${a.color}`}>{a.tag}</span>
-                <h3 className="text-sm font-black text-white group-hover:text-blue-300 transition-colors leading-snug">{a.title}</h3>
+                <h3 className="text-sm font-black text-[var(--text-primary)] group-hover:text-blue-300 transition-colors leading-snug">{a.title}</h3>
                 <div className="flex items-center justify-between mt-auto">
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1.5">
                     <BookOpen className="w-3 h-3" />{a.time}
                   </span>
                   <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
@@ -1339,17 +1339,17 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* ── EMAIL LEAD CAPTURE ── */}
-      <section className="py-20 px-6 md:px-10 border-t border-slate-800/50 bg-gradient-to-b from-slate-950 to-slate-900/50">
+      <section className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50 bg-gradient-to-b from-slate-950 to-slate-900/50">
         <div className="max-w-[680px] mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-6">
             <Gift className="w-3.5 h-3.5 text-blue-400" />
             <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.3em]">Free · No Credit Card</span>
           </div>
-          <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-white mb-4 leading-tight">
+          <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--text-primary)] mb-4 leading-tight">
             Get Your Free<br />
             <span className="text-blue-400">Institutional Portfolio Checklist</span>
           </h2>
-          <p className="text-slate-500 text-sm mb-8 max-w-md mx-auto leading-relaxed">
+          <p className="text-[var(--text-muted)] text-sm mb-8 max-w-md mx-auto leading-relaxed">
             Download our 12-parameter Audit Checklist + ABCD Tranche Guide PDF. Join 31,402 traders using data over tips.
           </p>
           <EmailCapture />
@@ -1363,7 +1363,7 @@ const HomePage: React.FC = () => {
       <section className="py-24 px-6 md:px-10 max-w-[1000px] mx-auto border-t border-slate-900">
          <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4 uppercase italic">Frequently Audited Queries</h2>
-            <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-xs">Everything you need to know about the terminal</p>
+            <p className="text-[var(--text-muted)] font-bold uppercase tracking-[0.2em] text-xs">Everything you need to know about the terminal</p>
          </div>
          
          <div className="space-y-4 text-left">
@@ -1385,14 +1385,14 @@ const HomePage: React.FC = () => {
                 a: "Live stock prices are synced continuously in real-time, and audit models re-examine key fundamental data points (like quarterly results, PE ratios, and institutional holdings) automatically daily to recalculate active scores and update zones."
               }
             ].map((faq, idx) => (
-              <div key={idx} className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden transition-all duration-300">
+              <div key={idx} className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-3xl overflow-hidden transition-all duration-300">
                  <button 
                    type="button"
                    onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                   className="w-full px-8 py-6 flex items-center justify-between hover:bg-white/5 transition-all text-left outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none"
+                   className="w-full px-8 py-6 flex items-center justify-between hover:bg-[var(--bg-primary)]/5 transition-all text-left outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none"
                  >
-                    <span className="text-sm font-black text-white uppercase tracking-wider">{faq.q}</span>
-                    <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform duration-305 ${openFaq === idx ? 'rotate-90 text-blue-500' : ''}`} />
+                    <span className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">{faq.q}</span>
+                    <ChevronRight className={`h-4 w-4 text-[var(--text-tertiary)] transition-transform duration-305 ${openFaq === idx ? 'rotate-90 text-blue-500' : ''}`} />
                  </button>
                  <AnimatePresence>
                     {openFaq === idx && (
@@ -1400,7 +1400,7 @@ const HomePage: React.FC = () => {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="px-8 pb-6 text-xs text-slate-500 font-mono leading-relaxed"
+                        className="px-8 pb-6 text-xs text-[var(--text-muted)] font-mono leading-relaxed"
                       >
                          {faq.a}
                       </motion.div>
@@ -1414,18 +1414,18 @@ const HomePage: React.FC = () => {
       {/* CTA Footer */}
       <section className="py-24 px-6 text-center">
          <div className="max-w-4xl mx-auto bg-gradient-to-br from-blue-600 to-indigo-700 p-1 rounded-[3.5rem] shadow-2xl">
-            <div className="bg-slate-950 rounded-[3.4rem] px-10 py-20 flex flex-col items-center">
+            <div className="bg-[var(--bg-primary)] rounded-[3.4rem] px-10 py-20 flex flex-col items-center">
                <h3 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 px-4">Ready to stop guessing?</h3>
-               <p className="text-slate-500 font-medium text-lg mb-10 max-w-xl">Join 31,402 traders who upgraded their strategy with MarketBeacon Pro. Free to start.</p>
+               <p className="text-[var(--text-muted)] font-medium text-lg mb-10 max-w-xl">Join 31,402 traders who upgraded their strategy with MarketBeacon Pro. Free to start.</p>
                <div className="flex flex-col sm:flex-row items-center gap-4">
-                 <Link to="/login" className="px-12 py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest text-base hover:scale-105 transition-all">
+                 <Link to="/login" className="px-12 py-5 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-2xl font-black uppercase tracking-widest text-base hover:scale-105 transition-all">
                     Launch Terminal Free
                  </Link>
                  <a
                    href="https://wa.me/919251180183?text=Hi%20Admin,%20I%20want%20to%20know%20more%20about%20MarketBeacon%20Pro."
                    target="_blank"
                    rel="noopener noreferrer"
-                   className="px-10 py-5 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-base hover:bg-emerald-500 hover:scale-105 transition-all"
+                   className="px-10 py-5 bg-emerald-600 text-[var(--text-primary)] rounded-2xl font-black uppercase tracking-widest text-base hover:bg-emerald-500 hover:scale-105 transition-all"
                  >
                    WhatsApp Us
                  </a>
@@ -1444,7 +1444,7 @@ const HomePage: React.FC = () => {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
-        className="fixed bottom-8 right-6 z-50 hidden md:flex items-center gap-2.5 px-5 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl shadow-2xl shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95"
+        className="fixed bottom-8 right-6 z-50 hidden md:flex items-center gap-2.5 px-5 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-[var(--text-primary)] rounded-2xl shadow-2xl shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95"
       >
         <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -1453,15 +1453,15 @@ const HomePage: React.FC = () => {
       </a>
 
       {/* Mobile Sticky CTA */}
-      <div className="fixed bottom-0 w-full p-3 md:hidden bg-slate-950/95 border-t border-slate-800 z-50 flex gap-2">
-        <Link to="/login" className="flex-1 flex items-center justify-center py-3.5 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-xl">
+      <div className="fixed bottom-0 w-full p-3 md:hidden bg-[var(--bg-primary)]/95 border-t border-[var(--border-primary)] z-50 flex gap-2">
+        <Link to="/login" className="flex-1 flex items-center justify-center py-3.5 bg-blue-600 text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-xs shadow-xl">
            Start Free
         </Link>
         <a
           href="https://wa.me/919251180183?text=Hi%20Admin,%20I%20want%20to%20know%20more%20about%20MarketBeacon%20Pro."
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center w-12 py-3.5 bg-emerald-600 text-white rounded-xl shadow-xl"
+          className="flex items-center justify-center w-12 py-3.5 bg-emerald-600 text-[var(--text-primary)] rounded-xl shadow-xl"
           aria-label="WhatsApp"
         >
           <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg">
@@ -1480,7 +1480,7 @@ const HomePage: React.FC = () => {
 
       {/* Deployment Verification Tag */}
       <div className="fixed bottom-4 right-4 z-[100] opacity-20 hover:opacity-100 transition-opacity">
-        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">
+        <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
           Build: v18.0.8-PRO-RENDER-VERIFY
         </span>
       </div>

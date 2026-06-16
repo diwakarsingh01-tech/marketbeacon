@@ -705,7 +705,7 @@ const ChartsTerminal: React.FC = () => {
 <body class="min-h-screen flex flex-col">
 
   <!-- Header -->
-  <header class="border-b border-[var(--border-primary)] bg-slate-900/50 backdrop-blur-md px-6 py-4 flex justify-between items-center">
+  <header class="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)]/50 backdrop-blur-md px-6 py-4 flex justify-between items-center">
     <div class="flex items-center gap-3">
       <div class="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-500">
         <i data-lucide="activity" class="h-6 w-6"></i>
@@ -714,12 +714,12 @@ const ChartsTerminal: React.FC = () => {
         <h1 class="text-lg font-black tracking-tight uppercase italic text-[var(--text-primary)] flex items-center gap-1.5">
           MarketBeacon <span class="text-blue-500">Terminal</span>
         </h1>
-        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Offline / Standalone Portable Instance</p>
+        <p class="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Offline / Standalone Portable Instance</p>
       </div>
     </div>
     
     <div class="flex items-center gap-4">
-      <div class="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-black tracking-wider text-slate-300">
+      <div class="px-3 py-1.5 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-xs font-black tracking-wider text-[var(--text-secondary)]">
         ACTIVE SYMBOL: <span class="text-blue-400 font-bold">${symbol}</span>
       </div>
     </div>
@@ -729,9 +729,9 @@ const ChartsTerminal: React.FC = () => {
     
     <!-- Left Panel: Fundamentals -->
     <section class="lg:col-span-1 space-y-6">
-      <div class="bg-slate-900/60 border border-[var(--border-primary)] p-5 rounded-3xl space-y-4 shadow-sm neon-border">
+      <div class="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] p-5 rounded-3xl space-y-4 shadow-sm neon-border">
         <div class="flex justify-between items-center border-b border-[var(--border-primary)] pb-3">
-          <span class="text-sm font-black text-slate-300 uppercase tracking-wider">Fundamentals</span>
+          <span class="text-sm font-black text-[var(--text-secondary)] uppercase tracking-wider">Fundamentals</span>
           <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase">
             \${fundamentals.audit?.universe || 'WATCHLIST'}
           </span>
@@ -739,7 +739,7 @@ const ChartsTerminal: React.FC = () => {
         
         <div class="space-y-4">
           <div>
-            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Price</span>
+            <span class="text-[10px] text-[var(--text-tertiary)] uppercase font-bold tracking-wider">Price</span>
             <div class="flex items-baseline gap-2">
               <span class="text-2xl font-black text-[var(--text-primary)] italic">₹ \${Number(fundamentals.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
               <span class="text-xs font-bold \${fundamentals.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
@@ -750,40 +750,40 @@ const ChartsTerminal: React.FC = () => {
 
           <div class="grid grid-cols-2 gap-4 border-t border-[var(--border-primary)] pt-3">
             <div>
-              <span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Audit Score</span>
+              <span class="text-[9px] text-[var(--text-tertiary)] uppercase font-bold tracking-wider">Audit Score</span>
               <p class="text-lg font-black text-blue-400 italic">\${fundamentals.audit?.score}/100</p>
             </div>
             <div>
-              <span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">PE Ratio</span>
-              <p class="text-lg font-black text-slate-200 italic">\${Number(fundamentals.peRatio || 0).toFixed(1)}</p>
+              <span class="text-[9px] text-[var(--text-tertiary)] uppercase font-bold tracking-wider">PE Ratio</span>
+              <p class="text-lg font-black text-[var(--text-secondary)] italic">\${Number(fundamentals.peRatio || 0).toFixed(1)}</p>
             </div>
           </div>
 
           <div class="space-y-2 border-t border-[var(--border-primary)] pt-3">
             <div class="flex justify-between text-xs">
-              <span class="text-slate-400">Market Cap:</span>
-              <span class="font-bold text-slate-200">\${formatCr(fundamentals.marketCap)}</span>
+              <span class="text-[var(--text-tertiary)]">Market Cap:</span>
+              <span class="font-bold text-[var(--text-secondary)]">\${formatCr(fundamentals.marketCap)}</span>
             </div>
             <div class="flex justify-between text-xs">
-              <span class="text-slate-400">ROE:</span>
-              <span class="font-bold text-slate-200">\${formatPct(fundamentals.returnOnEquity)}</span>
+              <span class="text-[var(--text-tertiary)]">ROE:</span>
+              <span class="font-bold text-[var(--text-secondary)]">\${formatPct(fundamentals.returnOnEquity)}</span>
             </div>
             <div class="flex justify-between text-xs">
-              <span class="text-slate-400">ROCE:</span>
-              <span class="font-bold text-slate-200">\${formatPct(fundamentals.roce)}</span>
+              <span class="text-[var(--text-tertiary)]">ROCE:</span>
+              <span class="font-bold text-[var(--text-secondary)]">\${formatPct(fundamentals.roce)}</span>
             </div>
             <div class="flex justify-between text-xs">
-              <span class="text-slate-400">Net Debt/Equity:</span>
-              <span class="font-bold text-slate-200">\${Number(fundamentals.netDebtToEquity || 0).toFixed(2)}</span>
+              <span class="text-[var(--text-tertiary)]">Net Debt/Equity:</span>
+              <span class="font-bold text-[var(--text-secondary)]">\${Number(fundamentals.netDebtToEquity || 0).toFixed(2)}</span>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Strategy Confidence Profile -->
-      <div id="confidence-card" class="bg-slate-900/60 border border-[var(--border-primary)] p-5 rounded-3xl space-y-4 shadow-sm neon-border hidden">
+      <div id="confidence-card" class="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] p-5 rounded-3xl space-y-4 shadow-sm neon-border hidden">
         <div class="flex justify-between items-center border-b border-[var(--border-primary)] pb-3">
-          <span class="text-xs font-black text-slate-300 uppercase tracking-wider">Strategy Confidence</span>
+          <span class="text-xs font-black text-[var(--text-secondary)] uppercase tracking-wider">Strategy Confidence</span>
           <span id="conf-badge" class="px-2 py-0.5 rounded-full text-[8px] font-black tracking-wider uppercase border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
             BUY ZONE
           </span>
@@ -803,13 +803,13 @@ const ChartsTerminal: React.FC = () => {
             </defs>
             <text id="conf-gauge-text" x="50" y="45" text-anchor="middle" class="text-lg font-black fill-white">0%</text>
           </svg>
-          <span id="conf-level-text" class="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2">MODERATE CONFIDENCE</span>
+          <span id="conf-level-text" class="text-[9px] font-black uppercase tracking-widest text-[var(--text-tertiary)] mt-2">MODERATE CONFIDENCE</span>
         </div>
 
         <!-- Progress bar visual range -->
         <div class="space-y-4 pt-2 border-t border-[var(--border-primary)]">
           <div class="relative pt-4 pb-2">
-            <div class="h-1.5 w-full bg-slate-800 rounded-full relative">
+            <div class="h-1.5 w-full bg-[var(--bg-tertiary)] rounded-full relative">
               <div id="conf-accumulation-bar" class="absolute h-full bg-emerald-500/30 rounded-full" style="left: 0%; right: 100%;"></div>
               <div id="conf-target-bar" class="absolute h-full bg-blue-500/20 rounded-full" style="left: 0%; right: 100%;"></div>
             </div>
@@ -817,11 +817,11 @@ const ChartsTerminal: React.FC = () => {
             <!-- Pins -->
             <div id="conf-price-pin" class="absolute -top-3 flex flex-col items-center transition-all duration-300" style="left: 50%; transform: translateX(-50%);">
               <div id="conf-price-val" class="px-1 py-0.2 rounded bg-blue-600 text-[7px] font-black text-[var(--text-primary)]">₹0</div>
-              <div class="w-1.5 h-1.5 rounded-full bg-white border border-blue-600 mt-0.5"></div>
+              <div class="w-1.5 h-1.5 rounded-full bg-[var(--bg-primary)] border border-blue-600 mt-0.5"></div>
             </div>
           </div>
           
-          <div class="flex justify-between text-[8px] font-bold text-slate-500 uppercase tracking-wider">
+          <div class="flex justify-between text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
             <span id="conf-floor-lbl">FLOOR: ₹0</span>
             <span id="conf-entry-lbl">ENTRY: ₹0</span>
             <span id="conf-target-lbl">TARGET: ₹0</span>
@@ -832,26 +832,26 @@ const ChartsTerminal: React.FC = () => {
 
     <!-- Right Panel: Interactive Chart -->
     <section class="lg:col-span-3 space-y-6">
-      <div class="bg-slate-900/60 border border-[var(--border-primary)] p-5 rounded-3xl space-y-4 shadow-sm neon-border">
+      <div class="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] p-5 rounded-3xl space-y-4 shadow-sm neon-border">
         <div class="flex justify-between items-center">
           <div class="flex items-center gap-3">
-            <h2 class="text-sm font-black text-slate-200 uppercase tracking-wider">\${symbol} Interactive Chart</h2>
+            <h2 class="text-sm font-black text-[var(--text-secondary)] uppercase tracking-wider">\${symbol} Interactive Chart</h2>
           </div>
-          <div class="flex rounded-xl bg-slate-950 p-1 border border-[var(--border-primary)]/80">
-            <button id="btn-candles" class="px-3 py-1 rounded-lg text-xs font-bold transition-all text-[var(--text-primary)] bg-slate-800">Candles</button>
-            <button id="btn-line" class="px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-400">Line</button>
+          <div class="flex rounded-xl bg-[var(--bg-primary)] p-1 border border-[var(--border-primary)]/80">
+            <button id="btn-candles" class="px-3 py-1 rounded-lg text-xs font-bold transition-all text-[var(--text-primary)] bg-[var(--bg-tertiary)]">Candles</button>
+            <button id="btn-line" class="px-3 py-1 rounded-lg text-xs font-bold transition-all text-[var(--text-tertiary)]">Line</button>
           </div>
         </div>
         
         <!-- Chart Canvas -->
-        <div id="chart" class="w-full rounded-2xl overflow-hidden border border-[var(--border-primary)]/60 bg-slate-950"></div>
+        <div id="chart" class="w-full rounded-2xl overflow-hidden border border-[var(--border-primary)]/60 bg-[var(--bg-primary)]"></div>
       </div>
     </section>
     
   </main>
 
   <!-- Footer -->
-  <footer class="border-t border-[var(--border-primary)] bg-slate-950/80 py-4 text-center text-[10px] text-slate-500 uppercase tracking-widest">
+  <footer class="border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/80 py-4 text-center text-[10px] text-[var(--text-muted)] uppercase tracking-widest">
     Generated via MarketBeacon Pro • Institutional Research Suite
   </footer>
 
@@ -1030,7 +1030,7 @@ const ChartsTerminal: React.FC = () => {
       
       let level = 'MODERATE';
       let badgeText = isBuy ? 'BUY ZONE' : 'HOLD';
-      let badgeClass = isBuy ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-500';
+      let badgeClass = isBuy ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-[var(--bg-tertiary)] border-[var(--border-secondary)] text-[var(--text-muted)]';
       
       if (score >= 85) level = 'STRONG BUY / MAX CONFIDENCE';
       else if (score >= 70) level = 'SAFE ACCUMULATION';
@@ -1115,10 +1115,10 @@ const ChartsTerminal: React.FC = () => {
       // re-draw lines
       drawStrategyLines(currentSeries);
 
-      btnCandles.classList.add('bg-slate-800', 'text-[var(--text-primary)]');
-      btnCandles.classList.remove('text-slate-400');
-      btnLine.classList.remove('bg-slate-800', 'text-[var(--text-primary)]');
-      btnLine.classList.add('text-slate-400');
+      btnCandles.classList.add('bg-[var(--bg-tertiary)]', 'text-[var(--text-primary)]');
+      btnCandles.classList.remove('text-[var(--text-tertiary)]');
+      btnLine.classList.remove('bg-[var(--bg-tertiary)]', 'text-[var(--text-primary)]');
+      btnLine.classList.add('text-[var(--text-tertiary)]');
     });
 
     btnLine.addEventListener('click', () => {
@@ -1131,10 +1131,10 @@ const ChartsTerminal: React.FC = () => {
       // re-draw lines
       drawStrategyLines(currentSeries);
 
-      btnLine.classList.add('bg-slate-800', 'text-[var(--text-primary)]');
-      btnLine.classList.remove('text-slate-400');
-      btnCandles.classList.remove('bg-slate-800', 'text-[var(--text-primary)]');
-      btnCandles.classList.add('text-slate-400');
+      btnLine.classList.add('bg-[var(--bg-tertiary)]', 'text-[var(--text-primary)]');
+      btnLine.classList.remove('text-[var(--text-tertiary)]');
+      btnCandles.classList.remove('bg-[var(--bg-tertiary)]', 'text-[var(--text-primary)]');
+      btnCandles.classList.add('text-[var(--text-tertiary)]');
     });
   </script>
 </body>
@@ -1323,12 +1323,12 @@ const ChartsTerminal: React.FC = () => {
     
     return (
       <div className={`p-6 rounded-3xl border ${
-        theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+        theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
       }`}>
         <div className="flex justify-between items-center mb-5 border-b border-[var(--border-primary)]/60 pb-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-blue-500" />
-            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
+            <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">
               Institutional Entry Confidence Profile
             </span>
           </div>
@@ -1339,7 +1339,7 @@ const ChartsTerminal: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
           {/* Gauge Widget */}
-          <div className="flex flex-col items-center justify-center p-4 border border-[var(--border-primary)]/40 rounded-2xl bg-slate-950/20">
+          <div className="flex flex-col items-center justify-center p-4 border border-[var(--border-primary)]/40 rounded-2xl bg-[var(--bg-primary)]/20">
             <svg viewBox="0 0 100 55" className="w-36 h-20">
               <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#1e293b" strokeWidth="8" strokeLinecap="round" />
               <path 
@@ -1361,18 +1361,18 @@ const ChartsTerminal: React.FC = () => {
               </defs>
               <text x="50" y="45" textAnchor="middle" className="text-lg font-black fill-current" style={{ fill: theme === 'dark' ? '#fff' : '#0f172a' }}>{confidence.score}%</text>
             </svg>
-            <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-500 mt-2">CONFIDENCE SCORE</span>
+            <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mt-2">CONFIDENCE SCORE</span>
           </div>
 
           {/* Range Slider / Shape */}
           <div className="md:col-span-2 space-y-5">
-            <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block">
+            <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest block">
               Confidence Range Visualization (Safe Entry vs Target Progression)
             </span>
             
             <div className="relative pt-6 pb-2 px-1">
               {/* Slider Track */}
-              <div className="h-2 w-full bg-slate-800 rounded-full relative">
+              <div className="h-2 w-full bg-[var(--bg-tertiary)] rounded-full relative">
                 {/* Safe Accumulation Band */}
                 <div 
                   className="absolute h-full bg-emerald-500/30 rounded-full"
@@ -1391,7 +1391,7 @@ const ChartsTerminal: React.FC = () => {
                 style={{ left: `${bottomPct}%`, transform: 'translateX(-50%)' }}
               >
                 <div className="h-4 w-1 bg-slate-500" />
-                <span className="text-[8px] font-black text-slate-500 mt-1">FLOOR (₹{Math.round(bottom)})</span>
+                <span className="text-[8px] font-black text-[var(--text-muted)] mt-1">FLOOR (₹{Math.round(bottom)})</span>
               </div>
 
               <div 
@@ -1418,7 +1418,7 @@ const ChartsTerminal: React.FC = () => {
                 <div className="px-2 py-0.5 rounded bg-blue-600 text-[8px] font-black text-[var(--text-primary)] shadow-md">
                   ₹{Math.round(price)}
                 </div>
-                <div className="w-2.5 h-2.5 rounded-full bg-white border-2 border-blue-600 mt-0.5" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[var(--bg-primary)] border-2 border-blue-600 mt-0.5" />
               </div>
             </div>
 
@@ -1449,17 +1449,17 @@ const ChartsTerminal: React.FC = () => {
 
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 \${
-      theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'
+      theme === 'dark' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)]' : 'bg-[var(--bg-secondary)] text-slate-800'
     }`}>
       
       {/* Ticker Bar (Top) */}
       <div className={`border-b text-[11px] font-black uppercase tracking-wider overflow-hidden \${
-        theme === 'dark' ? 'bg-slate-900 border-[var(--border-primary)] text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-500'
+        theme === 'dark' ? 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-tertiary)]' : 'bg-slate-100 border-[var(--border-primary)] text-[var(--text-muted)]'
       }`}>
         <div className="flex divide-x divide-slate-800 overflow-x-auto py-2 px-4 whitespace-nowrap scrollbar-none">
           {indices.map((idx, i) => (
             <div key={i} className="flex items-center gap-2 px-6">
-              <span className={theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}>{idx.name}</span>
+              <span className={theme === 'dark' ? 'text-[var(--text-secondary)]' : 'text-slate-700'}>{idx.name}</span>
               <span className="font-bold">₹ {idx.price.toLocaleString('en-IN')}</span>
               <span className={`flex items-center text-[10px] font-black \${
                 idx.change >= 0 ? 'text-emerald-500' : 'text-rose-500'
@@ -1470,7 +1470,7 @@ const ChartsTerminal: React.FC = () => {
             </div>
           ))}
           {indices.length === 0 && (
-            <div className="flex items-center justify-center w-full text-slate-500">
+            <div className="flex items-center justify-center w-full text-[var(--text-muted)]">
               <RefreshCw className="h-3 w-3 animate-spin mr-2" /> Connecting Market Feeds...
             </div>
           )}
@@ -1479,7 +1479,7 @@ const ChartsTerminal: React.FC = () => {
 
       {/* Main Header */}
       <header className={`border-b px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 \${
-        theme === 'dark' ? 'bg-slate-900/60 border-[var(--border-primary)]/80' : 'bg-white border-slate-200/80 shadow-sm'
+        theme === 'dark' ? 'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
       }`}>
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center gap-3 group">
@@ -1492,7 +1492,7 @@ const ChartsTerminal: React.FC = () => {
               }`}>
                 MarketBeacon <span className="text-blue-500">Terminal</span>
               </h1>
-              <p className="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest">Interactive Market Desk</p>
+              <p className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Interactive Market Desk</p>
             </div>
           </Link>
         </div>
@@ -1503,10 +1503,10 @@ const ChartsTerminal: React.FC = () => {
           <div className="relative w-full sm:w-80" ref={dropdownRef}>
             <div className={`flex items-center rounded-2xl border px-3.5 py-2 transition-all \${
               theme === 'dark' 
-                ? 'bg-slate-950 border-[var(--border-primary)] focus-within:border-blue-500/50' 
-                : 'bg-slate-50 border-slate-200 focus-within:border-blue-500/50 focus-within:bg-white'
+                ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50' 
+                : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] focus-within:border-blue-500/50 focus-within:bg-[var(--bg-primary)]'
             }`}>
-              <Search className="h-4 w-4 text-slate-400 mr-2.5" />
+              <Search className="h-4 w-4 text-[var(--text-tertiary)] mr-2.5" />
               <input
                 type="text"
                 placeholder="Search symbol (e.g. INFY, RELIANCE)..."
@@ -1523,7 +1523,7 @@ const ChartsTerminal: React.FC = () => {
             {/* Dropdown Results */}
             {showDropdown && searchResults.length > 0 && (
               <div className={`absolute left-0 right-0 mt-2 z-50 rounded-2xl border shadow-xl max-h-80 overflow-y-auto p-1.5 \${
-                theme === 'dark' ? 'bg-slate-900 border-[var(--border-primary)]' : 'bg-white border-slate-200'
+                theme === 'dark' ? 'bg-[var(--bg-secondary)] border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]'
               }`}>
                 {searchResults.map((item, i) => (
                   <button
@@ -1534,11 +1534,11 @@ const ChartsTerminal: React.FC = () => {
                       setShowDropdown(false);
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors \${
-                      theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-slate-50'
+                      theme === 'dark' ? 'hover:bg-[var(--bg-tertiary)]' : 'hover:bg-[var(--bg-secondary)]'
                     }`}
                   >
                     <div>
-                      <span className="text-xs font-black tracking-wide text-slate-200">{item.symbol}</span>
+                      <span className="text-xs font-black tracking-wide text-[var(--text-secondary)]">{item.symbol}</span>
                       <div className="flex gap-1.5 mt-0.5">
                         {item.baskets.map((b, idx) => (
                           <span key={idx} className="text-[8px] font-bold tracking-wider uppercase px-1.5 py-0.2 bg-blue-500/5 text-blue-400 border border-blue-500/10 rounded">
@@ -1566,8 +1566,8 @@ const ChartsTerminal: React.FC = () => {
               to="/alpha-hub"
               className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border font-extrabold text-xs tracking-wider uppercase transition-all ${
                 theme === 'dark'
-                  ? 'bg-slate-950 border-[var(--border-primary)] text-slate-300 hover:bg-slate-900 hover:text-[var(--text-primary)]'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
+                  : 'bg-[var(--bg-primary)] border-[var(--border-primary)] text-slate-600 hover:bg-[var(--bg-secondary)]'
               }`}
             >
               <span>Back to Terminal</span>
@@ -1577,7 +1577,7 @@ const ChartsTerminal: React.FC = () => {
             <button
               onClick={toggleTheme}
               className={`p-2.5 rounded-xl border transition-colors ${
-                theme === 'dark' ? 'bg-slate-950 border-[var(--border-primary)] text-slate-300 hover:bg-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                theme === 'dark' ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)] text-slate-600 hover:bg-[var(--bg-secondary)]'
               }`}
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -1603,10 +1603,10 @@ const ChartsTerminal: React.FC = () => {
         <section className="lg:col-span-3 space-y-6">
           {/* Card 1: Key Metrics */}
           <div className={`p-5 rounded-3xl border ${
-            theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
           }`}>
             {loading || !fundamentals ? (
-              <div className="space-y-4 py-12 text-center text-slate-400">
+              <div className="space-y-4 py-12 text-center text-[var(--text-tertiary)]">
                 <RefreshCw className="h-6 w-6 animate-spin mx-auto text-blue-500" />
                 <p className="text-xs font-bold uppercase tracking-wider">Gathering Asset Intel...</p>
               </div>
@@ -1616,7 +1616,7 @@ const ChartsTerminal: React.FC = () => {
                 <div className="flex justify-between items-start border-b border-[var(--border-primary)]/60 pb-4">
                   <div>
                     <h2 className="text-xl font-black italic tracking-tight">{fundamentals.symbol}</h2>
-                    <p className="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest">{fundamentals.industry}</p>
+                    <p className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">{fundamentals.industry}</p>
                   </div>
                   <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase ${
                     fundamentals.audit?.universe === 'INSTITUTIONAL'
@@ -1629,7 +1629,7 @@ const ChartsTerminal: React.FC = () => {
 
                 {/* Price Box */}
                 <div>
-                  <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">Current Price</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Current Price</span>
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className="text-3xl font-black italic">₹ {Number(fundamentals.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                     <span className={`text-xs font-black ${fundamentals.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -1640,10 +1640,10 @@ const ChartsTerminal: React.FC = () => {
 
                 {/* Audit Score Box */}
                 <div className={`p-4 rounded-2xl border flex items-center justify-between ${
-                  theme === 'dark' ? 'bg-slate-950/60 border-[var(--border-primary)]' : 'bg-slate-50 border-slate-200'
+                  theme === 'dark' ? 'bg-[var(--bg-primary)]/60 border-[var(--border-primary)]' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)]'
                 }`}>
                   <div className="space-y-0.5">
-                    <span className="text-[9px] text-slate-500 font-extrabold uppercase tracking-widest">Audit Score</span>
+                    <span className="text-[9px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Audit Score</span>
                     <h3 className="text-2xl font-black italic text-blue-500">{fundamentals.audit?.score}/100</h3>
                   </div>
                   <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/15 text-blue-500">
@@ -1653,15 +1653,15 @@ const ChartsTerminal: React.FC = () => {
 
                 {/* Valuation Multiples */}
                 <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
-                  <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">Valuation & Growth</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Valuation & Growth</span>
                   
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400 font-medium">PE Ratio:</span>
+                    <span className="text-[var(--text-tertiary)] font-medium">PE Ratio:</span>
                     <span className="font-extrabold">{Number(fundamentals.peRatio || 0).toFixed(1)}</span>
                   </div>
                   
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400 font-medium">Median PE (3Y/5Y):</span>
+                    <span className="text-[var(--text-tertiary)] font-medium">Median PE (3Y/5Y):</span>
                     <span className="font-extrabold">
                       {fundamentals.peMedians?.pe3Y ? Number(fundamentals.peMedians.pe3Y).toFixed(1) : '—'} / 
                       {fundamentals.peMedians?.pe5Y ? Number(fundamentals.peMedians.pe5Y).toFixed(1) : '—'}
@@ -1669,49 +1669,49 @@ const ChartsTerminal: React.FC = () => {
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400 font-medium">Market Capitalization:</span>
+                    <span className="text-[var(--text-tertiary)] font-medium">Market Capitalization:</span>
                     <span className="font-extrabold">{formatCr(fundamentals.marketCap)}</span>
                   </div>
                 </div>
 
                 {/* Efficiency & Balance Sheet */}
                 <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
-                  <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">Safety & Efficiency</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Safety & Efficiency</span>
                   
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400 font-medium">Return on Equity (ROE):</span>
+                    <span className="text-[var(--text-tertiary)] font-medium">Return on Equity (ROE):</span>
                     <span className="font-extrabold">{formatPct(fundamentals.returnOnEquity)}</span>
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400 font-medium">ROCE:</span>
+                    <span className="text-[var(--text-tertiary)] font-medium">ROCE:</span>
                     <span className="font-extrabold">{formatPct(fundamentals.roce)}</span>
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400 font-medium">Net Debt to Equity:</span>
+                    <span className="text-[var(--text-tertiary)] font-medium">Net Debt to Equity:</span>
                     <span className="font-extrabold">{Number(fundamentals.netDebtToEquity || 0).toFixed(2)}</span>
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400 font-medium">52W Range High:</span>
-                    <span className="font-extrabold text-slate-200">₹ {Number(fundamentals.fiftyTwoWeekHigh || 0).toLocaleString('en-IN')}</span>
+                    <span className="text-[var(--text-tertiary)] font-medium">52W Range High:</span>
+                    <span className="font-extrabold text-[var(--text-secondary)]">₹ {Number(fundamentals.fiftyTwoWeekHigh || 0).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 {/* Sales & Profit vs ATH */}
                 <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
-                  <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest flex items-center gap-1">
+                  <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest flex items-center gap-1">
                     <Sparkles className="h-3 w-3 text-blue-500" /> High Growth Potential
                   </span>
                   
                   <div className="space-y-2.5">
                     <div>
                       <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-slate-400">Sales (vs ATH):</span>
+                        <span className="text-[var(--text-tertiary)]">Sales (vs ATH):</span>
                         <span className="font-bold">{formatCr(fundamentals.currentSales)} / {formatCr(fundamentals.athSales)}</span>
                       </div>
-                      <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-blue-500 rounded-full"
                           style={{ width: `${Math.min(100, (fundamentals.currentSales / (fundamentals.athSales || 1)) * 100)}%` }}
@@ -1721,10 +1721,10 @@ const ChartsTerminal: React.FC = () => {
 
                     <div>
                       <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-slate-400">Net Profit (vs ATH):</span>
+                        <span className="text-[var(--text-tertiary)]">Net Profit (vs ATH):</span>
                         <span className="font-bold">{formatCr(fundamentals.currentNetProfit)} / {formatCr(fundamentals.athNetProfit)}</span>
                       </div>
-                      <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-emerald-500 rounded-full"
                           style={{ width: `${Math.min(100, (fundamentals.currentNetProfit / (fundamentals.athNetProfit || 1)) * 100)}%` }}
@@ -1739,15 +1739,15 @@ const ChartsTerminal: React.FC = () => {
 
           {/* Card 2: Strategy Selector */}
           <div className={`p-5 rounded-3xl border ${
-            theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
           }`}>
             <div className="flex items-center gap-2 mb-4 border-b border-[var(--border-primary)]/60 pb-3">
               <Layers className="h-4 w-4 text-blue-500" />
-              <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Active Entry Strategies</span>
+              <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Active Entry Strategies</span>
             </div>
 
             {loading || !fundamentals || !fundamentals.strategies ? (
-              <div className="py-4 text-center text-xs text-slate-500">No active strategies.</div>
+              <div className="py-4 text-center text-xs text-[var(--text-muted)]">No active strategies.</div>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                 {Object.entries(fundamentals.strategies).map(([key, value]: [string, any]) => {
@@ -1762,13 +1762,13 @@ const ChartsTerminal: React.FC = () => {
                       className={`w-full flex items-center justify-between p-3 rounded-2xl text-left border transition-all ${
                         activeStrategyId === key
                           ? (theme === 'dark' ? 'bg-blue-600/10 border-blue-500/30 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.05)]' : 'bg-blue-50 border-blue-200 text-blue-600')
-                          : (theme === 'dark' ? 'bg-slate-950/40 border-slate-900 hover:border-[var(--border-primary)]' : 'bg-slate-50/50 border-slate-100 hover:border-slate-200')
+                          : (theme === 'dark' ? 'bg-[var(--bg-primary)]/40 border-slate-900 hover:border-[var(--border-primary)]' : 'bg-[var(--bg-secondary)]/50 border-[var(--border-primary)] hover:border-[var(--border-primary)]')
                       }`}
                     >
                       <div className="space-y-0.5">
                         <span className="text-xs font-black tracking-wide block truncate max-w-[140px]">{displayName}</span>
                         {hasZone && value.tranche && (
-                          <span className="text-[8px] font-bold tracking-wider uppercase text-slate-500">
+                          <span className="text-[8px] font-bold tracking-wider uppercase text-[var(--text-muted)]">
                             Tranche {value.tranche}
                           </span>
                         )}
@@ -1778,7 +1778,7 @@ const ChartsTerminal: React.FC = () => {
                           BUY ZONE
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-slate-800 border border-slate-700 text-slate-500 uppercase tracking-wider">
+                        <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)] uppercase tracking-wider">
                           HOLD
                         </span>
                       )}
@@ -1794,27 +1794,27 @@ const ChartsTerminal: React.FC = () => {
         <section className="lg:col-span-6 space-y-6">
           {/* Interactive Chart Card */}
           <div className={`p-5 rounded-3xl border flex flex-col ${
-            theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
           }`}>
             {/* Chart Toolbar */}
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-black tracking-wider uppercase ${
-                  theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                  theme === 'dark' ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-muted)]'
                 }`}>NSE Chart Terminal</span>
                 {chartLoading && <RefreshCw className="h-3.5 w-3.5 animate-spin text-blue-500" />}
               </div>
               
               {/* Candles vs Line toggles */}
               <div className={`flex rounded-xl p-0.5 border ${
-                theme === 'dark' ? 'bg-slate-950 border-[var(--border-primary)]/80' : 'bg-slate-100 border-slate-200'
+                theme === 'dark' ? 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80' : 'bg-slate-100 border-[var(--border-primary)]'
               }`}>
                 <button
                   onClick={() => setChartType('candles')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                     chartType === 'candles'
-                      ? (theme === 'dark' ? 'bg-slate-800 text-[var(--text-primary)]' : 'bg-white text-slate-800 shadow-sm')
-                      : 'text-slate-500 hover:text-slate-400'
+                      ? (theme === 'dark' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'bg-[var(--bg-primary)] text-slate-800 shadow-sm')
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-tertiary)]'
                   }`}
                 >
                   Candles
@@ -1823,8 +1823,8 @@ const ChartsTerminal: React.FC = () => {
                   onClick={() => setChartType('line')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                     chartType === 'line'
-                      ? (theme === 'dark' ? 'bg-slate-800 text-[var(--text-primary)]' : 'bg-white text-slate-800 shadow-sm')
-                      : 'text-slate-500 hover:text-slate-400'
+                      ? (theme === 'dark' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'bg-[var(--bg-primary)] text-slate-800 shadow-sm')
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-tertiary)]'
                   }`}
                 >
                   Line
@@ -1836,12 +1836,12 @@ const ChartsTerminal: React.FC = () => {
             <div 
               ref={chartContainerRef} 
               className={`w-full rounded-2xl overflow-hidden border ${
-                theme === 'dark' ? 'border-[var(--border-primary)]/60 bg-slate-950' : 'border-slate-200 bg-white'
+                theme === 'dark' ? 'border-[var(--border-primary)]/60 bg-[var(--bg-primary)]' : 'border-[var(--border-primary)] bg-[var(--bg-primary)]'
               }`}
               style={{ minHeight: '450px' }}
             >
               {historyData.length === 0 && !chartLoading && (
-                <div className="flex flex-col items-center justify-center h-[450px] text-slate-500">
+                <div className="flex flex-col items-center justify-center h-[450px] text-[var(--text-muted)]">
                   <Info className="h-8 w-8 mb-2 text-slate-600" />
                   <p className="text-xs font-black uppercase tracking-widest">No Historical Quotes Available</p>
                 </div>
@@ -1850,17 +1850,17 @@ const ChartsTerminal: React.FC = () => {
 
             {/* Overlays Toggle and Legend Panel */}
             <div className={`mt-4 p-4 rounded-2xl border flex flex-col md:flex-row justify-between items-center gap-4 ${
-              theme === 'dark' ? 'bg-slate-950/60 border-[var(--border-primary)]/80' : 'bg-slate-50 border-slate-200'
+              theme === 'dark' ? 'bg-[var(--bg-primary)]/60 border-[var(--border-primary)]/80' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)]'
             }`}>
               {/* Toggles */}
               <div className="flex flex-wrap gap-4 items-center">
-                <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">Overlays:</span>
+                <span className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">Overlays:</span>
                 <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs font-bold">
                   <input 
                     type="checkbox" 
                     checked={showTargets} 
                     onChange={(e) => setShowTargets(e.target.checked)}
-                    className="rounded border-[var(--border-primary)] bg-slate-950 text-blue-600 focus:ring-blue-500/20"
+                    className="rounded border-[var(--border-primary)] bg-[var(--bg-primary)] text-blue-600 focus:ring-blue-500/20"
                   />
                   <span>Targets</span>
                 </label>
@@ -1869,7 +1869,7 @@ const ChartsTerminal: React.FC = () => {
                     type="checkbox" 
                     checked={showVolume} 
                     onChange={(e) => setShowVolume(e.target.checked)}
-                    className="rounded border-[var(--border-primary)] bg-slate-950 text-blue-600 focus:ring-blue-500/20"
+                    className="rounded border-[var(--border-primary)] bg-[var(--bg-primary)] text-blue-600 focus:ring-blue-500/20"
                   />
                   <span>Volume</span>
                 </label>
@@ -1878,7 +1878,7 @@ const ChartsTerminal: React.FC = () => {
                     type="checkbox" 
                     checked={showSr} 
                     onChange={(e) => setShowSr(e.target.checked)}
-                    className="rounded border-[var(--border-primary)] bg-slate-950 text-blue-600 focus:ring-blue-500/20"
+                    className="rounded border-[var(--border-primary)] bg-[var(--bg-primary)] text-blue-600 focus:ring-blue-500/20"
                   />
                   <span>S&R</span>
                 </label>
@@ -1887,14 +1887,14 @@ const ChartsTerminal: React.FC = () => {
                     type="checkbox" 
                     checked={showPatterns} 
                     onChange={(e) => setShowPatterns(e.target.checked)}
-                    className="rounded border-[var(--border-primary)] bg-slate-950 text-blue-600 focus:ring-blue-500/20"
+                    className="rounded border-[var(--border-primary)] bg-[var(--bg-primary)] text-blue-600 focus:ring-blue-500/20"
                   />
                   <span>Patterns</span>
                 </label>
               </div>
 
               {/* Legend */}
-              <div className="flex flex-wrap gap-3.5 items-center text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+              <div className="flex flex-wrap gap-3.5 items-center text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3.5 h-0.5 bg-emerald-500" />
                   <span>Entry</span>
@@ -1918,12 +1918,12 @@ const ChartsTerminal: React.FC = () => {
           {/* ABCD Tranche Laddering Visual Timeline */}
           {activeStrategy && (
             <div className={`p-5 rounded-3xl border ${
-              theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+              theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
             }`}>
               <div className="flex justify-between items-center mb-5 border-b border-[var(--border-primary)]/60 pb-3">
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-blue-500" />
-                  <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">
+                  <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">
                     ABCD Tranche Laddering Timeline: <span className="text-blue-500">{STRATEGY_NAMES[activeStrategyId || ''] || activeStrategyId}</span>
                   </span>
                 </div>
@@ -1950,8 +1950,8 @@ const ChartsTerminal: React.FC = () => {
                           isActive 
                             ? (theme === 'dark' ? 'bg-blue-600/10 border-blue-500/40 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.06)]' : 'bg-blue-50 border-blue-200 text-blue-600')
                             : (isPassed 
-                              ? (theme === 'dark' ? 'bg-slate-900/60 border-[var(--border-primary)]/80 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700')
-                              : (theme === 'dark' ? 'bg-slate-950/20 border-slate-950/80 text-slate-600 opacity-60' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'))
+                              ? (theme === 'dark' ? 'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80 text-[var(--text-secondary)]' : 'bg-slate-100 border-[var(--border-primary)] text-slate-700')
+                              : (theme === 'dark' ? 'bg-[var(--bg-primary)]/20 border-slate-950/80 text-slate-600 opacity-60' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-tertiary)] opacity-60'))
                         }`}
                       >
                         <div className="flex justify-between items-center mb-2">
@@ -1962,7 +1962,7 @@ const ChartsTerminal: React.FC = () => {
                         </div>
                         <div className="space-y-0.5">
                           <h4 className="text-lg font-black italic">₹ {Number(val.price).toLocaleString('en-IN')}</h4>
-                          <p className="text-[8px] font-extrabold uppercase tracking-wider text-slate-500">
+                          <p className="text-[8px] font-extrabold uppercase tracking-wider text-[var(--text-muted)]">
                             {val.date ? `Triggered: ${val.date}` : 'Not Triggered'}
                           </p>
                         </div>
@@ -1971,16 +1971,16 @@ const ChartsTerminal: React.FC = () => {
                   })}
                 </div>
               ) : (
-                <div className="py-8 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2">
+                <div className="py-8 text-center text-xs text-[var(--text-muted)] flex flex-col items-center justify-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-amber-500" />
                   <span>This strategy does not utilize the standard ABCD Tranche Laddering layout.</span>
-                  <div className="grid grid-cols-2 gap-6 w-full max-w-sm mt-3 border border-[var(--border-primary)] p-4 rounded-2xl bg-slate-950/30">
+                  <div className="grid grid-cols-2 gap-6 w-full max-w-sm mt-3 border border-[var(--border-primary)] p-4 rounded-2xl bg-[var(--bg-primary)]/30">
                     <div className="text-left">
-                      <span className="text-[9px] text-slate-500 uppercase font-extrabold">Entry Price</span>
+                      <span className="text-[9px] text-[var(--text-muted)] uppercase font-extrabold">Entry Price</span>
                       <p className="text-md font-black text-emerald-400 italic">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</p>
                     </div>
                     <div className="text-left">
-                      <span className="text-[9px] text-slate-500 uppercase font-extrabold">Target Price</span>
+                      <span className="text-[9px] text-[var(--text-muted)] uppercase font-extrabold">Target Price</span>
                       <p className="text-md font-black text-blue-400 italic">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</p>
                     </div>
                   </div>
@@ -1995,10 +1995,10 @@ const ChartsTerminal: React.FC = () => {
           {/* Institutional Trust Dial */}
           {activeStrategy && (
             <div className={`p-5 rounded-3xl border flex flex-col ${
-              theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+              theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
             }`}>
               <div className="flex justify-between items-center mb-4 border-b border-[var(--border-primary)]/60 pb-3">
-                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Institutional Trust Dial</span>
+                <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Institutional Trust Dial</span>
                 <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase ${confidence.bg} ${confidence.color} border border-current/20`}>
                   {confidence.level.split(' / ')[0]}
                 </span>
@@ -2027,13 +2027,13 @@ const ChartsTerminal: React.FC = () => {
                 </svg>
                 <div>
                   <h4 className="text-xs font-black uppercase tracking-wider">Rating: {confidence.score}/100</h4>
-                  <p className="text-[9px] text-slate-500 mt-1 font-bold">Measures technical support alignment & price zone safety.</p>
+                  <p className="text-[9px] text-[var(--text-muted)] mt-1 font-bold">Measures technical support alignment & price zone safety.</p>
                 </div>
               </div>
 
               {/* Slider Track (Miniaturized Range Visualization) */}
               <div className="relative pt-6 pb-2 px-1 border-t border-[var(--border-primary)]/40 mt-4">
-                <div className="h-1.5 w-full bg-slate-800 rounded-full relative">
+                <div className="h-1.5 w-full bg-[var(--bg-tertiary)] rounded-full relative">
                   <div 
                     className="absolute h-full bg-emerald-500/30 rounded-full"
                     style={{ left: `${rangeInfo.bottomPct}%`, right: `${100 - rangeInfo.entryPct}%` }}
@@ -2048,7 +2048,7 @@ const ChartsTerminal: React.FC = () => {
                   style={{ left: `${rangeInfo.bottomPct}%`, transform: 'translateX(-50%)' }}
                 >
                   <div className="h-3 w-0.5 bg-slate-500" />
-                  <span className="text-[6.5px] font-black text-slate-500 mt-0.5">FLR</span>
+                  <span className="text-[6.5px] font-black text-[var(--text-muted)] mt-0.5">FLR</span>
                 </div>
                 <div 
                   className="absolute -top-1.5 flex flex-col items-center"
@@ -2071,7 +2071,7 @@ const ChartsTerminal: React.FC = () => {
                   <div className="px-1 py-0.2 rounded bg-blue-600 text-[6.5px] font-black text-[var(--text-primary)] shadow">
                     ₹{Math.round(fundamentals.price)}
                   </div>
-                  <div className="w-1.5 h-1.5 rounded-full bg-white border border-blue-600 mt-0.5" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--bg-primary)] border border-blue-600 mt-0.5" />
                 </div>
               </div>
             </div>
@@ -2080,33 +2080,33 @@ const ChartsTerminal: React.FC = () => {
           {/* Guided Storytelling & Trade Targets Panel */}
           {activeStrategy && (
             <div className={`p-5 rounded-3xl border space-y-4 ${
-              theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+              theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
             }`}>
               <div className="flex items-center gap-2 border-b border-[var(--border-primary)]/60 pb-3">
                 <Sparkles className="h-4 w-4 text-blue-500" />
-                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Strategic Narrative</span>
+                <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Strategic Narrative</span>
               </div>
               <div>
-                <h3 className="text-xs font-black uppercase text-slate-300">{STRATEGY_NAMES[activeStrategyId || ''] || activeStrategyId}</h3>
-                <p className="text-[11px] text-slate-400 mt-2 font-medium leading-relaxed bg-slate-950/45 p-3 rounded-2xl border border-slate-900/50">
+                <h3 className="text-xs font-black uppercase text-[var(--text-secondary)]">{STRATEGY_NAMES[activeStrategyId || ''] || activeStrategyId}</h3>
+                <p className="text-[11px] text-[var(--text-tertiary)] mt-2 font-medium leading-relaxed bg-[var(--bg-primary)]/45 p-3 rounded-2xl border border-slate-900/50">
                   {getStorytellingText()}
                 </p>
               </div>
               <div className="space-y-2 pt-2 border-t border-[var(--border-primary)]/40">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-bold">Safe Entry:</span>
+                  <span className="text-[var(--text-tertiary)] font-bold">Safe Entry:</span>
                   <span className="font-extrabold text-emerald-400">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-bold">Target Price:</span>
+                  <span className="text-[var(--text-tertiary)] font-bold">Target Price:</span>
                   <span className="font-extrabold text-blue-400">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-bold">Stop Loss:</span>
+                  <span className="text-[var(--text-tertiary)] font-bold">Stop Loss:</span>
                   <span className="font-extrabold text-rose-500">₹ {Math.round(activeStrategy.stopLoss ? Number(activeStrategy.stopLoss) : (Number(activeStrategy.entryPrice || 0) * 0.9)).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-t border-[var(--border-primary)]/40 pt-2">
-                  <span className="text-slate-400 font-bold">R/R Ratio:</span>
+                  <span className="text-[var(--text-tertiary)] font-bold">R/R Ratio:</span>
                   <span className="font-extrabold text-blue-400">
                     1 : {((Number(activeStrategy.target || 0) - Number(activeStrategy.entryPrice || 0)) / Math.max(1, (Number(activeStrategy.entryPrice || 0) - (activeStrategy.stopLoss ? Number(activeStrategy.stopLoss) : Number(activeStrategy.entryPrice || 0) * 0.9)))).toFixed(1)}
                   </span>
@@ -2117,11 +2117,11 @@ const ChartsTerminal: React.FC = () => {
 
           {/* Deep Link & Verification panel */}
           <div className={`p-5 rounded-3xl border space-y-4 ${
-            theme === 'dark' ? 'bg-slate-900/40 border-[var(--border-primary)]' : 'bg-white border-slate-200/80 shadow-sm'
+            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
           }`}>
             <div className="space-y-1">
-              <span className="text-[8px] font-extrabold uppercase tracking-widest text-slate-500">Deep Link verification</span>
-              <p className="text-[10px] font-bold text-slate-400">Verify these exact levels inside your native TradingView charts.</p>
+              <span className="text-[8px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]">Deep Link verification</span>
+              <p className="text-[10px] font-bold text-[var(--text-tertiary)]">Verify these exact levels inside your native TradingView charts.</p>
             </div>
             <a
               href={`https://www.tradingview.com/chart/?symbol=NSE:${symbol}&interval=1H`}
