@@ -30,9 +30,11 @@ const NotFoundPage = lazy(() => import('./pages/NotFound'));
 const ChartsTerminalPage = lazy(() => import('./pages/ChartsTerminal'));
 const ScreenerVerifyPage = lazy(() => import('./pages/ScreenerVerify'));
 
+import { ThemeProvider } from './context/ThemeContext';
+
 // Institutional Loading Skeleton
 const PageLoader = () => (
-  <div className="min-h-screen bg-white p-4 md:p-8 lg:p-10 space-y-6 animate-in fade-in duration-300">
+  <div className="min-h-screen bg-[var(--bg-primary)] p-4 md:p-8 lg:p-10 space-y-6 animate-in fade-in duration-300">
     <div className="flex items-center gap-4">
       <Skeleton className="h-10 w-10 rounded-xl" />
       <div className="space-y-2 flex-1">
@@ -100,6 +102,7 @@ function AnimatedRoutes() {
 function App() {
   return (
     <HelmetProvider>
+    <ThemeProvider>
     <AuthProvider>
       <Toaster position="top-right" richColors closeButton expand={false} visibleToasts={5} duration={5000} toastOptions={{ style: { fontSize: '13px', fontWeight: 600 }, className: 'font-sans' }} />
       <Router>
@@ -110,6 +113,7 @@ function App() {
         </ErrorBoundary>
       </Router>
     </AuthProvider>
+    </ThemeProvider>
     </HelmetProvider>
   );
 }

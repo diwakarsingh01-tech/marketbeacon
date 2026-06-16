@@ -10,6 +10,8 @@ import { safeJsonParse, getApiUrl } from '../../lib/api-utils';
 
 const API_URL = getApiUrl();
 
+import { useTheme } from '../../context/ThemeContext';
+
 // Build a flat list of unique stocks for search
 const ALL_STOCKS = Array.from(new Set(Object.values(BASKETS).flat())).sort();
 
@@ -84,15 +86,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
       }
     } catch (e) { }
   };
-  const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
-    return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'dark';
-  });
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setThemeState(next);
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('mb_theme', next);
-  };
+  const { theme, toggleTheme } = useTheme();
 
   const [indices, setIndices] = useState<any[]>([]);
   const [marketStatus, setMarketStatus] = useState('CLOSED');
@@ -211,7 +205,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         {/* Desktop-only Pulse Status */}
         <div className="hidden md:flex flex-col h-8 justify-center">
           <div className="flex items-center space-x-2">
-             <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">Pulse Status</span>
+             <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Pulse Status</span>
              <div className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
           </div>
           <span className="text-[7px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">{marketStatus} Mode</span>
@@ -233,35 +227,35 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
             onFocus={() => searchQuery.length >= 1 && setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1.5 px-2 py-1 bg-zinc-800 border border-zinc-700 rounded-md pointer-events-none opacity-50 shadow-sm">
-            <Command className="h-2.5 w-2.5 text-zinc-400" />
-            <span className="text-[8px] font-black text-zinc-400">K</span>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1.5 px-2 py-1 bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] rounded-md pointer-events-none opacity-50 shadow-sm">
+            <Command className="h-2.5 w-2.5 text-[var(--text-tertiary)]" />
+            <span className="text-[8px] font-black text-[var(--text-tertiary)]">K</span>
           </div>
         </form>
 
         {/* Suggestions Dropdown */}
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2.5 bg-zinc-950 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-zinc-800 overflow-hidden z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="p-3 border-b border-zinc-800 bg-black flex justify-between items-center">
-               <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest px-2">Institutional Match</span>
-               <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-widest px-2">Press Enter</span>
+          <div className="absolute top-full left-0 right-0 mt-2.5 bg-[var(--bg-primary)] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-[var(--border-primary)] overflow-hidden z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="p-3 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] flex justify-between items-center">
+               <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest px-2">Institutional Match</span>
+               <span className="text-[7px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest px-2">Press Enter</span>
             </div>
             <div className="max-h-80 overflow-y-auto overflow-x-hidden no-scrollbar p-1.5 space-y-0.5">
               {suggestions.map((stock) => (
                 <button
                   key={stock.symbol}
                   onClick={() => selectStock(stock.symbol)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-zinc-900 rounded-xl transition-all group text-left border border-transparent hover:border-zinc-800"
+                  className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[var(--bg-secondary)] rounded-xl transition-all group text-left border border-transparent hover:border-[var(--border-primary)]"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="p-2 bg-zinc-900 rounded-lg border border-zinc-800 group-hover:bg-black group-hover:border-blue-500/30 transition-all shrink-0">
+                    <div className="p-2 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-primary)] group-hover:bg-[var(--bg-primary)] group-hover:border-blue-500/30 transition-all shrink-0">
                        <Zap className="h-3.5 w-3.5 text-blue-600 group-hover:scale-110 transition-transform" />
                     </div>
                     <div className="flex flex-col min-w-0">
-                       <span className="text-sm font-black text-white tracking-tighter leading-none">{stock.symbol}</span>
+                       <span className="text-sm font-black text-[var(--text-primary)] tracking-tighter leading-none">{stock.symbol}</span>
                        <span className="flex flex-wrap gap-1 mt-1">
                          {stock.baskets?.map((b: string) => (
-                           <span key={b} className={`text-[7px] font-black px-1.5 py-0.5 rounded-md border ${basketColors[b] || 'bg-zinc-900 text-zinc-400 border-zinc-700'}`}>
+                           <span key={b} className={`text-[7px] font-black px-1.5 py-0.5 rounded-md border ${basketColors[b] || 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-secondary)]'}`}>
                              {b.replace(' Basket', '')}
                            </span>
                          ))}
@@ -286,13 +280,13 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
       {/* Right: Actions & User */}
       <div className="flex items-center space-x-3 md:space-x-6 shrink-0">
         {/* Indices Bar (Sleeker version) */}
-        <div className="hidden xl:flex items-center space-x-8 pr-6 border-r border-zinc-800">
+        <div className="hidden xl:flex items-center space-x-8 pr-6 border-r border-[var(--border-primary)]">
            {Array.isArray(indices) && indices.slice(0, 2).map((idx) => {
              const athDiff = idx.ath && idx.price ? ((idx.ath - idx.price) / idx.ath) * 100 : 0;
              return (
               <div key={idx.name} className="flex flex-col items-start space-y-1">
                  <div className="flex items-center space-x-3">
-                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">{idx.name}</span>
+                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">{idx.name}</span>
                     <span className={`text-[11px] font-black font-mono leading-none ${idx.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                        {idx.price ? idx.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                     </span>
@@ -309,7 +303,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         {/* Mobile Search Trigger Button */}
         <button 
           onClick={() => setShowMobileSearch(true)}
-          className="p-3 text-zinc-500 hover:text-white lg:hidden hover:bg-zinc-800 rounded-xl transition-all"
+          className="p-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] lg:hidden hover:bg-[var(--bg-tertiary)] rounded-xl transition-all"
           title="Search Stocks"
         >
           <Search className="h-5 w-5" />
@@ -354,10 +348,10 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="absolute right-0 top-full mt-3 w-80 md:w-96 bg-zinc-950 rounded-[1.8rem] shadow-2xl border border-zinc-800 p-3 z-[110] max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:w-auto"
+              className="absolute right-0 top-full mt-3 w-80 md:w-96 bg-[var(--bg-primary)] rounded-[1.8rem] shadow-2xl border border-[var(--border-primary)] p-3 z-[110] max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:w-auto"
             >
-               <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">System Alerts</span>
+               <div className="px-4 py-3 border-b border-[var(--border-primary)] flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">System Alerts</span>
                   {notifications.some(n => n.unread) && (
                     <button 
                       onClick={() => {
@@ -378,7 +372,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                       animate={{ opacity: 1 }}
                       className="py-12 text-center flex flex-col items-center space-y-3"
                     >
-                       <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center">
+                       <div className="w-12 h-12 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center">
                           <Bell className="h-5 w-5 text-slate-200" />
                        </div>
                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No New Alerts</span>
@@ -392,7 +386,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.2, delay: i * 0.03, ease: 'easeOut' }}
                         onClick={() => n.unread && markAsRead(n.id)}
-                        className={`p-3 rounded-2xl flex items-start gap-3 transition-all hover:bg-zinc-800 relative cursor-pointer ${n.unread ? 'bg-blue-50/20' : ''}`}
+                        className={`p-3 rounded-2xl flex items-start gap-3 transition-all hover:bg-[var(--bg-tertiary)] relative cursor-pointer ${n.unread ? 'bg-blue-50/20' : ''}`}
                       >
                        <AnimatePresence>
                        {n.unread && (
@@ -410,7 +404,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                          n.type === 'signal' ? 'bg-blue-50 text-blue-600' :
                          n.type === 'audit' ? 'bg-amber-50 text-amber-600' :
                          n.type === 'target' ? 'bg-emerald-50 text-emerald-600' :
-                         'bg-zinc-800 text-zinc-500'
+                         'bg-[var(--bg-tertiary)] text-[var(--text-muted)]'
                        }`}>
                          {n.type === 'signal' ? <Zap className="h-3.5 w-3.5" /> :
                           n.type === 'audit' ? <ShieldCheck className="h-3.5 w-3.5" /> :
@@ -418,9 +412,9 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                           <Activity className="h-3.5 w-3.5" />}
                        </div>
                        <div className="flex-1 min-w-0 pr-2">
-                         <p className="text-[11px] font-black text-white tracking-tight leading-none mb-1">{n.title}</p>
-                         <p className="text-[9px] font-medium text-zinc-500 leading-relaxed break-words">{n.message}</p>
-                          <span className="text-[7.5px] font-black text-zinc-500 uppercase tracking-widest mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
+                         <p className="text-[11px] font-black text-[var(--text-primary)] tracking-tight leading-none mb-1">{n.title}</p>
+                         <p className="text-[9px] font-medium text-[var(--text-muted)] leading-relaxed break-words">{n.message}</p>
+                          <span className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
                         </div>
                       </motion.div>
                     ))
@@ -435,7 +429,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           href="https://wa.me/919251180183" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl transition-all shadow-sm border border-emerald-100 flex items-center space-x-2 group"
+          className="p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-[var(--text-primary)] rounded-xl transition-all shadow-sm border border-emerald-100 flex items-center space-x-2 group"
         >
           <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 group-hover:scale-110 transition-transform">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -446,7 +440,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           href="https://t.me/asktoceo" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-sm border border-blue-100 flex items-center space-x-2 group"
+          className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-[var(--text-primary)] rounded-xl transition-all shadow-sm border border-blue-100 flex items-center space-x-2 group"
         >
           <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 group-hover:scale-110 transition-transform">
             <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
@@ -461,26 +455,26 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center space-x-3 p-1.5 pr-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-all rounded-[1.2rem] group border border-[var(--border-primary)]"
               >
-                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg shadow-blue-500/20 group-hover:rotate-6 transition-transform">
+                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-[var(--text-primary)] font-black text-xs shadow-lg shadow-blue-500/20 group-hover:rotate-6 transition-transform">
                    {user?.name?.[0].toUpperCase()}
                 </div>
                 <div className="flex flex-col items-start hidden sm:flex">
-                   <span className="text-[10px] font-black text-white uppercase tracking-widest leading-none">{user?.name}</span>
+                   <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest leading-none">{user?.name}</span>
                    <div className="flex items-center space-x-1.5 mt-1">
                       <div className={`w-1.5 h-1.5 rounded-full ${(user as any)?.tier === 'alpha' ? 'bg-blue-400 animate-pulse' : 'bg-slate-400'}`} />
-                      <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">{(user as any)?.tier || 'Free'} Node</span>
+                      <span className="text-[7px] font-black text-[var(--text-muted)] uppercase tracking-widest">{(user as any)?.tier || 'Free'} Node</span>
                    </div>
                 </div>
               </button>
 
               {/* User Dropdown */}
               {showUserMenu && (
-                <div className="absolute right-0 top-full mt-3 w-56 bg-zinc-950 rounded-[1.8rem] shadow-2xl border border-zinc-800 p-2.5 z-[100] animate-in zoom-in-95 duration-200">
-                   <div className="px-4 py-3 border-b border-zinc-800 mb-1">
-                      <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Account Identity</p>
-                      <p className="text-xs font-black text-white truncate">{user?.email}</p>
+                <div className="absolute right-0 top-full mt-3 w-56 bg-[var(--bg-primary)] rounded-[1.8rem] shadow-2xl border border-[var(--border-primary)] p-2.5 z-[100] animate-in zoom-in-95 duration-200">
+                   <div className="px-4 py-3 border-b border-[var(--border-primary)] mb-1">
+                      <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Account Identity</p>
+                      <p className="text-xs font-black text-[var(--text-primary)] truncate">{user?.email}</p>
                    </div>
-                   <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center justify-between px-4 py-3 hover:bg-zinc-800 rounded-2xl transition-all group">
+                   <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-tertiary)] rounded-2xl transition-all group">
                       <div className="flex items-center space-x-3">
                         <User className="h-4 w-4 text-slate-400 group-hover:text-blue-600" />
                         <span className="text-xs font-black text-slate-600 uppercase tracking-widest">My Profile</span>
@@ -496,8 +490,8 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
             </>
           ) : (
             <div className="flex items-center space-x-4">
-               <Link to="/login" className="text-[11px] font-black uppercase tracking-widest text-zinc-500 hover:text-slate-950 transition-colors">Login</Link>
-               <Link to="/login" className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:scale-105 transition-all">Launch</Link>
+               <Link to="/login" className="text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-slate-950 transition-colors">Login</Link>
+               <Link to="/login" className="px-6 py-3 bg-blue-600 text-[var(--text-primary)] rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:scale-105 transition-all">Launch</Link>
             </div>
           )}
         </div>
@@ -505,7 +499,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
       {/* Mobile Search Overlay */}
       {showMobileSearch && (
-        <div className="absolute inset-0 bg-black/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
+        <div className="absolute inset-0 bg-[var(--bg-primary)]/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
           <div className="flex items-center gap-3">
             <form onSubmit={handleSearch} className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -513,7 +507,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 type="text"
                 autoFocus
                 placeholder="Search stock..."
-                className="w-full bg-zinc-900 border border-zinc-800 py-3 pl-11 pr-4 rounded-xl text-xs font-black uppercase tracking-widest text-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-zinc-700 focus:bg-black transition-all shadow-inner"
+                className="w-full bg-[var(--bg-secondary)] border border-[var(--border-primary)] py-3 pl-11 pr-4 rounded-xl text-xs font-black uppercase tracking-widest text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-[var(--border-secondary)] focus:bg-[var(--bg-primary)] transition-all shadow-inner"
                 value={searchQuery}
                 onChange={onSearchChange}
               />
@@ -524,7 +518,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 setSearchQuery('');
                 setSuggestions([]);
               }}
-              className="p-3 text-zinc-500 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-all"
+              className="p-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]/50 rounded-xl transition-all"
             >
               <X className="h-5 w-5" />
             </button>
@@ -532,9 +526,9 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
           {/* Suggestions List in mobile view */}
           {suggestions.length > 0 && (
-            <div className="mt-3 bg-zinc-950 border border-zinc-800/85 rounded-2xl shadow-2xl overflow-y-auto max-h-[70vh] p-1.5 space-y-0.5 z-[130] animate-in fade-in slide-in-from-top-1 duration-200">
-              <div className="p-2.5 border-b border-zinc-800 bg-zinc-800/50 flex justify-between items-center rounded-t-xl">
-                 <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Match Suggestions</span>
+            <div className="mt-3 bg-[var(--bg-primary)] border border-[var(--border-primary)]/85 rounded-2xl shadow-2xl overflow-y-auto max-h-[70vh] p-1.5 space-y-0.5 z-[130] animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="p-2.5 border-b border-[var(--border-primary)] bg-[var(--bg-tertiary)]/50 flex justify-between items-center rounded-t-xl">
+                 <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Match Suggestions</span>
               </div>
               {suggestions.map((stock) => (
                 <button
@@ -543,17 +537,17 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                     selectStock(stock.symbol);
                     setShowMobileSearch(false);
                   }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-zinc-800 rounded-xl transition-all text-left group"
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-[var(--bg-tertiary)] rounded-xl transition-all text-left group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 bg-zinc-800 rounded-lg border border-zinc-800 shrink-0">
+                    <div className="p-2 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-primary)] shrink-0">
                        <Zap className="h-3.5 w-3.5 text-blue-600" />
                     </div>
                     <div className="flex flex-col min-w-0">
-                       <span className="text-xs font-black text-white tracking-tighter leading-none">{stock.symbol}</span>
+                       <span className="text-xs font-black text-[var(--text-primary)] tracking-tighter leading-none">{stock.symbol}</span>
                        <span className="flex flex-wrap gap-1 mt-1">
                          {stock.baskets?.map((b: string) => (
-                           <span key={b} className={`text-[6px] font-black px-1 py-0.5 rounded-sm border ${basketColors[b] || 'bg-zinc-900 text-zinc-400 border-zinc-700'}`}>
+                           <span key={b} className={`text-[6px] font-black px-1 py-0.5 rounded-sm border ${basketColors[b] || 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-secondary)]'}`}>
                              {b.replace(' Basket', '')}
                            </span>
                          ))}
