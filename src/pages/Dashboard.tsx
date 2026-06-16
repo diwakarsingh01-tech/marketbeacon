@@ -42,7 +42,7 @@ const DashboardStat = ({ title, value, icon: Icon, color = "blue", subtitle }: a
   return (
     <motion.div 
       whileHover={{ y: -2, scale: 1.02 }}
-      className="bg-zinc-950 border border-zinc-800 rounded-xl p-5 flex flex-col justify-between min-h-[110px] transition-all duration-200 hover:border-zinc-700 hover:shadow-lg hover:shadow-black/50"
+      className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between min-h-[110px] transition-all duration-200 hover:border-[var(--border-secondary)] hover:shadow-lg hover:shadow-black/50"
     >
       <div className="flex justify-between items-center mb-3">
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{title}</span>
@@ -51,7 +51,7 @@ const DashboardStat = ({ title, value, icon: Icon, color = "blue", subtitle }: a
         </div>
       </div>
       <div className="space-y-0.5">
-        <h3 className="text-2xl font-black text-white tracking-tight font-mono">{value}</h3>
+        <h3 className="text-2xl font-black text-[var(--text-primary)] tracking-tight font-mono">{value}</h3>
         {subtitle && (
           <p className="text-[8px] font-semibold text-slate-500 uppercase tracking-widest">{subtitle}</p>
         )}
@@ -514,30 +514,30 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   if (!data && isRefreshing) {
     return (
-      <div className="flex-1 flex flex-col py-8 md:py-12 px-6 md:px-10 space-y-8 bg-black animate-in fade-in duration-500">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-zinc-800 pb-8 gap-8">
+      <div className="flex-1 flex flex-col py-8 md:py-12 px-6 md:px-10 space-y-8 bg-[var(--bg-primary)] animate-in fade-in duration-500">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-[var(--border-primary)] pb-8 gap-8">
            <div className="space-y-4">
-              <div className="w-64 h-10 bg-zinc-800 rounded-xl animate-pulse" />
-              <div className="w-96 h-14 bg-zinc-800 rounded-2xl animate-pulse" />
+              <div className="w-64 h-10 bg-[var(--bg-tertiary)] rounded-xl animate-pulse" />
+              <div className="w-96 h-14 bg-[var(--bg-tertiary)] rounded-2xl animate-pulse" />
            </div>
            <div className="flex gap-4">
-              <div className="w-40 h-14 bg-zinc-800 rounded-2xl animate-pulse" />
-              <div className="w-40 h-14 bg-zinc-800 rounded-2xl animate-pulse" />
+              <div className="w-40 h-14 bg-[var(--bg-tertiary)] rounded-2xl animate-pulse" />
+              <div className="w-40 h-14 bg-[var(--bg-tertiary)] rounded-2xl animate-pulse" />
            </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-           {[1,2,3,4].map(i => <div key={i} className="h-40 bg-zinc-950 rounded-2xl border border-zinc-800 animate-pulse" />)}
+           {[1,2,3,4].map(i => <div key={i} className="h-40 bg-[var(--bg-primary)] rounded-2xl border border-[var(--border-primary)] animate-pulse" />)}
         </div>
-        <div className="h-96 bg-zinc-950 rounded-3xl border border-zinc-800 animate-pulse" />
+        <div className="h-96 bg-[var(--bg-primary)] rounded-3xl border border-[var(--border-primary)] animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col py-6 md:py-8 px-6 md:px-10 space-y-8 bg-black overflow-y-auto no-scrollbar terminal-scan">
+    <div className="flex-1 flex flex-col py-6 md:py-8 px-6 md:px-10 space-y-8 bg-[var(--bg-primary)] overflow-y-auto no-scrollbar terminal-scan">
       <SEO title="Stock Screener" description="Real-time stock screener with Institutional Audit Scores, ABCD entry levels, and multi-strategy analysis for Nifty 500." />
       {/* Institutional Header (Safe-Guard Rule #9) */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-zinc-800 pb-8 gap-8">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-[var(--border-primary)] pb-8 gap-8">
         <div className="space-y-4">
            <div className="flex items-center space-x-3 text-slate-400">
               <div className="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-xl flex items-center justify-center shadow-xl border border-blue-500/30">
@@ -549,7 +549,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               </div>
            </div>
             <div className="space-y-1">
-               <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase leading-none">
+               <h1 className="text-3xl md:text-5xl font-black text-[var(--text-primary)] tracking-tighter uppercase leading-none">
                  {isPortfolioRoute ? 'Wealth Desk' : isMarketRoute ? 'Market Watch' : 'Matrix Screener'}
                </h1>
                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] pl-1">
@@ -578,7 +578,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                 </button>
                 <button 
                   onClick={() => setShowBrokerHub(true)} 
-                  className="px-5 py-3 bg-slate-ink text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center space-x-2 hover:bg-black transition-all active:scale-95 border border-white/5"
+                  className="px-5 py-3 bg-slate-ink text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center space-x-2 hover:bg-[var(--bg-primary)] transition-all active:scale-95 border border-white/5"
                   style={{ backgroundColor: 'var(--slate-ink)' }}
                 >
                   <Globe className="h-4 w-4 text-blue-500" />
@@ -664,7 +664,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                 
                 <Link 
                   to="/alpha-hub"
-                  className="flex-1 md:flex-initial flex items-center justify-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md group"
+                  className="flex-1 md:flex-initial flex items-center justify-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md group"
                 >
                   <Zap className="h-4 w-4 text-yellow-300 group-hover:scale-110 transition-transform" />
                   <span>Alpha Hub</span>
@@ -727,7 +727,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
            className="flex-1 min-h-0"
          >
            {error ? (
-             <div className="bg-zinc-950 border border-zinc-800 rounded-3xl h-96 flex flex-col items-center justify-center space-y-6 shadow-2xl p-8 backdrop-blur-sm">
+             <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-3xl h-96 flex flex-col items-center justify-center space-y-6 shadow-2xl p-8 backdrop-blur-sm">
                <div className="p-6 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 max-w-md text-center">
                   <ShieldAlert className="h-10 w-10 mx-auto mb-4 animate-pulse" />
                   <h2 className="text-lg font-black uppercase tracking-tighter mb-2 italic">Institutional Link Severed</h2>
@@ -736,15 +736,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                <div className="flex items-center space-x-4">
                  <button 
                    onClick={() => { localStorage.removeItem('mb_api_override'); window.location.reload(); }} 
-                   className="px-8 py-3.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.3em] shadow-lg hover:bg-blue-500 transition-all active:scale-95"
+                   className="px-8 py-3.5 bg-blue-600 text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-[0.3em] shadow-lg hover:bg-blue-500 transition-all active:scale-95"
                  >
                    Authorize Node Reset
                  </button>
-                 <Link to="/connect" className="px-6 py-3.5 bg-zinc-800 border border-slate-700 text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:text-white transition-all">Connectivity Hub</Link>
+                 <Link to="/connect" className="px-6 py-3.5 bg-[var(--bg-tertiary)] border border-slate-700 text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:text-[var(--text-primary)] transition-all">Connectivity Hub</Link>
                </div>
              </div>
            ) : (
-             <div className="bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden h-full relative group/table backdrop-blur-sm">
+             <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-3xl shadow-2xl flex flex-col overflow-hidden h-full relative group/table backdrop-blur-sm">
                 <div className="flex-1 overflow-auto custom-scrollbar">
                    <TradeTable 
                      trades={getTradesForTab()} 
@@ -772,11 +772,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-10 rounded-3xl"
+                    className="absolute inset-0 bg-[var(--bg-primary)]/80 backdrop-blur-md flex items-center justify-center z-10 rounded-3xl"
                   >
                     <div className="flex flex-col items-center space-y-4">
                       <div className="relative w-16 h-16">
-                        <div className="absolute inset-0 border-4 border-zinc-800 rounded-full" />
+                        <div className="absolute inset-0 border-4 border-[var(--border-primary)] rounded-full" />
                         <div className="absolute inset-0 border-4 border-transparent border-t-blue-500 rounded-full animate-spin" />
                         <div className="absolute inset-0 border-4 border-transparent border-b-emerald-500 rounded-full animate-spin" style={{ animationDuration: '0.8s', transform: 'rotate(180deg)' }} />
                       </div>
@@ -801,18 +801,18 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
        <BrokerHub isOpen={showBrokerHub} onClose={() => setShowBrokerHub(false)} onImportComplete={handleImportHoldings} />
 
       {showAddManualModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-[var(--bg-primary)]/80 backdrop-blur-md animate-in fade-in duration-300">
            <motion.div 
              initial={{ scale: 0.95, opacity: 0 }}
              animate={{ scale: 1, opacity: 1 }}
-             className="bg-zinc-950 w-full max-w-md rounded-3xl shadow-2xl p-8 border border-zinc-800"
+             className="bg-[var(--bg-primary)] w-full max-w-md rounded-3xl shadow-2xl p-8 border border-[var(--border-primary)]"
            >
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-4 mb-6">
+              <div className="flex items-center justify-between border-b border-[var(--border-primary)] pb-4 mb-6">
                  <div className="space-y-1">
-                    <h3 className="text-xl font-black text-white uppercase italic leading-none">Add Asset Node</h3>
+                    <h3 className="text-xl font-black text-[var(--text-primary)] uppercase italic leading-none">Add Asset Node</h3>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Manual Portfolio Entry</p>
                  </div>
-                 <button onClick={() => setShowAddManualModal(false)} className="p-2 text-slate-400 hover:text-white hover:bg-zinc-800 rounded-full transition-all"><X className="h-5 w-5" /></button>
+                 <button onClick={() => setShowAddManualModal(false)} className="p-2 text-slate-400 hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"><X className="h-5 w-5" /></button>
               </div>
               <form onSubmit={async (e) => {
                  e.preventDefault();
@@ -827,19 +827,19 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               }} className="space-y-6 text-left">
                  <div>
                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Stock Symbol</label>
-                    <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-black border-2 border-zinc-800 rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-zinc-950 transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-white placeholder:text-slate-600" />
+                    <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-slate-600" />
                  </div>
                  <div className="grid grid-cols-2 gap-6">
                     <div>
                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
-                       <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-black border-2 border-zinc-800 rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-zinc-950 transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-white placeholder:text-slate-600" />
+                       <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-slate-600" />
                     </div>
                     <div>
                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Buy Price</label>
-                       <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-black border-2 border-zinc-800 rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-zinc-950 transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-white placeholder:text-slate-600" />
+                       <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-slate-600" />
                     </div>
                  </div>
-                  <button type="submit" className="w-full py-5 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-blue-500">
+                  <button type="submit" className="w-full py-5 bg-blue-600 text-[var(--text-primary)] rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-blue-500">
                      Add to Portfolio
                   </button>
                </form>
