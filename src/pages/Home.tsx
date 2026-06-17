@@ -33,6 +33,7 @@ import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import SEO from '../components/SEO';
+import { OrganizationSchema, WebApplicationSchema } from '../components/StructuredData';
 
 const API_URL = getApiUrl();
 
@@ -290,6 +291,8 @@ const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] font-sans text-[var(--text-primary)] overflow-x-hidden selection:bg-blue-500/30">
       <SEO title="Best Stock Analysis Tool India" description="India's #1 Institutional Audit Score for Nifty 500 stocks. ABCD Tranche Logic, FII DII trends & real-time screening. For educational purposes only." />
+      <OrganizationSchema />
+      <WebApplicationSchema />
       {/* Live Trust Ticker (Safe-Guard Rule #7) */}
       <div className="bg-blue-600 py-2 overflow-hidden whitespace-nowrap border-b border-blue-500 relative">
         <div className="flex animate-marquee items-center gap-12">

@@ -4,6 +4,7 @@ import { ArrowLeft, Clock, ShieldCheck, ArrowRight, ChevronRight } from 'lucide-
 import BrandLogo from '../components/brand/BrandLogo';
 import SiteFooter from '../components/layout/SiteFooter';
 import SEO from '../components/SEO';
+import { OrganizationSchema, ArticleSchema, BreadcrumbSchema } from '../components/StructuredData';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 
 // ── Article Content Database ──────────────────────────────────────────────────
@@ -197,7 +198,19 @@ const BlogArticlePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      <SEO title={article.title} description={article.metaDescription} url={`/blog/${slug}`} />
+      <SEO title={article.title} description={article.metaDescription} url={`/blog/${slug}`} type="article" />
+      <OrganizationSchema />
+      <ArticleSchema
+        title={article.title}
+        description={article.metaDescription}
+        url={`/blog/${slug}`}
+        datePublished={article.date}
+      />
+      <BreadcrumbSchema items={[
+        { label: 'Home', href: '/' },
+        { label: 'Blog', href: '/blog' },
+        { label: article.title, href: `/blog/${slug}` }
+      ]} />
       {/* Navigation */}
       <nav className="border-b border-slate-800/60 px-6 md:px-10 py-5 flex items-center justify-between backdrop-blur-md bg-slate-950/80 sticky top-0 z-50">
         <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">

@@ -14,6 +14,7 @@ import { Confetti } from '../components/ui/Confetti';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { toast } from 'sonner';
 import SEO from '../components/SEO';
+import { OrganizationSchema, BreadcrumbSchema } from '../components/StructuredData';
 
 const API_URL = getApiUrl();
 
@@ -29,7 +30,7 @@ const PricingPage: React.FC = () => {
   React.useEffect(() => {
     const linkCanonical = document.createElement('link');
     linkCanonical.rel = 'canonical';
-    linkCanonical.href = 'https://marketbeacon.pro/pricing';
+    linkCanonical.href = 'https://marketbeaconpro.com/pricing';
     document.head.appendChild(linkCanonical);
     return () => {
       document.head.removeChild(linkCanonical);
@@ -135,6 +136,8 @@ const PricingPage: React.FC = () => {
   return (
     <div className="p-4 md:p-10 lg:p-16 max-w-7xl mx-auto space-y-8 md:space-y-12 pb-32 md:pb-16 font-sans min-h-screen overflow-y-auto">
       <SEO title="Pricing & License Desk" description="MarketBeacon Pro pricing plans — Free, Pro and Alpha tiers. Institutional stock research tools for every trader." />
+      <OrganizationSchema />
+      <BreadcrumbSchema items={[{ label: 'Home', href: '/' }, { label: 'Pricing', href: '/pricing' }]} />
       {showConfetti && <Confetti />}
       
       <div className="text-center space-y-6">

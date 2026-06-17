@@ -21,6 +21,7 @@ import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import { toast } from 'sonner';
 import SEO from '../components/SEO';
+import { OrganizationSchema, BreadcrumbSchema } from '../components/StructuredData';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 
 const API_URL = getApiUrl();
@@ -183,6 +184,11 @@ const PublicAnalysisPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-cyan-500/30 font-sans">
       <SEO title={`${symbol} Fundamental Audit`} description={`Research analysis for ${symbol} — Audit Score, peer comparison & key metrics.`} url={`/analysis/${symbol}`} />
+      <OrganizationSchema />
+      <BreadcrumbSchema items={[
+        { label: 'Home', href: '/' },
+        { label: `${symbol} Analysis`, href: `/analysis/${symbol}` }
+      ]} />
       {/* Visual Design Layer */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-5%] right-[-5%] w-[40%] h-[40%] bg-blue-600/5 blur-[120px] rounded-full" />

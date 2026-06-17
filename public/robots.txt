@@ -21,4 +21,4 @@ Disallow: /connect
 # Block old marketplace URL (301 redirected to /license-desk)
 Disallow: /marketplace
 
-Sitemap: https://marketbeacon.pro/sitemap.xml
+Sitemap: https://marketbeaconpro.com/sitemap.xml

@@ -1,0 +1,2060 @@
+//@version=6
+indicator(title="Investment_Master_Indicator", shorttitle="DKI", overlay=true)
+
+// === MODULES DASHBOARD: Master Toggles ===
+group_dashboard = "Modules Dashboard"
+show_envelope = input.bool(true, title="Envelope", group=group_dashboard)
+show_52whl = input.bool(true, title="52 Week High Low", group=group_dashboard)
+show_bb = input.bool(true, title="Bollinger Bands", group=group_dashboard)
+show_knoxville = input.bool(true, title="Knoxville Divergence", group=group_dashboard)
+show_sma_abcd = input.bool(true, title="SMA A-B-C-D", group=group_dashboard)
+show_sr = input.bool(true, title="Support/Resistance Levels", group=group_dashboard)
+show_ath67 = input.bool(true, title="67% Down From ATH", group=group_dashboard)
+show_20rally = input.bool(true, title="20% Green Rally", group=group_dashboard)
+show_shortsnsr = input.bool(true, title="Short-Term SnR (Mini-Range)", group=group_dashboard)
+show_rsi_bounce = input.bool(true, title="RSI 25% Short-Term Bounce", group=group_dashboard)
+show_wm_swing_seq = input.bool(true, title="WM Bands – Swing Entry (Seq B-T-B-T-B)", group=group_dashboard)
+show_cup_handle = input.bool(true, title="Cup & Handle Final", group=group_dashboard)
+grpMod = "Reverse H&S — Module" 
+modOn  = input.bool(true, "Reverse Head & Shoulders", group=group_dashboard)
+
+
+// ===========================================================================
+// === SUPPORT & RESISTANCE MODULE (Major S&R Lines, Dynamic, Modular) =======
+group_sr = "Support/Resistance (Major Levels)"
+srLookback = input.int(600, title="Lookback (300W/600D/1200-4H/1800-1H/2000-15m)", minval=50, group=group_sr)
+srTolerancePercent = input.float(0.2, title="Level Merge Tolerance %", minval=0.05, step=0.05, group=group_sr)
+minLevelGap = input.float(12.0, title="Min Gap Between Levels (%)", minval=0.1, step=0.1, group=group_sr)
+maxSRLines = input.int(6, title="Max S&R Lines to Show", minval=2, maxval=12, group=group_sr)
+
+if barstate.islast and show_sr
+    float[] srLevels = array.new_float()
+    int[] srCounts = array.new_int()
+    string[] srTypes = array.new_string()
+    for i = 0 to srLookback - 1
+        price = close[i]
+        rounded = math.round(price / syminfo.mintick) * syminfo.mintick
+        tolerance = rounded * srTolerancePercent / 100.0
+        found = false
+        int idx = na
+        if array.size(srLevels) > 0
+            for j = 0 to array.size(srLevels) - 1
+                level = array.get(srLevels, j)
+                if math.abs(level - rounded) <= tolerance
+                    array.set(srCounts, j, array.get(srCounts, j) + 1)
+                    found := true
+                    idx := j
+                    break
+        if not found
+            array.push(srLevels, rounded)
+            array.push(srCounts, 1)
+            idx := array.size(srLevels) - 1
+        // S/R type detection
+        if not na(idx)
+            level = array.get(srLevels, idx)
+            supportCnt = 0
+            resistCnt = 0
+            for x = 0 to srLookback - 1
+                if close[x] > level
+                    supportCnt := supportCnt + 1
+                if close[x] < level
+                    resistCnt := resistCnt + 1
+            srType = supportCnt > resistCnt ? "Support" : "Resistance"
+            if array.size(srTypes) <= idx
+                array.push(srTypes, srType)
+            else
+                array.set(srTypes, idx, srType)
+
+    // --- Sort by count ---
+    int nLevels = array.size(srLevels)
+    int[] idxSorted = array.new_int()
+    for i = 0 to nLevels - 1
+        array.push(idxSorted, i)
+    for i = 0 to nLevels - 2
+        for j = i + 1 to nLevels - 1
+            if array.get(srCounts, array.get(idxSorted, j)) > array.get(srCounts, array.get(idxSorted, i))
+                temp = array.get(idxSorted, i)
+                array.set(idxSorted, i, array.get(idxSorted, j))
+                array.set(idxSorted, j, temp)
+
+    // --- Pick only levels with enough gap ---
+    float[] chosenLevels = array.new_float()
+    string[] chosenTypes = array.new_string()
+    int[] chosenCounts = array.new_int()
+    for k = 0 to array.size(idxSorted) - 1
+        idx = array.get(idxSorted, k)
+        lvl = array.get(srLevels, idx)
+        typ = array.get(srTypes, idx)
+        cnt = array.get(srCounts, idx)
+        isFar = true
+        if array.size(chosenLevels) > 0
+            for j = 0 to array.size(chosenLevels) - 1
+                gap = math.abs(array.get(chosenLevels, j) - lvl) / lvl * 100
+                if gap < minLevelGap
+                    isFar := false
+                    break
+        if isFar and array.size(chosenLevels) < maxSRLines
+            array.push(chosenLevels, lvl)
+            array.push(chosenTypes, typ)
+            array.push(chosenCounts, cnt)
+
+    // --- Draw all levels with label showing paired gap (ABOVE LINE) ---
+    for k = 0 to array.size(chosenLevels) - 1
+        lvl = array.get(chosenLevels, k)
+        typ = array.get(chosenTypes, k)
+        cnt = array.get(chosenCounts, k)
+        clr = typ == "Support" ? color.green : color.red
+        float minGapHere = na
+        float pairedLevel = na
+        for m = 0 to array.size(chosenLevels) - 1
+            if m != k
+                gapVal = math.abs(array.get(chosenLevels, m) - lvl) / lvl * 100
+                if na(minGapHere) or gapVal < minGapHere
+                    minGapHere := gapVal
+                    pairedLevel := array.get(chosenLevels, m)
+        pairStr = not na(pairedLevel) ? "→ " + str.tostring(pairedLevel, format.mintick) : ""
+        gapText = not na(minGapHere) ? " | Gap " + pairStr + " (" + str.tostring(minGapHere, "#.##") + "%)" : ""
+        line.new(bar_index - srLookback, lvl, bar_index, lvl, color=clr, width=4, extend=extend.both, style=line.style_solid)
+        label.new(
+          bar_index, lvl + syminfo.mintick * 10,
+          typ + " ₹" + str.tostring(lvl, format.mintick) + " (" + str.tostring(cnt) + "x)" + gapText,
+          color=color.new(clr, 85),
+          style=label.style_label_upper_right,
+          textcolor=color.black, size=size.normal)
+
+// =========================================
+// === ENVELOPE MODULE + ABCD =============
+group_env = "Envelope"
+len_env         = input.int(20, title="Length", minval=1, group=group_env)
+percent_env     = input.float(10.0, "Percent", group=group_env)
+src_env         = input.source(close, title="Source", group=group_env)
+exponential_env = input.bool(false, "Exponential", group=group_env)
+basis_env = exponential_env ? ta.ema(src_env, len_env) : ta.sma(src_env, len_env)
+k_env = percent_env / 100.0
+upper_env = basis_env * (1 + k_env)
+lower_env = basis_env * (1 - k_env)
+plot(show_envelope ? basis_env : na, "Envelope Basis", color=#FF6D00)
+u_env = plot(show_envelope ? upper_env : na, "Envelope Upper", color=#2962FF)
+l_env = plot(show_envelope ? lower_env : na, "Envelope Lower", color=#2962FF)
+fill(u_env, l_env, color=show_envelope ? color.rgb(33, 150, 243, 95) : na, title="Envelope Background")
+
+// Envelope ABCD
+group_env_abcd = "Envelope A-B-C-D"
+enable_env_abcd = input.bool(false, title="Enable Envelope ABCD", group=group_env_abcd)
+step_env_abcd   = input.float(10, title="ABCD Step %", group=group_env_abcd) / 100
+
+var float entryA_env = na
+var float entryB_env = na
+var float entryC_env = na
+var float entryD_env = na
+
+if enable_env_abcd
+    // --- ENTRY LOGIC ---
+    if na(entryA_env) and close <= lower_env
+        entryA_env := close
+        label.new(bar_index, low, "A (Env)", color=color.green, style=label.style_label_up)
+    if not na(entryA_env) and na(entryB_env) and close <= entryA_env * (1 - step_env_abcd)
+        entryB_env := close
+        label.new(bar_index, low, "B (Env)", color=color.lime, style=label.style_label_up)
+    if not na(entryB_env) and na(entryC_env) and close <= entryB_env * (1 - step_env_abcd)
+        entryC_env := close
+        label.new(bar_index, low, "C (Env)", color=color.teal, style=label.style_label_up)
+    if not na(entryC_env) and na(entryD_env) and close <= entryC_env * (1 - step_env_abcd)
+        entryD_env := close
+        label.new(bar_index, low, "D (Env)", color=color.navy, style=label.style_label_up)
+    // --- EXIT LOGIC ---
+    if not na(entryD_env) and close >= entryC_env
+        label.new(bar_index, high, "Exit D (Env)", color=color.red, style=label.style_label_down)
+        entryD_env := na
+    if na(entryD_env) and not na(entryC_env) and close >= entryB_env
+        label.new(bar_index, high, "Exit C (Env)", color=color.red, style=label.style_label_down)
+        entryC_env := na
+    if na(entryD_env) and na(entryC_env) and not na(entryB_env) and close >= entryA_env
+        label.new(bar_index, high, "Exit B (Env)", color=color.red, style=label.style_label_down)
+        entryB_env := na
+    if na(entryD_env) and na(entryC_env) and na(entryB_env) and not na(entryA_env) and close >= lower_env
+        label.new(bar_index, high, "Exit A (Env)", color=color.red, style=label.style_label_down)
+        entryA_env := na
+
+// =========================================
+// === 52 WEEK HIGH LOW MODULE + ABCD ======
+group_52whl = "52 Week High Low"
+per_52whl = input.int(defval=251, title='Period', group=group_52whl)
+High52 = ta.highest(high, per_52whl)
+Low52 = ta.lowest(low, per_52whl)
+basis_52whl = math.avg(High52, Low52)
+plot(show_52whl ? basis_52whl : na, '52WHL Basis', color=color.new(#FF6D00, 0))
+plot(show_52whl ? High52 : na, title='52WHL High', linewidth=2, color=color.new(#0000FF, 0))
+plot(show_52whl ? Low52 : na, title='52WHL Low', linewidth=2, color=color.new(#FF0000, 0))
+
+// 52WHL ABCD
+group_52whl_abcd = "52WHL A-B-C-D"
+enable_52whl_abcd = input.bool(false, title="Enable 52WHL ABCD", group=group_52whl_abcd)
+step_52whl_abcd   = input.float(10, title="ABCD Step %", group=group_52whl_abcd) / 100
+
+var float entryA_52whl = na
+var float entryB_52whl = na
+var float entryC_52whl = na
+var float entryD_52whl = na
+
+if enable_52whl_abcd
+    if na(entryA_52whl) and close <= Low52
+        entryA_52whl := close
+        label.new(bar_index, low, "A (52WL)", color=color.green, style=label.style_label_up)
+    if not na(entryA_52whl) and na(entryB_52whl) and close <= entryA_52whl * (1 - step_52whl_abcd)
+        entryB_52whl := close
+        label.new(bar_index, low, "B (52WL)", color=color.lime, style=label.style_label_up)
+    if not na(entryB_52whl) and na(entryC_52whl) and close <= entryB_52whl * (1 - step_52whl_abcd)
+        entryC_52whl := close
+        label.new(bar_index, low, "C (52WL)", color=color.teal, style=label.style_label_up)
+    if not na(entryC_52whl) and na(entryD_52whl) and close <= entryC_52whl * (1 - step_52whl_abcd)
+        entryD_52whl := close
+        label.new(bar_index, low, "D (52WL)", color=color.navy, style=label.style_label_up)
+    if not na(entryD_52whl) and close >= entryC_52whl
+        label.new(bar_index, high, "Exit D (52WL)", color=color.red, style=label.style_label_down)
+        entryD_52whl := na
+    if na(entryD_52whl) and not na(entryC_52whl) and close >= entryB_52whl
+        label.new(bar_index, high, "Exit C (52WL)", color=color.red, style=label.style_label_down)
+        entryC_52whl := na
+    if na(entryD_52whl) and na(entryC_52whl) and not na(entryB_52whl) and close >= entryA_52whl
+        label.new(bar_index, high, "Exit B (52WL)", color=color.red, style=label.style_label_down)
+        entryB_52whl := na
+    if na(entryD_52whl) and na(entryC_52whl) and na(entryB_52whl) and not na(entryA_52whl) and close >= Low52
+        label.new(bar_index, high, "Exit A (52WL)", color=color.red, style=label.style_label_down)
+        entryA_52whl := na
+
+// =========================================
+// === BOLLINGER BANDS MODULE + ABCD =======
+group_bb = "Bollinger Bands"
+length_bb  = input.int(20, minval=1, group=group_bb)
+maType_bb  = input.string("SMA", "Basis MA Type", options=["SMA", "EMA", "SMMA (RMA)", "WMA", "VWMA"], group=group_bb)
+src_bb     = input.source(close, title="Source", group=group_bb)
+mult_bb    = input.float(2.0, minval=0.001, maxval=50, title="StdDev", group=group_bb)
+offset_bb  = input.int(0, "Offset", minval=-500, maxval=500, group=group_bb)
+ma(source, length, _type) =>
+    switch _type
+        "SMA" => ta.sma(source, length)
+        "EMA" => ta.ema(source, length)
+        "SMMA (RMA)" => ta.rma(source, length)
+        "WMA" => ta.wma(source, length)
+        "VWMA" => ta.vwma(source, length)
+basis_bb = ma(src_bb, length_bb, maType_bb)
+dev_bb   = mult_bb * ta.stdev(src_bb, length_bb)
+upper_bb = basis_bb + dev_bb
+lower_bb = basis_bb - dev_bb
+plot(show_bb ? basis_bb : na, "BB Basis", color=#2962FF, offset=offset_bb)
+p1_bb = plot(show_bb ? upper_bb : na, "BB Upper", color=#F23645, offset=offset_bb)
+p2_bb = plot(show_bb ? lower_bb : na, "BB Lower", color=#089981, offset=offset_bb)
+fill(p1_bb, p2_bb, title="BB Background", color=show_bb ? color.rgb(33, 150, 243, 95) : na)
+
+// BB ABCD
+group_bb_abcd = "Bollinger Bands A-B-C-D"
+enable_bb_abcd = input.bool(false, title="Enable BB ABCD", group=group_bb_abcd)
+step_bb_abcd   = input.float(10, title="ABCD Step %", group=group_bb_abcd) / 100
+
+var float entryA_bb = na
+var float entryB_bb = na
+var float entryC_bb = na
+var float entryD_bb = na
+
+if enable_bb_abcd
+    if na(entryA_bb) and close <= lower_bb
+        entryA_bb := close
+        label.new(bar_index, low, "A (BB)", color=color.green, style=label.style_label_up)
+    if not na(entryA_bb) and na(entryB_bb) and close <= entryA_bb * (1 - step_bb_abcd)
+        entryB_bb := close
+        label.new(bar_index, low, "B (BB)", color=color.lime, style=label.style_label_up)
+    if not na(entryB_bb) and na(entryC_bb) and close <= entryB_bb * (1 - step_bb_abcd)
+        entryC_bb := close
+        label.new(bar_index, low, "C (BB)", color=color.teal, style=label.style_label_up)
+    if not na(entryC_bb) and na(entryD_bb) and close <= entryC_bb * (1 - step_bb_abcd)
+        entryD_bb := close
+        label.new(bar_index, low, "D (BB)", color=color.navy, style=label.style_label_up)
+    if not na(entryD_bb) and close >= entryC_bb
+        label.new(bar_index, high, "Exit D (BB)", color=color.red, style=label.style_label_down)
+        entryD_bb := na
+    if na(entryD_bb) and not na(entryC_bb) and close >= entryB_bb
+        label.new(bar_index, high, "Exit C (BB)", color=color.red, style=label.style_label_down)
+        entryC_bb := na
+    if na(entryD_bb) and na(entryC_bb) and not na(entryB_bb) and close >= entryA_bb
+        label.new(bar_index, high, "Exit B (BB)", color=color.red, style=label.style_label_down)
+        entryB_bb := na
+    if na(entryD_bb) and na(entryC_bb) and na(entryB_bb) and not na(entryA_bb) and close >= lower_bb
+        label.new(bar_index, high, "Exit A (BB)", color=color.red, style=label.style_label_down)
+        entryA_bb := na
+
+// =========================================
+// === KNOXVILLE DIVERGENCE MODULE =========
+group_knox = "Knoxville Divergence"
+KnoxRSILength      = input.int(title="Knoxville RSI",            defval=17, group=group_knox)
+KnoxMOMLength      = input.int(title="Knoxville Mom",            defval=20, group=group_knox)
+KnoxDivergence     = input.bool(true, title="Knoxville Divergences", group=group_knox)
+KnoxLabel          = input.bool(true, title="Knoxville Divergence Labels", group=group_knox)
+KnoxTriangle       = input.bool(true, title="Knoxville Divergence Triangles", group=group_knox)
+ReversalTabs       = input.bool(true,  title="Reversal Tabs", group=group_knox)
+macd_fast_period   = input.int(title="Reversal Tabs - MACD Fast Period",            defval=12, group=group_knox)
+macd_slow_period   = input.int(title="Reversal Tabs - MACD Slow Period",            defval=26, group=group_knox)
+macd_signal_period = input.int(title="Reversal Tabs - MACD Signal Period",          defval=9, group=group_knox)
+stoch_period       = input.int(title="Reversal Tabs - Stochastic RSI Period",       defval=70, group=group_knox)
+prc_k_period       = input.int(title="Reversal Tabs - %K Period", defval=30, group=group_knox)
+prc_d_period       = input.int(title="Reversal Tabs - %D Period", defval=30, group=group_knox)
+stoch_ob           = input.int(title="Reversal Tabs - Stochastic Overbought Level", defval=70, group=group_knox)
+stoch_os           = input.int(title="Reversal Tabs - Stochastic Oversold Level",   defval=30, group=group_knox)
+
+KnoxRSI = ta.rsi(close, KnoxRSILength)
+KnoxMOM = ta.mom(close, KnoxMOMLength)
+KnoxRSIOB = KnoxRSI > 70 ? 1 : 0
+KnoxRSIOS = KnoxRSI < 30 ? 1 : 0
+
+knox_top_fractal = KnoxMOM[4] < KnoxMOM[2] and KnoxMOM[3] < KnoxMOM[2] and KnoxMOM[2] > KnoxMOM[1] and KnoxMOM[2] > KnoxMOM[0]
+knox_bot_fractal = KnoxMOM[4] > KnoxMOM[2] and KnoxMOM[3] > KnoxMOM[2] and KnoxMOM[2] < KnoxMOM[1] and KnoxMOM[2] < KnoxMOM[0]
+f_fractalize(_src, _top, _bot) =>
+    _top ? 1 : _bot ? -1 : 0
+
+fractal_knox = f_fractalize(KnoxMOM, knox_top_fractal, knox_bot_fractal)
+fractal_top_knox = fractal_knox > 0 ? KnoxMOM[2] : na
+fractal_bot_knox = fractal_knox < 0 ? KnoxMOM[2] : na
+
+high_prev_knox  = ta.valuewhen(not na(fractal_top_knox), KnoxMOM[2], 0)[2]
+high_price_knox = ta.valuewhen(not na(fractal_top_knox), high[2], 0)[2]
+low_prev_knox   = ta.valuewhen(not na(fractal_bot_knox), KnoxMOM[2], 0)[2]
+low_price_knox  = ta.valuewhen(not na(fractal_bot_knox), low[2], 0)[2]
+high_bar_knox  = ta.valuewhen(not na(fractal_top_knox), bar_index[2], 1)
+low_bar_knox   = ta.valuewhen(not na(fractal_bot_knox), bar_index[2], 1)
+
+knoxville_bearish_div = not na(fractal_top_knox) and KnoxRSIOB == 1 and high[2] > high_price_knox and KnoxMOM[2] < high_prev_knox
+knoxville_bullish_div = not na(fractal_bot_knox) and KnoxRSIOS == 1 and low[2] < low_price_knox and KnoxMOM[2] > low_prev_knox
+
+KnoxColor = knoxville_bearish_div ? #FA0000FA : knoxville_bullish_div ? #00FF00FA : na
+
+plot(show_knoxville and KnoxDivergence and not na(fractal_top_knox) ? high[2] : na, title='Knoxville - Bearish Divergence Lines', color=KnoxColor, linewidth=5, offset=-2)
+plot(show_knoxville and KnoxDivergence and not na(fractal_bot_knox) ? low[2] : na, title='Knoxville - Bullish Divergence Lines', color=KnoxColor, linewidth=5, offset=-2)
+
+plotshape(show_knoxville and KnoxLabel and knoxville_bearish_div ? close[2] : na, title='Knoxville - Label - Bearish Divergence - Label', text='Knox', style=shape.labeldown, location=location.abovebar, color=#FF000010, textcolor=#008000FA, offset=-2)
+plotshape(show_knoxville and KnoxLabel and knoxville_bullish_div ? close[2] : na, title='Knoxville - Label - Bullish Divergence - Label', text='Knox', style=shape.labelup, location=location.belowbar, color=#00800010, textcolor=#008000FA, offset=-2)
+
+plotshape(show_knoxville and KnoxTriangle and knoxville_bearish_div ? close[2] : na, title='Knoxville - Triangle - Bearish Divergence - Triangles', text='', style=shape.triangledown, location=location.abovebar, color=#008000FA, textcolor=#000000FA, offset=-2)
+plotshape(show_knoxville and KnoxTriangle and knoxville_bullish_div ? close[2] : na, title='Knoxville - Triangle - Bullish Divergence - Triangles', text='', style=shape.triangleup, location=location.belowbar, color=#008000FA, textcolor=#000000FA, offset=-2)
+
+// Knox Div Lines - draw diagonal divergence lines between fractals
+if show_knoxville and KnoxDivergence and knoxville_bearish_div
+    line.new(high_bar_knox, high_price_knox, bar_index[2], high[2], color=color.new(#FA0000, 0), width=2, style=line.style_solid)
+
+if show_knoxville and KnoxDivergence and knoxville_bullish_div
+    line.new(low_bar_knox, low_price_knox, bar_index[2], low[2], color=color.new(#00FF00, 0), width=2, style=line.style_solid)
+
+[macd_line, signal_line, hist_line] = ta.macd(close, macd_fast_period, macd_slow_period, macd_signal_period)
+fast_prc_k   = 100 * (close - ta.lowest(low, stoch_period)) / (ta.highest(high, stoch_period) - ta.lowest(low, stoch_period))
+fast_prc_d   = ta.sma(fast_prc_k, prc_d_period)
+slow_prc_k   = ta.sma(fast_prc_k, prc_k_period)
+slow_prc_d   = ta.sma(slow_prc_k, prc_d_period)
+
+is_buy_reversal  = ta.crossover(macd_line,  0) and slow_prc_k < stoch_os
+is_sell_reversal = ta.crossunder(macd_line, 0) and slow_prc_k > stoch_ob
+
+plotshape(show_knoxville and ReversalTabs and is_buy_reversal,  title='Reversal Tab Buy',  style=shape.triangleup,   color=color.green, size=size.small, location=location.belowbar)
+plotshape(show_knoxville and ReversalTabs and is_sell_reversal, title='Reversal Tab Sell', style=shape.triangledown, color=color.red,   size=size.small, location=location.abovebar)
+
+alertcondition(knoxville_bearish_div, title='Alert - Knoxville Bearish Divergence', message='Alert - Knoxville Bearish Divergence!')
+alertcondition(knoxville_bullish_div, title='Alert - Knoxville Bullish Divergence', message='Alert - Knoxville Bullish Divergence!')
+alertcondition(is_buy_reversal,  title='Alert - Buy Reversal Tab',  message='Reversal Tab BUY ALERT!')
+alertcondition(is_sell_reversal, title='Alert - Sell Reversal Tab', message='Reversal Tab SELL ALERT!')
+alertcondition(is_sell_reversal or is_buy_reversal, title='Alert - Buy or Sell Reversal Tab', message='Reversal Tab BUY OR SELL ALERT!')
+
+// =========================================
+// === SMA ABCD MODULE ====================
+group_sma_abcd = "SMA A-B-C-D"
+enable_sma_abcd = show_sma_abcd  // Controlled only by master toggle
+step_sma_abcd   = input.float(10, title="ABCD Step %", group=group_sma_abcd) / 100
+
+sma20 = ta.sma(close, 20)
+sma50 = ta.sma(close, 50)
+sma200 = ta.sma(close, 200)
+
+plot(show_sma_abcd ? sma20 : na, color=color.yellow, title="SMA(20)")
+plot(show_sma_abcd ? sma50 : na, color=color.fuchsia, title="SMA(50)")
+plot(show_sma_abcd ? sma200 : na, color=color.lime, title="SMA(200)")
+
+var float entryA_sma = na
+var float entryB_sma = na
+var float entryC_sma = na
+var float entryD_sma = na
+
+if enable_sma_abcd
+    if na(entryA_sma) and close <= sma20 and close <= sma50 and close <= sma200
+        entryA_sma := close
+        label.new(bar_index, low, "A (SMA)", color=color.green, style=label.style_label_up)
+    if not na(entryA_sma) and na(entryB_sma) and close <= entryA_sma * (1 - step_sma_abcd)
+        entryB_sma := close
+        label.new(bar_index, low, "B (SMA)", color=color.lime, style=label.style_label_up)
+    if not na(entryB_sma) and na(entryC_sma) and close <= entryB_sma * (1 - step_sma_abcd)
+        entryC_sma := close
+        label.new(bar_index, low, "C (SMA)", color=color.teal, style=label.style_label_up)
+    if not na(entryC_sma) and na(entryD_sma) and close <= entryC_sma * (1 - step_sma_abcd)
+        entryD_sma := close
+        label.new(bar_index, low, "D (SMA)", color=color.navy, style=label.style_label_up)
+    if not na(entryD_sma) and close >= entryC_sma
+        label.new(bar_index, high, "Exit D (SMA)", color=color.red, style=label.style_label_down)
+        entryD_sma := na
+    if na(entryD_sma) and not na(entryC_sma) and close >= entryB_sma
+        label.new(bar_index, high, "Exit C (SMA)", color=color.red, style=label.style_label_down)
+        entryC_sma := na
+    if na(entryD_sma) and na(entryC_sma) and not na(entryB_sma) and close >= entryA_sma
+        label.new(bar_index, high, "Exit B (SMA)", color=color.red, style=label.style_label_down)
+        entryB_sma := na
+    if na(entryD_sma) and na(entryC_sma) and na(entryB_sma) and not na(entryA_sma) and close >= sma20 and close >= sma50 and close >= sma200
+        label.new(bar_index, high, "Exit A (SMA)", color=color.red, style=label.style_label_down)
+        entryA_sma := na
+
+// ===========================
+// === 67% DOWN FROM ATH MODULE ===
+group_ath = "67% Down From ATH"
+show_currentfall  = input.bool(true, title="Show Current Fall % from ATH", group=group_ath)
+
+drop_choice = input.string("67", title="Select Drop % from ATH", options=["30", "40", "50", "67"], group=group_ath)
+drop_percent = str.tonumber(drop_choice)
+
+// ---- All-Time High Calculation (per session) ----
+var float ath = na
+ath := na(ath[1]) ? high : math.max(ath[1], high)
+
+// ---- Drawdown from ATH ----
+drawdown_perc = ((close - ath) / ath) * 100
+
+// ---- Plot ATH Line & Drop Detector (toggle logic) ----
+plot(show_ath67 ? ath : na, title="All-Time High", color=color.yellow, linewidth=2)
+
+is_ath_drop = drawdown_perc <= -drop_percent
+
+bgcolor(show_ath67 and is_ath_drop ? color.new(color.red, 85) : na, title="ATH Drop BG Highlight")
+
+// ---- Label and triangle when drop event occurs ----
+if show_ath67 and is_ath_drop and not is_ath_drop[1]
+    label.new(bar_index, low, drop_choice + "%", style=label.style_label_down, color=color.red, size=size.small)
+
+plotshape(show_ath67 and is_ath_drop and not is_ath_drop[1], style=shape.triangledown, color=color.red, location=location.belowbar, title="ATH Drop Signal")
+
+
+// ======================== 20% Green Rally MODULE ========================
+group_20rally = "20% Green Rally"
+min_rally_20   = input.float(20.0, title="Min Rally (%)", step=0.1, group=group_20rally)
+line_len_20    = input.int(20, title="Horizontal Line Length (bars)", group=group_20rally)
+ema_len_20     = input.int(200, title="EMA Period", group=group_20rally)
+
+// --- 200 EMA Line (always plotted for this module, just a line, no filter) ---
+ema200_20 = ta.ema(close, ema_len_20)
+plot(show_20rally ? ema200_20 : na, color=color.orange, linewidth=2, title="200 EMA (20% Rally)")
+
+// --- Multi-rally state variables ---
+var int rally_start_bar_20 = na
+var float rally_start_low_20 = na
+var float rally_high_20 = na
+var float rally_percent_20 = na
+var bool rally_in_progress_20 = false
+var int rally_number_20 = 0
+var int last_rally_bar_20 = na
+var int total_rallies_20 = 0
+
+if show_20rally
+    if rally_in_progress_20
+        if close > open
+            rally_high_20    := na(rally_high_20) ? high : math.max(rally_high_20, high)
+            rally_percent_20 := ((rally_high_20 - rally_start_low_20) / rally_start_low_20) * 100
+            if rally_percent_20 >= min_rally_20
+                if na(last_rally_bar_20) or last_rally_bar_20 != rally_start_bar_20
+                    rally_number_20 += 1
+                    // Main rally line (diagonal)
+                    line.new(rally_start_bar_20, rally_start_low_20, bar_index, rally_high_20, color=color.lime, width=2)
+                    // Horizontal lines for entry and exit
+                    line.new(rally_start_bar_20, rally_start_low_20, rally_start_bar_20 + line_len_20, rally_start_low_20, color=color.green, width=2, style=line.style_solid)
+                    line.new(bar_index, rally_high_20, bar_index + line_len_20, rally_high_20, color=color.red, width=2, style=line.style_solid)
+                    // Labels
+                    label.new(rally_start_bar_20, rally_start_low_20, "ENTRY #" + str.tostring(rally_number_20) + "\n" + str.tostring(rally_start_low_20, format.mintick), style=label.style_label_up, color=color.green)
+                    label.new(bar_index, rally_high_20, "EXIT #" + str.tostring(rally_number_20) + "\n" + str.tostring(rally_high_20, format.mintick), style=label.style_label_down, color=color.red)
+                    label.new(bar_index, rally_high_20, "RALLY #" + str.tostring(rally_number_20), color=color.blue, style=label.style_label_left)
+                    last_rally_bar_20 := rally_start_bar_20
+                    total_rallies_20 += 1
+                rally_in_progress_20 := false
+                rally_start_bar_20   := na
+                rally_start_low_20   := na
+                rally_high_20        := na
+                rally_percent_20     := na
+        else
+            rally_in_progress_20 := false
+            rally_start_bar_20   := na
+            rally_start_low_20   := na
+            rally_high_20        := na
+            rally_percent_20     := na
+    else
+        if close > open
+            rally_in_progress_20 := true
+            rally_start_bar_20   := bar_index
+            rally_start_low_20   := low
+            rally_high_20        := high
+            rally_percent_20     := 0
+
+    // --- Show total number of rallies in corner of chart ---
+    var label info_label_20 = na
+    if barstate.islast
+        if not na(info_label_20)
+            label.delete(info_label_20)
+        info_label_20 := label.new(bar_index, high, "Total 20% Green Rallies: " + str.tostring(total_rallies_20), color=color.yellow, style=label.style_label_left, size=size.large)
+
+// ======================= END 20% Green Rally MODULE =======================
+// === Short-Term SnR (Mini-Range) MODULE ===
+
+// --- Function ---
+f_tap_count_snsr(src, lvl, threshold, range_window) =>
+    float thresh_abs = lvl * threshold / 100
+    sum = 0
+    for i = 0 to range_window - 1
+        if math.abs(src[i] - lvl) <= thresh_abs
+            sum += 1
+    sum
+
+// --- Variable declarations (TOP LEVEL, only ONCE per script) ---
+var float entry_price_snsr = na
+var int entry_bar_index_snsr = na
+var label entry_label_snsr = na
+var label exit_label_snsr = na
+var line sup_line_snsr = na
+var line res_line_snsr = na
+var label sup_label_snsr = na
+var label res_label_snsr = na
+
+// --- Inputs ---
+group_shortsnsr = "Short-Term SnR (Mini-Range)"
+drop_from_ath       = input.float(30, "Min Drop from ATH (%)", minval=10, maxval=90, group=group_shortsnsr)
+range_min_pct       = input.float(5, "Range Min Height (%)", minval=5, maxval=15, group=group_shortsnsr)
+range_max_pct       = input.float(15, "Range Max Height (%)", minval=5, maxval=15, group=group_shortsnsr)
+min_taps            = input.int(2, "Min Taps (Support/Resistance)", minval=2, maxval=4, group=group_shortsnsr)
+lookback_bars_snsr  = input.int(120, "Lookback Bars", minval=20, maxval=500, group=group_shortsnsr)
+target_pct          = input.float(15, "Exit Target % (within range)", minval=5, maxval=25, group=group_shortsnsr)
+ath_window          = input.int(200, "ATH Lookback (bars)", minval=50, maxval=1500, group=group_shortsnsr)
+ath_buffer_pct      = input.float(5, "Min Distance From ATH (%)", minval=1, maxval=30, group=group_shortsnsr)
+
+// --- Main Logic ---
+if show_shortsnsr
+    // ...all calculations and drawing code as before...
+    // (No change in your logic)
+    ath_snsr = ta.highest(high, ath_window)
+    drop_snsr = 100 * (ath_snsr - close) / ath_snsr
+    drop_met_snsr = drop_snsr >= drop_from_ath
+    range_window_snsr = 20
+    range_high_snsr = ta.highest(high, range_window_snsr)
+    range_low_snsr  = ta.lowest(low, range_window_snsr)
+    range_height_pct_snsr = 100 * (range_high_snsr - range_low_snsr) / range_low_snsr
+    range_met_snsr = range_height_pct_snsr >= range_min_pct and range_height_pct_snsr <= range_max_pct
+    range_far_from_ath_snsr = ((ath_snsr - range_high_snsr) / ath_snsr) * 100 >= ath_buffer_pct
+    tap_threshold_snsr = 1.0
+    support_taps_snsr = f_tap_count_snsr(low, range_low_snsr, tap_threshold_snsr, range_window_snsr)
+    resist_taps_snsr  = f_tap_count_snsr(high, range_high_snsr, tap_threshold_snsr, range_window_snsr)
+    tap_met_snsr = support_taps_snsr >= min_taps and resist_taps_snsr >= min_taps
+    entry_long_snsr = drop_met_snsr and range_met_snsr and tap_met_snsr and range_far_from_ath_snsr
+
+    if entry_long_snsr and na(entry_price_snsr)
+        entry_price_snsr := close
+        entry_bar_index_snsr := bar_index
+        if not na(entry_label_snsr)
+            label.delete(entry_label_snsr)
+        entry_label_snsr := label.new(bar_index, low, "Buy\n₹"+str.tostring(entry_price_snsr, format.mintick), color=color.new(color.green,0), style=label.style_label_up, size=size.normal, yloc=yloc.belowbar, textcolor=color.black)
+
+    target_price_snsr = entry_price_snsr * (1 + target_pct / 100)
+    exit_long_snsr = not na(entry_price_snsr) and close >= target_price_snsr and (bar_index - entry_bar_index_snsr) <= 30
+
+    if exit_long_snsr
+        if not na(exit_label_snsr)
+            label.delete(exit_label_snsr)
+        exit_label_snsr := label.new(bar_index, high, "Sell\n₹"+str.tostring(close, format.mintick), color=color.new(color.red,0), style=label.style_label_down, size=size.normal, yloc=yloc.abovebar, textcolor=color.white)
+        entry_price_snsr := na
+        entry_bar_index_snsr := na
+
+    if not na(sup_line_snsr)
+        line.delete(sup_line_snsr)
+    if not na(res_line_snsr)
+        line.delete(res_line_snsr)
+    if not na(sup_label_snsr)
+        label.delete(sup_label_snsr)
+    if not na(res_label_snsr)
+        label.delete(res_label_snsr)
+
+    gap_string_snsr = str.tostring(range_height_pct_snsr, "#.##") + "%"
+
+    if range_met_snsr and range_far_from_ath_snsr
+        sup_line_snsr := line.new(bar_index - lookback_bars_snsr, range_low_snsr, bar_index, range_low_snsr, color=color.purple, width=2)
+        sup_label_snsr := label.new(bar_index, range_low_snsr, "Support\n₹"+str.tostring(range_low_snsr, format.mintick)+"\nGap: "+gap_string_snsr, color=color.purple, style=label.style_label_left, size=size.normal)
+        res_line_snsr := line.new(bar_index - lookback_bars_snsr, range_high_snsr, bar_index, range_high_snsr, color=color.blue, width=2)
+        res_label_snsr := label.new(bar_index, range_high_snsr, "Resistance\n₹"+str.tostring(range_high_snsr, format.mintick)+"\nGap: "+gap_string_snsr, color=color.blue, style=label.style_label_left, size=size.normal)
+else
+    // Clean up everything if toggled off
+    if not na(entry_label_snsr)
+        label.delete(entry_label_snsr)
+    if not na(exit_label_snsr)
+        label.delete(exit_label_snsr)
+    if not na(sup_line_snsr)
+        line.delete(sup_line_snsr)
+    if not na(res_line_snsr)
+        line.delete(res_line_snsr)
+    if not na(sup_label_snsr)
+        label.delete(sup_label_snsr)
+    if not na(res_label_snsr)
+        label.delete(res_label_snsr)
+
+// === RSI 25% Short-Term Bounce MODULE ===
+// === RSI 25% Short-Term Bounce MODULE (with ATH line/label) ===
+groupRSIMod = "RSI 25% Short-Term Bounce"
+// Use your dashboard master toggle, do NOT redeclare show_rsi_bounce here
+
+var float lastEntry = na
+var float lastT1 = na
+var float lastT2 = na
+var int lastBar = na
+var string lastDate = na
+var int tradeCount = 0
+var table dash = na
+
+bool freshBuy_global = false
+
+if show_rsi_bounce
+    // === INPUTS (module group) ===
+    rsiPeriod     = input.int(14, "RSI Period", group=groupRSIMod)
+    buyRSI        = input.int(25, "RSI Buy Threshold (20–25)", minval=20, maxval=25, group=groupRSIMod)
+    target1Pct    = input.float(5.0, "Profit Target 1 (%)", minval=2, maxval=10, group=groupRSIMod)
+    target2Pct    = input.float(10.0, "Profit Target 2 (%)", minval=5, maxval=20, group=groupRSIMod)
+    athDropPct    = input.float(30.0, "Minimum % Below ATH", minval=10, maxval=90, group=groupRSIMod)
+    showATH       = input.bool(true, "Show All-Time High (ATH) Line", group=groupRSIMod)
+    showSupport   = input.bool(false, "Show Nearest 21-bar Support Line?", group=groupRSIMod)
+    supportLength = input.int(21, "Support Lookback (bars)", minval=5, maxval=100, group=groupRSIMod)
+    dashPosition  = input.string("Top Left", "Dashboard Position", options=["Top Left", "Top Right", "Bottom Left", "Bottom Right"], group=groupRSIMod)
+
+    // === CALCULATION ===
+    rsi         = ta.rsi(close, rsiPeriod)
+    allTimeHigh = ta.highest(high, bar_index + 1)
+    athBar      = ta.valuewhen(high == allTimeHigh, bar_index, 0)
+    pctFromATH  = (close / allTimeHigh - 1) * 100
+    athDropOK   = pctFromATH <= -athDropPct
+
+    // === ATH Line & Label ===
+    var line athLine = na
+    var label athLabel = na
+    if showATH and barstate.islastconfirmedhistory and not na(athBar)
+        if not na(athLine)
+            line.delete(athLine)
+        if not na(athLabel)
+            label.delete(athLabel)
+        athLine := line.new(athBar, allTimeHigh, bar_index, allTimeHigh, color=color.purple, width=2, style=line.style_dashed)
+        athLabel := label.new(athBar, allTimeHigh, "ATH\n"+str.tostring(allTimeHigh, format.mintick), style=label.style_label_left, color=color.purple, textcolor=color.white, size=size.small)
+
+    // --- Support line (optional) ---
+    if showSupport
+        support = ta.lowest(low, supportLength)
+        line.new(bar_index-supportLength+1, support, bar_index, support, color=color.green, width=1, style=line.style_dotted)
+
+    // === BUY LOGIC (only if -30% or more from ATH) ===
+    freshBuy = ta.crossunder(rsi, buyRSI) and athDropOK
+    freshBuy_global := freshBuy
+
+    // --- Entry/Target lines & labels ---
+    if freshBuy
+        tradeCount += 1
+        entryPrice = close
+        target1 = entryPrice * (1 + target1Pct / 100)
+        target2 = entryPrice * (1 + target2Pct / 100)
+        right = bar_index + 15
+
+        line.new(bar_index, entryPrice, right, entryPrice, color=color.aqua, width=2, style=line.style_solid)
+        label.new(bar_index, entryPrice, "#"+str.tostring(tradeCount)+" Entry", style=label.style_label_left, color=color.aqua, textcolor=color.black, size=size.tiny)
+
+        line.new(bar_index, target1, right, target1, color=color.orange, width=2, style=line.style_dotted)
+        label.new(bar_index, target1, "#"+str.tostring(tradeCount)+" T1", style=label.style_label_left, color=color.orange, textcolor=color.black, size=size.tiny)
+
+        line.new(bar_index, target2, right, target2, color=color.red, width=2, style=line.style_dotted)
+        label.new(bar_index, target2, "#"+str.tostring(tradeCount)+" T2", style=label.style_label_left, color=color.red, textcolor=color.white, size=size.tiny)
+
+        lastEntry := entryPrice
+        lastT1    := target1
+        lastT2    := target2
+        lastBar   := bar_index
+        lastDate  := str.tostring(dayofmonth) + "/" + str.tostring(month) + "/" + str.tostring(year)
+
+    // === DASHBOARD: FEASIBLE POSITION ONLY ===
+    dashPos = position.top_left
+    if dashPosition == "Top Right"
+        dashPos := position.top_right
+    if dashPosition == "Bottom Left"
+        dashPos := position.bottom_left
+    if dashPosition == "Bottom Right"
+        dashPos := position.bottom_right
+
+    if na(dash)
+        dash := table.new(dashPos, 8, 2, border_width=1, frame_color=color.blue, frame_width=1)
+
+    if barstate.islast
+        table.clear(dash, 0, 0)
+        // Heading row
+        table.cell(dash, 0, 0, "RSI Bounce Dashboard", bgcolor=color.new(color.blue, 85), text_color=color.white)
+        table.cell(dash, 0, 1, "", bgcolor=color.new(color.blue, 85))
+
+        // Current RSI
+        table.cell(dash, 1, 0, "Current RSI", bgcolor=color.purple, text_color=color.white)
+        table.cell(dash, 1, 1, na(rsi) ? "–" : str.tostring(rsi, "#.##"), bgcolor=color.purple, text_color=color.white)
+
+        // Trade #
+        table.cell(dash, 2, 0, "Trade #", bgcolor=color.silver, text_color=color.black)
+        table.cell(dash, 2, 1, tradeCount == 0 ? "–" : str.tostring(tradeCount), bgcolor=color.silver, text_color=color.black)
+
+        // ATH & Drop %
+        table.cell(dash, 3, 0, "ATH Price", bgcolor=color.yellow, text_color=color.black)
+        table.cell(dash, 3, 1, na(allTimeHigh) ? "–" : str.tostring(allTimeHigh, format.mintick), bgcolor=color.yellow, text_color=color.black)
+        table.cell(dash, 4, 0, "% from ATH", bgcolor=color.yellow, text_color=color.black)
+        table.cell(dash, 4, 1, na(pctFromATH) ? "–" : str.tostring(pctFromATH, "#.##") + "%", bgcolor=color.yellow, text_color=color.black)
+
+        // Entry
+        table.cell(dash, 5, 0, "Entry", bgcolor=color.aqua, text_color=color.black)
+        table.cell(dash, 5, 1, na(lastEntry) ? "–" : str.tostring(lastEntry, format.mintick), bgcolor=color.aqua, text_color=color.black)
+        // Target 1
+        table.cell(dash, 6, 0, "Target 1 ("+str.tostring(target1Pct)+"%)", bgcolor=color.orange, text_color=color.black)
+        table.cell(dash, 6, 1, na(lastT1) ? "–" : str.tostring(lastT1, format.mintick), bgcolor=color.orange, text_color=color.black)
+        // Target 2
+        table.cell(dash, 7, 0, "Target 2 ("+str.tostring(target2Pct)+"%)", bgcolor=color.red, text_color=color.white)
+        table.cell(dash, 7, 1, na(lastT2) ? "–" : str.tostring(lastT2, format.mintick), bgcolor=color.red, text_color=color.white)
+
+// === ALERT (outside block) ===
+alertcondition(show_rsi_bounce and freshBuy_global, title="Buy Signal", message="RSI Bounce BUY! Entry: {{close}}, 5% Target: {{close}} x 1.05, 10% Target: {{close}} x 1.10")
+// ======================================================================
+// === WM Bands – Swing Entry (Seq B-T-B-T-B, 2.2–2.5% Merge, 30% Gap) ===
+// ======================================================================
+
+// --- Toggle wiring ---
+bool wms_on = show_wm_swing_seq
+
+// --- Inputs (names preserved)
+string wms_grpD = "WM / Detection"
+int    wms_lookbackBars   = input.int(1100, "Lookback Bars", minval=400, group=wms_grpD)
+int    wms_pivotLen       = input.int(5,    "Pivot Strength (L=R)", minval=3, maxval=15, group=wms_grpD)
+
+float  wms_mergeTolMinPct = input.float(2.2, "Merge Tol Min %", step=0.05, group=wms_grpD)
+float  wms_mergeTolMaxPct = input.float(2.5, "Merge Tol Max %", step=0.05, group=wms_grpD)
+bool   wms_mergeUseATR    = input.bool(true, "Use ATR Floor in Merge", group=wms_grpD)
+int    wms_atrLen         = input.int(14, "ATR Length", minval=3, group=wms_grpD)
+
+float  wms_minGapPct      = input.float(30.0, "Min Band Gap % (R–S)/S", step=0.5, group=wms_grpD)
+float  wms_gapFlexPct     = input.float(5.0,  "Gap Flexibility +/-", step=0.5, group=wms_grpD)
+int    wms_minTopTouches  = input.int(2, "Min Tops (upper line)", minval=2, maxval=6, group=wms_grpD)
+int    wms_minBotTouches  = input.int(2, "Min Bottoms (lower line)", minval=2, maxval=6, group=wms_grpD)
+
+string wms_grpSeq = "WM / Sequencing & De-dup"
+int    wms_minSepBars      = input.int(10, "Min bars between touches (de-dup)", minval=1, maxval=100, group=wms_grpSeq)
+
+string wms_grpR = "WM / Repeat & Freshness (Swing)"
+int    wms_minRepeatForEntry = input.int(3, "Min Repeat # at Bottom", minval=2, maxval=6, group=wms_grpR)
+int    wms_freshBars         = input.int(1200, "Entry within last N bars", minval=100, maxval=5000, group=wms_grpR)
+bool   wms_showPending       = input.bool(true, "Show Pending Setup (repeat not yet met)", group=wms_grpR)
+
+string wms_grpS = "WM / Style"
+int    wms_lineWidth    = input.int(3, "Band Line Width", minval=1, maxval=6, group=wms_grpS)
+color  wms_colRes       = input.color(color.new(color.orange, 0), "Resistance Color", group=wms_grpS)
+color  wms_colSup       = input.color(color.new(color.orange, 0), "Support Color", group=wms_grpS)
+color  wms_colZig       = input.color(color.new(color.blue,   0), "Zig/Arrow Color", group=wms_grpS)
+int    wms_guideLenBars = input.int(60, "Forward guide length (bars)", minval=20, maxval=400, group=wms_grpS)
+int    wms_spanAlpha    = input.int(60, "Span transparency (0=solid, 100=hidden)", minval=0, maxval=100, group=wms_grpS)
+
+// --- Helpers
+f_wms_effGapMin() => math.max(0.0, wms_minGapPct - wms_gapFlexPct)
+f_wms_tol_from(price, tolPct) => price * tolPct / 100.0
+float wms_atrPct = ta.atr(wms_atrLen) / close * 100.0
+
+f_wms_sort_int(arr) =>
+    for i = 0 to array.size(arr) - 2
+        for j = i + 1 to array.size(arr) - 1
+            if array.get(arr, j) < array.get(arr, i)
+                t = array.get(arr, i)
+                array.set(arr, i, array.get(arr, j))
+                array.set(arr, j, t)
+
+f_wms_trim(float[] p, int[] b, int cutoff) =>
+    while array.size(b) > 0 and array.get(b, 0) < cutoff
+        array.shift(p)
+        array.shift(b)
+
+// Cluster pivots into levels
+f_wms_build_bands(float[] pricesArr, int[] barsArr, float tolPct) =>
+    float[] levels = array.new_float()
+    int[]   counts = array.new_int()
+    int[]   firstB = array.new_int()
+    int[]   secondB= array.new_int()
+    int[]   lastB  = array.new_int()
+    sz = array.size(pricesArr)
+    if sz > 0
+        for i = 0 to sz - 1
+            p = array.get(pricesArr, i)
+            b = array.get(barsArr,   i)
+            tol = f_wms_tol_from(p, tolPct)
+            if wms_mergeUseATR
+                tol := math.max(tol, f_wms_tol_from(p, wms_atrPct))
+
+            int idx = na
+            int szL = array.size(levels)
+            if szL > 0
+                for k = 0 to szL - 1
+                    if math.abs(array.get(levels, k) - p) <= tol
+                        idx := k
+                        break
+
+            if na(idx)
+                array.push(levels, p)
+                array.push(counts, 1)
+                array.push(firstB, b)
+                array.push(secondB, na)
+                array.push(lastB, b)
+            else
+                old = array.get(levels, idx)
+                array.set(levels, idx, (old + p) / 2.0)
+                array.set(counts, idx, array.get(counts, idx) + 1)
+
+                fb = array.get(firstB, idx)
+                sb = array.get(secondB, idx)
+                lb = array.get(lastB, idx)
+                int[] tmp = array.new_int()
+                array.push(tmp, fb)
+                if not na(sb)
+                    array.push(tmp, sb)
+                array.push(tmp, lb)
+                array.push(tmp, b)
+                f_wms_sort_int(tmp)
+                array.set(firstB,  idx, array.get(tmp, 0))
+                array.set(secondB, idx, array.size(tmp) > 1 ? array.get(tmp, 1) : na)
+                array.set(lastB,   idx, array.get(tmp, array.size(tmp) - 1))
+    [levels, counts, firstB, secondB, lastB]
+
+// Score a candidate band pair
+f_wms_score_band(float rLvl, int rCnt, float sLvl, int sCnt, int latestBottomBar, int repeats) =>
+    gap = (rLvl - sLvl) / sLvl * 100.0
+    rec = 1.0 / (1.0 + float(bar_index - latestBottomBar))
+    touches = math.min(rCnt, 4) + math.min(sCnt, 4)
+    0.4 * repeats + 0.3 * (gap / 40.0) + 0.2 * (touches / 8.0) + 0.1 * (rec * 100.0)
+
+// --- Drawing lifecycle
+var line[]  wms_lines  = array.new_line()
+var label[] wms_labels = array.new_label()
+f_wms_clear_drawings() =>
+    while array.size(wms_lines) > 0
+        line.delete(array.pop(wms_lines))
+    while array.size(wms_labels) > 0
+        label.delete(array.pop(wms_labels))
+
+// --- Main
+if not wms_on
+    if barstate.islast
+        f_wms_clear_drawings()
+else
+    // pivots (streamed)
+    bool  wms_pivH = not na(ta.pivothigh(high, wms_pivotLen, wms_pivotLen))
+    bool  wms_pivL = not na(ta.pivotlow(low,  wms_pivotLen, wms_pivotLen))
+    float wms_ph   = ta.pivothigh(high, wms_pivotLen, wms_pivotLen)
+    float wms_pl   = ta.pivotlow(low,  wms_pivotLen, wms_pivotLen)
+
+    var float[] wms_hiP = array.new_float()
+    var int[]   wms_hiB = array.new_int()
+    var float[] wms_loP = array.new_float()
+    var int[]   wms_loB = array.new_int()
+
+    if barstate.isconfirmed
+        if wms_pivH
+            array.push(wms_hiP, wms_ph)
+            array.push(wms_hiB, bar_index - wms_pivotLen)
+        if wms_pivL
+            array.push(wms_loP, wms_pl)
+            array.push(wms_loB, bar_index - wms_pivotLen)
+
+    wms_cut = bar_index - wms_lookbackBars
+    f_wms_trim(wms_hiP, wms_hiB, wms_cut)
+    f_wms_trim(wms_loP, wms_loB, wms_cut)
+
+    if barstate.islast
+        f_wms_clear_drawings()
+
+        float wms_midTol = (wms_mergeTolMinPct + wms_mergeTolMaxPct) / 2.0
+        float[] wms_tolList = array.from(wms_mergeTolMinPct, wms_midTol, wms_mergeTolMaxPct)
+
+        float wms_bestScore = na
+        float wms_bestRes   = na
+        float wms_bestSup   = na
+        int   wms_best_rFirst  = na
+        int   wms_best_rSecond = na
+        int   wms_best_rLast   = na
+        int   wms_best_sFirst  = na
+        int   wms_best_sSecond = na
+        int   wms_best_sLast   = na
+
+        // pick best band by scoring
+        for t = 0 to array.size(wms_tolList) - 1
+            tolPct = array.get(wms_tolList, t)
+            [rL, rC, rF, rS, rLb] = f_wms_build_bands(wms_hiP, wms_hiB, tolPct)
+            [sL, sC, sF, sS, sLb] = f_wms_build_bands(wms_loP, wms_loB, tolPct)
+            if array.size(rL) == 0 or array.size(sL) == 0
+                continue
+
+            for i = 0 to array.size(rL) - 1
+                rLvl = array.get(rL, i)
+                rCnt = array.get(rC, i)
+                if rCnt < wms_minTopTouches
+                    continue
+                for j = 0 to array.size(sL) - 1
+                    sLvl = array.get(sL, j)
+                    sCnt = array.get(sC, j)
+                    if sCnt < wms_minBotTouches or sLvl >= rLvl
+                        continue
+                    gapPct = (rLvl - sLvl) / sLvl * 100.0
+                    if gapPct < f_wms_effGapMin()
+                        continue
+
+                    latestBottom = array.get(sLb, j)
+
+                    tolR = f_wms_tol_from(rLvl, tolPct)
+                    tolS = f_wms_tol_from(sLvl, tolPct)
+                    if wms_mergeUseATR
+                        tolR := math.max(tolR, f_wms_tol_from(rLvl, wms_atrPct))
+                        tolS := math.max(tolS, f_wms_tol_from(sLvl, wms_atrPct))
+
+                    int[] tBars = array.new_int()
+                    int[] bBars = array.new_int()
+                    for a = 0 to array.size(wms_hiP) - 1
+                        if math.abs(array.get(wms_hiP, a) - rLvl) <= tolR
+                            array.push(tBars, array.get(wms_hiB, a))
+                    for a = 0 to array.size(wms_loP) - 1
+                        if math.abs(array.get(wms_loP, a) - sLvl) <= tolS
+                            array.push(bBars, array.get(wms_loB, a))
+                    f_wms_sort_int(tBars)
+                    f_wms_sort_int(bBars)
+
+                    int ti = 0
+                    int bi = 0
+                    string last = ""
+                    int repeats = 0
+                    int[] topSeqBars = array.new_int()
+                    int[] botSeqBars = array.new_int()
+                    int lastTopBar = na
+                    int lastBotBar = na
+
+                    while (ti < array.size(tBars)) or (bi < array.size(bBars))
+                        nbTop = ti < array.size(tBars) ? array.get(tBars, ti) : na
+                        nbBot = bi < array.size(bBars) ? array.get(bBars, bi) : na
+                        useTop = na(nbBot) or (not na(nbTop) and nbTop < nbBot)
+
+                        if useTop
+                            if last != "T" and (na(lastTopBar) or nbTop - lastTopBar >= wms_minSepBars)
+                                array.push(topSeqBars, nbTop)
+                                last := "T"
+                                lastTopBar := nbTop
+                            ti += 1
+                        else
+                            if last != "B" and (na(lastBotBar) or nbBot - lastBotBar >= wms_minSepBars)
+                                array.push(botSeqBars, nbBot)
+                                last := "B"
+                                lastBotBar := nbBot
+                                repeats += 1
+                            bi += 1
+
+                    scr = f_wms_score_band(rLvl, rCnt, sLvl, sCnt, latestBottom, repeats)
+                    if na(wms_bestScore) or scr > wms_bestScore
+                        wms_bestScore := scr
+                        wms_bestRes := rLvl
+                        wms_bestSup := sLvl
+                        wms_best_rFirst  := array.get(rF, i)
+                        wms_best_rSecond := array.get(rS, i)
+                        wms_best_rLast   := array.get(rLb, i)
+                        wms_best_sFirst  := array.get(sF, j)
+                        wms_best_sSecond := array.get(sS, j)
+                        wms_best_sLast   := array.get(sLb, j)
+
+        // --- Draw chosen band with strict B T B T B ---
+        if not na(wms_bestRes) and not na(wms_bestSup)
+            float tolChosen = (wms_mergeTolMinPct + wms_mergeTolMaxPct) / 2.0
+            float tolR = f_wms_tol_from(wms_bestRes, tolChosen)
+            float tolS = f_wms_tol_from(wms_bestSup, tolChosen)
+            if wms_mergeUseATR
+                tolR := math.max(tolR, f_wms_tol_from(wms_bestRes, wms_atrPct))
+                tolS := math.max(tolS, f_wms_tol_from(wms_bestSup, wms_atrPct))
+
+            int[] tBars = array.new_int()
+            int[] bBars = array.new_int()
+            for a = 0 to array.size(wms_hiP) - 1
+                if math.abs(array.get(wms_hiP, a) - wms_bestRes) <= tolR
+                    array.push(tBars, array.get(wms_hiB, a))
+            for a = 0 to array.size(wms_loP) - 1
+                if math.abs(array.get(wms_loP, a) - wms_bestSup) <= tolS
+                    array.push(bBars, array.get(wms_loB, a))
+            f_wms_sort_int(tBars)
+            f_wms_sort_int(bBars)
+
+            int ti = 0
+            int bi = 0
+            string last = ""
+            int[] evType = array.new_int() // 1=Top, -1=Bottom
+            int[] evBar  = array.new_int()
+            int lastTopBar = na
+            int lastBotBar = na
+
+            while (ti < array.size(tBars)) or (bi < array.size(bBars))
+                nbTop = ti < array.size(tBars) ? array.get(tBars, ti) : na
+                nbBot = bi < array.size(bBars) ? array.get(bBars, bi) : na
+                useTop = na(nbBot) or (not na(nbTop) and nbTop < nbBot)
+
+                if useTop
+                    if last != "T" and (na(lastTopBar) or nbTop - lastTopBar >= wms_minSepBars)
+                        array.push(evType, 1)
+                        array.push(evBar, nbTop)
+                        last := "T"
+                        lastTopBar := nbTop
+                    ti += 1
+                else
+                    if last != "B" and (na(lastBotBar) or nbBot - lastBotBar >= wms_minSepBars)
+                        array.push(evType, -1)
+                        array.push(evBar, nbBot)
+                        last := "B"
+                        lastBotBar := nbBot
+                    bi += 1
+
+            // Find last pattern B T B T B (ending with Bottom)
+            int b3 = na
+            int t2 = na
+            int b2 = na
+            int t1 = na
+            int b1 = na
+
+            int idx = array.size(evType) - 1
+            while idx >= 0
+                if array.get(evType, idx) == -1
+                    int i3  = idx
+                    int i2t = na
+                    int i2b = na
+                    int i1t = na
+                    int i1b = na
+
+                    int k = i3 - 1
+                    while k >= 0
+                        if array.get(evType, k) == 1
+                            i2t := k
+                            break
+                        k -= 1
+                    if na(i2t)
+                        idx -= 1
+                        continue
+
+                    k := i2t - 1
+                    while k >= 0
+                        if array.get(evType, k) == -1
+                            i2b := k
+                            break
+                        k -= 1
+                    if na(i2b)
+                        idx -= 1
+                        continue
+
+                    k := i2b - 1
+                    while k >= 0
+                        if array.get(evType, k) == 1
+                            i1t := k
+                            break
+                        k -= 1
+                    if na(i1t)
+                        idx -= 1
+                        continue
+
+                    k := i1t - 1
+                    while k >= 0
+                        if array.get(evType, k) == -1
+                            i1b := k
+                            break
+                        k -= 1
+                    if na(i1b)
+                        idx -= 1
+                        continue
+
+                    b3 := array.get(evBar, i3)
+                    t2 := array.get(evBar, i2t)
+                    b2 := array.get(evBar, i2b)
+                    t1 := array.get(evBar, i1t)
+                    b1 := array.get(evBar, i1b)
+                    break
+                idx -= 1
+
+            if not na(b1) and not na(b2) and not na(b3) and not na(t1) and not na(t2)
+                int entryBar = b3
+
+                int repeats = 0
+                for m = 0 to array.size(evType) - 1
+                    if array.get(evType, m) == -1
+                        bb = array.get(evBar, m)
+                        if bb >= b1 and bb <= b3
+                            repeats += 1
+                // Optional freshness check (computed but not used for hiding)
+                bool okFresh = (bar_index - entryBar) <= wms_freshBars
+
+                // Main bands
+                line lnS = line.new(entryBar, wms_bestSup, bar_index, wms_bestSup, extend=extend.right, width=wms_lineWidth, color=wms_colSup)
+                line lnR = line.new(entryBar, wms_bestRes, bar_index, wms_bestRes, extend=extend.right, width=wms_lineWidth, color=wms_colRes)
+                array.push(wms_lines, lnS)
+                array.push(wms_lines, lnR)
+
+                // Price labels (start & latest)
+                label lb1 = label.new(entryBar, wms_bestSup, "S ₹" + str.tostring(wms_bestSup, format.mintick), style=label.style_label_left,  textcolor=color.black, color=color.new(color.white, 0))
+                label lb2 = label.new(bar_index, wms_bestSup, "S ₹" + str.tostring(wms_bestSup, format.mintick), style=label.style_label_right, textcolor=color.black, color=color.new(color.white, 0))
+                label lb3 = label.new(entryBar, wms_bestRes, "R ₹" + str.tostring(wms_bestRes, format.mintick), style=label.style_label_left,  textcolor=color.black, color=color.new(color.white, 0))
+                label lb4 = label.new(bar_index, wms_bestRes, "R ₹" + str.tostring(wms_bestRes, format.mintick), style=label.style_label_right, textcolor=color.black, color=color.new(color.white, 0))
+                array.push(wms_labels, lb1), array.push(wms_labels, lb2), array.push(wms_labels, lb3), array.push(wms_labels, lb4)
+
+                // Long spans & projection
+                int xThirdTop = entryBar + wms_guideLenBars
+                line ln5 = line.new(b1, wms_bestSup, entryBar,  wms_bestSup, xloc=xloc.bar_index, color=color.new(wms_colSup, wms_spanAlpha), width=wms_lineWidth)
+                line ln6 = line.new(entryBar, wms_bestSup, xThirdTop, wms_bestSup, xloc=xloc.bar_index, color=color.new(wms_colSup, wms_spanAlpha), width=wms_lineWidth)
+                line ln7 = line.new(t1, wms_bestRes, xThirdTop, wms_bestRes, xloc=xloc.bar_index, color=color.new(wms_colRes, wms_spanAlpha), width=wms_lineWidth)
+                array.push(wms_lines, ln5), array.push(wms_lines, ln6), array.push(wms_lines, ln7)
+
+                // Bottoms 1/2/3 and Tops 1/2
+                label lb5 = label.new(b1, wms_bestSup, "1st - Start - Bottom", style=label.style_label_up, textcolor=color.black, color=color.new(color.white, 0))
+                label lb6 = label.new(b2, wms_bestSup, "2nd - Bottom",         style=label.style_label_up, textcolor=color.black, color=color.new(color.white, 0))
+                string b3Text = repeats >= wms_minRepeatForEntry ? "3rd - Entry - Bottom\nRepeat #" + str.tostring(repeats) : (wms_showPending ? "Next Buying - Env (pending)" : "")
+                color  b3Col  = color.new(repeats >= wms_minRepeatForEntry ? color.yellow : color.blue, 10)
+                label lb7 = label.new(b3, wms_bestSup, b3Text, style=label.style_label_up, textcolor=color.black, color=b3Col)
+
+                label lb8 = label.new(t1, wms_bestRes, "1st Top - Mandatory touch", style=label.style_label_down, textcolor=color.black, color=color.new(color.white, 0))
+                label lb9 = label.new(t2, wms_bestRes, "2nd Top - Mandatory touch", style=label.style_label_down, textcolor=color.black, color=color.new(color.white, 0))
+                array.push(wms_labels, lb5), array.push(wms_labels, lb6), array.push(wms_labels, lb7), array.push(wms_labels, lb8), array.push(wms_labels, lb9)
+
+                // Target arrow to projected 3rd Top
+                line ln8  = line.new(entryBar, wms_bestSup, xThirdTop, wms_bestRes, xloc=xloc.bar_index, color=wms_colZig, width=2)
+                label lb10 = label.new(xThirdTop, wms_bestRes, "3rd Top - Target", style=label.style_label_down, textcolor=color.black, color=color.new(color.white, 0))
+                array.push(wms_lines, ln8), array.push(wms_labels, lb10)
+
+                // Info
+                float g = (wms_bestRes - wms_bestSup) / wms_bestSup * 100.0
+                label lb11 = label.new(entryBar, wms_bestRes, "Gap ≈ " + str.tostring(g, "#.##") + "% | Repeats=" + str.tostring(repeats),
+                                       style=label.style_label_left, textcolor=color.black, color=color.new(color.teal, 10))
+                array.push(wms_labels, lb11)
+
+// === Helper (must be at global scope in Pine) ===
+f_cup_clearFill(fl) =>
+    while array.size(fl) > 0
+        lineF = array.pop(fl)
+        line.delete(linefill.get_line1(lineF))
+        line.delete(linefill.get_line2(lineF))
+        linefill.delete(lineF)
+
+// ================================ //
+// 12) Cup & Handle Final Logic    //
+// ================================ //
+// v82 v109 v233
+
+// –––––––[       input      ]–––––––
+calcs     = 'Flattens the lines, \nthis has no effect \n   on calculations \n-> just for visuals'
+mHigh     = 'maximum highs breaking through the top line\n (% of bars between left & right point)'
+mLow      = 'maximum lows breaking through the bottom line\n (% of bars between left & right point)'
+cupLin    = 'shows maximum difference \n         (-> "% angle") \n between the 2 top points \n of the latest cup pattern'
+cupLab    = 'shows left & right top points of the latest cup pattern'
+cupHist   = 'shows position of cup pattern in history'
+
+left      = input.int  (3 , title='left'                               , maxval=50, minval=1)
+right     = input.int  (1 , title='right'                              , maxval=50, minval=1)
+ZZback    = input.int  (50, title='PP back'                            , maxval=50, minval=4)
+prcAngle  = input.float(22., title='% angle', step=0.1, minval=0, group='Top line') / 100
+prcOfCupT = input.float(22., title='% cup Height Top', maxval=100, minval=0, group='Top line') / 100
+maxHighs  = input.float(20., title='max % breaks', tooltip=mHigh, maxval=30, minval=0, group='Top line') / 100
+flatTop   = input.bool (true, title='Flatten', tooltip=calcs, group='Top line')
+i_shTlin  = input.bool (false, title='  show test-lines', tooltip=cupLin, group='Top line')
+i_shTlab  = input.bool (false, title='  show test-labels', tooltip=cupLab, group='Top line')
+prcOfCupB = input.float(22., title='% cup Height Bot', maxval=100, minval=0, group='Bottom line') / 100
+maxLows   = input.float(20., title='max % breaks', tooltip=mLow, maxval=30, minval=0, group='Bottom line') / 100
+flatBot   = input.bool (true, title='Flatten', tooltip=calcs, group='Bottom line')
+i_CupLab  = input.bool (false, title='  show Cup labels', tooltip=cupHist)
+
+c_cup     = input.color(color.new(color.yellow, 87), title='fill', group='colors')
+c_bord    = input.color(color.new(color.aqua  , 75), title='border', group='colors')
+c_retr    = input.color(color.new(#FF0000     , 80), title='retrace', group='colors')
+
+// –––––––[  ATH / Target / Entry Levels (drawings only; detection unchanged)  ]–––––––
+groupLevels     = 'ATH / Target / Entry Levels'
+i_showLevels    = input.bool(true , 'Enable Levels', group=groupLevels)
+i_showATH       = input.bool(true , 'Show ATH line', group=groupLevels)
+i_showDown      = input.bool(true , 'Show Down-from-ATH line & %', group=groupLevels)
+i_showTarget    = input.bool(true , 'Show Target line', group=groupLevels)
+i_showEntry     = input.bool(true , 'Show Entry line (cup top)', group=groupLevels)
+i_showABCD      = input.bool(true , 'Show ABCD Levels (-10% steps)', group=groupLevels)
+abcdStepPct     = input.float(10.0, 'ABCD Step %', minval=1, maxval=50, step=0.1, group=groupLevels) / 100.0
+extendRightBars = input.int (500  , 'Line extend bars (to right)', minval=50, maxval=10000, group=groupLevels)
+
+c_athLine       = input.color(color.new(color.lime   , 0 ), 'ATH line', group=groupLevels)
+c_downLine      = input.color(color.new(color.orange , 0 ), 'Down line', group=groupLevels)
+c_targetLine    = input.color(color.new(color.fuchsia, 0 ), 'Target line', group=groupLevels)
+c_entryLine     = input.color(color.new(color.teal   , 0 ), 'Entry line', group=groupLevels)
+c_abcdLine      = input.color(color.new(color.navy   , 0 ), 'ABCD lines', group=groupLevels)
+c_levelLabelBg  = input.color(color.new(color.black  , 10), 'Label BG', group=groupLevels)
+c_levelText     = input.color(color.new(color.white  , 0 ), 'Label Text', group=groupLevels)
+levelLineWidth  = input.int(2, 'Line width', minval=1, maxval=5, group=groupLevels)
+levelDashedATH  = input.bool(true, 'ATH line dashed', group=groupLevels)
+
+// –––––––[     helpers      ]–––––––
+clearFill(fl) =>
+    while array.size(fl) > 0
+        lineF = array.pop(fl)
+        line.delete(linefill.get_line1(lineF))
+        line.delete(linefill.get_line2(lineF))
+        linefill.delete(lineF)
+
+delLine(l) =>
+    if not na(l)
+        line.delete(l)
+
+delLabel(lb) =>
+    if not na(lb)
+        label.delete(lb)
+
+// –––––––[     variables    ]–––––––
+var aP         = array.new<float>()
+var aB         = array.new<int>()
+var aLbCup     = array.new<label>()
+var aLnFill    = array.new<linefill>()
+
+var line  l1   = line.new (bar_index, close, bar_index, close)
+var line  l2   = line.new (bar_index, close, bar_index, close)
+var label b1   = label.new(bar_index, close,  color=color.red, style=label.style_label_right, size=size.tiny)
+var label b2   = label.new(bar_index, close,  color=color.red, style=label.style_label_left , size=size.tiny)
+var box   bx   = box.new  (bar_index, close, bar_index, close, border_color=c_bord, bgcolor=na)
+var box   bx_  = box.new  (bar_index, close, bar_index, close, border_color=c_cup , bgcolor=na, border_width=7)
+var box   bx2  = box.new  (bar_index, close, bar_index, close, border_color=na    , bgcolor=c_retr)
+
+// Lines/labels for Levels
+var line  athLine    = na
+var line  downLine   = na
+var line  tgtLine    = na
+var line  entryLine  = na
+var label athLabel   = na
+var label downLabel  = na
+var label tgtLabel   = na
+var label entryLabel = na
+
+// ABCD arrays
+var line[]  abcdLines  = array.new_line()
+var label[] abcdLabels = array.new_label()
+
+// –––––––[  Running ATH (and array for past lookup at x2) ]–––––––
+var float runATH = na
+runATH := na(runATH[1]) ? high : math.max(runATH[1], high)
+
+var aATH = array.new<float>()
+array.unshift(aATH, runATH)
+if array.size(aATH) > 6000
+    array.pop(aATH)
+
+// –––––––[      clean       ]–––––––
+if array.size(aP) > 50
+    array.pop(aP)
+    array.pop(aB)
+
+if array.size(aLbCup) > 500
+    label.delete(array.pop(aLbCup))
+
+if array.size(aLnFill) > 500
+    lineF = array.pop(aLnFill)
+    line.delete(linefill.get_line1(lineF))
+    line.delete(linefill.get_line2(lineF))
+    linefill.delete(lineF)
+
+// –––––––[      calcs       ]–––––––
+ph = ta.pivothigh(high, left, right)
+if not na(ph)
+    lwset = 0., cupH1 = 0., cupH2 = 0.
+    if array.size(aP) > 4
+        // loopieloopie a{
+        for a = 4 to math.min(ZZback, array.size(aP)) - 1
+            broken = false
+            brTop  = 0
+            brBot  = 0
+            // –––––––[ get points -> x, y ]–––––––
+            x1 = array.get(aB, a), y1 = array.get(aP, a)
+            x2 = bar_index - right, y2 = ph
+            //
+            cupW = x2 - x1           // width 'cup'
+            lo = low
+            // loopieloopie c{
+            for c = 0 to cupW
+                if low[c] < lo
+                    lo := low[c]
+            // –––––––[ if 'angle' per bar between y2 & y1 is smaller than x% of difference ]–––––––
+            if y2 > y1 and y1 > y2 - ((y2 - lo) * prcAngle) and bar_index - x1 < 3000
+                // –––––––[ draw line ]–––––––
+                testline = line.new(x1, y1, x2, y2)
+                // loopieloopie b{
+                for b = right to bar_index - x1
+                    if close[b] > line.get_price(testline, bar_index - b)
+                        broken := true
+                        break
+                // }
+                if broken == false
+                    // –––––––[ A) check no break above/below ]–––––––
+                    aPPT = array.new<float>()
+                    aPPB = array.new<float>()
+                    aPBT = array.new<int>()
+                    aPBB = array.new<int>()
+
+                    lwset := lo                // lowest point
+                    cupH1 := y2 - lwset        // height 'cup' (y2 - lowest)
+                    cupH2 := y1 - lwset        // height 'cup' (y1 - lowest)
+                    plus   = cupH1 * prcOfCupT // % of difference between highest and lowest of cup
+                    min    = cupH2 * prcOfCupB // % of difference between other high and lowest of cup
+                    brT    = math.round(cupW * maxHighs)
+                    brB    = math.round(cupW * maxLows)
+
+                    // loopieloopie d{
+                    for d = 0 to cupW
+                        cos  = math.cos(math.pi / cupW * d) // 1 -> -1
+                        nxt  = math.sqrt(1 - cos * cos)     // 1 -> 0 -> 1
+                        clcT = y2 - (cupH1 * nxt) + plus
+                        clcB = y1 - (cupH2 * nxt) - min
+                        if brTop > brT or brBot > brB
+                            break
+                        if high[d] > math.min(clcT, y2)
+                            brTop += 1
+                        if low[d] < math.max(lwset, clcB)
+                            brBot += 1
+                        array.unshift(aPPT, flatTop ? math.min(y2, clcT) : clcT)
+                        array.unshift(aPPB, flatBot ? math.max(lwset, clcB) : clcB)
+                        array.unshift(aPBT, x2 - d)
+                        array.unshift(aPBB, x2 - d)
+                    // }
+                    // –––––––[ B) draw ]–––––––
+                    if brTop < brT and brBot < brB
+                        clearFill(aLnFill)
+                        if i_CupLab
+                            _lb = label.new(x2, y2, text='Cup', color=color.new(color.blue, 75), textcolor=color.yellow, size=size.small)
+                            array.unshift(aLbCup, _lb)
+                        // loopieloopie e{
+                        for e = array.size(aPPT) - 2 to 0
+                            _l1 = line.new(array.get(aPBT, e),     array.get(aPPT, e),
+                                           array.get(aPBT, e + 1), array.get(aPPT, e + 1), color=c_bord)
+                            _l2 = line.new(array.get(aPBB, e),     array.get(aPPB, e),
+                                           array.get(aPBB, e + 1), array.get(aPPB, e + 1), color=c_bord)
+                            _fill = linefill.new(_l1, _l2, c_cup)
+                            array.unshift(aLnFill, _fill)
+
+                        // –––––––[ draw box ]–––––––
+                        box.set_lefttop     (bx , x2           , y2                 )
+                        box.set_rightbottom (bx , x2 + cupW / 3, y2 - (cupH1 * 0.5 ))
+                        box.set_lefttop     (bx_, x2           , y2                 )
+                        box.set_rightbottom (bx_, x2 + cupW / 3, y2 - (cupH1 * 0.5 ))
+                        box.set_lefttop     (bx2, x2           , y2 - (cupH1 * 0.33))
+                        box.set_rightbottom (bx2, x2 + cupW / 3, y2 - (cupH1 * 0.5 ))
+
+                        // –––––––[ test labels/lines ]–––––––
+                        if i_shTlab
+                            label.set_xy(b1, x1, y1)
+                            label.set_xy(b2, x2, y2)
+                        if i_shTlin
+                            line.set_xy1(l1, x1, y2)
+                            line.set_xy2(l1, x2, y2)
+                            line.set_xy1(l2, x1, y2 - ((y2 - lo) * prcAngle))
+                            line.set_xy2(l2, x2, y2 - ((y2 - lo) * prcAngle))
+
+                        // –––––––[ Levels: ATH / Down% / Target / Entry / ABCD ]–––––––
+                        if i_showLevels
+                            // ATH at right-top (x2) using stored series (barsAgo = right)
+                            athAtX2 = array.size(aATH) > right ? array.get(aATH, right) : na
+
+                            // Clean previous drawings so only the latest pattern shows
+                            delLine(athLine), delLine(downLine), delLine(tgtLine), delLine(entryLine)
+                            delLabel(athLabel), delLabel(downLabel), delLabel(tgtLabel), delLabel(entryLabel)
+                            while array.size(abcdLines) > 0
+                                line.delete(array.pop(abcdLines))
+                            while array.size(abcdLabels) > 0
+                                label.delete(array.pop(abcdLabels))
+
+                            // Right end of horizontal lines
+                            xr = x2 + extendRightBars
+
+                            // (1) ATH line + label
+                            if i_showATH and show_cup_handle and not na(athAtX2)
+                                athStyle = levelDashedATH ? line.style_dashed : line.style_solid
+                                athLine  := line.new(x2, athAtX2, xr, athAtX2, extend=extend.none, xloc=xloc.bar_index, style=athStyle, width=levelLineWidth, color=c_athLine)
+                                athLabel := label.new(x2, athAtX2, text='ATH', textcolor=c_levelText, color=c_levelLabelBg, style=label.style_label_down, size=size.small)
+
+                            // (2) Down-from-ATH — show label at the MIDPOINT between ATH and Entry A (no overlap)
+                            if  i_showDown and show_cup_handle
+                                 and not na(athAtX2)
+                                downPct = athAtX2 > 0 ? (athAtX2 - y2) / athAtX2 * 100.0 : na
+                                // draw horizontal at Entry A (kept for context)
+                                downLine := line.new(x2, y2, xr, y2, extend=extend.none, xloc=xloc.bar_index, width=levelLineWidth, color=c_downLine)
+                                // midpoint y position + slight upward offset for visibility
+                                yMid  = (athAtX2 + y2) / 2.0
+                                yText = yMid + (cupH1 * 0.04)
+                                // place a few bars to the left of x2 so it doesn't collide with Entry A label
+                                xText = x2 - math.round(math.max(3, cupW * 0.06))
+                                downText  = '▼ Drop from ATH: ' + (not na(downPct) ? str.tostring(downPct, '#.##') + '%' : 'n/a')
+                                downLabel := label.new(xText, yText, text=downText, textcolor=c_levelText, color=c_levelLabelBg,
+                                                       style=label.style_label_left, size=size.small)
+
+                            // (3) Target line: +H from cup top
+                            if i_showTarget and show_cup_handle
+                                targetPrice = y2 + cupH1
+                                tgtLine   := line.new(x2, targetPrice, xr, targetPrice, extend=extend.none, xloc=xloc.bar_index, width=levelLineWidth, color=c_targetLine)
+                                tgtPct    = y2 != 0 ? (targetPrice - y2) / y2 * 100.0 : na
+                                tgtText   = 'Target (+H): ' + str.tostring(targetPrice, format.mintick) + (not na(tgtPct) ? '  (' + str.tostring(tgtPct, '#.##') + '%)' : '')
+                                tgtLabel  := label.new(x2, targetPrice, text=tgtText, textcolor=c_levelText, color=c_levelLabelBg, style=label.style_label_left, size=size.small)
+
+                            // (4) Entry line at cup top (breakout)
+                            if i_showEntry and show_cup_handle
+                                entryLine  := line.new(x2, y2, xr, y2, extend=extend.none, xloc=xloc.bar_index, width=levelLineWidth, color=c_entryLine)
+                                entryLabel := label.new(x2, y2, text='Entry A: ' + str.tostring(y2, format.mintick), textcolor=c_levelText, color=c_levelLabelBg, style=label.style_label_left, size=size.small)
+
+                            // (5) ABCD averaging levels
+                            if i_showABCD and show_cup_handle
+                                stepMul = 1.0 - abcdStepPct
+                                entryA = y2
+                                entryB = entryA * stepMul
+                                entryC = entryB * stepMul
+                                entryD = entryC * stepMul
+                                for idx = 0 to 2
+                                    lvl = idx == 0 ? entryB : idx == 1 ? entryC : entryD
+                                    nm  = idx == 0 ? "Entry B" : idx == 1 ? "Entry C" : "Entry D"
+                                    ln = line.new(x2, lvl, xr, lvl, extend=extend.none, xloc=xloc.bar_index, width=levelLineWidth, color=c_abcdLine)
+                                    lb = label.new(x2, lvl, text = nm + ": " + str.tostring(lvl, format.mintick),
+                                                   textcolor=c_levelText, color=c_levelLabelBg, style=label.style_label_left, size=size.small)
+                                    array.push(abcdLines, ln)
+                                    array.push(abcdLabels, lb)
+                        else
+                            // Levels module disabled: hide everything
+                            delLine(athLine), delLine(downLine), delLine(tgtLine), delLine(entryLine)
+                            delLabel(athLabel), delLabel(downLabel), delLabel(tgtLabel), delLabel(entryLabel)
+                            while array.size(abcdLines) > 0
+                                line.delete(array.pop(abcdLines))
+                            while array.size(abcdLabels) > 0
+                                label.delete(array.pop(abcdLabels))
+
+                line.delete(testline)
+        // }
+    //        
+    array.unshift(aP, ph)
+    array.unshift(aB, bar_index - right)
+
+// If the Levels module is toggled OFF outside of a detection event, ensure previously drawn objects are removed.
+if not i_showLevels
+    delLine(athLine), delLine(downLine), delLine(tgtLine), delLine(entryLine)
+    delLabel(athLabel), delLabel(downLabel), delLabel(tgtLabel), delLabel(entryLabel)
+    while array.size(abcdLines) > 0
+        line.delete(array.pop(abcdLines))
+    while array.size(abcdLabels) > 0
+        label.delete(array.pop(abcdLabels))
+
+
+
+//=============Reverse Head & Shoulders Pattern=======================
+//──────────────────────────────────────────────────────────────────────────────
+// MODULE TOGGLE
+//──────────────────────────────────────────────────────────────────────────────
+
+// Drawing stores (CONFIRMED)
+var line[]  LINES  = array.new_line()
+var label[] LABELS = array.new_label()
+
+clearAll() =>
+    while array.size(LINES)  > 0
+        line.delete(array.pop(LINES))
+    while array.size(LABELS) > 0
+        label.delete(array.pop(LABELS))
+
+if not modOn
+    clearAll()
+
+//──────────────────────────────────────────────────────────────────────────────
+// SETTINGS (DETECTION / CONFIRMATION / DISPLAY / LEVELS)
+//──────────────────────────────────────────────────────────────────────────────
+grpDet     = "Reverse H&S — Detection"
+pl         = input.int(5,  "Pivot Left/Right", minval=2, group=grpDet)
+lookback   = input.int(500,"Scan Window (bars)", minval=150, group=grpDet)
+shouldTol  = input.float(12.0, "Shoulders Similarity %", minval=2, maxval=50, group=grpDet)
+timeTol    = input.float(40.0, "Time Symmetry %", minval=10, maxval=100, group=grpDet)
+neckType   = input.string("Slanted","Neckline", options=["Slanted","Horizontal"], group=grpDet)
+
+grpConf    = "Reverse H&S — Confirmation"
+needClose  = input.bool(true,  "Require Close above Neckline", group=grpConf)
+volOn      = input.bool(false, "Volume Confirmation", group=grpConf)
+volLen     = input.int(20,     "Volume MA", minval=2, group=grpConf)
+
+grpDisp    = "Reverse H&S — Display"
+onlyLatest = input.bool(false, "Show Only Latest Confirmed Pattern", group=grpDisp)
+maxKeep    = input.int(6, "Max Patterns to Keep (when multiple)", minval=1, maxval=50, group=grpDisp)
+maxPerBar  = input.int(3, "Max New Patterns Per Bar", minval=1, maxval=10, group=grpDisp)
+showPoints = input.bool(true, "Mark L / Head / R", group=grpDisp)
+ptLblSizeStr = input.string("Small", "Point Label Size", options=["Tiny","Small","Normal","Large","Huge"], group=grpDisp)
+// Visibility toggles
+showConfirmed = input.bool(true, "Show Confirmed Patterns", group=grpDisp)
+showPredict   = input.bool(true, "Show Potential Pattern (Prediction)", group=grpDisp)
+
+grpLvls    = "Reverse H&S — Levels"
+showEntryLvls = input.bool(true,  "Show Entry A/B/C/D", group=grpLvls)
+stepDropPct   = input.float(10.0, "Step Drop % (B/C/D)", minval=1.0, maxval=50.0, group=grpLvls)
+showATHDrop   = input.bool(true,  "Show ATH Drop % at Entry", group=grpLvls)
+showTargetLbl = input.bool(true,  "Show Target Price Label", group=grpLvls)
+showTargetPct = input.bool(true,  "Show Target % from Entry", group=grpLvls)
+
+lvlLblSizeStr = input.string("Normal", "Level Label Size", options=["Tiny","Small","Normal","Large","Huge"], group=grpLvls)
+lvlLineW      = input.int(2, "Level Line Width", minval=1, maxval=5, group=grpLvls)
+lvlBCW        = input.int(1, "B/C/D Line Width", minval=1, maxval=5, group=grpLvls)
+lblStyle      = input.string("Compact", "Label Style", options=["Compact","Detailed"], group=grpLvls)
+
+// Spacing/offsets & shifts
+lblOffsetATR  = input.float(0.50, "Label Offset (ATR)", minval=0.0, maxval=5.0, group=grpLvls)   // B/C/D/Target
+entryYOffsetATR = input.float(0.60, "Entry A Y Offset (ATR)", minval=0.0, maxval=5.0, group=grpLvls)
+athYOffsetATR   = input.float(1.40, "ATH Y Offset (ATR)",     minval=0.0, maxval=5.0, group=grpLvls)
+shiftA          = input.int(-3, "Entry A Label Shift (bars)", minval=-20, maxval=20, group=grpLvls)
+shiftATH        = input.int( 6, "ATH Label Shift (bars)",     minval=-20, maxval=20, group=grpLvls)
+athAtHigh       = input.bool(true, "ATH Label at Breakout High", group=grpLvls)
+
+// Colors (CONFIRMED)
+colNeck    = input.color(color.new(color.blue,0),   "Neckline",       group=grpLvls)
+colStruct  = input.color(color.new(color.teal,0),   "Structure Lines", group=grpLvls)
+colHead    = input.color(color.new(color.green,0),  "Head Label",     group=grpLvls)
+colBreak   = input.color(color.new(color.orange,0), "Entry/Breakout",  group=grpLvls)
+colEntryBC = input.color(color.new(color.gray,20),  "Entry B/C/D",     group=grpLvls)
+colTarget  = input.color(color.new(color.purple,0), "Target Line",     group=grpLvls)
+
+//──────────────────────────────────────────────────────────────────────────────
+// PREDICTION (UNCONFIRMED) SETTINGS
+//──────────────────────────────────────────────────────────────────────────────
+grpPred = "Reverse H&S — Prediction"
+predLineW      = input.int(2, "Pred Neck/Lines Width", minval=1, maxval=5, group=grpPred)
+predLblSizeStr = input.string("Normal", "Pred Label Size", options=["Tiny","Small","Normal","Large","Huge"], group=grpPred)
+predYOffset    = input.float(0.60, "Pred Labels Y Offset (ATR)", minval=0.0, maxval=5.0, group=grpPred)
+predShift      = input.int(1, "Pred Labels Shift (bars)", minval=-20, maxval=20, group=grpPred)
+// NEW: where to anchor prediction
+predAnchor = input.string("Right Shoulder+1", "Pred Anchor At", options=["Current Bar","Right Shoulder+1"], group=grpPred)
+
+// Prediction colors
+colPredNeck   = input.color(color.new(color.aqua,0),    "Pred Neckline", group=grpPred)
+colPredStruct = input.color(color.new(color.blue,0),    "Pred Structure", group=grpPred)
+colPredLbl    = input.color(color.new(color.blue,0),    "Pred Labels",    group=grpPred)
+colPredTgt    = input.color(color.new(color.fuchsia,0), "Pred Target",    group=grpPred)
+
+//──────────────────────────────────────────────────────────────────────────────
+// PIVOTS
+//──────────────────────────────────────────────────────────────────────────────
+plow  = ta.pivotlow(low,  pl, pl)
+phigh = ta.pivothigh(high, pl, pl)
+
+var int[]   lowIdx  = array.new_int()
+var float[] lowVal  = array.new_float()
+var int[]   highIdx = array.new_int()
+var float[] highVal = array.new_float()
+
+if not na(plow)
+    array.push(lowIdx,  bar_index - pl), array.push(lowVal,  plow)
+if not na(phigh)
+    array.push(highIdx, bar_index - pl), array.push(highVal, phigh)
+
+// Trim arrays to lookback
+while array.size(lowIdx)  > 0 and (bar_index - array.get(lowIdx,  0)) > lookback
+    array.shift(lowIdx), array.shift(lowVal)
+while array.size(highIdx) > 0 and (bar_index - array.get(highIdx, 0)) > lookback
+    array.shift(highIdx), array.shift(highVal)
+
+//──────────────────────────────────────────────────────────────────────────────
+// HISTORY BUFFER (for accurate breakout time & ATH-at-that-time)
+//──────────────────────────────────────────────────────────────────────────────
+var int[]   histIdx   = array.new_int()
+var float[] histClose = array.new_float()
+var float[] histHigh  = array.new_float()
+var float[] histATH   = array.new_float()
+
+var float runningATH = na
+runningATH := na(runningATH) ? high : math.max(runningATH, high)
+
+array.push(histIdx,   bar_index)
+array.push(histClose, close)
+array.push(histHigh,  high)
+array.push(histATH,   runningATH)
+
+while array.size(histIdx) > 0 and (bar_index - array.get(histIdx, 0)) > lookback
+    array.shift(histIdx), array.shift(histClose), array.shift(histHigh), array.shift(histATH)
+
+//──────────────────────────────────────────────────────────────────────────────
+// HELPERS
+//──────────────────────────────────────────────────────────────────────────────
+pctDiff(a, b) =>
+    a == 0 or b == 0 ? 0.0 : math.abs(a - b) / ((a + b) / 2.0) * 100.0
+
+getHighBetween(aIdx, bIdx) =>
+    float hv = na
+    int   hi = na
+    int sz = array.size(highIdx)
+    if sz > 0
+        for i = 0 to sz - 1
+            int ix = array.get(highIdx, i)
+            if ix >= aIdx and ix <= bIdx
+                float v = array.get(highVal, i)
+                if na(hv) or v > hv
+                    hv := v, hi := ix
+    [hi, hv]
+
+yOnLine(x1, y1, x2, y2, x) =>
+    x2 == x1 ? y1 : y1 + (y2 - y1) * (x - x1) / (x2 - x1)
+
+// Size mappers
+getSize(sz) =>
+    sz == "Tiny"   ? size.tiny   :
+     sz == "Small" ? size.small  :
+     sz == "Normal"? size.normal :
+     sz == "Large" ? size.large  : size.huge
+
+ptLblSize    = getSize(ptLblSizeStr)
+lvlLblSize   = getSize(lvlLblSizeStr)
+predLblSize  = getSize(predLblSizeStr)
+
+// Text helpers
+fmtPrice(p) => str.tostring(p, format.mintick)
+entryText(tag, p) =>
+    lblStyle == "Compact" ? (tag + " " + fmtPrice(p)) : (tag + "\n" + fmtPrice(p))
+
+// Label helper
+mkLbl(x, y, txt, col, sz) =>
+    label.new(x, y, txt, style=label.style_label_left, color=color.new(col, 0), textcolor=color.white, size=sz)
+
+// Return: breakoutBarIndex, necklineAtBreak, closeAtBreak, histPosition
+findFirstBreakout(startIdx, h1i, h1v, h2i, h2v) =>
+    int outIdx = na
+    float neckAtBreak = na
+    float closeAtBreak = na
+    int pos = na
+    int sz = array.size(histIdx)
+    if sz > 1
+        int j0 = na
+        for j = 0 to sz - 1
+            if array.get(histIdx, j) >= startIdx
+                j0 := j
+                break
+        if not na(j0)
+            for j = j0 to sz - 1
+                int   bx  = array.get(histIdx, j)
+                float c   = array.get(histClose, j)
+                float h   = array.get(histHigh,  j)
+                float nn  = neckType == "Horizontal" ? (h1v + h2v)/2.0 : yOnLine(h1i, h1v, h2i, h2v, bx)
+                float npv = na
+                if j > 0
+                    int bxPrev = array.get(histIdx, j-1)
+                    npv := neckType == "Horizontal" ? nn : yOnLine(h1i, h1v, h2i, h2v, bxPrev)
+                bool crossHere = needClose ? (c > nn and array.get(histClose, j-1) <= npv)
+                                           : (h > nn and array.get(histHigh,  j-1) <= npv)
+                if crossHere
+                    outIdx := bx
+                    neckAtBreak := nn
+                    closeAtBreak := c
+                    pos := j
+                    break
+    [outIdx, neckAtBreak, closeAtBreak, pos]
+
+//──────────────────────────────────────────────────────────────────────────────
+// MULTI-PATTERN REGISTRY (CONFIRMED; robust to empty)
+//──────────────────────────────────────────────────────────────────────────────
+var int[] drawnRights   = array.new_int()
+var int[] patLineStart  = array.new_int()
+var int[] patLineCount  = array.new_int()
+var int[] patLabelStart = array.new_int()
+var int[] patLabelCount = array.new_int()
+
+patternAlreadyDrawn(iR) =>
+    int sz = array.size(drawnRights)
+    if sz == 0
+        false
+    else
+        bool seen = false
+        for i = 0 to sz - 1
+            if array.get(drawnRights, i) == iR
+                seen := true
+                break
+        seen
+
+addPatternRecord(iR, lStart, lCount, lbStart, lbCount) =>
+    array.push(drawnRights, iR)
+    array.push(patLineStart,  lStart)
+    array.push(patLineCount,  lCount)
+    array.push(patLabelStart, lbStart)
+    array.push(patLabelCount, lbCount)
+
+deleteOldestPattern() =>
+    if array.size(drawnRights) > 0
+        int lStart = array.get(patLineStart,  0)
+        int lCount = array.get(patLineCount,  0)
+        int bStart = array.get(patLabelStart, 0)
+        int bCount = array.get(patLabelCount, 0)
+        for j = 0 to math.max(lCount - 1, -1)
+            int idx = lStart + j
+            if idx >= 0 and idx < array.size(LINES)
+                line.delete(array.get(LINES, idx))
+        for j = 0 to math.max(bCount - 1, -1)
+            int idx = bStart + j
+            if idx >= 0 and idx < array.size(LABELS)
+                label.delete(array.get(LABELS, idx))
+        array.shift(drawnRights), array.shift(patLineStart), array.shift(patLineCount), array.shift(patLabelStart), array.shift(patLabelCount)
+
+resetAllPatternRecords() =>
+    array.clear(drawnRights), array.clear(patLineStart), array.clear(patLineCount), array.clear(patLabelStart), array.clear(patLabelCount)
+
+//──────────────────────────────────────────────────────────────────────────────
+// CORE (Confirmed drawing — ORIGINAL LOGIC)
+//──────────────────────────────────────────────────────────────────────────────
+vma = ta.sma(volume, volLen)
+atr = ta.atr(14)
+
+if modOn
+    if showConfirmed
+        int n = array.size(lowIdx)
+        if n >= 3
+            int tests = math.min(n - 2, 14)
+            int addedThisBar = 0
+            for k = 0 to tests - 1
+                int   iL = array.get(lowIdx, n-3-k)
+                int   iH = array.get(lowIdx, n-2-k)
+                int   iR = array.get(lowIdx, n-1-k)
+                float vL = array.get(lowVal, n-3-k)
+                float vH = array.get(lowVal, n-2-k)
+                float vR = array.get(lowVal, n-1-k)
+
+                if not (iL < iH and iH < iR)
+                    continue
+                if not (vH < vL and vH < vR)
+                    continue
+                if pctDiff(vL, vR) > shouldTol
+                    continue
+                if pctDiff(iH - iL, iR - iH) > timeTol
+                    continue
+
+                [h1i, h1v] = getHighBetween(iL, iH)
+                [h2i, h2v] = getHighBetween(iH, iR)
+                if na(h1i) or na(h2i)
+                    continue
+
+                [brkIdx, neckAtBreak, brkClose, jPos] = findFirstBreakout(iR + 1, h1i, h1v, h2i, h2v)
+                if na(brkIdx)
+                    continue
+
+                bool volOK = not volOn or (volume > vma and volume > volume[1])
+                if not volOK
+                    continue
+
+                if onlyLatest
+                    clearAll(), resetAllPatternRecords()
+                if patternAlreadyDrawn(iR)
+                    continue
+
+                int lStart  = array.size(LINES)
+                int lbStart = array.size(LABELS)
+
+                // 1) Neckline
+                line ln = na
+                if neckType == "Horizontal"
+                    ln := line.new(h1i, (h1v+h2v)/2.0, h2i, (h1v+h2v)/2.0, extend=extend.right, color=colNeck, width=lvlLineW)
+                else
+                    ln := line.new(h1i, h1v, h2i, h2v, extend=extend.right, color=colNeck, width=lvlLineW)
+                array.push(LINES, ln)
+
+                // 2) Structure L→H→R
+                array.push(LINES, line.new(iL, vL, iH, vH, color=colStruct, width=1))
+                array.push(LINES, line.new(iH, vH, iR, vR, color=colStruct, width=1))
+
+                // 3) Points
+                if showPoints
+                    array.push(LABELS, label.new(iL, vL, "L",    style=label.style_label_up, color=color.new(colStruct,0), textcolor=color.white, size=ptLblSize))
+                    array.push(LABELS, label.new(iH, vH, "Head", style=label.style_label_up, color=color.new(colHead,0),   textcolor=color.white, size=ptLblSize))
+                    array.push(LABELS, label.new(iR, vR, "R",    style=label.style_label_up, color=color.new(colStruct,0), textcolor=color.white, size=ptLblSize))
+
+                // Offsets
+                float offBCT = atr * lblOffsetATR
+                float offA   = atr * entryYOffsetATR
+                float offATH = atr * athYOffsetATR
+
+                // 4) Entry A (line + shifted label)
+                float entryA = needClose ? brkClose : neckAtBreak
+                array.push(LINES, line.new(brkIdx, entryA, brkIdx + 1, entryA, extend=extend.right, color=colBreak, width=lvlLineW))
+                array.push(LABELS, mkLbl(brkIdx + shiftA, entryA + offA, entryText("Entry A", entryA), colBreak, lvlLblSize))
+
+                // ATH % label
+                if showATHDrop and not na(jPos)
+                    float refY = athAtHigh ? array.get(histHigh, jPos) : entryA
+                    float athAtBreak = array.get(histATH, jPos)
+                    float dropPct = athAtBreak > 0 ? (athAtBreak - entryA) / athAtBreak * 100.0 : na
+                    if not na(dropPct)
+                        string msg = "ATH drop: " + str.tostring(dropPct, "#.0") + "%"
+                        array.push(LABELS, mkLbl(brkIdx + shiftATH, refY + offATH, msg, color.new(color.black, 0), lvlLblSize))
+
+                // 5) Entry B/C/D
+                if showEntryLvls
+                    float entryB = entryA * (1.0 - stepDropPct/100.0)
+                    float entryC = entryB * (1.0 - stepDropPct/100.0)
+                    float entryD = entryC * (1.0 - stepDropPct/100.0)
+
+                    array.push(LINES, line.new(brkIdx, entryB, brkIdx + 1, entryB, extend=extend.right, color=colEntryBC, width=lvlBCW, style=line.style_dashed))
+                    array.push(LABELS, mkLbl(brkIdx, entryB + offBCT, entryText("Entry B", entryB), colEntryBC, lvlLblSize))
+
+                    array.push(LINES, line.new(brkIdx, entryC, brkIdx + 1, entryC, extend=extend.right, color=colEntryBC, width=lvlBCW, style=line.style_dashed))
+                    array.push(LABELS, mkLbl(brkIdx, entryC + offBCT, entryText("Entry C", entryC), colEntryBC, lvlLblSize))
+
+                    array.push(LINES, line.new(brkIdx, entryD, brkIdx + 1, entryD, extend=extend.right, color=colEntryBC, width=lvlBCW, style=line.style_dashed))
+                    array.push(LABELS, mkLbl(brkIdx, entryD + offBCT, entryText("Entry D", entryD), colEntryBC, lvlLblSize))
+
+                // 6) Target (+ % from Entry)
+                float neckAtR = neckType == "Horizontal" ? (h1v+h2v)/2.0 : yOnLine(h1i, h1v, h2i, h2v, iR)
+                float height  = neckAtR - vH
+                float tgt     = (na(neckAtBreak) ? neckAtR : neckAtBreak) + height
+                array.push(LINES, line.new(brkIdx, tgt, brkIdx + 1, tgt, extend=extend.right, color=colTarget, width=lvlLineW, style=line.style_dotted))
+                if showTargetLbl
+                    string tgtTxt = entryText("Target", tgt)
+                    if showTargetPct and entryA != 0
+                        float tgPct = (tgt - entryA) / entryA * 100.0
+                        tgtTxt := tgtTxt + " (" + str.tostring(tgPct, "#.0") + "%)"
+                    array.push(LABELS, mkLbl(brkIdx, tgt + offBCT, tgtTxt, colTarget, lvlLblSize))
+
+                // Registry (for FIFO cleanup)
+                int lCount  = array.size(LINES)  - lStart
+                int lbCount = array.size(LABELS) - lbStart
+                addPatternRecord(iR, lStart, lCount, lbStart, lbCount)
+
+                if not onlyLatest and array.size(drawnRights) > maxKeep
+                    deleteOldestPattern()
+
+                addedThisBar += 1
+                if addedThisBar >= maxPerBar
+                    break
+
+//──────────────────────────────────────────────────────────────────────────────
+// PREDICTION: current potential iH&S (UNCONFIRMED)
+//──────────────────────────────────────────────────────────────────────────────
+var line[]  P_LINES  = array.new_line()
+var label[] P_LABELS = array.new_label()
+
+clearPred() =>
+    while array.size(P_LINES)  > 0
+        line.delete(array.pop(P_LINES))
+    while array.size(P_LABELS) > 0
+        label.delete(array.pop(P_LABELS))
+
+if showPredict and modOn
+    clearPred()
+    int n = array.size(lowIdx)
+    if n >= 3
+        bool drawn = false
+        for k = 0 to math.min(n - 3, 20)
+            int   iL = array.get(lowIdx, n-3-k)
+            int   iH = array.get(lowIdx, n-2-k)
+            int   iR = array.get(lowIdx, n-1-k)
+            float vL = array.get(lowVal, n-3-k)
+            float vH = array.get(lowVal, n-2-k)
+            float vR = array.get(lowVal, n-1-k)
+
+            if not (iL < iH and iH < iR)
+                continue
+            if not (vH < vL and vH < vR)
+                continue
+            if pctDiff(vL, vR) > shouldTol
+                continue
+            if pctDiff(iH - iL, iR - iH) > timeTol
+                continue
+
+            [h1i, h1v] = getHighBetween(iL, iH)
+            [h2i, h2v] = getHighBetween(iH, iR)
+            if na(h1i) or na(h2i)
+                continue
+
+            // Already broke? then skip (will be drawn by confirmed section)
+            [brkIdxTmp, _, _, _] = findFirstBreakout(iR + 1, h1i, h1v, h2i, h2v)
+            if not na(brkIdxTmp)
+                continue
+
+            // Choose anchor for prediction
+            int anchorX = predAnchor == "Current Bar" ? bar_index : (iR + 1)
+            float neckAtAnchor = neckType == "Horizontal" ? (h1v + h2v)/2.0 : yOnLine(h1i, h1v, h2i, h2v, anchorX)
+            float neckAtR      = neckType == "Horizontal" ? (h1v + h2v)/2.0 : yOnLine(h1i, h1v, h2i, h2v, iR)
+            float height       = neckAtR - vH
+            float predTgt      = neckAtAnchor + height
+
+            // Structure
+            array.push(P_LINES, line.new(iL, vL, iH, vH, color=colPredStruct, width=1))
+            array.push(P_LINES, line.new(iH, vH, iR, vR, color=colPredStruct, width=1))
+
+            // Neckline (extend right)
+            line ncl = na
+            if neckType == "Horizontal"
+                ncl := line.new(h1i, (h1v+h2v)/2.0, h2i, (h1v+h2v)/2.0, extend=extend.right, color=colPredNeck, width=predLineW, style=line.style_dashed)
+            else
+                ncl := line.new(h1i, h1v, h2i, h2v, extend=extend.right, color=colPredNeck, width=predLineW, style=line.style_dashed)
+            array.push(P_LINES, ncl)
+
+            // Labels at chosen anchor
+            float offP = atr * predYOffset
+            array.push(P_LABELS, mkLbl(anchorX + predShift, neckAtAnchor + offP, "Potential Entry " + fmtPrice(neckAtAnchor), colPredLbl, predLblSize))
+            array.push(P_LABELS, mkLbl(anchorX + predShift, predTgt      + offP, "Potential Target " + fmtPrice(predTgt),    colPredTgt, predLblSize))
+
+            drawn := true
+            break
+else
+    clearPred()
+// ============================================================
+// === FUNDAMENTAL DATA TABLE MODULE (EPS + Sales + Net Profit YoY)
+// ============================================================
+
+grp_fund    = "📊 Fundamentals Table"
+show_fund = input.bool(true,     title="📊 Fundamental Data Table", group=group_dashboard)
+fund_period = input.string("FY",  title="Period (FQ=Quarterly / FY=Annual)",options=["FQ","FY"], group=group_dashboard)
+fund_rows   = input.int(5,        title="Number of Rows (quarters)",        minval=2, maxval=8,  group=group_dashboard)
+fund_tableX = input.string("right","Table Position (H)",                    options=["left","center","right"], group=group_dashboard)
+fund_tableY = input.string("bottom","Table Position (V)",                   options=["top","middle","bottom"], group=group_dashboard)
+fund_txtSz  = input.string("small","Text Size",                             options=["tiny","small","normal","large"], group=group_dashboard)
+
+// ---- Fundamental Data Arrays (filled on every bar) ----
+var array<float> epsArr   = array.new_float(20, na)
+var array<float> salesArr = array.new_float(20, na)
+var array<float> profArr  = array.new_float(20, na)
+var array<int>   datesArr = array.new_int(20, na)
+// --- Helper: value in Crores ---
+f_cr(v) => na(v) ? "—" : str.tostring(math.round(v / 1e7, 0))
+
+// --- Helper: YoY % ---
+f_yoy(curr, prev) => (na(curr) or na(prev) or prev == 0) ? float(na) : (curr - prev) / math.abs(prev) * 100
+
+// --- Helper: format % string ---
+f_pct(v) => na(v) ? "—" : (v >= 0 ? "+" : "") + str.tostring(math.round(v, 0)) + "%"
+
+// --- Helper: color by % ---
+f_col(v) => na(v) ? color.gray : v > 20 ? color.new(#00e676, 0) : v > 0 ? color.new(#69f0ae, 0) : color.new(#ff5252, 0)
+
+// --- Market Cap & PE (fetched once outside loop) ---
+tso0    = request.financial(syminfo.tickerid, "TOTAL_SHARES_OUTSTANDING", "FQ", barmerge.gaps_off)
+mktcap  = na(tso0) ? float(na) : (tso0 * close) / 1e7
+eps0      = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_BASIC", "TTM", barmerge.gaps_off)
+pe_val    = (not na(eps0) and eps0 != 0) ? close / eps0 : float(na)
+pe_color = na(pe_val) ? color.gray : pe_val < 0 ? color.red : pe_val <= 50 ? color.orange : color.green
+
+// ---- Accumulate quarterly financials into arrays on every bar ----
+_eps_now  = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_BASIC", fund_period, barmerge.gaps_on)
+_rev_now  = request.financial(syminfo.tickerid, "TOTAL_REVENUE",            fund_period, barmerge.gaps_on)
+_np_now   = request.financial(syminfo.tickerid, "NET_INCOME",               fund_period, barmerge.gaps_on)
+if not na(_eps_now)
+    _chk = array.size(epsArr) > 0 ? array.get(epsArr, 0) : na
+    if na(_chk) or _chk != _eps_now
+        array.unshift(epsArr,   _eps_now)
+        array.unshift(salesArr, _rev_now)
+        array.unshift(profArr,  _np_now)
+        array.unshift(datesArr, time)
+        if array.size(epsArr) > 20
+            array.pop(epsArr)
+            array.pop(salesArr)
+            array.pop(profArr)
+            array.pop(datesArr)
+
+// --- Pre-fetch all date timestamps OUTSIDE the loop (max 8 quarters) ---
+dt0  = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_BASIC", fund_period, barmerge.gaps_on)[0]
+dt1  = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_BASIC", fund_period, barmerge.gaps_on)[1]
+dt2  = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_BASIC", fund_period, barmerge.gaps_on)[2]
+dt3  = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_BASIC", fund_period, barmerge.gaps_on)[3]
+dt4  = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_BASIC", fund_period, barmerge.gaps_on)[4]
+dt5  = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_BASIC", fund_period, barmerge.gaps_on)[5]
+dt6  = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_BASIC", fund_period, barmerge.gaps_on)[6]
+dt7  = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_BASIC", fund_period, barmerge.gaps_on)[7]
+
+// Convert to date label using time of financial bar
+f_dtlbl(val) => na(val) ? "—" : str.format("{0,date,MMM-yy}", time)
+
+// --- Text size (single line) ---
+tsize = fund_txtSz == "tiny" ? size.tiny : fund_txtSz == "small" ? size.small : fund_txtSz == "normal" ? size.normal : size.large
+
+// --- Table position (single line) ---
+tpos = fund_tableY == "top" and fund_tableX == "left" ? position.top_left : fund_tableY == "top" and fund_tableX == "center" ? position.top_center : fund_tableY == "top" and fund_tableX == "right" ? position.top_right : fund_tableY == "middle" and fund_tableX == "left" ? position.middle_left : fund_tableY == "middle" and fund_tableX == "center" ? position.middle_center : fund_tableY == "middle" and fund_tableX == "right" ? position.middle_right : fund_tableY == "bottom" and fund_tableX == "left" ? position.bottom_left : fund_tableY == "bottom" and fund_tableX == "center" ? position.bottom_center : position.bottom_right
+
+// --- Build Table ---
+var table fundTbl = na
+
+if barstate.islast and show_fund
+    fundTbl := table.new(tpos, 8, fund_rows + 4,
+         border_color = color.new(color.gray, 60),
+         border_width  = 1,
+         frame_color   = color.new(color.gray, 50),
+         frame_width   = 1)
+
+    hBG  = color.new(#1e2a38, 0)
+    hTxt = color.white
+    rBG  = color.new(#0d1117, 15)
+
+    // ---- ROW 0: HEADER ----
+    table.cell(fundTbl, 0, 0, "Date",       text_color=hTxt, bgcolor=hBG, text_size=tsize, text_halign=text.align_center)
+    table.cell(fundTbl, 1, 0, "EPS",        text_color=hTxt, bgcolor=hBG, text_size=tsize, text_halign=text.align_center)
+    table.cell(fundTbl, 2, 0,fund_period == "FY" ? "YoY" : "QoQ",       text_color=hTxt, bgcolor=hBG, text_size=tsize, text_halign=text.align_center)
+    table.cell(fundTbl, 3, 0, "Sales(Cr)",  text_color=hTxt, bgcolor=hBG, text_size=tsize, text_halign=text.align_center)
+    table.cell(fundTbl, 4, 0,fund_period == "FY" ? "YoY" : "QoQ",       text_color=hTxt, bgcolor=hBG, text_size=tsize, text_halign=text.align_center)
+    table.cell(fundTbl, 5, 0, "NP(Cr)",     text_color=hTxt, bgcolor=hBG, text_size=tsize, text_halign=text.align_center)
+    table.cell(fundTbl, 6, 0, fund_period == "FY" ? "YoY" : "QoQ",       text_color=hTxt, bgcolor=hBG, text_size=tsize, text_halign=text.align_center)
+    table.cell(fundTbl, 7, 0, syminfo.description, text_color=color.new(#00e5ff,0), bgcolor=hBG, text_size=tsize, text_halign=text.align_left)
+
+    // ---- ROW 1: MCap ----
+    mktcap_str = na(mktcap) ? "MCap: —" : "MCap: " + str.tostring(math.round(mktcap, 0)) + " Cr"
+    table.cell(fundTbl, 0, 1, "",           bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 1, 1, "",           bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 2, 1, "",           bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 3, 1, "",           bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 4, 1, "",           bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 5, 1, "",           bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 6, 1, "",           bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 7, 1, mktcap_str,  text_color=color.white, bgcolor=rBG, text_size=tsize, text_halign=text.align_left)
+
+    // ---- ROW 2: PE ----
+    pe_dot = na(pe_val) ? "" : pe_val < 0 ? " 🔴" : pe_val <= 50 ? " 🟢" : " 🟠"
+    pe_str = na(pe_val) ? "P/E: —" : "P/E: " + str.tostring(math.round(pe_val, 1)) + " -->" + pe_dot
+    table.cell(fundTbl, 0, 2, "",       bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 1, 2, "",       bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 2, 2, "",       bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 3, 2, "",       bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 4, 2, "",       bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 5, 2, "",       bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 6, 2, "",       bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 7, 2, pe_str,   text_color=pe_color, bgcolor=rBG, text_size=tsize, text_halign=text.align_left)
+    // ----- ROW 3: PE Legend -----
+    table.cell(fundTbl, 0, 3, "", bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 1, 3, "", bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 2, 3, "", bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 3, 3, "", bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 4, 3, "", bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 5, 3, "", bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 6, 3, "", bgcolor=rBG, text_size=tsize)
+    table.cell(fundTbl, 7, 3, "🔴 < 0, 🟢 0-50, 🟠 > 50", text_color=color.silver, bgcolor=rBG, text_size=tsize, text_halign=text.align_left)
+    // ---- DATA ROWS (start at row 3) ----
+    for i = 0 to fund_rows - 1
+        row = i + 4
+
+        eps_cur  = array.size(epsArr)  > i     ? array.get(epsArr,  i)     : na
+        eps_prev = array.size(epsArr) > i + 1 ? array.get(epsArr, i + 1) : na
+        rev_cur  = array.size(salesArr) > i     ? array.get(salesArr, i)     : na
+        rev_prev = array.size(salesArr) > i + 1 ? array.get(salesArr, i + 1) : na
+        np_cur   = array.size(profArr)  > i     ? array.get(profArr,  i)     : na
+        np_prev  = array.size(profArr)  > i + 1 ? array.get(profArr,  i + 1) : na
+
+        qoq_eps = f_yoy(eps_cur, eps_prev)
+        qoq_rev = f_yoy(rev_cur, rev_prev)
+        qoq_np  = f_yoy(np_cur,  np_prev)
+
+        dt_lbl = array.size(datesArr) > i ? str.format_time(array.get(datesArr, i), "MMM-yy", "Asia/Kolkata") : "—"
+        eps_str = na(eps_cur) ? "—" : str.tostring(math.round(eps_cur, 1))
+        rev_str = f_cr(rev_cur)
+        np_str  = f_cr(np_cur)
+
+        dBG = i == 0 ? color.new(#1a2744, 10) : rBG
+
+        table.cell(fundTbl, 0, row, dt_lbl,         text_color=color.white, bgcolor=dBG, text_size=tsize, text_halign=text.align_center)
+        table.cell(fundTbl, 1, row, eps_str,         text_color=color.white, bgcolor=dBG, text_size=tsize, text_halign=text.align_right)
+        table.cell(fundTbl, 2, row, f_pct(qoq_eps),  text_color=f_col(qoq_eps), bgcolor=dBG, text_size=tsize, text_halign=text.align_center)
+        table.cell(fundTbl, 3, row, rev_str,         text_color=color.white, bgcolor=dBG, text_size=tsize, text_halign=text.align_right)
+        table.cell(fundTbl, 4, row, f_pct(qoq_rev),  text_color=f_col(qoq_rev), bgcolor=dBG, text_size=tsize, text_halign=text.align_center)
+        table.cell(fundTbl, 5, row, np_str,          text_color=color.white, bgcolor=dBG, text_size=tsize, text_halign=text.align_right)
+        table.cell(fundTbl, 6, row, f_pct(qoq_np),   text_color=f_col(qoq_np),  bgcolor=dBG, text_size=tsize, text_halign=text.align_center)
+        table.cell(fundTbl, 7, row, i == 3 ? "Industry: " + syminfo.industry : i == 4 ? "Sector: " + syminfo.sector : "", bgcolor=dBG, text_size=tsize, text_color=color.silver, text_halign=text.align_left)
+else if barstate.islast
+    if not na(fundTbl)
+        table.delete(fundTbl)
+                        // table cleared
+// === END FUNDAMENTAL TABLE MODULE ===

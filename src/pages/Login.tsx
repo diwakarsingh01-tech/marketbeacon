@@ -5,6 +5,8 @@ import { GoogleLogin } from '@react-oauth/google';
 import BrandLogo from '../components/brand/BrandLogo';
 import { AlertCircle, ArrowRight, UserPlus, Globe } from 'lucide-react';
 import { getApiUrl } from '../lib/api-utils';
+import SEO from '../components/SEO';
+import { OrganizationSchema } from '../components/StructuredData';
 
 const API_URL = getApiUrl();
 
@@ -113,6 +115,8 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 font-sans relative overflow-hidden">
+      <SEO title="Login" description="Access your MarketBeacon Pro terminal. Google OAuth sign-in for institutional stock research tools." url="/login" />
+      <OrganizationSchema />
       {/* Dynamic Grid Background */}
       <div className="absolute inset-0 z-0 opacity-20" 
            style={{ backgroundImage: 'radial-gradient(#334155 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
