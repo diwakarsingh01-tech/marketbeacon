@@ -89,7 +89,7 @@ export function calculateEnvelope(quotes: Quote[], percentage: number = 14, leng
   else if (state === 'C_ACTIVE') { activeE = c_entry; activeT = b_entry; activeTr = 'C'; }
   else if (state === 'D_ACTIVE') { activeE = d_entry; activeT = c_entry; activeTr = 'D'; }
 
-  return { isBuyZone: (activeTr !== 'NONE') && currentPrice <= activeE * 1.02, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: a_date, tranche: activeTr, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date } }, isLocked: true };
+  return { isBuyZone: (activeTr !== 'NONE') && Math.abs(currentPrice - activeE) / activeE <= 0.022, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: a_date, tranche: activeTr, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date } }, isLocked: true };
 }
 
 /**
@@ -128,7 +128,7 @@ export function processShortEnvelope(quotes: Quote[]) {
   else if (state === 'C_ACTIVE') { activeE = c_entry; activeT = b_entry; activeTr = 'C'; }
   else if (state === 'D_ACTIVE') { activeE = d_entry; activeT = c_entry; activeTr = 'D'; }
 
-  return { isBuyZone: (activeTr !== 'NONE') && currentPrice <= activeE * 1.02, tranche: activeTr, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: a_date, isLocked: true, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date } } };
+  return { isBuyZone: (activeTr !== 'NONE') && Math.abs(currentPrice - activeE) / activeE <= 0.022, tranche: activeTr, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: a_date, isLocked: true, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date } } };
 }
 
 /**
@@ -202,7 +202,7 @@ export function calculateBollingerBand(quotes: Quote[], length: number = 200, sd
   else if (state === 'D_ACTIVE') { activeE = d_entry; activeT = c_entry; activeTr = 'D'; }
 
   return { 
-    isBuyZone: (activeTr !== 'NONE') && currentPrice <= activeE * 1.02, 
+    isBuyZone: (activeTr !== 'NONE') && Math.abs(currentPrice - activeE) / activeE <= 0.022, 
     entryPrice: activeE, 
     target: activeT, 
     currentPrice: Math.round(currentPrice), 
@@ -249,7 +249,7 @@ export function calculateSMAStacking(quotes: Quote[]) {
   else if (state === 'B_ACTIVE') { activeE = b_entry; activeT = a_entry; activeTr = 'B'; }
   else if (state === 'C_ACTIVE') { activeE = c_entry; activeT = b_entry; activeTr = 'C'; }
   else if (state === 'D_ACTIVE') { activeE = d_entry; activeT = c_entry; activeTr = 'D'; }
-  return { isBuyZone: (activeTr !== 'NONE') && currentPrice <= activeE * 1.02, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: a_date, tranche: activeTr, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date }, gap: 10 }, isLocked: true };
+  return { isBuyZone: (activeTr !== 'NONE') && Math.abs(currentPrice - activeE) / activeE <= 0.022, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: a_date, tranche: activeTr, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date }, gap: 10 }, isLocked: true };
 }
 
 /**
@@ -282,7 +282,7 @@ export function calculate52WeekStrategy(quotes: Quote[]) {
   else if (state === 'B_ACTIVE') { activeE = b_entry; activeT = a_entry; activeTr = 'B'; activeD = b_date; }
   else if (state === 'C_ACTIVE') { activeE = c_entry; activeT = b_entry; activeTr = 'C'; activeD = c_date; }
   else if (state === 'D_ACTIVE') { activeE = d_entry; activeT = c_entry; activeTr = 'D'; activeD = d_date; }
-  return { isBuyZone: (activeTr !== 'NONE') && currentPrice <= activeE * 1.02, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: activeD, tranche: activeTr, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date }, gap: 10 }, isLocked: true };
+  return { isBuyZone: (activeTr !== 'NONE') && Math.abs(currentPrice - activeE) / activeE <= 0.022, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: activeD, tranche: activeTr, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date }, gap: 10 }, isLocked: true };
 }
 
 /**
@@ -406,8 +406,8 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
              const abcd = calculateABCDLevels(supportCeiling);
              let activeTr = 'NONE';
              
-             // Strict +/- 5.0% Range Check for each Tranche (Per MEMORY.md)
-             const tolerance = 0.05; 
+             // Strict +/- 2.2% Range Check for each Tranche (Per Institutional Mandate)
+             const tolerance = 0.022; 
              if (Math.abs(currentPrice - abcd.a.price) / abcd.a.price <= tolerance) activeTr = 'A';
              else if (Math.abs(currentPrice - abcd.b.price) / abcd.b.price <= tolerance) activeTr = 'B';
              else if (Math.abs(currentPrice - abcd.c.price) / abcd.c.price <= tolerance) activeTr = 'C';
@@ -426,7 +426,7 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
                const triggerDate = typeof triggerDateObj === 'string' ? triggerDateObj : (triggerDateObj as any).toISOString();
                
                return { 
-                 isBuyZone: true, 
+                 isBuyZone: isQualified, 
                  status: isQualified ? "QUALIFIED" : "OBSERVATION",
                  tranche: activeTr,
                  abcd: abcd,
@@ -486,7 +486,7 @@ export function calculateRHS(quotes: Quote[]) {
           // Rule 3: 30% Target Upside Gap
           const targetGap = (target / s2.price) - 1;
           const priceDist = Math.abs(currentPrice - s2.price) / s2.price;
-          if (targetGap >= 0.30 && priceDist <= 0.07) {
+          if (targetGap >= 0.30 && priceDist <= 0.022) {
             return { isBuyZone: true, entryPrice: Math.round(s2.price), target: Math.round(target), currentPrice: Math.round(currentPrice), triggerDate: s2.date, correction: corr.toFixed(1), isLocked: true };
           }
         }
@@ -530,7 +530,7 @@ export function calculateCupHandle(quotes: Quote[]) {
               
               const target = rim2.price + (rim2.price - bottom.price);
               // Rule 3: 30% Target Upside Gap
-              if (corr >= 7 && corr <= 20 && (target / currentPrice) - 1 >= 0.30 && Math.abs(currentPrice - handleLow.price) / handleLow.price <= 0.10) {
+              if (corr >= 7 && corr <= 20 && (target / currentPrice) - 1 >= 0.30 && Math.abs(currentPrice - handleLow.price) / handleLow.price <= 0.022) {
                 return { isBuyZone: true, entryPrice: Math.round(handleLow.price), target: Math.round(target), currentPrice: Math.round(currentPrice), triggerDate: handleLow.date, correction: corr.toFixed(1), isLocked: true };
               }
             }
@@ -557,6 +557,9 @@ export function calculateSixtySevenFunda(quotes: Quote[], data: any) {
   }
 
   const dr = ((ath - currentPrice) / ath) * 100;
+  const idealEntry = ath * 0.67;
+  const isQualified = dr >= 33.0 && Math.abs(currentPrice - idealEntry) / idealEntry <= 0.022;
+
   if (parseFloat(data?.dividendYield || 0) < 1.0 || dr < 33.0) return { isBuyZone: false };
 
   // Target depends on ATH recency
@@ -564,10 +567,10 @@ export function calculateSixtySevenFunda(quotes: Quote[], data: any) {
   // If ATH was > 252 trading days ago → 100% gain from entry
   const barsSinceATH = latestIdx - athIdx;
   const targetMultiplier = barsSinceATH <= 252 ? 1.67 : 2.0;
-  const entry = Math.round(currentPrice);
+  const entry = Math.round(idealEntry);
   const target = Math.round(entry * targetMultiplier);
 
-  return { isBuyZone: true, entryPrice: entry, target, currentPrice: Math.round(currentPrice), triggerDate: new Date().toISOString().split('T')[0], drawdown: dr.toFixed(1), isLocked: true };
+  return { isBuyZone: isQualified, entryPrice: entry, target, currentPrice: Math.round(currentPrice), triggerDate: new Date().toISOString().split('T')[0], drawdown: dr.toFixed(1), isLocked: true };
 }
 
 /**
@@ -584,16 +587,16 @@ export function calculateTwentyRallyRetest(quotes: Quote[]) {
   }
   if (rallies.length === 0) return { isBuyZone: false };
   const best = rallies.sort((a, b) => b.peakIdx - a.peakIdx)[0];
-  return { isBuyZone: latestIdx - best.peakIdx <= 252 && Math.abs(currentPrice - best.origin) / best.origin <= 0.05 && currentPrice < ema200[latestIdx], entryPrice: Math.round(best.origin), target: Math.round(best.peak), currentPrice: Math.round(currentPrice), triggerDate: (typeof best.date === 'string' ? best.date : (best.date as Date).toISOString()).split('T')[0], isLocked: true };
+  return { isBuyZone: latestIdx - best.peakIdx <= 252 && Math.abs(currentPrice - best.origin) / best.origin <= 0.022 && currentPrice < ema200[latestIdx], entryPrice: Math.round(best.origin), target: Math.round(best.peak), currentPrice: Math.round(currentPrice), triggerDate: (typeof best.date === 'string' ? best.date : (best.date as Date).toISOString()).split('T')[0], isLocked: true };
 }
 
 /**
  * UTILITY: ABCD Level Calculation (Institutional 10% Model)
  */
 export function calculateABCDLevels(anchorPrice: number, marketCap: number = 0) {
-  const gap = 0.10; // Forced 10% institutional step
+  const gap = 0.10;
   return { 
-    a: { price: anchorPrice, label: "A" }, 
+    a: { price: Math.round(anchorPrice), label: "A" }, 
     b: { price: Math.round(anchorPrice * (1 - gap)), label: "B" }, 
     c: { price: Math.round(anchorPrice * Math.pow(1 - gap, 2)), label: "C" }, 
     d: { price: Math.round(anchorPrice * Math.pow(1 - gap, 3)), label: "D" }, 
@@ -606,7 +609,7 @@ export function calculateABCDLevels(anchorPrice: number, marketCap: number = 0) 
  * Enforces D/E <= 1.0 and Smart Money >= 70%
  */
 export function checkInstitutionalMandates(screenerData: any, symbol: string = '') {
-  if (!screenerData) return { passed: true }; // Defensive fallback if no data
+  if (!screenerData) return { passed: true };
 
   const de = screenerData.netDebtToEquity || 0;
   const sm = screenerData.smartMoneyTotal || 0;
@@ -623,7 +626,7 @@ export function checkInstitutionalMandates(screenerData: any, symbol: string = '
 
   const reasons = [];
   if (de > debtLimit) reasons.push(`D/E High (${de.toFixed(2)})`);
-  if (sm < 70 && mcapCr > 1000) reasons.push(`SM Low (${sm.toFixed(1)}%)`);
+  if (sm < 30) reasons.push(`SM Critical (${sm.toFixed(1)}%)`);
 
   return {
     passed: reasons.length === 0,

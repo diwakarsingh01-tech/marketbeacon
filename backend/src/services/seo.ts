@@ -5,35 +5,50 @@ import { NIFTY_500 } from '../universe.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_SITEMAP_PATH = path.join(__dirname, '../../../public/sitemap.xml');
+const BASE_URL = 'https://marketbeaconpro.com';
+const TODAY = new Date().toISOString().split('T')[0];
+
+function safeUrl(page: string) {
+  return `${BASE_URL}${page}`.replace(/\/+/g, '/').replace('https:/', 'https://');
+}
 
 export function generateSitemap() {
-  console.log('🌐 [SEO] Generating Sitemap for Organic Traffic...');
-  const baseUrl = 'https://marketbeacon.pro'; // Update to production domain
-  
-  const staticPages = [
-    '',
-    '/login',
-    '/pricing',
-    '/education',
-    '/marketplace'
-  ];
+  const seen = new Set<string>();
+  const uniqueStockPages = NIFTY_500
+    .map(s => `/analysis/${s.replace('.NS', '')}`)
+    .filter(p => {
+      if (seen.has(p)) return false;
+      seen.add(p);
+      return true;
+    });
 
-  const stockPages = NIFTY_500.map(s => `/analysis/${s.replace('.NS', '')}`);
+  const staticPages = [
+    { path: '', priority: '1.0', freq: 'daily' },
+    { path: '/blog', priority: '0.9', freq: 'weekly' },
+    { path: '/login', priority: '0.8', freq: 'weekly' },
+    { path: '/pricing', priority: '0.8', freq: 'weekly' },
+    { path: '/privacy-policy', priority: '0.5', freq: 'monthly' },
+    { path: '/blog/abcd-tranche-laddering-guide', priority: '0.85', freq: 'monthly' },
+    { path: '/blog/what-is-sebi-compliant-stock-screener', priority: '0.85', freq: 'monthly' },
+    { path: '/blog/how-to-trade-like-fii-dii-india', priority: '0.85', freq: 'monthly' },
+    { path: '/blog/institutional-audit-score-explained', priority: '0.8', freq: 'monthly' },
+  ];
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${[...staticPages, ...stockPages].map(page => `
+${[...staticPages, ...uniqueStockPages.map(p => ({ path: p, priority: '0.7', freq: 'daily' }))].map(p => `
   <url>
-    <loc>${baseUrl}${page}</loc>
-    <changefreq>daily</changefreq>
-    <priority>${page.includes('/analysis/') ? '0.8' : '1.0'}</priority>
+    <loc>${safeUrl(p.path)}</loc>
+    <lastmod>${TODAY}</lastmod>
+    <changefreq>${p.freq}</changefreq>
+    <priority>${p.priority}</priority>
   </url>`).join('')}
 </urlset>`;
 
   try {
     fs.writeFileSync(PUBLIC_SITEMAP_PATH, sitemap);
-    console.log(`✅ [SEO] Sitemap created with ${stockPages.length} stock pages.`);
+    console.log(`Sitemap generated at ${PUBLIC_SITEMAP_PATH} with ${staticPages.length + uniqueStockPages.length} URLs.`);
   } catch (e: any) {
-    console.error('❌ [SEO] Sitemap generation failed:', e.message);
+    console.error('Sitemap generation failed:', e.message);
   }
 }

@@ -19,6 +19,7 @@ import {
   initSnapshotCache,
   getMarketSnapshot
 } from './screener.js';
+import { NIFTY_500 } from './universe.js';
 import { validateBatch9 } from './services/fundamentalAudit.js';
 import { runStrategyAnalysis } from './services/strategyService.js';
 import { precalculateAlpha40, getAlpha40Cache } from './services/worker.js';
@@ -83,7 +84,7 @@ export const BASKETS: Record<string, string[]> = {
     "INDHOTEL", "SHREECEM", "OFSS", "AUROPHARMA", "NMDC", "SRF", "PERSISTENT", "IDBI", "LAURUSLABS", "SUZLON",
     "DABUR", "FEDERALBNK", "YESBANK", "FORTIS", "NATIONALUM", "AUBANK", "HAVELLS", "MCX", "NAM-INDIA", "INDUSINDBK",
     "ICICIPRULI", "DIXON", "GICRE", "BIOCON", "BANKINDIA", "NAUKRI", "IOB", "SCHAEFFLER", "ALKEM", "PHOENIXLTD",
-    "IDFCFIRSTB", "GLENMARK", "MAHABANK", "TIINDIA", "LINDEINDIA", "COFORGE", "OBEROIRLTY", "BERGEPAINT", "JSL", "MFSL",
+    "IDFCFIRSTB", "GLENMARK", "MAHABANK", "TIINDIA", "LINDEINDIA", "COFORGE", "OBEROIRLTY", "BERGEPAINT", "JSL", "MFSL", "TATAMOTORS",
     "THERMAX", "COLPAL", "COROMANDEL", "MRF", "KEI", "HINDCOPPER", "APLAPOLLO", "RADICO", "SUPREMEIND", "MPHASIS",
     "AIAENG", "VOLTAS", "IPCALAB", "BALKRISIND", "PIIND", "ASTRAL", "PETRONET", "COCHINSHIP", "KPRMILL", "AJANTPHARM",
     "GLAXO", "WELCORP", "NAVINFLUOR", "3MINDIA", "ENDURANCE", "GODFRYPHLP", "UBL", "JBCHEPHARM", "HSCL", "CONCOR",
@@ -404,17 +405,39 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
        };
     }
 
-    res.json({ 
+    function r0(v: number) { return Math.round(v); }
+    function r2(v: number) { return Math.round(v * 100) / 100; }
+    function cleanPrice(o: any, depth = 0) {
+      if (!o || typeof o !== 'object') return;
+      for (const k of Object.keys(o)) {
+        if (k === 'price' && typeof o[k] === 'number') {
+          const before = o[k];
+          o[k] = r0(o[k]);
+          if (before !== o[k]) console.log(`[CLEAN] ${symbol} ${depth}:${k} ${before} -> ${o[k]}`);
+        } else if (typeof o[k] === 'object') {
+          cleanPrice(o[k], depth + 1);
+        }
+      }
+    }
+    if (abcd) {
+      if (abcd.a && typeof abcd.a.price === 'number') abcd.a.price = Math.round(abcd.a.price);
+      if (abcd.b && typeof abcd.b.price === 'number') abcd.b.price = Math.round(abcd.b.price);
+      if (abcd.c && typeof abcd.c.price === 'number') abcd.c.price = Math.round(abcd.c.price);
+      if (abcd.d && typeof abcd.d.price === 'number') abcd.d.price = Math.round(abcd.d.price);
+    }
+
+    const response = { 
       symbol, 
-      score: audit.score, 
+      score: Math.round(audit.score), 
       isPass: audit.isPass, 
       strategies: qualified,
-      smartMoney: audit.smartMoneyTotal || 0,
+      smartMoney: r2(audit.smartMoneyTotal || 0),
       upside: maxUpside,
       basket: basketType,
       risk: audit.score >= 80 ? 'LOW' : (audit.score >= 70 ? 'MODERATE' : 'HIGH'),
       abcd
-    });
+    };
+    res.json(response);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -440,18 +463,20 @@ app.get('/api/stock-fundamentals', async (req, res) => {
 
     const audit = await validateBatch9(symbol as string, snap, 'Elite Basket');
     const lastQuote = snap.quotes[snap.quotes.length - 1];
+    const lastPrice = lastQuote?.close || 0;
+    const change = snap.quote?.regularMarketChangePercent || 0;
     
     res.json({
       symbol,
-      price: lastQuote?.close,
-      change: snap.quote?.regularMarketChangePercent || 0,
+      price: Math.round(lastPrice * 100) / 100,
+      change: Math.round(change * 100) / 100,
       marketCap: snap.quote?.marketCap,
       industry: MANUAL_SECTOR_MAP[symbol as string] || snap.screener?.industry || 'General',
-      peRatio: snap.quote?.pe || snap.screener?.peRatio,
+      peRatio: snap.quote?.pe || snap.screener?.peRatio || 0,
       peMedians: snap.screener?.peMedians || {},
-      returnOnEquity: snap.screener?.returnOnEquity || snap.quote?.roe,
-      roce: snap.screener?.roce,
-      netDebtToEquity: snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity / 100),
+      returnOnEquity: Math.round((snap.screener?.returnOnEquity || snap.quote?.roe || 0) * 100) / 100,
+      roce: Math.round((snap.screener?.roce || 0) * 100) / 100,
+      netDebtToEquity: Math.round((snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity / 100) || 0) * 100) / 100,
       athSales: snap.screener?.athSales,
       athNetProfit: snap.screener?.athNetProfit,
       currentSales: snap.screener?.currentSales,
@@ -1061,9 +1086,10 @@ app.get('/api/stock-prices', async (req, res) => {
       const snap = snapshot[s];
       if (!snap) return { symbol: s, price: 0 };
       const lastQuote = snap.quotes && snap.quotes.length > 0 ? snap.quotes[snap.quotes.length - 1] : null;
+      const price = lastQuote?.close || snap.quote?.regularMarketPrice || 0;
       return { 
         symbol: s, 
-        price: lastQuote?.close || snap.quote?.regularMarketPrice || 0, 
+        price: Math.round(price * 100) / 100, 
         ath: snap.quotes ? Math.round(Math.max(...snap.quotes.map((q: any) => q.high || 0))) : snap.quote?.fiftyTwoWeekHigh || 0, 
         marketCap: snap.quote?.marketCap || 0, 
         sector: MANUAL_SECTOR_MAP[s] || snap.screener?.industry || 'General',
@@ -1351,14 +1377,24 @@ app.get('/api/search/stock', async (req: any, res: any) => {
     const snap = getMarketSnapshot();
     const matchedSymbols = new Set<string>();
     const basketMap: Record<string, string[]> = {};
+
+    // Search baskets first
     for (const [basket, symbols] of Object.entries(BASKETS)) {
       const found = symbols.filter(s => s.includes(query));
-      if (found.length > 0) {
-        for (const s of found) {
-          matchedSymbols.add(s);
-          if (!basketMap[s]) basketMap[s] = [];
-          basketMap[s].push(basket);
-        }
+      for (const s of found) {
+        matchedSymbols.add(s);
+        if (!basketMap[s]) basketMap[s] = [];
+        basketMap[s].push(basket);
+      }
+    }
+
+    // Also search full universe if under 10 results
+    if (matchedSymbols.size < 10) {
+      const universeFound = (NIFTY_500 || [])
+        .map(s => s.replace('.NS', ''))
+        .filter(s => s.includes(query) && !matchedSymbols.has(s));
+      for (const s of universeFound.slice(0, 10 - matchedSymbols.size)) {
+        matchedSymbols.add(s);
       }
     }
 
@@ -1374,7 +1410,6 @@ app.get('/api/search/stock', async (req: any, res: any) => {
         }
       }
       let peMedians = stockSnap?.screener?.peMedians || {};
-      // Fallback: if peMedians empty, use current PE ratio
       if (!peMedians.pe3Y && !peMedians.pe5Y) {
         const pe = stockSnap?.quote?.pe || 0;
         if (pe > 0) peMedians = { pe3Y: pe, pe5Y: pe };
@@ -1383,7 +1418,7 @@ app.get('/api/search/stock', async (req: any, res: any) => {
         symbol: sym,
         baskets: basketMap[sym] || [],
         strategies,
-        price: stockSnap?.quote?.regularMarketPrice || 0,
+        price: Math.round((stockSnap?.quote?.regularMarketPrice || 0) * 100) / 100,
         change: stockSnap?.quote?.regularMarketChangePercent || 0,
         peMedians
       };

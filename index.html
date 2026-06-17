@@ -10,89 +10,68 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MarketBeacon Pro | Best Stock Analysis Tool India | FII DII Data & Audit Score</title>
-    <meta name="description" content="Check any stock's safety with India's #1 Institutional Audit Score. Get FII DII buying trends, safe entry levels, and multibagger stock analysis for Nifty 500. Stop guessing, start auditing." />
-    <link rel="canonical" href="https://marketbeaconpro.com" />
-    <!-- Phase 1 SEO: Indian Retail Keywords -->
-    <meta name="keywords" content="best stocks to buy today, share market audit score, FII DII data today, multibagger stocks 2026, safe stocks for long term, stock analysis report India, Nifty 500 entry exit levels, share market tips India, best stock screener app" />
-    <meta name="robots" content="index, follow" />
-    <meta name="author" content="MarketBeacon Pro" />
-    
-    <!-- Meta Pixel (Facebook) -->
-    <!-- <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', 'YOUR_PIXEL_ID');
-      fbq('track', 'PageView');
-    </script> -->
-
-    <!-- OpenGraph -->
-    <meta property="og:title" content="MarketBeacon Pro | Institutional Stock Research Tool India" />
-    <meta property="og:description" content="The ABCD Tranche Laddering & 100-point Audit System used by institutional desks — now available for retail traders. Educational research tool. Not investment advice." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://marketbeaconpro.com" />
-    <meta property="og:image" content="https://marketbeaconpro.com/og-preview.svg" />
-    <meta property="og:site_name" content="MarketBeacon Pro" />
     <meta property="og:locale" content="en_IN" />
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="MarketBeacon Pro | Trade Like Institutions" />
-    <meta name="twitter:description" content="India's institutional stock research tool. ABCD Tranche Logic & real-time Audit Scores. For educational purposes only. Join 30,000+ traders." />
-    <meta name="twitter:image" content="https://marketbeaconpro.com/og-preview.svg" />
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
-    <script>
-      // 🚀 [Institutional Safe-Guard] Force Cache & Service Worker Purge
+    <script defer>
       (function() {
-        console.log('🛡️ [Safe-Guard] Executing Automated System Recovery...');
-        
-        // 1. Unregister all existing Service Workers immediately
         if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for(let registration of registrations) {
-              registration.unregister();
-              console.log('✅ Service Worker Unregistered.');
-            }
-          });
+          navigator.serviceWorker.getRegistrations().then(function(r) { for(let reg of r) reg.unregister(); });
         }
-
-        // 2. Clear all Caches
         if ('caches' in window) {
-          caches.keys().then(function(names) {
-            for (let name of names) caches.delete(name);
-            console.log('✅ Caches Purged.');
-          });
+          caches.keys().then(function(n) { for (let name of n) caches.delete(name); });
         }
-
-        // 3. Clear corrupted LocalStorage keys if any
-        const corruptKeys = ['mb_api_override'];
-        corruptKeys.forEach(k => localStorage.removeItem(k));
+        localStorage.removeItem('mb_api_override');
       })();
     </script>
-    <!-- Phase 3: Grand Launch Analytics Framework -->
-    <!-- Google Analytics (GA4) - Replace G-YOUR-MEASUREMENT-ID with your real ID -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YOUR-MEASUREMENT-ID"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-YOUR-MEASUREMENT-ID', {
-        page_title: document.title,
-        page_location: window.location.href,
-        anonymize_ip: true
-      });
+    <!-- GA4: Set VITE_GA_ID in .env to enable -->
+    <script defer>
+      (function() {
+        var gaId = '%VITE_GA_ID%';
+        if (gaId && gaId !== '%VITE' + '_GA_ID%') {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+          document.head.appendChild(s);
+          gtag('config', gaId, { anonymize_ip: true });
+        }
+      })();
     </script>
-    <!-- Google Search Console Verification — Replace content value with your verification token -->
-    <!-- Get from: search.google.com/search-console → Add property → HTML tag method -->
-    <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_TOKEN_HERE" /> -->
+    <!-- Search Console: Set VITE_GSC_VERIFICATION in .env to enable -->
+    <script defer>
+      (function() {
+        var gsc = '%VITE_GSC_VERIFICATION%';
+        if (gsc && gsc !== '%VITE' + '_GSC_VERIFICATION%') {
+          var meta = document.createElement('meta');
+          meta.name = 'google-site-verification';
+          meta.content = gsc;
+          document.head.appendChild(meta);
+        }
+      })();
+    </script>
+    <!-- Meta Pixel: Set VITE_META_PIXEL_ID in .env to enable -->
+    <script defer>
+      (function() {
+        var pixelId = '%VITE_META_PIXEL_ID%';
+        if (pixelId && pixelId !== '%VITE' + '_META_PIXEL_ID%') {
+          !function(f,b,e,v,n,t,s)
+          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src='https://connect.facebook.net/en_US/fbevents.js';
+          s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script');
+          fbq('init', pixelId);
+          fbq('track', 'PageView');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

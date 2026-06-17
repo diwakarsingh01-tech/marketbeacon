@@ -4,6 +4,7 @@ import { ArrowRight, Clock, BookOpen, TrendingUp, ShieldCheck, BarChart2, Chevro
 import BrandLogo from '../components/brand/BrandLogo';
 import SiteFooter from '../components/layout/SiteFooter';
 import SEO from '../components/SEO';
+import { OrganizationSchema, BreadcrumbSchema } from '../components/StructuredData';
 
 const ARTICLES = [
   {
@@ -59,7 +60,9 @@ const ARTICLES = [
 const BlogPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      <SEO title="Stock Market Research Blog" description="Learn institutional research methods, ABCD Tranche strategy, and market analysis. Educational content for Indian stock market investors." />
+      <SEO title="Stock Market Research Blog" description="Learn institutional research methods, ABCD Tranche strategy, and market analysis. Educational content for Indian stock market investors." url="/blog" />
+      <OrganizationSchema />
+      <BreadcrumbSchema items={[{ label: 'Home', href: '/' }, { label: 'Blog', href: '/blog' }]} />
       {/* Navigation */}
       <nav className="border-b border-slate-800/60 px-6 md:px-10 py-5 flex items-center justify-between backdrop-blur-md bg-slate-950/80 sticky top-0 z-50">
         <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">

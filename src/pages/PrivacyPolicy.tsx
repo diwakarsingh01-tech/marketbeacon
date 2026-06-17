@@ -54,7 +54,7 @@ const PrivacyPolicyPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      <SEO title="Privacy Policy" description="MarketBeacon Pro privacy policy and terms of use for our stock research platform." />
+      <SEO title="Privacy Policy" description="MarketBeacon Pro privacy policy and terms of use for our stock research platform." url="/privacy-policy" />
       {/* Nav */}
       <nav className="border-b border-slate-800/60 px-6 md:px-10 py-5 flex items-center justify-between bg-slate-950/80 sticky top-0 z-50 backdrop-blur-md">
         <Link to="/" className="hover:opacity-80 transition-opacity">
