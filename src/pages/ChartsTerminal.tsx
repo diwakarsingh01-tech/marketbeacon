@@ -1522,7 +1522,7 @@ const ChartsTerminal: React.FC = () => {
 
             {/* Dropdown Results */}
             {showDropdown && searchResults.length > 0 && (
-              <div className={`absolute left-0 right-0 mt-2 z-50 rounded-2xl border shadow-xl max-h-80 overflow-y-auto p-1.5 \${
+              <div className={`absolute left-0 right-0 mt-2 z-[100] rounded-2xl border shadow-xl max-h-[50vh] overflow-y-auto p-1.5 \${
                 theme === 'dark' ? 'bg-[var(--bg-secondary)] border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]'
               }`}>
                 {searchResults.map((item, i) => (
