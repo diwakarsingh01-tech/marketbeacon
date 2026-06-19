@@ -48,6 +48,7 @@ const AdminPanel: React.FC = () => {
   const [replyText, setReplyText] = useState('');
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [tempPassword, setTempPassword] = useState('');
   const [isAddVoucherModalOpen, setIsAddVoucherModalOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -283,9 +284,9 @@ const AdminPanel: React.FC = () => {
                 className="bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-3 text-[11px] font-black uppercase tracking-widest focus:bg-white transition-all w-full md:w-64 shadow-inner"
               />
            </div>
-           <button onClick={() => setIsAddUserModalOpen(true)} className="p-3 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center space-x-2 text-slate-500 flex-1 md:flex-initial">
-              <UserPlus className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Member</span>
+<button onClick={() => { setTempPassword(crypto.randomUUID().slice(0, 12)); setIsAddUserModalOpen(true); }} className="p-3 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center space-x-2 text-slate-500 flex-1 md:flex-initial">
+               <UserPlus className="h-4 w-4" />
+               <span className="text-[10px] font-black uppercase tracking-widest">Member</span>
            </button>
            <button onClick={() => setIsAddVoucherModalOpen(true)} className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-lg flex items-center justify-center space-x-2 flex-1 md:flex-initial">
               <Gift className="h-4 w-4" />
@@ -938,7 +939,7 @@ const AdminPanel: React.FC = () => {
                        body: JSON.stringify({
                           name: fd.get('name'),
                           email: fd.get('email'),
-                          password: fd.get('password') || 'MarketBeacon2026',
+                           password: fd.get('password') || tempPassword,
                           role: fd.get('role')
                        })
                     });
@@ -968,7 +969,7 @@ const AdminPanel: React.FC = () => {
                        </div>
                        <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1 text-slate-500">Temp Password</label>
-                          <input type="text" name="password" placeholder="Auto-generated" className="w-full bg-slate-100 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none cursor-not-allowed" disabled value="MarketBeacon2026" />
+                           <input type="text" name="password" placeholder="Auto-generated" className="w-full bg-slate-100 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none cursor-not-allowed" disabled value={tempPassword} />
                        </div>
                     </div>
                  </div>
