@@ -830,6 +830,55 @@ const HomePage: React.FC = () => {
         </div>
         </header>
 
+      {/* ── INSTITUTIONAL STRATEGY MATRIX ── */}
+      <section className="py-16 md:py-20 px-6 md:px-10 bg-[var(--bg-secondary)]/30 border-y border-[var(--border-primary)]/40">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.4em] mb-3">Institutional Strategy Matrix</p>
+            <h2 className="text-2xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)]">10 Proprietary <span className="text-blue-400">Strategies.</span> One Terminal.</h2>
+            <p className="text-xs md:text-sm text-[var(--text-muted)] mt-3 max-w-2xl mx-auto font-medium">
+              The same quant frameworks used by institutional desks — now accessible through a single terminal. Each strategy is pre-coded, backtested, and ready to scan.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+            {[
+              { name: 'Institutional Floor', sub: 'Envelope Long', tier: 'free', color: 'emerald' },
+              { name: 'Momentum Ceiling', sub: 'Envelope Short', tier: 'free', color: 'emerald' },
+              { name: 'Volatility Channel', sub: 'Bollinger Band', tier: 'free', color: 'emerald' },
+              { name: 'SMA-ABCD', sub: 'Bearish Stacking', tier: 'pro', color: 'blue' },
+              { name: '52W High/Low', sub: 'Support Matrix', tier: 'pro', color: 'blue' },
+              { name: 'Structural Pivot', sub: 'Cup & Handle', tier: 'pro', color: 'blue' },
+              { name: 'Dynamic Reversal', sub: 'RHS + ABCD', tier: 'pro', color: 'blue' },
+              { name: 'Supply-Demand Core', sub: 'S&R Zones', tier: 'alpha', color: 'amber' },
+              { name: 'Velocity Retest', sub: '20% Rally Pullback', tier: 'alpha', color: 'amber' },
+              { name: 'Deep Recovery', sub: '67% ATH Reset', tier: 'alpha', color: 'amber' },
+            ].map((s, i) => (
+              <div key={i} className={`group relative p-4 md:p-5 rounded-2xl border transition-all hover:-translate-y-1 hover:shadow-lg cursor-default ${
+                s.color === 'emerald' 
+                  ? 'bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-400/40 hover:shadow-emerald-500/10' 
+                  : s.color === 'blue'
+                  ? 'bg-blue-500/5 border-blue-500/20 hover:border-blue-400/40 hover:shadow-blue-500/10'
+                  : 'bg-amber-500/5 border-amber-500/20 hover:border-amber-400/40 hover:shadow-amber-500/10'
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                    s.tier === 'free' ? 'text-emerald-400 bg-emerald-500/10' : s.tier === 'pro' ? 'text-blue-400 bg-blue-500/10' : 'text-amber-400 bg-amber-500/10'
+                  }`}>{s.tier === 'free' ? 'FREE' : s.tier === 'pro' ? 'PRO' : 'ALPHA'}</span>
+                  <Lock className={`h-3 w-3 ${s.tier === 'free' ? 'text-emerald-500/40' : 'text-slate-600'}`} />
+                </div>
+                <h3 className="text-xs md:text-sm font-black text-[var(--text-primary)] leading-tight mb-0.5">{s.name}</h3>
+                <p className="text-[8px] md:text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{s.sub}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-8">
+            <Link to="/education" className="inline-flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-[var(--text-primary)] transition-colors">
+              Understand Each Strategy <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ── PHASE 1: 3 ICP SEGMENT CARDS ── */}
       <section aria-label="Who is MarketBeacon Pro for" className="py-20 px-6 md:px-10 border-y border-[var(--border-primary)]/60 bg-[var(--bg-secondary)]/20 relative overflow-hidden">
         {/* 3D Background Effects */}
