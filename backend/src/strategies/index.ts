@@ -560,7 +560,23 @@ export function calculateSixtySevenFunda(quotes: Quote[], data: any) {
   const idealEntry = ath * 0.67;
   const isQualified = dr >= 33.0 && Math.abs(currentPrice - idealEntry) / idealEntry <= 0.022;
 
+  // Fundamental filters
+  const pe = parseFloat(data?.peRatio) || 0;
+  const peMedians = data?.peMedians || {};
+  const pe3Y = peMedians.pe3Y || 0;
+  const pe5Y = peMedians.pe5Y || 0;
+  const roce = parseFloat(data?.roce) || 0;
+  const de = parseFloat(data?.netDebtToEquity) || 0;
+  const sector = (data?.industry || '').trim();
+  const isFinance = ['Banking', 'Finance', 'NBFC', 'Financial Services'].includes(sector) || sector.toLowerCase().includes('finance');
+  const debtLimit = isFinance ? 8.0 : 1.0;
+
   if (parseFloat(data?.dividendYield || 0) < 1.0 || dr < 33.0) return { isBuyZone: false };
+  if (pe > 60) return { isBuyZone: false, reason: 'P/E > 60' };
+  if (pe3Y > 0 && pe > pe3Y * 1.02) return { isBuyZone: false, reason: `P/E > 3Y median (${pe.toFixed(1)} vs ${pe3Y.toFixed(1)})` };
+  if (pe5Y > 0 && pe > pe5Y * 1.02) return { isBuyZone: false, reason: `P/E > 5Y median (${pe.toFixed(1)} vs ${pe5Y.toFixed(1)})` };
+  if (roce < 15) return { isBuyZone: false, reason: `ROCE < 15% (${roce.toFixed(1)}%)` };
+  if (de > debtLimit) return { isBuyZone: false, reason: `D/E high (${de.toFixed(2)})` };
 
   // Target depends on ATH recency
   // If ATH was within last 252 trading days → 67% gain from entry
@@ -613,6 +629,10 @@ export function checkInstitutionalMandates(screenerData: any, symbol: string = '
 
   const de = screenerData.netDebtToEquity || 0;
   const sm = screenerData.smartMoneyTotal || 0;
+  const pe = screenerData.peRatio || 0;
+  const peMedians = screenerData.peMedians || {};
+  const pe3Y = peMedians.pe3Y || 0;
+  const pe5Y = peMedians.pe5Y || 0;
   const mcapCr = (screenerData.marketCap || 0) / 10000000;
   const sector = (screenerData.industry || '').trim();
 
@@ -627,6 +647,9 @@ export function checkInstitutionalMandates(screenerData: any, symbol: string = '
   const reasons = [];
   if (de > debtLimit) reasons.push(`D/E High (${de.toFixed(2)})`);
   if (sm < 30) reasons.push(`SM Critical (${sm.toFixed(1)}%)`);
+  if (pe > 60) reasons.push(`P/E High (${pe.toFixed(1)})`);
+  if (pe3Y > 0 && pe > pe3Y * 1.02) reasons.push(`P/E > 3Y Median (${pe.toFixed(1)} vs ${pe3Y.toFixed(1)})`);
+  if (pe5Y > 0 && pe > pe5Y * 1.02) reasons.push(`P/E > 5Y Median (${pe.toFixed(1)} vs ${pe5Y.toFixed(1)})`);
 
   return {
     passed: reasons.length === 0,

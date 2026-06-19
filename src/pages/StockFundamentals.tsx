@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
-  Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight, Lock, Sparkles
+  Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight, Lock, Sparkles, ChevronDown, ChevronUp, BarChart3
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +15,10 @@ const StockFundamentalsPage: React.FC = () => {
   const { symbol } = useParams<{ symbol: string }>();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [backtestData, setBacktestData] = useState<any>(null);
+  const [backtestLoading, setBacktestLoading] = useState(false);
+  const [backtestLoaded, setBacktestLoaded] = useState(false);
+  const [expandedStrategy, setExpandedStrategy] = useState<string | null>(null);
   
   const { user } = useAuth();
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -68,6 +72,16 @@ const StockFundamentalsPage: React.FC = () => {
     };
     fetchFundamentals();
   }, [symbol]);
+
+  const loadBacktest = async () => {
+    setBacktestLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/backtest/history?symbol=${symbol}&t=${Date.now()}`);
+      const result = await safeJsonParse(res);
+      if (res.ok && !result.error) setBacktestData(result);
+    } catch (e) { console.error('Backtest fetch failed', e); }
+    finally { setBacktestLoading(false); setBacktestLoaded(true); }
+  };
 
   if (loading) return (
     <div className="flex-1 flex items-center justify-center min-h-screen bg-[var(--bg-primary)]">
@@ -166,6 +180,86 @@ const StockFundamentalsPage: React.FC = () => {
                 <p className={`text-lg font-black leading-tight font-mono ${Number(data?.netDebtToEquity) > 0.2 ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{Number(data?.netDebtToEquity).toFixed(2)}</p>
              </div>
           </div>
+
+          {/* Strategy Backtest Section */}
+          <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
+            <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+              <span className="text-[var(--text-primary)]">Strategy Backtest (20-Year History)</span>
+              {backtestLoading && <div className="w-4 h-4 border-2 border-[var(--border-primary)] border-t-blue-500 rounded-full animate-spin" />}
+              {backtestLoaded && !backtestLoading && <span className="text-emerald-500">Loaded</span>}
+            </div>
+            <div className="p-4 space-y-2">
+              {!backtestLoaded && !backtestLoading && (
+                <div className="text-center py-6">
+                  <button onClick={loadBacktest} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-colors">
+                    Load 20-Year Backtest
+                  </button>
+                  <p className="text-[8px] text-[var(--text-muted)] mt-2">Computes all 10 strategies across 20 years of daily data. May take ~60s.</p>
+                </div>
+              )}
+              {backtestLoading && <div className="p-4 text-center text-[9px] text-[var(--text-muted)]">Computing 20-year backtest...</div>}
+              {backtestLoaded && !backtestLoading && backtestData ? (
+                Object.entries(backtestData).sort((a: any, b: any) => b[1].totalTrades - a[1].totalTrades).map(([sid, r]: [string, any]) => (
+                  <div key={sid} className="bg-[var(--bg-primary)]/40 border border-[var(--border-primary)] rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => setExpandedStrategy(expandedStrategy === sid ? null : sid)}
+                      className="w-full flex items-center justify-between p-3 hover:bg-[var(--bg-primary)]/60 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest">
+                        <span className="text-[var(--text-primary)]">{sid.replace(/_/g, ' ')}</span>
+                        <span className="text-[var(--text-muted)]">{r.totalTrades} trades</span>
+                        <span className={r.winRate >= 60 ? 'text-emerald-500' : r.winRate >= 40 ? 'text-amber-500' : 'text-red-500'}>{r.winRate}% WR</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-[9px] font-bold">
+                        <span className="text-blue-400">{r.avgRoi}% avg ROI</span>
+                        <span className="text-[var(--text-muted)]">{r.avgDays}d avg</span>
+                        {expandedStrategy === sid ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </div>
+                    </button>
+                    {expandedStrategy === sid && r.trades?.length > 0 && (
+                      <div className="border-t border-[var(--border-primary)] overflow-x-auto">
+                        <table className="w-full text-[8px] font-mono">
+                          <thead>
+                            <tr className="bg-[var(--bg-primary)]/60 text-[var(--text-muted)] uppercase tracking-widest">
+                              <th className="p-2 text-left">Entry</th>
+                              <th className="p-2 text-left">Price</th>
+                              <th className="p-2 text-left">Exit</th>
+                              <th className="p-2 text-left">Price</th>
+                              <th className="p-2 text-left">Target</th>
+                              <th className="p-2 text-left">Hit?</th>
+                              <th className="p-2 text-right">ROI</th>
+                              <th className="p-2 text-right">Days</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {r.trades.map((t: any, i: number) => (
+                              <tr key={i} className="border-t border-[var(--border-primary)]/50 hover:bg-[var(--bg-primary)]/40">
+                                <td className="p-2 text-[var(--text-primary)]">{t.entryDate}</td>
+                                <td className="p-2 text-[var(--text-secondary)]">₹{t.entryPrice}</td>
+                                <td className="p-2 text-[var(--text-primary)]">{t.exitDate}</td>
+                                <td className="p-2 text-[var(--text-secondary)]">₹{t.exitPrice}</td>
+                                <td className="p-2 text-[var(--text-secondary)]">₹{t.targetPrice}</td>
+                                <td className="p-2">{t.targetHit ? <span className="text-emerald-500">✓</span> : <span className="text-red-500">✗</span>}</td>
+                                <td className={`p-2 text-right font-bold ${t.roi >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>{t.roi > 0 ? '+' : ''}{t.roi}%</td>
+                                <td className="p-2 text-right text-[var(--text-secondary)]">{t.daysHeld}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    {expandedStrategy === sid && (!r.trades || r.trades.length === 0) && (
+                      <div className="p-4 text-center text-[9px] text-[var(--text-muted)]">No trades recorded for 20-year period</div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-[9px] text-[var(--text-muted)]">
+                  {backtestLoading ? 'Computing 20-year backtest...' : 'Backtest data unavailable'}
+                </div>
+              )}
+            </div>
+          </section>
 
           <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
              <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">

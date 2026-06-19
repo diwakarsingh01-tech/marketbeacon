@@ -33,16 +33,10 @@ const API_URL = getApiUrl();
 
 // --- Reusable helpers ---
 
-const generateDynamicChartData = (capital: number, years: number) => {
+const generateDynamicChartData = (capital: number, years: number, alphaCagr: number = 0.425, niftyCagr: number = 0.182) => {
   const data = [];
   const startYear = 2024 - years + 1;
   const currentYear = new Date().getFullYear();
-  const alphaCagr = 0.425;
-  const niftyCagr = 0.182;
-
-  // Simulated trade activity per year
-  const annualEntries = Math.floor(8 + Math.random() * 6);
-  const annualExits = Math.floor(6 + Math.random() * 4);
 
   for (let i = 0; i <= years; i++) {
     const year = startYear + i;
@@ -51,7 +45,6 @@ const generateDynamicChartData = (capital: number, years: number) => {
     const alphaMulti = Math.pow(1 + alphaCagr, yearsElapsed);
     const niftyMulti = Math.pow(1 + niftyCagr, yearsElapsed);
 
-    // Simple booked profit simulation: 40% of gains booked annually
     const cumulativeGain = Math.round(alphaMulti * capital - capital);
     const bookedProfit = Math.round(cumulativeGain * 0.4);
 
@@ -61,8 +54,8 @@ const generateDynamicChartData = (capital: number, years: number) => {
       "Portfolio Value (Strategy)": Math.round(alphaMulti * capital),
       "Total Invested": capital,
       "Nifty 50 Index": Math.round(niftyMulti * capital),
-      entries: annualEntries + Math.floor(i * 1.2),
-      exits: annualExits + Math.floor(i * 0.8),
+      entries: Math.floor(8 + yearsElapsed * 1.2),
+      exits: Math.floor(6 + yearsElapsed * 0.8),
       bookedProfit
     });
   }
@@ -195,6 +188,7 @@ const AlphaHubPage: React.FC = () => {
   const [filterBasket, setFilterBasket] = useState<string>('all');
   const [expandedStock, setExpandedStock] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [backtestComparison, setBacktestComparison] = useState<any>(null);
 
   // Investment calculator state
   const [investmentMode, setInvestmentMode] = useState<'lumpsum' | 'sip'>('lumpsum');
@@ -223,8 +217,17 @@ const AlphaHubPage: React.FC = () => {
     return acc + sq * (s.currentPrice || s.entryPrice || 1);
   }, 1);
 
-  // Historical chart data
-  const chartData = generateDynamicChartData(totalCapital, perfYears);
+  // Historical chart data (use real CAGR from backtest when available)
+  const niftyCagrDecimal = backtestComparison?.nifty50?.cagr ? backtestComparison.nifty50.cagr / 100 : 0.182;
+  const alphaCagr = backtestComparison?.strategy?.cagr ? backtestComparison.strategy.cagr / 100 : niftyCagrDecimal + 0.08;
+  const niftyCagr = niftyCagrDecimal;
+  const chartData = generateDynamicChartData(totalCapital, perfYears, alphaCagr, niftyCagr);
+  const alphaCagrPct = (alphaCagr * 100).toFixed(1);
+  const totalTrades = backtestComparison?.strategy?.totalTrades || 0;
+  const winRate = backtestComparison?.strategy?.winRate || 0;
+  const avgRoi = backtestComparison?.strategy?.avgRoi || 0;
+  const avgDays = backtestComparison?.strategy?.avgDays || 0;
+  const backtestYears = backtestComparison?.nifty50?.years || 20;
 
   const fetchAlphaHub = async () => {
     setLoading(true);
@@ -258,8 +261,20 @@ const AlphaHubPage: React.FC = () => {
     }
   };
 
+  const fetchBacktestComparison = async () => {
+    try {
+      const token = localStorage.getItem('mb_token');
+      const res = await fetch(`${API_URL}/api/backtest/nifty-comparison`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const d = await safeJsonParse(res);
+      if (res.ok && !d.error) setBacktestComparison(d);
+    } catch (e) { /* silent */ }
+  };
+
   useEffect(() => {
     fetchAlphaHub();
+    fetchBacktestComparison();
   }, []);
 
   const handleRedeemVoucher = async () => {
@@ -512,11 +527,11 @@ const AlphaHubPage: React.FC = () => {
                   <div className="text-[6.5px] font-bold text-[var(--text-muted)] uppercase tracking-widest">STOCKS</div>
                 </div>
                 <div className="text-center border-x border-[var(--border-primary)]/80">
-                  <div className="text-sm font-black text-[var(--text-primary)] font-mono">20Y</div>
+                  <div className="text-sm font-black text-[var(--text-primary)] font-mono">{backtestYears}Y</div>
                   <div className="text-[6.5px] font-bold text-[var(--text-muted)] uppercase tracking-widest">DATA</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-black text-emerald-400 font-mono">42.5%</div>
+                  <div className="text-sm font-black text-emerald-400 font-mono">{alphaCagrPct}%</div>
                   <div className="text-[6.5px] font-bold text-[var(--text-muted)] uppercase tracking-widest">CAGR</div>
                 </div>
               </div>
@@ -1038,20 +1053,20 @@ const AlphaHubPage: React.FC = () => {
                       <div className="text-base font-black text-[var(--text-primary)] font-mono">₹{totalCapital.toLocaleString('en-IN')}</div>
                     </div>
                     <div className="text-center p-1 border-l border-[var(--border-primary)]/50">
-                      <div className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Booked Profit</div>
+                      <div className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Projected Return</div>
                       <div className="text-base font-black text-emerald-400 font-mono">
-                        +₹{Math.round(totalCapital * Math.pow(1.425, perfYears) - totalCapital).toLocaleString('en-IN')}
+                        +₹{Math.round(totalCapital * Math.pow(1 + alphaCagr, perfYears) - totalCapital).toLocaleString('en-IN')}
                       </div>
                     </div>
                     <div className="text-center p-1 border-l border-[var(--border-primary)]/50">
-                      <div className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Portfolio Value</div>
+                      <div className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Projected Value</div>
                       <div className="text-base font-black text-blue-400 font-mono">
-                        ₹{Math.round(totalCapital * Math.pow(1.425, perfYears)).toLocaleString('en-IN')}
+                        ₹{Math.round(totalCapital * Math.pow(1 + alphaCagr, perfYears)).toLocaleString('en-IN')}
                       </div>
                     </div>
                     <div className="text-center p-1 border-l border-[var(--border-primary)]/50">
                       <div className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">CAGR (Backtest)</div>
-                      <div className="text-base font-black text-emerald-400 font-mono">42.5%</div>
+                      <div className="text-base font-black text-emerald-400 font-mono">{alphaCagrPct}%</div>
                     </div>
                   </div>
 
@@ -1059,15 +1074,19 @@ const AlphaHubPage: React.FC = () => {
                   <div className="flex flex-wrap gap-4 text-[9px] font-medium text-[var(--text-tertiary)] justify-center md:justify-start">
                     <span className="flex items-center gap-1.5 px-3 py-1 bg-[var(--bg-primary)]/40 rounded-full border border-[var(--border-primary)]">
                       <TrendingUp className="h-3 w-3 text-emerald-400" />
-                      {Math.floor(perfYears * 12)} entry signals
+                      {totalTrades} total trades
                     </span>
                     <span className="flex items-center gap-1.5 px-3 py-1 bg-[var(--bg-primary)]/40 rounded-full border border-[var(--border-primary)]">
                       <BarChart3 className="h-3 w-3 text-blue-400" />
-                      {Math.floor(perfYears * 8)} exit signals
+                      {winRate}% win rate
                     </span>
                     <span className="flex items-center gap-1.5 px-3 py-1 bg-[var(--bg-primary)]/40 rounded-full border border-[var(--border-primary)]">
                       <Activity className="h-3 w-3 text-amber-400" />
-                      {Math.floor(perfYears * 5)} trade cycles
+                      {avgRoi}% avg ROI
+                    </span>
+                    <span className="flex items-center gap-1.5 px-3 py-1 bg-[var(--bg-primary)]/40 rounded-full border border-[var(--border-primary)]">
+                      <Activity className="h-3 w-3 text-amber-400" />
+                      {avgDays}d avg hold
                     </span>
                   </div>
 

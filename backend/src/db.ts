@@ -194,6 +194,26 @@ export async function initDB() {
   `);
 
   await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS blog_posts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      meta_description TEXT,
+      content TEXT NOT NULL,
+      tag TEXT DEFAULT 'General',
+      tag_color TEXT DEFAULT 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+      read_time TEXT DEFAULT '5 min read',
+      date TEXT NOT NULL,
+      key_takeaways TEXT DEFAULT '[]',
+      related_slug TEXT,
+      related_title TEXT,
+      published INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await tursoClient.execute(`
     CREATE TABLE IF NOT EXISTS trades (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,

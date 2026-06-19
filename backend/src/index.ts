@@ -27,6 +27,7 @@ import { initDB, getDB } from './db.js';
 import { notifyAdmins } from './services/notificationService.js';
 import { runHealthCheck, runAndNotifyHealthCheck } from './services/healthCheck.js';
 import { scheduleAuditCron } from './cron/auditScheduler.js';
+import { backtestAllStrategies, backtestStrategy } from './services/backtestEngine.js';
 
 dotenv.config();
 
@@ -359,6 +360,163 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
       });
     }
     res.status(503).json({ error: 'Terminal warming up...' });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Strategy Backtest History (20-year walk) ──
+app.get('/api/backtest/history', async (req, res) => {
+  try {
+    const { symbol, strategy } = req.query;
+    if (!symbol) return res.status(400).json({ error: 'Symbol required' });
+    const sym = (symbol as string).toUpperCase();
+    const snapshot = await getSnapshotFromCloud([sym]);
+    const snap = snapshot[sym];
+    if (!snap || !snap.quotes || snap.quotes.length < 200) {
+      return res.status(404).json({ error: 'Insufficient historical data for this symbol' });
+    }
+    const results = backtestAllStrategies(snap.quotes, snap.screener);
+    if (strategy) {
+      const stratResults = results[strategy as string];
+      if (!stratResults) return res.status(404).json({ error: 'Strategy not found' });
+      return res.json(stratResults);
+    }
+    res.json(results);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Consolidated backtest for all symbols in a basket ──
+app.get('/api/backtest/basket-summary', async (req, res) => {
+  try {
+    const { basket = 'Elite Basket' } = req.query;
+    const symbols = BASKETS[basket as string] || Array.from(new Set(Object.values(BASKETS).flat()));
+    const uniqueSymbols = Array.from(new Set(symbols as string[])).filter(s => s && s !== '^NSEI');
+    const snapshot = await getSnapshotFromCloud(uniqueSymbols);
+    const summary: Record<string, any> = {};
+
+    for (const sym of uniqueSymbols) {
+      const snap = snapshot[sym];
+      if (!snap || !snap.quotes || snap.quotes.length < 200) continue;
+      const results = backtestAllStrategies(snap.quotes, snap.screener, true);
+      let bestWinRate = 0, bestAvgRoi = 0, bestStrategy = '', totalTradesAll = 0, winsAll = 0;
+      for (const [sid, r] of Object.entries(results)) {
+        if (r.totalTrades > 0) {
+          totalTradesAll += r.totalTrades;
+          winsAll += r.wins;
+          if (r.winRate > bestWinRate) { bestWinRate = r.winRate; bestAvgRoi = r.avgRoi; bestStrategy = sid; }
+        }
+      }
+      summary[sym] = { bestStrategy, bestWinRate, bestAvgRoi, totalTradesAll, winsAll, winRateAll: totalTradesAll > 0 ? Math.round((winsAll / totalTradesAll) * 10000) / 100 : 0 };
+    }
+    res.json({ basket, totalSymbols: uniqueSymbols.length, withData: Object.keys(summary).length, stocks: summary });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── NIFTY 50 vs Strategy Comparison (Cache-backed) ──
+const NIFTY_SYMBOL = '^NSEI';
+
+const BACKTEST_CACHE_PATH = path.resolve(process.cwd(), 'backtest_nifty_cache.json');
+
+function loadBacktestCache(): any {
+  try {
+    if (fs.existsSync(BACKTEST_CACHE_PATH)) {
+      return JSON.parse(fs.readFileSync(BACKTEST_CACHE_PATH, 'utf-8'));
+    }
+  } catch {}
+  return null;
+}
+
+function saveBacktestCache(data: any) {
+  try { fs.writeFileSync(BACKTEST_CACHE_PATH, JSON.stringify(data)); } catch {}
+}
+
+app.get('/api/backtest/nifty-comparison', async (req, res) => {
+  try {
+    const { refresh } = req.query;
+
+    // Check cache first (unless refresh=1)
+    if (refresh !== '1') {
+      const cached = loadBacktestCache();
+      if (cached && cached.nifty50) return res.json(cached);
+    }
+
+    let niftyQuotes: any[] = [];
+    const snapshot = await getSnapshotFromCloud([NIFTY_SYMBOL]);
+    const niftySnap = snapshot[NIFTY_SYMBOL];
+    if (niftySnap?.quotes?.length > 200) {
+      niftyQuotes = niftySnap.quotes as any[];
+    } else {
+      try {
+        const period1 = new Date(); period1.setFullYear(period1.getFullYear() - 20);
+        const chart = await yahooFinance.chart('^NSEI', { period1: period1.toISOString().split('T')[0], interval: '1d' as any });
+        if (chart?.quotes) niftyQuotes = chart.quotes.filter((q: any) => q.close && q.low && q.high);
+      } catch (e) {
+        return res.status(503).json({ error: 'NIFTY data not available. Could not fetch from upstream.' });
+      }
+    }
+    const niftyStart = niftyQuotes[0]?.close || 0;
+    const niftyEnd = niftyQuotes[niftyQuotes.length - 1]?.close || 0;
+    const niftyYears = niftyQuotes.length / 252;
+    const niftyCagr = niftyYears > 0 ? (Math.pow(niftyEnd / niftyStart, 1 / niftyYears) - 1) * 100 : 0;
+
+    // Use INFY as representative for quick comparison
+    const symbols = ['INFY', 'TCS', 'RELIANCE', 'HDFCBANK', 'ICICIBANK'];
+    const batchSnapshot = await getSnapshotFromCloud(symbols);
+
+    let totalTrades = 0, totalWins = 0, totalRoiSum = 0, totalDaysSum = 0;
+    const strategyTotals: Record<string, { trades: number; wins: number; roiSum: number; daysSum: number }> = {};
+
+    const stratIds = ['BOLLINGER', 'ENVELOPE_LONG', 'ENVELOPE_SHORT'];
+    for (const sym of symbols) {
+      const snap = batchSnapshot[sym];
+      if (!snap || !snap.quotes || snap.quotes.length < 200) continue;
+      for (const sid of stratIds) {
+        const r = backtestStrategy(sid, snap.quotes, snap.screener, true);
+        if (r.totalTrades === 0) continue;
+        if (!strategyTotals[sid]) strategyTotals[sid] = { trades: 0, wins: 0, roiSum: 0, daysSum: 0 };
+        strategyTotals[sid].trades += r.totalTrades;
+        strategyTotals[sid].wins += r.wins;
+        strategyTotals[sid].roiSum += r.avgRoi * r.totalTrades;
+        strategyTotals[sid].daysSum += r.avgDays * r.totalTrades;
+        totalTrades += r.totalTrades;
+        totalWins += r.wins;
+        totalRoiSum += r.avgRoi * r.totalTrades;
+        totalDaysSum += r.avgDays * r.totalTrades;
+      }
+    }
+
+    const result = {
+      nifty50: {
+        startPrice: Math.round(niftyStart),
+        endPrice: Math.round(niftyEnd),
+        years: Math.round(niftyYears * 10) / 10,
+        cagr: Math.round(niftyCagr * 100) / 100,
+      },
+      strategy: {
+        totalTrades,
+        totalWins,
+        winRate: totalTrades > 0 ? Math.round((totalWins / totalTrades) * 10000) / 100 : 0,
+        avgRoi: totalTrades > 0 ? Math.round((totalRoiSum / totalTrades) * 100) / 100 : 0,
+        avgDays: totalTrades > 0 ? Math.round(totalDaysSum / totalTrades) : 0,
+        cagr: totalTrades > 0 && totalDaysSum > 0 ? (() => {
+          const winProb = totalWins / totalTrades;
+          const avgRoiDec = totalRoiSum / totalTrades / 100;
+          const avgFactor = 1 + avgRoiDec * (2 * winProb - 1);
+          const tradesPerYear = totalTrades / (niftyYears || 1);
+          return Math.round((Math.pow(avgFactor, tradesPerYear) - 1) * 10000) / 100;
+        })() : 0,
+        strategyBreakdown: Object.entries(strategyTotals).map(([sid, s]) => ({
+          strategyId: sid,
+          strategyName: sid.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+          totalTrades: s.trades,
+          winRate: s.trades > 0 ? Math.round((s.wins / s.trades) * 10000) / 100 : 0,
+          avgRoi: s.trades > 0 ? Math.round((s.roiSum / s.trades) * 100) / 100 : 0,
+          avgDays: s.trades > 0 ? Math.round(s.daysSum / s.trades) : 0,
+        })).sort((a, b) => b.winRate - a.winRate),
+      }
+    };
+
+    saveBacktestCache(result);
+    res.json(result);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1508,12 +1666,288 @@ app.get('/api/admin/audit/:date', authenticateToken, requireAdmin, async (req: a
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// ── n8n Integration ──
+const N8N_API_KEY = process.env.N8N_API_KEY || 'mb_linkedin_2026_secret_key';
+
+function verifyN8n(req: any, res: any) {
+  const apiKey = req.headers['x-api-key'] || req.query.api_key;
+  if (apiKey !== N8N_API_KEY) { res.status(403).json({ error: 'Invalid API key' }); return false; }
+  return true;
+}
+
+app.get('/api/n8n/qualified-stocks', async (req, res) => {
+  try {
+    if (!verifyN8n(req, res)) return;
+    const basket = (req.query.basket as string) || 'Elite Basket';
+    const symbols = BASKETS[basket] || BASKETS['Elite Basket'];
+    const uniqueSymbols = Array.from(new Set(symbols)).filter(s => s && s !== '^NSEI');
+    const snapshot = await getSnapshotFromCloud(uniqueSymbols);
+    const results = [];
+    for (const sym of uniqueSymbols) {
+      try {
+        const cleanSym = sym.trim().toUpperCase();
+        let snap = snapshot[cleanSym] || snapshot[`${cleanSym}.NS`];
+        if (!snap) { const k = Object.keys(snapshot).find(k => k.replace('.NS', '') === cleanSym); if (k) snap = snapshot[k]; }
+        if (!snap) continue;
+        const audit = await validateBatch9(cleanSym, snap, basket);
+        const qualified = STRATEGIES.filter(s => { const r: any = runStrategyAnalysis(s.id, snap, snap.quote?.marketCap || 0, basket); return r?.isBuyZone; });
+        if (!audit.isPass && qualified.length === 0) continue;
+        results.push({
+          symbol: cleanSym,
+          score: Math.round(audit.score),
+          isPass: audit.isPass,
+          strategies: qualified.map(s => s.name),
+          price: Math.round((snap.quotes?.[snap.quotes.length - 1]?.close || 0) * 100) / 100,
+          change: Math.round((snap.quote?.regularMarketChangePercent || 0) * 100) / 100,
+          sector: MANUAL_SECTOR_MAP[cleanSym] || snap.screener?.industry || 'General',
+          marketCap: snap.quote?.marketCap,
+          peRatio: snap.quote?.pe || snap.screener?.peRatio || 0,
+          profitabilityQuality: audit.profitabilityQuality,
+          balanceSheetSafety: audit.balanceSheetSafety,
+          growthQuality: audit.growthQuality
+        });
+      } catch (e: any) { /* skip symbol on error */ }
+    }
+    results.sort((a, b) => b.score - a.score);
+    res.json(results);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/n8n/stock-data/:symbol', async (req, res) => {
+  try {
+    if (!verifyN8n(req, res)) return;
+    const { symbol } = req.params;
+    const cleanSym = symbol.trim().toUpperCase();
+    const snapshot = await getSnapshotFromCloud([cleanSym]);
+    let snap = snapshot[cleanSym] || snapshot[`${cleanSym}.NS`];
+    if (!snap) { const k = Object.keys(snapshot).find(k => k.replace('.NS', '') === cleanSym); if (k) snap = snapshot[k]; }
+    if (!snap) return res.status(404).json({ error: 'Symbol not found' });
+    const audit = await validateBatch9(cleanSym, snap, 'Elite Basket');
+    const lastQuote = snap.quotes?.[snap.quotes.length - 1];
+    const qualified = STRATEGIES.filter(s => { const r: any = runStrategyAnalysis(s.id, snap, snap.quote?.marketCap || 0, 'Elite Basket'); return r?.isBuyZone; });
+    let maxUpside = 30;
+    let abcd: any = null;
+    if (qualified.length > 0) {
+      const sRes: any = runStrategyAnalysis(qualified[0].id, snap, snap.quote?.marketCap || 0, 'Elite Basket');
+      abcd = sRes?.abcd;
+      if (sRes?.target) {
+        const entry = sRes.entryPrice || lastQuote?.close || 0;
+        if (entry > 0) maxUpside = Math.round(((sRes.target / entry) - 1) * 100);
+      }
+    }
+    res.json({
+      symbol: cleanSym,
+      price: Math.round((lastQuote?.close || 0) * 100) / 100,
+      change: Math.round((snap.quote?.regularMarketChangePercent || 0) * 100) / 100,
+      sector: MANUAL_SECTOR_MAP[cleanSym] || snap.screener?.industry || 'General',
+      marketCap: snap.quote?.marketCap,
+      peRatio: snap.quote?.pe || snap.screener?.peRatio || 0,
+      peMedians: snap.screener?.peMedians || {},
+      returnOnEquity: Math.round((snap.screener?.returnOnEquity || 0) * 100) / 100,
+      roce: Math.round((snap.screener?.roce || 0) * 100) / 100,
+      debtToEquity: Math.round((snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity / 100) || 0) * 100) / 100,
+      athSales: snap.screener?.athSales,
+      athNetProfit: snap.screener?.athNetProfit,
+      currentSales: snap.screener?.currentSales || snap.screener?.sales,
+      currentNetProfit: snap.screener?.currentNetProfit || snap.screener?.netProfit,
+      fiftyTwoWeekHigh: snap.quote?.fiftyTwoWeekHigh,
+      fiftyTwoWeekLow: snap.quote?.fiftyTwoWeekLow,
+      beta: snap.quote?.beta,
+      auditScore: Math.round(audit.score),
+      isQualified: audit.isPass,
+      strategies: qualified.map(s => ({ id: s.id, name: s.name, tier: s.tier })),
+      upside: maxUpside,
+      abcd,
+      profitabilityQuality: audit.profitabilityQuality,
+      balanceSheetSafety: audit.balanceSheetSafety,
+      growthQuality: audit.growthQuality,
+      efficiencyGovernance: audit.efficiencyGovernance
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/n8n/blog-post', async (req, res) => {
+  try {
+    if (!verifyN8n(req, res)) return;
+    const db = getDB();
+    const { title, slug, meta_description, content, tag, tag_color, read_time, date, key_takeaways, related_slug, related_title } = req.body;
+    if (!title || !slug) return res.status(400).json({ error: 'title and slug required' });
+    const result = await db.run(
+      `INSERT INTO blog_posts (title, slug, meta_description, content, tag, tag_color, read_time, date, key_takeaways, related_slug, related_title, published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      [title, slug, meta_description || '', JSON.stringify(content || []), tag || 'Analysis', tag_color || 'text-blue-400 bg-blue-400/10 border-blue-400/20', read_time || '3 min read', date || new Date().toISOString().split('T')[0], JSON.stringify(key_takeaways || []), related_slug || null, related_title || null]
+    );
+    res.json({ id: result.lastID, slug });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Recent Blog Posts (for homepage) ──
+app.get('/api/blog/recent', async (req, res) => {
+  try {
+    const db = getDB();
+    const limit = Math.min(parseInt(req.query.limit as string) || 3, 10);
+    const posts = await db.all('SELECT id, title, slug, meta_description, tag, tag_color, read_time, date, created_at FROM blog_posts WHERE published = 1 ORDER BY created_at DESC LIMIT ?', [limit]);
+    res.json(posts);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Blog API ──
+app.get('/api/blog', async (req, res) => {
+  try {
+    const db = getDB();
+    const posts = await db.all('SELECT id, title, slug, meta_description, tag, tag_color, read_time, date, key_takeaways, related_slug, related_title, created_at FROM blog_posts WHERE published = 1 ORDER BY created_at DESC');
+    res.json(posts);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/blog/:slug', async (req, res) => {
+  try {
+    const db = getDB();
+    const post = await db.get('SELECT * FROM blog_posts WHERE slug = ? AND published = 1', [req.params.slug]);
+    if (!post) return res.status(404).json({ error: 'Article not found' });
+    post.content = JSON.parse(post.content || '[]');
+    post.key_takeaways = JSON.parse(post.key_takeaways || '[]');
+    res.json(post);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/blog', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    const { title, slug, meta_description, content, tag, tag_color, read_time, date, key_takeaways, related_slug, related_title, published } = req.body;
+    const result = await db.run(
+      `INSERT INTO blog_posts (title, slug, meta_description, content, tag, tag_color, read_time, date, key_takeaways, related_slug, related_title, published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [title, slug, meta_description, JSON.stringify(content), tag || 'General', tag_color || 'text-blue-400 bg-blue-400/10 border-blue-400/20', read_time || '5 min read', date, JSON.stringify(key_takeaways || []), related_slug || null, related_title || null, published ?? 1]
+    );
+    res.json({ id: result.lastID });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/admin/blog/:id', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    const { title, slug, meta_description, content, tag, tag_color, read_time, date, key_takeaways, related_slug, related_title, published } = req.body;
+    await db.run(
+      `UPDATE blog_posts SET title=?, slug=?, meta_description=?, content=?, tag=?, tag_color=?, read_time=?, date=?, key_takeaways=?, related_slug=?, related_title=?, published=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`,
+      [title, slug, meta_description, JSON.stringify(content), tag, tag_color, read_time, date, JSON.stringify(key_takeaways || []), related_slug, related_title, published ?? 1, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/blog/:id', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    await db.run('DELETE FROM blog_posts WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/blog', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    const posts = await db.all('SELECT id, title, slug, tag, published, date, created_at FROM blog_posts ORDER BY created_at DESC');
+    res.json(posts);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Sitemap (dynamic, includes blog posts from DB) ──
+app.get('/api/sitemap.xml', async (req, res) => {
+  try {
+    const db = getDB();
+    const posts = await db.all('SELECT slug, date, created_at FROM blog_posts WHERE published = 1 ORDER BY created_at DESC');
+    const today = new Date().toISOString().split('T')[0];
+
+    const staticPages = [
+      { path: '', priority: '1.0', freq: 'daily' },
+      { path: '/blog', priority: '0.9', freq: 'daily' },
+      { path: '/login', priority: '0.9', freq: 'weekly' },
+      { path: '/license-desk', priority: '0.9', freq: 'weekly' },
+      { path: '/pricing', priority: '0.8', freq: 'weekly' },
+      { path: '/privacy-policy', priority: '0.5', freq: 'monthly' },
+    ];
+
+    const blogUrls = (posts || []).map((p: any) => ({
+      path: `/blog/${p.slug}`,
+      priority: '0.85',
+      freq: 'weekly',
+      lastmod: p.created_at?.split('T')[0] || today,
+    }));
+
+    const seen = new Set<string>();
+    const stockUrls = NIFTY_500
+      .map((s: string) => `/analysis/${s.replace('.NS', '')}`)
+      .filter((p: string) => { if (seen.has(p)) return false; seen.add(p); return true; })
+      .map((p: string) => ({ path: p, priority: '0.7', freq: 'daily' }));
+
+    const allUrls = [...staticPages, ...blogUrls, ...stockUrls];
+
+    res.header('Content-Type', 'application/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${allUrls.map(u => `  <url>
+    <loc>https://marketbeaconpro.com${u.path}</loc>
+    <lastmod>${(u as any).lastmod || today}</lastmod>
+    <changefreq>${u.freq}</changefreq>
+    <priority>${u.priority}</priority>
+  </url>`).join('\n')}
+</urlset>`);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── RSS Feed ──
+app.get('/api/rss.xml', async (req, res) => {
+  try {
+    const db = getDB();
+    const posts = await db.all('SELECT title, slug, meta_description, date, created_at FROM blog_posts WHERE published = 1 ORDER BY created_at DESC LIMIT 20');
+
+    const escXml = (s: string) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+
+    res.header('Content-Type', 'application/rss+xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>MarketBeacon Pro Blog</title>
+    <link>https://marketbeaconpro.com/blog</link>
+    <description>Institutional stock research - ABCD Tranche, Smart Money tracking, and 100-point audit scores for Indian stock market.</description>
+    <language>en-in</language>
+    <atom:link href="https://marketbeaconpro.com/api/rss.xml" rel="self" type="application/rss+xml"/>
+${(posts || []).map((p: any) => `    <item>
+      <title>${escXml(p.title)}</title>
+      <link>https://marketbeaconpro.com/blog/${encodeURIComponent(p.slug)}</link>
+      <guid isPermaLink="true">https://marketbeaconpro.com/blog/${encodeURIComponent(p.slug)}</guid>
+      <description>${escXml(p.meta_description || '')}</description>
+      <pubDate>${new Date(p.created_at || p.date).toUTCString()}</pubDate>
+    </item>`).join('\n')}
+  </channel>
+</rss>`);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+async function seedBlogPosts(db: any) {
+  const count = await db.get('SELECT COUNT(*) as cnt FROM blog_posts');
+  if (count && count.cnt > 0) return;
+  const articles = [
+    { slug: 'abcd-tranche-laddering-guide', title: "What is ABCD Tranche Laddering? A Beginner's Guide for Indian Traders", meta_description: "Learn ABCD Tranche Laddering — the institutional method to split stock purchases into 4 systematic tranches. Used by FII/DII desks in India. Free guide for retail traders.", tag: 'Strategy', tag_color: 'text-blue-400 bg-blue-400/10 border-blue-400/20', read_time: '6 min read', date: 'Jun 06, 2026', content: '[{"heading":"The Problem With How Most Retail Traders Buy Stocks","body":"Most retail traders do the same thing..."},{"heading":"What Is ABCD Tranche Laddering?","body":"ABCD Tranche Laddering is a capital deployment method..."},{"heading":"How Each Tranche Works","body":"Stage A (25% Allocation)..."},{"heading":"Why Does This Work? The Math Behind It","body":"Let\'s say a stock is at ₹1000..."},{"heading":"How MarketBeacon Pro Implements This","body":"MarketBeacon Pro\'s ABCD Ladder strategy..."}]', key_takeaways: '["Never allocate 100% at one price...","Stage C (the deepest pullback)...","Tranche buyers consistently achieve...","MarketBeacon Pro automatically calculates...","This is the same method FII/DII desks..."]', related_slug: 'how-to-trade-like-fii-dii-india', related_title: 'How to Trade Like FII/DII in India' },
+    { slug: 'what-is-sebi-compliant-stock-screener', title: "What Should a Responsible Stock Research Tool Look Like? A SEBI Framework Guide", meta_description: "Learn what SEBI regulations say about stock screeners and research tools in India.", tag: 'Education', tag_color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20', read_time: '5 min read', date: 'Jun 06, 2026', content: '[{"heading":"The Problem With Many Stock Tip Platforms in India","body":"There are hundreds of stock screener apps..."},{"heading":"What SEBI Says: The Three Categories","body":"SEBI distinguishes between..."},{"heading":"Where MarketBeacon Pro Stands","body":"MarketBeacon Pro is an educational quantitative research tool..."},{"heading":"What to Look For in Any Research Platform","body":"Whether you use MarketBeacon Pro..."}]', key_takeaways: '["SEBI requires Investment Advisers to be registered...","MarketBeacon Pro is NOT a SEBI-registered IA or RA...","All audit scores are for educational purposes...","Always consult a SEBI-registered advisor...","Good research tools are transparent..."]', related_slug: 'institutional-audit-score-explained', related_title: 'The 100-Point Institutional Audit Score Explained' },
+    { slug: 'how-to-trade-like-fii-dii-india', title: "How to Trade Like FII/DII in India: The Institutional Strategy Explained", meta_description: "Learn how FIIs and DIIs build positions in Indian stocks.", tag: 'Institutional', tag_color: 'text-amber-400 bg-amber-400/10 border-amber-400/20', read_time: '8 min read', date: 'Jun 06, 2026', content: '[{"heading":"Why FIIs and DIIs Don\'t Think Like Retail Traders","body":"Foreign Institutional Investors..."},{"heading":"Principle 1: Institutions Buy at Value Floors","body":"Retail traders often buy..."},{"heading":"Principle 2: Smart Money Tracking via Shareholding Data","body":"Every quarter..."},{"heading":"Principle 3: Fundamental Conviction Before Any Entry","body":"Institutions will not invest..."},{"heading":"How to Apply This As a Retail Trader","body":"You can\'t replicate..."}]', key_takeaways: '["FIIs/DIIs buy at value floors...","Rising FII/DII holding during a price decline...","Institutions reject stocks with high debt...","Retail traders can replicate institutional logic...","Patience is the institutional edge..."]', related_slug: 'abcd-tranche-laddering-guide', related_title: 'ABCD Tranche Laddering: The Complete Guide' },
+    { slug: 'institutional-audit-score-explained', title: "The 100-Point Institutional Audit Score: How Stocks Are Graded", meta_description: "MarketBeacon Pro grades every stock on a 100-point institutional audit score.", tag: 'Deep Dive', tag_color: 'text-purple-400 bg-purple-400/10 border-purple-400/20', read_time: '7 min read', date: 'Jun 06, 2026', content: '[{"heading":"Why We Built a 100-Point Score","body":"Most stock screeners show you raw data..."},{"heading":"The Three Rating Categories","body":"Every stock receives one of three ratings..."},{"heading":"The 12 Audit Parameters","body":"Parameter 1 — Debt-to-Equity..."},{"heading":"How the Score Is Calculated","body":"Each of the 12 parameters is weighted..."}]', key_takeaways: '["100-point audit score converts complex analysis...","Qualified = 80+, Neutral = 50-79, Rejected = 0-49","Hard reject rules immediately disqualify stocks...","Scores update daily with live market data...","12 parameters cover debt, growth, valuation..."]', related_slug: 'what-is-sebi-compliant-stock-screener', related_title: 'What Is a SEBI Compliant Stock Screener?' },
+  ];
+  for (const article of articles) {
+    try {
+      await db.run('INSERT OR IGNORE INTO blog_posts (title, slug, meta_description, content, tag, tag_color, read_time, date, key_takeaways, related_slug, related_title, published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)',
+        [article.title, article.slug, article.meta_description, article.content, article.tag, article.tag_color, article.read_time, article.date, article.key_takeaways, article.related_slug, article.related_title]);
+    } catch (e: any) { console.error('Seed article failed:', article.slug, e.message); }
+  }
+  console.log(`Seeded ${articles.length} blog articles.`);
+}
+
 const startServer = async () => {
   const PORT = Number(process.env.PORT) || 3001;
   try {
-    await initDB();
+    const db = await initDB();
     await initSnapshotCache();
     initScreenerCron();
+    await seedBlogPosts(db);
 
     // 8:30 PM IST - Daily Alpha-40 institutional recalculation
     cron.schedule('30 20 * * *', precalculateAlpha40);
@@ -1522,7 +1956,7 @@ const startServer = async () => {
     cron.schedule('0 19 * * *', runAndNotifyHealthCheck);
 
     setTimeout(precalculateAlpha40, 5000); // Warm cache on boot
-    setTimeout(precalculateGrowth, 15000); // Prime growth basket shortly after startup
+    // Growth basket priming moved to cron only (blocks event loop for 5+ min on 281 symbols)
     scheduleAuditCron(BASKETS);
     app.listen(PORT, '0.0.0.0', () => {
       console.log('----------------------------------------------------');
