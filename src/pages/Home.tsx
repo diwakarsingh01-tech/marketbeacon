@@ -831,7 +831,12 @@ const HomePage: React.FC = () => {
         </header>
 
       {/* ── INSTITUTIONAL STRATEGY MATRIX ── */}
-      <section className="py-16 md:py-20 px-6 md:px-10 bg-[var(--bg-secondary)]/30 border-y border-[var(--border-primary)]/40">
+      <motion.section
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.6 }}
+        className="py-16 md:py-20 px-6 md:px-10 bg-[var(--bg-secondary)]/30 border-y border-[var(--border-primary)]/40">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-10">
             <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.4em] mb-3">Institutional Strategy Matrix</p>
@@ -853,7 +858,13 @@ const HomePage: React.FC = () => {
               { name: 'Velocity Retest', sub: '20% Rally Pullback', tier: 'alpha', color: 'amber' },
               { name: 'Deep Recovery', sub: '67% ATH Reset', tier: 'alpha', color: 'amber' },
             ].map((s, i) => (
-              <div key={i} className={`group relative p-4 md:p-5 rounded-2xl border transition-all hover:-translate-y-1 hover:shadow-lg cursor-default ${
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.4, delay: i * 0.05 }}
+                className={`group relative p-4 md:p-5 rounded-2xl border transition-all hover:-translate-y-1 hover:shadow-lg cursor-default ${
                 s.color === 'emerald' 
                   ? 'bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-400/40 hover:shadow-emerald-500/10' 
                   : s.color === 'blue'
@@ -868,7 +879,7 @@ const HomePage: React.FC = () => {
                 </div>
                 <h3 className="text-xs md:text-sm font-black text-[var(--text-primary)] leading-tight mb-0.5">{s.name}</h3>
                 <p className="text-[8px] md:text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{s.sub}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
           <div className="text-center mt-8">
@@ -877,10 +888,15 @@ const HomePage: React.FC = () => {
             </Link>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── PHASE 1: 3 ICP SEGMENT CARDS ── */}
-      <section aria-label="Who is MarketBeacon Pro for" className="py-20 px-6 md:px-10 border-y border-[var(--border-primary)]/60 bg-[var(--bg-secondary)]/20 relative overflow-hidden">
+      <motion.section
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.6 }}
+        aria-label="Who is MarketBeacon Pro for" className="py-20 px-6 md:px-10 border-y border-[var(--border-primary)]/60 bg-[var(--bg-secondary)]/20 relative overflow-hidden">
         {/* 3D Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-b from-blue-600/5 via-transparent to-emerald-600/5 pointer-events-none" />
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -992,10 +1008,15 @@ const HomePage: React.FC = () => {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Social Proof (Bento Grid) */}
-      <section id="proof" className="py-24 px-6 md:px-10 border-y border-[var(--border-primary)] bg-[var(--bg-secondary)]/30">
+      <motion.section
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.6 }}
+        id="proof" className="py-24 px-6 md:px-10 border-y border-[var(--border-primary)] bg-[var(--bg-secondary)]/30">
          <div className="max-w-[1440px] mx-auto">
             <div className="text-center mb-20">
                <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-4">Proven Institutional Results</h2>
@@ -1016,9 +1037,9 @@ const HomePage: React.FC = () => {
                         <div className="text-sm text-[var(--text-muted)] font-medium">{item.desc}</div>
                     </div>
                 ))}
-            </div>
-         </div>
-      </section>
+          </div>
+          </div>
+        </motion.section>
 
       {/* Interactive Strategy Simulator */}
       <section className="py-24 px-6 md:px-10 max-w-[1440px] mx-auto border-t border-slate-900">
@@ -1087,8 +1108,8 @@ const HomePage: React.FC = () => {
               </span>
             </div>
           </div>
-        </div>
-      </section>
+         </div>
+        </section>
 
       {/* Pillar #2: Internal Link Matrix (Trending Audits) */}
       <section className="py-24 px-6 md:px-10 max-w-[1440px] mx-auto border-t border-slate-900">
@@ -1122,7 +1143,12 @@ const HomePage: React.FC = () => {
 
       {/* Pillar #5: Conversion Tunnel (Education) */}
       <section className="py-24 px-6 md:px-10 max-w-[1440px] mx-auto">
-         <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-[3.5rem] p-12 overflow-hidden relative group">
+         <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6 }}
+            className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-[3.5rem] p-12 overflow-hidden relative group">
             <div className="absolute right-0 top-0 w-96 h-96 bg-blue-600/5 blur-[100px] -mr-48 -mt-48 transition-all group-hover:bg-blue-600/10" />
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
@@ -1155,8 +1181,8 @@ const HomePage: React.FC = () => {
                   ))}
                </div>
             </div>
-         </div>
-      </section>
+         </motion.div>
+       </section>
 
       {/* ── BLOG TEASER ── */}
       <BlogTeaser />
@@ -1622,8 +1648,8 @@ const BlogTeaser: React.FC = () => {
             </Link>
           ))}
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
   );
 };
 
