@@ -543,67 +543,206 @@ export function calculateCupHandle(quotes: Quote[]) {
 }
 
 /**
- * STRATEGY 9: 67 Ka Funda
+ * STRATEGY 9: 67 Ka Funda — Contrarian Value Strategy
+ * Course: Hemant Jain — Equity Course Batch 4
+ *
+ * "67" = stock that has fallen ≥67% from its All-Time High.
+ * 10-point binary checklist (pass/fail). No numerical scoring.
+ *
+ * Automated checks (what we can calculate):
+ *   1. Stock ≥67% down from ATH
+ *   2. Min 100% profit potential from entry to ATH
+ *   3. Net Profit > ₹50 Cr (avoid SME/junk)
+ *   4. D/E < 1 (or < 8 for finance)
+ *   5. PE below 3Y median
+ *   6. Quarterly sales & profit improving
+ *
+ * Manual review required (flagged for user):
+ *   - Why did the stock fall? (sentiment / business / fundamental)
+ *   - Does that reason no longer exist?
+ *   - Proven track record & future growth prospects
+ *   - Exit rule: sell at 100% gain if within 1 year, else hold to ATH or 3x
  */
 export function calculateSixtySevenFunda(quotes: Quote[], data: any) {
   if (!quotes || quotes.length < 250) return { isBuyZone: false };
   const latestIdx = quotes.length - 1;
   const currentPrice = quotes[latestIdx].close;
 
-  // Find ATH and its index
+  // Find ATH
   let ath = 0, athIdx = 0;
   for (let i = 0; i < quotes.length; i++) {
     if (quotes[i].high > ath) { ath = quotes[i].high; athIdx = i; }
   }
 
   const dr = ((ath - currentPrice) / ath) * 100;
-  const idealEntry = ath * 0.67;
-  const isQualified = dr >= 33.0 && Math.abs(currentPrice - idealEntry) / idealEntry <= 0.022;
+  const checklist: string[] = [];
+  const failed: string[] = [];
 
-  // Fundamental filters
+  // RULE 1: Stock must be ≥67% down from ATH
+  if (dr < 67) { failed.push(`Drawdown ${dr.toFixed(1)}% < 67%`); }
+  else { checklist.push(`Drawdown ${dr.toFixed(1)}% ≥ 67%`); }
+
+  // RULE 7: Min 100% profit potential (ATH / current >= 2x)
+  const profitPotential = (ath / currentPrice) - 1;
+  if (profitPotential < 1.0) { failed.push(`Profit potential ${(profitPotential * 100).toFixed(0)}% < 100%`); }
+  else { checklist.push(`Profit potential ${(profitPotential * 100).toFixed(0)}% ≥ 100%`); }
+
+  if (failed.length > 0) {
+    return { isBuyZone: false, reason: failed.join("; "), drawdown: dr.toFixed(1), profitPotential: (profitPotential * 100).toFixed(0) + "%", triggerDate: "" };
+  }
+
+  // Fundamental filters (bare minimum)
   const pe = parseFloat(data?.peRatio) || 0;
   const peMedians = data?.peMedians || {};
   const pe3Y = peMedians.pe3Y || 0;
-  const pe5Y = peMedians.pe5Y || 0;
-  const roce = parseFloat(data?.roce) || 0;
+  const netProfit = parseFloat(data?.netProfit) || 0;
   const de = parseFloat(data?.netDebtToEquity) || 0;
   const sector = (data?.industry || '').trim();
-  const isFinance = ['Banking', 'Finance', 'NBFC', 'Financial Services'].includes(sector) || sector.toLowerCase().includes('finance');
+  const isFinance = ['Banking', 'Finance', 'NBFC', 'Financial Services', 'Asset Management'].includes(sector) || sector.toLowerCase().includes('finance');
   const debtLimit = isFinance ? 8.0 : 1.0;
 
-  if (parseFloat(data?.dividendYield || 0) < 1.0 || dr < 33.0) return { isBuyZone: false };
-  if (pe > 60) return { isBuyZone: false, reason: 'P/E > 60' };
-  if (pe3Y > 0 && pe > pe3Y * 1.02) return { isBuyZone: false, reason: `P/E > 3Y median (${pe.toFixed(1)} vs ${pe3Y.toFixed(1)})` };
-  if (pe5Y > 0 && pe > pe5Y * 1.02) return { isBuyZone: false, reason: `P/E > 5Y median (${pe.toFixed(1)} vs ${pe5Y.toFixed(1)})` };
-  if (roce < 15) return { isBuyZone: false, reason: `ROCE < 15% (${roce.toFixed(1)}%)` };
-  if (de > debtLimit) return { isBuyZone: false, reason: `D/E high (${de.toFixed(2)})` };
+  // RULE 3: Net Profit > ₹50 Cr
+  if (netProfit > 0 && netProfit < 50) { failed.push(`Net profit ₹${netProfit}Cr < ₹50Cr`); }
+  else if (netProfit > 0) { checklist.push(`Net profit ₹${netProfit}Cr > ₹50Cr`); }
 
-  // Target depends on ATH recency
-  // If ATH was within last 252 trading days → 67% gain from entry
-  // If ATH was > 252 trading days ago → 100% gain from entry
-  const barsSinceATH = latestIdx - athIdx;
-  const targetMultiplier = barsSinceATH <= 252 ? 1.67 : 2.0;
-  const entry = Math.round(idealEntry);
-  const target = Math.round(entry * targetMultiplier);
+  // RULE 4: Quarterly improvement proxy — sales & profit growing YoY
+  const currentSales = parseFloat(data?.currentSales) || 0;
+  const athSales = parseFloat(data?.athSales) || 0;
+  const athNetProfit = parseFloat(data?.athNetProfit) || 0;
+  if (currentSales > 0 && athSales > 0) {
+    const salesNearATH = currentSales >= athSales * 0.8;
+    const profitNearATH = netProfit >= athNetProfit * 0.8;
+    if (!salesNearATH) { failed.push(`Sales ₹${currentSales}Cr < 80% of ATH ₹${athSales}Cr`); }
+    else { checklist.push(`Sales ₹${currentSales}Cr ≥ 80% of ATH`); }
+    if (!profitNearATH) { failed.push(`Net profit ₹${netProfit}Cr < 80% of ATH ₹${athNetProfit}Cr`); }
+    else { checklist.push(`Net profit ₹${netProfit}Cr ≥ 80% of ATH`); }
+  } else {
+    checklist.push("Quarterly improvement — manual check required");
+  }
 
-  return { isBuyZone: isQualified, entryPrice: entry, target, currentPrice: Math.round(currentPrice), triggerDate: new Date().toISOString().split('T')[0], drawdown: dr.toFixed(1), isLocked: true };
+  // RULE 5: D/E < 1 (or < 8 for finance)
+  if (de > debtLimit) { failed.push(`D/E ${de.toFixed(2)} > ${debtLimit}`); }
+  else if (de > 0) { checklist.push(`D/E ${de.toFixed(2)} ≤ ${debtLimit}`); }
+
+  // PE sanity
+  if (pe > 0 && pe > 60) { failed.push(`P/E ${pe.toFixed(1)} > 60`); }
+  if (pe3Y > 0 && pe > pe3Y * 1.02) { failed.push(`P/E ${pe.toFixed(1)} > 3Y median ${pe3Y.toFixed(1)}`); }
+
+  if (failed.length > 0) {
+    return { isBuyZone: false, reason: failed.join("; "), drawdown: dr.toFixed(1), profitPotential: (profitPotential * 100).toFixed(0) + "%", triggerDate: "" };
+  }
+
+  // Entry: current price is anywhere at or below 67% of ATH
+  const isEntryZone = currentPrice <= ath * 0.33;
+
+  // Target: exit at 100% gain (course Rule 8)
+  const entryPrice = currentPrice;
+  const target100 = Math.round(entryPrice * 2.0);
+  const targetATH = Math.round(ath);
+
+  return {
+    isBuyZone: isEntryZone,
+    entryPrice: Math.round(entryPrice),
+    target: target100,
+    targetATH,
+    currentPrice: Math.round(currentPrice),
+    triggerDate: new Date().toISOString().split('T')[0],
+    drawdown: dr.toFixed(1) + "%",
+    profitPotential: (profitPotential * 100).toFixed(0) + "%",
+    checklist,
+    manualReview: [
+      "Why did the stock fall? (sentiment / business / fundamental)",
+      "Does that reason no longer exist?",
+      "Future growth prospects (industry outlook, business moat, competitive advantage)",
+      "Exit rule: sell at 100% if within 1yr, else hold to ATH or 3x"
+    ],
+    isLocked: true
+  };
 }
 
 /**
- * STRATEGY 10: Velocity Retest
+ * STRATEGY 10: 20% Rally Retest (Super Strategy)
+ * Course: Hemant Jain — Equity Course Batch 4
+ * Rules:
+ *   - Start: close > prev close AND price < EMA200
+ *   - ALL candles must be green (close > open), no red allowed
+ *   - Gain from lowest wick to highest wick >= 20%
+ *   - Single candle exception: >= 19% qualifies
+ *   - Entry: price falls back to rally origin (within 2.2%)
+ *   - Target: rally peak (highest wick)
+ *   - Fall must occur within ~1 year (252 trading days)
+ *   - Prefer entry below EMA200
  */
 export function calculateTwentyRallyRetest(quotes: Quote[]) {
   if (!quotes || quotes.length < 250) return { isBuyZone: false };
-  const ema200 = calculateEMA(quotes.map(q => q.close), 200), latestIdx = quotes.length - 1, currentPrice = quotes[latestIdx].close, rallies = [];
-  for (let i = 200; i < latestIdx - 1; i++) {
-    if (quotes[i].close > quotes[i-1].close && quotes[i].close < ema200[i]) {
-      let j = i + 1; while (j <= latestIdx && quotes[j].close > quotes[j].open) j++;
-      if ((quotes[j-1].close - quotes[i].low) / quotes[i].low >= 0.20) rallies.push({ origin: quotes[i].low, peak: quotes[j-1].close, peakIdx: j - 1, date: quotes[i].date });
+  const ema200 = calculateEMA(quotes.map(q => q.close), 200);
+  const latestIdx = quotes.length - 1;
+  const currentPrice = quotes[latestIdx].close;
+
+  // Scan backwards to find the most recent valid rally
+  for (let i = latestIdx - 1; i >= 200; i--) {
+    // Start condition: close > prev close AND below EMA200
+    if (!(quotes[i].close > quotes[i-1].close && quotes[i].close < ema200[i])) continue;
+
+    // Ensure this is the TRUE start (previous candle didn't also meet start condition)
+    if (i > 200 && quotes[i-1].close > quotes[i-2].close && quotes[i-1].close < ema200[i-1]) continue;
+
+    let j = i;
+    let lowest = quotes[i].low;
+    let highest = quotes[i].high;
+
+    // Extend forward: every candle must be green (close > open) AND make higher low (wicks included)
+    while (j <= latestIdx && quotes[j].close > quotes[j].open && (j === i || quotes[j].low > quotes[j-1].low)) {
+      lowest = Math.min(lowest, quotes[j].low);
+      highest = Math.max(highest, quotes[j].high);
+      j++;
     }
+
+    const candleCount = j - i;
+    if (candleCount === 0) continue;
+
+    // Calculate gain from lowest wick → highest wick (course rule)
+    const gain = (highest - lowest) / lowest;
+
+    // Check threshold: 19% for single candle, 20% for multi-candle
+    const minGain = candleCount === 1 ? 0.19 : 0.20;
+    if (gain < minGain) continue;
+
+    // Valid rally found — check entry conditions
+    const rallyOrigin = lowest;
+    const rallyPeak = highest;
+    const peakIdx = j - 1;
+
+    // Must fall back within 1 year (~252 trading days)
+    if (latestIdx - peakIdx > 252) continue;
+
+    // Current price must be near rally origin (entry zone)
+    const isAtOrigin = Math.abs(currentPrice - rallyOrigin) / rallyOrigin <= 0.022;
+
+    if (isAtOrigin) {
+      const triggerDate = typeof quotes[i].date === 'string'
+        ? quotes[i].date
+        : (quotes[i].date as Date).toISOString().split('T')[0];
+      const isBelow200 = currentPrice < ema200[latestIdx];
+
+      return {
+        isBuyZone: true,
+        entryPrice: Math.round(rallyOrigin),
+        target: Math.round(rallyPeak),
+        currentPrice: Math.round(currentPrice),
+        triggerDate,
+        candleCount,
+        gain: (gain * 100).toFixed(1) + "%",
+        below200MA: isBelow200,
+        isLocked: true
+      };
+    }
+
+    // Found the most recent rally — if not at entry, stop searching
+    break;
   }
-  if (rallies.length === 0) return { isBuyZone: false };
-  const best = rallies.sort((a, b) => b.peakIdx - a.peakIdx)[0];
-  return { isBuyZone: latestIdx - best.peakIdx <= 252 && Math.abs(currentPrice - best.origin) / best.origin <= 0.022 && currentPrice < ema200[latestIdx], entryPrice: Math.round(best.origin), target: Math.round(best.peak), currentPrice: Math.round(currentPrice), triggerDate: (typeof best.date === 'string' ? best.date : (best.date as Date).toISOString()).split('T')[0], isLocked: true };
+
+  return { isBuyZone: false };
 }
 
 /**
