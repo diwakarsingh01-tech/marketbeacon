@@ -254,6 +254,14 @@ const HomePage: React.FC = () => {
 
   const [searchError, setSearchError] = useState<string | null>(null);
 
+  // Fetch default teaser for TCS on load so visitors see instant value
+  useEffect(() => {
+    fetch(`${API_URL}/api/public/analysis/TCS`)
+      .then(r => r.json())
+      .then(data => { if (data && !data.error) setTeaserData(data); })
+      .catch(() => {});
+  }, []);
+
   const handleSearch = async (e?: React.FormEvent, symbolOverride?: string) => {
     if (e) e.preventDefault();
     const finalQuery = symbolOverride || searchQuery;
@@ -760,7 +768,9 @@ const HomePage: React.FC = () => {
         <h1 className="text-3xl md:text-[6rem] font-black tracking-tighter leading-[0.85] text-[var(--text-primary)] mb-3 md:mb-6 drop-shadow-2xl">
            THE SYSTEM <br className="hidden sm:block" /><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">FII/DII USE.</span>
         </h1>
-        <p className="text-sm md:text-xl font-black text-blue-300/80 uppercase tracking-[0.25em] mb-5 md:mb-10">Now In Your Hands.</p>
+         <p className="text-xs md:text-base font-medium text-blue-300/70 max-w-2xl mx-auto leading-relaxed mb-6 md:mb-8 px-4">
+           Type any stock symbol above → get its <span className="text-blue-400 font-black">100-point institutional audit score</span> in seconds. Free, no login needed.
+         </p>
 
         {/* Grand Launch Promo Banner */}
         <div className="max-w-2xl mx-auto mb-6 md:mb-10">
@@ -775,14 +785,11 @@ const HomePage: React.FC = () => {
                   <p className="text-[7px] md:text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest truncate">Free 7-Day Institutional Access</p>
                 </div>
               </div>
-              <button 
-                onClick={() => {
-                   setOpenVoucherModal(true);
-                }}
-                className="px-3 md:px-5 py-1.5 md:py-2.5 bg-blue-600 hover:bg-blue-500 text-[var(--text-primary)] rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0"
+              <Link to="/login"
+                className="px-3 md:px-5 py-1.5 md:py-2.5 bg-blue-600 hover:bg-blue-500 text-[var(--text-primary)] rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 text-center"
               >
-                Claim Now
-              </button>
+                Start 7-Day Free Trial →
+              </Link>
             </div>
             <div className="absolute top-0 right-0 p-1">
                <div className="px-1 py-0.5 bg-emerald-500 text-[var(--text-primary)] text-[5px] md:text-[6px] font-black uppercase rounded-bl-lg animate-bounce">Live</div>
@@ -790,17 +797,60 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Symbols */}
-        <div className="flex justify-center gap-3 md:gap-4 mb-4 md:mb-6">
-          {["RELAXO", "TCS", "ITC"].map(sym => (
-            <button 
-              key={sym} 
-              onClick={() => { handleSearch(undefined, sym); }}
-              className="text-[8px] md:text-[10px] font-black text-[var(--text-muted)] hover:text-blue-400 transition-colors uppercase tracking-widest"
-            >
-              {sym}
-            </button>
-          ))}
+        {/* Live Preview Card — Instant Value Proof */}
+        <div className="max-w-md mx-auto mb-6 md:mb-8">
+          <Link to={`/analysis/${teaserData?.symbol || 'TCS'}`}
+            className="block group relative overflow-hidden p-[1px] bg-gradient-to-r from-blue-600 via-indigo-400 to-emerald-400 rounded-2xl shadow-xl shadow-blue-900/20 hover:scale-[1.02] transition-all duration-300"
+          >
+            <div className="bg-[var(--bg-primary)]/95 backdrop-blur-xl rounded-[15px] px-4 md:px-5 py-3 md:py-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg md:text-xl font-black text-[var(--text-primary)] italic tracking-tighter">{teaserData?.symbol || 'TCS'}</span>
+                  {teaserData?.isPass !== undefined && (
+                    <span className={`px-2 py-0.5 rounded-full text-[7px] md:text-[8px] font-black uppercase tracking-widest ${
+                      teaserData.isPass ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                    }`}>
+                      {teaserData.isPass ? 'Qualified' : 'Audit Pending'}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1">
+                  <Activity className="w-3 h-3 text-blue-400" /> Live
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 md:gap-4">
+                  {teaserData?.score !== undefined && (
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-lg md:text-2xl font-black italic tracking-tighter ${
+                        teaserData.score >= 70 ? 'text-emerald-400' : 'text-amber-400'
+                      }`}>{teaserData.score}</span>
+                      <span className="text-[7px] md:text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest leading-tight">Audit<br/>Score</span>
+                    </div>
+                  )}
+                  {teaserData?.smartMoney !== undefined && (
+                    <div className="h-8 w-px bg-[var(--border-primary)]" />
+                  )}
+                  {teaserData?.smartMoney !== undefined && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-lg md:text-2xl font-black text-blue-400 italic tracking-tighter">{teaserData.smartMoney.toFixed(0)}%</span>
+                      <span className="text-[7px] md:text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest leading-tight">Smart<br/>Money</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 text-blue-400">
+                  <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest">View Audit</span>
+                  <ArrowUpRight className="w-3 h-3 md:w-4 md:h-4" />
+                </div>
+              </div>
+              {!teaserData && (
+                <div className="flex items-center gap-2 text-[var(--text-muted)]">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span className="text-[9px] font-bold uppercase tracking-widest">Loading live audit data...</span>
+                </div>
+              )}
+            </div>
+          </Link>
         </div>
 
         {/* CTA */}
