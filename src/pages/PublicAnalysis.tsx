@@ -141,7 +141,7 @@ const PublicAnalysisPage: React.FC = () => {
 
       const linkCanonical = document.createElement('link');
       linkCanonical.rel = 'canonical';
-      linkCanonical.href = `https://marketbeacon.pro/analysis/${symbol}`;
+      linkCanonical.href = `https://marketbeaconpro.com/analysis/${symbol}`;
       document.head.appendChild(linkCanonical);
 
       return () => {
@@ -344,9 +344,12 @@ const PublicAnalysisPage: React.FC = () => {
             <BrandLogo variant="dark" size={24} />
           </div>
           <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em] leading-relaxed max-w-xl mx-auto italic">
-            This analysis is for institutional research purposes only. 
-            Investments in securities market are subject to market risks. 
-            Read all the related documents carefully before investing.
+            MarketBeacon Pro is a quantitative research tool for educational purposes only.
+            We are NOT a SEBI-registered Investment Adviser or Research Analyst.
+            Audit scores, strategy signals, and ABCD zones are pre-coded mathematical models.
+            Nothing on this page constitutes personalised investment advice.
+            Investments in securities market are subject to market risks.
+            Read all related documents carefully before investing. Consult a SEBI-registered advisor.
           </p>
         </footer>
         </div>
