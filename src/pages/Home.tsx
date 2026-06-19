@@ -333,12 +333,12 @@ const HomePage: React.FC = () => {
            <BrandLogo variant="dark" size={30} />
         </Link>
         <div className="hidden md:flex items-center space-x-6">
-           <Link to="/blog" className="text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-widest transition-colors">
-             Blog
-           </Link>
-           <Link to="/license-desk" className="text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-widest transition-colors">
-             Pricing
-           </Link>
+           <Link to="/blog" className="text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-widest transition-colors flex items-center gap-1.5">
+              Blog <span className="text-[6px] font-black text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">NEW</span>
+            </Link>
+            <Link to="/license-desk" className="text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-widest transition-colors">
+              Pricing
+            </Link>
            <div className="flex items-center space-x-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">31,402 Active Traders</span>
@@ -1109,6 +1109,9 @@ const HomePage: React.FC = () => {
          </div>
       </section>
 
+      {/* ── BLOG TEASER ── */}
+      <BlogTeaser />
+
       {/* Schema.org Structured Markup — SoftwareApplication + AggregateRating + Reviews */}
       <script type="application/ld+json">
         {JSON.stringify({
@@ -1304,9 +1307,6 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* ── BLOG TEASER ── */}
-      <BlogTeaser />
 
       {/* ── EMAIL LEAD CAPTURE ── */}
       <section className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50 bg-gradient-to-b from-slate-950 to-slate-900/50">
