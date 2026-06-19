@@ -804,9 +804,9 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* CTA */}
-        <p className="text-xs md:text-lg font-medium text-[var(--text-muted)] max-w-2xl mx-auto leading-relaxed mb-4 md:mb-6 px-4">
-          100-point Institutional Audit Score + ABCD Tranche Laddering — the same framework used by institutional desks. Free to try.
-        </p>
+          <p className="text-xs md:text-lg font-medium text-[var(--text-muted)] max-w-2xl mx-auto leading-relaxed mb-4 md:mb-6 px-4">
+           100-point Institutional Audit Score + 10 Proprietary Strategies + ABCD Tranche Laddering — the same framework used by institutional desks. Free to try.
+         </p>
 
         <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4 mb-6 md:mb-10">
           <Link to="/login" className="w-full md:w-auto inline-flex items-center justify-center px-6 md:px-10 py-3 md:py-5 bg-blue-600 text-[var(--text-primary)] rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm hover:bg-blue-500 hover:scale-105 transition-all shadow-2xl shadow-blue-900/40">
@@ -1082,9 +1082,9 @@ const HomePage: React.FC = () => {
                      <BookOpen className="h-4 w-4 text-blue-400" />
                      <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Free Institutional Education</span>
                   </div>
-                  <h2 className="text-5xl md:text-6xl font-black tracking-tighter leading-none">Master the <br /><span className="text-blue-500">12 Proprietary</span> Strategies.</h2>
-                  <p className="text-[var(--text-muted)] text-lg font-medium leading-relaxed max-w-md">
-                     Don't just follow triggers. Understand the institutional logic behind every setup—from SMA-ABCD Stacking to the 67% ATH Reset Cycle.
+                   <h2 className="text-5xl md:text-6xl font-black tracking-tighter leading-none">Master the <br /><span className="text-blue-500">10 Institutional</span> Strategies.</h2>
+                   <p className="text-[var(--text-muted)] text-lg font-medium leading-relaxed max-w-md">
+                      Don't just follow triggers. Understand the institutional logic behind every setup—from SMA-ABCD Stacking to the 67% ATH Contrarian Reset.
                   </p>
                   <Link to="/education" className="inline-flex items-center px-8 py-4 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-500 hover:text-[var(--text-primary)] transition-all">
                      Explore Knowledge Base <ChevronRight className="ml-2 w-4 h-4" />
@@ -1092,12 +1092,12 @@ const HomePage: React.FC = () => {
                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                     { title: 'SMA-ABCD', desc: 'Bearish exhaustion logic', icon: Layers },
-                     { title: '67% Reset', desc: 'Deep recovery audit', icon: RefreshCw },
-                     { title: '14% Envelope', desc: 'Institutional demand floors', icon: ShieldCheck },
-                     { title: 'Bollinger Sqz', desc: 'Volatility breakout matrix', icon: Activity },
-                  ].map((item, i) => (
+                   {[
+                      { title: '67% Reset', desc: 'Contrarian value (Fallen Value Basket)', icon: RefreshCw },
+                      { title: 'Velocity Retest', desc: '20% rally pullback entry', icon: TrendingUp },
+                      { title: 'SMA-ABCD', desc: 'Bearish exhaustion logic', icon: Layers },
+                      { title: 'Bollinger Sqz', desc: 'Volatility breakout matrix', icon: Activity },
+                   ].map((item, i) => (
                      <div key={i} className="p-6 bg-[var(--bg-primary)] rounded-3xl border border-[var(--border-primary)] hover:border-blue-500/30 transition-all">
                         <item.icon className="h-6 w-6 text-blue-500 mb-4" />
                         <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-1">{item.title}</h4>
@@ -1447,6 +1447,61 @@ const HomePage: React.FC = () => {
         userEmail={user?.email} 
       />
       {showConfetti && <Confetti />}
+
+      {/* Voucher / Claim Modal */}
+      {openVoucherModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[var(--bg-secondary)] rounded-[2rem] p-6 max-w-md w-full shadow-2xl border border-[var(--border-primary)] space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight italic">Claim Alpha Access</h3>
+                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Enter your 7-day trial voucher</p>
+              </div>
+              <button onClick={() => setOpenVoucherModal(false)} className="p-1 hover:bg-[var(--bg-tertiary)] rounded-full transition-colors">
+                <X className="h-5 w-5 text-[var(--text-muted)]" />
+              </button>
+            </div>
+
+            {!user ? (
+              <div className="space-y-4">
+                <p className="text-xs text-[var(--text-muted)] leading-relaxed">Please sign in to redeem a voucher code.</p>
+                <Link to="/login" className="block w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-blue-500 transition-all">
+                  Sign In
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Enter voucher (e.g. ALPHA7)..."
+                    value={voucherCode}
+                    onChange={(e) => setVoucherCode(e.target.value)}
+                    className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-[var(--text-primary)] outline-none focus:border-blue-500"
+                  />
+                  <button
+                    onClick={handleRedeemVoucher}
+                    disabled={redeeming}
+                    className="px-5 py-3 bg-blue-600 text-white hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                  >
+                    {redeeming ? 'Redeeming...' : 'Redeem'}
+                  </button>
+                </div>
+                {voucherError && (
+                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-wider">{voucherError}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setVoucherCode('ALPHA7'); setVoucherError(null); }}
+                  className="text-[9px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
+                >
+                  Quick Apply: ALPHA7 (7-Day Free Trial)
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Deployment Verification Tag */}
       <div className="fixed bottom-4 right-4 z-[100] opacity-20 hover:opacity-100 transition-opacity">
