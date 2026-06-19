@@ -128,7 +128,7 @@ const ScreenerVerify: React.FC = () => {
   const fetchScreenerList = async (stratId: string) => {
     setLoadingList(true);
     try {
-      const response = await fetch(`${API_URL}/api/backtest/audit?basket=Elite%20Basket&strategy=${stratId}`, {
+      const response = await fetch(`${API_URL}/api/backtest/audit?strategy=${stratId}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` }
       });
       const d = await safeJsonParse(response);
