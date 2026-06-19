@@ -1,6 +1,6 @@
 {
   "date": "2026-06-19",
-  "timestamp": "2026-06-19T15:27:41.387Z",
+  "timestamp": "2026-06-19T16:51:12.842Z",
   "alpha40": [
     {
       "symbol": "INFY",
@@ -241,6 +241,23 @@
       "signalCount": 2
     },
     {
+      "symbol": "BANDHANBNK",
+      "stockName": "BANDHANBNK",
+      "strategy": "Institutional Reset (67%)",
+      "tranche": "A",
+      "basketSource": "Growth Basket",
+      "capType": "MID",
+      "sector": "Banking",
+      "currentPrice": 208.08999633789062,
+      "entryPrice": 208,
+      "entryTime": "2026-06-19",
+      "target": 416,
+      "roi": 100,
+      "score": 90,
+      "smartMoney": 83.38,
+      "signalCount": 1
+    },
+    {
       "symbol": "ASTRAZEN",
       "stockName": "ASTRAZEN",
       "strategy": "SMA + BCD",
@@ -273,6 +290,40 @@
       "score": 75,
       "smartMoney": 0,
       "signalCount": 2
+    },
+    {
+      "symbol": "RELAXO",
+      "stockName": "RELAXO",
+      "strategy": "Institutional Reset (67%)",
+      "tranche": "A",
+      "basketSource": "Quality Basket",
+      "capType": "SMALL",
+      "sector": "Footwear",
+      "currentPrice": 355.8500061035156,
+      "entryPrice": 356,
+      "entryTime": "2026-06-19",
+      "target": 712,
+      "roi": 100,
+      "score": 85,
+      "smartMoney": 84.05,
+      "signalCount": 1
+    },
+    {
+      "symbol": "VENKEYS",
+      "stockName": "VENKEYS",
+      "strategy": "Institutional Reset (67%)",
+      "tranche": "A",
+      "basketSource": "Growth Basket",
+      "capType": "SMALL",
+      "sector": "Fast Moving Consumer Goods",
+      "currentPrice": 1423.5,
+      "entryPrice": 1424,
+      "entryTime": "2026-06-19",
+      "target": 2847,
+      "roi": 99.92977528089888,
+      "score": 70,
+      "smartMoney": 57.38,
+      "signalCount": 1
     },
     {
       "symbol": "INTELLECT",
@@ -725,6 +776,17 @@
       "DELTACORP",
       "JAGRAN",
       "RUPA"
+    ],
+    "Fallen Value Basket": [
+      "BANDHANBNK",
+      "VENKEYS",
+      "ZEEL",
+      "DELTACORP",
+      "IEX",
+      "NEWGEN",
+      "MAPMYINDIA",
+      "JUSTDIAL",
+      "SKFINDIA"
     ]
   },
   "growthBasket": [
@@ -1017,7 +1079,8 @@
     "SMA + BCD": 6,
     "Envelope Short": 4,
     "Bollinger Band": 2,
-    "Reverse Head and Shoulder + ABCD": 1
+    "Reverse Head and Shoulder + ABCD": 1,
+    "Institutional Reset (67%)": 3
   },
   "allQualified": [
     {
@@ -1133,6 +1196,14 @@
       "grade": "A"
     },
     {
+      "symbol": "BANDHANBNK",
+      "strategy": "Institutional Reset (67%)",
+      "basket": "Growth Basket",
+      "entryPrice": 208,
+      "target": 416,
+      "grade": "A"
+    },
+    {
       "symbol": "ASTRAZEN",
       "strategy": "SMA + BCD",
       "basket": "Quality Basket",
@@ -1146,6 +1217,22 @@
       "basket": "Elite Basket",
       "entryPrice": 270,
       "target": 302,
+      "grade": "A"
+    },
+    {
+      "symbol": "RELAXO",
+      "strategy": "Institutional Reset (67%)",
+      "basket": "Quality Basket",
+      "entryPrice": 356,
+      "target": 712,
+      "grade": "A"
+    },
+    {
+      "symbol": "VENKEYS",
+      "strategy": "Institutional Reset (67%)",
+      "basket": "Growth Basket",
+      "entryPrice": 1424,
+      "target": 2847,
       "grade": "A"
     },
     {
