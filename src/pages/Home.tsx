@@ -1118,7 +1118,7 @@ const HomePage: React.FC = () => {
           "operatingSystem": "Web, iOS, Android",
           "applicationCategory": "FinanceApplication",
           "description": "India's institutional stock research tool for educational purposes. ABCD Tranche Laddering and 100-point Audit Score system. Not investment advice.",
-          "url": "https://marketbeacon.pro",
+          "url": "https://marketbeaconpro.com",
           "offers": {
             "@type": "Offer",
             "price": "99",

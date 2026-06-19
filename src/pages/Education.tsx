@@ -479,7 +479,7 @@ const EducationPage: React.FC = () => {
   React.useEffect(() => {
     const linkCanonical = document.createElement('link');
     linkCanonical.rel = 'canonical';
-    linkCanonical.href = 'https://marketbeacon.pro/education';
+    linkCanonical.href = 'https://marketbeaconpro.com/education';
     document.head.appendChild(linkCanonical);
     return () => { document.head.removeChild(linkCanonical); };
   }, []);
