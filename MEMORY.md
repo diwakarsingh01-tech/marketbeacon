@@ -17,7 +17,8 @@
 12. **Front page copy updated** — "12 Proprietary" → "10 Institutional", added Velocity Retest card, Fallen Value Basket mention
 13. **Blog Teaser moved higher** — appears right after strategy section (was buried near footer)
 14. **Nav "Blog" link** — added "NEW" badge for visibility
-15. **Desktop backup** at `~/Desktop/marketbeacon-backup-2026-06-19/`
+15. **Scroll animations** — 4 major sections (Strategy Matrix, ICP Cards, Social Proof, Education) + staggered strategy grid cards use framer-motion `whileInView` fade+slide-up
+16. **Desktop backup** at `~/Desktop/marketbeacon-backup-2026-06-19/`
 
 ### Not Pushed
 Remote: `https://github.com/diwakarsingh01-tech/marketbeacon.git` (HTTPS)
