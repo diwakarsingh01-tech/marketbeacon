@@ -61,6 +61,9 @@ export async function precalculateAlpha40() {
       
       for (const sym of symbols) {
         try {
+          // Yield to event loop so HTTP requests can be processed
+          await new Promise(r => setImmediate(r));
+
           const snap = snapshot[sym];
           if (!snap || !snap.quotes?.length) continue;
           

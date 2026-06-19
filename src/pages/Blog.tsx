@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Clock, BookOpen, TrendingUp, ShieldCheck, BarChart2, ChevronRight } from 'lucide-react';
 import BrandLogo from '../components/brand/BrandLogo';
 import SiteFooter from '../components/layout/SiteFooter';
 import SEO from '../components/SEO';
 import { OrganizationSchema, BreadcrumbSchema } from '../components/StructuredData';
+import { getApiUrl } from '../lib/api-utils';
 
-const ARTICLES = [
+const FALLBACK_ARTICLES = [
   {
     slug: 'abcd-tranche-laddering-guide',
     tag: 'Strategy',
@@ -57,7 +58,32 @@ const ARTICLES = [
   },
 ];
 
+const ICON_MAP: Record<string, any> = { TrendingUp, ShieldCheck, BarChart2, BookOpen };
+
 const BlogPage: React.FC = () => {
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${getApiUrl()}/api/blog`)
+      .then(r => {
+        if (!r.ok) throw new Error('API unavailable');
+        return r.json();
+      })
+      .then(data => {
+        setArticles(data.map((a: any) => ({
+          ...a,
+          icon: ICON_MAP[a.tag] || BookOpen,
+          iconColor: a.tag_color?.match(/text-\w+-\d+/)?.[0] || 'text-blue-400',
+          highlight: a.id === 1 ? 'Most Read' : null,
+          excerpt: a.meta_description,
+        })));
+      })
+      .catch(() => setArticles(FALLBACK_ARTICLES))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="min-h-screen bg-slate-950" />;
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
       <SEO title="Stock Market Research Blog" description="Learn institutional research methods, ABCD Tranche strategy, and market analysis. Educational content for Indian stock market investors." url="/blog" />
@@ -97,27 +123,27 @@ const BlogPage: React.FC = () => {
 
       {/* Featured Article */}
       <section className="px-6 md:px-10 max-w-[1100px] mx-auto mb-12">
-        <Link
-          to={`/blog/${ARTICLES[0].slug}`}
+        {articles.length > 0 && <Link
+          to={`/blog/${articles[0].slug}`}
           className="group block bg-gradient-to-br from-blue-600/10 to-indigo-600/5 border border-blue-500/20 rounded-[2.5rem] p-8 md:p-12 hover:border-blue-400/40 transition-all hover:-translate-y-1"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <div className="space-y-5">
               <div className="flex items-center gap-3">
-                <span className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${ARTICLES[0].tagColor}`}>
-                  {ARTICLES[0].tag}
+                <span className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${articles[0].tagColor}`}>
+                  {articles[0].tag}
                 </span>
-                <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] font-black text-amber-400 uppercase tracking-widest">
-                  ⭐ {ARTICLES[0].highlight}
-                </span>
+                {articles[0].highlight && <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] font-black text-amber-400 uppercase tracking-widest">
+                  ⭐ {articles[0].highlight}
+                </span>}
               </div>
               <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white leading-tight group-hover:text-blue-300 transition-colors">
-                {ARTICLES[0].title}
+                {articles[0].title}
               </h2>
-              <p className="text-slate-500 text-sm leading-relaxed">{ARTICLES[0].excerpt}</p>
+              <p className="text-slate-500 text-sm leading-relaxed">{articles[0].excerpt}</p>
               <div className="flex items-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" />{ARTICLES[0].readTime}</span>
-                <span>{ARTICLES[0].date}</span>
+                <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" />{articles[0].readTime}</span>
+                <span>{articles[0].date}</span>
               </div>
               <div className="flex items-center gap-2 text-blue-400 text-[11px] font-black uppercase tracking-widest group-hover:gap-3 transition-all">
                 Read Article <ArrowRight className="w-4 h-4" />
@@ -143,13 +169,13 @@ const BlogPage: React.FC = () => {
               ))}
             </div>
           </div>
-        </Link>
+        </Link>}
       </section>
 
       {/* Article Grid */}
       <section className="px-6 md:px-10 max-w-[1100px] mx-auto pb-24">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {ARTICLES.slice(1).map((article) => {
+          {articles.slice(1).map((article) => {
             const Icon = article.icon;
             return (
               <Link

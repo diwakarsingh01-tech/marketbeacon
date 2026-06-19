@@ -1,0 +1,150 @@
+{
+  "name": "Auto Blog - Stock Analysis",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Run Now",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://mb-backend:3001/api/n8n/qualified-stocks",
+        "options": {
+          "headers": {
+            "x-api-key": "={{ $env.N8N_API_KEY }}"
+          }
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "basket",
+              "value": "Elite Basket"
+            }
+          ]
+        }
+      },
+      "id": "get-qualified",
+      "name": "Get Qualified Stocks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const stocks = $input.all();\nconst items = stocks[0].json;\nif (!Array.isArray(items)) throw new Error('Expected array');\n// Only publish stocks with score >= 80\nconst qualified = items.filter(s => s.score >= 80 || s.isPass);\nif (qualified.length === 0) {\n  return [{ json: { message: 'No qualified stocks found' } }];\n}\nreturn qualified.map(s => ({ json: s }));"
+      },
+      "id": "filter-qualified",
+      "name": "Filter Qualified",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "batch-split",
+      "name": "One at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "url": "=http://mb-backend:3001/api/n8n/stock-data/{{ $json.symbol }}",
+        "options": {
+          "headers": {
+            "x-api-key": "={{ $env.N8N_API_KEY }}"
+          }
+        }
+      },
+      "id": "get-stock-data",
+      "name": "Get Stock Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "options": {},
+        "text": "=You are a professional stock research analyst at MarketBeacon Pro.\n\nWrite a detailed stock analysis article for {{ $json.symbol }} with the following data:\n\n**Company Profile**\n- Symbol: {{ $json.symbol }}\n- Sector: {{ $json.sector }}\n- Current Price: ₹{{ $json.price }}\n- Market Cap: {{ ($json.marketCap / 10000000).toFixed(2) }} Cr\n- P/E Ratio: {{ $json.peRatio }}\n- 52-Week Range: ₹{{ $json.fiftyTwoWeekLow }} - ₹{{ $json.fiftyTwoWeekHigh }}\n\n**Fundamentals**\n- Return on Equity (ROE): {{ $json.returnOnEquity }}%\n- ROCE: {{ $json.roce }}%\n- Debt-to-Equity: {{ $json.debtToEquity }}\n- Beta: {{ $json.beta }}\n\n**Institutional Audit Score: {{ $json.auditScore }}/100**\n- {{ $json.isQualified ? '✅ QUALIFIED - Passes institutional screening' : '❌ Does not pass all audit parameters' }}\n- Profitability Quality: {{ $json.profitabilityQuality }}\n- Balance Sheet Safety: {{ $json.balanceSheetSafety }}\n- Growth Quality: {{ $json.growthQuality }}\n\n**Strategy Signals**\nActive Strategies: {{ $json.strategies.map(s => s.name).join(', ') }}\nUpside Potential: {{ $json.upside }}%\n\nWrite a 1000+ word analysis article with the following sections (each as a JSON object with 'heading' and 'body'):\n1. Executive Summary - Overview of the stock and why it's qualified\n2. Fundamental Strength - Deep dive into ROE, ROCE, debt, sales growth\n3. Institutional Audit - Explain the audit score components\n4. Valuation & Technical Setup - P/E context, ABCD zones, upside\n5. Key Risks to Monitor - What could derail the thesis\n6. Final Verdict - Summary and strategy conclusion\n\nAlso provide:\n- A compelling title (max 80 chars, don't include the company name in a redundant way)\n- A meta description (120-155 chars)\n- 5 key takeaways as an array of strings\n- A slug (lowercase, hyphens, e.g. 'reliance-stock-analysis-june-2026')\n- A read time estimate (e.g. '5 min read')\n\nCRITICAL: Respond with ONLY valid JSON (no markdown fences, no explanation):\n{\n  \"title\": \"...\",\n  \"slug\": \"...\",\n  \"meta_description\": \"...\",\n  \"tag\": \"Analysis\",\n  \"tag_color\": \"text-blue-400 bg-blue-400/10 border-blue-400/20\",\n  \"read_time\": \"...\",\n  \"key_takeaways\": [\"...\",\"...\",\"...\",\"...\",\"...\"],\n  \"content\": [\n    {\"heading\": \"Executive Summary\", \"body\": \"...\"},\n    {\"heading\": \"Fundamental Strength\", \"body\": \"...\"},\n    {\"heading\": \"Institutional Audit\", \"body\": \"...\"},\n    {\"heading\": \"Valuation & Technical Setup\", \"body\": \"...\"},\n    {\"heading\": \"Key Risks to Monitor\", \"body\": \"...\"},\n    {\"heading\": \"Final Verdict\", \"body\": \"...\"}\n  ]\n}"
+      },
+      "id": "generate-with-ai",
+      "name": "Generate Article",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://mb-backend:3001/api/n8n/blog-post",
+        "sendBody": true,
+        "options": {
+          "headers": {
+            "x-api-key": "={{ $env.N8N_API_KEY }}"
+          }
+        },
+        "bodyParameters": {
+          "parameters": [
+            { "name": "title", "value": "={{ $json.message?.title || $json.title }}" },
+            { "name": "slug", "value": "={{ $json.message?.slug || $json.slug }}" },
+            { "name": "meta_description", "value": "={{ $json.message?.meta_description || $json.meta_description }}" },
+            { "name": "content", "value": "={{ $json.message?.content || $json.content }}" },
+            { "name": "tag", "value": "={{ $json.message?.tag || $json.tag || 'Analysis' }}" },
+            { "name": "tag_color", "value": "={{ $json.message?.tag_color || $json.tag_color || 'text-blue-400 bg-blue-400/10 border-blue-400/20' }}" },
+            { "name": "read_time", "value": "={{ $json.message?.read_time || $json.read_time }}" },
+            { "name": "key_takeaways", "value": "={{ $json.message?.key_takeaways || $json.key_takeaways }}" },
+            { "name": "date", "value": "={{ new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }}" }
+          ]
+        }
+      },
+      "id": "publish-blog",
+      "name": "Publish Blog Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "text": "={{ '📝 *New Blog Post*\n\n' + ($json.title || 'Stock Analysis') + '\n\nRead the full analysis on MarketBeacon Pro:\nhttps://marketbeaconpro.com/blog/' + ($json.slug || '') }}",
+        "additionalFields": {
+          "chatId": "-1003707897105",
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "notify-telegram",
+      "name": "Notify Telegram Group",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1650, 300]
+    }
+  ],
+  "connections": {
+    "manual-trigger": {
+      "main": [[{ "node": "get-qualified", "type": "main", "index": 0 }]]
+    },
+    "get-qualified": {
+      "main": [[{ "node": "filter-qualified", "type": "main", "index": 0 }]]
+    },
+    "filter-qualified": {
+      "main": [[{ "node": "batch-split", "type": "main", "index": 0 }]]
+    },
+    "batch-split": {
+      "main": [[{ "node": "get-stock-data", "type": "main", "index": 0 }]]
+    },
+    "get-stock-data": {
+      "main": [[{ "node": "generate-with-ai", "type": "main", "index": 0 }]]
+    },
+    "generate-with-ai": {
+      "main": [[{ "node": "publish-blog", "type": "main", "index": 0 }]]
+    },
+    "publish-blog": {
+      "main": [[{ "node": "notify-telegram", "type": "main", "index": 0 }]]
+    }
+  }
+}
