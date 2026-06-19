@@ -16,11 +16,25 @@ const ROUTES = [
   '/pricing',
   '/login',
   '/privacy-policy',
-  '/blog/abcd-tranche-laddering-guide',
-  '/blog/what-is-sebi-compliant-stock-screener',
-  '/blog/how-to-trade-like-fii-dii-india',
-  '/blog/institutional-audit-score-explained',
 ];
+
+const API_BASE = process.env.API_URL || 'http://localhost:3001';
+
+async function fetchArticleSlugs() {
+  try {
+    const res = await fetch(`${API_BASE}/api/blog`);
+    if (!res.ok) throw new Error('API unavailable');
+    const articles = await res.json();
+    return articles.map(a => `/blog/${a.slug}`);
+  } catch {
+    return [
+      '/blog/abcd-tranche-laddering-guide',
+      '/blog/what-is-sebi-compliant-stock-screener',
+      '/blog/how-to-trade-like-fii-dii-india',
+      '/blog/institutional-audit-score-explained',
+    ];
+  }
+}
 
 function waitForServer(url, timeout = 30000) {
   return new Promise((resolve, reject) => {
@@ -57,8 +71,12 @@ function deduplicateHeadTags(html) {
   dedup(/<meta property="og:title" content=".*?"\/?>/gi);
   dedup(/<meta property="og:description" content=".*?"\/?>/gi);
   dedup(/<meta property="og:url" content=".*?"\/?>/gi);
+  dedup(/<meta property="og:image" content=".*?"\/?>/gi);
+  dedup(/<meta property="og:type" content=".*?"\/?>/gi);
+  dedup(/<meta property="og:site_name" content=".*?"\/?>/gi);
   dedup(/<meta name="twitter:title" content=".*?"\/?>/gi);
   dedup(/<meta name="twitter:description" content=".*?"\/?>/gi);
+  dedup(/<meta name="twitter:image" content=".*?"\/?>/gi);
   return html;
 }
 
@@ -79,7 +97,10 @@ async function prerender() {
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     });
 
-    for (const route of ROUTES) {
+    const blogRoutes = await fetchArticleSlugs();
+    const allRoutes = [...ROUTES, ...blogRoutes];
+
+    for (const route of allRoutes) {
       const url = BASE + route;
       console.log(`[Prerender] Rendering ${route}...`);
       const page = await browser.newPage();

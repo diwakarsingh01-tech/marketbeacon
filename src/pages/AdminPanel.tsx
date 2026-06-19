@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
+import AdminBlog from '../components/AdminBlog';
+import {
   Users, 
   ShieldCheck, 
   Zap, 
@@ -19,7 +20,8 @@ import {
   MessageSquare,
   Star,
   Send,
-  X
+  X,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
@@ -35,7 +37,7 @@ const AdminPanel: React.FC = () => {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [waitlist, setWaitlist] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users' | 'vouchers' | 'feedback' | 'waitlist'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users' | 'vouchers' | 'feedback' | 'waitlist' | 'blog'>('pending');
   const [search, setSearch] = useState('');
   
   // Modals
@@ -332,6 +334,13 @@ const AdminPanel: React.FC = () => {
             >
               <MessageSquare className="h-4 w-4" />
               <span>Feedback ({feedbacks.length})</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab('blog')}
+              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'blog' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+            >
+              <FileText className="h-4 w-4" />
+              <span>Blog</span>
             </button>
             <button 
               onClick={() => { setActiveTab('waitlist'); fetchWaitlist(); }}
@@ -779,7 +788,14 @@ const AdminPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* 3b. Waitlist Tab */}
+      {/* 3b. Blog Tab */}
+      {activeTab === 'blog' && (
+        <div className="space-y-4">
+          <AdminBlog />
+        </div>
+      )}
+
+      {/* 3c. Waitlist Tab */}
       {activeTab === 'waitlist' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">

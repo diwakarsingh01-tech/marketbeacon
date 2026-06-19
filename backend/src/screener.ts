@@ -283,7 +283,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
     const batch = symbols.slice(i, i + batchSize);
     await Promise.all(batch.map(async (baseSymbol) => {
       try {
-        const symbol = baseSymbol.includes('.') ? baseSymbol : `${baseSymbol}.NS`;
+        const symbol = (baseSymbol.includes('.') || baseSymbol.startsWith('^')) ? baseSymbol : `${baseSymbol}.NS`;
         const period1 = new Date();
         period1.setFullYear(period1.getFullYear() - 20);
         const [history, quote, summary, screenerData] = await Promise.all([
