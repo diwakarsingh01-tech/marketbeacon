@@ -22,6 +22,7 @@ import {
 import { Link } from 'react-router-dom';
 
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import type { AlphaHubStock, AlphaHubData, BacktestData, BasketConfig } from '../types';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import { useAuth } from '../context/AuthContext';
@@ -62,7 +63,7 @@ const generateDynamicChartData = (capital: number, years: number, alphaCagr: num
   return data;
 };
 
-const calculateQuantity = (stock: any, totalCapital: number) => {
+const calculateQuantity = (stock: AlphaHubStock, totalCapital: number) => {
   if (!totalCapital || totalCapital < 50000) return 0;
   const targetCount = 40;
   const baseAllocation = totalCapital / targetCount;
@@ -77,12 +78,19 @@ const calculateQuantity = (stock: any, totalCapital: number) => {
   return Math.floor(perStockBudget / (stock.entryPrice || stock.currentPrice || 1));
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipEntry {
+  name: string;
+  value: number;
+  color: string;
+  payload: { initialCapital: number };
+}
+
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: TooltipEntry[]; label?: string }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] p-4 rounded-2xl shadow-2xl space-y-3">
         <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest border-b border-[var(--border-primary)] pb-2">{label}</p>
-        {payload.map((entry: any, index: number) => {
+        {payload.map((entry: TooltipEntry, index: number) => {
           const initial = entry.payload.initialCapital || 1;
           const roi = (((entry.value / initial) - 1) * 100).toFixed(1);
           return (
@@ -108,12 +116,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 // --- Basket definitions derived from API data ---
 
-const buildBaskets = (stocks: any[], totalCapital: number) => {
+const buildBaskets = (stocks: AlphaHubStock[], totalCapital: number): BasketConfig[] => {
   if (!stocks?.length) return [];
 
-  const large = stocks.filter((s: any) => s.capType === 'LARGE');
-  const mid = stocks.filter((s: any) => s.capType === 'MID');
-  const small = stocks.filter((s: any) => s.capType === 'SMALL');
+  const large = stocks.filter(s => s.capType === 'LARGE');
+  const mid = stocks.filter(s => s.capType === 'MID');
+  const small = stocks.filter(s => s.capType === 'SMALL');
 
   const totalStocks = stocks.length || 1;
 
@@ -174,7 +182,7 @@ const calcSIPTotal = (monthly: number, years: number) => {
 const AlphaHubPage: React.FC = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AlphaHubData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -188,7 +196,7 @@ const AlphaHubPage: React.FC = () => {
   const [filterBasket, setFilterBasket] = useState<string>('all');
   const [expandedStock, setExpandedStock] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
-  const [backtestComparison, setBacktestComparison] = useState<any>(null);
+  const [backtestComparison, setBacktestComparison] = useState<BacktestData | null>(null);
 
   // Investment calculator state
   const [investmentMode, setInvestmentMode] = useState<'lumpsum' | 'sip'>('lumpsum');
@@ -205,14 +213,14 @@ const AlphaHubPage: React.FC = () => {
 
   // Filter stocks: only include grades A/B/C/D — exclude NONE-grade stocks
   const validGrades = ['A', 'B', 'C', 'D'];
-  const qualifiedStocks = (data?.stocks || []).filter((s: any) => s.tranche && validGrades.includes(s.tranche.toUpperCase()));
+  const qualifiedStocks = (data?.stocks || []).filter(s => s.tranche && validGrades.includes(s.tranche.toUpperCase()));
   const excludedStockCount = (data?.stocks || []).length - qualifiedStocks.length;
 
   // Build baskets from qualified stocks only
   const baskets = buildBaskets(qualifiedStocks, totalCapital);
 
   // Pre-compute total portfolio amount for weight calculations
-  const totalPortfolioAmount = qualifiedStocks.reduce((acc: number, s: any) => {
+  const totalPortfolioAmount = qualifiedStocks.reduce((acc: number, s: AlphaHubStock) => {
     const sq = calculateQuantity(s, totalCapital);
     return acc + sq * (s.currentPrice || s.entryPrice || 1);
   }, 1);
@@ -308,12 +316,12 @@ const AlphaHubPage: React.FC = () => {
   const handleExportAlpha = () => {
     if (!qualifiedStocks?.length) return;
     const headers = ['Symbol', 'Sector', 'Cap', 'Basket', 'Strategy', 'Audit Score', 'Base Price', 'ROI%', 'Qty', 'Invest Amt'];
-    const rows = qualifiedStocks.map((s: any) => [
+    const rows = qualifiedStocks.map((s: AlphaHubStock) => [
       s.symbol, s.sector, s.capType, s.basketSource, s.strategy, s.score,
       s.entryPrice, Number(s.roi)?.toFixed(2),
       1, s.entryPrice
     ]);
-    const csvContent = [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n');
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.body.appendChild(document.createElement('a'));
     link.href = URL.createObjectURL(blob);
@@ -600,7 +608,7 @@ const AlphaHubPage: React.FC = () => {
 
                   {/* Quick presets */}
                   <div className="flex flex-wrap gap-1.5">
-                    {[100000, 250000, 500000, 1000000].map(amt => (
+                    {[100000, 300000, 500000, 1000000].map(amt => (
                       <button
                         key={amt}
                         onClick={() => setLumpSumAmount(amt)}
@@ -840,8 +848,8 @@ const AlphaHubPage: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-[var(--border-primary)] font-mono text-[11px] text-[var(--text-secondary)]">
                       {qualifiedStocks
-                        .filter((s: any) => filterBasket === 'all' || baskets.find(b => b.id === filterBasket)?.stocks.includes(s))
-                        .map((stock: any) => {
+                        .filter(s => filterBasket === 'all' || baskets.find(b => b.id === filterBasket)?.stocks.includes(s))
+                        .map((stock: AlphaHubStock) => {
                           const qty = calculateQuantity(stock, totalCapital);
                           const price = stock.currentPrice || stock.entryPrice || 1;
                           const amount = qty * price;
@@ -906,8 +914,8 @@ const AlphaHubPage: React.FC = () => {
               {/* Mobile Stock Cards */}
               <div className="md:hidden space-y-2">
                 {qualifiedStocks
-                  .filter((s: any) => filterBasket === 'all' || baskets.find(b => b.id === filterBasket)?.stocks.includes(s))
-                  .map((stock: any) => {
+                  .filter(s => filterBasket === 'all' || baskets.find(b => b.id === filterBasket)?.stocks.includes(s))
+                  .map((stock: AlphaHubStock) => {
                     const qty = calculateQuantity(stock, totalCapital);
                     const price = stock.currentPrice || stock.entryPrice || 1;
                     const amount = qty * price;

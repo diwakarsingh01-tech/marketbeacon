@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type ComponentType } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Clock, BookOpen, TrendingUp, ShieldCheck, BarChart2, ChevronRight } from 'lucide-react';
 import BrandLogo from '../components/brand/BrandLogo';
@@ -6,6 +6,21 @@ import SiteFooter from '../components/layout/SiteFooter';
 import SEO from '../components/SEO';
 import { OrganizationSchema, BreadcrumbSchema } from '../components/StructuredData';
 import { getApiUrl } from '../lib/api-utils';
+
+interface BlogArticle {
+  slug: string;
+  tag: string;
+  tagColor: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;
+  title: string;
+  excerpt: string;
+  readTime: string;
+  date: string;
+  highlight: string | null;
+  id?: number;
+  meta_description?: string;
+}
 
 const FALLBACK_ARTICLES = [
   {
@@ -58,10 +73,10 @@ const FALLBACK_ARTICLES = [
   },
 ];
 
-const ICON_MAP: Record<string, any> = { TrendingUp, ShieldCheck, BarChart2, BookOpen };
+const ICON_MAP: Record<string, ComponentType> = { TrendingUp, ShieldCheck, BarChart2, BookOpen };
 
 const BlogPage: React.FC = () => {
-  const [articles, setArticles] = useState<any[]>([]);
+  const [articles, setArticles] = useState<BlogArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -70,7 +85,7 @@ const BlogPage: React.FC = () => {
         if (!r.ok) throw new Error('API unavailable');
         return r.json();
       })
-      .then(data => {
+      .then((data: any[]) => {
         setArticles(data.map((a: any) => ({
           ...a,
           icon: ICON_MAP[a.tag] || BookOpen,

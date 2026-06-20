@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import SEO from '../components/SEO';
 import { 
   User, 
   Mail, 
@@ -77,7 +78,9 @@ const ProfilePage: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-8 lg:px-10 space-y-6 md:space-y-8 overflow-y-auto font-sans bg-[#f8fafc]">
+    <>
+      <SEO title="Profile" description="Manage your MarketBeacon Pro account, API keys, and preferences." url="/profile" noindex />
+      <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-8 lg:px-10 space-y-6 md:space-y-8 overflow-y-auto font-sans bg-[#f8fafc]">
       
       {/* 1. Profile Hero Section */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-8 border-b border-slate-200 pb-10">
@@ -285,6 +288,7 @@ const ProfilePage: React.FC = () => {
          <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Global Security Hash: 0X4F-TERM-SEC</p>
       </footer>
     </div>
+    </>
   );
 };
 

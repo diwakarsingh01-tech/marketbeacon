@@ -3,6 +3,7 @@ import { ShieldCheck, ArrowUpRight, Lock, BookOpen, Layers, Zap, ChevronDown, Ch
 import LegalModal from '../modals/LegalModal';
 import { Link } from 'react-router-dom';
 import BrandLogo from '../brand/BrandLogo';
+import { WHATSAPP_BASE } from '../../lib/constants';
 
 const GlobalFooter: React.FC = () => {
   const [legalModal, setLegalModal] = useState<{ open: boolean, type: 'policy' | 'risk' }>({ open: false, type: 'policy' });
@@ -59,7 +60,7 @@ const GlobalFooter: React.FC = () => {
               </button>
               <ul className={`space-y-2 text-[10px] font-black text-slate-600 uppercase tracking-wider overflow-hidden transition-all duration-300 md:max-h-none ${expandedSections.external ? 'max-h-96' : 'max-h-0 md:max-h-none'}`}>
                 <li><a href="https://t.me/asktoceo" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors inline-flex items-center gap-1">Telegram Alerts <ArrowUpRight className="h-3 w-3 text-slate-400" /></a></li>
-                <li><a href="https://wa.me/919251180183" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 transition-colors inline-flex items-center gap-1">WhatsApp <ArrowUpRight className="h-3 w-3 text-slate-400" /></a></li>
+                <li><a href={WHATSAPP_BASE} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 transition-colors inline-flex items-center gap-1">WhatsApp <ArrowUpRight className="h-3 w-3 text-slate-400" /></a></li>
                 <li><button onClick={() => setLegalModal({ open: true, type: 'policy' })} className="hover:text-blue-600 transition-colors text-left">Legal Protocol</button></li>
                 <li><button onClick={() => setLegalModal({ open: true, type: 'risk' })} className="hover:text-blue-600 transition-colors text-left">Risk Disclaimers</button></li>
               </ul>

@@ -1,0 +1,395 @@
+{
+  "date": "2026-06-19",
+  "startedAt": "2026-06-19T20:00:00.076Z",
+  "completedAt": "2026-06-19T20:00:03.261Z",
+  "status": "WARNING",
+  "summary": {
+    "totalChecks": 32,
+    "passedChecks": 29,
+    "failedChecks": 3,
+    "autoFixed": 1,
+    "manualRequired": 3,
+    "entries": [],
+    "exits": [],
+    "strategyCounts": [
+      {
+        "strategyId": "52 week High Low",
+        "strategyName": "52 week High Low",
+        "count": 3,
+        "delta": 3
+      },
+      {
+        "strategyId": "Bollinger Band",
+        "strategyName": "Bollinger Band",
+        "count": 2,
+        "delta": 2
+      },
+      {
+        "strategyId": "Envelope Long",
+        "strategyName": "Envelope Long",
+        "count": 2,
+        "delta": 2
+      },
+      {
+        "strategyId": "Envelope Short",
+        "strategyName": "Envelope Short",
+        "count": 4,
+        "delta": 4
+      },
+      {
+        "strategyId": "Institutional Reset (67%)",
+        "strategyName": "Institutional Reset (67%)",
+        "count": 3,
+        "delta": 3
+      },
+      {
+        "strategyId": "Reverse Head and Shoulder + ABCD",
+        "strategyName": "Reverse Head and Shoulder + ABCD",
+        "count": 1,
+        "delta": 1
+      },
+      {
+        "strategyId": "SMA + BCD",
+        "strategyName": "SMA + BCD",
+        "count": 6,
+        "delta": 6
+      },
+      {
+        "strategyId": "Support and Resistance Strategy (S&R)",
+        "strategyName": "Support and Resistance Strategy (S&R)",
+        "count": 3,
+        "delta": 3
+      }
+    ],
+    "status": "WARNING"
+  },
+  "checks": [
+    {
+      "id": "ST-1",
+      "category": "structural",
+      "name": "Alpha-40 cache file exists",
+      "severity": "critical",
+      "status": "pass",
+      "details": "Found at /Users/diwakarsingh/marketbeacon/backend/alpha_40_results.json",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "ST-2",
+      "category": "structural",
+      "name": "Alpha-40 cache has valid active array",
+      "severity": "critical",
+      "status": "pass",
+      "details": "24 active signals",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "ST-3",
+      "category": "structural",
+      "name": "Market snapshot file exists",
+      "severity": "critical",
+      "status": "pass",
+      "details": "Found market_snapshot.json",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "ST-4",
+      "category": "structural",
+      "name": "Alpha-40 cache freshness",
+      "severity": "high",
+      "status": "pass",
+      "details": "Cache age: 3.2 hours (threshold: 26h)",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "ST-5",
+      "category": "structural",
+      "name": "Audit reports directory writable",
+      "severity": "high",
+      "status": "pass",
+      "details": "/Users/diwakarsingh/marketbeacon/backend/audit_reports",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "ST-6",
+      "category": "structural",
+      "name": "Snapshots directory writable",
+      "severity": "high",
+      "status": "pass",
+      "details": "/Users/diwakarsingh/marketbeacon/backend/audit_reports/snapshots",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-1",
+      "category": "data_quality",
+      "name": "All symbols are non-null",
+      "severity": "critical",
+      "status": "pass",
+      "details": "24 symbols present",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-2",
+      "category": "data_quality",
+      "name": "Entry prices are positive",
+      "severity": "critical",
+      "status": "pass",
+      "details": "All positive",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-3",
+      "category": "data_quality",
+      "name": "Target prices are positive",
+      "severity": "critical",
+      "status": "pass",
+      "details": "All positive",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-4",
+      "category": "data_quality",
+      "name": "Entry price ≤ Target price",
+      "severity": "high",
+      "status": "pass",
+      "details": "All valid",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-5",
+      "category": "data_quality",
+      "name": "Current prices are present",
+      "severity": "high",
+      "status": "pass",
+      "details": "All present",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-6",
+      "category": "data_quality",
+      "name": "Valid tranche/grade values",
+      "severity": "high",
+      "status": "pass",
+      "details": "All valid",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-7",
+      "category": "data_quality",
+      "name": "ROI in sane range (-100% to 10000%)",
+      "severity": "medium",
+      "status": "pass",
+      "details": "All in range",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-8",
+      "category": "data_quality",
+      "name": "No duplicate symbols in active list",
+      "severity": "critical",
+      "status": "pass",
+      "details": "All unique",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-9",
+      "category": "data_quality",
+      "name": "Strategy name present on all signals",
+      "severity": "medium",
+      "status": "pass",
+      "details": "All have strategy",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-10",
+      "category": "data_quality",
+      "name": "Basket source present on all signals",
+      "severity": "medium",
+      "status": "pass",
+      "details": "All have basket source",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-11",
+      "category": "data_quality",
+      "name": "Audit score present",
+      "severity": "medium",
+      "status": "pass",
+      "details": "All have scores",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-12",
+      "category": "data_quality",
+      "name": "Cap type present",
+      "severity": "medium",
+      "status": "pass",
+      "details": "All have cap type",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SL-1",
+      "category": "strategy",
+      "name": "S&R entry→target gap ≥ 30%",
+      "severity": "critical",
+      "status": "pass",
+      "details": "3 S&R signals all have ≥30% gap",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SL-2",
+      "category": "strategy",
+      "name": "RHS entry→target gap ≥ 30%",
+      "severity": "critical",
+      "status": "pass",
+      "details": "1 RHS signals OK",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SL-3",
+      "category": "strategy",
+      "name": "Cup & Handle entry→target gap ≥ 30%",
+      "severity": "critical",
+      "status": "pass",
+      "details": "0 Cup & Handle signals OK",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SL-4",
+      "category": "strategy",
+      "name": "67 Funda gap is 67% or 100% (±5%)",
+      "severity": "critical",
+      "status": "pass",
+      "details": "3 67 Funda signals show correct gaps",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SL-5",
+      "category": "strategy",
+      "name": "Velocity Retest gap ≥ 20%",
+      "severity": "high",
+      "status": "pass",
+      "details": "0 Velocity signals OK",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SL-6",
+      "category": "strategy",
+      "name": "Envelope Long gap ~32.5% (±2.5%)",
+      "severity": "high",
+      "status": "pass",
+      "details": "2 Envelope Long OK",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SL-7",
+      "category": "strategy",
+      "name": "52W High/Low entry within 52W range",
+      "severity": "high",
+      "status": "fail",
+      "details": "HINDUNILVR outside 52W range",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SL-8",
+      "category": "strategy",
+      "name": "No sector exceeds 8 stock cap",
+      "severity": "high",
+      "status": "pass",
+      "details": "All sectors within cap",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SL-9",
+      "category": "strategy",
+      "name": "Cap mix balanced (~20L/12M/8S ±3)",
+      "severity": "medium",
+      "status": "fail",
+      "details": "L:13 M:3 S:8 outside tolerance (±3)",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "BM-1",
+      "category": "basket",
+      "name": "Elite Basket symbols in snapshot",
+      "severity": "critical",
+      "status": "pass",
+      "details": "All Elite symbols present",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "BM-2",
+      "category": "basket",
+      "name": "Quality Basket symbols in snapshot",
+      "severity": "critical",
+      "status": "fixed",
+      "details": "1 missing: JCHAC",
+      "autoFixable": true,
+      "autoFixed": true,
+      "fixDetails": "Auto-fix applied successfully"
+    },
+    {
+      "id": "BM-3",
+      "category": "basket",
+      "name": "Snapshot size sanity",
+      "severity": "medium",
+      "status": "pass",
+      "details": "349 symbols in snapshot (expected ≥200)",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "BM-4",
+      "category": "basket",
+      "name": "Active signals count",
+      "severity": "high",
+      "status": "pass",
+      "details": "24 active signals",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "BM-5",
+      "category": "basket",
+      "name": "Previous day snapshot",
+      "severity": "high",
+      "status": "fail",
+      "details": "Missing 2026-06-18.json (first run?)",
+      "autoFixable": false,
+      "autoFixed": false
+    }
+  ],
+  "changes": [],
+  "snapshotsCompared": {
+    "today": "2026-06-19",
+    "yesterday": "2026-06-18"
+  },
+  "raw": {}
+}

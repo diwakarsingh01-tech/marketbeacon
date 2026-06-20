@@ -20,7 +20,9 @@ import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import { toast } from 'sonner';
+import { Helmet } from 'react-helmet-async';
 import SEO from '../components/SEO';
+import { RATING_COUNT } from '../lib/constants';
 import { OrganizationSchema, BreadcrumbSchema } from '../components/StructuredData';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 
@@ -89,82 +91,6 @@ const PublicAnalysisPage: React.FC = () => {
     fetchData();
   }, [symbol]);
 
-  useEffect(() => {
-    if (data) {
-      const metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc) {
-        metaDesc.setAttribute('content', `Get the institutional 100-point audit for ${symbol}. Audit Score: ${(data.score || 0).toFixed(0)}, Smart Money: ${(data.smartMoney || 0).toFixed(1)}%, Model Projection: +${data.upside}%. Verified logic by MarketBeacon Pro.`);
-      }
-
-      const updateOG = (property: string, content: string) => {
-        let meta = document.querySelector(`meta[property="${property}"]`);
-        if (!meta) {
-          meta = document.createElement('meta');
-          meta.setAttribute('property', property);
-          document.head.appendChild(meta);
-        }
-        meta.setAttribute('content', content);
-      };
-
-      updateOG('og:title', `${symbol} Institutional Audit: ${(data.score || 0).toFixed(0)}/100`);
-      updateOG('og:description', `Institutional 100-point audit for ${symbol}. Smart Money: ${(data.smartMoney || 0).toFixed(1)}%, Risk: ${data.risk || 'Low'}.`);
-      updateOG('og:url', window.location.href);
-      updateOG('og:type', 'article');
-
-      const schema = {
-        "@context": "https://schema.org",
-        "@type": "InvestmentPortfolio",
-        "name": `MarketBeacon Institutional Analysis: ${symbol}`,
-        "description": `Professional fundamental audit and strategy matrix for ${symbol}`,
-        "provider": {
-          "@type": "Organization",
-          "name": "MarketBeacon Pro"
-        },
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": data.score,
-          "bestRating": "100",
-          "worstRating": "0",
-          "ratingCount": "31400"
-        },
-        "mainEntityOfPage": {
-          "@type": "WebPage",
-          "@id": window.location.href
-        }
-      };
-
-      const script = document.createElement('script');
-      script.type = "application/ld+json";
-      script.id = `json-ld-${symbol}`;
-      script.text = JSON.stringify(schema);
-      document.head.appendChild(script);
-
-      const linkCanonical = document.createElement('link');
-      linkCanonical.rel = 'canonical';
-      linkCanonical.href = `https://marketbeaconpro.com/analysis/${symbol}`;
-      document.head.appendChild(linkCanonical);
-
-      return () => {
-        const oldScript = document.getElementById(`json-ld-${symbol}`);
-        if (oldScript) oldScript.remove();
-        document.head.removeChild(linkCanonical);
-      };
-    }
-  }, [data, symbol]);
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: `MarketBeacon Pro: ${symbol} Institutional Analysis`,
-        text: `Check out the institutional-grade 100-point audit for ${symbol} on MarketBeacon Pro.`,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast('Link copied to clipboard!');
-    }
-  };
-
   if (loading) return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center space-y-6">
       <div className="w-16 h-16 border-4 border-white/5 border-t-cyan-500 rounded-full animate-spin shadow-[0_0_20px_rgba(34,211,238,0.2)]" />
@@ -181,9 +107,37 @@ const PublicAnalysisPage: React.FC = () => {
     </div>
   );
 
+  const score = data.score.toFixed(0);
+  const smartMoney = data.smartMoney.toFixed(1);
+  const desc = `Get the institutional 100-point audit for ${symbol}. Audit Score: ${score}, Smart Money: ${smartMoney}%, Model Projection: +${data.upside}%. Verified logic by MarketBeacon Pro.`;
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `MarketBeacon Pro: ${symbol} Institutional Analysis`,
+        text: `Check out the institutional-grade 100-point audit for ${symbol} on MarketBeacon Pro.`,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast('Link copied to clipboard!');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-cyan-500/30 font-sans">
-      <SEO title={`${symbol} Fundamental Audit`} description={`Research analysis for ${symbol} — Audit Score, peer comparison & key metrics.`} url={`/analysis/${symbol}`} />
+      <SEO title={`${symbol} Fundamental Audit`} description={`Research analysis for ${symbol} — Audit Score, peer comparison & key metrics.`} url={`/analysis/${symbol}`} image={`https://marketbeaconpro.com/api/og/${symbol}`} />
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'InvestmentPortfolio',
+          name: `MarketBeacon Institutional Analysis: ${symbol}`,
+          description: `Professional fundamental audit and strategy matrix for ${symbol}`,
+          provider: { '@type': 'Organization', name: 'MarketBeacon Pro' },
+          aggregateRating: { '@type': 'AggregateRating', ratingValue: data.score, bestRating: '100', worstRating: '0', ratingCount: RATING_COUNT },
+          mainEntityOfPage: { '@type': 'WebPage', '@id': `https://marketbeaconpro.com/analysis/${symbol}` },
+        })}</script>
+      </Helmet>
       <OrganizationSchema />
       <BreadcrumbSchema items={[
         { label: 'Home', href: '/' },

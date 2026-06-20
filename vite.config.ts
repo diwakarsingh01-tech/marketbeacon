@@ -17,4 +17,16 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/') || id.includes('node_modules/react-router')) return 'vendor-react';
+          if (id.includes('lightweight-charts') || id.includes('recharts')) return 'vendor-charts';
+          if (id.includes('papaparse') || id.includes('file-saver')) return 'vendor-utils';
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
 })

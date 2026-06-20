@@ -14,6 +14,7 @@ import { Confetti } from '../components/ui/Confetti';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { toast } from 'sonner';
 import SEO from '../components/SEO';
+import { waLink } from '../lib/constants';
 import { OrganizationSchema, BreadcrumbSchema } from '../components/StructuredData';
 
 const API_URL = getApiUrl();
@@ -129,7 +130,7 @@ const PricingPage: React.FC = () => {
        window.location.href = '/screener';
        return;
     }
-    setSelectedTier(tierName.toLowerCase() as any);
+    setSelectedTier(tierName.toLowerCase() as 'pro' | 'alpha');
     setShowUpgrade(true);
   };
 
@@ -278,7 +279,7 @@ const PricingPage: React.FC = () => {
               Zero-latency institutional nodes. Request a custom deployment for your fund.
             </p>
             <button 
-              onClick={() => window.open('https://wa.me/919251180183?text=Hi%20Admin,%20I%20am%20interested%20in%20a%20Corporate%20Deployment%20for%20my%20fund.', '_blank')}
+              onClick={() => window.open(waLink('Hi Admin, I am interested in a Corporate Deployment for my fund.'), '_blank')}
               className="px-6 md:px-10 py-3 md:py-5 bg-blue-600 text-white rounded-xl md:rounded-3xl text-[10px] md:text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all flex items-center space-x-2 mx-auto md:mx-0"
             >
               <span>Contact Admin Support</span>

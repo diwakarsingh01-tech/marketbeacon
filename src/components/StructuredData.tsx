@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { WHATSAPP_BASE } from '../lib/constants';
 
 const SITE_URL = 'https://marketbeaconpro.com';
 const SITE_NAME = 'MarketBeacon Pro';
@@ -15,10 +16,10 @@ export function OrganizationSchema() {
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer support',
-      url: 'https://wa.me/919251180183',
+      url: WHATSAPP_BASE,
     },
     sameAs: [
-      'https://wa.me/919251180183',
+      WHATSAPP_BASE,
     ],
   };
 
@@ -103,6 +104,24 @@ export function ArticleSchema({
       name: SITE_NAME,
       logo: `${SITE_URL}/favicon.svg`,
     },
+  };
+
+  return (
+    <Helmet>
+      <script type="application/ld+json">{JSON.stringify(schema)}</script>
+    </Helmet>
+  );
+}
+
+export function FAQPageSchema({ questions }: { questions: { q: string; a: string }[] }) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: questions.map(({ q, a }) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
   };
 
   return (

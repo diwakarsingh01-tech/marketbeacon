@@ -12,13 +12,29 @@ const BASE = 'http://localhost:' + PORT;
 
 const ROUTES = [
   '/',
-  '/blog',
   '/pricing',
   '/login',
   '/privacy-policy',
 ];
 
 const API_BASE = process.env.API_URL || 'http://localhost:3001';
+
+async function fetchStockSymbols() {
+  try {
+    const res = await fetch(`${API_BASE}/api/stocks?limit=100`);
+    if (!res.ok) throw new Error('API unavailable');
+    const stocks = await res.json();
+    return stocks.map(s => `/analysis/${s.symbol}`);
+  } catch {
+    return [
+      '/analysis/RELIANCE', '/analysis/TCS', '/analysis/HDFCBANK', '/analysis/INFY',
+      '/analysis/ICICIBANK', '/analysis/ITC', '/analysis/SBIN', '/analysis/BHARTIARTL',
+      '/analysis/HINDUNILVR', '/analysis/ADANIENT', '/analysis/BAJFINANCE', '/analysis/KOTAKBANK',
+      '/analysis/TITAN', '/analysis/ASIANPAINT', '/analysis/MARUTI', '/analysis/SUNPHARMA',
+      '/analysis/HCLTECH', '/analysis/NTPC', '/analysis/ONGC', '/analysis/POWERGRID',
+    ];
+  }
+}
 
 async function fetchArticleSlugs() {
   try {
@@ -97,8 +113,8 @@ async function prerender() {
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     });
 
-    const blogRoutes = await fetchArticleSlugs();
-    const allRoutes = [...ROUTES, ...blogRoutes];
+    const stockRoutes = await fetchStockSymbols();
+    const allRoutes = [...ROUTES, ...stockRoutes];
 
     for (const route of allRoutes) {
       const url = BASE + route;

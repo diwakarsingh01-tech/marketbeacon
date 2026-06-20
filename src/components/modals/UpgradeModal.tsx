@@ -21,6 +21,7 @@ interface UpgradeModalProps {
 }
 
 import { safeJsonParse, getApiUrl } from '../../lib/api-utils';
+import { waLink } from '../../lib/constants';
 import { Confetti } from '../ui/Confetti';
 import { toast } from 'sonner';
 
@@ -157,7 +158,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
 
   const openWhatsApp = () => {
     const text = `Hi Admin, I have paid ${currentPrice} for MarketBeacon ${currentTier.name} (${billingCycle}). My Email: ${userEmail}. Transaction ID: ${transactionId || 'Pending Verification'}`;
-    window.open(`https://wa.me/919251180183?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(waLink(text), '_blank');
   };
   
   const upiId = "diwakarsingh01.tech@okaxis";
@@ -268,7 +269,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                   {Object.entries(tiers).map(([id, t]) => (
                      <button 
                        key={id}
-                       onClick={() => setSelectedTier(id as any)}
+                        onClick={() => setSelectedTier(id as 'pro' | 'alpha')}
                        className={`w-full p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border-2 text-left transition-all flex items-center justify-between ${selectedTier === id ? 'border-blue-600 bg-blue-50/30' : 'border-slate-100 hover:border-slate-200'}`}
                      >
                        <div className="space-y-1">

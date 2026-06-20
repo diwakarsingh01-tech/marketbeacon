@@ -26,25 +26,26 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { toast } from 'sonner';
+import type { AdminUser, Feedback, Voucher, WaitlistEntry, UpgradeRequest } from '../types';
 
 const API_URL = getApiUrl();
 
 const AdminPanel: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<any[]>([]);
-  const [requests, setRequests] = useState<any[]>([]);
-  const [vouchers, setVouchers] = useState<any[]>([]);
-  const [feedbacks, setFeedbacks] = useState<any[]>([]);
-  const [waitlist, setWaitlist] = useState<any[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [requests, setRequests] = useState<UpgradeRequest[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users' | 'vouchers' | 'feedback' | 'waitlist' | 'blog'>('pending');
   const [search, setSearch] = useState('');
   
   // Modals
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
-  const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
+  const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [replyText, setReplyText] = useState('');
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -86,7 +87,7 @@ const AdminPanel: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if ((currentUser as any)?.role === 'admin') fetchData();
+    if (currentUser?.role === 'admin') fetchData();
   }, [currentUser, fetchData]);
 
   const handleApprove = async (requestId: number) => {
@@ -147,7 +148,7 @@ const AdminPanel: React.FC = () => {
     finally { setIsSubmittingReply(false); }
   };
 
-  const handleUpdateUser = async (userId: number, data: any) => {
+  const handleUpdateUser = async (userId: number, data: Record<string, unknown>) => {
     const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
@@ -166,7 +167,7 @@ const AdminPanel: React.FC = () => {
       } else {
         toast(`Update Failed: ${result.error || 'Server Error'}`);
       }
-    } catch (e: any) { toast(`Update failed: ${e.message}`); }
+    } catch (e: unknown) { toast(`Update failed: ${e instanceof Error ? e.message : 'Unknown error'}`); }
   };
 
   const handleDeleteUser = async (userId: number) => {
@@ -251,7 +252,7 @@ const AdminPanel: React.FC = () => {
     return Math.max(0, days);
   };
 
-  if ((currentUser as any)?.role !== 'admin') {
+  if (currentUser?.role !== 'admin') {
     return (
       <div className="flex flex-col items-center justify-center h-screen space-y-4">
         <ShieldCheck className="h-12 w-12 text-red-500" />
@@ -817,7 +818,7 @@ const AdminPanel: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3">
-              {waitlist.map((entry: any) => (
+              {waitlist.map((entry: WaitlistEntry) => (
                 <div key={entry.id} className="bg-white border border-slate-100 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                   <div className="flex flex-col space-y-1">
                     <span className="text-sm font-black text-slate-900">{entry.name}</span>
