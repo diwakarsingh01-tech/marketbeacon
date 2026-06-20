@@ -5,7 +5,9 @@ import { useAuth } from '../../context/AuthContext';
 import { BASKETS } from '../../data/stocks';
 import BrandLogo from '../brand/BrandLogo';
 import { AnimatePresence, motion } from 'framer-motion';
+import { WHATSAPP_BASE } from '../../lib/constants';
 
+import type { Notification, IndexResult, StockSearchResult } from '../../types';
 import { safeJsonParse, getApiUrl } from '../../lib/api-utils';
 
 const API_URL = getApiUrl();
@@ -59,7 +61,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -88,10 +90,10 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   };
   const { theme, toggleTheme } = useTheme();
 
-  const [indices, setIndices] = useState<any[]>([]);
+  const [indices, setIndices] = useState<IndexResult[]>([]);
   const [marketStatus, setMarketStatus] = useState('CLOSED');
   const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<StockSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const navigate = useNavigate();
@@ -132,7 +134,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         // Fallback: local filter if API fails
         const local = ALL_STOCKS.filter(s => s.toLowerCase().includes(val.toLowerCase())).slice(0, 8);
         if (local.length > 0) {
-          setSuggestions(local.map(s => ({ symbol: s, baskets: [], strategies: [] })));
+          setSuggestions(local.map(s => ({ symbol: s, baskets: [], strategies: [], price: 0, change: 0, peMedians: {} })));
           setShowSuggestions(true);
         }
       }, 300);
@@ -197,7 +199,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
         {/* Mobile-only Brand Logo */}
         <div className="flex items-center md:hidden">
-          <Link to="/alpha-hub" className="transition-all hover:opacity-90 active:scale-95">
+          <Link to="/app" className="transition-all hover:opacity-90 active:scale-95">
             <BrandLogo variant="light" size={26} hideText={true} />
           </Link>
         </div>
@@ -263,7 +265,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-                    {stock.strategies?.slice(0, 2).map((s: any) => (
+                    {stock.strategies?.slice(0, 2).map((s) => (
                       <span key={s.id} className="text-[7px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">
                         {s.id.slice(0, 8)}
                       </span>
@@ -426,7 +428,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
          </div>
 
         <a 
-          href="https://wa.me/919251180183" 
+          href={WHATSAPP_BASE} 
           target="_blank" 
           rel="noopener noreferrer"
           className="p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-[var(--text-primary)] rounded-xl transition-all shadow-sm border border-emerald-100 flex items-center space-x-2 group"
@@ -461,8 +463,8 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 <div className="flex flex-col items-start hidden sm:flex">
                    <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest leading-none">{user?.name}</span>
                    <div className="flex items-center space-x-1.5 mt-1">
-                      <div className={`w-1.5 h-1.5 rounded-full ${(user as any)?.tier === 'alpha' ? 'bg-blue-400 animate-pulse' : 'bg-slate-400'}`} />
-                      <span className="text-[7px] font-black text-[var(--text-muted)] uppercase tracking-widest">{(user as any)?.tier || 'Free'} Node</span>
+                       <div className={`w-1.5 h-1.5 rounded-full ${user?.tier === 'alpha' ? 'bg-blue-400 animate-pulse' : 'bg-slate-400'}`} />
+                       <span className="text-[7px] font-black text-[var(--text-muted)] uppercase tracking-widest">{user?.tier || 'Free'} Node</span>
                    </div>
                 </div>
               </button>
@@ -555,7 +557,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    {stock.strategies?.slice(0, 1).map((s: any) => (
+                    {stock.strategies?.slice(0, 1).map((s) => (
                       <span key={s.id} className="text-[6px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-sm">
                         {s.id.slice(0, 8)}
                       </span>

@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import SideNav from './SideNav';
 import TopNav from './TopNav';
-import GlobalFooter from './Footer';
-
 import FeedbackModal from '../ui/FeedbackModal';
 import InstallPrompt from '../InstallPrompt';
 import { 
@@ -28,7 +26,8 @@ const AppLayout: React.FC = () => {
   };
 
   const mobileNavItems = [
-    { icon: LayoutGrid, label: 'Alpha', path: '/alpha-hub' },
+    { icon: LayoutGrid, label: 'Home', path: '/app' },
+    { icon: Zap, label: 'Alpha', path: '/alpha-hub' },
     { icon: Zap, label: 'Screener', path: '/screener' },
     { icon: Briefcase, label: 'Manager', path: '/portfolio' },
     { icon: BookOpen, label: 'Journal', path: '/trades' },
@@ -71,7 +70,7 @@ const AppLayout: React.FC = () => {
           <div className="flex-1">
             <Outlet />
           </div>
-          <GlobalFooter />
+          
         </main>
       </div>
 

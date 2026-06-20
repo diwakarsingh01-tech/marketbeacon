@@ -625,7 +625,7 @@ const EducationPage: React.FC = () => {
                           {/* Sections */}
                           <div className="p-8 space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {activeStrat.sections.map((sec, i) => (
+                              {(activeStrat?.sections || []).map((sec, i) => (
                                 <motion.div
                                   key={i}
                                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
@@ -732,7 +732,7 @@ const EducationPage: React.FC = () => {
                             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                               <Eye className="h-3 w-3" /> What You Can Do Here
                             </p>
-                            {activeTourItem.features.map((feature, i) => (
+                            {(activeTourItem?.features || []).map((feature, i) => (
                               <motion.div
                                 key={i}
                                 initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}

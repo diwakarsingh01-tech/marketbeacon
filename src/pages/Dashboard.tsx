@@ -25,13 +25,22 @@ import LegalModal from '../components/modals/LegalModal';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { toast } from 'sonner';
 import SEO from '../components/SEO';
+import type { AllStockItem, AuditData, WatchlistItem, TradeRecord, StockPriceResult } from '../types';
 
 const API_URL = getApiUrl();
 
 // --- PREMIUM DASHBOARD COMPONENTS ---
 
-const DashboardStat = ({ title, value, icon: Icon, color = "blue", subtitle }: any) => {
-  const iconColors: any = {
+interface DashboardStatProps {
+  title: string;
+  value: string | number;
+  icon: React.FC<React.SVGProps<SVGSVGElement>>;
+  color?: string;
+  subtitle?: string;
+}
+
+const DashboardStat: React.FC<DashboardStatProps> = ({ title, value, icon: Icon, color = "blue", subtitle }) => {
+  const iconColors: Record<string, string> = {
     blue: "text-blue-500 bg-blue-500/10 border-blue-500/30",
     emerald: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30",
     rose: "text-rose-500 bg-rose-500/10 border-rose-500/30",
@@ -92,13 +101,26 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const currentStrategy = STRATEGIES.find(s => s.id === strategyId) || STRATEGIES[0];
 
-  const [data, setData] = useState<any | null>(null);
+  const [data, setData] = useState<AuditData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeBasket, setActiveBasket] = useState<string>(currentStrategy.baskets[0]);
+  const [activeBasket, setActiveBasket] = useState<string>(() => {
+    const paramBasket = searchParams.get('basket');
+    if (paramBasket && STRATEGIES.some(s => s.baskets.includes(paramBasket))) {
+      return paramBasket;
+    }
+    return currentStrategy.baskets[0];
+  });
   
   const lockedStrategies = STRATEGIES.filter(s => s.isLocked && s.baskets.includes(activeBasket));
 
-  const [activeTab, setActiveTab] = useState<'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral'>(() => {
+    const paramTab = searchParams.get('tab') as any;
+    const validTabs = ['open', 'hold', 'watchlist', 'portfolio', 'rejected', 'neutral'];
+    if (paramTab && validTabs.includes(paramTab)) {
+      return paramTab;
+    }
+    return defaultTab;
+  });
 
   // Locked tab setter — prevents screener route from ever showing portfolio tab & vice versa
   const handleSetActiveTab = (tab: 'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral') => {
@@ -126,18 +148,29 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const [stockATHs, setStockATHs] = useState<Record<string, number>>({});
   const [stockCaps, setStockCaps] = useState<Record<string, number>>({});
   const [stockSectors, setStockSectors] = useState<Record<string, string>>({});
-  const [userWatchlist, setUserWatchlist] = useState<any[]>([]);
-  const [trades, setTrades] = useState<any[]>([]);
+  const [userWatchlist, setUserWatchlist] = useState<WatchlistItem[]>([]);
+  const [trades, setTrades] = useState<TradeRecord[]>([]);
 
   useEffect(() => {
-    setActiveTab(defaultTab);
-  }, [defaultTab]);
+    const paramTab = new URLSearchParams(location.search).get('tab') as any;
+    const validTabs = ['open', 'hold', 'watchlist', 'portfolio', 'rejected', 'neutral'];
+    if (paramTab && validTabs.includes(paramTab)) {
+      setActiveTab(paramTab);
+    } else {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab, location.search]);
 
   useEffect(() => {
-    if (currentStrategy && !currentStrategy.baskets.includes(activeBasket as any)) {
+    const paramBasket = new URLSearchParams(location.search).get('basket');
+    if (paramBasket && currentStrategy.baskets.includes(paramBasket)) {
+      setActiveBasket(paramBasket);
+      return;
+    }
+    if (currentStrategy && !currentStrategy.baskets.includes(activeBasket)) {
       setActiveBasket(currentStrategy.baskets[0]);
     }
-  }, [strategyId, currentStrategy]);
+  }, [strategyId, currentStrategy, location.search]);
 
   const fetchTrades = useCallback(async () => {
     const token = localStorage.getItem('mb_token');
@@ -200,7 +233,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     } catch (e) { console.error('Update Error:', e); }
   };
 
-  const handleImportHoldings = async (holdings: any[], mode: 'merge' | 'overwrite' = 'merge') => {
+  const handleImportHoldings = async (holdings: Array<Record<string, unknown>>, mode: 'merge' | 'overwrite' = 'merge') => {
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     setIsRefreshing(true);
@@ -292,7 +325,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         const response = await fetch(`${API_URL}/api/stock-prices?symbols=${chunk.join(',')}`);
         const d = await safeJsonParse(response);
         if (response.ok && Array.isArray(d)) {
-          d.forEach((p: any) => { 
+          d.forEach((p: StockPriceResult) => { 
             if (p.price) priceMap[p.symbol] = p.price; 
             if (p.ath) athMap[p.symbol] = p.ath;
             if (p.marketCap) capMap[p.symbol] = p.marketCap;
@@ -335,7 +368,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           console.log(`[DASHBOARD] Successfully fetched ${d.allStocks?.length || 0} nodes for basket: ${activeBasket}`);
           setData(d);
           const portfolioSymbols = [...(userWatchlist || []).map(w => w.symbol), ...(trades || []).map(t => t.symbol)];
-          const symbolsToFetch = Array.from(new Set([...(d.allStocks?.map((s: any) => s.symbol) || []), ...portfolioSymbols]));
+          const symbolsToFetch = Array.from(new Set([...(d.allStocks?.map(s => s.symbol) || []), ...portfolioSymbols]));
           fetchStockPrices(symbolsToFetch);
       } else {
           setError(d.error || `Data Sync Failed`);
@@ -359,7 +392,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         } else { combinedMap[t.symbol] = { quantity: t.quantity || 0, buy_price: t.entry_price || 0 }; }
       });
       return Object.keys(combinedMap).map(symbol => {
-        const base = data?.allStocks?.find((s: any) => s.symbol === symbol) || { symbol, marketCap: stockCaps[symbol] || 0, sector: stockSectors[symbol] || 'Manual', currentPrice: stockPrices[symbol] || 0 };
+        const base = data?.allStocks?.find((s: AllStockItem) => s.symbol === symbol) || { symbol, marketCap: stockCaps[symbol] || 0, sector: stockSectors[symbol] || 'Manual', currentPrice: stockPrices[symbol] || 0 };
         return { ...base, ...combinedMap[symbol] };
       }).filter(s => s.quantity > 0);
     }
@@ -375,20 +408,20 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const currentBasketStocks = (BASKETS[activeBasket] || []).map(s => s.trim().toUpperCase());
     
     // Institutional Robustness: Filter by basket but fallback to raw backend data if needed
-    const basketData = data.allStocks.map((r: any) => {
+    const basketData = data.allStocks.map((r: AllStockItem) => {
       const sym = (r.symbol || '').trim().toUpperCase();
       const inLocalBasket = currentBasketStocks.includes(sym) || 
                             currentBasketStocks.includes(sym.replace('.NS', '')) ||
                             currentBasketStocks.some(b => b.replace('.NS', '') === sym);
       return { ...r, inLocalBasket };
-    }).filter((r: any) => r.inLocalBasket || activeBasket === 'All Symbols');
+    }).filter((r: AllStockItem & { inLocalBasket: boolean }) => r.inLocalBasket || activeBasket === 'All Symbols');
 
     // If basket filtering results in 0 nodes but backend sent data, show backend data as fallback
     const finalDisplayData = basketData.length > 0 ? basketData : data.allStocks;
 
-    const open = finalDisplayData.filter((r: any) => r && r.isBuyZone && r.isPass);
-    const rejected = finalDisplayData.filter((r: any) => r && !r.isPass && r.reason !== 'Audit Pending: Node Warming Up' && r.reason !== 'QUALIFIED' && r.reason !== 'OBSERVATION');
-    const neutral = finalDisplayData.filter((r: any) => r && ( r.isObservation || (!r.isBuyZone && r.isPass) || r.reason === 'Audit Pending: Node Warming Up' ));
+    const open = finalDisplayData.filter((r: AllStockItem) => r && r.isBuyZone && r.isPass);
+    const rejected = finalDisplayData.filter((r: AllStockItem) => r && !r.isPass && r.reason !== 'Audit Pending: Node Warming Up' && r.reason !== 'QUALIFIED' && r.reason !== 'OBSERVATION');
+    const neutral = finalDisplayData.filter((r: AllStockItem) => r && ( r.isObservation || (!r.isBuyZone && r.isPass) || r.reason === 'Audit Pending: Node Warming Up' ));
     const watchlist = finalDisplayData; // Full institutional basket
 
     if (activeTab === 'hold') return watchlist; 
@@ -451,7 +484,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const openCount = useMemo(() => {
     const basket = (BASKETS[activeBasket] || []).map(s => s.trim().toUpperCase());
-    return (data?.allStocks || []).filter((r: any) => {
+    return (data?.allStocks || []).filter((r: AllStockItem) => {
       const sym = (r.symbol || '').trim().toUpperCase();
       const inBasket = basket.includes(sym) || basket.includes(sym.replace('.NS', '')) || basket.some(b => b.replace('.NS', '') === sym);
       return inBasket && r.isBuyZone && r.isPass;
@@ -460,7 +493,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const neutralCount = useMemo(() => {
     const basket = (BASKETS[activeBasket] || []).map(s => s.trim().toUpperCase());
-    return (data?.allStocks || []).filter((r: any) => {
+    return (data?.allStocks || []).filter((r: AllStockItem) => {
       const sym = (r.symbol || '').trim().toUpperCase();
       const inBasket = basket.includes(sym) || basket.includes(sym.replace('.NS', '')) || basket.some(b => b.replace('.NS', '') === sym);
       return inBasket && ( (r.isBuyZone === false && r.isPass) || r.reason === 'Audit Pending: Node Warming Up' );
@@ -469,7 +502,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const rejectedCount = useMemo(() => {
     const basket = (BASKETS[activeBasket] || []).map(s => s.trim().toUpperCase());
-    return (data?.allStocks || []).filter((r: any) => {
+    return (data?.allStocks || []).filter((r: AllStockItem) => {
       const sym = (r.symbol || '').trim().toUpperCase();
       const inBasket = basket.includes(sym) || basket.includes(sym.replace('.NS', '')) || basket.some(b => b.replace('.NS', '') === sym);
       return inBasket && r.isPass === false;
@@ -483,7 +516,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const handleMasterExport = () => {
     if (!data?.allStocks?.length) return;
     const headers = ['Symbol', 'Observation', 'Strategy', 'Sector', 'Market Cap', 'Level A (Base)', 'CMP', 'ATH', 'Model Objective', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
-    const rows = data.allStocks.map((t: any) => {
+    const rows = data.allStocks.map((t: AllStockItem) => {
       const ath = stockATHs[t.symbol] || t.ath || 0;
       const gap = t.entryPrice > 0 ? (((t.currentPrice - t.entryPrice)/t.entryPrice) * 100).toFixed(2) : '0.00';
       const roi = t.currentPrice > 0 ? (((t.target - t.currentPrice)/t.currentPrice) * 100).toFixed(2) : '0.00';
@@ -504,7 +537,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         t.reason || 'Institutional Audit Active'
       ];
     });
-    const csvContent = [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n');
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -633,7 +666,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                     onChange={(e) => {
                       const selected = STRATEGIES.find(s => s.id === e.target.value);
                       if (selected && !canAccess(selected.tier)) {
-                        setRequiredTier(selected.tier as any);
+                        setRequiredTier(selected.tier as 'pro' | 'alpha');
                         setShowUpgradeModal(true);
                         return;
                       }

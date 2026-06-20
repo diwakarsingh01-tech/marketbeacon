@@ -15,7 +15,7 @@ import Papa from 'papaparse';
 interface BrokerHubProps {
   isOpen: boolean;
   onClose: () => void;
-  onImportComplete: (holdings: any[], mode: 'merge' | 'overwrite') => void;
+  onImportComplete: (holdings: Array<Record<string, unknown>>, mode: 'merge' | 'overwrite') => void;
 }
 
 const BROKERS = [
@@ -54,7 +54,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
       skipEmptyLines: true,
       complete: (results) => {
         try {
-          const rawData = results.data as any[];
+          const rawData = results.data as Record<string, unknown>[];
           
           const mappedHoldings = rawData.map(row => {
             const keys = Object.keys(row);
@@ -87,8 +87,8 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
           onImportComplete(mappedHoldings, importMode);
           setStep('selection');
           onClose();
-        } catch (err: any) {
-          setError(err.message || "Failed to parse file.");
+        } catch (err: unknown) {
+          setError(err instanceof Error ? err.message : "Failed to parse file.");
         } finally {
           setIsParsing(false);
         }
@@ -158,12 +158,12 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                                   alt={broker.name} 
                                   loading="lazy" decoding="async"
                                   className="max-w-[75%] max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-500"
-                                 onError={(e) => {
-                                   (e.target as any).style.display = 'none';
-                                   const fallback = document.createElement('div');
-                                   fallback.className = `w-10 h-10 rounded-xl ${broker.color} flex items-center justify-center font-black text-slate-500 uppercase text-xs`;
-                                   fallback.innerText = broker.name[0];
-                                   (e.target as any).parentElement.appendChild(fallback);
+                   onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    const fallback = document.createElement('div');
+                                    fallback.className = `w-10 h-10 rounded-xl ${broker.color} flex items-center justify-center font-black text-slate-500 uppercase text-xs`;
+                                    fallback.innerText = broker.name[0];
+                                    (e.target as HTMLImageElement).parentElement!.appendChild(fallback);
                                  }}
                                />
                              ) : (

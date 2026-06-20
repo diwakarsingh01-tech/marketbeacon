@@ -11,7 +11,8 @@
     "build": "tsc -b && vite build",
     "build:prerender": "npm run build && node prerender.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "bash deploy.sh"
   },
   "dependencies": {
     "@react-oauth/google": "^0.13.5",

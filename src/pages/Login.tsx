@@ -21,18 +21,18 @@ const LoginPage: React.FC = () => {
   const { googleLogin, user, refreshAuth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/screener";
+  const from = location.state?.from?.pathname || "/app";
 
   useEffect(() => {
     if (user) {
-      if ((user as any).needsOnboarding) setOnboarding(true);
+      if (user?.needsOnboarding) setOnboarding(true);
       else navigate(from, { replace: true });
     }
   }, [user, navigate, from]);
 
   const [showWakingMessage, setShowWakingMessage] = useState(false);
 
-  const onGoogleSuccess = async (response: any) => {
+  const onGoogleSuccess = async (response: { credential?: string }) => {
     setLoading(true);
     setError(null);
     setShowWakingMessage(false);
@@ -43,9 +43,9 @@ const LoginPage: React.FC = () => {
     try {
       await googleLogin(response.credential);
       clearTimeout(wakeTimer);
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(wakeTimer);
-      setError(err.message || 'Google Login Failed');
+      setError(err instanceof Error ? err.message : 'Login failed');
       setLoading(false);
     }
   };

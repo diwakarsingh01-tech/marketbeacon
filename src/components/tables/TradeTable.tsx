@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { WHATSAPP_BASE } from '../../lib/constants';
 import { 
   ChevronUp as ChevronUpIcon, 
   ChevronDown as ChevronDownIcon, 
@@ -18,16 +19,55 @@ import {
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import type { TradeRecord } from '../../types';
+
+interface EnrichedTrade {
+  symbol: string;
+  livePrice?: number;
+  currentPrice?: number;
+  marketCap?: number;
+  sector?: string;
+  ath?: number;
+  entryTime?: string;
+  target?: number;
+  entryPrice?: number;
+  isPass?: boolean;
+  score?: number;
+  reason?: string;
+  abcd?: Record<string, { price: number; label?: string; date?: string } | number>;
+  peRatio?: number;
+  peMedians?: { pe3Y?: number; pe5Y?: number };
+  buy_price?: number;
+  change?: number;
+  isBuyZone?: boolean;
+  actualEntryPrice?: number;
+  targetPrice?: number;
+  targetGap?: number;
+  dfh?: number;
+  calculatedRoi?: number;
+  id?: number;
+  entry_price?: number;
+  exit_price?: number;
+  quantity?: number;
+  entry_date?: string;
+  exit_date?: string;
+  target_price?: number;
+  stop_loss?: number;
+  level?: string;
+  strategy?: string;
+  status?: string;
+  notes?: string;
+}
 
 interface TradeTableProps {
-  trades: any[];
+  trades: EnrichedTrade[];
   livePrices?: Record<string, number>;
   athData?: Record<string, number>;
   capData?: Record<string, number>;
   sectorData?: Record<string, string>;
   isWatchlist?: boolean;
   activeTab?: string;
-  setActiveTab?: (tab: any) => void;
+  setActiveTab?: (tab: string) => void;
   userWatchlist?: string[];
   strategyId?: string;
   onToggleWatchlist?: (symbol: string) => void;
@@ -42,7 +82,14 @@ interface TradeTableProps {
   onConnectNodeClick?: () => void;
 }
 
-const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onConnectNode, onGoToScreener }: any) => {
+const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onConnectNode, onGoToScreener }: {
+  activeTab?: string;
+  searchTerm?: string;
+  onClearSearch?: () => void;
+  onAddPosition?: () => void;
+  onConnectNode?: () => void;
+  onGoToScreener?: () => void;
+}) => {
   return (
     <div className="flex flex-col items-center justify-center text-center py-16 px-6 max-w-md mx-auto animate-in fade-in duration-500">
       <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm">
@@ -82,7 +129,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
               Upload New Details
             </button>
             <a 
-              href="https://wa.me/919251180183" 
+              href={WHATSAPP_BASE} 
               target="_blank" 
               rel="noopener noreferrer"
               className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100 flex items-center space-x-1.5 group"
@@ -187,7 +234,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
   onAddPositionClick,
   onConnectNodeClick
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => {
+    return new URLSearchParams(window.location.search).get('search') || '';
+  });
   const [showColumnSettings, setShowColumnSettings] = useState(false);
   const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -286,7 +335,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
     document.body.removeChild(link);
   };
 
-  const handleShareSignal = (trade: any, method: 'copy' | 'telegram' = 'copy') => {
+  const handleShareSignal = (trade: EnrichedTrade, method: 'copy' | 'telegram' = 'copy') => {
     const livePrice = livePrices?.[trade.symbol] || trade.livePrice || trade.currentPrice || 0;
     const text = `🚨 *MarketBeacon Research: ${trade.symbol}*
 
@@ -349,7 +398,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
     if (sortConfig) {
       result.sort((a, b) => {
-        let valA: any, valB: any;
+        let valA: number | string, valB: number | string;
         if (sortConfig.key === 'roi') { valA = a.calculatedRoi; valB = b.calculatedRoi; }
         else if (sortConfig.key === 'pending') { valA = a.targetGap; valB = b.targetGap; }
         else if (sortConfig.key === 'symbol') { valA = a.symbol; valB = b.symbol; }
@@ -358,8 +407,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
           valA = a.entryTime && a.entryTime !== '-' ? new Date(a.entryTime).getTime() : 0;
           valB = b.entryTime && b.entryTime !== '-' ? new Date(b.entryTime).getTime() : 0;
         } else {
-          valA = a[sortConfig.key as keyof typeof a];
-          valB = b[sortConfig.key as keyof typeof b];
+          valA = a[sortConfig.key as keyof typeof a] as string | number;
+          valB = b[sortConfig.key as keyof typeof b] as string | number;
         }
         if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
         if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -407,7 +456,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                {visibleTabs.map(tab => (
                  <button
                    key={tab.id}
-                   onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() => setActiveTab(tab.id as string)}
                    className={`px-3 py-1.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider transition-all whitespace-nowrap w-full flex items-center justify-center ${
                      activeTab === tab.id 
                        ? 'bg-white text-slate-900 shadow-md border border-slate-200/20' 

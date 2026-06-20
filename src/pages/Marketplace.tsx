@@ -11,13 +11,14 @@ import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { waLink } from '../lib/constants';
 
 const API_URL = getApiUrl();
 
 // ── Micro-components ──────────────────────────────────────────────────────────
 
-const Badge = ({ children, color = 'blue' }: any) => {
-  const colors: any = {
+const Badge = ({ children, color = 'blue' }: { children: React.ReactNode; color?: string }) => {
+  const colors: Record<string, string> = {
     blue: 'bg-blue-600/10 text-blue-600 border-blue-600/20',
     amber: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
     emerald: 'bg-emerald-600/10 text-emerald-600 border-emerald-600/20',
@@ -30,7 +31,7 @@ const Badge = ({ children, color = 'blue' }: any) => {
   );
 };
 
-const TrustStat = ({ value, label, icon: Icon }: any) => (
+const TrustStat = ({ value, label, icon: Icon }: { value: string; label: string; icon: React.ComponentType<any> }) => (
   <motion.div
     whileHover={{ y: -2, scale: 1.03 }}
     className="flex items-center gap-3 border border-white/10 backdrop-blur-sm rounded-2xl px-4 py-3"
@@ -69,7 +70,7 @@ const MembershipPage: React.FC = () => {
   const [voucherMsg, setVoucherMsg] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const userTier = (user as any)?.tier || 'free';
+  const userTier = user?.tier || 'free';
   const isActive = (tier: string) => {
     if (userTier === 'alpha') return true;
     if (userTier === 'pro' && tier !== 'alpha') return true;
@@ -541,7 +542,7 @@ const MembershipPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 shrink-0">
               <motion.button
                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                onClick={() => window.open('https://wa.me/919251180183?text=Hi%20Admin,%20I%20am%20interested%20in%20a%20Corporate%20Deployment%20for%20my%20fund.', '_blank')}
+                onClick={() => window.open(waLink('Hi Admin, I am interested in a Corporate Deployment for my fund.'), '_blank')}
                 className="px-8 py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-3"
               >
                 <span>WhatsApp Admin</span>

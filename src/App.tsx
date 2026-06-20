@@ -26,6 +26,8 @@ const ConnectivityHubPage = lazy(() => import('./pages/Connect'));
 const BlogPage = lazy(() => import('./pages/Blog'));
 const BlogArticlePage = lazy(() => import('./pages/BlogArticle'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicy'));
+const MethodologyPage = lazy(() => import('./pages/Methodology'));
+const AppHomePage = lazy(() => import('./pages/AppHome'));
 const NotFoundPage = lazy(() => import('./pages/NotFound'));
 const ChartsTerminalPage = lazy(() => import('./pages/ChartsTerminal'));
 const ScreenerVerifyPage = lazy(() => import('./pages/ScreenerVerify'));
@@ -67,8 +69,9 @@ function AnimatedRoutes() {
         <Route path="/blog/:slug" element={<BlogArticlePage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<PrivacyPolicyPage />} />
+        <Route path="/methodology" element={<MethodologyPage />} />
         <Route path="/marketplace" element={<Navigate to="/license-desk" replace />} />
-        <Route path="/charts" element={<ChartsTerminalPage />} />
+        <Route path="/charts" element={<AuthGuard><ChartsTerminalPage /></AuthGuard>} />
 
         {/* Authenticated SaaS Platform */}
         <Route 
@@ -78,6 +81,7 @@ function AnimatedRoutes() {
             </AuthGuard>
           }
         >
+          <Route path="/app" element={<AppHomePage />} />
           <Route path="/alpha-hub" element={<AlphaHubPage />} />
           <Route path="/screener" element={<DashboardPage key="screener" defaultTab="open" />} />
           <Route path="/screener-verify" element={<ScreenerVerifyPage />} />

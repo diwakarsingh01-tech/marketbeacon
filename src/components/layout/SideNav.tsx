@@ -11,7 +11,8 @@ import {
   LayoutGrid,
   ChevronRight,
   Settings,
-  HelpCircle
+  HelpCircle,
+  LineChart
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -22,14 +23,21 @@ interface SideNavProps {
 
 const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  const isAdmin = (user as any)?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
   const sections = [
     {
+      title: 'Overview',
+      items: [
+        { icon: LayoutGrid, label: 'Dashboard', path: '/app', desc: 'Command Center', tag: 'HOME' },
+      ]
+    },
+    {
       title: 'Institutional Core',
       items: [
-        { icon: LayoutGrid, label: 'Alpha Hub', path: '/alpha-hub', desc: 'Main Terminal', tag: 'USP' },
+        { icon: Zap, label: 'Alpha Hub', path: '/alpha-hub', desc: 'Main Terminal', tag: 'USP' },
         { icon: Zap, label: 'Screener', path: '/screener', desc: 'Real-time Matrix' },
+        { icon: LineChart, label: 'Charts Terminal', path: '/charts', desc: 'Technical Charting' },
       ]
     },
     {

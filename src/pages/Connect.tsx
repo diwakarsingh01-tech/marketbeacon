@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import SEO from '../components/SEO';
 import { 
   RefreshCw, 
   Database, 
@@ -69,7 +70,9 @@ const ConnectivityHub: React.FC = () => {
   const isLocal = apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1');
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 md:p-10 font-sans text-slate-900">
+    <>
+      <SEO title="Connectivity Hub" description="Check your MarketBeacon Pro API connection status, latency, and diagnostic information." url="/connect" noindex />
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 md:p-10 font-sans text-slate-900">
       <div className="w-full max-w-4xl bg-white rounded-[4rem] shadow-2xl border border-slate-100 overflow-hidden flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-700">
         
         {/* Left Side: Brand & Status */}
@@ -205,6 +208,7 @@ const ConnectivityHub: React.FC = () => {
 
       </div>
     </div>
+    </>
   );
 };
 
