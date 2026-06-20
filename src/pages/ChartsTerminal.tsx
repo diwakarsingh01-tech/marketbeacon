@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -22,6 +23,8 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import type { HistoryQuote, FundamentalData, ABCDNode } from '../types';
+import { BASKETS } from '../data/stocks';
 
 const API_URL = getApiUrl();
 
@@ -58,15 +61,17 @@ const STRATEGY_NAMES: Record<string, string> = {
 };
 
 import { useTheme } from '../context/ThemeContext';
+import { ConfidenceGauge } from '../components/ui/ConfidenceGauge';
 
 const ChartsTerminal: React.FC = () => {
   const [symbol, setSymbol] = useState<string>('RELIANCE');
+  const [selectedBasket, setSelectedBasket] = useState<string>('Elite Basket');
   const { theme, toggleTheme } = useTheme();
   const [chartType, setChartType] = useState<'candles' | 'line'>('candles');
   
   // Data States
-  const [historyData, setHistoryData] = useState<any[]>([]);
-  const [fundamentals, setFundamentals] = useState<any>(null);
+  const [historyData, setHistoryData] = useState<HistoryQuote[]>([]);
+  const [fundamentals, setFundamentals] = useState<FundamentalData | null>(null);
   const [indices, setIndices] = useState<IndexResult[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [chartLoading, setChartLoading] = useState<boolean>(true);
@@ -82,7 +87,7 @@ const ChartsTerminal: React.FC = () => {
 
   // Chart Refs
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<any>(null);
+  const chartRef = useRef<IChartApi | null>(null);
 
   // Overlays Toggles State
   const [showTargets, setShowTargets] = useState<boolean>(true);
@@ -100,6 +105,24 @@ const ChartsTerminal: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Synchronize basket dropdown when symbol changes
+  useEffect(() => {
+    const foundBasket = Object.keys(BASKETS).find(basketKey => 
+      (BASKETS[basketKey] || []).includes(symbol)
+    );
+    if (foundBasket && ['Elite Basket', 'Quality Basket', 'Growth Basket'].includes(foundBasket)) {
+      setSelectedBasket(foundBasket);
+    }
+  }, [symbol]);
+
+  const handleBasketChange = (basketName: string) => {
+    setSelectedBasket(basketName);
+    const stocksInBasket = BASKETS[basketName] || [];
+    if (stocksInBasket.length > 0) {
+      setSymbol(stocksInBasket[0]);
+    }
+  };
 
   // Fetch Market Indices (Ticker Bar)
   const fetchIndices = async () => {
@@ -196,7 +219,7 @@ const ChartsTerminal: React.FC = () => {
     }
 
     const containerWidth = chartContainerRef.current.clientWidth;
-    const containerHeight = 450;
+    const containerHeight = 520;
 
     const isDark = theme === 'dark';
     
@@ -245,7 +268,7 @@ const ChartsTerminal: React.FC = () => {
     // Format historical data and filter duplicates to prevent lightweight-charts crashes
     const rawSorted = [...historyData].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
     const seenTimes = new Set<string>();
-    const sortedHistory: any[] = [];
+    const sortedHistory: HistoryQuote[] = [];
     for (const q of rawSorted) {
       if (q.time && !seenTimes.has(q.time)) {
         seenTimes.add(q.time);
@@ -255,19 +278,19 @@ const ChartsTerminal: React.FC = () => {
     
     const formattedQuotes = sortedHistory.map(q => ({
       time: q.time,
-      open: parseFloat(q.open),
-      high: parseFloat(q.high),
-      low: parseFloat(q.low),
-      close: parseFloat(q.close),
+      open: Number(q.open),
+      high: Number(q.high),
+      low: Number(q.low),
+      close: Number(q.close),
     }));
 
     const formattedVolumes = sortedHistory.map(q => ({
       time: q.time,
-      value: parseFloat(q.volume || 0),
-      color: parseFloat(q.close) >= parseFloat(q.open) ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)',
+      value: Number(q.volume || 0),
+      color: Number(q.close) >= Number(q.open) ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)',
     }));
 
-    let mainSeries: any = null;
+    let mainSeries: ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | null = null;
 
     // Add main series
     if (chartType === 'candles') {
@@ -361,20 +384,9 @@ const ChartsTerminal: React.FC = () => {
           });
         }
 
-        // 3. Stop Loss Price Line (Red)
-        const stopLossVal = strat.stopLoss ? Number(strat.stopLoss) : (Number(strat.entryPrice) * 0.9);
-        mainSeries.createPriceLine({
-          price: stopLossVal,
-          color: '#ef4444', // red
-          lineWidth: 2,
-          lineStyle: 2, // dashed
-          axisLabelVisible: true,
-          title: `STOP LOSS: ₹${Math.round(stopLossVal)}`,
-        });
-
         // 4. ABCD Points (Tranches)
         if (strat.abcd) {
-          Object.entries(strat.abcd).forEach(([key, val]: [string, any]) => {
+          Object.entries(strat.abcd).forEach(([key, val]: [string, ABCDNode]) => {
             if (val && val.price) {
               const p = Number(val.price);
               if (p !== Number(strat.entryPrice) && p !== Number(strat.target)) {
@@ -397,14 +409,14 @@ const ChartsTerminal: React.FC = () => {
           let bottomLimit = entry;
           if (strat.abcd) {
             const prices = Object.values(strat.abcd)
-              .map((v: any) => Number(v?.price))
+              .map(v => Number(v?.price))
               .filter(p => !isNaN(p) && p > 0);
             if (prices.length > 0) {
               bottomLimit = Math.min(...prices);
             }
           }
           if (bottomLimit === entry) {
-            bottomLimit = entry * 0.9; // fallback to 10% below entry
+            bottomLimit = entry * 0.9;
           }
           
           if (entry > bottomLimit) {
@@ -428,7 +440,7 @@ const ChartsTerminal: React.FC = () => {
 
     // Draw Bollinger Bands Channel if active and toggled
     if (activeStrategyId === 'BOLLINGER' && showPatterns && sortedHistory.length > 20) {
-      const closePrices = sortedHistory.map(q => parseFloat(q.close));
+      const closePrices = sortedHistory.map(q => Number(q.close));
       const { basis, upper, lower } = calculateBollingerBands(closePrices);
       
       const basisSeries = chart.addSeries(LineSeries, {
@@ -456,7 +468,7 @@ const ChartsTerminal: React.FC = () => {
 
     // Draw Envelope Channel if active and toggled
     if ((activeStrategyId === 'ENVELOPE_LONG' || activeStrategyId === 'ENVELOPE_SHORT') && showPatterns && sortedHistory.length > 50) {
-      const closePrices = sortedHistory.map(q => parseFloat(q.close));
+      const closePrices = sortedHistory.map(q => Number(q.close));
       const { basis, upper, lower } = calculateEnvelope(closePrices, 200, 14);
       
       const basisSeries = chart.addSeries(LineSeries, {
@@ -484,7 +496,7 @@ const ChartsTerminal: React.FC = () => {
 
     // Draw swing Support & Resistance Pivots if toggled
     if (showSr && sortedHistory.length > 30) {
-      const closePrices = sortedHistory.map(q => parseFloat(q.close));
+      const closePrices = sortedHistory.map(q => Number(q.close));
       const peaks: number[] = [];
       const troughs: number[] = [];
       const k = 5; // swing lookback
@@ -531,10 +543,10 @@ const ChartsTerminal: React.FC = () => {
     // Draw Cup & Handle pattern outlines if active and toggled
     if (activeStrategyId === 'CUP_HANDLE_ABCD' && showPatterns && sortedHistory.length > 60) {
       const cupHistory = sortedHistory.slice(-60);
-      const lowPrice = Math.min(...cupHistory.map(q => parseFloat(q.close)));
-      const lowIdx = cupHistory.findIndex(q => parseFloat(q.close) === lowPrice);
-      const startPrice = parseFloat(cupHistory[0].close);
-      const endPrice = parseFloat(cupHistory[cupHistory.length - 1].close);
+      const lowPrice = Math.min(...cupHistory.map(q => Number(q.close)));
+      const lowIdx = cupHistory.findIndex(q => Number(q.close) === lowPrice);
+      const startPrice = Number(cupHistory[0].close);
+      const endPrice = Number(cupHistory[cupHistory.length - 1].close);
       
       const cupSeries = chart.addSeries(LineSeries, {
         color: '#f59e0b', // Gold
@@ -654,14 +666,13 @@ const ChartsTerminal: React.FC = () => {
   }, [historyData, theme, chartType, activeStrategyId, fundamentals, showTargets, showVolume, showSr, showPatterns]);
 
   // Format Large Currency in Crores
-  const formatCr = (val: any) => {
+  const formatCr = (val: unknown) => {
     const n = Number(val);
     if (isNaN(n) || n === 0) return '—';
     return `₹ ${(n / 10000000).toLocaleString('en-IN', { maximumFractionDigits: 2 })} Cr.`;
   };
 
-  // Format Percentages
-  const formatPct = (val: any) => {
+  const formatPct = (val: unknown) => {
     const n = Number(val);
     if (isNaN(n)) return '—';
     return `${(n * 100).toFixed(2)} %`;
@@ -1176,7 +1187,7 @@ const ChartsTerminal: React.FC = () => {
         score += 15;
         if (activeStrategy.abcd) {
           const prices = Object.values(activeStrategy.abcd)
-            .map((v: any) => Number(v?.price))
+            .map(v => Number(v?.price))
             .filter(p => !isNaN(p) && p > 0);
           if (prices.length > 0) {
             const bottom = Math.min(...prices);
@@ -1236,19 +1247,40 @@ const ChartsTerminal: React.FC = () => {
     const displayName = STRATEGY_NAMES[activeStrategyId || ''] || activeStrategyId;
     const entry = Math.round(Number(activeStrategy.entryPrice || 0));
     const target = Math.round(Number(activeStrategy.target || 0));
-    const stop = Math.round(activeStrategy.stopLoss ? Number(activeStrategy.stopLoss) : (entry * 0.9));
     
     switch (activeStrategyId) {
       case 'BOLLINGER':
-        return `${symbol} crossed below its lower Bollinger Band at ₹${entry}, triggering a momentum exhaust rebound setup. 1H RSI is oversold. Accumulation buy range is active up to ₹${entry} with target objectives set at ₹${target} and safety stop-loss placed below major support floor at ₹${stop}.`;
+        return `${symbol} crossed below its lower Bollinger Band at ₹${entry}, triggering a momentum exhaust rebound setup. 1H RSI is oversold. Accumulation buy range is active up to ₹${entry} with target objectives set at ₹${target}.`;
       case 'ENVELOPE_LONG':
         return `${symbol} is trading within the extreme lower bounds of its 200 EMA envelope channel. Long-term accumulation is active in the optimal green buy corridor under ₹${entry} with key profit booking target targets placed at ₹${target}.`;
       case '52W_HIGH_LOW':
-        return `${symbol} has entered a key consolidation range near its 52-week parameters. A technical breakout trigger is set at ₹${entry} with a target of ₹${target} and stop-loss support placed at ₹${stop}.`;
+        return `${symbol} has entered a key consolidation range near its 52-week parameters. A technical breakout trigger is set at ₹${entry} with a target of ₹${target}.`;
       default:
-        return `${symbol} has matched all technical qualifiers for the ${displayName} strategy. A safe entry buy zone is currently active at ₹${entry} with a projected risk-reward ratio of 1:${((target - entry) / Math.max(1, entry - stop)).toFixed(1)} targeting ₹${target}.`;
+        return `${symbol} has matched all technical qualifiers for the ${displayName} strategy. A safe entry buy zone is currently active at ₹${entry} with a projected target potential gain of +${(((target - entry) / Math.max(1, entry)) * 100).toFixed(1)}% targeting ₹${target}.`;
     }
   };
+
+  const getActiveBuyStrategyName = (): string => {
+    if (!fundamentals || !fundamentals.strategies) return '';
+    
+    // Find if the currently active strategy is in buy zone first
+    if (activeStrategyId && fundamentals.strategies[activeStrategyId]?.isBuyZone) {
+      return STRATEGY_NAMES[activeStrategyId] || activeStrategyId;
+    }
+    
+    // Otherwise, find any strategy that has isBuyZone === true
+    const buyStratId = Object.keys(fundamentals.strategies).find(
+      key => fundamentals.strategies[key]?.isBuyZone
+    );
+    
+    if (buyStratId) {
+      return STRATEGY_NAMES[buyStratId] || buyStratId;
+    }
+    
+    return '';
+  };
+
+  const activeBuyStrategy = getActiveBuyStrategyName();
 
   const confidence = getConfidenceInfo();
 
@@ -1262,7 +1294,7 @@ const ChartsTerminal: React.FC = () => {
     let bottom = entry;
     if (activeStrategy.abcd) {
       const prices = Object.values(activeStrategy.abcd)
-        .map((v: any) => Number(v?.price))
+        .map(v => Number(v?.price))
         .filter(p => !isNaN(p) && p > 0);
       if (prices.length > 0) {
         bottom = Math.min(...prices);
@@ -1298,7 +1330,7 @@ const ChartsTerminal: React.FC = () => {
     let bottom = entry;
     if (activeStrategy.abcd) {
       const prices = Object.values(activeStrategy.abcd)
-        .map((v: any) => Number(v?.price))
+        .map(v => Number(v?.price))
         .filter(p => !isNaN(p) && p > 0);
       if (prices.length > 0) {
         bottom = Math.min(...prices);
@@ -1338,31 +1370,7 @@ const ChartsTerminal: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-          {/* Gauge Widget */}
-          <div className="flex flex-col items-center justify-center p-4 border border-[var(--border-primary)]/40 rounded-2xl bg-[var(--bg-primary)]/20">
-            <svg viewBox="0 0 100 55" className="w-36 h-20">
-              <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#1e293b" strokeWidth="8" strokeLinecap="round" />
-              <path 
-                d="M 10 50 A 40 40 0 0 1 90 50" 
-                fill="none" 
-                stroke="url(#reactConfidenceGradient)" 
-                strokeWidth="8" 
-                strokeLinecap="round" 
-                strokeDasharray="125" 
-                strokeDashoffset={125 - (125 * confidence.score) / 100} 
-                className="transition-all duration-500 ease-out"
-              />
-              <defs>
-                <linearGradient id="reactConfidenceGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#ef4444" />
-                  <stop offset="50%" stopColor="#f59e0b" />
-                  <stop offset="100%" stopColor="#10b981" />
-                </linearGradient>
-              </defs>
-              <text x="50" y="45" textAnchor="middle" className="text-lg font-black fill-current" style={{ fill: theme === 'dark' ? '#fff' : '#0f172a' }}>{confidence.score}%</text>
-            </svg>
-            <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] mt-2">CONFIDENCE SCORE</span>
-          </div>
+          <ConfidenceGauge score={confidence.score} className="p-4 border border-[var(--border-primary)]/40 rounded-2xl bg-[var(--bg-primary)]/20" />
 
           {/* Range Slider / Shape */}
           <div className="md:col-span-2 space-y-5">
@@ -1457,7 +1465,7 @@ const ChartsTerminal: React.FC = () => {
         theme === 'dark' ? 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-tertiary)]' : 'bg-slate-100 border-[var(--border-primary)] text-[var(--text-muted)]'
       }`}>
         <div className="flex divide-x divide-slate-800 overflow-x-auto py-2 px-4 whitespace-nowrap scrollbar-none">
-          {indices.map((idx, i) => (
+          {(indices || []).map((idx, i) => (
             <div key={i} className="flex items-center gap-2 px-6">
               <span className={theme === 'dark' ? 'text-[var(--text-secondary)]' : 'text-slate-700'}>{idx.name}</span>
               <span className="font-bold">₹ {idx.price.toLocaleString('en-IN')}</span>
@@ -1499,8 +1507,57 @@ const ChartsTerminal: React.FC = () => {
 
         {/* Search & Toolbar */}
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          {/* Basket & Asset Selectors */}
+          <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
+            {/* Basket Selector */}
+            <div className={`flex items-center rounded-2xl border px-3 py-2 transition-all ${
+              theme === 'dark' 
+                ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50' 
+                : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] focus-within:border-blue-500/50 focus-within:bg-[var(--bg-primary)]'
+            }`}>
+              <span className="text-[9px] font-black uppercase text-[var(--text-tertiary)] mr-1.5 tracking-wider">Basket:</span>
+              <select
+                value={selectedBasket}
+                onChange={(e) => handleBasketChange(e.target.value)}
+                className="bg-transparent border-none text-xs font-bold outline-none cursor-pointer pr-1 text-[var(--text-secondary)] focus:text-[var(--text-primary)]"
+              >
+                <option value="Elite Basket" className={theme === 'dark' ? 'bg-[#0f172a]' : 'bg-white'}>Elite</option>
+                <option value="Quality Basket" className={theme === 'dark' ? 'bg-[#0f172a]' : 'bg-white'}>Quality</option>
+                <option value="Growth Basket" className={theme === 'dark' ? 'bg-[#0f172a]' : 'bg-white'}>Growth</option>
+              </select>
+            </div>
+
+            {/* Asset Selector */}
+            <div className={`flex items-center rounded-2xl border px-3 py-2 transition-all ${
+              theme === 'dark' 
+                ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50' 
+                : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] focus-within:border-blue-500/50 focus-within:bg-[var(--bg-primary)]'
+            }`}>
+              <span className="text-[9px] font-black uppercase text-[var(--text-tertiary)] mr-1.5 tracking-wider">Stock:</span>
+              <select
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value)}
+                className="bg-transparent border-none text-xs font-bold outline-none cursor-pointer pr-1 text-[var(--text-secondary)] focus:text-[var(--text-primary)] w-24"
+              >
+                {(BASKETS[selectedBasket] || []).map((stockSymbol) => (
+                  <option key={stockSymbol} value={stockSymbol} className={theme === 'dark' ? 'bg-[#0f172a]' : 'bg-white'}>
+                    {stockSymbol}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Active Buy Strategy Badge */}
+          {activeBuyStrategy && (
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-wider animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+              <span>BUY: {activeBuyStrategy}</span>
+            </div>
+          )}
+
           {/* Autocomplete Search input */}
-          <div className="relative w-full sm:w-80" ref={dropdownRef}>
+          <div className="relative w-full sm:w-64" ref={dropdownRef}>
             <div className={`flex items-center rounded-2xl border px-3.5 py-2 transition-all \${
               theme === 'dark' 
                 ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50' 
@@ -1540,7 +1597,7 @@ const ChartsTerminal: React.FC = () => {
                     <div>
                       <span className="text-xs font-black tracking-wide text-[var(--text-secondary)]">{item.symbol}</span>
                       <div className="flex gap-1.5 mt-0.5">
-                        {item.baskets.map((b, idx) => (
+                        {(item.baskets || []).map((b, idx) => (
                           <span key={idx} className="text-[8px] font-bold tracking-wider uppercase px-1.5 py-0.2 bg-blue-500/5 text-blue-400 border border-blue-500/10 rounded">
                             {b.replace(' Basket', '')}
                           </span>
@@ -1596,202 +1653,11 @@ const ChartsTerminal: React.FC = () => {
         </div>
       </header>
 
-      {/* Workspace Grid */}
-      <main className="flex-1 p-6 max-w-[1440px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Workspace Area */}
+      <main className="flex-1 p-6 max-w-[1600px] w-full mx-auto space-y-6">
         
-        {/* Left Column (Span 3): Stock Metrics & Fundamentals & Active Strategies list */}
-        <section className="lg:col-span-3 space-y-6">
-          {/* Card 1: Key Metrics */}
-          <div className={`p-5 rounded-3xl border ${
-            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
-          }`}>
-            {loading || !fundamentals ? (
-              <div className="space-y-4 py-12 text-center text-[var(--text-tertiary)]">
-                <RefreshCw className="h-6 w-6 animate-spin mx-auto text-blue-500" />
-                <p className="text-xs font-bold uppercase tracking-wider">Gathering Asset Intel...</p>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                {/* Symbol Information */}
-                <div className="flex justify-between items-start border-b border-[var(--border-primary)]/60 pb-4">
-                  <div>
-                    <h2 className="text-xl font-black italic tracking-tight">{fundamentals.symbol}</h2>
-                    <p className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">{fundamentals.industry}</p>
-                  </div>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase ${
-                    fundamentals.audit?.universe === 'INSTITUTIONAL'
-                      ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                      : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
-                  }`}>
-                    {fundamentals.audit?.universe}
-                  </span>
-                </div>
-
-                {/* Price Box */}
-                <div>
-                  <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Current Price</span>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <span className="text-3xl font-black italic">₹ {Number(fundamentals.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                    <span className={`text-xs font-black ${fundamentals.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {fundamentals.change >= 0 ? '+' : ''}{Number(fundamentals.change).toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-
-                {/* Audit Score Box */}
-                <div className={`p-4 rounded-2xl border flex items-center justify-between ${
-                  theme === 'dark' ? 'bg-[var(--bg-primary)]/60 border-[var(--border-primary)]' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)]'
-                }`}>
-                  <div className="space-y-0.5">
-                    <span className="text-[9px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Audit Score</span>
-                    <h3 className="text-2xl font-black italic text-blue-500">{fundamentals.audit?.score}/100</h3>
-                  </div>
-                  <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/15 text-blue-500">
-                    <ShieldCheck className="h-5 w-5" />
-                  </div>
-                </div>
-
-                {/* Valuation Multiples */}
-                <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
-                  <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Valuation & Growth</span>
-                  
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--text-tertiary)] font-medium">PE Ratio:</span>
-                    <span className="font-extrabold">{Number(fundamentals.peRatio || 0).toFixed(1)}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--text-tertiary)] font-medium">Median PE (3Y/5Y):</span>
-                    <span className="font-extrabold">
-                      {fundamentals.peMedians?.pe3Y ? Number(fundamentals.peMedians.pe3Y).toFixed(1) : '—'} / 
-                      {fundamentals.peMedians?.pe5Y ? Number(fundamentals.peMedians.pe5Y).toFixed(1) : '—'}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--text-tertiary)] font-medium">Market Capitalization:</span>
-                    <span className="font-extrabold">{formatCr(fundamentals.marketCap)}</span>
-                  </div>
-                </div>
-
-                {/* Efficiency & Balance Sheet */}
-                <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
-                  <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Safety & Efficiency</span>
-                  
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--text-tertiary)] font-medium">Return on Equity (ROE):</span>
-                    <span className="font-extrabold">{formatPct(fundamentals.returnOnEquity)}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--text-tertiary)] font-medium">ROCE:</span>
-                    <span className="font-extrabold">{formatPct(fundamentals.roce)}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--text-tertiary)] font-medium">Net Debt to Equity:</span>
-                    <span className="font-extrabold">{Number(fundamentals.netDebtToEquity || 0).toFixed(2)}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-[var(--text-tertiary)] font-medium">52W Range High:</span>
-                    <span className="font-extrabold text-[var(--text-secondary)]">₹ {Number(fundamentals.fiftyTwoWeekHigh || 0).toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-
-                {/* Sales & Profit vs ATH */}
-                <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
-                  <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest flex items-center gap-1">
-                    <Sparkles className="h-3 w-3 text-blue-500" /> High Growth Potential
-                  </span>
-                  
-                  <div className="space-y-2.5">
-                    <div>
-                      <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-[var(--text-tertiary)]">Sales (vs ATH):</span>
-                        <span className="font-bold">{formatCr(fundamentals.currentSales)} / {formatCr(fundamentals.athSales)}</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${Math.min(100, (fundamentals.currentSales / (fundamentals.athSales || 1)) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-[var(--text-tertiary)]">Net Profit (vs ATH):</span>
-                        <span className="font-bold">{formatCr(fundamentals.currentNetProfit)} / {formatCr(fundamentals.athNetProfit)}</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-emerald-500 rounded-full"
-                          style={{ width: `${Math.min(100, (fundamentals.currentNetProfit / (fundamentals.athNetProfit || 1)) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Card 2: Strategy Selector */}
-          <div className={`p-5 rounded-3xl border ${
-            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
-          }`}>
-            <div className="flex items-center gap-2 mb-4 border-b border-[var(--border-primary)]/60 pb-3">
-              <Layers className="h-4 w-4 text-blue-500" />
-              <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Active Entry Strategies</span>
-            </div>
-
-            {loading || !fundamentals || !fundamentals.strategies ? (
-              <div className="py-4 text-center text-xs text-[var(--text-muted)]">No active strategies.</div>
-            ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-                {Object.entries(fundamentals.strategies).map(([key, value]: [string, any]) => {
-                  const hasZone = value && typeof value === 'object';
-                  const isBuy = hasZone && value.isBuyZone;
-                  const displayName = STRATEGY_NAMES[key] || key;
-                  
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setActiveStrategyId(key)}
-                      className={`w-full flex items-center justify-between p-3 rounded-2xl text-left border transition-all ${
-                        activeStrategyId === key
-                          ? (theme === 'dark' ? 'bg-blue-600/10 border-blue-500/30 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.05)]' : 'bg-blue-50 border-blue-200 text-blue-600')
-                          : (theme === 'dark' ? 'bg-[var(--bg-primary)]/40 border-slate-900 hover:border-[var(--border-primary)]' : 'bg-[var(--bg-secondary)]/50 border-[var(--border-primary)] hover:border-[var(--border-primary)]')
-                      }`}
-                    >
-                      <div className="space-y-0.5">
-                        <span className="text-xs font-black tracking-wide block truncate max-w-[140px]">{displayName}</span>
-                        {hasZone && value.tranche && (
-                          <span className="text-[8px] font-bold tracking-wider uppercase text-[var(--text-muted)]">
-                            Tranche {value.tranche}
-                          </span>
-                        )}
-                      </div>
-                      {isBuy ? (
-                        <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase tracking-wider">
-                          BUY ZONE
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)] uppercase tracking-wider">
-                          HOLD
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Center Column (Span 6): TradingView Chart Workspace & Toggles/Legend & ABCD Timeline */}
-        <section className="lg:col-span-6 space-y-6">
+        {/* Top Part: Chart Canvas (Full Width) */}
+        <section className="w-full">
           {/* Interactive Chart Card */}
           <div className={`p-5 rounded-3xl border flex flex-col ${
             theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
@@ -1838,10 +1704,10 @@ const ChartsTerminal: React.FC = () => {
               className={`w-full rounded-2xl overflow-hidden border ${
                 theme === 'dark' ? 'border-[var(--border-primary)]/60 bg-[var(--bg-primary)]' : 'border-[var(--border-primary)] bg-[var(--bg-primary)]'
               }`}
-              style={{ minHeight: '450px' }}
+              style={{ minHeight: '520px' }}
             >
               {historyData.length === 0 && !chartLoading && (
-                <div className="flex flex-col items-center justify-center h-[450px] text-[var(--text-muted)]">
+                <div className="flex flex-col items-center justify-center h-[520px] text-[var(--text-muted)]">
                   <Info className="h-8 w-8 mb-2 text-slate-600" />
                   <p className="text-xs font-black uppercase tracking-widest">No Historical Quotes Available</p>
                 </div>
@@ -1904,235 +1770,406 @@ const ChartsTerminal: React.FC = () => {
                   <span>Target</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3.5 h-0.5 bg-rose-500" />
-                  <span>Stop</span>
-                </div>
-                <div className="flex items-center gap-1.5">
                   <div className="w-3 h-2 bg-emerald-500/20 rounded" />
                   <span>Zone</span>
                 </div>
               </div>
             </div>
           </div>
+        </section>
 
-          {/* ABCD Tranche Laddering Visual Timeline */}
-          {activeStrategy && (
-            <div className={`p-5 rounded-3xl border ${
-              theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
-            }`}>
-              <div className="flex justify-between items-center mb-5 border-b border-[var(--border-primary)]/60 pb-3">
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-blue-500" />
-                  <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">
-                    ABCD Tranche Laddering Timeline: <span className="text-blue-500">{STRATEGY_NAMES[activeStrategyId || ''] || activeStrategyId}</span>
-                  </span>
+        {/* Bottom Part: Options, Metrics, and Analysis Grid */}
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           
+           {/* Column 1: Strategy Selector & Key Metrics */}
+           <div className="space-y-6">
+              {/* Strategy Selector */}
+              <div className={`p-5 rounded-3xl border ${
+                theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+              }`}>
+                <div className="flex items-center gap-2 mb-4 border-b border-[var(--border-primary)]/60 pb-3">
+                  <Layers className="h-4 w-4 text-blue-500" />
+                  <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Active Entry Strategies</span>
                 </div>
-                {activeStrategy.isBuyZone && (
-                  <div className="flex items-center gap-1 text-[9px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    <CheckCircle2 className="h-3 w-3" /> Safe Entry Active
+
+                {loading || !fundamentals || !fundamentals.strategies ? (
+                  <div className="py-4 text-center text-xs text-[var(--text-muted)]">No active strategies.</div>
+                ) : (
+                  <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                    {Object.entries(fundamentals.strategies).map(([key, value]: [string, any]) => {
+                      const hasZone = value && typeof value === 'object';
+                      const isBuy = hasZone && value.isBuyZone;
+                      const displayName = STRATEGY_NAMES[key] || key;
+                      
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => setActiveStrategyId(key)}
+                          className={`w-full flex items-center justify-between p-3 rounded-2xl text-left border transition-all ${
+                            activeStrategyId === key
+                              ? (theme === 'dark' ? 'bg-blue-600/10 border-blue-500/30 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.05)]' : 'bg-blue-50 border-blue-200 text-blue-600')
+                              : (theme === 'dark' ? 'bg-[var(--bg-primary)]/40 border-slate-900 hover:border-[var(--border-primary)]' : 'bg-[var(--bg-secondary)]/50 border-[var(--border-primary)] hover:border-[var(--border-primary)]')
+                          }`}
+                        >
+                          <div className="space-y-0.5">
+                            <span className="text-xs font-black tracking-wide block truncate max-w-[140px]">{displayName}</span>
+                            {hasZone && value.tranche && (
+                              <span className="text-[8px] font-bold tracking-wider uppercase text-[var(--text-muted)]">
+                                Tranche {value.tranche}
+                              </span>
+                            )}
+                          </div>
+                          {isBuy ? (
+                            <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase tracking-wider">
+                              BUY ZONE
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)] uppercase tracking-wider">
+                              HOLD
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
-              {/* Ladder visual pipeline */}
-              {activeStrategy.abcd ? (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
-                  {Object.entries(activeStrategy.abcd).map(([key, val]: [string, any]) => {
-                    const isPassed = activeStrategy.tranche 
-                      ? key.toUpperCase().charCodeAt(0) <= activeStrategy.tranche.toUpperCase().charCodeAt(0)
-                      : false;
-                    const isActive = activeStrategy.tranche === key.toUpperCase();
-                    
-                    return (
-                      <div 
-                        key={key} 
-                        className={`p-4 rounded-2xl border transition-all relative ${
-                          isActive 
-                            ? (theme === 'dark' ? 'bg-blue-600/10 border-blue-500/40 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.06)]' : 'bg-blue-50 border-blue-200 text-blue-600')
-                            : (isPassed 
-                              ? (theme === 'dark' ? 'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80 text-[var(--text-secondary)]' : 'bg-slate-100 border-[var(--border-primary)] text-slate-700')
-                              : (theme === 'dark' ? 'bg-[var(--bg-primary)]/20 border-slate-950/80 text-slate-600 opacity-60' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-tertiary)] opacity-60'))
-                        }`}
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-[10px] font-extrabold uppercase tracking-widest">Tranche {key.toUpperCase()}</span>
-                          {isActive && (
-                            <span className="h-2 w-2 rounded-full bg-blue-500 animate-ping absolute top-4 right-4" />
-                          )}
+              {/* Key Metrics */}
+              <div className={`p-5 rounded-3xl border ${
+                theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+              }`}>
+                {loading || !fundamentals ? (
+                  <div className="space-y-4 py-12 text-center text-[var(--text-tertiary)]">
+                    <RefreshCw className="h-6 w-6 animate-spin mx-auto text-blue-500" />
+                    <p className="text-xs font-bold uppercase tracking-wider">Gathering Asset Intel...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    {/* Symbol Information */}
+                    <div className="flex justify-between items-start border-b border-[var(--border-primary)]/60 pb-4">
+                      <div>
+                        <h2 className="text-xl font-black italic tracking-tight">{fundamentals.symbol}</h2>
+                        <p className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">{fundamentals.industry}</p>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase ${
+                        fundamentals.audit?.universe === 'INSTITUTIONAL'
+                          ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                          : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                      }`}>
+                        {fundamentals.audit?.universe}
+                      </span>
+                    </div>
+
+                    {/* Price Box */}
+                    <div>
+                      <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Current Price</span>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-3xl font-black italic">₹ {Number(fundamentals.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                        <span className={`text-xs font-black ${fundamentals.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                          {fundamentals.change >= 0 ? '+' : ''}{Number(fundamentals.change).toFixed(2)}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Audit Score Box */}
+                    <div className={`p-4 rounded-2xl border flex items-center justify-between ${
+                      theme === 'dark' ? 'bg-[var(--bg-primary)]/60 border-[var(--border-primary)]' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)]'
+                    }`}>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Audit Score</span>
+                        <h3 className="text-2xl font-black italic text-blue-500">{fundamentals.audit?.score}/100</h3>
+                      </div>
+                      <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/15 text-blue-500">
+                        <ShieldCheck className="h-5 w-5" />
+                      </div>
+                    </div>
+
+                    {/* Valuation Multiples */}
+                    <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
+                      <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Valuation & Growth</span>
+                      
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[var(--text-tertiary)] font-medium">PE Ratio:</span>
+                        <span className="font-extrabold">{Number(fundamentals.peRatio || 0).toFixed(1)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[var(--text-tertiary)] font-medium">Median PE (3Y/5Y):</span>
+                        <span className="font-extrabold">
+                          {fundamentals.peMedians?.pe3Y ? Number(fundamentals.peMedians.pe3Y).toFixed(1) : '—'} / 
+                          {fundamentals.peMedians?.pe5Y ? Number(fundamentals.peMedians.pe5Y).toFixed(1) : '—'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[var(--text-tertiary)] font-medium">Market Capitalization:</span>
+                        <span className="font-extrabold">{formatCr(fundamentals.marketCap)}</span>
+                      </div>
+                    </div>
+
+                    {/* Efficiency & Balance Sheet */}
+                    <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
+                      <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Safety & Efficiency</span>
+                      
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[var(--text-tertiary)] font-medium">Return on Equity (ROE):</span>
+                        <span className="font-extrabold">{formatPct(fundamentals.returnOnEquity)}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[var(--text-tertiary)] font-medium">ROCE:</span>
+                        <span className="font-extrabold">{formatPct(fundamentals.roce)}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[var(--text-tertiary)] font-medium">Net Debt to Equity:</span>
+                        <span className="font-extrabold">{Number(fundamentals.netDebtToEquity || 0).toFixed(2)}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[var(--text-tertiary)] font-medium">52W Range High:</span>
+                        <span className="font-extrabold text-[var(--text-secondary)]">₹ {Number(fundamentals.fiftyTwoWeekHigh || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+
+                    {/* Sales & Profit vs ATH */}
+                    <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
+                      <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 text-blue-500" /> High Growth Potential
+                      </span>
+                      
+                      <div className="space-y-2.5">
+                        <div>
+                          <div className="flex justify-between text-[11px] mb-1">
+                            <span className="text-[var(--text-tertiary)]">Sales (vs ATH):</span>
+                            <span className="font-bold">{formatCr(fundamentals.currentSales)} / {formatCr(fundamentals.athSales)}</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-blue-500 rounded-full"
+                              style={{ width: `${Math.min(100, (fundamentals.currentSales / (fundamentals.athSales || 1)) * 100)}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-0.5">
-                          <h4 className="text-lg font-black italic">₹ {Number(val.price).toLocaleString('en-IN')}</h4>
-                          <p className="text-[8px] font-extrabold uppercase tracking-wider text-[var(--text-muted)]">
-                            {val.date ? `Triggered: ${val.date}` : 'Not Triggered'}
-                          </p>
+
+                        <div>
+                          <div className="flex justify-between text-[11px] mb-1">
+                            <span className="text-[var(--text-tertiary)]">Net Profit (vs ATH):</span>
+                            <span className="font-bold">{formatCr(fundamentals.currentNetProfit)} / {formatCr(fundamentals.athNetProfit)}</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-emerald-500 rounded-full"
+                              style={{ width: `${Math.min(100, (fundamentals.currentNetProfit / (fundamentals.athNetProfit || 1)) * 100)}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-xs text-[var(--text-muted)] flex flex-col items-center justify-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-500" />
-                  <span>This strategy does not utilize the standard ABCD Tranche Laddering layout.</span>
-                  <div className="grid grid-cols-2 gap-6 w-full max-w-sm mt-3 border border-[var(--border-primary)] p-4 rounded-2xl bg-[var(--bg-primary)]/30">
-                    <div className="text-left">
-                      <span className="text-[9px] text-[var(--text-muted)] uppercase font-extrabold">Entry Price</span>
-                      <p className="text-md font-black text-emerald-400 italic">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</p>
                     </div>
-                    <div className="text-left">
-                      <span className="text-[9px] text-[var(--text-muted)] uppercase font-extrabold">Target Price</span>
-                      <p className="text-md font-black text-blue-400 italic">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</p>
+                  </div>
+                )}
+              </div>
+           </div>
+
+           {/* Column 2: ABCD Timeline & Strategic Narrative */}
+           <div className="space-y-6">
+              {/* Guided Storytelling & Trade Targets Panel */}
+              {activeStrategy && (
+                <div className={`p-5 rounded-3xl border space-y-4 ${
+                  theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+                }`}>
+                  <div className="flex items-center gap-2 border-b border-[var(--border-primary)]/60 pb-3">
+                    <Sparkles className="h-4 w-4 text-blue-500" />
+                    <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Strategic Narrative</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black uppercase text-[var(--text-secondary)]">{STRATEGY_NAMES[activeStrategyId || ''] || activeStrategyId}</h3>
+                    <p className="text-[11px] text-[var(--text-tertiary)] mt-2 font-medium leading-relaxed bg-[var(--bg-primary)]/45 p-3 rounded-2xl border border-slate-900/50">
+                      {getStorytellingText()}
+                    </p>
+                  </div>
+                  <div className="space-y-2 pt-2 border-t border-[var(--border-primary)]/40">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-[var(--text-tertiary)] font-bold">Safe Entry:</span>
+                      <span className="font-extrabold text-emerald-400">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-[var(--text-tertiary)] font-bold">Target Price:</span>
+                      <span className="font-extrabold text-blue-400">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs border-t border-[var(--border-primary)]/40 pt-2">
+                      <span className="text-[var(--text-tertiary)] font-bold">Potential Gain:</span>
+                      <span className="font-extrabold text-emerald-400">
+                        +{(((Number(activeStrategy.target || 0) - Number(activeStrategy.entryPrice || 0)) / Math.max(1, Number(activeStrategy.entryPrice || 1))) * 100).toFixed(1)}%
+                      </span>
                     </div>
                   </div>
                 </div>
               )}
-            </div>
-          )}
-        </section>
 
-        {/* Right Column (Span 3): Confidence Engine Dial, Storytelling Explanation, and Verification Link */}
-        <section className="lg:col-span-3 space-y-6">
-          {/* Institutional Trust Dial */}
-          {activeStrategy && (
-            <div className={`p-5 rounded-3xl border flex flex-col ${
-              theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
-            }`}>
-              <div className="flex justify-between items-center mb-4 border-b border-[var(--border-primary)]/60 pb-3">
-                <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Institutional Trust Dial</span>
-                <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase ${confidence.bg} ${confidence.color} border border-current/20`}>
-                  {confidence.level.split(' / ')[0]}
-                </span>
-              </div>
-              <div className="flex items-center gap-4">
-                <svg viewBox="0 0 100 55" className="w-24 h-14 shrink-0">
-                  <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#1e293b" strokeWidth="8" strokeLinecap="round" />
-                  <path 
-                    d="M 10 50 A 40 40 0 0 1 90 50" 
-                    fill="none" 
-                    stroke="url(#reactConfidenceGradient3)" 
-                    strokeWidth="8" 
-                    strokeLinecap="round" 
-                    strokeDasharray="125" 
-                    strokeDashoffset={125 - (125 * confidence.score) / 100} 
-                    className="transition-all duration-500 ease-out"
-                  />
-                  <defs>
-                    <linearGradient id="reactConfidenceGradient3" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#ef4444" />
-                      <stop offset="50%" stopColor="#f59e0b" />
-                      <stop offset="100%" stopColor="#10b981" />
-                    </linearGradient>
-                  </defs>
-                  <text x="50" y="45" textAnchor="middle" className="text-lg font-black fill-current" style={{ fill: theme === 'dark' ? '#fff' : '#0f172a' }}>{confidence.score}%</text>
-                </svg>
-                <div>
-                  <h4 className="text-xs font-black uppercase tracking-wider">Rating: {confidence.score}/100</h4>
-                  <p className="text-[9px] text-[var(--text-muted)] mt-1 font-bold">Measures technical support alignment & price zone safety.</p>
-                </div>
-              </div>
-
-              {/* Slider Track (Miniaturized Range Visualization) */}
-              <div className="relative pt-6 pb-2 px-1 border-t border-[var(--border-primary)]/40 mt-4">
-                <div className="h-1.5 w-full bg-[var(--bg-tertiary)] rounded-full relative">
-                  <div 
-                    className="absolute h-full bg-emerald-500/30 rounded-full"
-                    style={{ left: `${rangeInfo.bottomPct}%`, right: `${100 - rangeInfo.entryPct}%` }}
-                  />
-                  <div 
-                    className="absolute h-full bg-blue-500/20 rounded-full"
-                    style={{ left: `${rangeInfo.entryPct}%`, right: `${100 - rangeInfo.targetPct}%` }}
-                  />
-                </div>
-                <div 
-                  className="absolute -top-1.5 flex flex-col items-center"
-                  style={{ left: `${rangeInfo.bottomPct}%`, transform: 'translateX(-50%)' }}
-                >
-                  <div className="h-3 w-0.5 bg-slate-500" />
-                  <span className="text-[6.5px] font-black text-[var(--text-muted)] mt-0.5">FLR</span>
-                </div>
-                <div 
-                  className="absolute -top-1.5 flex flex-col items-center"
-                  style={{ left: `${rangeInfo.entryPct}%`, transform: 'translateX(-50%)' }}
-                >
-                  <div className="h-3 w-1 bg-emerald-500" />
-                  <span className="text-[6.5px] font-black text-emerald-400 mt-0.5">ENT</span>
-                </div>
-                <div 
-                  className="absolute -top-1.5 flex flex-col items-center"
-                  style={{ left: `${rangeInfo.targetPct}%`, transform: 'translateX(-50%)' }}
-                >
-                  <div className="h-3 w-1 bg-blue-500" />
-                  <span className="text-[6.5px] font-black text-blue-400 mt-0.5">TGT</span>
-                </div>
-                <div 
-                  className="absolute -top-4 flex flex-col items-center z-10 transition-all duration-300"
-                  style={{ left: `${rangeInfo.currentPct}%`, transform: 'translateX(-50%)' }}
-                >
-                  <div className="px-1 py-0.2 rounded bg-blue-600 text-[6.5px] font-black text-[var(--text-primary)] shadow">
-                    ₹{Math.round(fundamentals.price)}
+              {/* ABCD Tranche Laddering Visual Timeline */}
+              {activeStrategy && (
+                <div className={`p-5 rounded-3xl border ${
+                  theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+                }`}>
+                  <div className="flex justify-between items-center mb-5 border-b border-[var(--border-primary)]/60 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-blue-500" />
+                      <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">
+                        ABCD Tranche Timeline
+                      </span>
+                    </div>
+                    {activeStrategy.isBuyZone && (
+                      <div className="flex items-center gap-1 text-[9px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        <CheckCircle2 className="h-3 w-3" /> Safe Entry Active
+                      </div>
+                    )}
                   </div>
-                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--bg-primary)] border border-blue-600 mt-0.5" />
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* Guided Storytelling & Trade Targets Panel */}
-          {activeStrategy && (
-            <div className={`p-5 rounded-3xl border space-y-4 ${
-              theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
-            }`}>
-              <div className="flex items-center gap-2 border-b border-[var(--border-primary)]/60 pb-3">
-                <Sparkles className="h-4 w-4 text-blue-500" />
-                <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Strategic Narrative</span>
-              </div>
-              <div>
-                <h3 className="text-xs font-black uppercase text-[var(--text-secondary)]">{STRATEGY_NAMES[activeStrategyId || ''] || activeStrategyId}</h3>
-                <p className="text-[11px] text-[var(--text-tertiary)] mt-2 font-medium leading-relaxed bg-[var(--bg-primary)]/45 p-3 rounded-2xl border border-slate-900/50">
-                  {getStorytellingText()}
-                </p>
-              </div>
-              <div className="space-y-2 pt-2 border-t border-[var(--border-primary)]/40">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[var(--text-tertiary)] font-bold">Safe Entry:</span>
-                  <span className="font-extrabold text-emerald-400">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</span>
+                  {/* Ladder visual pipeline */}
+                  {activeStrategy.abcd ? (
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      {Object.entries(activeStrategy.abcd).map(([key, val]: [string, any]) => {
+                        const isPassed = activeStrategy.tranche 
+                          ? key.toUpperCase().charCodeAt(0) <= activeStrategy.tranche.toUpperCase().charCodeAt(0)
+                          : false;
+                        const isActive = activeStrategy.tranche === key.toUpperCase();
+                        
+                        return (
+                          <div 
+                            key={key} 
+                            className={`p-3.5 rounded-2xl border transition-all relative ${
+                              isActive 
+                                ? (theme === 'dark' ? 'bg-blue-600/10 border-blue-500/40 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.06)]' : 'bg-blue-50 border-blue-200 text-blue-600')
+                                : (isPassed 
+                                  ? (theme === 'dark' ? 'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80 text-[var(--text-secondary)]' : 'bg-slate-100 border-[var(--border-primary)] text-slate-700')
+                                  : (theme === 'dark' ? 'bg-[var(--bg-primary)]/20 border-slate-955/80 text-slate-600 opacity-60' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-tertiary)] opacity-60'))
+                            }`}
+                          >
+                            <div className="flex justify-between items-center mb-1.5">
+                              <span className="text-[9px] font-extrabold uppercase tracking-widest">Tranche {key.toUpperCase()}</span>
+                              {isActive && (
+                                <span className="h-2.5 w-2.5 rounded-full bg-blue-500 animate-ping absolute top-3 right-3" />
+                              )}
+                            </div>
+                            <div className="space-y-0.5">
+                              <h4 className="text-md font-black italic">₹ {Number(val.price).toLocaleString('en-IN')}</h4>
+                              <p className="text-[7.5px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] truncate">
+                                {val.date ? `${val.date}` : 'Not Triggered'}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="py-6 text-center text-xs text-[var(--text-muted)] flex flex-col items-center justify-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">No ABCD Tranche settings for this strategy.</span>
+                      <div className="grid grid-cols-2 gap-4 w-full mt-2 border border-[var(--border-primary)] p-3 rounded-2xl bg-[var(--bg-primary)]/30">
+                        <div className="text-left">
+                          <span className="text-[8px] text-[var(--text-muted)] uppercase font-extrabold">Entry</span>
+                          <p className="text-sm font-black text-emerald-400 italic">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</p>
+                        </div>
+                        <div className="text-left">
+                          <span className="text-[8px] text-[var(--text-muted)] uppercase font-extrabold">Target</span>
+                          <p className="text-sm font-black text-blue-400 italic">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[var(--text-tertiary)] font-bold">Target Price:</span>
-                  <span className="font-extrabold text-blue-400">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[var(--text-tertiary)] font-bold">Stop Loss:</span>
-                  <span className="font-extrabold text-rose-500">₹ {Math.round(activeStrategy.stopLoss ? Number(activeStrategy.stopLoss) : (Number(activeStrategy.entryPrice || 0) * 0.9)).toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs border-t border-[var(--border-primary)]/40 pt-2">
-                  <span className="text-[var(--text-tertiary)] font-bold">R/R Ratio:</span>
-                  <span className="font-extrabold text-blue-400">
-                    1 : {((Number(activeStrategy.target || 0) - Number(activeStrategy.entryPrice || 0)) / Math.max(1, (Number(activeStrategy.entryPrice || 0) - (activeStrategy.stopLoss ? Number(activeStrategy.stopLoss) : Number(activeStrategy.entryPrice || 0) * 0.9)))).toFixed(1)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
+              )}
+           </div>
 
-          {/* Deep Link & Verification panel */}
-          <div className={`p-5 rounded-3xl border space-y-4 ${
-            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
-          }`}>
-            <div className="space-y-1">
-              <span className="text-[8px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]">Deep Link verification</span>
-              <p className="text-[10px] font-bold text-[var(--text-tertiary)]">Verify these exact levels inside your native TradingView charts.</p>
-            </div>
-            <a
-              href={`https://www.tradingview.com/chart/?symbol=NSE:${symbol}&interval=1H`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-[var(--text-primary)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-blue-600/15 transition-all justify-center w-full"
-            >
-              <ArrowUpRight className="h-4 w-4" />
-              <span>Verify on TradingView</span>
-            </a>
-          </div>
+           {/* Column 3: Trust Dial & Verification */}
+           <div className="space-y-6">
+              {/* Institutional Trust Dial */}
+              {activeStrategy && (
+                <div className={`p-5 rounded-3xl border flex flex-col ${
+                  theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+                }`}>
+                  <div className="flex justify-between items-center mb-4 border-b border-[var(--border-primary)]/60 pb-3">
+                    <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Institutional Trust Dial</span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase ${confidence.bg} ${confidence.color} border border-current/20`}>
+                      {confidence.level.split(' / ')[0]}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <ConfidenceGauge score={confidence.score} size="sm" label="" className="shrink-0" />
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider">Rating: {confidence.score}/100</h4>
+                      <p className="text-[9px] text-[var(--text-muted)] mt-1 font-bold">Measures technical support alignment & price zone safety.</p>
+                    </div>
+                  </div>
+
+                  {/* Slider Track (Miniaturized Range Visualization) */}
+                  <div className="relative pt-6 pb-2 px-1 border-t border-[var(--border-primary)]/40 mt-4">
+                    <div className="h-1.5 w-full bg-[var(--bg-tertiary)] rounded-full relative">
+                      <div 
+                        className="absolute h-full bg-emerald-500/30 rounded-full"
+                        style={{ left: `${rangeInfo.bottomPct}%`, right: `${100 - rangeInfo.entryPct}%` }}
+                      />
+                      <div 
+                        className="absolute h-full bg-blue-500/20 rounded-full"
+                        style={{ left: `${rangeInfo.entryPct}%`, right: `${100 - rangeInfo.targetPct}%` }}
+                      />
+                    </div>
+                    <div 
+                      className="absolute -top-1.5 flex flex-col items-center"
+                      style={{ left: `${rangeInfo.bottomPct}%`, transform: 'translateX(-50%)' }}
+                    >
+                      <div className="h-3 w-0.5 bg-slate-500" />
+                      <span className="text-[6.5px] font-black text-[var(--text-muted)] mt-0.5">FLR</span>
+                    </div>
+                    <div 
+                      className="absolute -top-1.5 flex flex-col items-center"
+                      style={{ left: `${rangeInfo.entryPct}%`, transform: 'translateX(-50%)' }}
+                    >
+                      <div className="h-3 w-1 bg-emerald-500" />
+                      <span className="text-[6.5px] font-black text-emerald-400 mt-0.5">ENT</span>
+                    </div>
+                    <div 
+                      className="absolute -top-1.5 flex flex-col items-center"
+                      style={{ left: `${rangeInfo.targetPct}%`, transform: 'translateX(-50%)' }}
+                    >
+                      <div className="h-3 w-1 bg-blue-500" />
+                      <span className="text-[6.5px] font-black text-blue-400 mt-0.5">TGT</span>
+                    </div>
+                    <div 
+                      className="absolute -top-4 flex flex-col items-center z-10 transition-all duration-300"
+                      style={{ left: `${rangeInfo.currentPct}%`, transform: 'translateX(-50%)' }}
+                    >
+                      <div className="px-1 py-0.2 rounded bg-blue-600 text-[6.5px] font-black text-[var(--text-primary)] shadow">
+                        ₹{Math.round(fundamentals.price)}
+                      </div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--bg-primary)] border border-blue-600 mt-0.5" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Deep Link & Verification panel */}
+              <div className={`p-5 rounded-3xl border space-y-4 ${
+                theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+              }`}>
+                <div className="space-y-1">
+                  <span className="text-[8px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]">Deep Link verification</span>
+                  <p className="text-[10px] font-bold text-[var(--text-tertiary)]">Verify these exact levels inside your native TradingView charts.</p>
+                </div>
+                <a
+                  href={`https://www.tradingview.com/chart/?symbol=NSE:${symbol}&interval=1H`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-[var(--text-primary)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-blue-600/15 transition-all justify-center w-full"
+                >
+                  <ArrowUpRight className="h-4 w-4" />
+                  <span>Verify on TradingView</span>
+                </a>
+              </div>
+           </div>
+
         </section>
       </main>
     </div>

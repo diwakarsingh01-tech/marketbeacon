@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -25,6 +26,8 @@ import {
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import SEO from '../components/SEO';
+import { ConfidenceGauge } from '../components/ui/ConfidenceGauge';
+import type { HistoryQuote, FundamentalData, ABCDNode, AllStockItem } from '../types';
 
 const API_URL = getApiUrl();
 
@@ -114,15 +117,15 @@ const ScreenerVerify: React.FC = () => {
   
   // Data States
   const [allStocks, setAllStocks] = useState<StockSearchResult[]>([]);
-  const [historyData, setHistoryData] = useState<any[]>([]);
-  const [fundamentals, setFundamentals] = useState<any>(null);
+  const [historyData, setHistoryData] = useState<HistoryQuote[]>([]);
+  const [fundamentals, setFundamentals] = useState<FundamentalData | null>(null);
   
   const [loadingList, setLoadingList] = useState<boolean>(false);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<any>(null);
+  const chartRef = useRef<IChartApi | null>(null);
 
   // Fetch qualifying stock list for selected strategy
   const fetchScreenerList = async (stratId: string) => {
@@ -135,7 +138,7 @@ const ScreenerVerify: React.FC = () => {
       if (response.ok && d.allStocks && d.allStocks.length > 0) {
         setAllStocks(d.allStocks);
         // Default to first buy zone stock or first symbol
-        const buyStock = d.allStocks.find((s: any) => s.isBuyZone && s.isPass);
+        const buyStock = d.allStocks.find((s: AllStockItem) => s.isBuyZone && s.isPass);
         setSymbol(buyStock ? buyStock.symbol : d.allStocks[0].symbol);
       } else {
         // Fallback mock data if token unavailable or empty results
@@ -256,19 +259,19 @@ const ScreenerVerify: React.FC = () => {
     
     const formattedQuotes = sortedHistory.map(q => ({
       time: q.time,
-      open: parseFloat(q.open),
-      high: parseFloat(q.high),
-      low: parseFloat(q.low),
-      close: parseFloat(q.close),
+      open: Number(q.open),
+      high: Number(q.high),
+      low: Number(q.low),
+      close: Number(q.close),
     }));
 
     const formattedVolumes = sortedHistory.map(q => ({
       time: q.time,
-      value: parseFloat(q.volume || 0),
-      color: parseFloat(q.close) >= parseFloat(q.open) ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)',
+      value: Number(q.volume || 0),
+      color: Number(q.close) >= Number(q.open) ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)',
     }));
 
-    let mainSeries: any = null;
+    let mainSeries: ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | null = null;
 
     if (chartType === 'candles') {
       mainSeries = chart.addSeries(CandlestickSeries, {
@@ -320,7 +323,7 @@ const ScreenerVerify: React.FC = () => {
       let bottomVal = entryVal;
       if (activeStrat.abcd) {
         const prices = Object.values(activeStrat.abcd)
-          .map((v: any) => Number(v?.price))
+          .map(v => Number(v?.price))
           .filter(p => !isNaN(p) && p > 0);
         if (prices.length > 0) {
           bottomVal = Math.min(...prices);
@@ -329,16 +332,6 @@ const ScreenerVerify: React.FC = () => {
       if (bottomVal === entryVal) {
         bottomVal = entryVal * 0.9;
       }
-      const stopLossVal = bottomVal * 0.97; // 3% safety margin below floor
-
-      mainSeries.createPriceLine({
-        price: stopLossVal,
-        color: '#ef4444',
-        lineWidth: 2,
-        lineStyle: 2,
-        axisLabelVisible: true,
-        title: `STOP LOSS: ₹${Math.round(stopLossVal)}`,
-      });
 
       // 4. Shaded Accumulation Buy-Zone Band
       if (entryVal > bottomVal) {
@@ -408,7 +401,7 @@ const ScreenerVerify: React.FC = () => {
         score += 15;
         if (activeStrategy.abcd) {
           const prices = Object.values(activeStrategy.abcd)
-            .map((v: any) => Number(v?.price))
+            .map(v => Number(v?.price))
             .filter(p => !isNaN(p) && p > 0);
           if (prices.length > 0) {
             const bottom = Math.min(...prices);
@@ -471,7 +464,7 @@ const ScreenerVerify: React.FC = () => {
     let bottom = entry;
     if (activeStrategy.abcd) {
       const prices = Object.values(activeStrategy.abcd)
-        .map((v: any) => Number(v?.price))
+        .map(v => Number(v?.price))
         .filter(p => !isNaN(p) && p > 0);
       if (prices.length > 0) {
         bottom = Math.min(...prices);
@@ -813,31 +806,7 @@ const ScreenerVerify: React.FC = () => {
               </span>
             </div>
 
-            {/* The SVG Gauge */}
-            <div className="flex flex-col items-center justify-center py-4 border border-[var(--border-primary)]/40 rounded-2xl bg-[var(--bg-primary)]/20">
-              <svg viewBox="0 0 100 55" className="w-36 h-20">
-                <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#1e293b" strokeWidth="8" strokeLinecap="round" />
-                <path 
-                  d="M 10 50 A 40 40 0 0 1 90 50" 
-                  fill="none" 
-                  stroke="url(#verifyConfidenceGradient)" 
-                  strokeWidth="8" 
-                  strokeLinecap="round" 
-                  strokeDasharray="125" 
-                  strokeDashoffset={125 - (125 * confidence.score) / 100} 
-                  className="transition-all duration-500 ease-out"
-                />
-                <defs>
-                  <linearGradient id="verifyConfidenceGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#ef4444" />
-                    <stop offset="50%" stopColor="#f59e0b" />
-                    <stop offset="100%" stopColor="#10b981" />
-                  </linearGradient>
-                </defs>
-                <text x="50" y="45" textAnchor="middle" className="text-lg font-black fill-current" style={{ fill: theme === 'dark' ? '#fff' : '#0f172a' }}>{confidence.score}%</text>
-              </svg>
-              <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-2">CONFIDENCE SCORE</span>
-            </div>
+            <ConfidenceGauge score={confidence.score} className="py-4 border border-[var(--border-primary)]/40 rounded-2xl bg-[var(--bg-primary)]/20" />
 
             {/* Range progression slider */}
             {fundamentals && activeStrategy && (
