@@ -1,32 +1,10 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  ShieldCheck, 
-  Target, 
-  ArrowRight,
-  Activity,
-  Globe,
-  Search,
-  TrendingUp,
-  ChevronRight,
-  Zap,
-  BarChart2,
-  Lock,
-  ArrowUpRight,
-  RefreshCw,
-  BadgeCheck,
-  BookOpen,
-  Layers,
-  Users,
-  X,
-  Gift,
-  CheckCircle,
-  Mail,
-  Sparkles,
-  Newspaper
-} from 'lucide-react';
+import { ArrowRight, ChevronRight, Zap, Gift, X, Mail, CheckCircle, BookOpen, ShieldCheck, RefreshCw, TrendingUp, Layers, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { waLink } from '../lib/constants';
+import type { StockSearchResult } from '../types';
 import { BASKETS } from '../data/stocks';
 import BrandLogo from '../components/brand/BrandLogo';
 import SiteFooter from '../components/layout/SiteFooter';
@@ -34,7 +12,17 @@ import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import SEO from '../components/SEO';
-import { OrganizationSchema, WebApplicationSchema } from '../components/StructuredData';
+import { OrganizationSchema, WebApplicationSchema, FAQPageSchema } from '../components/StructuredData';
+import HeroSection from '../components/landing/HeroSection';
+import StrategyMatrix from '../components/landing/StrategyMatrix';
+import ICPCards from '../components/landing/ICPCards';
+import TestimonialsSection from '../components/landing/TestimonialsSection';
+import EducationSection from '../components/landing/EducationSection';
+import FAQSection from '../components/landing/FAQSection';
+import CTABanner from '../components/landing/CTABanner';
+import BlogTeaser from '../components/landing/BlogTeaser';
+import CourseFramework from '../components/landing/CourseFramework';
+import { useVoucherRedeem } from '../hooks/useVoucherRedeem';
 
 const API_URL = getApiUrl();
 
@@ -83,9 +71,9 @@ const EmailCapture: React.FC = () => {
         <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
           <CheckCircle className="w-8 h-8 text-emerald-400" />
         </div>
-        <h4 className="text-lg font-black text-[var(--text-primary)] tracking-tight">Starter Kit Sent!</h4>
+        <h4 className="text-lg font-black text-[var(--text-primary)] tracking-tight">Request Saved!</h4>
         <p className="text-[var(--text-muted)] text-sm max-w-xs mx-auto">
-          Check your inbox for the ABCD Tranche Zones + Audit Checklist PDF.
+          We have saved your request. The ABCD Tranche Guide + Audit Checklist PDF will be delivered to your email shortly.
         </p>
       </div>
     );
@@ -138,7 +126,7 @@ const HomePage: React.FC = () => {
   const [searchQuery, setSearchSearchQuery] = useState('');
   const [teaserData, setTeaserData] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<StockSearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -149,46 +137,18 @@ const HomePage: React.FC = () => {
   const { user } = useAuth();
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [voucherCode, setVoucherCode] = useState('');
-  const [redeeming, setRedeeming] = useState(false);
-  const [voucherError, setVoucherError] = useState<string | null>(null);
   const [openVoucherModal, setOpenVoucherModal] = useState(false);
+  const {
+    code: voucherCode,
+    setCode: setVoucherCode,
+    redeeming,
+    error: voucherError,
+    setError: setVoucherError,
+    success: voucherSuccess,
+    redeem: handleRedeemVoucher,
+  } = useVoucherRedeem();
 
   const isProOrAbove = user?.tier === 'pro' || user?.tier === 'alpha';
-
-  const handleRedeemVoucher = async () => {
-    if (!voucherCode.trim()) return;
-    if (!user) {
-      setVoucherError('Please log in first to redeem a voucher code.');
-      return;
-    }
-    setRedeeming(true);
-    setVoucherError(null);
-    const token = localStorage.getItem('mb_token');
-    try {
-      const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ code: voucherCode.trim().toUpperCase() })
-      });
-      const result = await safeJsonParse(res);
-      if (res.ok && !result.error) {
-        setShowConfetti(true);
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
-      } else {
-        setVoucherError(result.error || 'Invalid voucher code.');
-      }
-    } catch (e) {
-      setVoucherError('Network error. Please try again.');
-    } finally {
-      setRedeeming(false);
-    }
-  };
 
   // Unified Institutional Symbol List
   const ALL_SYMBOLS = useMemo(() => {
@@ -215,7 +175,7 @@ const HomePage: React.FC = () => {
     ).slice(0, 5);
 
     // STEP 1: Show symbols immediately (Pre-populated)
-    const initialSuggestions = filtered.map(s => ({ symbol: s, strategies: [] }));
+    const initialSuggestions: StockSearchResult[] = filtered.map(s => ({ symbol: s, strategies: [], baskets: [], price: 0, change: 0, peMedians: {} }));
     setSuggestions(initialSuggestions);
     setSelectedIndex(-1);
     itemRefs.current = [];
@@ -228,9 +188,9 @@ const HomePage: React.FC = () => {
             const res = await fetch(`${API_URL}/api/public/analysis/${sym}`);
             if (!res.ok) throw new Error('Fetch failed');
             const data = await safeJsonParse(res);
-            return { symbol: sym, strategies: data?.strategies || [] };
+            return { symbol: sym, strategies: data?.strategies || [], baskets: [], price: 0, change: 0, peMedians: {} };
           } catch (e) {
-            return { symbol: sym, strategies: [] };
+            return { symbol: sym, strategies: [], baskets: [], price: 0, change: 0, peMedians: {} };
           }
         }));
         if (active) setSuggestions(results);
@@ -297,11 +257,24 @@ const HomePage: React.FC = () => {
     fetch(`${API_URL}/api/health`).catch(() => {/* Silent fail */});
   }, []);
 
+  useEffect(() => {
+    if (voucherSuccess) {
+      setShowConfetti(true);
+      setTimeout(() => window.location.reload(), 3000);
+    }
+  }, [voucherSuccess]);
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] font-sans text-[var(--text-primary)] overflow-x-hidden selection:bg-blue-500/30">
       <SEO title="Best Stock Analysis Tool India" description="India's #1 Institutional Audit Score for Nifty 500 stocks. ABCD Tranche Logic, FII DII trends & real-time screening. For educational purposes only." />
       <OrganizationSchema />
       <WebApplicationSchema />
+      <FAQPageSchema questions={[
+        { q: "What is an Institutional Stock Audit?", a: "An institutional stock audit is a quantitative scan that measures an asset against 100 mathematical data points. Unlike standard news bulletins, it reviews deep fundamental safety, debt leverage parameters, historical valuation percentiles, and institutional demand floors to assign a conviction score out of 100." },
+        { q: "How does the ABCD Tranche Laddering model protect capital?", a: "Instead of allocating 100% of your capital at a single price point (which exposes you to instant drawdowns), the ABCD Ladder model divides buying capacity into four distinct tranches (A, B, C, D) triggered by historical pullback milestones. This averages your position downward automatically during sweeps and secures a stable demand floor." },
+        { q: "Is MarketBeacon Pro investment advice or advisory?", a: "No. MarketBeacon Pro is NOT a SEBI-registered Investment Adviser (IA) or Research Analyst (RA). It is a quantitative mathematical research tool for educational and personal research purposes only. All audit scores, strategy signals, and ABCD zones are pre-coded mathematical models. Nothing on this platform constitutes a personalized investment recommendation, buy/sell advisory, or portfolio management service. Always consult a SEBI-registered advisor before making investment decisions." },
+        { q: "How often are stock prices and audit scores updated?", a: "Live stock prices are synced continuously in real-time, and audit models re-examine key fundamental data points (like quarterly results, PE ratios, and institutional holdings) automatically daily to recalculate active scores and update zones." }
+      ]} />
       {/* Live Trust Ticker (Safe-Guard Rule #7) */}
       <div className="bg-blue-600 py-2 overflow-hidden whitespace-nowrap border-b border-blue-500 relative">
         <div className="flex animate-marquee items-center gap-12">
@@ -360,705 +333,34 @@ const HomePage: React.FC = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <header className="pt-24 md:pt-36 pb-16 md:pb-32 px-6 md:px-10 max-w-[1440px] mx-auto text-center relative">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-96 bg-blue-600/10 blur-[120px] pointer-events-none" />
-        
-        {/* 3D Floating Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-20 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl animate-pulse" />
-          <div className="absolute top-40 right-32 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-        </div>
+      <HeroSection
+        searchQuery={searchQuery}
+        setSearchSearchQuery={setSearchSearchQuery}
+        suggestions={suggestions}
+        setSuggestions={setSuggestions}
+        selectedIndex={selectedIndex}
+        setSelectedIndex={setSelectedIndex}
+        isSearching={isSearching}
+        searchError={searchError}
+        handleSearch={handleSearch}
+        handleReset={handleReset}
+        teaserData={teaserData}
+        isProOrAbove={isProOrAbove}
+        user={user}
+        voucherCode={voucherCode}
+        setVoucherCode={setVoucherCode}
+        redeeming={redeeming}
+        handleRedeemVoucher={handleRedeemVoucher}
+        voucherError={voucherError}
+        setVoucherError={setVoucherError}
+        itemRefs={itemRefs}
+        suggestionsRef={suggestionsRef}
+        setShowUpgrade={setShowUpgrade}
+      />
+      <CourseFramework />
+      <StrategyMatrix />
 
-          {/* Hero Search Bar — Top, Like Google Search */}
-          <div id="search-anchor" className="max-w-2xl mx-auto mb-8 md:mb-12 relative group">
-            <form onSubmit={(e) => handleSearch(e)} className="flex flex-col sm:flex-row p-1.5 md:p-2 bg-[var(--bg-secondary)]/80 backdrop-blur-3xl border-2 border-[var(--border-secondary)] rounded-[1.25rem] sm:rounded-[2.5rem] focus-within:border-blue-500/70 focus-within:bg-[var(--bg-secondary)]/90 transition-all shadow-2xl shadow-blue-900/20 relative gap-1.5 sm:gap-0 transform group-hover:scale-[1.02] transition-all duration-300">
-              <div className="flex-1 flex items-center pl-3 md:pl-6 gap-2 md:gap-3 py-1.5 md:py-0">
-                <div className="relative">
-                  <Search className="w-4 h-4 md:w-5 md:h-5 text-[var(--text-tertiary)] group-focus-within:text-blue-400 transition-colors shrink-0" />
-                  {searchQuery && (
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                  )}
-                </div>
-                <input 
-                  type="text" 
-                  placeholder="Enter stock symbol..." 
-                  className="bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none w-full text-[10px] md:text-sm font-black uppercase tracking-widest text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchSearchQuery(e.target.value);
-                    setSelectedIndex(-1);
-                  }}
-                  onKeyDown={(e) => {
-                    if (suggestions.length === 0) return;
-                    if (e.key === 'ArrowDown') {
-                      e.preventDefault();
-                      setSelectedIndex(prev => {
-                        const next = prev < suggestions.length - 1 ? prev + 1 : 0;
-                        itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
-                        return next;
-                      });
-                    } else if (e.key === 'ArrowUp') {
-                      e.preventDefault();
-                      setSelectedIndex(prev => {
-                        const next = prev > 0 ? prev - 1 : suggestions.length - 1;
-                        itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
-                        return next;
-                      });
-                    } else if (e.key === 'Enter' && selectedIndex >= 0) {
-                      e.preventDefault();
-                      handleSearch(undefined, suggestions[selectedIndex].symbol);
-                    } else if (e.key === 'Escape') {
-                      setSuggestions([]);
-                      setSelectedIndex(-1);
-                    }
-                  }}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck="false"
-                  inputMode="search"
-                />
-                {searchQuery && (
-                  <button 
-                    type="button" 
-                    onClick={handleReset}
-                    className="p-1 md:p-2 mr-1 md:mr-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"
-                  >
-                    <X className="w-3 h-3 md:w-4 md:h-4" />
-                  </button>
-                )}
-              </div>
-              <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-4 sm:px-8 py-2 sm:py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-[var(--text-primary)] rounded-[0.75rem] sm:rounded-[2rem] font-black uppercase tracking-widest text-[9px] sm:text-xs hover:from-blue-500 hover:to-blue-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-xl shadow-blue-900/30 transform group-hover:scale-105 transition-all duration-300">
-                {isSearching ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Auditing...
-                  </span>
-                ) : (
-                  <><span className="hidden sm:inline">Fundamentals Audit</span>
-                  <span className="sm:hidden">Audit</span>
-                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" /></>
-                )}
-              </button>
-            </form>
-          <AnimatePresence>
-            {searchError && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="mt-4 p-6 bg-rose-500/10 border border-rose-500/30 rounded-3xl text-left flex flex-col md:flex-row items-center justify-between gap-4"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-rose-500/20 rounded-xl">
-                    <X className="w-5 h-5 text-rose-500" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest italic">{searchError}</p>
-                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest leading-relaxed">We only audit Nifty 500 & Alpha 40 symbols currently.</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => window.open(`https://wa.me/919251180183?text=Request%20Symbol:%20${searchQuery}`, '_blank')}
-                  className="px-6 py-2 bg-[var(--bg-primary)] text-[var(--text-primary)] text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-500 hover:text-[var(--text-primary)] transition-all whitespace-nowrap"
-                >
-                  Request Addition
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Institutional Suggestions Dropdown */}
-          <AnimatePresence>
-            {suggestions.length > 0 && (
-              <motion.div 
-                ref={suggestionsRef}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full left-0 w-full mt-3 bg-[#0f172a] border border-white/10 rounded-3xl overflow-hidden z-[999] shadow-2xl"
-              >
-                {suggestions.map((item, idx) => (
-                  <button
-                    key={item.symbol}
-                    ref={el => { itemRefs.current[idx] = el; }}
-                    onMouseEnter={() => setSelectedIndex(idx)}
-                    onClick={() => handleSearch(undefined, item.symbol)}
-                    className={`w-full px-6 py-4 flex items-center justify-between transition-colors border-b border-white/5 last:border-none group ${idx === selectedIndex ? 'bg-blue-600/20' : 'hover:bg-[var(--bg-primary)]/5'}`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-3">
-                        <Zap className="w-4 h-4 text-blue-500 group-hover:animate-pulse" />
-                        <span className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">{item.symbol}</span>
-                      </div>
-                      
-                      {/* Strategy Badges */}
-                      <div className="hidden sm:flex items-center gap-2">
-                        {item.strategies?.length > 0 ? (
-                          item.strategies.slice(0, 2).map((s: any, idx: number) => (
-                            <span key={idx} className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[7px] font-black text-blue-400 uppercase tracking-widest italic">
-                              {s.name}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest italic">Monitoring Node</span>
-                        )}
-                        {item.strategies?.length > 2 && (
-                          <span className="text-[7px] font-black text-[var(--text-muted)] uppercase">+{item.strategies.length - 2}</span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest italic group-hover:text-blue-400">Institutional Node</span>
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Live Trust Ticker (Audit Results) */}
-        <div className="mb-8 md:mb-10">
-          <AnimatePresence>
-            {teaserData && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="mt-8 p-1 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-[2.5rem] shadow-2xl shadow-blue-900/30 relative overflow-hidden"
-              >
-                {/* 3D Glow Effects */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-indigo-600/20 animate-pulse" style={{ animationDuration: '3s' }} />
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-y-6" />
-                
-                <div className="bg-[var(--bg-primary)] rounded-[2.4rem] p-8 text-left space-y-6 relative overflow-hidden border border-white/10">
-                   <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[80px] -mr-32 -mt-32" />
-                   <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-600/10 blur-[60px] -ml-24 -mb-24" />
-                   
-                   <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                         <div className="flex items-center gap-3">
-                            <h3 className="text-3xl font-black text-[var(--text-primary)] italic tracking-tighter">{teaserData.symbol}</h3>
-                            <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-lg text-[9px] font-black text-blue-400 uppercase tracking-widest italic">{teaserData.basket} Node</span>
-                            {teaserData.isPass && (
-                              <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-[7px] font-black text-emerald-400 uppercase tracking-widest">
-                                BULLISH
-                              </span>
-                            )}
-                         </div>
-                         <div className="flex items-center gap-2 pt-1">
-                            {teaserData.isPass && (
-                               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                                  <BadgeCheck className="w-3.5 h-3.5 text-emerald-400" />
-                                  <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Qualified on Fundamentals</span>
-                               </div>
-                            )}
-                            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest italic">Institutional Audit Pass</p>
-                         </div>
-                       </div>
-                       <div className="text-right">
-                          <div className={`text-5xl font-black italic ${teaserData.score >= 80 ? 'text-emerald-400' : 'text-blue-400'} relative`}>
-                            {isProOrAbove ? (teaserData.score || 0).toFixed(0) : '🔒'}
-                            {teaserData.score >= 80 && (
-                              <span className="absolute -top-2 -right-2 text-[10px] font-black text-emerald-500 uppercase tracking-wider">BUY</span>
-                            )}
-                          </div>
-                          <div className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Audit Score</div>
-                       </div>
-                    </div>
-
-                    <div className="relative">
-                       {/* Premium Stats Grid & Strategies (Blurred for Free users) */}
-                       <div className={`space-y-6 transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-30' : ''}`}>
-                          <div className="grid grid-cols-3 gap-4">
-                             {[
-                               { label: 'Smart Money', val: `${(teaserData.smartMoney || 0).toFixed(1)}%`, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                               { label: 'Alpha Target', val: `+${teaserData.upside}%`, icon: Target, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-                               { label: 'Risk Profile', val: teaserData.risk, icon: ShieldCheck, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-                             ].map((stat, i) => (
-                               <div key={i} className="p-4 bg-[var(--bg-primary)]/5 border border-white/5 rounded-2xl hover:bg-[var(--bg-primary)]/10 transition-all group hover:scale-105 hover:border-blue-500/30">
-                                  <div className={`p-2 ${stat.bg} rounded-xl w-fit mb-2 group-hover:scale-110 transition-transform`}>
-                                    <stat.icon className={`h-4 w-4 ${stat.color} group-hover:text-[var(--text-primary)] transition-colors`} />
-                                  </div>
-                                  <p className="text-[7px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 group-hover:text-[var(--text-secondary)] transition-colors">{stat.label}</p>
-                                  <p className={`text-sm font-black text-[var(--text-primary)] italic ${stat.color} group-hover:text-[var(--text-primary)] transition-colors`}>{stat.val}</p>
-                               </div>
-                             ))}
-                          </div>
-
-                          <div className="pt-4 space-y-4">
-                             <div className="flex flex-wrap gap-2">
-                               {teaserData.strategies?.length > 0 ? (
-                                  teaserData.strategies.map((s: any, i: number) => (
-                                     <div key={i} className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl hover:border-blue-500/50 transition-all group hover:scale-105 hover:bg-blue-500/5">
-                                        <Zap className="w-3 h-3 text-blue-500 group-hover:animate-pulse" />
-                                        <span className="text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-widest group-hover:text-blue-400 transition-colors">{s.name} Entry</span>
-                                        {i === 0 && (
-                                          <span className="text-[6px] font-black text-emerald-500 uppercase tracking-wider ml-1">PRIMARY</span>
-                                        )}
-                                     </div>
-                                  ))
-                               ) : (
-                                  <div className="px-4 py-2 bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)]/50 rounded-2xl italic">
-                                     <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Monitoring for Institutional Entry</span>
-                                  </div>
-                               )}
-                             </div>
-                             
-                             <div className="flex items-center justify-between border-t border-white/5 pt-4">
-                                <div className="flex items-center gap-2">
-                                   <ShieldCheck className="w-4 h-4 text-slate-600" />
-                                   <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em]">Verified by Institutional Matrix v12.0</span>
-                                </div>
-                                <Link 
-                                  to={`/analysis/${teaserData.symbol}`}
-                                  className="flex items-center gap-2 text-[10px] font-black text-blue-400 hover:text-[var(--text-primary)] transition-all uppercase tracking-widest group"
-                                >
-                                  Access Full Strategy Matrix <ArrowUpRight className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                                </Link>
-                             </div>
-
-                             {/* Phase 3: HNI ABCD Tranche Visualizer */}
-                             <div className="mt-6 p-5 bg-blue-600/5 border border-blue-500/10 rounded-3xl space-y-4 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl" />
-                                <div className="flex items-center justify-between relative z-10">
-                                   <div className="flex items-center gap-2">
-                                      <Layers className="h-3.5 w-3.5 text-blue-500" />
-                                      <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">Institutional Entry Plan (HNI Edge)</h4>
-                                   </div>
-                                   <span className="text-[7px] font-black text-[var(--text-muted)] uppercase tracking-widest">Cap: ₹10,00,000 (Sample)</span>
-                                </div>
-                                
-                                <div className="grid grid-cols-4 gap-2 relative z-10">
-                                   {[
-                                      { id: 'A', label: 'Tranche A', price: teaserData.abcd?.a?.price, weight: '25%', status: 'active', color: 'bg-emerald-500' },
-                                      { id: 'B', label: 'Tranche B', price: teaserData.abcd?.b?.price, weight: '25%', status: 'pending', color: 'bg-blue-500' },
-                                      { id: 'C', label: 'Tranche C', price: teaserData.abcd?.c?.price, weight: '25%', status: 'pending', color: 'bg-slate-500' },
-                                      { id: 'D', label: 'Tranche D', price: teaserData.abcd?.d?.price, weight: '25%', status: 'locked', color: 'bg-slate-700' },
-                                   ].map((t, idx) => (
-                                      <div key={idx} className="p-3 bg-[var(--bg-secondary)]/50 border border-white/5 rounded-2xl flex flex-col items-center text-center space-y-1 relative group hover:scale-105 transition-all">
-                                         <span className="text-[7px] font-black text-[var(--text-muted)] uppercase">{t.label}</span>
-                                         <span className="text-[10px] font-black text-[var(--text-primary)] italic">{t.price}</span>
-                                         <div className="w-full h-1 bg-[var(--bg-tertiary)] rounded-full mt-1 overflow-hidden">
-                                            <div className={`h-full ${t.color} rounded-full transition-all duration-1000`} style={{ width: t.weight }} />
-                                         </div>
-                                         <span className={`text-[7px] font-bold mt-1 ${t.status === 'active' ? 'text-emerald-400' : t.status === 'pending' ? 'text-blue-400' : 'text-[var(--text-muted)]'}`}>Alloc: ₹2.5L</span>
-                                         {t.status === 'active' && (
-                                           <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                                         )}
-                                      </div>
-                                   ))}
-                                </div>
-                                <p className="text-[8px] text-[var(--text-muted)] italic text-center font-bold relative z-10">
-                                   "Institutional capital follows a laddered entry approach to maximize capital protection."
-                                </p>
-                             </div>
-                          </div>
-                       </div>
-
-                       {/* Lock overlay for Free users */}
-                       {!isProOrAbove && (
-                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--bg-primary)]/40 backdrop-blur-[2px] rounded-3xl p-4 text-center">
-                             <div className="bg-[var(--bg-secondary)]/90 border border-[var(--border-primary)] rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl -mr-16 -mt-16" />
-                                <div className="mx-auto w-10 h-10 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500 animate-pulse relative z-10">
-                                   <Lock className="w-4 h-4" />
-                                </div>
-                                <div className="space-y-1 relative z-10">
-                                   <h4 className="text-xs font-black uppercase tracking-widest text-[var(--text-primary)]">PRO STRATEGY MATRIX LOCKED</h4>
-                                   <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
-                                      Smart money details, upside targets, and strategy entry points for <span className="text-blue-400 font-bold">{teaserData.symbol}</span> require a Pro Execution tier license.
-                                   </p>
-                                </div>
-
-                                <div className="flex flex-col gap-2 pt-2 relative z-10">
-                                   {user ? (
-                                      <button 
-                                        onClick={() => setShowUpgrade(true)}
-                                        className="w-full py-2.5 bg-blue-600 text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all flex items-center justify-center gap-1.5 relative overflow-hidden group"
-                                      >
-                                         <span className="relative z-10">Unlock with Pro Execution</span>
-                                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-                                      </button>
-                                   ) : (
-                                      <Link 
-                                        to="/login"
-                                        className="w-full py-2.5 bg-blue-600 text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-blue-500 transition-all text-center relative overflow-hidden group"
-                                      >
-                                         <span className="relative z-10">Sign In to Unlock</span>
-                                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-                                      </Link>
-                                   )}
-                                </div>
-
-                                <div className="border-t border-[var(--border-primary)] pt-3.5 space-y-2.5 relative z-10">
-                                   <div className="flex gap-1.5">
-                                      <input 
-                                        type="text" 
-                                        placeholder="Enter voucher (ALPHA7)..."
-                                        value={voucherCode}
-                                        onChange={(e) => setVoucherCode(e.target.value)}
-                                        className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500"
-                                      />
-                                      <button
-                                        onClick={handleRedeemVoucher}
-                                        disabled={redeeming}
-                                        className="px-4 py-2 bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-slate-100 disabled:bg-[var(--bg-secondary)] disabled:text-slate-700 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
-                                      >
-                                         {redeeming ? '...' : 'Apply'}
-                                      </button>
-                                   </div>
-                                   {voucherError && (
-                                      <p className="text-[9px] font-black text-rose-500 uppercase tracking-wider">{voucherError}</p>
-                                   )}
-                                   <button 
-                                      type="button"
-                                      onClick={() => {
-                                         setVoucherCode('ALPHA7');
-                                         setVoucherError(null);
-                                      }}
-                                      className="text-[8px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
-                                   >
-                                      Apply ALPHA7 (7-Day Trial)
-                                   </button>
-                                </div>
-                             </div>
-                          </div>
-                       )}
-                    </div>
-
-                    {/* Share Results (Safe-Guard Phase 2: Viral Trigger) */}
-                    <div className="pt-4 flex flex-col sm:flex-row gap-3 relative z-10">
-                       <button 
-                         onClick={() => {
-                           const scoreTxt = (teaserData.score || 0).toFixed(0);
-                           const text = encodeURIComponent(`🚨 [Institutional Audit] ${teaserData.symbol} scored ${scoreTxt}/100 on MarketBeacon Pro! \n\nCheck the full FII/DII analysis here: https://marketbeaconpro.com/analysis/${teaserData.symbol}`);
-                           window.open(`https://wa.me/919251180183?text=${text}`, '_blank');
-                         }}
-                         className="flex-1 py-3.5 bg-emerald-600 text-[var(--text-primary)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/20 active:scale-95 relative overflow-hidden group"
-                       >
-                         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-                         <Zap className="w-4 h-4 fill-current relative z-10" /> <span className="relative z-10">Share on WhatsApp</span>
-                       </button>
-                       <button 
-                         onClick={() => {
-                           const scoreTxt = (teaserData.score || 0).toFixed(0);
-                           const text = encodeURIComponent(`🚨 [Institutional Audit] ${teaserData.symbol} scored ${scoreTxt}/100 on MarketBeacon Pro!`);
-                           const url = `https://marketbeaconpro.com/analysis/${teaserData.symbol}`;
-                           window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
-                         }}
-                         className="flex-1 py-3.5 bg-blue-600 text-[var(--text-primary)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20 active:scale-95 relative overflow-hidden group"
-                       >
-                         <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-                         <TrendingUp className="w-4 h-4 relative z-10" /> <span className="relative z-10">Share on Telegram</span>
-                       </button>
-                    </div>
-                 </div>
-               </motion.div>
-             )}
-            </AnimatePresence>
-          </div>
-
-        {/* Brand Heading */}
-        <div className="inline-flex items-center space-x-2 px-3 py-1.5 md:px-4 md:py-2 bg-blue-950/50 backdrop-blur-sm rounded-full border border-blue-900 mb-4 md:mb-8">
-           <ShieldCheck className="h-3 w-3 md:h-4 md:w-4 text-blue-400" />
-           <span className="text-[7px] md:text-[10px] font-black text-blue-400 uppercase tracking-widest">For Educational & Research Purposes Only</span>
-        </div>
-        
-        <h1 className="text-3xl md:text-[6rem] font-black tracking-tighter leading-[0.85] text-[var(--text-primary)] mb-3 md:mb-6 drop-shadow-2xl">
-           THE SYSTEM <br className="hidden sm:block" /><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">FII/DII USE.</span>
-        </h1>
-         <p className="text-xs md:text-base font-medium text-blue-300/70 max-w-2xl mx-auto leading-relaxed mb-6 md:mb-8 px-4">
-           Type any stock symbol above → get its <span className="text-blue-400 font-black">100-point institutional audit score</span> in seconds. Free, no login needed.
-         </p>
-
-        {/* Grand Launch Promo Banner */}
-        <div className="max-w-2xl mx-auto mb-6 md:mb-10">
-          <div className="relative group cursor-pointer overflow-hidden p-[1px] bg-gradient-to-r from-blue-600 via-indigo-400 to-emerald-400 rounded-2xl shadow-xl shadow-blue-900/20">
-            <div className="bg-[var(--bg-primary)]/90 backdrop-blur-xl rounded-[15px] px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2 md:gap-4">
-              <div className="flex items-center gap-2 md:gap-4 min-w-0">
-                <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500 shrink-0">
-                  <Zap className="w-4 h-4 md:w-5 md:h-5 fill-current animate-pulse" />
-                </div>
-                <div className="text-left min-w-0">
-                  <h4 className="text-[9px] md:text-[11px] font-black text-[var(--text-primary)] uppercase tracking-widest leading-none mb-0.5 md:mb-1 truncate">Grand Alpha Launch Live</h4>
-                  <p className="text-[7px] md:text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest truncate">Free 7-Day Institutional Access</p>
-                </div>
-              </div>
-              <Link to="/login"
-                className="px-3 md:px-5 py-1.5 md:py-2.5 bg-blue-600 hover:bg-blue-500 text-[var(--text-primary)] rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 text-center"
-              >
-                Start 7-Day Free Trial →
-              </Link>
-            </div>
-            <div className="absolute top-0 right-0 p-1">
-               <div className="px-1 py-0.5 bg-emerald-500 text-[var(--text-primary)] text-[5px] md:text-[6px] font-black uppercase rounded-bl-lg animate-bounce">Live</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Live Preview Card — Instant Value Proof */}
-        <div className="max-w-md mx-auto mb-6 md:mb-8">
-          <Link to={`/analysis/${teaserData?.symbol || 'TCS'}`}
-            className="block group relative overflow-hidden p-[1px] bg-gradient-to-r from-blue-600 via-indigo-400 to-emerald-400 rounded-2xl shadow-xl shadow-blue-900/20 hover:scale-[1.02] transition-all duration-300"
-          >
-            <div className="bg-[var(--bg-primary)]/95 backdrop-blur-xl rounded-[15px] px-4 md:px-5 py-3 md:py-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg md:text-xl font-black text-[var(--text-primary)] italic tracking-tighter">{teaserData?.symbol || 'TCS'}</span>
-                  {teaserData?.isPass !== undefined && (
-                    <span className={`px-2 py-0.5 rounded-full text-[7px] md:text-[8px] font-black uppercase tracking-widest ${
-                      teaserData.isPass ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                    }`}>
-                      {teaserData.isPass ? 'Qualified' : 'Audit Pending'}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1">
-                  <Activity className="w-3 h-3 text-blue-400" /> Live
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 md:gap-4">
-                  {teaserData?.score !== undefined && (
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-lg md:text-2xl font-black italic tracking-tighter ${
-                        teaserData.score >= 70 ? 'text-emerald-400' : 'text-amber-400'
-                      }`}>{teaserData.score}</span>
-                      <span className="text-[7px] md:text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest leading-tight">Audit<br/>Score</span>
-                    </div>
-                  )}
-                  {teaserData?.smartMoney !== undefined && (
-                    <div className="h-8 w-px bg-[var(--border-primary)]" />
-                  )}
-                  {teaserData?.smartMoney !== undefined && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-lg md:text-2xl font-black text-blue-400 italic tracking-tighter">{teaserData.smartMoney.toFixed(0)}%</span>
-                      <span className="text-[7px] md:text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest leading-tight">Smart<br/>Money</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 text-blue-400">
-                  <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest">View Audit</span>
-                  <ArrowUpRight className="w-3 h-3 md:w-4 md:h-4" />
-                </div>
-              </div>
-              {!teaserData && (
-                <div className="flex items-center gap-2 text-[var(--text-muted)]">
-                  <RefreshCw className="w-3 h-3 animate-spin" />
-                  <span className="text-[9px] font-bold uppercase tracking-widest">Loading live audit data...</span>
-                </div>
-              )}
-            </div>
-          </Link>
-        </div>
-
-        {/* CTA */}
-          <p className="text-xs md:text-lg font-medium text-[var(--text-muted)] max-w-2xl mx-auto leading-relaxed mb-4 md:mb-6 px-4">
-           100-point Institutional Audit Score + 10 Proprietary Strategies + ABCD Tranche Laddering — the same framework used by institutional desks. Free to try.
-         </p>
-
-        <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4 mb-6 md:mb-10">
-          <Link to="/login" className="w-full md:w-auto inline-flex items-center justify-center px-6 md:px-10 py-3 md:py-5 bg-blue-600 text-[var(--text-primary)] rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm hover:bg-blue-500 hover:scale-105 transition-all shadow-2xl shadow-blue-900/40">
-             Start Free — No Card Needed
-          </Link>
-          <Link to="/license-desk" className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-5 bg-[var(--bg-primary)]/5 border border-white/10 text-[var(--text-primary)] rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm hover:bg-[var(--bg-primary)]/10 transition-all">
-            View Pricing <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
-          </Link>
-        </div>
-
-        <div className="flex items-center justify-center gap-4 md:gap-6 mb-6 md:mb-10">
-          <div className="flex -space-x-2 md:-space-x-3">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 md:border-4 border-slate-950 bg-[var(--bg-tertiary)] overflow-hidden shadow-xl">
-                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+10}`} alt="Active trader on MarketBeacon Pro" loading="lazy" decoding="async" />
-              </div>
-            ))}
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 md:border-4 border-slate-950 bg-blue-600 flex items-center justify-center text-[7px] md:text-[9px] font-black text-[var(--text-primary)] shadow-xl">+30K</div>
-          </div>
-          <p className="text-[9px] md:text-xs font-bold text-[var(--text-muted)]">Trusted by <span className="text-[var(--text-primary)] font-black">30,000+</span> traders</p>
-        </div>
-        </header>
-
-      {/* ── INSTITUTIONAL STRATEGY MATRIX ── */}
-      <motion.section
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.6 }}
-        className="py-16 md:py-20 px-6 md:px-10 bg-[var(--bg-secondary)]/30 border-y border-[var(--border-primary)]/40">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.4em] mb-3">Institutional Strategy Matrix</p>
-            <h2 className="text-2xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)]">10 Proprietary <span className="text-blue-400">Strategies.</span> One Terminal.</h2>
-            <p className="text-xs md:text-sm text-[var(--text-muted)] mt-3 max-w-2xl mx-auto font-medium">
-              The same quant frameworks used by institutional desks — now accessible through a single terminal. Each strategy is pre-coded, backtested, and ready to scan.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
-            {[
-              { name: 'Institutional Floor', sub: 'Envelope Long', tier: 'free', color: 'emerald' },
-              { name: 'Momentum Ceiling', sub: 'Envelope Short', tier: 'free', color: 'emerald' },
-              { name: 'Volatility Channel', sub: 'Bollinger Band', tier: 'free', color: 'emerald' },
-              { name: 'SMA-ABCD', sub: 'Bearish Stacking', tier: 'pro', color: 'blue' },
-              { name: '52W High/Low', sub: 'Support Matrix', tier: 'pro', color: 'blue' },
-              { name: 'Structural Pivot', sub: 'Cup & Handle', tier: 'pro', color: 'blue' },
-              { name: 'Dynamic Reversal', sub: 'RHS + ABCD', tier: 'pro', color: 'blue' },
-              { name: 'Supply-Demand Core', sub: 'S&R Zones', tier: 'alpha', color: 'amber' },
-              { name: 'Velocity Retest', sub: '20% Rally Pullback', tier: 'alpha', color: 'amber' },
-              { name: 'Deep Recovery', sub: '67% ATH Reset', tier: 'alpha', color: 'amber' },
-            ].map((s, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-                className={`group relative p-4 md:p-5 rounded-2xl border transition-all hover:-translate-y-1 hover:shadow-lg cursor-default ${
-                s.color === 'emerald' 
-                  ? 'bg-emerald-500/5 border-emerald-500/20 hover:border-emerald-400/40 hover:shadow-emerald-500/10' 
-                  : s.color === 'blue'
-                  ? 'bg-blue-500/5 border-blue-500/20 hover:border-blue-400/40 hover:shadow-blue-500/10'
-                  : 'bg-amber-500/5 border-amber-500/20 hover:border-amber-400/40 hover:shadow-amber-500/10'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                    s.tier === 'free' ? 'text-emerald-400 bg-emerald-500/10' : s.tier === 'pro' ? 'text-blue-400 bg-blue-500/10' : 'text-amber-400 bg-amber-500/10'
-                  }`}>{s.tier === 'free' ? 'FREE' : s.tier === 'pro' ? 'PRO' : 'ALPHA'}</span>
-                  <Lock className={`h-3 w-3 ${s.tier === 'free' ? 'text-emerald-500/40' : 'text-slate-600'}`} />
-                </div>
-                <h3 className="text-xs md:text-sm font-black text-[var(--text-primary)] leading-tight mb-0.5">{s.name}</h3>
-                <p className="text-[8px] md:text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{s.sub}</p>
-              </motion.div>
-            ))}
-          </div>
-          <div className="text-center mt-8">
-            <Link to="/education" className="inline-flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-[var(--text-primary)] transition-colors">
-              Understand Each Strategy <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* ── PHASE 1: 3 ICP SEGMENT CARDS ── */}
-      <motion.section
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.6 }}
-        aria-label="Who is MarketBeacon Pro for" className="py-20 px-6 md:px-10 border-y border-[var(--border-primary)]/60 bg-[var(--bg-secondary)]/20 relative overflow-hidden">
-        {/* 3D Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/5 via-transparent to-emerald-600/5 pointer-events-none" />
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="max-w-[1200px] mx-auto relative">
-          <div className="text-center mb-14">
-            <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.4em] mb-3">Kiske Liye Hai?</p>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--text-primary)]">Aapki Category <span className="text-blue-400">Kaunsi Hai?</span></h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Segment 1: Retail Trader */}
-            <div className="group relative bg-[var(--bg-secondary)]/80 border border-[var(--border-secondary)] rounded-[2rem] p-8 hover:border-blue-500/60 transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/10 flex flex-col backdrop-blur-sm">
-              <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-2xl w-fit mb-6 group-hover:bg-blue-500/20 transition-colors">
-                <TrendingUp className="h-6 w-6 text-blue-400 group-hover:text-blue-300 transition-colors" />
-              </div>
-              <div className="mb-2 text-[9px] font-black text-blue-400 uppercase tracking-[0.3em] group-hover:text-blue-300 transition-colors">Retail Trader</div>
-              <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-blue-100 transition-colors">Portfolio: ₹5L – ₹50L</h3>
-              <p className="text-[var(--text-tertiary)] text-sm leading-relaxed flex-1 mb-6 group-hover:text-[var(--text-secondary)] transition-colors">
-                "I never knew when to research entry vs wait for confirmation. — The ABCD Tranche system gives institutional clarity."
-              </p>
-              <div className="space-y-2 mb-8">
-                {['100-Point Audit Score Free', 'ABCD Entry Zones', 'Live Screener Access'].map((f, index) => (
-                  <div key={f} className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)] transition-colors">
-                    <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 group-hover:bg-blue-500/30 transition-colors">
-                      <ShieldCheck className="w-2.5 h-2.5 text-blue-400" />
-                    </div>
-                    <span className="relative">
-                      {f}
-                      {index === 0 && (
-                        <span className="absolute -top-1 -right-1 text-[6px] font-black text-emerald-500 uppercase tracking-wider">NEW</span>
-                      )}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <Link to="/login" className="w-full py-3.5 bg-blue-600 text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/25 transition-all relative overflow-hidden group">
-                <span className="relative z-10">Start Free Trial</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-              </Link>
-            </div>
-
-            {/* Segment 2: Sub-broker / Advisor */}
-            <div className="group relative bg-[var(--bg-secondary)]/60 border border-emerald-500/40 rounded-[2rem] p-8 hover:border-emerald-400/60 transition-all hover:-translate-y-1 flex flex-col">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-[var(--text-primary)] px-4 py-1 rounded-full text-[8px] font-black uppercase tracking-widest whitespace-nowrap shadow-lg">
-                Most Popular
-              </div>
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl w-fit mb-6 mt-2 group-hover:bg-emerald-500/20 transition-colors">
-                <Users className="h-6 w-6 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
-              </div>
-              <div className="mb-2 text-[9px] font-black text-emerald-400 uppercase tracking-[0.3em] group-hover:text-emerald-300 transition-colors">Sub-broker / Advisor</div>
-              <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-emerald-100 transition-colors">Client Portfolio Manager</h3>
-              <p className="text-[var(--text-tertiary)] text-sm leading-relaxed flex-1 mb-6 group-hover:text-[var(--text-secondary)] transition-colors">
-                "I need to justify every research note to clients. — The Audit Score helps me back every call with data."
-              </p>
-              <div className="space-y-2 mb-8">
-                {['Audit Trail per Trade', 'Client-Ready Data Reports', 'Educational Research Framework'].map((f, index) => (
-                  <div key={f} className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)] transition-colors">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 group-hover:bg-emerald-500/30 transition-colors">
-                      <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" />
-                    </div>
-                    <span className="relative">
-                      {f}
-                      {index === 1 && (
-                        <span className="absolute -top-1 -right-1 text-[6px] font-black text-amber-500 uppercase tracking-wider">PRO</span>
-                      )}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <Link to="/license-desk" className="w-full py-3.5 bg-emerald-600 text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/25 transition-all relative overflow-hidden group">
-                <span className="relative z-10">Get Pro Access</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-              </Link>
-            </div>
-
-            {/* Segment 3: HNI / Family Office */}
-            <div className="group relative bg-[var(--bg-secondary)]/60 border border-amber-500/30 rounded-[2rem] p-8 hover:border-amber-400/50 transition-all hover:-translate-y-1 flex flex-col">
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl w-fit mb-6 group-hover:bg-amber-500/20 transition-colors">
-                <BarChart2 className="h-6 w-6 text-amber-400 group-hover:text-amber-300 transition-colors" />
-              </div>
-              <div className="mb-2 text-[9px] font-black text-amber-400 uppercase tracking-[0.3em] group-hover:text-amber-300 transition-colors">HNI / Family Office</div>
-              <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-amber-100 transition-colors">Portfolio: ₹50L+</h3>
-              <p className="text-[var(--text-tertiary)] text-sm leading-relaxed flex-1 mb-6 group-hover:text-[var(--text-secondary)] transition-colors">
-                "Risk management weak hai, capital protect nahi ho raha." — Tranche Laddering se capital systematic way mein deploy hota hai. No emotional decisions.
-              </p>
-              <div className="space-y-2 mb-8">
-                {['Full Alpha Hub Access', 'Priority Alpha Strategy Triggers', 'Custom Enterprise Node'].map((f, index) => (
-                  <div key={f} className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)] transition-colors">
-                    <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 group-hover:bg-amber-500/30 transition-colors">
-                      <ShieldCheck className="w-2.5 h-2.5 text-amber-400" />
-                    </div>
-                    <span className="relative">
-                      {f}
-                      {index === 2 && (
-                        <span className="absolute -top-1 -right-1 text-[6px] font-black text-emerald-500 uppercase tracking-wider">EXCLUSIVE</span>
-                      )}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => window.open('https://wa.me/919251180183?text=Hi%20Admin,%20I%20am%20interested%20in%20Alpha%20Access%20for%20my%20HNI%20portfolio.', '_blank')}
-                className="w-full py-3.5 bg-amber-600/80 text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-amber-500 hover:shadow-lg hover:shadow-amber-500/25 transition-all relative overflow-hidden group"
-              >
-                <span className="relative z-10">Contact for Alpha</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-500 to-amber-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </motion.section>
+      <ICPCards />
 
       {/* Social Proof (Bento Grid) */}
       <motion.section
@@ -1087,79 +389,137 @@ const HomePage: React.FC = () => {
                         <div className="text-sm text-[var(--text-muted)] font-medium">{item.desc}</div>
                     </div>
                 ))}
-          </div>
-          </div>
-        </motion.section>
+           </div>
+           <div className="mt-6 max-w-2xl mx-auto text-center">
+             <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+               Backtest period: Jan 2020–Dec 2025 · Universe: Nifty 500 + Alpha 40 · 1,247 total signals · Slippage: 0.1% per trade · Transaction cost: 0.05% · Results are historical; past performance does not guarantee future returns. For educational reference only.
+             </p>
+           </div>
+           </div>
+         </motion.section>
 
-      {/* Interactive Strategy Simulator */}
-      <section className="py-24 px-6 md:px-10 max-w-[1440px] mx-auto border-t border-slate-900">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-5 space-y-6 text-left">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 bg-blue-500/10 rounded-full border border-blue-500/20">
-              <Activity className="h-3.5 w-3.5 text-blue-400" />
-              <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Interactive Audit Simulator</span>
+       <EducationSection simStage={simStage} setSimStage={setSimStage} />
+
+      {/* ── ABCD Walkthrough Example ── */}
+      <section className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.4em] mb-2">From Search to Entry</p>
+            <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)]">Full <span className="text-blue-400">ABCD Walkthrough</span></h2>
+            <p className="text-xs text-[var(--text-muted)] mt-2 max-w-xl mx-auto">Step-by-step example of how a stock moves from search to ABCD zones.</p>
+          </div>
+          <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-[2rem] p-6 md:p-8 space-y-6">
+            <div className="flex flex-col md:flex-row items-start gap-6">
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-black text-sm">1</div>
+                  <div>
+                    <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Search</p>
+                    <p className="text-xs font-black text-[var(--text-primary)]">Type "TCS" in search → get audit score 90/100</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-black text-sm">2</div>
+                  <div>
+                    <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Audit</p>
+                    <p className="text-xs font-black text-[var(--text-primary)]">Score 90/100 → Smart Money 95% → Qualified ✓</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-black text-sm">3</div>
+                  <div>
+                    <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">ABCD Zones</p>
+                    <p className="text-xs font-black text-[var(--text-primary)]">A: ₹2,125 | B: ₹1,913 | C: ₹1,721 | D: ₹1,551</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-black text-sm">4</div>
+                  <div>
+                    <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Invalidation</p>
+                    <p className="text-xs font-black text-[var(--text-primary)]">If price closes below D zone (−27%), audit retriggers</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 p-4 bg-[var(--bg-primary)] rounded-2xl border border-[var(--border-primary)]">
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Sample Capital Allocation</p>
+                <div className="space-y-2">
+                  {[
+                    { label: 'Tranche A (25%)', price: '₹2,125', pct: 'w-1/4', color: 'bg-blue-500' },
+                    { label: 'Tranche B (25%)', price: '₹1,913', pct: 'w-1/4', color: 'bg-emerald-500' },
+                    { label: 'Tranche C (35%)', price: '₹1,721', pct: 'w-[35%]', color: 'bg-amber-500' },
+                    { label: 'Tranche D (15%)', price: '₹1,551', pct: 'w-[15%]', color: 'bg-purple-500' },
+                  ].map(t => (
+                    <div key={t.label} className="flex items-center gap-3">
+                      <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest w-28 shrink-0">{t.label}</span>
+                      <div className={`h-2 ${t.pct} ${t.color} rounded-full opacity-70`} />
+                      <span className="text-[9px] font-bold text-[var(--text-muted)]">{t.price}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[8px] font-bold text-amber-400/70 uppercase tracking-widest mt-3 text-center">Educational example. Not investment advice.</p>
+              </div>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tighter leading-none uppercase italic">Visualizing the <br /><span className="text-blue-500">ABCD Tranche</span> Ladder</h2>
-            <p className="text-[var(--text-muted)] text-sm leading-relaxed">
-              Institutional capital doesn't enter stocks all at once. They build positions in tranches to absorb market volatility. Click each stage to see how our algorithms ladder your entry.
-            </p>
-            
-            <div className="grid grid-cols-4 gap-2 pt-4">
-              {(['A', 'B', 'C', 'D'] as const).map((stage) => (
-                <button
-                  key={stage}
-                  onClick={() => setSimStage(stage)}
-                  className={`py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
-                    simStage === stage
-                      ? 'bg-blue-600 border-blue-500 text-[var(--text-primary)] shadow-lg shadow-blue-500/20'
-                      : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)]'
-                  }`}
-                >
-                  Stage {stage}
-                </button>
-              ))}
+            <div className="text-center">
+              <Link to="/analysis/TCS" className="inline-flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-[var(--text-primary)] transition-colors">
+                View Live TCS Audit <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
           </div>
-          
-          <div className="lg:col-span-7 bg-[var(--bg-secondary)]/40 border border-[var(--border-primary)] rounded-[2.5rem] p-8 md:p-10 relative overflow-hidden flex flex-col justify-between min-h-[300px]">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[80px] -mr-32 -mt-32 pointer-events-none" />
-            
-            <div className="space-y-4 text-left">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em]">Tranche Allocation</span>
-                <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest bg-blue-500/10 px-2 py-0.5 rounded">Active Matrix</span>
-              </div>
-              
-              <h3 className="text-xl font-black uppercase text-[var(--text-primary)] italic tracking-tight">
-                {simStage === 'A' && "Stage A: Base Price Floor Establishment"}
-                {simStage === 'B' && "Stage B: Pullback Accumulation Sweep"}
-                {simStage === 'C' && "Stage C: Hard Value Floor Validation"}
-                {simStage === 'D' && "Stage D: Breakout / Target Realization"}
-              </h3>
-              
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed font-mono">
-                {simStage === 'A' && "Algorithm registers initial institutional activity at key support floors. A safe 25% initial position tranche is cleared for audit."}
-                {simStage === 'B' && "Volatile swings sweep minor stops. Buy limit triggers average-down protection, adding 25% volume at a 10% lower basis."}
-                {simStage === 'C' && "The final accumulation block triggers. 35% capacity is locked at the historical value floor, stabilizing the net holding yields."}
-                {simStage === 'D' && "The volume breakout clears minor resistances. Momentum surges to target objective (D-tranche ceiling) yielding ~42% Alpha exit."}
-              </p>
-            </div>
-            
-            <div className="pt-6 border-t border-[var(--border-primary)] flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-mono text-[9px] text-[var(--text-muted)] uppercase">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Simulation Active</span>
-              </div>
-              <span className="text-[9px] font-black text-[var(--text-secondary)] font-mono uppercase tracking-widest">
-                {simStage === 'A' && "Alloc: 25% | Gap: 0%"}
-                {simStage === 'B' && "Alloc: 50% | Gap: -10%"}
-                {simStage === 'C' && "Alloc: 85% | Gap: -18%"}
-                {simStage === 'D' && "Alloc: 100% | Target Achieved"}
-              </span>
-            </div>
+        </div>
+      </section>
+
+      {/* Strategy Comparison Table */}
+      <section className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--text-primary)] mb-2">Which Strategy Fits Your Style?</h2>
+            <p className="text-[var(--text-muted)] font-bold uppercase tracking-[0.2em] text-xs">Comparison of All 10 Institutional Models</p>
           </div>
-         </div>
-        </section>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[10px]">
+              <thead>
+                <tr className="border-b border-[var(--border-primary)]">
+                  <th className="py-3 pr-4 font-black text-[var(--text-primary)]">Strategy</th>
+                  <th className="py-3 px-4 font-black text-[var(--text-primary)]">Best For</th>
+                  <th className="py-3 px-4 font-black text-[var(--text-primary)]">Timeframe</th>
+                  <th className="py-3 px-4 font-black text-[var(--text-primary)]">Signal Type</th>
+                  <th className="py-3 px-4 font-black text-[var(--text-primary)]">Risk Level</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { s: 'KCM Envelope', b: 'Trending markets', t: '1–5 days', st: 'Momentum', r: 'Medium' },
+                  { s: 'Bollinger Bands', b: 'Range-bound / volatile', t: '1–10 days', st: 'Mean Reversion', r: 'Medium-High' },
+                  { s: 'SMA + BCD', b: 'Dips in uptrend', t: '5–20 days', st: 'Trend Continuation', r: 'Low-Medium' },
+                  { s: '52W High/Low', b: 'Breakout / breakdown', t: '5–30 days', st: 'Trend Confirmation', r: 'Medium' },
+                  { s: 'Support & Resistance', b: 'Range-bound markets', t: '1–10 days', st: 'Reversal', r: 'Low-Medium' },
+                  { s: 'RHS / Cup ABCD', b: 'Restructured / turnaround', t: '10–45 days', st: 'Structural Recovery', r: 'Medium-High' },
+                  { s: 'Market Structure', b: 'Swing / positional', t: '5–20 days', st: 'Trend Filter', r: 'Low' },
+                  { s: 'Volume Spread', b: 'Breakout confirmation', t: '1–5 days', st: 'Volume Divergence', r: 'Medium' },
+                  { s: 'Smart Money Index', b: 'Institutional flow tracking', t: '1–10 days', st: 'Flow Following', r: 'Low-Medium' },
+                  { s: 'Multi-Timeframe', b: 'Confluence validation', t: '1–30 days', st: 'Composite', r: 'Low' },
+                ].map((row, i) => (
+                  <tr key={i} className="border-b border-[var(--border-primary)]/30 hover:bg-[var(--bg-secondary)]/30 transition-colors">
+                    <td className="py-2.5 pr-4 font-bold text-[var(--text-primary)]">{row.s}</td>
+                    <td className="py-2.5 px-4 text-[var(--text-muted)]">{row.b}</td>
+                    <td className="py-2.5 px-4 text-[var(--text-muted)]">{row.t}</td>
+                    <td className="py-2.5 px-4 text-[var(--text-muted)]">{row.st}</td>
+                    <td className="py-2.5 px-4">
+                      <span className={`text-[8px] font-black uppercase tracking-widest ${
+                        row.r === 'Low' ? 'text-emerald-400' :
+                        row.r === 'Low-Medium' ? 'text-emerald-300' :
+                        row.r === 'Medium' ? 'text-amber-400' :
+                        row.r === 'Medium-High' ? 'text-orange-400' : 'text-red-400'
+                      }`}>{row.r}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[8px] font-bold text-amber-400/70 uppercase tracking-widest mt-4 text-center">Educational classification. Performance varies by market regime.</p>
+        </div>
+      </section>
 
       {/* Pillar #2: Internal Link Matrix (Trending Audits) */}
       <section className="py-24 px-6 md:px-10 max-w-[1440px] mx-auto border-t border-slate-900">
@@ -1277,99 +637,7 @@ const HomePage: React.FC = () => {
         })}
       </script>
 
-      {/* ── TESTIMONIALS SECTION ── */}
-      <section aria-label="Trader testimonials and reviews" className="py-24 px-6 md:px-10 border-t border-[var(--border-primary)]/50">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full mb-6">
-              <span className="text-amber-400 text-sm">★★★★★</span>
-              <span className="text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">4.9 / 5 from 1,280 traders</span>
-            </div>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--text-primary)] mb-4">
-              Traders Who Switched to <span className="text-blue-400">Institutional Logic</span>
-            </h2>
-            <p className="text-[var(--text-muted)] text-sm max-w-lg mx-auto">From retail traders to advisors — here's what MarketBeacon Pro users say.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                name: 'Rahul Sharma',
-                role: 'Retail Trader, Delhi',
-                avatar: 3,
-                stars: 5,
-                text: '"The ABCD tranche system completely changed how I manage risk. I used to dump everything at one price and panic when it fell. Now I build positions systematically — my average costs are 15-18% better than before."',
-                stat: '+18% better avg cost',
-                statColor: 'text-emerald-400',
-              },
-              {
-                name: 'Priya Mehta',
-                role: 'Sub-broker, Mumbai',
-                avatar: 7,
-                stars: 5,
-                text: '"As a sub-broker, every research note needs to be justified. The 100-point Audit Score gives me a defensible, data-backed reason for every stock I suggest. My clients trust me more now."',
-                stat: 'Research Tool Framework',
-                statColor: 'text-blue-400',
-              },
-              {
-                name: 'Vikram Nair',
-                role: 'HNI Investor, Bangalore',
-                avatar: 11,
-                stars: 5,
-                text: '"I manage a ₹2Cr portfolio. Before MarketBeacon, I relied on tips and news. Now I screen using the Audit Score, enter via ABCD zones, and track smart money. My drawdowns have reduced significantly."',
-                stat: 'Portfolio: ₹2Cr+',
-                statColor: 'text-amber-400',
-              },
-              {
-                name: 'Ananya Reddy',
-                role: 'Retail Trader, Hyderabad',
-                avatar: 5,
-                stars: 5,
-                text: '"I was using a popular screener before — it just gave me charts and raw numbers. MarketBeacon Pro tells me WHY a stock qualifies, what the entry zone is, and what the risk level is. Night and day difference."',
-                stat: 'Switched from Screener.in',
-                statColor: 'text-purple-400',
-              },
-              {
-                name: 'Suresh Iyer',
-                role: 'Family Office, Chennai',
-                avatar: 9,
-                stars: 5,
-                text: '"The institutional approach resonates with how we think about capital preservation. The zero-debt filter and smart money tracking are powerful. We use this as a first-pass filter for our equity allocation."',
-                stat: 'Family Office Use Case',
-                statColor: 'text-indigo-400',
-              },
-              {
-                name: 'Deepak Gupta',
-                role: 'Part-time Trader, Pune',
-                avatar: 14,
-                stars: 5,
-                text: '"I only get 30 minutes a day for stock research. The Qualified list + Audit Score makes it fast. I check the score, check the ABCD zone, and decide. No more hours of reading balance sheets manually."',
-                stat: '30 mins/day workflow',
-                statColor: 'text-emerald-400',
-              },
-            ].map((t, i) => (
-              <div key={i} className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-[2rem] p-7 flex flex-col gap-5 hover:border-[var(--border-secondary)] transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[var(--bg-tertiary)] border-2 border-[var(--border-secondary)] overflow-hidden shrink-0">
-                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${t.avatar}`} alt={t.name} loading="lazy" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-black text-[var(--text-primary)]">{t.name}</p>
-                      <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t.role}</p>
-                    </div>
-                  </div>
-                  <div className="text-amber-400 text-xs tracking-tight">{'★'.repeat(t.stars)}</div>
-                </div>
-                <p className="text-[var(--text-secondary)] text-sm leading-relaxed flex-1 italic">{t.text}</p>
-                <div className="pt-3 border-t border-[var(--border-primary)]">
-                  <span className={`text-[9px] font-black uppercase tracking-widest ${t.statColor}`}>{t.stat}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TestimonialsSection />
 
       {/* ── VS COMPARISON SECTION ── */}
       <section aria-label="MarketBeacon Pro vs other stock screeners" className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50 bg-[var(--bg-secondary)]/20">
@@ -1433,6 +701,41 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* ── WHY STOCKS GET REJECTED ── */}
+      <section className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50">
+        <div className="max-w-[900px] mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-[9px] font-black text-rose-400 uppercase tracking-[0.4em] mb-2">Avoiding Bad Trades</p>
+            <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)]">Why Stocks Get <span className="text-rose-400">Rejected</span></h2>
+            <p className="text-xs text-[var(--text-muted)] mt-2">The audit score doesn't just find winners — it filters out 70% of the market.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { reason: 'Debt-to-Equity > 1.0', impact: 'Hard Reject', desc: 'Stocks with high debt relative to equity are automatically disqualified. High debt = high bankruptcy risk in downturns.', icon: '💀' },
+              { reason: 'Smart Money < 30%', impact: 'Hard Reject', desc: 'If Promoter + FII + DII holding is below 30%, the stock lacks institutional interest. Retail-dominated stocks are too volatile.', icon: '👻' },
+              { reason: 'Promoter Pledge ≥ 5%', impact: 'Hard Reject', desc: 'When promoters have pledged >5% of their stake, it signals financial distress. Institutions avoid these.', icon: '🔴' },
+              { reason: 'ROCE < 12%', impact: 'Score Penalty', desc: 'Return on Capital Employed below 12% means the company isn\'t generating enough return on its capital base.', icon: '⚠️' },
+              { reason: 'Declining Revenue Trend', impact: 'Score Penalty', desc: '3-year revenue declining = business shrinking. Even if price is low, the underlying business is deteriorating.', icon: '📉' },
+              { reason: 'FII/DII Holding Dropping', impact: 'Score Penalty', desc: 'If institutions are reducing their stake quarter-on-quarter, the smart money is exiting. Follow the trend.', icon: '🏃' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-4 p-5 bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-2xl hover:border-rose-500/30 transition-all">
+                <span className="text-xl shrink-0">{item.icon}</span>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xs font-black text-[var(--text-primary)]">{item.reason}</h3>
+                    <span className={`text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                      item.impact === 'Hard Reject' ? 'text-rose-400 bg-rose-500/10' : 'text-amber-400 bg-amber-500/10'
+                    }`}>{item.impact}</span>
+                  </div>
+                  <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest text-center mt-6">These filters run automatically on every stock. Educational criteria, not investment advice.</p>
+        </div>
+      </section>
+
       {/* ── EMAIL LEAD CAPTURE ── */}
       <section className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50 bg-gradient-to-b from-slate-950 to-slate-900/50">
         <div className="max-w-[680px] mx-auto text-center">
@@ -1454,88 +757,16 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* FAQ Accordion Section */}
-      <section className="py-24 px-6 md:px-10 max-w-[1000px] mx-auto border-t border-slate-900">
-         <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4 uppercase italic">Frequently Audited Queries</h2>
-            <p className="text-[var(--text-muted)] font-bold uppercase tracking-[0.2em] text-xs">Everything you need to know about the terminal</p>
-         </div>
-         
-         <div className="space-y-4 text-left">
-            {[
-              {
-                q: "What is an Institutional Stock Audit?",
-                a: "An institutional stock audit is a quantitative scan that measures an asset against 100 mathematical data points. Unlike standard news bulletins, it reviews deep fundamental safety, debt leverage parameters, historical valuation percentiles, and institutional demand floors to assign a conviction score out of 100."
-              },
-              {
-                q: "How does the ABCD Tranche Laddering model protect capital?",
-                a: "Instead of allocating 100% of your capital at a single price point (which exposes you to instant drawdowns), the ABCD Ladder model divides buying capacity into four distinct tranches (A, B, C, D) triggered by historical pullback milestones. This averages your position downward automatically during sweeps and secures a stable demand floor."
-              },
-              {
-                q: "Is MarketBeacon Pro investment advice or advisory?",
-                a: "No. MarketBeacon Pro is NOT a SEBI-registered Investment Adviser (IA) or Research Analyst (RA). It is a quantitative mathematical research tool for educational and personal research purposes only. All audit scores, strategy signals, and ABCD zones are pre-coded mathematical models. Nothing on this platform constitutes a personalized investment recommendation, buy/sell advisory, or portfolio management service. Always consult a SEBI-registered advisor before making investment decisions."
-              },
-              {
-                q: "How often are stock prices and audit scores updated?",
-                a: "Live stock prices are synced continuously in real-time, and audit models re-examine key fundamental data points (like quarterly results, PE ratios, and institutional holdings) automatically daily to recalculate active scores and update zones."
-              }
-            ].map((faq, idx) => (
-              <div key={idx} className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-3xl overflow-hidden transition-all duration-300">
-                 <button 
-                   type="button"
-                   onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                   className="w-full px-8 py-6 flex items-center justify-between hover:bg-[var(--bg-primary)]/5 transition-all text-left outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none"
-                 >
-                    <span className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">{faq.q}</span>
-                    <ChevronRight className={`h-4 w-4 text-[var(--text-tertiary)] transition-transform duration-305 ${openFaq === idx ? 'rotate-90 text-blue-500' : ''}`} />
-                 </button>
-                 <AnimatePresence>
-                    {openFaq === idx && (
-                      <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="px-8 pb-6 text-xs text-[var(--text-muted)] font-mono leading-relaxed"
-                      >
-                         {faq.a}
-                      </motion.div>
-                    )}
-                 </AnimatePresence>
-              </div>
-            ))}
-         </div>
-      </section>
+      <FAQSection openFaq={openFaq} setOpenFaq={setOpenFaq} />
 
-      {/* CTA Footer */}
-      <section className="py-24 px-6 text-center">
-         <div className="max-w-4xl mx-auto bg-gradient-to-br from-blue-600 to-indigo-700 p-1 rounded-[3.5rem] shadow-2xl">
-            <div className="bg-[var(--bg-primary)] rounded-[3.4rem] px-10 py-20 flex flex-col items-center">
-               <h3 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 px-4">Ready to stop guessing?</h3>
-               <p className="text-[var(--text-muted)] font-medium text-lg mb-10 max-w-xl">Join 31,402 traders who upgraded their strategy with MarketBeacon Pro. Free to start.</p>
-               <div className="flex flex-col sm:flex-row items-center gap-4">
-                 <Link to="/login" className="px-12 py-5 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-2xl font-black uppercase tracking-widest text-base hover:scale-105 transition-all">
-                    Launch Terminal Free
-                 </Link>
-                 <a
-                   href="https://wa.me/919251180183?text=Hi%20Admin,%20I%20want%20to%20know%20more%20about%20MarketBeacon%20Pro."
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   className="px-10 py-5 bg-emerald-600 text-[var(--text-primary)] rounded-2xl font-black uppercase tracking-widest text-base hover:bg-emerald-500 hover:scale-105 transition-all"
-                 >
-                   WhatsApp Us
-                 </a>
-               </div>
-               <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest mt-8">Institutional Build v12.2.0-PRO · For Educational Use Only · Not Investment Advice</p>
-            </div>
-         </div>
-      </section>
+      <CTABanner />
 
       {/* Site Footer */}
       <SiteFooter />
 
       {/* Floating WhatsApp Button (Desktop) */}
       <a
-        href="https://wa.me/919251180183?text=Hi%20Admin,%20I%20want%20to%20know%20more%20about%20MarketBeacon%20Pro."
+        href={waLink('Hi Admin, I want to know more about MarketBeacon Pro.')}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
@@ -1553,7 +784,7 @@ const HomePage: React.FC = () => {
            Start Free
         </Link>
         <a
-          href="https://wa.me/919251180183?text=Hi%20Admin,%20I%20want%20to%20know%20more%20about%20MarketBeacon%20Pro."
+          href={waLink('Hi Admin, I want to know more about MarketBeacon Pro.')}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center w-12 py-3.5 bg-emerald-600 text-[var(--text-primary)] rounded-xl shadow-xl"
@@ -1636,70 +867,6 @@ const HomePage: React.FC = () => {
       </div>
 
     </div>
-  );
-};
-
-// ── Blog Teaser (fetches latest from API) ──
-const BlogTeaser: React.FC = () => {
-  const [articles, setArticles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch(`${getApiUrl()}/api/blog/recent?limit=3`)
-      .then(r => { if (!r.ok) throw new Error('API unavailable'); return r.json(); })
-      .then(data => setArticles(data))
-      .catch(() => setArticles([]))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const TAG_COLORS: Record<string, string> = {
-    Strategy: 'text-blue-400 border-blue-400/20 bg-blue-400/5',
-    Education: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5',
-    Institutional: 'text-amber-400 border-amber-400/20 bg-amber-400/5',
-    'Deep Dive': 'text-purple-400 border-purple-400/20 bg-purple-400/5',
-    Analysis: 'text-cyan-400 border-cyan-400/20 bg-cyan-400/5',
-  };
-
-  if (loading) return null;
-
-  return (
-    <section className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50">
-      <div className="max-w-[1100px] mx-auto">
-        <div className="flex flex-col md:flex-row items-end justify-between mb-10 gap-4">
-          <div>
-            <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.4em] mb-2">Knowledge Base</p>
-            <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)]">Latest <span className="text-blue-400">Insights</span></h2>
-          </div>
-          <Link to="/blog" className="flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-[var(--text-primary)] transition-colors shrink-0">
-            All Articles <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {articles.length === 0 ? (
-            <p className="text-[var(--text-muted)] text-sm col-span-3 text-center py-10">No articles yet. Check back soon.</p>
-          ) : articles.map((a) => (
-            <Link
-              key={a.slug}
-              to={`/blog/${a.slug}`}
-              className="group bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-[1.5rem] p-6 flex flex-col gap-4 hover:border-slate-600 hover:-translate-y-1 transition-all"
-            >
-              <span className={`self-start px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${TAG_COLORS[a.tag] || 'text-slate-400 border-slate-400/20 bg-slate-400/5'}`}>
-                {a.tag}
-              </span>
-              <h3 className="text-sm font-black text-[var(--text-primary)] group-hover:text-blue-300 transition-colors leading-snug">
-                {a.title}
-              </h3>
-              <div className="flex items-center justify-between mt-auto">
-                <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1.5">
-                  <BookOpen className="w-3 h-3" />{a.read_time || '3 min read'}
-                </span>
-                <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
-              </div>
-            </Link>
-          ))}
-        </div>
-        </div>
-      </section>
   );
 };
 

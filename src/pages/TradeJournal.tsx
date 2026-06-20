@@ -21,15 +21,16 @@ import Papa from 'papaparse';
 import { BASKETS, STRATEGIES } from '../data/stocks';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { toast } from 'sonner';
+import type { TradeRecord, StockPriceResult } from '../types';
 
 const API_URL = getApiUrl();
 
 const TradeJournalPage: React.FC = () => {
-  const [trades, setTrades] = useState<any[]>([]);
+  const [trades, setTrades] = useState<TradeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSegment, setActiveSegment] = useState<'OPEN' | 'CLOSED'>('OPEN');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showCloseModal, setShowCloseModal] = useState<any>(null);
+  const [showCloseModal, setShowCloseModal] = useState<TradeRecord | null>(null);
   const [symbolSearch, setSymbolSearch] = useState('');
   const [livePrices, setLivePrices] = useState<Record<string, number>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,8 +62,8 @@ const TradeJournalPage: React.FC = () => {
       const res = await fetch(`${API_URL}/api/stock-prices?symbols=${symbols.join(',')}`);
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) {
-        const prices: any = {};
-        data.forEach((s: any) => {
+        const prices: Record<string, number> = {};
+        data.forEach((s: StockPriceResult) => {
           if (s.price) prices[s.symbol] = s.price;
         });
         setLivePrices(prices);
@@ -90,7 +91,7 @@ const TradeJournalPage: React.FC = () => {
       }
       if (res.ok && !data.error) {
         setTrades(data);
-        if (data.length > 0) fetchLivePrices(data.map((t: any) => t.symbol));
+        if (data.length > 0) fetchLivePrices(data.map((t: TradeRecord) => t.symbol));
       }
     } catch (e) { console.error('Trades fetch failed:', e); }
     finally { setLoading(false); }
@@ -155,7 +156,7 @@ const TradeJournalPage: React.FC = () => {
       return { ...t, cmp, price, invested, currentVal, pnl, pnlPer, targetVal, gap, days, annualGain };
     });
     if (sortConfig) {
-      tradeData.sort((a: any, b: any) => {
+      tradeData.sort((a, b) => {
         const valA = a[sortConfig.key];
         const valB = b[sortConfig.key];
         if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -236,7 +237,7 @@ const TradeJournalPage: React.FC = () => {
     link.click();
   };
 
-  const handleShareTrade = (trade: any) => {
+  const handleShareTrade = (trade: TradeRecord & { pnlPer?: number; pnl?: number; days?: number }) => {
     const isClosed = trade.status === 'CLOSED';
     const text = isClosed 
       ? `✅ *Trade Booked: ${trade.symbol}*
@@ -292,9 +293,9 @@ const TradeJournalPage: React.FC = () => {
 
             if (!symbol || !buyPrice || !qty || String(symbol).toLowerCase().includes('total')) return null;
 
-            const formatDate = (raw: any) => {
+            const formatDate = (raw: unknown) => {
               if (!raw) return new Date().toISOString().split('T')[0];
-              const d = new Date(raw);
+              const d = new Date(raw as string | number);
               return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
             };
 
@@ -315,7 +316,7 @@ const TradeJournalPage: React.FC = () => {
               strategy: findVal(['strategy']) || 'CSV Import',
               notes: findVal(['notes', 'remark']) || ''
             };
-          }).filter((t: any) => t && t.symbol && t.entry_price > 0);
+          }).filter((t) => t && t.symbol && t.entry_price > 0);
 
           if (tradesToImport.length === 0) { 
             toast("No valid trades detected. Check column names like 'Symbol', 'Open Price', and 'Qty'."); 
@@ -336,8 +337,8 @@ const TradeJournalPage: React.FC = () => {
           } else { 
             toast("Server Error: " + (data.error || "Failed to save trades.")); 
           }
-        } catch (err: any) { 
-          toast("Processing Error: " + err.message); 
+        } catch (err: unknown) { 
+          toast("Processing Error: " + (err instanceof Error ? err.message : 'Unknown error')); 
         } finally { 
           setIsImporting(false); 
           if (fileInputRef.current) fileInputRef.current.value = ''; 

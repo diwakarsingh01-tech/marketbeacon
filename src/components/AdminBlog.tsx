@@ -40,7 +40,7 @@ export default function AdminBlog() {
     if (!editor.title || !editor.slug) { toast('Title and slug are required'); return; }
     setSaving(true);
     try {
-      const body = { ...editor, key_takeaways: editor.key_takeaways.filter((t: string) => t.trim()) };
+      const body = { ...editor, key_takeaways: (editor.key_takeaways || []).filter((t: string) => t.trim()) };
       const res = editor.id
         ? await fetch(`${API_URL}/api/admin/blog/${editor.id}`, { method: 'PUT', headers, body: JSON.stringify(body) })
         : await fetch(`${API_URL}/api/admin/blog`, { method: 'POST', headers, body: JSON.stringify(body) });
@@ -104,7 +104,7 @@ export default function AdminBlog() {
                 <button onClick={() => togglePublish(post)} className={`p-2 rounded-xl transition-all ${post.published ? 'text-emerald-500 hover:bg-emerald-50' : 'text-slate-300 hover:bg-slate-50'}`} title={post.published ? 'Published' : 'Draft'}>
                   {post.published ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
-                <button onClick={() => setEditor(post)} className="p-2 rounded-xl text-blue-500 hover:bg-blue-50 transition-all">
+                <button onClick={() => setEditor({ ...post, sections: typeof post.content === 'string' ? JSON.parse(post.content) : (post.content || []), key_takeaways: typeof post.key_takeaways === 'string' ? JSON.parse(post.key_takeaways) : (post.key_takeaways || []) })} className="p-2 rounded-xl text-blue-500 hover:bg-blue-50 transition-all">
                   <Edit3 className="w-4 h-4" />
                 </button>
                 <button onClick={() => remove(post.id)} className="p-2 rounded-xl text-red-400 hover:bg-red-50 transition-all">
@@ -176,7 +176,7 @@ export default function AdminBlog() {
 
               <div>
                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Key Takeaways (one per line)</label>
-                <textarea value={editor.key_takeaways.join('\n')} onChange={e => setEditor({ ...editor, key_takeaways: e.target.value.split('\n').filter((t: string) => t.trim()) })} rows={3} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white transition-all" />
+                <textarea value={(editor.key_takeaways || []).join('\n')} onChange={e => setEditor({ ...editor, key_takeaways: e.target.value.split('\n').filter((t: string) => t.trim()) })} rows={3} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white transition-all" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

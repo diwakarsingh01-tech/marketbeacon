@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, TrendingUp } from 'lucide-react';
 import BrandLogo from '../brand/BrandLogo';
+import { WHATSAPP_BASE } from '../../lib/constants';
 
 const SiteFooter: React.FC = () => {
   const year = new Date().getFullYear();
@@ -57,7 +58,7 @@ const SiteFooter: React.FC = () => {
             {/* Social */}
             <div className="flex items-center gap-3 pt-1">
               <a
-                href="https://wa.me/919251180183"
+                href={WHATSAPP_BASE}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp MarketBeacon Pro"

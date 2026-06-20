@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
+import { BASKETS, STRATEGIES } from '../data/stocks';
 
 const API_URL = getApiUrl();
 
@@ -89,7 +90,7 @@ const StockFundamentalsPage: React.FC = () => {
     </div>
   );
 
-  const formatCr = (val: any) => {
+  const formatCr = (val: unknown) => {
     const n = Number(val);
     if (isNaN(n) || n === 0) return '—';
     return `₹ ${(n / 10000000).toLocaleString(undefined, { maximumFractionDigits: 0 })} Cr.`;
@@ -112,6 +113,21 @@ const StockFundamentalsPage: React.FC = () => {
   const avgMedian = (pe3Y + pe5Y) / 2;
   const hasMedian = avgMedian > 0;
   const isPEOvervalued = peRatio > avgMedian && hasMedian;
+
+  // Find all baskets that contain this stock
+  const containingBaskets = Object.entries(BASKETS)
+    .filter(([_, list]) => {
+      const sym = symbol?.trim().toUpperCase();
+      return list.some(s => {
+        const u = s.trim().toUpperCase();
+        return u === sym || u.replace('.NS', '') === sym || sym.replace('.NS', '') === u;
+      });
+    })
+    .map(([name]) => name);
+
+  const applicableStrategies = STRATEGIES.filter(strat =>
+    strat.baskets.some(b => containingBaskets.includes(b))
+  );
 
   return (
     <div className="flex-1 flex flex-col font-sans text-[var(--text-secondary)] bg-[var(--bg-primary)] lg:h-screen lg:overflow-hidden overflow-y-auto pb-24 md:pb-0 relative terminal-scan">
@@ -181,6 +197,92 @@ const StockFundamentalsPage: React.FC = () => {
              </div>
           </div>
 
+          {/* Basket & Strategy Classifications */}
+          <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl p-5 backdrop-blur-sm space-y-4">
+             <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] border-b border-[var(--border-primary)] pb-3">
+                <span className="text-[var(--text-primary)]">Basket & Strategy Matrix</span>
+                <span className="text-[var(--text-muted)]">Live Status</span>
+             </div>
+             
+             {/* Baskets list */}
+             <div className="space-y-2">
+                <span className="text-[8px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest block">Associated Baskets</span>
+                <div className="flex flex-wrap gap-2">
+                   {containingBaskets.length > 0 ? (
+                      containingBaskets.map((bName) => (
+                         <span key={bName} className="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg text-[9px] font-black uppercase tracking-wider">
+                            {bName}
+                         </span>
+                      ))
+                   ) : (
+                      <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase">None (Not in any predefined basket)</span>
+                   )}
+                </div>
+             </div>
+
+             {/* Strategies table */}
+             <div className="space-y-3 pt-2">
+                <span className="text-[8px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest block">Strategy Routing & Approval Status</span>
+                <div className="grid grid-cols-1 gap-2.5">
+                   {applicableStrategies.map((strat) => {
+                      const stratResult = data?.strategies?.[strat.id];
+                      let statusText = 'WATCHLIST';
+                      let statusColor = 'text-blue-400 bg-blue-500/5 border-blue-500/10';
+                      let tabName = 'watchlist';
+
+                      if (stratResult) {
+                         if (stratResult.status === 'QUALIFIED' || stratResult.isBuyZone) {
+                            statusText = 'APPROVED / BUY ZONE';
+                            statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+                            tabName = 'open';
+                         } else if (stratResult.status === 'OBSERVATION' || stratResult.isObservation) {
+                            statusText = 'OBSERVATION / NEUTRAL';
+                            statusColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+                            tabName = 'neutral';
+                         } else if (stratResult.status === 'REJECTED' || stratResult.status === 'REJECT' || stratResult.isPass === false) {
+                            statusText = 'REJECTED / AVOID';
+                            statusColor = 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+                            tabName = 'rejected';
+                         }
+                      }
+
+                      // Find a basket that connects this stock and strategy
+                      const matchingBasket = strat.baskets.find(b => containingBaskets.includes(b)) || strat.baskets[0];
+
+                      return (
+                         <div key={strat.id} className="flex items-center justify-between p-3.5 bg-[var(--bg-primary)]/40 border border-[var(--border-primary)] rounded-xl hover:border-blue-500/30 transition-all">
+                            <div className="space-y-1">
+                               <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-wide block">{strat.name}</span>
+                               <span className="text-[8px] text-[var(--text-muted)] font-semibold uppercase tracking-wider block">Basket: {matchingBasket}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                               <span className={`px-2 py-0.5 rounded text-[8px] font-black tracking-wider border uppercase leading-none ${statusColor}`}>
+                                  {statusText}
+                                  {stratResult?.reason && stratResult.reason !== 'QUALIFIED' && stratResult.reason !== 'OBSERVATION' && (
+                                     <span className="block text-[6px] opacity-85 mt-0.5 normal-case font-bold">{stratResult.reason}</span>
+                                  )}
+                               </span>
+                               <Link 
+                                  to={`/screener?strategy=${strat.id}&basket=${encodeURIComponent(matchingBasket)}&tab=${tabName}&search=${symbol}`}
+                                  className="p-1.5 bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg border border-blue-500/20 transition-all text-[8px] font-black uppercase tracking-wider flex items-center gap-1 active:scale-95"
+                                  title="View on Screener Matrix"
+                               >
+                                  <span>View Matrix</span>
+                                  <ArrowUpRight className="w-3.5 h-3.5" />
+                               </Link>
+                            </div>
+                         </div>
+                      );
+                   })}
+                   {applicableStrategies.length === 0 && (
+                      <div className="p-4 bg-[var(--bg-primary)]/20 border border-[var(--border-primary)] rounded-xl text-center">
+                         <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-wider">No applicable strategy for this stock's basket classification.</p>
+                      </div>
+                   )}
+                </div>
+             </div>
+          </section>
+
           {/* Strategy Backtest Section */}
           <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
             <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
@@ -199,7 +301,7 @@ const StockFundamentalsPage: React.FC = () => {
               )}
               {backtestLoading && <div className="p-4 text-center text-[9px] text-[var(--text-muted)]">Computing 20-year backtest...</div>}
               {backtestLoaded && !backtestLoading && backtestData ? (
-                Object.entries(backtestData).sort((a: any, b: any) => b[1].totalTrades - a[1].totalTrades).map(([sid, r]: [string, any]) => (
+                Object.entries(backtestData).sort((a: [string, any], b: [string, any]) => b[1].totalTrades - a[1].totalTrades).map(([sid, r]: [string, any]) => (
                   <div key={sid} className="bg-[var(--bg-primary)]/40 border border-[var(--border-primary)] rounded-xl overflow-hidden">
                     <button
                       onClick={() => setExpandedStrategy(expandedStrategy === sid ? null : sid)}
@@ -232,7 +334,7 @@ const StockFundamentalsPage: React.FC = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {r.trades.map((t: any, i: number) => (
+                            {r.trades.map((t, i: number) => (
                               <tr key={i} className="border-t border-[var(--border-primary)]/50 hover:bg-[var(--bg-primary)]/40">
                                 <td className="p-2 text-[var(--text-primary)]">{t.entryDate}</td>
                                 <td className="p-2 text-[var(--text-secondary)]">₹{t.entryPrice}</td>
@@ -276,7 +378,7 @@ const StockFundamentalsPage: React.FC = () => {
                       <span className="text-[9px] font-bold text-[var(--text-primary)]">{segment.data.score}/{segment.data.max}</span>
                     </div>
                     <div className="space-y-2">
-                      {(segment.data.checks || []).map((check: any, idx: number) => (
+                      {(segment.data.checks || []).map((check, idx: number) => (
                         <div key={idx} className="flex items-center justify-between">
                            <span className="text-[9px] font-medium text-[var(--text-muted)] uppercase">{check.label}</span>
                            <span className={`text-[9px] font-bold ${check.pass ? 'text-emerald-500' : 'text-amber-500'}`}>{check.value}</span>
