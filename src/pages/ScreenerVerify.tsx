@@ -618,7 +618,7 @@ const ScreenerVerify: React.FC = () => {
                 placeholder="Filter symbol..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none text-xs font-bold outline-none placeholder-slate-500 w-full"
+                className="bg-transparent border-none text-xs font-bold outline-none text-[var(--text-primary)] placeholder-[var(--text-tertiary)] w-full"
               />
             </div>
 
@@ -636,7 +636,7 @@ const ScreenerVerify: React.FC = () => {
                     className={`w-full flex items-center justify-between p-3 rounded-2xl border text-left transition-all ${
                       symbol === item.symbol
                         ? 'bg-blue-600/10 border-blue-500/40 text-blue-400'
-                        : 'bg-[var(--bg-primary)]/40 border-slate-900/60 hover:border-[var(--border-primary)]'
+                        : 'bg-[var(--bg-primary)]/40 border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
                     }`}
                   >
                     <div>
@@ -730,7 +730,7 @@ const ScreenerVerify: React.FC = () => {
             >
               {historyData.length === 0 && !loadingDetail && (
                 <div className="flex flex-col items-center justify-center h-[440px] text-[var(--text-muted)]">
-                  <Info className="h-8 w-8 mb-2 text-slate-600" />
+                  <Info className="h-8 w-8 mb-2 text-[var(--text-tertiary)]" />
                   <p className="text-xs font-black uppercase tracking-widest">No candlestick records available</p>
                 </div>
               )}
