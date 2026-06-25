@@ -31,6 +31,11 @@ const AppHomePage = lazy(() => import('./pages/AppHome'));
 const NotFoundPage = lazy(() => import('./pages/NotFound'));
 const ChartsTerminalPage = lazy(() => import('./pages/ChartsTerminal'));
 const ScreenerVerifyPage = lazy(() => import('./pages/ScreenerVerify'));
+const UserDashboardPage = lazy(() => import('./pages/UserDashboard'));
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfService'));
+const DisclaimerPage = lazy(() => import('./pages/Disclaimer'));
+const AboutPage = lazy(() => import('./pages/About'));
+const ContactPage = lazy(() => import('./pages/Contact'));
 
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -70,8 +75,12 @@ function AnimatedRoutes() {
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<PrivacyPolicyPage />} />
         <Route path="/methodology" element={<MethodologyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
+        <Route path="/disclaimer" element={<DisclaimerPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/marketplace" element={<Navigate to="/license-desk" replace />} />
-        <Route path="/charts" element={<AuthGuard><ChartsTerminalPage /></AuthGuard>} />
+        <Route path="/charts" element={<ChartsTerminalPage />} />
 
         {/* Authenticated SaaS Platform */}
         <Route 
@@ -96,7 +105,7 @@ function AnimatedRoutes() {
         </Route>
         
         {/* Redirects */}
-        <Route path="/dashboard" element={<Navigate to="/alpha-hub" replace />} />
+        <Route path="/dashboard" element={<UserDashboardPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AnimatePresence>
