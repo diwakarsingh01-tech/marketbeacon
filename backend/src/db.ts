@@ -56,6 +56,15 @@ export async function initDB() {
   `);
 
   await tursoClient.execute(`
+    ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1
+  `).catch(() => {});
+  await tursoClient.execute(`
+    ALTER TABLE users ADD COLUMN twofa_secret TEXT
+  `).catch(() => {});
+  await tursoClient.execute(`
+    ALTER TABLE users ADD COLUMN twofa_enabled INTEGER DEFAULT 0
+  `).catch(() => {});
+  await tursoClient.execute(`
     CREATE TABLE IF NOT EXISTS upgrade_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,

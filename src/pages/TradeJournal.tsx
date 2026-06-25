@@ -453,7 +453,7 @@ const TradeJournalPage: React.FC = () => {
             <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Holding Duration</p>
          </div>
 
-         <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl shadow-slate-200 group hover:scale-[1.02] transition-all">
+         <div className="bg-[var(--bg-tertiary)] rounded-3xl p-6 text-[var(--text-primary)] shadow-xl shadow-[var(--border-primary)] group hover:scale-[1.02] transition-all">
             <div className="flex items-center justify-between mb-3">
                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Annual Projection</span>
                <Activity className="h-3.5 w-3.5 text-blue-400" />
@@ -468,7 +468,7 @@ const TradeJournalPage: React.FC = () => {
             <button onClick={() => { setActiveSegment('OPEN'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSegment === 'OPEN' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>Open Positions</button>
             <button onClick={() => { setActiveSegment('CLOSED'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSegment === 'CLOSED' ? 'bg-blue-600 text-white shadow-xl' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>Closed History</button>
          </div>
-         {selectedIds.length > 0 && <button onClick={handleBulkDelete} className="flex items-center space-x-2 px-6 py-3 bg-red-50 text-rose-400 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3 w-3" /><span>Delete ({selectedIds.length})</span></button>}
+         {selectedIds.length > 0 && <button onClick={handleBulkDelete} className="flex items-center space-x-2 px-6 py-3 bg-rose-500/10 text-rose-400 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-rose-500/20 hover:bg-rose-600 hover:text-white transition-all"><Trash2 className="h-3 w-3" /><span>Delete ({selectedIds.length})</span></button>}
       </div>
 
       <div className="hidden md:flex flex-1 flex flex-col min-h-0 bg-[var(--bg-secondary)] rounded-[2.5rem] border border-[var(--border-primary)] shadow-xl overflow-hidden relative">
@@ -476,7 +476,7 @@ const TradeJournalPage: React.FC = () => {
             <table className="w-full text-left border-collapse">
                <thead>
                   <tr className="bg-[var(--bg-secondary)] text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-[var(--border-primary)] sticky top-0 z-10">
-                     <th className="px-6 py-4 w-10"><button onClick={() => { if (selectedIds.length === processedTrades.length) setSelectedIds([]); else setSelectedIds(processedTrades.map(t => t.id)); }} className="text-slate-300">{selectedIds.length === processedTrades.length && processedTrades.length > 0 ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></th>
+                     <th className="px-6 py-4 w-10"><button onClick={() => { if (selectedIds.length === processedTrades.length) setSelectedIds([]); else setSelectedIds(processedTrades.map(t => t.id)); }} className="text-[var(--text-tertiary)]">{selectedIds.length === processedTrades.length && processedTrades.length > 0 ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></th>
                      <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('symbol')}>Instrument {SortIcon('symbol')}</th>
                      {activeSegment === 'OPEN' ? (
                        <>
@@ -505,10 +505,10 @@ const TradeJournalPage: React.FC = () => {
                      <th className="px-6 py-4 text-center">Action</th>
                   </tr>
                </thead>
-               <tbody className="divide-y divide-slate-50 text-[10px] font-black">
+               <tbody className="divide-y divide-[var(--border-primary)] text-[10px] font-black">
                   {processedTrades.map((t) => (
                       <tr key={t.id} className={`hover:bg-[var(--bg-secondary)] transition-colors group ${selectedIds.includes(t.id) ? 'bg-blue-500/10' : ''}`}>
-                         <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])} className={selectedIds.includes(t.id) ? 'text-blue-400' : 'text-slate-200'}>{selectedIds.includes(t.id) ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></td>
+                         <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])} className={selectedIds.includes(t.id) ? 'text-blue-400' : 'text-[var(--text-tertiary)]'}>{selectedIds.includes(t.id) ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></td>
                          <td className="px-4 py-3">
                             <div className="flex flex-col uppercase tracking-tighter relative group/item">
                                <div className="flex items-center space-x-2">
@@ -522,7 +522,7 @@ const TradeJournalPage: React.FC = () => {
                            <>
                              <td className="px-4 py-3 text-[var(--text-muted)] font-bold">{t.entry_date}</td>
                              <td className="px-4 py-3 text-center text-[var(--text-primary)]">{t.quantity}</td>
-                             <td className="px-4 py-3 text-center"><span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${t.level === 'A' ? 'bg-blue-600 text-white' : t.level === 'B' ? 'bg-amber-500/100 text-white' : t.level === 'C' ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}>{t.level}</span></td>
+                             <td className="px-4 py-3 text-center"><span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${t.level === 'A' ? 'bg-blue-600 text-white' : t.level === 'B' ? 'bg-amber-600 text-white' : t.level === 'C' ? 'bg-indigo-600 text-white' : 'bg-[var(--bg-primary)] text-[var(--text-primary)] border-[var(--border-primary)]'}`}>{t.level}</span></td>
                              <td className="px-4 py-3 text-right text-[var(--text-secondary)]">₹{t.entry_price.toLocaleString()}</td>
                              <td className="px-4 py-3 text-right font-black text-blue-400">₹{t.cmp.toLocaleString()}</td>
                              <td className={`${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} px-4 py-3 text-right`}>₹{Math.abs(t.pnl).toLocaleString()}</td>
@@ -679,7 +679,7 @@ const TradeJournalPage: React.FC = () => {
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[var(--bg-primary)]/60 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-[var(--bg-secondary)] w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
              <div className="p-8 border-b border-[var(--border-primary)] flex items-center justify-between bg-[var(--bg-secondary)]/30">
                 <div className="space-y-1">
@@ -813,7 +813,7 @@ const TradeJournalPage: React.FC = () => {
       )}
 
       {showCloseModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[var(--bg-primary)]/60 backdrop-blur-md animate-in fade-in duration-300">
            <div className="bg-[var(--bg-secondary)] w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300">
               <h3 className="text-xl font-black text-[var(--text-primary)] uppercase italic mb-6">Realize Research: {showCloseModal.symbol}</h3>
               <form onSubmit={handleConfirmClose} className="space-y-6 text-left">
@@ -835,9 +835,9 @@ const TradeJournalPage: React.FC = () => {
       )}
 
       {isImporting && (
-        <div className="fixed inset-0 z-[300] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center flex-col space-y-4">
-           <div className="w-12 h-12 border-4 border-white/10 border-t-blue-500 rounded-full animate-spin" />
-           <p className="text-white text-[10px] font-black uppercase tracking-[0.4em] animate-pulse">Auditing Spreadsheet Integrity...</p>
+        <div className="fixed inset-0 z-[300] bg-[var(--bg-primary)]/95 backdrop-blur-xl flex items-center justify-center flex-col space-y-4">
+           <div className="w-12 h-12 border-4 border-[var(--border-primary)] border-t-blue-500 rounded-full animate-spin" />
+           <p className="text-[var(--text-primary)] text-[10px] font-black uppercase tracking-[0.4em] animate-pulse">Auditing Spreadsheet Integrity...</p>
         </div>
       )}
     </div>

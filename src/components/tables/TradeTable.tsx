@@ -132,7 +132,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
               href={WHATSAPP_BASE} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100 flex items-center space-x-1.5 group"
+              className="px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-500/20 flex items-center space-x-1.5 group"
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3 group-hover:scale-110 transition-transform">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -143,7 +143,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
               href="https://t.me/asktoceo" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-100 flex items-center space-x-1.5 group"
+              className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-500/20 flex items-center space-x-1.5 group"
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3 group-hover:scale-110 transition-transform">
                 <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
@@ -191,7 +191,7 @@ const CircularGauge = ({ value, size = 32, strokeWidth = 3 }: { value: number, s
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="currentColor" strokeWidth={strokeWidth} fill="transparent" className="text-slate-100" />
+        <circle cx={size / 2} cy={size / 2} r={radius} stroke="currentColor" strokeWidth={strokeWidth} fill="transparent" className="text-[var(--border-primary)]" />
         <motion.circle
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
@@ -206,12 +206,12 @@ const CircularGauge = ({ value, size = 32, strokeWidth = 3 }: { value: number, s
 
 const getMarketCapTag = (cap: number, symbol: string) => {
   if (['NIFTYBEES', 'BANKBEES'].includes(symbol)) {
-    return { label: 'ETF', class: 'text-indigo-600 bg-indigo-50 border-indigo-100' };
+    return { label: 'ETF', class: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' };
   }
   const capInCr = cap / 10000000;
   if (capInCr >= 20000) return { label: 'LARGE CAP', class: 'text-[var(--text-primary)] bg-[var(--bg-tertiary)] border-[var(--border-secondary)]' };
-  if (capInCr >= 5000) return { label: 'MID CAP', class: 'text-blue-400 bg-blue-500/10 border-blue-100' };
-  return { label: 'SMALL CAP', class: 'text-amber-400 bg-amber-500/10 border-amber-100' };
+  if (capInCr >= 5000) return { label: 'MID CAP', class: 'text-blue-400 bg-blue-500/10 border-blue-500/20' };
+  return { label: 'SMALL CAP', class: 'text-amber-400 bg-amber-500/10 border-amber-500/20' };
 };
 
 const TradeTable: React.FC<TradeTableProps> = ({ 
@@ -452,19 +452,19 @@ const TradeTable: React.FC<TradeTableProps> = ({
           
           {/* Compact Pill Tabs */}
           {setActiveTab && visibleTabs.length > 0 && (
-            <div className="grid grid-cols-3 bg-slate-200/40 p-1 rounded-xl border border-slate-200/50 gap-0.5 w-full md:flex md:w-auto overflow-x-auto no-scrollbar shadow-inner">
+            <div className="grid grid-cols-3 bg-[var(--bg-tertiary)] p-1 rounded-xl border border-[var(--border-primary)] gap-0.5 w-full md:flex md:w-auto overflow-x-auto no-scrollbar">
                {visibleTabs.map(tab => (
                  <button
                    key={tab.id}
                     onClick={() => setActiveTab(tab.id as string)}
                    className={`px-3 py-1.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider transition-all whitespace-nowrap w-full flex items-center justify-center ${
                      activeTab === tab.id 
-                       ? 'bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-md border border-slate-200/20' 
+                        ? 'bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-md border border-[var(--border-primary)]' 
                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]/20'
                    }`}
                  >
                    <span>{tab.label}</span>
-                   <span className={`ml-1.5 px-2 py-0.5 bg-slate-200/80 text-[var(--text-secondary)] rounded-lg text-[8px] font-black ${activeTab === tab.id ? 'bg-[var(--bg-tertiary)] text-white' : ''}`}>
+                    <span className={`ml-1.5 px-2 py-0.5 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-lg text-[8px] font-black ${activeTab === tab.id ? 'bg-[var(--bg-primary)] text-white' : ''}`}>
                      {tab.count}
                    </span>
                  </button>
@@ -548,7 +548,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                 </tr>
               )}
             </thead>
-            <tbody className="divide-y divide-slate-50 font-mono">
+            <tbody className="divide-y divide-[var(--border-primary)] font-mono">
               {filteredAndSortedTrades.length === 0 ? (
                 <tr>
                   <td colSpan={15} className="px-6 py-12">
@@ -579,11 +579,11 @@ const TradeTable: React.FC<TradeTableProps> = ({
                            initial={{ opacity: 0, y: 5 }}
                            animate={{ opacity: 1, y: 0 }}
                            transition={{ delay: idx * 0.02 }}
-                           className="hover:bg-[var(--bg-secondary)]/50 transition-all font-black text-[11px] group divide-x divide-slate-50"
+                           className="hover:bg-[var(--bg-secondary)]/50 transition-all font-black text-[11px] group divide-x divide-[var(--border-primary)]"
                         >
                           <td className="px-6 py-2.5 text-left">
                             <div className="flex items-center space-x-3">
-                              <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-all active:scale-90 shrink-0">
+                              <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-[var(--text-tertiary)] transition-all active:scale-90 shrink-0">
                                  <StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current text-amber-400' : ''}`} />
                               </button>
                               <div className="flex flex-col font-sans">
@@ -597,7 +597,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                               type="number" 
                               defaultValue={trade.quantity || 0} 
                               onBlur={(e) => onUpdateHolding?.(trade.symbol, parseInt(e.target.value) || 0, trade.buy_price || 0)} 
-                              className="w-16 bg-[var(--bg-secondary)]/50 border border-[var(--border-secondary)] rounded-lg text-center font-mono font-bold py-1 px-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:bg-[var(--bg-secondary)] focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 hover:border-slate-300 transition-all shadow-sm" 
+                              className="w-16 bg-[var(--bg-secondary)]/50 border border-[var(--border-secondary)] rounded-lg text-center font-mono font-bold py-1 px-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:bg-[var(--bg-secondary)] focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 hover:border-[var(--border-primary)] transition-all shadow-sm" 
                             />
                           </td>
                           <td className="px-4 py-2.5 text-right">
@@ -605,7 +605,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                               type="number" 
                               defaultValue={trade.buy_price || 0} 
                               onBlur={(e) => onUpdateHolding?.(trade.symbol, trade.quantity || 0, parseFloat(e.target.value) || 0)} 
-                              className="w-24 bg-[var(--bg-secondary)]/50 border border-[var(--border-secondary)] rounded-lg text-right font-mono font-bold py-1 px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:bg-[var(--bg-secondary)] focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 hover:border-slate-300 transition-all shadow-sm" 
+                              className="w-24 bg-[var(--bg-secondary)]/50 border border-[var(--border-secondary)] rounded-lg text-right font-mono font-bold py-1 px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:bg-[var(--bg-secondary)] focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 hover:border-[var(--border-primary)] transition-all shadow-sm" 
                             />
                           </td>
                           <td className="px-4 py-2.5 text-right text-blue-400 font-bold italic">₹{trade.livePrice?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -625,8 +625,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                      PASS
                                    </div>
                                   ) : (
-                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-red-50 text-rose-400 border border-red-200 rounded-full text-[9px] font-black tracking-wide shrink-0">
-                                      <span className="w-1 h-1 rounded-full bg-red-500" />
+                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full text-[9px] font-black tracking-wide shrink-0">
+                                      <span className="w-1 h-1 rounded-full bg-rose-500/100" />
                                       REJECT
                                     </div>
                                   )}
@@ -655,7 +655,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.02 }}
-                        className="hover:bg-[var(--bg-secondary)] group transition-all font-black text-[11px] divide-x divide-slate-50"
+                        className="hover:bg-[var(--bg-secondary)] group transition-all font-black text-[11px] divide-x divide-[var(--border-primary)]"
                       >
                         {visibleColumns.observation && (
                           <td className="px-6 py-2.5 text-[9px] text-[var(--text-muted)] font-bold uppercase whitespace-nowrap italic">
@@ -675,11 +675,11 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         {visibleColumns.symbol && (
                           <td className="px-4 py-2.5">
                             <div className="flex items-center space-x-3">
-                               <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-slate-200 hover:text-amber-400 transition-all active:scale-90 shrink-0">
+                               <button onClick={(e) => handleToggleWatchlist(e, trade.symbol)} className="text-[var(--text-tertiary)] transition-all active:scale-90 shrink-0">
                                   <StarIcon className={`h-4 w-4 ${isStarred ? 'fill-current text-amber-400' : ''}`} />
                                </button>
                                 <div className="flex flex-col font-sans">
-                                   <span className="text-sm font-black text-slate-950 group-hover:text-blue-400 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
+                                   <span className="text-sm font-black text-[var(--text-primary)] group-hover:text-blue-400 transition-colors tracking-tighter leading-none">{trade.symbol}</span>
                                    <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">{trade.sector}</span>
                                  </div>
                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-auto pr-2 shrink-0">
@@ -701,9 +701,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                 const levelObj = trade.abcd?.[l];
                                 const levelVal = typeof levelObj === 'object' ? levelObj.price : (typeof trade.abcd?.[l] === 'number' ? trade.abcd[l] : 0);
                                 const isActive = (trade.livePrice || 0) <= levelVal && levelVal > 0;
-                                const levelColor = l === 'a' ? (isActive ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/40' : 'bg-blue-500/10 text-blue-400 border-blue-100') :
-                                                 (l === 'b' || l === 'c') ? (isActive ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-500/40' : 'bg-indigo-50 text-indigo-400 border-indigo-100') :
-                                                 (isActive ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/40' : 'bg-emerald-500/10 text-emerald-400 border-emerald-100');
+                                const levelColor = l === 'a' ? (isActive ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/40' : 'bg-blue-500/10 text-blue-400 border-blue-500/20') :
+                                                 (l === 'b' || l === 'c') ? (isActive ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-500/40' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20') :
+                                                 (isActive ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/40' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20');
 
                                 return (
                                   <div key={l} className={`w-5.5 h-5.5 rounded flex items-center justify-center text-[8px] font-black border-2 transition-all ${levelColor} ${isActive ? 'shadow-md scale-110 z-10' : 'opacity-30'}`}>
@@ -712,7 +712,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                 );
                               })}
                             </div>
-                            <div className={`absolute left-1/2 -translate-x-1/2 z-[200] hidden group-hover/ladder:block bg-slate-950 text-white shadow-2xl rounded-xl p-4 animate-in fade-in duration-300 min-w-[200px] ${
+                            <div className={`absolute left-1/2 -translate-x-1/2 z-[200] hidden group-hover/ladder:block bg-[var(--bg-tertiary)] text-white shadow-2xl rounded-xl p-4 animate-in fade-in duration-300 min-w-[200px] ${
                               idx < 2 
                                 ? 'top-full mt-3 slide-in-from-top-2' 
                                 : 'bottom-full mb-3 slide-in-from-bottom-2'
@@ -744,7 +744,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         {visibleColumns.basePrice && <td className="px-4 py-2.5 text-right text-[var(--text-muted)] font-semibold italic">₹{trade.entryPrice?.toLocaleString()}</td>}
                         {visibleColumns.cmp && <td className="px-4 py-2.5 text-right text-blue-400 font-bold italic bg-[var(--bg-secondary)]/50 shadow-inner">₹{trade.livePrice?.toLocaleString()}</td>}
                         {visibleColumns.dfh && <td className="px-4 py-2.5 text-right text-[var(--text-muted)] font-medium opacity-80 italic">{trade.dfh?.toFixed(1)}%</td>}
-                        {visibleColumns.objective && <td className="px-4 py-2.5 text-right text-fuchsia-600 font-bold font-mono">₹{trade.target?.toLocaleString()}</td>}
+                        {visibleColumns.objective && <td className="px-4 py-2.5 text-right text-fuchsia-400 font-bold font-mono">₹{trade.target?.toLocaleString()}</td>}
                         {visibleColumns.roi && (
                           <td className="px-4 py-2.5 text-right">
                              <div className="flex flex-col items-end">
@@ -758,7 +758,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         {visibleColumns.pending && (
                           <td className="px-4 py-2.5 text-right">
                              <div className="flex flex-col items-end">
-                                <span className="text-xs font-bold text-orange-600 italic">
+                                <span className="text-xs font-bold text-orange-400 italic">
                                    {trade.entryPrice > 0 ? (((trade.livePrice - trade.entryPrice)/trade.entryPrice) * 100).toFixed(1) : '0.0'}%
                                 </span>
                                 <span className="text-[7px] text-[var(--text-tertiary)] uppercase font-black tracking-widest mt-0.5">Level Window</span>
@@ -790,8 +790,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                     </div>
                                   ) : (
                                     <div className="flex items-center gap-1.5">
-                                      <span className="px-2 py-0.5 bg-red-50 text-rose-400 border border-red-200 rounded-full text-[7px] font-black tracking-wide shrink-0">REJECT</span>
-                                      <span className="text-[8px] font-bold text-amber-700 leading-tight max-w-[180px]">
+                                      <span className="px-2 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full text-[7px] font-black tracking-wide shrink-0">REJECT</span>
+                                      <span className="text-[8px] font-bold text-amber-400 leading-tight max-w-[180px]">
                                         {trade.reason === 'Pattern Not Found' 
                                           ? 'Score: ' + (trade.score || 0) + '/60' 
                                           : trade.reason || 'Score: ' + (trade.score || 0) + '/60'}
@@ -840,7 +840,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                      initial={{ opacity: 0, y: 10 }}
                      animate={{ opacity: 1, y: 0 }}
                      transition={{ delay: Math.min(idx * 0.03, 0.3) }}
-                     className="bg-[var(--bg-secondary)] rounded-[1.25rem] border border-slate-100/80 shadow-md shadow-slate-100 overflow-hidden"
+                     className="bg-[var(--bg-secondary)] rounded-[1.25rem] border border-[var(--border-primary)] shadow-md shadow-[var(--border-primary)] overflow-hidden"
                   >
                      {/* Clickable Header Area */}
                      <div 
@@ -862,7 +862,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         <div className="flex items-center space-x-3">
                            <div className="text-right flex flex-col items-end">
                               <span className="text-sm font-extrabold text-[var(--text-primary)] font-mono">₹{trade.livePrice?.toLocaleString()}</span>
-                              <span className={`text-[8.5px] font-black font-mono leading-none mt-1.5 px-1.5 py-0.5 rounded ${isPnlPositive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-100/45' : 'bg-rose-500/10 text-rose-400 border border-rose-100/45'}`}>
+                              <span className={`text-[8.5px] font-black font-mono leading-none mt-1.5 px-1.5 py-0.5 rounded ${isPnlPositive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
                                  {isPnlPositive ? '+' : ''}{yieldPercent.toFixed(1)}% Yield
                               </span>
                            </div>
@@ -871,9 +871,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
                      </div>
 
                      {/* Quick Info (Always Visible: Edit controls for portfolio) */}
-                     <div className="px-4 pb-3 flex items-center justify-between border-b border-slate-50 gap-2">
+                     <div className="px-4 pb-3 flex items-center justify-between border-[var(--border-primary)] gap-2">
                         <div className="flex items-center space-x-2">
-                          <span className="text-[8.5px] font-black text-slate-450 uppercase tracking-wider">Qty:</span>
+                          <span className="text-[8.5px] font-black text-[var(--text-secondary)] uppercase tracking-wider">Qty:</span>
                           <input 
                             type="number" 
                             defaultValue={trade.quantity || 0} 
@@ -883,7 +883,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                           />
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className="text-[8.5px] font-black text-slate-450 uppercase tracking-wider">Avg:</span>
+                          <span className="text-[8.5px] font-black text-[var(--text-secondary)] uppercase tracking-wider">Avg:</span>
                           <input 
                             type="number" 
                             defaultValue={trade.buy_price || 0} 
@@ -899,18 +899,18 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
                      {/* Expanded Details Section */}
                      {isExpanded && (
-                        <div className="p-4 bg-[var(--bg-secondary)]/40 border-t border-slate-50 space-y-4 animate-in slide-in-from-top-1 duration-200">
+                        <div className="p-4 bg-[var(--bg-secondary)]/40 border-t border-[var(--border-primary)] space-y-4 animate-in slide-in-from-top-1 duration-200">
                            {/* Core Metrics Grid */}
                            <div className="grid grid-cols-3 gap-2">
-                              <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
+                              <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-[var(--border-primary)] text-center flex flex-col justify-center shadow-sm">
                                  <span className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none mb-1">Invested</span>
                                  <span className="text-xs font-black font-mono text-[var(--text-primary)]">₹{invested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                               </div>
-                              <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
-                                 <span className="text-[7.5px] font-black text-slate-455 uppercase tracking-widest leading-none mb-1">Current Val</span>
+                              <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-[var(--border-primary)] text-center flex flex-col justify-center shadow-sm">
+                                 <span className="text-[7.5px] font-black text-[var(--text-secondary)] uppercase tracking-widest leading-none mb-1">Current Val</span>
                                  <span className="text-xs font-black font-mono text-[var(--text-primary)]">₹{currentVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                               </div>
-                              <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
+                              <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-[var(--border-primary)] text-center flex flex-col justify-center shadow-sm">
                                  <span className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none mb-1">Total PnL</span>
                                  <span className={`text-xs font-black font-mono ${isPnlPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
                                     {isPnlPositive ? '+' : ''}₹{pnl.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -919,12 +919,12 @@ const TradeTable: React.FC<TradeTableProps> = ({
                            </div>
 
                            {/* Audit / Score row */}
-                           <div className="flex items-center justify-between bg-[var(--bg-secondary)] px-3 py-2.5 rounded-[0.75rem] border border-slate-100/80 shadow-sm text-[10px]">
+                           <div className="flex items-center justify-between bg-[var(--bg-secondary)] px-3 py-2.5 rounded-[0.75rem] border border-[var(--border-primary)] shadow-sm text-[10px]">
                               <div className="flex items-center space-x-1.5">
                                  {trade.isPass !== false ? (
-                                    <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-100 rounded text-[7.5px] font-black">PASS</span>
+                                    <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-[7.5px] font-black">PASS</span>
                                  ) : (
-                                     <span className="px-1.5 py-0.5 bg-red-50 text-rose-400 border border-red-100 rounded text-[7.5px] font-black">REJECT</span>
+                                     <span className="px-1.5 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded text-[7.5px] font-black">REJECT</span>
                                 )}
                                  <span className="font-extrabold text-[var(--text-secondary)]">Audit Score:</span>
                                  <span className="font-black text-[var(--text-primary)]">{trade.score || 0}</span>
@@ -954,7 +954,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                    initial={{ opacity: 0, y: 10 }}
                    animate={{ opacity: 1, y: 0 }}
                    transition={{ delay: Math.min(idx * 0.03, 0.3) }}
-                   className="bg-[var(--bg-secondary)] rounded-[1.25rem] border border-slate-100/80 shadow-md shadow-slate-100 overflow-hidden"
+                   className="bg-[var(--bg-secondary)] rounded-[1.25rem] border border-[var(--border-primary)] shadow-md shadow-[var(--border-primary)] overflow-hidden"
                 >
                    {/* Clickable Header Area */}
                    <div 
@@ -985,16 +985,16 @@ const TradeTable: React.FC<TradeTableProps> = ({
                    </div>
 
                    {/* Quick Info (Always Visible: ABCD ladder & status) */}
-                   <div className="px-4 pb-3 flex items-center justify-between border-b border-slate-50">
+                   <div className="px-4 pb-3 flex items-center justify-between border-[var(--border-primary)]">
                       {visibleColumns.abcd ? (
                          <div className="flex items-center space-x-1">
                             {['a', 'b', 'c', 'd'].map((l) => {
                               const levelObj = trade.abcd?.[l];
                               const levelVal = typeof levelObj === 'object' ? levelObj.price : (typeof trade.abcd?.[l] === 'number' ? trade.abcd[l] : 0);
                               const isActive = (trade.livePrice || 0) <= levelVal && levelVal > 0;
-                              const levelColor = l === 'a' ? (isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-blue-50/50 text-blue-300 border-blue-100/45') :
-                                               (l === 'b' || l === 'c') ? (isActive ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50/50 text-indigo-300 border-indigo-100/45') :
-                                               (isActive ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-50/50 text-emerald-300 border-emerald-100/45');
+                              const levelColor = l === 'a' ? (isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-blue-500/10 text-blue-300 border-blue-500/20') :
+                                               (l === 'b' || l === 'c') ? (isActive ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20') :
+                                               (isActive ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20');
 
                               return (
                                 <div key={l} className={`w-5 h-5 rounded-[0.35rem] flex items-center justify-center text-[7px] font-black border transition-all ${levelColor} ${isActive ? 'scale-105 font-black opacity-100' : 'opacity-40'}`}>
@@ -1018,11 +1018,11 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
                    {/* Expanded Details Section */}
                    {isExpanded && (
-                      <div className="p-4 bg-[var(--bg-secondary)]/40 border-t border-slate-50 space-y-4 animate-in slide-in-from-top-1 duration-200">
+                      <div className="p-4 bg-[var(--bg-secondary)]/40 border-t border-[var(--border-primary)] space-y-4 animate-in slide-in-from-top-1 duration-200">
                          {/* ABCD Prices */}
                          {visibleColumns.abcd && trade.abcd && (
-                            <div className="bg-[var(--bg-secondary)] p-3 rounded-[0.75rem] border border-slate-100/80 space-y-1.5 shadow-sm">
-                               <div className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-slate-50 pb-1 mb-1">Research Levels</div>
+                            <div className="bg-[var(--bg-secondary)] p-3 rounded-[0.75rem] border border-[var(--border-primary)] space-y-1.5 shadow-sm">
+                               <div className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest border-[var(--border-primary)] pb-1 mb-1">Research Levels</div>
                                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                                   {['a', 'b', 'c', 'd'].map((l) => {
                                      const levelObj = trade.abcd?.[l];
@@ -1040,27 +1040,27 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
                          {/* Core Metrics Grid */}
                          <div className="grid grid-cols-3 gap-2">
-                            <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
+                            <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-[var(--border-primary)] text-center flex flex-col justify-center shadow-sm">
                                <span className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none mb-1">Obs Base</span>
                                <span className="text-xs font-black font-mono text-[var(--text-primary)]">₹{trade.entryPrice?.toLocaleString()}</span>
                             </div>
-                            <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
+                            <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-[var(--border-primary)] text-center flex flex-col justify-center shadow-sm">
                                <span className="text-[7.5px] font-black text-fuchsia-500 uppercase tracking-widest leading-none mb-1">Target</span>
-                               <span className="text-xs font-black font-mono text-fuchsia-600">₹{trade.target?.toLocaleString()}</span>
+                               <span className="text-xs font-black font-mono text-fuchsia-400">₹{trade.target?.toLocaleString()}</span>
                             </div>
-                            <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-slate-100/80 text-center flex flex-col justify-center shadow-sm">
+                            <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-[var(--border-primary)] text-center flex flex-col justify-center shadow-sm">
                                <span className="text-[7.5px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-1">ROI (Est.)</span>
                                <span className="text-xs font-black font-mono text-emerald-400">+{trade.targetGap?.toFixed(1)}%</span>
                             </div>
                          </div>
 
                          {/* Audit / Score row */}
-                          <div className="flex items-center justify-between bg-[var(--bg-secondary)] px-3 py-2.5 rounded-[0.75rem] border border-slate-100/80 shadow-sm text-[10px]">
+                          <div className="flex items-center justify-between bg-[var(--bg-secondary)] px-3 py-2.5 rounded-[0.75rem] border border-[var(--border-primary)] shadow-sm text-[10px]">
                              <div className="flex items-center space-x-1.5">
                                 {trade.isPass !== false ? (
-                                   <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-100 rounded text-[7.5px] font-black">PASS</span>
+                                   <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-[7.5px] font-black">PASS</span>
                                  ) : (
-                                    <span className="px-1.5 py-0.5 bg-red-50 text-rose-400 border border-red-100 rounded text-[7.5px] font-black">REJECT</span>
+                                    <span className="px-1.5 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded text-[7.5px] font-black">REJECT</span>
                                  )}
                                  <span className="font-extrabold text-[var(--text-secondary)]">Audit Score:</span>
                                 <span className="font-black text-[var(--text-primary)]">{trade.score || 0}</span>
@@ -1076,7 +1076,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                           </div>
                           {trade.isPass === false && (
                             <div className="bg-amber-50/50 border border-amber-200/50 rounded-[0.75rem] px-3 py-2 text-[9px]">
-                              <span className="font-black text-amber-700 uppercase tracking-wider text-[7px]">Reason: </span>
+                              <span className="font-black text-amber-400 uppercase tracking-wider text-[7px]">Reason: </span>
                               <span className="font-medium text-amber-800">
                                 {trade.reason === 'Pattern Not Found'
                                   ? 'Score ' + (trade.score || 0) + '/60 - Audit threshold not met'
@@ -1101,14 +1101,14 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
                             <button 
                                onClick={(e) => { e.stopPropagation(); handleShareSignal(trade, 'telegram'); }}
-                               className="px-3.5 py-2 bg-blue-500/10 text-blue-400 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center"
+                               className="px-3.5 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center"
                             >
                                <Share2 className="h-3.5 w-3.5" />
                             </button>
 
                             <Link 
                                to={`/stock/${trade.symbol}`}
-                               className="flex-1 py-2 bg-slate-950 text-white text-[9px] font-black uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-1 hover:bg-black transition-all"
+                               className="flex-1 py-2 bg-[var(--bg-tertiary)] text-white text-[9px] font-black uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-1 hover:bg-black transition-all"
                             >
                                <InfoIcon className="h-3.5 w-3.5" />
                                Audit details
