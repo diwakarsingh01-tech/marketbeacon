@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  LayoutGrid, Zap, Briefcase, BookOpen, TrendingUp, LineChart, 
-  Search, ArrowRight, Activity, BarChart3, Shield, Star, 
-  Clock, Target, Wallet, AlertTriangle
+import {
+  LayoutGrid, Zap, Briefcase, BookOpen, TrendingUp, LineChart,
+  Search, ArrowRight, Activity, BarChart3, Shield, Star,
+  Clock, Target, Wallet, AlertTriangle, TrendingDown,
+  RefreshCw, PieChart, Sparkles, ChevronRight, Bell,
+  CheckCircle2, Info
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl, safeJsonParse } from '../lib/api-utils';
 import SEO from '../components/SEO';
+import { BASKETS } from '../data/stocks';
+import type { IndexResult, WatchlistItem, TradeRecord, StockPriceResult, AllStockItem, Notification } from '../types';
 
 const API_URL = getApiUrl();
 
@@ -18,9 +22,10 @@ interface StatCardProps {
   icon: React.FC<React.SVGProps<SVGSVGElement>>;
   color: string;
   subtitle?: string;
+  change?: { value: string; positive: boolean } | null;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, subtitle }) => {
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, subtitle, change }) => {
   const colors: Record<string, string> = {
     blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
     emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
@@ -42,7 +47,17 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, su
       </div>
       <div>
         <div className="text-2xl font-black text-[var(--text-primary)] tracking-tight">{value}</div>
-        {subtitle && <div className="text-[9px] text-[var(--text-muted)] font-medium mt-0.5">{subtitle}</div>}
+        <div className="flex items-center gap-2 mt-0.5">
+          {change && (
+            <span className={`text-[10px] font-black flex items-center gap-0.5 ${
+              change.positive ? 'text-emerald-400' : 'text-rose-400'
+            }`}>
+              {change.positive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {change.value}
+            </span>
+          )}
+          {subtitle && <span className="text-[9px] text-[var(--text-muted)] font-medium">{subtitle}</span>}
+        </div>
       </div>
     </motion.div>
   );
@@ -67,51 +82,308 @@ const quickLinks: QuickLink[] = [
   { icon: BarChart3, label: 'Charts Terminal', path: '/charts', desc: 'Advanced charting suite', bg: 'bg-blue-500/10', border: 'border-blue-500/20', iconCls: 'text-blue-400' },
 ];
 
-const recentItems = [
-  { symbol: 'TCS', score: 87, action: 'Buy Zone', change: '+2.3%', strategy: 'Envelope Long' },
-  { symbol: 'RELIANCE', score: 72, action: 'Watch', change: '-0.8%', strategy: 'S&R Zones' },
-  { symbol: 'HDFCBANK', score: 64, action: 'Avoid', change: '-1.2%', strategy: 'Bearish Stacking' },
-];
+interface BuyZoneCard {
+  symbol: string;
+  entryPrice: number;
+  target: number;
+  currentPrice: number;
+  score: number;
+  strategy: string;
+}
 
 const AppHome: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    portfolioValue: '₹0',
-    activeSignals: 0,
-    watchlistCount: 0,
-    auditScore: 0,
-  });
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      const token = localStorage.getItem('mb_token');
-      if (!token) return;
-      try {
-        const res = await fetch(`${API_URL}/api/user/stats`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setStats(prev => ({ ...prev, ...data }));
-        }
-      } catch {
-        // silencio
-      }
-    };
-    fetchStats();
-  }, []);
+  // Market indices
+  const [indices, setIndices] = useState<IndexResult[]>([]);
+
+  // Portfolio data
+  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
+  const [trades, setTrades] = useState<TradeRecord[]>([]);
+  const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
+  const [stockCaps, setStockCaps] = useState<Record<string, number>>({});
+  const [stockChange, setStockChange] = useState<Record<string, number>>({});
+
+  // Buy zones
+  const [buyZones, setBuyZones] = useState<BuyZoneCard[]>([]);
+  const [loadingZones, setLoadingZones] = useState(true);
+
+  // Search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [showSearch, setShowSearch] = useState(false);
+
+  // Day P&L tracking
+  const [dayPnL, setDayPnL] = useState<number>(0);
+
+  // Notifications
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifIndex, setNotifIndex] = useState(0);
 
   const tierColor = user?.tier === 'alpha' ? 'amber' : user?.tier === 'pro' ? 'blue' : 'emerald';
   const tierLabel = user?.tier === 'alpha' ? 'Alpha' : user?.tier === 'pro' ? 'Pro' : 'Free';
+
+  // Fetch market indices
+  useEffect(() => {
+    const fetchIndices = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/market-indices`);
+        const data = await safeJsonParse(res);
+        if (res.ok && data.results) setIndices(data.results);
+      } catch {}
+    };
+    fetchIndices();
+    const interval = setInterval(fetchIndices, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch portfolio/watchlist data
+  useEffect(() => {
+    const token = localStorage.getItem('mb_token');
+    if (!token) return;
+
+    const fetchAll = async () => {
+      try {
+        const auth = { headers: { 'Authorization': `Bearer ${token}` } };
+        const [wRes, tRes] = await Promise.all([
+          fetch(`${API_URL}/api/watchlist`, auth),
+          fetch(`${API_URL}/api/trades`, auth),
+        ]);
+        if (wRes.ok) {
+          const wd = await safeJsonParse(wRes);
+          if (!wd.error) setWatchlist(wd || []);
+        }
+        if (tRes.ok) {
+          const td = await safeJsonParse(tRes);
+          if (!td.error) setTrades(td || []);
+        }
+      } catch {}
+    };
+    fetchAll();
+  }, []);
+
+  // Fetch prices for portfolio symbols
+  useEffect(() => {
+    const symbols = [
+      ...watchlist.map(w => w.symbol),
+      ...trades.filter(t => t.status === 'OPEN').map(t => t.symbol),
+      'TCS', 'RELIANCE', 'HDFCBANK', 'INFY', 'ITC',
+    ];
+    if (symbols.length === 0) return;
+    const unique = [...new Set(symbols)];
+    fetch(`${API_URL}/api/stock-prices?symbols=${unique.join(',')}`)
+      .then(r => r.json())
+      .then((data: StockPriceResult[]) => {
+        if (!Array.isArray(data)) return;
+        const pMap: Record<string, number> = {};
+        const cMap: Record<string, number> = {};
+        const chMap: Record<string, number> = {};
+        data.forEach(s => {
+          if (s.price) pMap[s.symbol] = s.price;
+          if (s.marketCap) cMap[s.symbol] = s.marketCap;
+          if (s.ath) chMap[s.symbol] = s.ath;
+        });
+        setStockPrices(pMap);
+        setStockCaps(cMap);
+      })
+      .catch(() => {});
+  }, [watchlist, trades]);
+
+  // Fetch active buy zones
+  useEffect(() => {
+    const token = localStorage.getItem('mb_token');
+    if (!token) return;
+    setLoadingZones(true);
+    fetch(`${API_URL}/api/backtest/audit?basket=Elite Basket&strategy=ENVELOPE_LONG`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then((data: { allStocks?: AllStockItem[] }) => {
+        if (data?.allStocks) {
+          const buyZoneStocks = data.allStocks
+            .filter((s: AllStockItem) => s.isBuyZone && s.entryPrice && s.target)
+            .slice(0, 4)
+            .map((s: AllStockItem) => ({
+              symbol: s.symbol,
+              entryPrice: s.entryPrice || 0,
+              target: s.target || 0,
+              currentPrice: stockPrices[s.symbol] || s.currentPrice || 0,
+              score: s.score || 0,
+              strategy: s.strategy || 'Institutional',
+            }));
+          setBuyZones(buyZoneStocks);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingZones(false));
+  }, [stockPrices]);
+
+  // Symbol search
+  const ALL_SYMBOLS = useMemo(() => {
+    const s = new Set<string>();
+    Object.values(BASKETS).forEach(list => list.forEach(sym => s.add(sym)));
+    return Array.from(s);
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery.length < 1) {
+      setSearchResults([]);
+      return;
+    }
+    const q = searchQuery.toUpperCase();
+    const filtered = ALL_SYMBOLS.filter(s => s.includes(q)).slice(0, 6);
+    setSearchResults(filtered);
+  }, [searchQuery, ALL_SYMBOLS]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowSearch(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Calculate portfolio summary (open + closed) + cap allocation
+  const portfolioSummary = useMemo(() => {
+    let totalInv = 0, totalCur = 0, realizedPnL = 0;
+    const capInv = { large: 0, mid: 0, small: 0 };
+    const combinedMap: Record<string, { quantity: number; buy_price: number }> = {};
+    watchlist.forEach(w => { combinedMap[w.symbol] = { quantity: w.quantity || 0, buy_price: w.buy_price || 0 }; });
+    trades.filter(t => t.status === 'OPEN').forEach(t => {
+      if (combinedMap[t.symbol]) {
+        const ex = combinedMap[t.symbol];
+        const nQty = ex.quantity + (t.quantity || 0);
+        if (nQty > 0) { ex.buy_price = ((ex.buy_price * ex.quantity) + (t.entry_price * t.quantity)) / nQty; ex.quantity = nQty; }
+      } else {
+        combinedMap[t.symbol] = { quantity: t.quantity || 0, buy_price: t.entry_price || 0 };
+      }
+    });
+    Object.entries(combinedMap).forEach(([symbol, h]) => {
+      const inv = h.quantity * h.buy_price;
+      if (inv > 0) {
+        totalInv += inv;
+        totalCur += h.quantity * (stockPrices[symbol] || h.buy_price);
+        const capCr = (stockCaps[symbol] || 0) / 10000000;
+        if (capCr >= 20000) capInv.large += inv;
+        else if (capCr >= 5000) capInv.mid += inv;
+        else capInv.small += inv;
+      }
+    });
+    const unrealizedPnL = totalCur - totalInv;
+    trades.filter(t => t.status === 'CLOSED' && t.exit_price).forEach(t => {
+      realizedPnL += (t.exit_price! - t.entry_price) * t.quantity;
+    });
+    const totalPnL = unrealizedPnL + realizedPnL;
+    const pnlPct = totalInv > 0 ? (totalPnL / totalInv) * 100 : (realizedPnL !== 0 ? 100 : 0);
+    const capBreakdown = {
+      large: totalInv > 0 ? (capInv.large / totalInv) * 100 : 0,
+      mid: totalInv > 0 ? (capInv.mid / totalInv) * 100 : 0,
+      small: totalInv > 0 ? (capInv.small / totalInv) * 100 : 0,
+    };
+    return { totalInvested: totalInv, totalCurrent: totalCur, unrealizedPnL, realizedPnL, totalPnL, pnlPct, capBreakdown };
+  }, [watchlist, trades, stockPrices, stockCaps]);
+
+  const portfolioCount = useMemo(() => {
+    const combinedMap: Record<string, number> = {};
+    watchlist.forEach(w => { combinedMap[w.symbol] = (combinedMap[w.symbol] || 0) + (w.quantity || 0); });
+    trades.filter(t => t.status === 'OPEN').forEach(t => {
+      combinedMap[t.symbol] = (combinedMap[t.symbol] || 0) + (t.quantity || 0);
+    });
+    return Object.keys(combinedMap).filter(s => combinedMap[s] > 0).length;
+  }, [watchlist, trades]);
+
+  // Day P&L from localStorage snapshot
+  useEffect(() => {
+    const curValue = portfolioSummary.totalCurrent;
+    if (curValue <= 0) return;
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      const raw = localStorage.getItem('apphome_snapshot');
+      if (raw) {
+        const snap = JSON.parse(raw);
+        if (snap.date !== today) {
+          setDayPnL(curValue - snap.value);
+          localStorage.setItem('apphome_snapshot', JSON.stringify({ date: today, value: curValue }));
+        }
+      } else {
+        localStorage.setItem('apphome_snapshot', JSON.stringify({ date: today, value: curValue }));
+      }
+    } catch {}
+  }, [portfolioSummary.totalCurrent]);
+
+  // Fetch real notifications
+  useEffect(() => {
+    const token = localStorage.getItem('mb_token');
+    if (!token) return;
+    const fetchNotifs = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/notifications`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const data = await safeJsonParse(res);
+        if (Array.isArray(data)) setNotifications(data);
+      } catch {}
+    };
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Rotate notification ticker
+  useEffect(() => {
+    if (notifications.length < 2) return;
+    const t = setInterval(() => {
+      setNotifIndex(prev => (prev + 1) % notifications.length);
+    }, 4000);
+    return () => clearInterval(t);
+  }, [notifications]);
+
+  // Closed trades for recent activity
+  const closedTrades = useMemo(() => {
+    return trades.filter(t => t.status === 'CLOSED').sort((a, b) => {
+      const da = a.exit_date || a.entry_date;
+      const db = b.exit_date || b.entry_date;
+      return db.localeCompare(da);
+    });
+  }, [trades]);
+
+  // Format large numbers
+  const fmt = (n: number) => `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <>
       <SEO title="Dashboard | MarketBeacon Pro" description="Your institutional audit command center" />
 
-      <div className="p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+      <div className="p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-6">
+
+        {/* ── Market Indices Ticker ── */}
+        <div className="border border-[var(--border-primary)] rounded-xl bg-[var(--bg-secondary)]/50 overflow-hidden">
+          <div className="flex divide-x divide-[var(--border-primary)] overflow-x-auto py-2.5 px-4 whitespace-nowrap scrollbar-none text-[11px] font-black uppercase tracking-wider">
+            {indices.map((idx, i) => (
+              <div key={i} className="flex items-center gap-2.5 px-5">
+                <span className="text-[var(--text-secondary)]">{idx.name}</span>
+                <span className="font-bold text-[var(--text-primary)]">{idx.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                <span className={`flex items-center gap-0.5 text-[10px] font-black ${idx.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {idx.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {idx.change >= 0 ? '+' : ''}{idx.change.toFixed(2)}%
+                </span>
+              </div>
+            ))}
+            {indices.length === 0 && (
+              <div className="flex items-center gap-2 w-full justify-center text-[var(--text-muted)] text-[10px]">
+                <RefreshCw className="w-3 h-3 animate-spin" /> Loading market data...
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--text-primary)]">
               Welcome{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
@@ -120,7 +392,7 @@ const AppHome: React.FC = () => {
               <span className={`w-1.5 h-1.5 rounded-full ${
                 tierColor === 'amber' ? 'bg-amber-400' : tierColor === 'blue' ? 'bg-blue-400' : 'bg-emerald-400'
               }`} />
-              {tierLabel} Tier · Institutional Audit Platform
+              {tierLabel} Tier · {indices[0] ? `NIFTY ${indices[0].price.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : 'Market Open'}
             </p>
           </div>
           <Link
@@ -131,75 +403,362 @@ const AppHome: React.FC = () => {
           </Link>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-          <StatCard title="Portfolio Value" value={stats.portfolioValue} icon={Wallet} color="emerald" subtitle="Across all holdings" />
-          <StatCard title="Active Signals" value={stats.activeSignals} icon={Activity} color="blue" subtitle="Live institutional setups" />
-          <StatCard title="Watchlist" value={stats.watchlistCount} icon={Star} color="amber" subtitle="Tracked stocks" />
-          <StatCard title="Avg. Audit Score" value={stats.auditScore ? `${stats.auditScore}/100` : '--'} icon={Shield} color="purple" subtitle="Portfolio health" />
+        {/* ── Stats Grid ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard
+            title="Portfolio Value"
+            value={portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalCurrent) : '₹0'}
+            icon={Wallet}
+            color="emerald"
+            change={portfolioSummary.totalInvested > 0 ? {
+              value: `${portfolioSummary.pnlPct >= 0 ? '+' : ''}${portfolioSummary.pnlPct.toFixed(2)}%`,
+              positive: portfolioSummary.pnlPct >= 0,
+            } : null}
+            subtitle={portfolioCount > 0 ? `${portfolioCount} holdings` : undefined}
+          />
+          <StatCard
+            title="Total P&L"
+            value={portfolioSummary.totalInvested > 0 || portfolioSummary.realizedPnL !== 0 ? `${portfolioSummary.totalPnL >= 0 ? '+' : ''}${fmt(Math.abs(portfolioSummary.totalPnL))}` : '--'}
+            icon={Activity}
+            color={portfolioSummary.totalPnL >= 0 ? 'emerald' : 'rose'}
+            change={dayPnL !== 0 ? {
+              value: `${dayPnL >= 0 ? '+' : ''}${fmt(Math.abs(dayPnL))} today`,
+              positive: dayPnL >= 0,
+            } : null}
+            subtitle={portfolioSummary.realizedPnL !== 0 ? `Realized ${portfolioSummary.realizedPnL >= 0 ? '+' : ''}${fmt(Math.abs(portfolioSummary.realizedPnL))}` : undefined}
+          />
+          <StatCard
+            title="Active Signals"
+            value={buyZones.length}
+            icon={Zap}
+            color="blue"
+            subtitle="Buy zone stocks"
+          />
+          <StatCard
+            title="Watchlist"
+            value={watchlist.length}
+            icon={Star}
+            color="amber"
+            subtitle={`${ALL_SYMBOLS.length} in universe`}
+          />
         </div>
 
-        {/* Two Column Layout */}
+        {/* ── Two Column: Buy Zones + Portfolio ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Quick Actions */}
+
+          {/* ── Active Buy Zone Cards ── */}
           <div className="lg:col-span-2">
-            <h2 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest mb-3">Quick Actions</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-              {quickLinks.map((link, i) => (
-                <motion.button
-                  key={i}
-                  whileHover={{ y: -1 }}
-                  onClick={() => navigate(link.path)}
-                  className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-4 text-left hover:border-blue-500/30 transition-all group"
-                >
-                  <div className={`w-8 h-8 rounded-lg ${link.bg} ${link.border} flex items-center justify-center mb-2`}>
-                    <link.icon className={`w-4 h-4 ${link.iconCls}`} />
-                  </div>
-                  <div className="text-[11px] font-black text-[var(--text-primary)] group-hover:text-blue-400 transition-colors">{link.label}</div>
-                  <div className="text-[8px] text-[var(--text-muted)] font-medium mt-0.5">{link.desc}</div>
-                </motion.button>
-              ))}
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> Active Buy Zones
+              </h2>
+              <Link to="/alpha-hub" className="text-[8px] font-black text-blue-400 uppercase tracking-widest hover:text-blue-300 transition-colors flex items-center gap-1">
+                View All <ChevronRight className="w-2.5 h-2.5" />
+              </Link>
             </div>
+            {loadingZones ? (
+              <div className="grid grid-cols-2 gap-2.5">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-4 animate-pulse">
+                    <div className="h-4 w-16 bg-[var(--bg-tertiary)] rounded mb-3" />
+                    <div className="h-6 w-24 bg-[var(--bg-tertiary)] rounded mb-2" />
+                    <div className="h-3 w-32 bg-[var(--bg-tertiary)] rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : buyZones.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2.5">
+                {buyZones.map((zone, i) => (
+                  <motion.button
+                    key={zone.symbol}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    whileHover={{ y: -1 }}
+                    onClick={() => navigate(`/analysis/${zone.symbol}`)}
+                    className="bg-[var(--bg-secondary)]/50 border border-emerald-500/20 rounded-xl p-4 text-left hover:border-emerald-500/40 transition-all group relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-bl-full" />
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-black text-[var(--text-primary)] group-hover:text-emerald-400 transition-colors">{zone.symbol}</span>
+                      <span className="text-[8px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">BUY</span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[9px]">
+                        <span className="text-[var(--text-muted)]">Entry</span>
+                        <span className="font-bold text-[var(--text-secondary)]">₹{zone.entryPrice.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex justify-between text-[9px]">
+                        <span className="text-[var(--text-muted)]">Target</span>
+                        <span className="font-bold text-blue-400">₹{zone.target.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex justify-between text-[9px]">
+                        <span className="text-[var(--text-muted)]">Gain</span>
+                        <span className="font-bold text-emerald-400">
+                          +{(((zone.target - zone.entryPrice) / zone.entryPrice) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-[var(--border-primary)]/40 flex items-center gap-1 text-[7px] font-black uppercase tracking-wider text-[var(--text-muted)]">
+                      <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" /> {zone.strategy}
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-6 text-center">
+                <Info className="w-5 h-5 text-[var(--text-muted)] mx-auto mb-2" />
+                <p className="text-[11px] font-bold text-[var(--text-muted)]">No active buy zones right now</p>
+                <p className="text-[8px] text-[var(--text-muted)] mt-1">Check back after the next market scan</p>
+              </div>
+            )}
           </div>
 
-          {/* Recent Activity */}
-          <div>
-            <h2 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest mb-3">Recent Audits</h2>
-            <div className="space-y-2">
-              {recentItems.map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  onClick={() => navigate(`/analysis/${item.symbol}`)}
-                  className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-4 cursor-pointer hover:border-blue-500/30 transition-all group"
+          {/* ── Portfolio Allocation + Recent Activity ── */}
+          <div className="space-y-4">
+            {/* Allocation */}
+            <div>
+              <h2 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                <PieChart className="w-3.5 h-3.5 text-blue-400" /> Portfolio
+              </h2>
+              <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Invested</span>
+                  <span className="text-sm font-black text-[var(--text-primary)]">{portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalInvested) : '₹0'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Current</span>
+                  <span className="text-sm font-black text-[var(--text-primary)]">{portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalCurrent) : '--'}</span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-[var(--border-primary)]/40">
+                  <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-wider">P&L</span>
+                  <span className={`text-sm font-black flex items-center gap-1 ${
+                    portfolioSummary.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                  }`}>
+                    {portfolioSummary.totalPnL >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                    {portfolioSummary.totalInvested > 0 || portfolioSummary.realizedPnL !== 0
+                      ? `${portfolioSummary.totalPnL >= 0 ? '+' : ''}${fmt(Math.abs(portfolioSummary.totalPnL))}`
+                      : '--'}
+                  </span>
+                </div>
+                <div className="text-[8px] text-[var(--text-muted)] font-medium space-y-0.5 pt-1">
+                  <span className="flex justify-between">
+                    <span>Unrealized</span>
+                    <span className={portfolioSummary.unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                      {portfolioSummary.totalInvested > 0 ? `${portfolioSummary.unrealizedPnL >= 0 ? '+' : ''}${fmt(Math.abs(portfolioSummary.unrealizedPnL))}` : '--'}
+                    </span>
+                  </span>
+                  <span className="flex justify-between">
+                    <span>Realized</span>
+                    <span className={portfolioSummary.realizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                      {portfolioSummary.realizedPnL !== 0 ? `${portfolioSummary.realizedPnL >= 0 ? '+' : ''}${fmt(Math.abs(portfolioSummary.realizedPnL))}` : '--'}
+                    </span>
+                  </span>
+                </div>
+                {portfolioSummary.totalInvested > 0 && (
+                  <div className="pt-2">
+                    <div className="flex justify-between text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-wider mb-1.5">
+                      <span>Allocation</span>
+                      <span>{portfolioCount} holdings</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-[var(--bg-tertiary)] overflow-hidden flex">
+                      <div
+                        className="h-full bg-blue-500 transition-all"
+                        style={{ width: `${Math.max(portfolioSummary.capBreakdown.large, portfolioSummary.capBreakdown.large > 0 ? 4 : 0)}%` }}
+                        title={`Large Cap ${portfolioSummary.capBreakdown.large.toFixed(0)}%`}
+                      />
+                      <div
+                        className="h-full bg-amber-500 transition-all"
+                        style={{ width: `${Math.max(portfolioSummary.capBreakdown.mid, portfolioSummary.capBreakdown.mid > 0 ? 4 : 0)}%` }}
+                        title={`Mid Cap ${portfolioSummary.capBreakdown.mid.toFixed(0)}%`}
+                      />
+                      <div
+                        className="h-full bg-emerald-500 transition-all"
+                        style={{ width: `${Math.max(portfolioSummary.capBreakdown.small, portfolioSummary.capBreakdown.small > 0 ? 4 : 0)}%` }}
+                        title={`Small/Micro Cap ${portfolioSummary.capBreakdown.small.toFixed(0)}%`}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[7px] text-[var(--text-muted)] font-medium mt-1">
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Large {portfolioSummary.capBreakdown.large.toFixed(0)}%</span>
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Mid {portfolioSummary.capBreakdown.mid.toFixed(0)}%</span>
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Small {portfolioSummary.capBreakdown.small.toFixed(0)}%</span>
+                    </div>
+                  </div>
+                )}
+                <Link
+                  to="/portfolio"
+                  className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-blue-600/10 border border-blue-500/20 text-blue-400 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-blue-600/20 transition-all"
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-black text-[var(--text-primary)] group-hover:text-blue-400 transition-colors">{item.symbol}</span>
-                    <span className={`text-[9px] font-black ${
-                      item.change.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'
-                    }`}>{item.change}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[8px] text-[var(--text-muted)] font-medium uppercase tracking-wider">
-                    <span className="text-blue-400">{item.score}/100</span>
-                    <span>·</span>
-                    <span>{item.action}</span>
-                    <span>·</span>
-                    <span>{item.strategy}</span>
-                  </div>
-                </motion.div>
-              ))}
+                  View Wealth Desk <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div>
+              <h2 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest mb-3">Recent Activity</h2>
+              <div className="space-y-2">
+                {(() => {
+                  const openItems = watchlist.slice(0, 2).map((item) => {
+                    const pnl = item.quantity && stockPrices[item.symbol]
+                      ? (stockPrices[item.symbol] - (item.buy_price || 0)) * item.quantity
+                      : 0;
+                    const pct = item.buy_price ? (pnl / (item.quantity * item.buy_price)) * 100 : 0;
+                    return { type: 'open' as const, symbol: item.symbol, qty: item.quantity || 0, entry: item.buy_price || 0, pnl, pct, label: 'In Portfolio' as const };
+                  });
+                  const closedItems = closedTrades.slice(0, 2).map((t) => {
+                    const pnl = t.exit_price ? (t.exit_price - t.entry_price) * t.quantity : 0;
+                    const pct = t.entry_price ? ((t.exit_price || 0) - t.entry_price) / t.entry_price * 100 : 0;
+                    return { type: 'closed' as const, symbol: t.symbol, qty: t.quantity, entry: t.entry_price, exitPrice: t.exit_price, pnl, pct, label: 'Closed' as const };
+                  });
+                  const items = [...openItems, ...closedItems].slice(0, 4);
+                  return items.length > 0 ? items.map((item, i) => (
+                    <motion.div
+                      key={`${item.type}-${item.symbol}-${i}`}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      onClick={() => navigate(`/analysis/${item.symbol}`)}
+                      className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-3 cursor-pointer hover:border-blue-500/30 transition-all group"
+                    >
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-xs font-black text-[var(--text-primary)] group-hover:text-blue-400 transition-colors">{item.symbol}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[7px] font-black px-1.5 py-0.5 rounded ${
+                            item.pct >= 5 ? 'bg-emerald-500/10 text-emerald-400' :
+                            item.pct >= 0 ? 'bg-blue-500/10 text-blue-400' :
+                            'bg-rose-500/10 text-rose-400'
+                          }`}>
+                            {item.pct >= 0 ? '+' : ''}{item.pct.toFixed(1)}%
+                          </span>
+                          <span className={`text-[9px] font-black ${item.type === 'closed' ? 'text-[var(--text-muted)]' : 'text-emerald-400'}`}>
+                            {item.label}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-[8px] text-[var(--text-muted)] font-medium">
+                        {item.qty} shares @ ₹{item.entry.toLocaleString('en-IN')}
+                        {item.type === 'closed' && item.exitPrice
+                          ? ` → ₹${item.exitPrice.toLocaleString('en-IN')}`
+                          : stockPrices[item.symbol]
+                            ? ` · CMP: ₹${stockPrices[item.symbol].toLocaleString('en-IN')}`
+                            : ''}
+                        <span className={`ml-1.5 font-bold ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {item.pnl >= 0 ? '+' : ''}{fmt(item.pnl)}
+                        </span>
+                      </div>
+                    </motion.div>
+                  )) : (
+                    <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-4 text-center">
+                      <p className="text-[10px] text-[var(--text-muted)] font-medium">No activity yet</p>
+                      <Link to="/screener" className="text-[8px] font-black text-blue-400 mt-1 inline-block hover:text-blue-300 transition-colors">
+                        Start screening stocks →
+                      </Link>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Upgrade CTA for Free users */}
+        {/* ── Real Notifications Ticker ── */}
+        {notifications.length > 0 && (
+          <div className="border border-[var(--border-primary)] rounded-xl bg-[var(--bg-secondary)]/50 overflow-hidden">
+            <div className="flex items-center py-2.5 px-4 gap-3">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Bell className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[9px] font-black uppercase tracking-wider text-[var(--text-secondary)]">Alerts</span>
+              </div>
+              <div className="flex-1 min-w-0 overflow-hidden relative h-4">
+                <motion.div
+                  key={notifIndex}
+                  initial={{ y: 12, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -12, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0 flex items-center"
+                >
+                  <span className="text-[10px] font-bold text-[var(--text-primary)] truncate">
+                    {notifications[notifIndex]?.title && (
+                      <span className="text-amber-400 mr-1.5">{notifications[notifIndex].title}:</span>
+                    )}
+                    {notifications[notifIndex]?.message || ''}
+                  </span>
+                </motion.div>
+              </div>
+              {notifications.filter(n => n.unread).length > 0 && (
+                <span className="text-[8px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full shrink-0">
+                  {notifications.filter(n => n.unread).length} new
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Quick Actions ── */}
+        <div>
+          <h2 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest mb-3">Quick Actions</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
+            {quickLinks.map((link, i) => (
+              <motion.button
+                key={i}
+                whileHover={{ y: -1 }}
+                onClick={() => navigate(link.path)}
+                className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-4 text-left hover:border-blue-500/30 transition-all group"
+              >
+                <div className={`w-8 h-8 rounded-lg ${link.bg} ${link.border} flex items-center justify-center mb-2`}>
+                  <link.icon className={`w-4 h-4 ${link.iconCls}`} />
+                </div>
+                <div className="text-[11px] font-black text-[var(--text-primary)] group-hover:text-blue-400 transition-colors">{link.label}</div>
+                <div className="text-[8px] text-[var(--text-muted)] font-medium mt-0.5">{link.desc}</div>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Inline Symbol Search ── */}
+        <div className="relative" ref={dropdownRef}>
+          <div className="flex items-center gap-3 bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl px-4 py-3 focus-within:border-blue-500/50 transition-all">
+            <Search className="w-4 h-4 text-[var(--text-tertiary)] shrink-0" />
+            <input
+              type="text"
+              placeholder="Quick search any symbol (e.g. TCS, INFY, RELIANCE)..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setShowSearch(true); }}
+              onFocus={() => setShowSearch(true)}
+              className="bg-transparent border-none text-sm font-bold w-full outline-none placeholder-[var(--text-tertiary)] text-[var(--text-primary)]"
+            />
+            {searchQuery && (
+              <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] text-xs font-black p-1">
+                ✕
+              </button>
+            )}
+          </div>
+          {showSearch && searchResults.length > 0 && (
+            <div className="absolute left-0 right-0 mt-1.5 z-50 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl shadow-xl overflow-hidden">
+              {searchResults.map((sym) => (
+                <button
+                  key={sym}
+                  onClick={() => { navigate(`/analysis/${sym}`); setShowSearch(false); setSearchQuery(''); }}
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-tertiary)] transition-colors text-left"
+                >
+                  <span className="text-sm font-black text-[var(--text-primary)]">{sym}</span>
+                  <span className="text-[8px] font-black text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                    View Audit <ArrowRight className="w-3 h-3" />
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Upgrade CTA for Free users ── */}
         {user?.tier === 'free' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-8 p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/10 border border-blue-500/20 flex items-center justify-between flex-wrap gap-3"
+            className="p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/10 border border-blue-500/20 flex items-center justify-between flex-wrap gap-3"
           >
             <div>
               <h3 className="text-sm font-black text-[var(--text-primary)] tracking-tight flex items-center gap-2">
@@ -217,8 +776,8 @@ const AppHome: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Mobile CTA */}
-        <div className="mt-6 md:hidden">
+        {/* ── Mobile CTA ── */}
+        <div className="md:hidden">
           <Link
             to="/screener"
             className="flex items-center justify-center gap-2 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest px-5 py-4 rounded-xl w-full"

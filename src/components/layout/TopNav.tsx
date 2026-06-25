@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Activity, LogOut, User, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X, Sun, Moon } from 'lucide-react';
+import { Activity, LogOut, User, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BASKETS } from '../../data/stocks';
 import BrandLogo from '../brand/BrandLogo';
@@ -11,8 +11,6 @@ import type { Notification, IndexResult, StockSearchResult } from '../../types';
 import { safeJsonParse, getApiUrl } from '../../lib/api-utils';
 
 const API_URL = getApiUrl();
-
-import { useTheme } from '../../context/ThemeContext';
 
 // Build a flat list of unique stocks for search
 const ALL_STOCKS = Array.from(new Set(Object.values(BASKETS).flat())).sort();
@@ -88,8 +86,6 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
       }
     } catch (e) { }
   };
-  const { theme, toggleTheme } = useTheme();
-
   const [indices, setIndices] = useState<IndexResult[]>([]);
   const [marketStatus, setMarketStatus] = useState('CLOSED');
   const [searchQuery, setSearchQuery] = useState('');
@@ -309,14 +305,6 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           title="Search Stocks"
         >
           <Search className="h-5 w-5" />
-        </button>
-
-        <button
-          onClick={toggleTheme}
-          className="p-2.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all"
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-        >
-          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </button>
 
         <div className="relative">
