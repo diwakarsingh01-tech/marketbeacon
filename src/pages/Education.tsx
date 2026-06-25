@@ -449,22 +449,22 @@ const tourSections = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 const colorMap: Record<string, { bg: string; text: string; border: string; badge: string; badgeText: string; dot: string }> = {
-  blue:    { bg: 'bg-blue-50',    text: 'text-blue-600',   border: 'border-blue-200',   badge: 'bg-blue-600',    badgeText: 'text-white',      dot: 'bg-blue-500' },
-  indigo:  { bg: 'bg-indigo-50',  text: 'text-indigo-600', border: 'border-indigo-200', badge: 'bg-indigo-600',  badgeText: 'text-white',      dot: 'bg-indigo-500' },
-  emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600',border: 'border-emerald-200',badge: 'bg-emerald-600', badgeText: 'text-white',      dot: 'bg-emerald-500' },
-  amber:   { bg: 'bg-amber-50',   text: 'text-amber-600',  border: 'border-amber-200',  badge: 'bg-amber-500',   badgeText: 'text-white',      dot: 'bg-amber-500' },
-  purple:  { bg: 'bg-purple-50',  text: 'text-purple-600', border: 'border-purple-200', badge: 'bg-purple-600',  badgeText: 'text-white',      dot: 'bg-purple-500' },
-  cyan:    { bg: 'bg-cyan-50',    text: 'text-cyan-600',   border: 'border-cyan-200',   badge: 'bg-cyan-600',    badgeText: 'text-white',      dot: 'bg-cyan-500' },
-  orange:  { bg: 'bg-orange-50',  text: 'text-orange-600', border: 'border-orange-200', badge: 'bg-orange-500',  badgeText: 'text-white',      dot: 'bg-orange-500' },
-  rose:    { bg: 'bg-rose-50',    text: 'text-rose-600',   border: 'border-rose-200',   badge: 'bg-rose-600',    badgeText: 'text-white',      dot: 'bg-rose-500' },
-  violet:  { bg: 'bg-violet-50',  text: 'text-violet-600', border: 'border-violet-200', badge: 'bg-violet-600',  badgeText: 'text-white',      dot: 'bg-violet-500' },
+  blue:    { bg: 'bg-blue-500/10',    text: 'text-blue-400',   border: 'border-blue-500/20',   badge: 'bg-blue-600',    badgeText: 'text-white',      dot: 'bg-blue-500' },
+  indigo:  { bg: 'bg-indigo-500/10',  text: 'text-indigo-400', border: 'border-indigo-500/20', badge: 'bg-indigo-600',  badgeText: 'text-white',      dot: 'bg-indigo-500' },
+  emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400',border: 'border-emerald-500/20',badge: 'bg-emerald-600', badgeText: 'text-white',      dot: 'bg-emerald-500' },
+  amber:   { bg: 'bg-amber-500/100/10',   text: 'text-amber-400',  border: 'border-amber-500/20',  badge: 'bg-amber-500/100',   badgeText: 'text-white',      dot: 'bg-amber-500/100' },
+  purple:  { bg: 'bg-purple-500/10',  text: 'text-purple-400', border: 'border-purple-500/20', badge: 'bg-purple-600',  badgeText: 'text-white',      dot: 'bg-purple-500' },
+  cyan:    { bg: 'bg-cyan-500/10',    text: 'text-cyan-400',   border: 'border-cyan-500/20',   badge: 'bg-cyan-600',    badgeText: 'text-white',      dot: 'bg-cyan-500' },
+  orange:  { bg: 'bg-orange-500/10',  text: 'text-orange-400', border: 'border-orange-500/20', badge: 'bg-orange-500',  badgeText: 'text-white',      dot: 'bg-orange-500' },
+  rose:    { bg: 'bg-rose-500/10',    text: 'text-rose-400',   border: 'border-rose-500/20',   badge: 'bg-rose-600',    badgeText: 'text-white',      dot: 'bg-rose-500' },
+  violet:  { bg: 'bg-violet-500/10',  text: 'text-violet-400', border: 'border-violet-500/20', badge: 'bg-violet-600',  badgeText: 'text-white',      dot: 'bg-violet-500' },
 };
 
 const tierBadge: Record<string, { label: string; cls: string }> = {
-  all:   { label: 'All Tiers', cls: 'bg-slate-100 text-slate-600' },
-  free:  { label: 'Free',      cls: 'bg-emerald-100 text-emerald-700' },
-  pro:   { label: 'Pro',       cls: 'bg-blue-100 text-blue-700' },
-  alpha: { label: 'Alpha',     cls: 'bg-indigo-900 text-indigo-100' },
+  all:   { label: 'All Tiers', cls: 'bg-[var(--bg-tertiary)] text-[var(--text-muted)]' },
+  free:  { label: 'Free',      cls: 'bg-emerald-500/10 text-emerald-400' },
+  pro:   { label: 'Pro',       cls: 'bg-blue-500/10 text-blue-400' },
+  alpha: { label: 'Alpha',     cls: 'bg-indigo-500/10 text-indigo-400' },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -488,7 +488,7 @@ const EducationPage: React.FC = () => {
   const activeTourItem = tourSections.find(t => t.id === activeTour)!;
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen font-sans overflow-y-auto pb-20">
+    <div className="bg-[var(--bg-primary)] min-h-screen font-sans overflow-y-auto pb-20">
       <div className="px-4 md:px-8 lg:px-10 py-6 md:py-10 max-w-7xl mx-auto space-y-8">
 
         <Breadcrumbs items={[
@@ -497,27 +497,27 @@ const EducationPage: React.FC = () => {
         ]} />
 
         {/* ── HEADER ── */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-100 pb-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[var(--border-primary)] pb-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center shadow-xl shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-xl shrink-0">
               <BookOpen className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+              <h1 className="text-3xl md:text-5xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic leading-none">
                 Education Center
               </h1>
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mt-1">
+              <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] mt-1">
                 Strategy Guides · Platform Tour · Institutional Knowledge
               </p>
             </div>
           </div>
 
           {/* Main tab switcher */}
-          <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 shadow-sm gap-1 w-fit">
+          <div className="flex items-center bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl p-1 shadow-sm gap-1 w-fit">
             <button
               onClick={() => setMainTab('strategies')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                mainTab === 'strategies' ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:text-slate-700'
+                mainTab === 'strategies' ? 'bg-blue-600 text-white shadow' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               <BookOpen className="h-3.5 w-3.5" />
@@ -526,7 +526,7 @@ const EducationPage: React.FC = () => {
             <button
               onClick={() => setMainTab('tour')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                mainTab === 'tour' ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:text-slate-700'
+                mainTab === 'tour' ? 'bg-blue-600 text-white shadow' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               <Compass className="h-3.5 w-3.5" />
@@ -556,13 +556,13 @@ const EducationPage: React.FC = () => {
                       onClick={() => setActiveStrategy(s.id)}
                       className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-left ${
                         isActive
-                          ? `bg-white border-2 ${c.border} shadow-lg`
-                          : 'bg-white/60 border border-slate-100 hover:border-slate-200 hover:bg-white'
+                          ? `bg-[var(--bg-secondary)] border-2 ${c.border} shadow-lg`
+                          : 'bg-[var(--bg-primary)]/60 border border-[var(--border-primary)] hover:border-[var(--border-secondary)] hover:bg-[var(--bg-secondary)]/80'
                       }`}
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className={`p-2.5 rounded-xl shrink-0 ${isActive ? c.bg : 'bg-slate-100'}`}>
-                          <s.icon className={`h-4 w-4 ${isActive ? c.text : 'text-slate-400'}`} />
+                        <div className={`p-2.5 rounded-xl shrink-0 ${isActive ? c.bg : 'bg-[var(--bg-tertiary)]'}`}>
+                          <s.icon className={`h-4 w-4 ${isActive ? c.text : 'text-[var(--text-tertiary)]'}`} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -570,12 +570,12 @@ const EducationPage: React.FC = () => {
                               {tb.label}
                             </span>
                           </div>
-                          <p className={`text-[11px] font-black uppercase tracking-tight mt-0.5 truncate ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>
+                          <p className={`text-[11px] font-black uppercase tracking-tight mt-0.5 truncate ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                             {s.name}
                           </p>
                         </div>
                       </div>
-                      <ChevronRight className={`h-3.5 w-3.5 shrink-0 ml-2 transition-all ${isActive ? `${c.text} translate-x-0.5` : 'text-slate-200'}`} />
+                      <ChevronRight className={`h-3.5 w-3.5 shrink-0 ml-2 transition-all ${isActive ? `${c.text} translate-x-0.5` : 'text-[var(--text-tertiary)]'}`} />
                     </motion.button>
                   );
                 })}
@@ -588,7 +588,7 @@ const EducationPage: React.FC = () => {
                     key={activeStrategy}
                     initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}
                     transition={{ duration: 0.2 }}
-                    className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden"
+                    className="bg-[var(--bg-secondary)] rounded-3xl shadow-xl border border-[var(--border-primary)] overflow-hidden"
                   >
                     {/* Card header */}
                     {(() => {
@@ -596,21 +596,21 @@ const EducationPage: React.FC = () => {
                       const tb = tierBadge[activeStrat.tier];
                       return (
                         <>
-                          <div className={`px-8 py-6 border-b border-slate-100 ${c.bg}`}>
+                          <div className={`px-8 py-6 border-b border-[var(--border-primary)] ${c.bg}`}>
                             <div className="flex items-start justify-between gap-4">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${tb.cls}`}>
                                     {tb.label}
                                   </span>
-                                  <span className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full">
+                                  <span className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-full">
                                     {activeStrat.category}
                                   </span>
                                 </div>
-                                <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-tight mt-2">
+                                <h2 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic leading-tight mt-2">
                                   {activeStrat.name}
                                 </h2>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{activeStrat.subtitle}</p>
+                                <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{activeStrat.subtitle}</p>
                               </div>
                               <div className={`p-3 rounded-2xl ${c.bg} border ${c.border} shrink-0`}>
                                 <activeStrat.icon className={`h-7 w-7 ${c.text}`} />
@@ -629,23 +629,23 @@ const EducationPage: React.FC = () => {
                                 <motion.div
                                   key={i}
                                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-                                  className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-2"
+                                  className="bg-[var(--bg-secondary)] rounded-2xl p-5 border border-[var(--border-primary)] space-y-2"
                                 >
                                   <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 rounded-full ${c.dot}`} />
-                                    <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{sec.heading}</h4>
+                                    <h4 className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">{sec.heading}</h4>
                                   </div>
-                                  <p className="text-[12px] font-bold text-slate-700 leading-relaxed">{sec.body}</p>
+                                  <p className="text-[12px] font-bold text-[var(--text-secondary)] leading-relaxed">{sec.body}</p>
                                 </motion.div>
                               ))}
                             </div>
 
                             {/* Guardrail */}
-                            <div className="flex items-start gap-4 bg-amber-50 border border-amber-100 rounded-2xl p-5">
-                              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="flex items-start gap-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5">
+                              <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                               <div>
-                                <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-1">Institutional Guardrail</p>
-                                <p className="text-[12px] font-bold text-amber-800 leading-relaxed">{activeStrat.guardrail}</p>
+                                <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Institutional Guardrail</p>
+                                <p className="text-[12px] font-bold text-amber-300 leading-relaxed">{activeStrat.guardrail}</p>
                               </div>
                             </div>
                           </div>
@@ -677,22 +677,22 @@ const EducationPage: React.FC = () => {
                       onClick={() => setActiveTour(t.id)}
                       className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-left ${
                         isActive
-                          ? `bg-white border-2 ${c.border} shadow-lg`
-                          : 'bg-white/60 border border-slate-100 hover:border-slate-200 hover:bg-white'
+                          ? `bg-[var(--bg-secondary)] border-2 ${c.border} shadow-lg`
+                          : 'bg-[var(--bg-primary)]/60 border border-[var(--border-primary)] hover:border-[var(--border-secondary)] hover:bg-[var(--bg-secondary)]'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`p-2.5 rounded-xl shrink-0 ${isActive ? c.bg : 'bg-slate-100'}`}>
-                          <t.icon className={`h-4 w-4 ${isActive ? c.text : 'text-slate-400'}`} />
+                        <div className={`p-2.5 rounded-xl shrink-0 ${isActive ? c.bg : 'bg-[var(--bg-tertiary)]'}`}>
+                          <t.icon className={`h-4 w-4 ${isActive ? c.text : 'text-[var(--text-tertiary)]'}`} />
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.path}</p>
-                          <p className={`text-[12px] font-black uppercase tracking-tight ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>
+                          <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t.path}</p>
+                          <p className={`text-[12px] font-black uppercase tracking-tight ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                             {t.name}
                           </p>
                         </div>
                       </div>
-                      <ChevronRight className={`h-3.5 w-3.5 shrink-0 ml-2 transition-all ${isActive ? `${c.text} translate-x-0.5` : 'text-slate-200'}`} />
+                      <ChevronRight className={`h-3.5 w-3.5 shrink-0 ml-2 transition-all ${isActive ? `${c.text} translate-x-0.5` : 'text-[var(--text-tertiary)]'}`} />
                     </motion.button>
                   );
                 })}
@@ -705,17 +705,17 @@ const EducationPage: React.FC = () => {
                     key={activeTour}
                     initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}
                     transition={{ duration: 0.2 }}
-                    className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden"
+                    className="bg-[var(--bg-secondary)] rounded-3xl shadow-xl border border-[var(--border-primary)] overflow-hidden"
                   >
                     {(() => {
                       const c = colorMap[activeTourItem.color] || colorMap.blue;
                       return (
                         <>
-                          <div className={`px-8 py-6 border-b border-slate-100 ${c.bg}`}>
+                          <div className={`px-8 py-6 border-b border-[var(--border-primary)] ${c.bg}`}>
                             <div className="flex items-start justify-between gap-4">
                               <div className="space-y-1">
-                                <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">{activeTourItem.path}</span>
-                                <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">{activeTourItem.path}</span>
+                                <h2 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic leading-none">
                                   {activeTourItem.name}
                                 </h2>
                               </div>
@@ -723,25 +723,25 @@ const EducationPage: React.FC = () => {
                                 <activeTourItem.icon className={`h-7 w-7 ${c.text}`} />
                               </div>
                             </div>
-                            <p className={`mt-4 text-sm font-bold text-slate-600 leading-relaxed border-l-4 ${c.border} pl-4`}>
+                            <p className={`mt-4 text-sm font-bold text-[var(--text-secondary)] leading-relaxed border-l-4 ${c.border} pl-4`}>
                               {activeTourItem.description}
                             </p>
                           </div>
 
                           <div className="p-8 space-y-3">
-                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-4 flex items-center gap-2">
                               <Eye className="h-3 w-3" /> What You Can Do Here
                             </p>
                             {(activeTourItem?.features || []).map((feature, i) => (
                               <motion.div
                                 key={i}
                                 initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
-                                className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors"
+                                className="flex items-start gap-3 p-4 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-colors"
                               >
                                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${c.bg} border ${c.border}`}>
                                   <span className={`text-[8px] font-black ${c.text}`}>{String(i + 1).padStart(2, '0')}</span>
                                 </div>
-                                <p className="text-[11px] font-bold text-slate-700 leading-snug">{feature}</p>
+                                <p className="text-[11px] font-bold text-[var(--text-secondary)] leading-snug">{feature}</p>
                               </motion.div>
                             ))}
                           </div>

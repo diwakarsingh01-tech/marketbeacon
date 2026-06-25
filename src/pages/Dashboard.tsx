@@ -43,7 +43,7 @@ const DashboardStat: React.FC<DashboardStatProps> = ({ title, value, icon: Icon,
   const iconColors: Record<string, string> = {
     blue: "text-blue-500 bg-blue-500/10 border-blue-500/30",
     emerald: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30",
-    rose: "text-rose-500 bg-rose-500/10 border-rose-500/30",
+    rose: "text-rose-400 bg-rose-500/10 border-rose-500/30",
     slate: "text-[var(--text-tertiary)] bg-slate-500/10 border-slate-500/30",
     amber: "text-amber-400 bg-amber-500/10 border-amber-500/30"
   };
@@ -597,9 +597,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               <div className="grid grid-cols-3 gap-2.5 w-full md:flex md:w-auto">
                 <button 
                   onClick={handleClearPortfolio} 
-                  className="px-4 py-3 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center space-x-1.5 hover:bg-rose-100/50 hover:border-rose-300 transition-all active:scale-95 animate-in fade-in"
+                  className="px-4 py-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center space-x-1.5 hover:bg-rose-100/50 hover:border-rose-300 transition-all active:scale-95 animate-in fade-in"
                 >
-                  <Trash2 className="h-4 w-4 text-rose-500" />
+                  <Trash2 className="h-4 w-4 text-rose-400" />
                   <span className="hidden sm:inline">Remove Old Details</span>
                   <span className="sm:hidden">Reset</span>
                 </button>
@@ -611,8 +611,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                 </button>
                 <button 
                   onClick={() => setShowBrokerHub(true)} 
-                  className="px-5 py-3 bg-slate-ink text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center space-x-2 hover:bg-[var(--bg-primary)] transition-all active:scale-95 border border-white/5"
-                  style={{ backgroundColor: 'var(--slate-ink)' }}
+                  className="px-5 py-3 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center space-x-2 hover:bg-[var(--bg-primary)] transition-all active:scale-95 border border-white/5"
                 >
                   <Globe className="h-4 w-4 text-blue-500" />
                   <span className="hidden sm:inline">Upload New Details</span>
@@ -860,16 +859,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               }} className="space-y-6 text-left">
                  <div>
                     <label className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest ml-1 mb-2 block">Stock Symbol</label>
-                    <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-slate-600" />
+                    <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]" />
                  </div>
                  <div className="grid grid-cols-2 gap-6">
                     <div>
                        <label className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
-                       <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-slate-600" />
+                       <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]" />
                     </div>
                     <div>
                        <label className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest ml-1 mb-2 block">Buy Price</label>
-                       <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-slate-600" />
+                       <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-black focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]" />
                     </div>
                  </div>
                   <button type="submit" className="w-full py-5 bg-blue-600 text-[var(--text-primary)] rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-blue-500">

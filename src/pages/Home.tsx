@@ -358,6 +358,107 @@ const HomePage: React.FC = () => {
         setShowUpgrade={setShowUpgrade}
       />
       <CourseFramework />
+
+      {/* ── Live Charts Terminal ── */}
+      <section className="py-16 px-6 md:px-10 max-w-[1440px] mx-auto">
+        <div className="bg-gradient-to-br from-blue-600/[0.04] via-[var(--bg-secondary)]/30 to-indigo-600/[0.04] border border-[var(--border-primary)] rounded-[2rem] p-6 md:p-10 relative overflow-hidden group">
+          <div className="absolute right-0 top-0 w-64 h-64 bg-blue-600/5 blur-[80px] -mr-32 -mt-32" />
+          <div className="absolute left-0 bottom-0 w-48 h-48 bg-indigo-600/5 blur-[60px] -ml-24 -mb-24" />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center relative z-10">
+            <div className="space-y-4">
+              <div className="inline-flex items-center space-x-2 px-3 py-1.5 bg-blue-500/10 rounded-full border border-blue-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest">Live Charts Terminal</span>
+              </div>
+              <h2 className="text-2xl md:text-4xl font-black tracking-tighter leading-none">
+                Institutional-Grade <br /><span className="text-blue-500">Charts & Analytics</span>
+              </h2>
+              <p className="text-[var(--text-muted)] text-sm font-medium leading-relaxed max-w-md">
+                Professional candlestick charts with FII/DII overlays, ABCD tranche levels, volume profile, and 50+ technical indicators — all in one terminal.
+              </p>
+              <ul className="space-y-2">
+                {[
+                  'Real-time NSE/BSE price feed synced with audit scores',
+                  'ABCD Tranche entry zones plotted directly on charts',
+                  'Smart Money (FII/DII) volume divergence indicators',
+                  'Multi-timeframe analysis with institutional strategy overlays',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-[var(--text-secondary)]">
+                    <div className="w-4 h-4 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <svg className="w-2.5 h-2.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Link to="/charts" className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-500 hover:scale-105 transition-all shadow-lg shadow-blue-900/30">
+                  Open Charts Terminal <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link to="/education" className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--bg-primary)]/5 border border-white/10 text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-[var(--bg-primary)]/10 transition-all">
+                  Learn Chart Analysis
+                </Link>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--border-primary)] rounded-xl overflow-hidden shadow-lg shadow-blue-900/20">
+                <div className="bg-[var(--bg-primary)] rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-blue-600/10 border border-blue-500/20 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-[var(--text-primary)]">RELIANCE · NSE</p>
+                        <p className="text-[7px] text-emerald-400 font-black uppercase tracking-widest">LIVE · 2,845.30 <span className="text-emerald-400">+1.2%</span></p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-5 h-5 rounded bg-[var(--bg-tertiary)] flex items-center justify-center text-[6px] font-black text-[var(--text-muted)]">1D</div>
+                      <div className="w-5 h-5 rounded bg-blue-600 text-white flex items-center justify-center text-[6px] font-black">1W</div>
+                      <div className="w-5 h-5 rounded bg-[var(--bg-tertiary)] flex items-center justify-center text-[6px] font-black text-[var(--text-muted)]">1M</div>
+                      <div className="w-5 h-5 rounded bg-[var(--bg-tertiary)] flex items-center justify-center text-[6px] font-black text-[var(--text-muted)]">1Y</div>
+                    </div>
+                  </div>
+                  <div className="h-32 rounded-xl bg-gradient-to-b from-blue-600/[0.02] to-transparent border border-[var(--border-primary)] relative overflow-hidden">
+                    <div className="absolute inset-0 flex items-end px-2 pb-3">
+                      <svg className="w-full h-full" viewBox="0 0 400 160" preserveAspectRatio="none">
+                        <line x1="0" y1="40" x2="400" y2="40" stroke="rgba(59,130,246,0.08)" strokeWidth="1" />
+                        <line x1="0" y1="80" x2="400" y2="80" stroke="rgba(59,130,246,0.08)" strokeWidth="1" />
+                        <line x1="0" y1="120" x2="400" y2="120" stroke="rgba(59,130,246,0.08)" strokeWidth="1" />
+                        <path d="M0,100 L30,90 L60,95 L90,75 L120,80 L150,60 L180,65 L210,50 L240,55 L270,40 L300,45 L330,35 L360,40 L400,30" fill="none" stroke="#3b82f6" strokeWidth="2" />
+                        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
+                          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                        </linearGradient>
+                        <path d="M0,100 L30,90 L60,95 L90,75 L120,80 L150,60 L180,65 L210,50 L240,55 L270,40 L300,45 L330,35 L360,40 L400,30 L400,160 L0,160 Z" fill="url(#chartGrad)" />
+                        <circle cx="90" cy="75" r="4" fill="transparent" stroke="#10b981" strokeWidth="2" />
+                        <circle cx="270" cy="40" r="4" fill="transparent" stroke="#10b981" strokeWidth="2" />
+                        <circle cx="150" cy="60" r="3" fill="#ef4444" />
+                      </svg>
+                    </div>
+                    <div className="absolute top-2 left-2 flex gap-1.5">
+                      <div className="px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[6px] font-black text-blue-400 uppercase tracking-wider">ABCD: B</div>
+                      <div className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[6px] font-black text-emerald-400 uppercase tracking-wider">Audit: 82/100</div>
+                    </div>
+                  </div>
+                  <div className="flex items-end gap-1 h-6 px-1">
+                    {[40,60,35,75,50,90,65,45,80,55,70,85,30,50,65,45,80,55,70,85,40,60,35].map((h, i) => (
+                      <div key={i} className="flex-1 bg-blue-500/20 rounded-t" style={{height: h + '%'}} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/40 animate-pulse">
+                Interactive
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <StrategyMatrix />
 
       <ICPCards />
