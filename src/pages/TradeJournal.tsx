@@ -387,75 +387,75 @@ const TradeJournalPage: React.FC = () => {
 
   const SortIcon = (key: string) => {
     if (sortConfig?.key !== key) return <ArrowUpDown className="h-2 w-2 ml-1 opacity-20" />;
-    return <ArrowUpDown className={`h-2 w-2 ml-1 ${sortConfig.direction === 'asc' ? 'text-blue-600' : 'text-slate-400'}`} />;
+    return <ArrowUpDown className={`h-2 w-2 ml-1 ${sortConfig.direction === 'asc' ? 'text-blue-400' : 'text-[var(--text-tertiary)]'}`} />;
   };
 
-  if (loading) return <div className="flex-1 flex items-center justify-center"><div className="w-10 h-10 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex-1 flex items-center justify-center"><div className="w-10 h-10 border-4 border-[var(--border-primary)] border-t-blue-600 rounded-full animate-spin" /></div>;
 
   return (
     <div className="flex-1 flex flex-col min-h-0 py-6 px-4 md:px-8 lg:px-10 space-y-6 overflow-hidden font-sans bg-[#f8fafc]">
-      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-100 pb-6 gap-6 shrink-0">
+      <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[var(--border-primary)] pb-6 gap-6 shrink-0">
         <div className="space-y-1">
-          <div className="flex items-center space-x-2 px-3 py-1 bg-blue-500/10 w-fit rounded-lg border border-blue-500/20 mb-3"><BookOpen className="h-3 w-3 text-blue-600" /><span className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">Journal</span></div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">Trade Ledger</h1>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Institutional Order Execution Audit</p>
+          <div className="flex items-center space-x-2 px-3 py-1 bg-blue-500/10 w-fit rounded-lg border border-blue-500/20 mb-3"><BookOpen className="h-3 w-3 text-blue-400" /><span className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none">Journal</span></div>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tighter italic uppercase leading-none">Trade Ledger</h1>
+          <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Institutional Order Execution Audit</p>
         </div>
         <div className="flex items-center space-x-3">
            <div className="flex items-center space-x-2 ml-4">
-              <button onClick={() => handleDownloadTemplate('OPEN')} className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl shadow-sm hover:bg-blue-50 hover:text-blue-600 transition-all flex items-center space-x-2" title="Download Template for Open Trades"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Tpl (Open)</span></button>
-              <button onClick={() => handleDownloadTemplate('CLOSED')} className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl shadow-sm hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center space-x-2" title="Download Template for Closed History"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Tpl (Closed)</span></button>
-              <button onClick={handleExportTrades} className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl shadow-sm hover:bg-emerald-50 hover:text-emerald-600 transition-all flex items-center space-x-2" title="Export Your Trades"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Export</span></button>
+              <button onClick={() => handleDownloadTemplate('OPEN')} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-blue-500/10 hover:text-blue-400 transition-all flex items-center space-x-2" title="Download Template for Open Trades"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Tpl (Open)</span></button>
+              <button onClick={() => handleDownloadTemplate('CLOSED')} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-indigo-500/10 hover:text-indigo-400 transition-all flex items-center space-x-2" title="Download Template for Closed History"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Tpl (Closed)</span></button>
+              <button onClick={handleExportTrades} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-emerald-500/10 hover:text-emerald-400 transition-all flex items-center space-x-2" title="Export Your Trades"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Export</span></button>
               <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleCSVUpload} />
-              <button onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="p-3 bg-white border border-slate-200 text-slate-500 rounded-2xl shadow-sm hover:bg-slate-50 flex items-center space-x-2"><Upload className={`h-4 w-4 ${isImporting ? 'animate-bounce' : ''}`} /><span className="text-[10px] font-black uppercase tracking-widest">Import</span></button>
-              <button onClick={() => setShowAddModal(true)} className="px-6 py-3 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg flex items-center space-x-2"><Plus className="h-4 w-4" /><span>Record</span></button>
+              <button onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-[var(--bg-secondary)] flex items-center space-x-2"><Upload className={`h-4 w-4 ${isImporting ? 'animate-bounce' : ''}`} /><span className="text-[10px] font-black uppercase tracking-widest">Import</span></button>
+              <button onClick={() => setShowAddModal(true)} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg flex items-center space-x-2"><Plus className="h-4 w-4" /><span>Record</span></button>
            </div>
         </div>
       </div>
 
       {/* 2. Institutional Performance Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 shrink-0 animate-in fade-in slide-in-from-top-4 duration-500">
-         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+         <div className="bg-[var(--bg-secondary)] rounded-3xl p-6 border border-[var(--border-primary)] shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-2xl -mr-8 -mt-8" />
             <div className="flex items-center justify-between mb-3">
-               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Total Exposure</span>
-               <Wallet className="h-3.5 w-3.5 text-blue-600" />
+               <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Total Exposure</span>
+               <Wallet className="h-3.5 w-3.5 text-blue-400" />
             </div>
-            <h3 className="text-2xl font-black text-slate-900">₹{summaryStats.totalBuyValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
-            <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">Capital in Play</p>
+            <h3 className="text-2xl font-black text-[var(--text-primary)]">₹{summaryStats.totalBuyValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+            <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Capital in Play</p>
          </div>
 
-         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm group hover:shadow-md transition-all">
+         <div className="bg-[var(--bg-secondary)] rounded-3xl p-6 border border-[var(--border-primary)] shadow-sm group hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-3">
-               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">
+               <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">
                   {activeSegment === 'OPEN' ? 'Running Yield (Live)' : 'Net Segment Yield'}
                </span>
                <TrendingUp className={`h-3.5 w-3.5 ${summaryStats.totalPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`} />
             </div>
             <div className="flex items-end space-x-2">
-               <h3 className={`text-2xl font-black ${summaryStats.totalPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+               <h3 className={`text-2xl font-black ${summaryStats.totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-600'}`}>
                   {summaryStats.totalPnl >= 0 ? '+' : '-'}{summaryStats.totalPnlPer.toFixed(2)}%
                </h3>
                <span className={`text-[10px] font-black uppercase mb-1 ${summaryStats.totalPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                   {summaryStats.totalPnl >= 0 ? '+' : '-'}₹{Math.abs(summaryStats.totalPnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                </span>
             </div>
-            <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+            <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">
                {summaryStats.totalPnl >= 0 ? 'Net Gain' : 'Net Loss'}: ₹{Math.abs(summaryStats.totalPnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </p>
          </div>
 
-         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm group hover:shadow-md transition-all">
+         <div className="bg-[var(--bg-secondary)] rounded-3xl p-6 border border-[var(--border-primary)] shadow-sm group hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-3">
-               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Avg. Velocity</span>
+               <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Avg. Velocity</span>
                <Clock className="h-3.5 w-3.5 text-indigo-500" />
             </div>
-            <h3 className="text-2xl font-black text-slate-900">{summaryStats.avgDays.toFixed(1)} Days</h3>
-            <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">Holding Duration</p>
+            <h3 className="text-2xl font-black text-[var(--text-primary)]">{summaryStats.avgDays.toFixed(1)} Days</h3>
+            <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Holding Duration</p>
          </div>
 
          <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl shadow-slate-200 group hover:scale-[1.02] transition-all">
             <div className="flex items-center justify-between mb-3">
-               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Annual Projection</span>
+               <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Annual Projection</span>
                <Activity className="h-3.5 w-3.5 text-blue-400" />
             </div>
             <h3 className="text-2xl font-black text-white">{summaryStats.avgAnnualGain.toFixed(0)}%</h3>
@@ -465,18 +465,18 @@ const TradeJournalPage: React.FC = () => {
 
       <div className="flex items-center justify-between shrink-0">
          <div className="flex items-center space-x-4">
-            <button onClick={() => { setActiveSegment('OPEN'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSegment === 'OPEN' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' : 'text-slate-500 hover:text-slate-600'}`}>Open Positions</button>
-            <button onClick={() => { setActiveSegment('CLOSED'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSegment === 'CLOSED' ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-500 hover:text-slate-600'}`}>Closed History</button>
+            <button onClick={() => { setActiveSegment('OPEN'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSegment === 'OPEN' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>Open Positions</button>
+            <button onClick={() => { setActiveSegment('CLOSED'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSegment === 'CLOSED' ? 'bg-blue-600 text-white shadow-xl' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>Closed History</button>
          </div>
-         {selectedIds.length > 0 && <button onClick={handleBulkDelete} className="flex items-center space-x-2 px-6 py-3 bg-red-50 text-red-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3 w-3" /><span>Delete ({selectedIds.length})</span></button>}
+         {selectedIds.length > 0 && <button onClick={handleBulkDelete} className="flex items-center space-x-2 px-6 py-3 bg-red-50 text-rose-400 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3 w-3" /><span>Delete ({selectedIds.length})</span></button>}
       </div>
 
-      <div className="hidden md:flex flex-1 flex flex-col min-h-0 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden relative">
+      <div className="hidden md:flex flex-1 flex flex-col min-h-0 bg-[var(--bg-secondary)] rounded-[2.5rem] border border-[var(--border-primary)] shadow-xl overflow-hidden relative">
          <div className="flex-1 overflow-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
                <thead>
-                  <tr className="bg-slate-50 text-[8px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 sticky top-0 z-10">
-                     <th className="px-6 py-4 w-10"><button onClick={() => { if (selectedIds.length === processedTrades.length) setSelectedIds([]); else setSelectedIds(processedTrades.map(t => t.id)); }} className="text-slate-300">{selectedIds.length === processedTrades.length && processedTrades.length > 0 ? <CheckSquare className="h-4 w-4 text-blue-600" /> : <Square className="h-4 w-4" />}</button></th>
+                  <tr className="bg-[var(--bg-secondary)] text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-[var(--border-primary)] sticky top-0 z-10">
+                     <th className="px-6 py-4 w-10"><button onClick={() => { if (selectedIds.length === processedTrades.length) setSelectedIds([]); else setSelectedIds(processedTrades.map(t => t.id)); }} className="text-slate-300">{selectedIds.length === processedTrades.length && processedTrades.length > 0 ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></th>
                      <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('symbol')}>Instrument {SortIcon('symbol')}</th>
                      {activeSegment === 'OPEN' ? (
                        <>
@@ -484,7 +484,7 @@ const TradeJournalPage: React.FC = () => {
                          <th className="px-4 py-4 text-center">Qty</th>
                          <th className="px-4 py-4 text-center cursor-pointer" onClick={() => handleSort('level')}>Level {SortIcon('level')}</th>
                          <th className="px-4 py-4 text-right">Avg Price</th>
-                         <th className="px-4 py-4 text-right text-blue-600">CMP</th>
+                         <th className="px-4 py-4 text-right text-blue-400">CMP</th>
                          <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnl')}>Gain Amt {SortIcon('pnl')}</th>
                          <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('pnlPer')}>Yield % {SortIcon('pnlPer')}</th>
                          <th className="px-4 py-4 text-right cursor-pointer" onClick={() => handleSort('gap')}>Objective/Gap {SortIcon('gap')}</th>
@@ -507,42 +507,42 @@ const TradeJournalPage: React.FC = () => {
                </thead>
                <tbody className="divide-y divide-slate-50 text-[10px] font-black">
                   {processedTrades.map((t) => (
-                      <tr key={t.id} className={`hover:bg-slate-50 transition-colors group ${selectedIds.includes(t.id) ? 'bg-blue-50/50' : ''}`}>
-                         <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])} className={selectedIds.includes(t.id) ? 'text-blue-600' : 'text-slate-200'}>{selectedIds.includes(t.id) ? <CheckSquare className="h-4 w-4 text-blue-600" /> : <Square className="h-4 w-4" />}</button></td>
+                      <tr key={t.id} className={`hover:bg-[var(--bg-secondary)] transition-colors group ${selectedIds.includes(t.id) ? 'bg-blue-500/10' : ''}`}>
+                         <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])} className={selectedIds.includes(t.id) ? 'text-blue-400' : 'text-slate-200'}>{selectedIds.includes(t.id) ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></td>
                          <td className="px-4 py-3">
                             <div className="flex flex-col uppercase tracking-tighter relative group/item">
                                <div className="flex items-center space-x-2">
-                                  <span className="text-slate-900 font-black">{t.symbol}</span>
-                                  <button onClick={() => handleShareTrade(t)} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-slate-100 rounded text-slate-400" title="Share Trade"><Share2 className="h-2.5 w-2.5" /></button>
+                                  <span className="text-[var(--text-primary)] font-black">{t.symbol}</span>
+                                  <button onClick={() => handleShareTrade(t)} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-[var(--bg-tertiary)] rounded text-[var(--text-tertiary)]" title="Share Trade"><Share2 className="h-2.5 w-2.5" /></button>
                                </div>
-                               <span className="text-[7px] text-slate-400">{t.strategy}</span>
+                               <span className="text-[7px] text-[var(--text-tertiary)]">{t.strategy}</span>
                             </div>
                          </td>
                          {activeSegment === 'OPEN' ? (
                            <>
-                             <td className="px-4 py-3 text-slate-500 font-bold">{t.entry_date}</td>
-                             <td className="px-4 py-3 text-center text-slate-900">{t.quantity}</td>
-                             <td className="px-4 py-3 text-center"><span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${t.level === 'A' ? 'bg-blue-600 text-white' : t.level === 'B' ? 'bg-amber-500 text-white' : t.level === 'C' ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}>{t.level}</span></td>
-                             <td className="px-4 py-3 text-right text-slate-600">₹{t.entry_price.toLocaleString()}</td>
-                             <td className="px-4 py-3 text-right font-black text-blue-600">₹{t.cmp.toLocaleString()}</td>
-                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 text-right`}>₹{Math.abs(t.pnl).toLocaleString()}</td>
-                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 text-right`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
-                             <td className="px-4 py-3 text-right"><div className="flex flex-col items-end"><span className="text-slate-500">₹{t.targetVal.toLocaleString()}</span><span className={`${t.gap > 0 ? 'text-orange-500' : 'text-green-500'} text-[8px]`}>{t.gap > 0 ? `${t.gap.toFixed(1)}% Gap` : 'OBJ REACHED'}</span></div></td>
+                             <td className="px-4 py-3 text-[var(--text-muted)] font-bold">{t.entry_date}</td>
+                             <td className="px-4 py-3 text-center text-[var(--text-primary)]">{t.quantity}</td>
+                             <td className="px-4 py-3 text-center"><span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${t.level === 'A' ? 'bg-blue-600 text-white' : t.level === 'B' ? 'bg-amber-500/100 text-white' : t.level === 'C' ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}>{t.level}</span></td>
+                             <td className="px-4 py-3 text-right text-[var(--text-secondary)]">₹{t.entry_price.toLocaleString()}</td>
+                             <td className="px-4 py-3 text-right font-black text-blue-400">₹{t.cmp.toLocaleString()}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} px-4 py-3 text-right`}>₹{Math.abs(t.pnl).toLocaleString()}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} px-4 py-3 text-right`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
+                             <td className="px-4 py-3 text-right"><div className="flex flex-col items-end"><span className="text-[var(--text-muted)]">₹{t.targetVal.toLocaleString()}</span><span className={`${t.gap > 0 ? 'text-orange-400' : 'text-emerald-400'} text-[8px]`}>{t.gap > 0 ? `${t.gap.toFixed(1)}% Gap` : 'OBJ REACHED'}</span></div></td>
                            </>
                          ) : (
                            <>
-                             <td className="px-4 py-3 text-slate-500 font-bold">{t.entry_date}</td>
-                             <td className="px-4 py-3 text-center text-slate-900">{t.quantity}</td>
-                             <td className="px-4 py-3 text-right text-slate-600">₹{t.entry_price.toLocaleString()}</td>
-                             <td className="px-4 py-3 text-right text-slate-500 font-bold">{t.exit_date}</td>
-                             <td className="px-4 py-3 text-right text-slate-900">₹{t.exit_price?.toLocaleString() || '-'}</td>
-                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 text-right font-black`}>₹{Math.abs(t.pnl).toLocaleString()}</td>
-                             <td className="px-4 py-3 text-center text-slate-500">{t.days}</td>
-                             <td className={`${t.pnl >= 0 ? 'text-green-600' : 'text-red-600'} px-4 py-3 text-right`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
-                             <td className={`${t.annualGain >= 0 ? 'text-blue-600' : 'text-red-600'} px-4 py-3 text-right`}>{t.annualGain >= 0 ? '+' : ''}{t.annualGain.toFixed(0)}%</td>
+                             <td className="px-4 py-3 text-[var(--text-muted)] font-bold">{t.entry_date}</td>
+                             <td className="px-4 py-3 text-center text-[var(--text-primary)]">{t.quantity}</td>
+                             <td className="px-4 py-3 text-right text-[var(--text-secondary)]">₹{t.entry_price.toLocaleString()}</td>
+                             <td className="px-4 py-3 text-right text-[var(--text-muted)] font-bold">{t.exit_date}</td>
+                             <td className="px-4 py-3 text-right text-[var(--text-primary)]">₹{t.exit_price?.toLocaleString() || '-'}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} px-4 py-3 text-right font-black`}>₹{Math.abs(t.pnl).toLocaleString()}</td>
+                             <td className="px-4 py-3 text-center text-[var(--text-muted)]">{t.days}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} px-4 py-3 text-right`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
+                             <td className={`${t.annualGain >= 0 ? 'text-blue-400' : 'text-rose-400'} px-4 py-3 text-right`}>{t.annualGain >= 0 ? '+' : ''}{t.annualGain.toFixed(0)}%</td>
                            </>
                          )}
-                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-50 text-emerald-600 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Re-open?')) { fetch(`${API_URL}/api/trades/${t.id}/reopen`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => { if(window.confirm('Delete?')) { fetch(`${API_URL}/api/trades/${t.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-slate-50 text-slate-400 rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
+                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Re-open?')) { fetch(`${API_URL}/api/trades/${t.id}/reopen`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => { if(window.confirm('Delete?')) { fetch(`${API_URL}/api/trades/${t.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-[var(--bg-secondary)] text-[var(--text-tertiary)] rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
                       </tr>
                   ))}
                </tbody>
@@ -557,94 +557,94 @@ const TradeJournalPage: React.FC = () => {
             return (
               <div 
                  key={t.id} 
-                 className="bg-white rounded-[1.25rem] border border-slate-100/80 shadow-md shadow-slate-100 p-4 space-y-3 animate-in fade-in duration-250"
+                 className="bg-[var(--bg-secondary)] rounded-[1.25rem] border border-[var(--border-primary)]/80 shadow-md shadow-[var(--bg-primary)] p-4 space-y-3 animate-in fade-in duration-250"
               >
                  {/* Card Header */}
                  <div className="flex justify-between items-start">
                     <div className="flex flex-col">
                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-black text-slate-900 tracking-tight font-mono uppercase">{t.symbol}</span>
+                          <span className="text-sm font-black text-[var(--text-primary)] tracking-tight font-mono uppercase">{t.symbol}</span>
                           {activeSegment === 'OPEN' && (
                              <span className={`px-1.5 py-0.5 rounded-[0.25rem] text-[6.5px] font-black border tracking-wider leading-none ${
-                                t.level === 'A' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                t.level === 'B' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                t.level === 'C' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
-                                'bg-slate-50 text-slate-600 border-slate-200'
+                                t.level === 'A' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                t.level === 'B' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                t.level === 'C' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                                'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-secondary)]'
                              }`}>
                                 L-{t.level}
                              </span>
                           )}
                        </div>
-                       <span className="text-[7.5px] font-bold text-slate-500 uppercase tracking-widest mt-1">{t.strategy}</span>
+                       <span className="text-[7.5px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">{t.strategy}</span>
                     </div>
                     
                     <div className="text-right flex flex-col items-end">
-                       <span className={`text-sm font-black font-mono ${isGain ? 'text-green-600' : 'text-red-600'}`}>
+                       <span className={`text-sm font-black font-mono ${isGain ? 'text-emerald-400' : 'text-rose-400'}`}>
                           ₹{Math.abs(t.pnl).toLocaleString()}
                        </span>
-                       <span className={`text-[8.5px] font-black font-mono mt-0.5 ${isGain ? 'text-green-600' : 'text-red-600'}`}>
+                       <span className={`text-[8.5px] font-black font-mono mt-0.5 ${isGain ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {isGain ? '+' : ''}{t.pnlPer.toFixed(2)}%
                        </span>
                     </div>
                  </div>
 
                  {/* Metrics Grid */}
-                 <div className="grid grid-cols-2 gap-2 bg-slate-50/50 p-3 rounded-[0.75rem] border border-slate-100/50 text-[10px] font-semibold text-slate-600">
+                 <div className="grid grid-cols-2 gap-2 bg-[var(--bg-secondary)]/50 p-3 rounded-[0.75rem] border border-[var(--border-primary)]/50 text-[10px] font-semibold text-[var(--text-secondary)]">
                     {activeSegment === 'OPEN' ? (
                        <>
                           <div className="flex justify-between">
-                             <span className="text-slate-500 uppercase text-[8px] font-bold tracking-wider">Qty:</span>
-                             <span className="font-bold font-mono text-slate-900">{t.quantity}</span>
+                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Qty:</span>
+                             <span className="font-bold font-mono text-[var(--text-primary)]">{t.quantity}</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-slate-500 uppercase text-[8px] font-bold tracking-wider">Avg Price:</span>
-                             <span className="font-bold font-mono text-slate-900">₹{t.entry_price.toLocaleString()}</span>
+                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Avg Price:</span>
+                             <span className="font-bold font-mono text-[var(--text-primary)]">₹{t.entry_price.toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-slate-500 uppercase text-[8px] font-bold tracking-wider">CMP:</span>
-                             <span className="font-bold font-mono text-blue-600">₹{t.cmp.toLocaleString()}</span>
+                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">CMP:</span>
+                             <span className="font-bold font-mono text-blue-400">₹{t.cmp.toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-slate-500 uppercase text-[8px] font-bold tracking-wider">Objective:</span>
-                             <span className="font-bold font-mono text-slate-900">₹{t.targetVal.toLocaleString()}</span>
+                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Objective:</span>
+                             <span className="font-bold font-mono text-[var(--text-primary)]">₹{t.targetVal.toLocaleString()}</span>
                           </div>
                        </>
                     ) : (
                        <>
                           <div className="flex justify-between">
-                             <span className="text-slate-500 uppercase text-[8px] font-bold tracking-wider">Qty:</span>
-                             <span className="font-bold font-mono text-slate-900">{t.quantity}</span>
+                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Qty:</span>
+                             <span className="font-bold font-mono text-[var(--text-primary)]">{t.quantity}</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-slate-500 uppercase text-[8px] font-bold tracking-wider">Hold Days:</span>
-                             <span className="font-bold font-mono text-slate-900">{t.days} Days</span>
+                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Hold Days:</span>
+                             <span className="font-bold font-mono text-[var(--text-primary)]">{t.days} Days</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-slate-500 uppercase text-[8px] font-bold tracking-wider">Open Price:</span>
-                             <span className="font-bold font-mono text-slate-900">₹{t.entry_price.toLocaleString()}</span>
+                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Open Price:</span>
+                             <span className="font-bold font-mono text-[var(--text-primary)]">₹{t.entry_price.toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-slate-500 uppercase text-[8px] font-bold tracking-wider">Close Price:</span>
-                             <span className="font-bold font-mono text-slate-900">₹{t.exit_price?.toLocaleString() || '-'}</span>
+                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Close Price:</span>
+                             <span className="font-bold font-mono text-[var(--text-primary)]">₹{t.exit_price?.toLocaleString() || '-'}</span>
                           </div>
                        </>
                     )}
                  </div>
 
                  {/* Date & Actions row */}
-                 <div className="flex items-center justify-between text-[9px] text-slate-500 pt-1">
+                 <div className="flex items-center justify-between text-[9px] text-[var(--text-muted)] pt-1">
                     <div>
                        {activeSegment === 'OPEN' ? (
-                          <span>Opened: <strong className="text-slate-700">{t.entry_date}</strong></span>
+                          <span>Opened: <strong className="text-[var(--text-secondary)]">{t.entry_date}</strong></span>
                        ) : (
-                          <span>Period: <strong className="text-slate-700">{t.entry_date} - {t.exit_date}</strong></span>
+                          <span>Period: <strong className="text-[var(--text-secondary)]">{t.entry_date} - {t.exit_date}</strong></span>
                        )}
                     </div>
                     
                     <div className="flex items-center space-x-1.5">
                        <button 
                           onClick={() => handleShareTrade(t)} 
-                          className="p-1.5 bg-slate-50 text-slate-500 border border-slate-100 rounded-lg hover:bg-slate-100"
+                          className="p-1.5 bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-primary)] rounded-lg hover:bg-[var(--bg-tertiary)]"
                        >
                           <Share2 className="h-3.5 w-3.5" />
                        </button>
@@ -652,14 +652,14 @@ const TradeJournalPage: React.FC = () => {
                        {activeSegment === 'OPEN' ? (
                           <button 
                              onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} 
-                             className="px-2.5 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[8.5px] font-black uppercase tracking-wider flex items-center gap-1 hover:bg-emerald-600 hover:text-white"
+                             className="px-2.5 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-[8.5px] font-black uppercase tracking-wider flex items-center gap-1 hover:bg-emerald-600 hover:text-white"
                           >
                              <CheckCircle2 className="h-3 w-3" /> Close
                           </button>
                        ) : (
                           <button 
                              onClick={() => { if(window.confirm('Re-open?')) { fetch(`${API_URL}/api/trades/${t.id}/reopen`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} 
-                             className="p-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg hover:bg-blue-600 hover:text-white"
+                             className="p-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-600 hover:text-white"
                           >
                              <RotateCcw className="h-3.5 w-3.5" />
                           </button>
@@ -680,19 +680,19 @@ const TradeJournalPage: React.FC = () => {
 
       {showAddModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-             <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+          <div className="bg-[var(--bg-secondary)] w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+             <div className="p-8 border-b border-[var(--border-primary)] flex items-center justify-between bg-[var(--bg-secondary)]/30">
                 <div className="space-y-1">
-                   <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">New Research Note</h3>
-                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Add Stock to Ledger</p>
+                   <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tighter italic">New Research Note</h3>
+                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Add Stock to Ledger</p>
                 </div>
-                <button onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"><X className="h-6 w-6" /></button>
+                <button onClick={() => setShowAddModal(false)} className="p-2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"><X className="h-6 w-6" /></button>
              </div>
              
              <form onSubmit={handleAddTrade} className="p-8 space-y-6 text-left max-h-[70vh] overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-6">
                    <div className="col-span-2 relative">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Instrument Symbol</label>
+                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Instrument Symbol</label>
                       <input 
                         type="text" 
                         required 
@@ -703,12 +703,12 @@ const TradeJournalPage: React.FC = () => {
                           setSymbolSearch(val); 
                           setNewTrade(prev => ({...prev, symbol: val})); 
                         }} 
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
                    
                    <div>
-<label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Open Price</label>
+<label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Open Price</label>
                        <input 
                          type="number" 
                          step="0.05" 
@@ -716,52 +716,52 @@ const TradeJournalPage: React.FC = () => {
                          placeholder="0.00"
                         value={newTrade.entry_price} 
                         onChange={(e) => setNewTrade({...newTrade, entry_price: e.target.value})} 
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
                    
                    <div>
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
+                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
                       <input 
                         type="number" 
                         required 
                         placeholder="0"
                         value={newTrade.quantity} 
                         onChange={(e) => setNewTrade({...newTrade, quantity: e.target.value})} 
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
 
                    <div>
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Objective Price (Optional)</label>
+                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Objective Price (Optional)</label>
                       <input 
                         type="number" 
                         step="0.05" 
                         placeholder="Defaults to Open * 1.25"
                         value={newTrade.target_price} 
                         onChange={(e) => setNewTrade({...newTrade, target_price: e.target.value})} 
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
 
                    <div>
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Risk Guard (Optional)</label>
+                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Risk Guard (Optional)</label>
                       <input 
                         type="number" 
                         step="0.05" 
                         placeholder="Risk Guard level"
                         value={newTrade.stop_loss} 
                         onChange={(e) => setNewTrade({...newTrade, stop_loss: e.target.value})} 
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
 
                    <div>
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Open Level</label>
+                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Open Level</label>
                       <select 
                         value={newTrade.level} 
                         onChange={(e) => setNewTrade({...newTrade, level: e.target.value})} 
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black appearance-none focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner"
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black appearance-none focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner"
                       >
                          <option value="A">Level A (Primary)</option>
                          <option value="B">Level B (Secondary)</option>
@@ -771,40 +771,40 @@ const TradeJournalPage: React.FC = () => {
                    </div>
 
                    <div>
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Open Date</label>
+                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Open Date</label>
                       <input 
                         type="date" 
                         required
                         value={newTrade.entry_date} 
                         onChange={(e) => setNewTrade({...newTrade, entry_date: e.target.value})} 
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
                    
                    <div className="col-span-2">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Matrix Strategy</label>
+                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Matrix Strategy</label>
                       <select 
                         value={newTrade.strategy} 
                         onChange={(e) => setNewTrade({...newTrade, strategy: e.target.value})} 
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black appearance-none focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner"
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black appearance-none focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner"
                       >
                          {STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                       </select>
                    </div>
 
                    <div className="col-span-2">
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-2 block">Transaction Notes</label>
+                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Transaction Notes</label>
                       <textarea 
                         placeholder="Log strategy details, logic parameters, or observations..."
                         value={newTrade.notes} 
                         onChange={(e) => setNewTrade({...newTrade, notes: e.target.value})} 
                         rows={3}
-                        className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner font-sans resize-none" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner font-sans resize-none" 
                       />
                    </div>
                 </div>
                 
-                <button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-black mt-4">
+                <button type="submit" className="w-full py-5 bg-blue-600 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-blue-700 mt-4">
                    Commit to Ledger
                 </button>
              </form>
@@ -814,19 +814,19 @@ const TradeJournalPage: React.FC = () => {
 
       {showCloseModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-           <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300">
-              <h3 className="text-xl font-black text-slate-900 uppercase italic mb-6">Realize Research: {showCloseModal.symbol}</h3>
+           <div className="bg-[var(--bg-secondary)] w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300">
+              <h3 className="text-xl font-black text-[var(--text-primary)] uppercase italic mb-6">Realize Research: {showCloseModal.symbol}</h3>
               <form onSubmit={handleConfirmClose} className="space-y-6 text-left">
                  <div>
-                    <label className="text-[9px] font-black text-slate-500 uppercase ml-1 mb-2 block">Close Level</label>
-                    <input type="number" step="0.05" required value={closeTradeData.exit_price} onChange={(e) => setCloseTradeData({...closeTradeData, exit_price: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-emerald-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
+                    <label className="text-[9px] font-black text-[var(--text-muted)] uppercase ml-1 mb-2 block">Close Level</label>
+                    <input type="number" step="0.05" required value={closeTradeData.exit_price} onChange={(e) => setCloseTradeData({...closeTradeData, exit_price: e.target.value})} className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-emerald-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
                  </div>
                  <div>
-                    <label className="text-[9px] font-black text-slate-500 uppercase ml-1 mb-2 block">Quantity to Close</label>
-                    <input type="number" required value={closeTradeData.quantity_to_close} onChange={(e) => setCloseTradeData({...closeTradeData, quantity_to_close: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:border-emerald-600 focus:bg-white transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
+                    <label className="text-[9px] font-black text-[var(--text-muted)] uppercase ml-1 mb-2 block">Quantity to Close</label>
+                    <input type="number" required value={closeTradeData.quantity_to_close} onChange={(e) => setCloseTradeData({...closeTradeData, quantity_to_close: e.target.value})} className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-emerald-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
                  </div>
                  <div className="flex space-x-3 mt-8">
-                    <button type="button" onClick={() => setShowCloseModal(null)} className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase hover:bg-slate-200 transition-all">Cancel</button>
+                    <button type="button" onClick={() => setShowCloseModal(null)} className="flex-1 py-4 bg-[var(--bg-tertiary)] text-[var(--text-muted)] rounded-2xl text-[10px] font-black uppercase hover:bg-slate-200 transition-all">Cancel</button>
                     <button type="submit" className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95">Verify & Close</button>
                  </div>
               </form>

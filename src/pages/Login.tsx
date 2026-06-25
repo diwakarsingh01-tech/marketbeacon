@@ -74,16 +74,16 @@ const LoginPage: React.FC = () => {
   }
 
   if (onboarding) return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-md bg-white p-12 rounded-[3.5rem] shadow-2xl border border-slate-100 space-y-10 animate-in zoom-in-95 duration-500 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-slate-900/5 blur-3xl -mr-16 -mt-16" />
+    <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-6 font-sans">
+      <div className="w-full max-w-md bg-[var(--bg-secondary)] p-12 rounded-[3.5rem] shadow-2xl border border-[var(--border-primary)] space-y-10 animate-in zoom-in-95 duration-500 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl -mr-16 -mt-16" />
         <div className="text-center space-y-4 relative z-10">
-           <div className="bg-slate-900 w-20 h-20 rounded-[2rem] flex items-center justify-center text-white mx-auto shadow-2xl rotate-3">
+           <div className="bg-blue-600 w-20 h-20 rounded-[2rem] flex items-center justify-center text-white mx-auto shadow-2xl rotate-3">
               <UserPlus className="h-10 w-10" />
            </div>
            <div className="space-y-1 pt-4">
-              <h1 className="text-3xl font-black text-slate-900 uppercase italic leading-none">Identity Audit</h1>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Complete your institutional profile</p>
+              <h1 className="text-3xl font-black text-[var(--text-primary)] uppercase italic leading-none">Identity Audit</h1>
+              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Complete your institutional profile</p>
            </div>
         </div>
         <form className="space-y-8 relative z-10" onSubmit={async (e) => {
@@ -101,10 +101,10 @@ const LoginPage: React.FC = () => {
           finally { setLoading(false); }
         }}>
            <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] block pl-1">Full Legal Name</label>
-              <input type="text" placeholder="Ex: Diwakar Singh" className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl px-8 py-5 text-sm font-black focus:bg-white focus:border-slate-900 transition-all outline-none" value={userName} onChange={(e) => setUserName(e.target.value)} required autoFocus />
+              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em] block pl-1">Full Legal Name</label>
+              <input type="text" placeholder="Ex: Diwakar Singh" className="w-full bg-[var(--bg-tertiary)] border-2 border-[var(--border-primary)] rounded-3xl px-8 py-5 text-sm font-black text-[var(--text-primary)] focus:bg-[var(--bg-primary)] focus:border-blue-500 transition-all outline-none" value={userName} onChange={(e) => setUserName(e.target.value)} required autoFocus />
            </div>
-           <button type="submit" disabled={loading} className="w-full py-6 bg-slate-900 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center space-x-3 transition-all hover:bg-black">
+           <button type="submit" disabled={loading} className="w-full py-6 bg-blue-600 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center space-x-3 transition-all hover:bg-blue-500">
              <span>Initialize Terminal Access</span>
              <ArrowRight className="h-5 w-5" />
            </button>

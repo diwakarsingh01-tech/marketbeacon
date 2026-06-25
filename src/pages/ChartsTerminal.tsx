@@ -6,8 +6,6 @@ import {
   TrendingUp, 
   TrendingDown, 
   Search, 
-  Moon, 
-  Sun, 
   Download, 
   Activity, 
   ShieldCheck, 
@@ -66,7 +64,7 @@ import { ConfidenceGauge } from '../components/ui/ConfidenceGauge';
 const ChartsTerminal: React.FC = () => {
   const [symbol, setSymbol] = useState<string>('RELIANCE');
   const [selectedBasket, setSelectedBasket] = useState<string>('Elite Basket');
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const [chartType, setChartType] = useState<'candles' | 'line'>('candles');
   
   // Data States
@@ -221,7 +219,7 @@ const ChartsTerminal: React.FC = () => {
     const containerWidth = chartContainerRef.current.clientWidth;
     const containerHeight = 520;
 
-    const isDark = theme === 'dark';
+    const isDark = true;
     
     // Create new chart instance
     const chart = createChart(chartContainerRef.current, {
@@ -358,7 +356,7 @@ const ChartsTerminal: React.FC = () => {
     if (showTargets && fundamentals && fundamentals.strategies && activeStrategyId && mainSeries) {
       const strat = fundamentals.strategies[activeStrategyId];
       if (strat && typeof strat === 'object') {
-        const isDark = theme === 'dark';
+        const isDark = true;
         
         // 1. Entry Price Line
         if (strat.entryPrice) {
@@ -515,7 +513,7 @@ const ChartsTerminal: React.FC = () => {
       
       const uniquePeaks = [...new Set(peaks)].sort((a, b) => b - a).slice(0, 3);
       const uniqueTroughs = [...new Set(troughs)].sort((a, b) => a - b).slice(0, 3);
-      const isDark = theme === 'dark';
+      const isDark = true;
 
       uniquePeaks.forEach(p => {
         mainSeries.createPriceLine({
@@ -1355,7 +1353,7 @@ const ChartsTerminal: React.FC = () => {
     
     return (
       <div className={`p-6 rounded-3xl border ${
-        theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+        'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
       }`}>
         <div className="flex justify-between items-center mb-5 border-b border-[var(--border-primary)]/60 pb-3">
           <div className="flex items-center gap-2">
@@ -1457,17 +1455,17 @@ const ChartsTerminal: React.FC = () => {
 
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 \${
-      theme === 'dark' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)]' : 'bg-[var(--bg-secondary)] text-slate-800'
+      'bg-[var(--bg-primary)] text-[var(--text-primary)]'
     }`}>
       
       {/* Ticker Bar (Top) */}
       <div className={`border-b text-[11px] font-black uppercase tracking-wider overflow-hidden \${
-        theme === 'dark' ? 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-tertiary)]' : 'bg-slate-100 border-[var(--border-primary)] text-[var(--text-muted)]'
+        'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-tertiary)]'
       }`}>
         <div className="flex divide-x divide-slate-800 overflow-x-auto py-2 px-4 whitespace-nowrap scrollbar-none">
           {(indices || []).map((idx, i) => (
             <div key={i} className="flex items-center gap-2 px-6">
-              <span className={theme === 'dark' ? 'text-[var(--text-secondary)]' : 'text-slate-700'}>{idx.name}</span>
+              <span className={'text-[var(--text-secondary)]'}>{idx.name}</span>
               <span className="font-bold">₹ {idx.price.toLocaleString('en-IN')}</span>
               <span className={`flex items-center text-[10px] font-black \${
                 idx.change >= 0 ? 'text-emerald-500' : 'text-rose-500'
@@ -1487,7 +1485,7 @@ const ChartsTerminal: React.FC = () => {
 
       {/* Main Header */}
       <header className={`border-b px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 \${
-        theme === 'dark' ? 'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+        'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80'
       }`}>
         <div className="flex items-center gap-3">
           <Link to="/" className="flex items-center gap-3 group">
@@ -1496,7 +1494,7 @@ const ChartsTerminal: React.FC = () => {
             </div>
             <div>
               <h1 className={`text-lg font-black tracking-tight uppercase italic flex items-center gap-1.5 \${
-                theme === 'dark' ? 'text-[var(--text-primary)]' : 'text-slate-900'
+                'text-[var(--text-primary)]'
               }`}>
                 MarketBeacon <span className="text-blue-500">Terminal</span>
               </h1>
@@ -1511,9 +1509,7 @@ const ChartsTerminal: React.FC = () => {
           <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
             {/* Basket Selector */}
             <div className={`flex items-center rounded-2xl border px-3 py-2 transition-all ${
-              theme === 'dark' 
-                ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50' 
-                : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] focus-within:border-blue-500/50 focus-within:bg-[var(--bg-primary)]'
+              'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50'
             }`}>
               <span className="text-[9px] font-black uppercase text-[var(--text-tertiary)] mr-1.5 tracking-wider">Basket:</span>
               <select
@@ -1521,17 +1517,15 @@ const ChartsTerminal: React.FC = () => {
                 onChange={(e) => handleBasketChange(e.target.value)}
                 className="bg-transparent border-none text-xs font-bold outline-none cursor-pointer pr-1 text-[var(--text-secondary)] focus:text-[var(--text-primary)]"
               >
-                <option value="Elite Basket" className={theme === 'dark' ? 'bg-[#0f172a]' : 'bg-white'}>Elite</option>
-                <option value="Quality Basket" className={theme === 'dark' ? 'bg-[#0f172a]' : 'bg-white'}>Quality</option>
-                <option value="Growth Basket" className={theme === 'dark' ? 'bg-[#0f172a]' : 'bg-white'}>Growth</option>
+                <option value="Elite Basket" className={'bg-[#0f172a]'}>Elite</option>
+                <option value="Quality Basket" className={'bg-[#0f172a]'}>Quality</option>
+                <option value="Growth Basket" className={'bg-[#0f172a]'}>Growth</option>
               </select>
             </div>
 
             {/* Asset Selector */}
             <div className={`flex items-center rounded-2xl border px-3 py-2 transition-all ${
-              theme === 'dark' 
-                ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50' 
-                : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] focus-within:border-blue-500/50 focus-within:bg-[var(--bg-primary)]'
+              'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50'
             }`}>
               <span className="text-[9px] font-black uppercase text-[var(--text-tertiary)] mr-1.5 tracking-wider">Stock:</span>
               <select
@@ -1540,7 +1534,7 @@ const ChartsTerminal: React.FC = () => {
                 className="bg-transparent border-none text-xs font-bold outline-none cursor-pointer pr-1 text-[var(--text-secondary)] focus:text-[var(--text-primary)] w-24"
               >
                 {(BASKETS[selectedBasket] || []).map((stockSymbol) => (
-                  <option key={stockSymbol} value={stockSymbol} className={theme === 'dark' ? 'bg-[#0f172a]' : 'bg-white'}>
+                  <option key={stockSymbol} value={stockSymbol} className={'bg-[#0f172a]'}>
                     {stockSymbol}
                   </option>
                 ))}
@@ -1559,9 +1553,7 @@ const ChartsTerminal: React.FC = () => {
           {/* Autocomplete Search input */}
           <div className="relative w-full sm:w-64" ref={dropdownRef}>
             <div className={`flex items-center rounded-2xl border px-3.5 py-2 transition-all \${
-              theme === 'dark' 
-                ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50' 
-                : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] focus-within:border-blue-500/50 focus-within:bg-[var(--bg-primary)]'
+              'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50'
             }`}>
               <Search className="h-4 w-4 text-[var(--text-tertiary)] mr-2.5" />
               <input
@@ -1580,7 +1572,7 @@ const ChartsTerminal: React.FC = () => {
             {/* Dropdown Results */}
             {showDropdown && searchResults.length > 0 && (
               <div className={`absolute left-0 right-0 mt-2 z-[100] rounded-2xl border shadow-xl max-h-[50vh] overflow-y-auto p-1.5 \${
-                theme === 'dark' ? 'bg-[var(--bg-secondary)] border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]'
+                'bg-[var(--bg-secondary)] border-[var(--border-primary)]'
               }`}>
                 {searchResults.map((item, i) => (
                   <button
@@ -1591,7 +1583,7 @@ const ChartsTerminal: React.FC = () => {
                       setShowDropdown(false);
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors \${
-                      theme === 'dark' ? 'hover:bg-[var(--bg-tertiary)]' : 'hover:bg-[var(--bg-secondary)]'
+                      'hover:bg-[var(--bg-tertiary)]'
                     }`}
                   >
                     <div>
@@ -1622,23 +1614,11 @@ const ChartsTerminal: React.FC = () => {
             <Link
               to="/alpha-hub"
               className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border font-extrabold text-xs tracking-wider uppercase transition-all ${
-                theme === 'dark'
-                  ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
-                  : 'bg-[var(--bg-primary)] border-[var(--border-primary)] text-slate-600 hover:bg-[var(--bg-secondary)]'
+                'bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               <span>Back to Terminal</span>
             </Link>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className={`p-2.5 rounded-xl border transition-colors ${
-                theme === 'dark' ? 'bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)] text-slate-600 hover:bg-[var(--bg-secondary)]'
-              }`}
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
 
             {/* Standalone Download */}
             <button
@@ -1660,26 +1640,26 @@ const ChartsTerminal: React.FC = () => {
         <section className="w-full">
           {/* Interactive Chart Card */}
           <div className={`p-5 rounded-3xl border flex flex-col ${
-            theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+            'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
           }`}>
             {/* Chart Toolbar */}
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-black tracking-wider uppercase ${
-                  theme === 'dark' ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-muted)]'
+                  'text-[var(--text-tertiary)]'
                 }`}>NSE Chart Terminal</span>
                 {chartLoading && <RefreshCw className="h-3.5 w-3.5 animate-spin text-blue-500" />}
               </div>
               
               {/* Candles vs Line toggles */}
               <div className={`flex rounded-xl p-0.5 border ${
-                theme === 'dark' ? 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80' : 'bg-slate-100 border-[var(--border-primary)]'
+                'bg-[var(--bg-primary)] border-[var(--border-primary)]/80'
               }`}>
                 <button
                   onClick={() => setChartType('candles')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                     chartType === 'candles'
-                      ? (theme === 'dark' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'bg-[var(--bg-primary)] text-slate-800 shadow-sm')
+                      ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
                       : 'text-[var(--text-muted)] hover:text-[var(--text-tertiary)]'
                   }`}
                 >
@@ -1689,7 +1669,7 @@ const ChartsTerminal: React.FC = () => {
                   onClick={() => setChartType('line')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                     chartType === 'line'
-                      ? (theme === 'dark' ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'bg-[var(--bg-primary)] text-slate-800 shadow-sm')
+                      ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
                       : 'text-[var(--text-muted)] hover:text-[var(--text-tertiary)]'
                   }`}
                 >
@@ -1702,7 +1682,7 @@ const ChartsTerminal: React.FC = () => {
             <div 
               ref={chartContainerRef} 
               className={`w-full rounded-2xl overflow-hidden border ${
-                theme === 'dark' ? 'border-[var(--border-primary)]/60 bg-[var(--bg-primary)]' : 'border-[var(--border-primary)] bg-[var(--bg-primary)]'
+                'border-[var(--border-primary)]/60 bg-[var(--bg-primary)]'
               }`}
               style={{ minHeight: '520px' }}
             >
@@ -1716,7 +1696,7 @@ const ChartsTerminal: React.FC = () => {
 
             {/* Overlays Toggle and Legend Panel */}
             <div className={`mt-4 p-4 rounded-2xl border flex flex-col md:flex-row justify-between items-center gap-4 ${
-              theme === 'dark' ? 'bg-[var(--bg-primary)]/60 border-[var(--border-primary)]/80' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)]'
+              'bg-[var(--bg-primary)]/60 border-[var(--border-primary)]/80'
             }`}>
               {/* Toggles */}
               <div className="flex flex-wrap gap-4 items-center">
@@ -1785,7 +1765,7 @@ const ChartsTerminal: React.FC = () => {
            <div className="space-y-6">
               {/* Strategy Selector */}
               <div className={`p-5 rounded-3xl border ${
-                theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+                'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
               }`}>
                 <div className="flex items-center gap-2 mb-4 border-b border-[var(--border-primary)]/60 pb-3">
                   <Layers className="h-4 w-4 text-blue-500" />
@@ -1807,8 +1787,8 @@ const ChartsTerminal: React.FC = () => {
                           onClick={() => setActiveStrategyId(key)}
                           className={`w-full flex items-center justify-between p-3 rounded-2xl text-left border transition-all ${
                             activeStrategyId === key
-                              ? (theme === 'dark' ? 'bg-blue-600/10 border-blue-500/30 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.05)]' : 'bg-blue-50 border-blue-200 text-blue-600')
-                              : (theme === 'dark' ? 'bg-[var(--bg-primary)]/40 border-slate-900 hover:border-[var(--border-primary)]' : 'bg-[var(--bg-secondary)]/50 border-[var(--border-primary)] hover:border-[var(--border-primary)]')
+                              ? 'bg-blue-600/10 border-blue-500/30 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.05)]'
+                              : 'bg-[var(--bg-primary)]/40 border-slate-900 hover:border-[var(--border-primary)]'
                           }`}
                         >
                           <div className="space-y-0.5">
@@ -1837,7 +1817,7 @@ const ChartsTerminal: React.FC = () => {
 
               {/* Key Metrics */}
               <div className={`p-5 rounded-3xl border ${
-                theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+                'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
               }`}>
                 {loading || !fundamentals ? (
                   <div className="space-y-4 py-12 text-center text-[var(--text-tertiary)]">
@@ -1874,7 +1854,7 @@ const ChartsTerminal: React.FC = () => {
 
                     {/* Audit Score Box */}
                     <div className={`p-4 rounded-2xl border flex items-center justify-between ${
-                      theme === 'dark' ? 'bg-[var(--bg-primary)]/60 border-[var(--border-primary)]' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)]'
+                      'bg-[var(--bg-primary)]/60 border-[var(--border-primary)]'
                     }`}>
                       <div className="space-y-0.5">
                         <span className="text-[9px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Audit Score</span>
@@ -1977,7 +1957,7 @@ const ChartsTerminal: React.FC = () => {
               {/* Guided Storytelling & Trade Targets Panel */}
               {activeStrategy && (
                 <div className={`p-5 rounded-3xl border space-y-4 ${
-                  theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+                  'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
                 }`}>
                   <div className="flex items-center gap-2 border-b border-[var(--border-primary)]/60 pb-3">
                     <Sparkles className="h-4 w-4 text-blue-500" />
@@ -2011,7 +1991,7 @@ const ChartsTerminal: React.FC = () => {
               {/* ABCD Tranche Laddering Visual Timeline */}
               {activeStrategy && (
                 <div className={`p-5 rounded-3xl border ${
-                  theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+                  'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
                 }`}>
                   <div className="flex justify-between items-center mb-5 border-b border-[var(--border-primary)]/60 pb-3">
                     <div className="flex items-center gap-2">
@@ -2041,10 +2021,10 @@ const ChartsTerminal: React.FC = () => {
                             key={key} 
                             className={`p-3.5 rounded-2xl border transition-all relative ${
                               isActive 
-                                ? (theme === 'dark' ? 'bg-blue-600/10 border-blue-500/40 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.06)]' : 'bg-blue-50 border-blue-200 text-blue-600')
+                                ? 'bg-blue-600/10 border-blue-500/40 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.06)]'
                                 : (isPassed 
-                                  ? (theme === 'dark' ? 'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80 text-[var(--text-secondary)]' : 'bg-slate-100 border-[var(--border-primary)] text-slate-700')
-                                  : (theme === 'dark' ? 'bg-[var(--bg-primary)]/20 border-slate-955/80 text-slate-600 opacity-60' : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-tertiary)] opacity-60'))
+                                  ? 'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80 text-[var(--text-secondary)]'
+                                  : 'bg-[var(--bg-primary)]/20 border-slate-955/80 text-slate-600 opacity-60')
                             }`}
                           >
                             <div className="flex justify-between items-center mb-1.5">
@@ -2088,7 +2068,7 @@ const ChartsTerminal: React.FC = () => {
               {/* Institutional Trust Dial */}
               {activeStrategy && (
                 <div className={`p-5 rounded-3xl border flex flex-col ${
-                  theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+                  'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
                 }`}>
                   <div className="flex justify-between items-center mb-4 border-b border-[var(--border-primary)]/60 pb-3">
                     <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Institutional Trust Dial</span>
@@ -2152,7 +2132,7 @@ const ChartsTerminal: React.FC = () => {
 
               {/* Deep Link & Verification panel */}
               <div className={`p-5 rounded-3xl border space-y-4 ${
-                theme === 'dark' ? 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]/80 shadow-sm'
+                'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
               }`}>
                 <div className="space-y-1">
                   <span className="text-[8px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]">Deep Link verification</span>
