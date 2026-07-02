@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { 
@@ -66,7 +67,7 @@ const ChartsTerminal: React.FC = () => {
   const [selectedBasket, setSelectedBasket] = useState<string>('Elite Basket');
   const { theme } = useTheme();
   const [chartType, setChartType] = useState<'candles' | 'line'>('candles');
-  const navigate = useNavigate();
+  const { user } = useAuth();
   
   // Data States
   const [historyData, setHistoryData] = useState<HistoryQuote[]>([]);
@@ -1489,7 +1490,7 @@ const ChartsTerminal: React.FC = () => {
         'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80'
       }`}>
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-3 group cursor-pointer">
+          <Link to={user ? '/app' : '/'} className="flex items-center gap-3 group">
             <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-500 group-hover:scale-105 transition-transform">
               <Activity className="h-6 w-6" />
             </div>
@@ -1501,7 +1502,7 @@ const ChartsTerminal: React.FC = () => {
               </h1>
               <p className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Interactive Market Desk</p>
             </div>
-          </button>
+          </Link>
         </div>
 
         {/* Search & Toolbar */}
