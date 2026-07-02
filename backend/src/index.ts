@@ -31,7 +31,7 @@ import { backtestAllStrategies, backtestStrategy } from './services/backtestEngi
 
 dotenv.config();
 
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'ajaythomasjohn@gmail.com,diwakarsingh01.tech@gmail.com').split(',').map(e => e.trim());
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'ajaythomasjohn@gmail.com,diwakarsingh01.tech@gmail.com,diwakar.singh01@gmail.com').split(',').map(e => e.trim());
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));

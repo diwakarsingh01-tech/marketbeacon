@@ -9,7 +9,8 @@ async function seed() {
   const admins = [
     { name: 'Ajay Thomas John', email: 'ajaythomasjohn@gmail.com' },
     { name: 'Admin MarketBeacon', email: 'admin@marketbeacon.com' },
-    { name: 'Diwakar Singh', email: 'diwakarsingh01.tech@gmail.com' }
+    { name: 'Diwakar Singh', email: 'diwakarsingh01.tech@gmail.com' },
+    { name: 'Diwakar Singh', email: 'diwakar.singh01@gmail.com' }
   ];
 
   for (const admin of admins) {
