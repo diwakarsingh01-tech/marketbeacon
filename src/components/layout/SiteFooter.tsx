@@ -24,8 +24,8 @@ const SiteFooter: React.FC = () => {
     ],
     Legal: [
       { label: 'Privacy Policy', to: '/privacy-policy' },
-      { label: 'Terms of Service', to: '/privacy-policy' },
-      { label: 'SEBI Disclaimer', to: '/privacy-policy#sebi' },
+      { label: 'Terms of Service', to: '/terms' },
+      { label: 'SEBI Disclaimer', to: '/disclaimer' },
     ],
   };
 

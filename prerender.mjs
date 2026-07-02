@@ -15,6 +15,12 @@ const ROUTES = [
   '/pricing',
   '/login',
   '/privacy-policy',
+  '/terms',
+  '/disclaimer',
+  '/charts',
+  '/about',
+  '/contact',
+  '/methodology',
 ];
 
 const API_BASE = process.env.API_URL || 'http://localhost:3001';
@@ -114,7 +120,8 @@ async function prerender() {
     });
 
     const stockRoutes = await fetchStockSymbols();
-    const allRoutes = [...ROUTES, ...stockRoutes];
+    const articleRoutes = await fetchArticleSlugs();
+    const allRoutes = [...ROUTES, ...stockRoutes, ...articleRoutes];
 
     for (const route of allRoutes) {
       const url = BASE + route;
