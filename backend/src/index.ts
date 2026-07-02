@@ -152,8 +152,11 @@ const authenticateToken = async (req: any, res: any, next: any) => {
     const user = await db.get('SELECT * FROM users WHERE id = ?', [decoded.id]);
     if (!user) return res.status(403).json({ error: 'User not found.' });
 
-    // --- Subscription Expiry Check ---
-    if (user.tier !== 'free' && user.subscription_expiry) {
+    // Normalize and Override for Admins — admins are always alpha, never expire
+    const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase());
+    
+    // --- Subscription Expiry Check (skip for admins) ---
+    if (!isAdmin && user.tier !== 'free' && user.subscription_expiry) {
       const expiry = new Date(user.subscription_expiry);
       if (expiry < new Date()) {
         console.log(`[SUBSCRIPTION] Expiring tier for user ${user.email}`);
@@ -162,8 +165,6 @@ const authenticateToken = async (req: any, res: any, next: any) => {
       }
     }
     
-    // Normalize and Override for Admins
-    const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase());
     const finalRole = isAdmin ? 'admin' : (user.role || 'user').toLowerCase();
     const finalTier = isAdmin ? 'alpha' : (user.tier || 'free').toLowerCase();
 
@@ -1071,7 +1072,9 @@ app.post('/api/auth/mobile-verify-otp', async (req, res) => {
 
 app.get('/api/auth/me', authenticateToken, (req: any, res) => {
   let daysRemaining = null;
-  if (req.user?.subscription_expiry) {
+  if (req.user?.role === 'admin') {
+    daysRemaining = 9999; // Admins never expire
+  } else if (req.user?.subscription_expiry) {
     const diff = new Date(req.user.subscription_expiry).getTime() - new Date().getTime();
     daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }
