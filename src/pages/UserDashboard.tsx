@@ -37,11 +37,9 @@ const UserDashboard: React.FC = () => {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   const fetchTrades = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) { setLoading(false); return; }
     try {
       const res = await fetch(`${API_URL}/api/trades`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const d = await safeJsonParse(res);
       if (res.ok && !d?.error) setTrades(d || []);
