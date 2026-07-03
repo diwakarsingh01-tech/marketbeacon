@@ -12,7 +12,6 @@ import {
   ChevronUp,
   IndianRupee,
   Target,
-  CalendarDays,
   Info,
   TrendingUp,
   BarChart3,
@@ -165,18 +164,6 @@ const buildBaskets = (stocks: AlphaHubStock[], totalCapital: number): BasketConf
   ].filter(b => b.count > 0 && totalCapital >= b.minAmount);
 };
 
-// --- SIP calc helpers ---
-
-const calcMonthlySIP = (goal: number, years: number) => {
-  if (!years || !goal) return 0;
-  const months = years * 12;
-  return Math.round(goal / months);
-};
-
-const calcSIPTotal = (monthly: number, years: number) => {
-  return monthly * years * 12;
-};
-
 // --- Main Page ---
 
 const AlphaHubPage: React.FC = () => {
@@ -199,17 +186,10 @@ const AlphaHubPage: React.FC = () => {
   const [backtestComparison, setBacktestComparison] = useState<BacktestData | null>(null);
 
   // Investment calculator state
-  const [investmentMode, setInvestmentMode] = useState<'lumpsum' | 'sip'>('lumpsum');
-  const [sipMode, setSipMode] = useState<'monthly' | 'goal'>('monthly');
   const [lumpSumAmount, setLumpSumAmount] = useState(500000);
-  const [sipMonthlyAmount, setSipMonthlyAmount] = useState(10000);
-  const [sipGoalAmount, setSipGoalAmount] = useState(1000000);
-  const [sipDuration, setSipDuration] = useState(5);
   const [perfYears, setPerfYears] = useState(5);
 
-  const effectiveMonthlySIP = sipMode === 'goal' ? calcMonthlySIP(sipGoalAmount, sipDuration) : sipMonthlyAmount;
-  const suggestedMonthlySIP = sipMode === 'goal' ? calcMonthlySIP(sipGoalAmount, sipDuration) : sipMonthlyAmount;
-  const totalCapital = investmentMode === 'lumpsum' ? lumpSumAmount : calcSIPTotal(effectiveMonthlySIP, sipDuration);
+  const totalCapital = lumpSumAmount;
 
   // Filter stocks: only include grades A/B/C/D — exclude NONE-grade stocks
   const validGrades = ['A', 'B', 'C', 'D'];
@@ -331,19 +311,19 @@ const AlphaHubPage: React.FC = () => {
   };
 
   const scrollToPortfolio = () => {
-    const el = document.getElementById('suggested-portfolio');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setCurrentStep(2);
-    }
+    setCurrentStep(2);
+    setTimeout(() => {
+      const el = document.getElementById('suggested-portfolio');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const scrollToPerformance = () => {
-    const el = document.getElementById('backtest-performance');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setCurrentStep(3);
-    }
+    setCurrentStep(3);
+    setTimeout(() => {
+      const el = document.getElementById('backtest-performance');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   // Loading state
@@ -452,7 +432,7 @@ const AlphaHubPage: React.FC = () => {
   // --- MAIN PAGE CONTENT (authenticated, data loaded)
   return (
     <div className="flex flex-col min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
-      <SEO title="Alpha Desk — Rules-Based Strategy Portfolios" description="Enter your investment amount and get a rules-based stock allocation with full entry/exit details. SIP and lump sum supported. Backtested performance up to 20 years." />
+      <SEO title="Alpha Desk — Rules-Based Strategy Portfolios" description="Enter your investment amount and get a rules-based stock allocation with full entry/exit details. Backtested performance up to 20 years." />
       {showConfetti && <Confetti />}
 
       {/* HEADER BAR */}
@@ -517,11 +497,8 @@ const AlphaHubPage: React.FC = () => {
           ))}
         </div>
 
-        {/* TWO-COLUMN GRID LAYOUT */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-          {/* LEFT SIDEBAR (Span 4) */}
-          <div className="lg:col-span-4 lg:sticky lg:top-[160px] space-y-6">
+        {/* STEP 1: INVESTMENT AMOUNT */}
+        <div className="max-w-3xl mx-auto w-full space-y-6">
 
             {/* HERO STATS STRIP */}
             <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border border-blue-500/10 rounded-2xl p-5 text-center space-y-3 shadow-xl">
@@ -558,33 +535,8 @@ const AlphaHubPage: React.FC = () => {
                 <p className="text-[10px] font-medium text-[var(--text-tertiary)]">Choose mode and inputs to calculate quantities.</p>
               </div>
 
-              {/* Mode Toggle */}
-              <div className="flex bg-[var(--bg-primary)] p-1 rounded-xl w-full border border-[var(--border-primary)]">
-                <button
-                  onClick={() => setInvestmentMode('lumpsum')}
-                  className={`flex-1 px-4 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
-                    investmentMode === 'lumpsum'
-                      ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] shadow-sm border border-[var(--border-primary)]'
-                      : 'text-[var(--text-muted)] hover:text-slate-350'
-                  }`}
-                >
-                  One-time
-                </button>
-                <button
-                  onClick={() => setInvestmentMode('sip')}
-                  className={`flex-1 px-4 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
-                    investmentMode === 'sip'
-                      ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] shadow-sm border border-[var(--border-primary)]'
-                      : 'text-[var(--text-muted)] hover:text-slate-350'
-                  }`}
-                >
-                  Monthly SIP
-                </button>
-              </div>
-
-              {/* LUMP SUM INPUTS */}
-              {investmentMode === 'lumpsum' && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+              {/* INPUTS */}
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
                   <div className="space-y-2">
                     <label className="block text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                       Deploy amount today
@@ -621,141 +573,12 @@ const AlphaHubPage: React.FC = () => {
                         ₹{(amt / 100000).toFixed(0)}L
                       </button>
                     ))}
-                  </div>
                 </div>
-              )}
-
-              {/* SIP INPUTS */}
-              {investmentMode === 'sip' && (
-                <div className="space-y-5 animate-in fade-in slide-in-from-top-1 duration-200">
-                  {/* SIP sub-mode toggle */}
-                  <div className="flex bg-[var(--bg-primary)] p-1 rounded-xl w-full border border-[var(--border-primary)]">
-                    <button
-                      onClick={() => setSipMode('monthly')}
-                      className={`flex-1 px-3 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${
-                        sipMode === 'monthly'
-                          ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] shadow-sm border border-[var(--border-primary)]'
-                          : 'text-[var(--text-muted)] hover:text-slate-350'
-                      }`}
-                    >
-                      Monthly Amount
-                    </button>
-                    <button
-                      onClick={() => setSipMode('goal')}
-                      className={`flex-1 px-3 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${
-                        sipMode === 'goal'
-                          ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] shadow-sm border border-[var(--border-primary)]'
-                          : 'text-[var(--text-muted)] hover:text-slate-350'
-                      }`}
-                    >
-                      Target Goal
-                    </button>
-                  </div>
-
-                  {sipMode === 'monthly' ? (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="block text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                          Monthly SIP amount
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[var(--text-tertiary)] font-mono">₹</span>
-                          <input
-                            type="text"
-                            value={sipMonthlyAmount ? sipMonthlyAmount.toLocaleString('en-IN') : ''}
-                            onChange={(e) => {
-                              const raw = e.target.value.replace(/,/g, '');
-                              if (!isNaN(Number(raw)) && raw !== '') setSipMonthlyAmount(Number(raw));
-                              else if (raw === '') setSipMonthlyAmount(0);
-                            }}
-                            className="w-full bg-[var(--bg-primary)]/60 border-2 border-[var(--border-primary)] rounded-xl px-4 py-3.5 pl-8 text-sm font-black text-[var(--text-primary)] font-mono outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600 transition-all"
-                            placeholder="10,00,000"
-                          />
-                        </div>
-                        <p className="text-[7.5px] font-medium text-[var(--text-muted)]">Min: ₹1,000 per month</p>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="block text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                          Duration (years)
-                        </label>
-                        <div className="relative">
-                          <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)]" />
-                          <input
-                            type="number"
-                            min={1}
-                            max={30}
-                            value={sipDuration}
-                            onChange={(e) => setSipDuration(Number(e.target.value) || 1)}
-                            className="w-full bg-[var(--bg-primary)]/60 border-2 border-[var(--border-primary)] rounded-xl px-4 py-3.5 pl-12 text-sm font-black text-[var(--text-primary)] font-mono outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600 transition-all"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="block text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                          Target Goal Amount
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[var(--text-tertiary)] font-mono">₹</span>
-                          <input
-                            type="text"
-                            value={sipGoalAmount ? sipGoalAmount.toLocaleString('en-IN') : ''}
-                            onChange={(e) => {
-                              const raw = e.target.value.replace(/,/g, '');
-                              if (!isNaN(Number(raw)) && raw !== '') setSipGoalAmount(Number(raw));
-                              else if (raw === '') setSipGoalAmount(0);
-                            }}
-                            className="w-full bg-[var(--bg-primary)]/60 border-2 border-[var(--border-primary)] rounded-xl px-4 py-3.5 pl-8 text-sm font-black text-[var(--text-primary)] font-mono outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600 transition-all"
-                            placeholder="10,00,000"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="block text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                          Horizon (years)
-                        </label>
-                        <div className="relative">
-                          <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)]" />
-                          <input
-                            type="number"
-                            min={1}
-                            max={30}
-                            value={sipDuration}
-                            onChange={(e) => setSipDuration(Number(e.target.value) || 1)}
-                            className="w-full bg-[var(--bg-primary)]/60 border-2 border-[var(--border-primary)] rounded-xl px-4 py-3.5 pl-12 text-sm font-black text-[var(--text-primary)] font-mono outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600 transition-all"
-                          />
-                        </div>
-                      </div>
-
-                      {sipGoalAmount > 0 && sipDuration > 0 && (
-                        <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-4 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Target className="h-4 w-4 text-blue-400" />
-                            <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Suggested monthly SIP</span>
-                          </div>
-                          <p className="text-xl font-black text-[var(--text-primary)] font-mono tracking-tighter">
-                            ₹{suggestedMonthlySIP.toLocaleString('en-IN')}
-                          </p>
-                          <p className="text-[8px] font-medium text-[var(--text-muted)]">
-                            for {sipDuration} year{sipDuration > 1 ? 's' : ''} to reach ₹{sipGoalAmount.toLocaleString('en-IN')}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+              </div>
 
               {/* Summary Strip */}
-              <div className="bg-[var(--bg-primary)]/30 border border-[var(--border-primary)] rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-4 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
-                  <span>Mode: <span className="text-[var(--text-primary)]">{investmentMode === 'lumpsum' ? 'One-time' : 'Monthly SIP'}</span></span>
-                  {investmentMode === 'sip' && sipMode === 'monthly' && (
-                    <span>Years: <span className="text-[var(--text-primary)]">{sipDuration}</span></span>
-                  )}
-                </div>
+              <div className="bg-[var(--bg-primary)]/30 border border-[var(--border-primary)] rounded-xl p-4 flex items-center justify-between gap-3">
+                <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">One-time Investment</span>
                 <div className="text-right">
                   <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest block">Deployed Capital</span>
                   <span className="text-sm font-black text-[var(--text-primary)] font-mono">₹{totalCapital.toLocaleString('en-IN')}</span>
@@ -766,10 +589,10 @@ const AlphaHubPage: React.FC = () => {
               {totalCapital >= 50000 && baskets.length > 0 && (
                 <button
                   onClick={scrollToPortfolio}
-                  className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-[var(--text-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg shadow-blue-500/10 flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg shadow-blue-500/10 flex items-center justify-center gap-2"
                 >
                   <BarChart3 className="h-4 w-4" />
-                  Compile Portfolio ({qualifiedStocks.length} stocks)
+                  Build My Portfolio →
                 </button>
               )}
               {totalCapital < 50000 && (
@@ -781,8 +604,9 @@ const AlphaHubPage: React.FC = () => {
 
           </div>
 
-          {/* RIGHT CONTENT WORKSPACE (Span 8) */}
-          <div className="lg:col-span-8 space-y-8">
+        {/* STEP 2: STOCK ALLOCATION */}
+        {currentStep >= 2 && (
+        <div className="space-y-8 max-w-5xl mx-auto w-full">
 
             {/* STOCKS TABLE PANEL */}
             <div id="suggested-portfolio" className="scroll-mt-48 space-y-4">
@@ -1012,11 +836,13 @@ const AlphaHubPage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-[var(--bg-tertiary)] transition-all border border-[var(--border-primary)]"
               >
                 <BarChart3 className="h-4 w-4" />
-                Proceed to Backtest Performance →
+                View Performance History →
               </button>
             </div>
 
-            {/* PERFORMANCE / BACKTEST PANEL */}
+            {/* STEP 3: PERFORMANCE HISTORY */}
+            {currentStep >= 3 && (
+            <div className="space-y-4">
             <div id="backtest-performance" className="scroll-mt-48 space-y-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -1255,10 +1081,10 @@ const AlphaHubPage: React.FC = () => {
                 End-to-end encrypted
               </div>
             </div>
-
+            </div>
+          )}
           </div>
-
-        </div>
+        )}
 
       </main>
 
