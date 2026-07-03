@@ -41,20 +41,18 @@ const PricingPage: React.FC = () => {
   const handleRedeemVoucher = async () => {
     if (!voucherCode) return;
     setRedeemning(true);
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ code: voucherCode })
       });
       
       const data = await safeJsonParse(res);
       if (res.status === 401 || res.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
-        localStorage.removeItem('mb_token');
         localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;

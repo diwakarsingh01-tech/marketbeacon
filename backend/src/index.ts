@@ -142,9 +142,42 @@ const JWT_SECRET = process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRE
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-const authenticateToken = async (req: any, res: any, next: any) => {
+const COOKIE_NAME = 'mb_auth';
+const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+const setAuthCookie = (res: any, token: string) => {
+  res.cookie(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: COOKIE_MAX_AGE,
+    path: '/',
+  });
+};
+
+const getTokenFromRequest = (req: any): string | null => {
+  // 1. Try Authorization header (backward compat)
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  if (authHeader) {
+    const token = authHeader.split(' ')[1];
+    if (token) return token;
+  }
+  // 2. Try httpOnly cookie
+  const cookieHeader = req.headers['cookie'];
+  if (cookieHeader) {
+    const cookies = Object.fromEntries(
+      cookieHeader.split(';').map(c => {
+        const [k, ...v] = c.trim().split('=');
+        return [k, decodeURIComponent(v.join('='))];
+      })
+    );
+    if (cookies[COOKIE_NAME]) return cookies[COOKIE_NAME];
+  }
+  return null;
+};
+
+const authenticateToken = async (req: any, res: any, next: any) => {
+  const token = getTokenFromRequest(req);
   if (!token) return res.status(401).json({ error: 'Access denied.' });
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
@@ -392,6 +425,7 @@ app.post('/api/auth/google', async (req, res) => {
       user = { id: result.lastID, email, role, tier };
     }
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
+    setAuthCookie(res, token);
     res.json({ token, user });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -991,6 +1025,7 @@ app.post('/api/auth/register', async (req, res) => {
     );
 
     const token = jwt.sign({ id: result.lastID, role }, JWT_SECRET);
+    setAuthCookie(res, token);
     res.json({ token, user: { id: result.lastID, name, email: email.toLowerCase(), role, tier } });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -1021,6 +1056,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
+    setAuthCookie(res, token);
     console.log(`✅ [LOGIN-SUCCESS] User ${user.id} logged in successfully`);
     res.json({ token, user: { ...user, role: isAdmin ? 'admin' : user.role, tier: isAdmin ? 'alpha' : user.tier } });
   } catch (e: any) { 
@@ -1061,6 +1097,7 @@ app.post('/api/auth/mobile-verify-otp', async (req, res) => {
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
+    setAuthCookie(res, token);
     console.log(`✅ [AUTH] Mobile Login Success: ${mobile} (${Date.now() - start}ms)`);
     res.json({ token, user: { ...user, role: user.role, tier: user.tier } });
   } catch (e: any) {
@@ -1076,6 +1113,11 @@ app.get('/api/auth/me', authenticateToken, (req: any, res) => {
     daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }
   res.json({ user: { ...req.user, daysRemaining } });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie(COOKIE_NAME, { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict' });
+  res.json({ success: true });
 });
 
 app.get('/api/user/profile', authenticateToken, async (req: any, res) => {

@@ -50,14 +50,13 @@ const PublicAnalysisPage: React.FC = () => {
     }
     setRedeeming(true);
     setVoucherError(null);
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ code: voucherCode.trim().toUpperCase() })
       });
       const result = await safeJsonParse(res);

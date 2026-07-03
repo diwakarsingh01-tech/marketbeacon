@@ -173,14 +173,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   }, [strategyId, currentStrategy, location.search]);
 
   const fetchTrades = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) return;
     try {
-      const authHeader = `Bearer ${token}`;
-      const res = await fetch(`${API_URL}/api/trades`, { headers: { 'Authorization': authHeader } });
+      const res = await fetch(`${API_URL}/api/trades`, { credentials: 'include' });
       const d = await safeJsonParse(res);
       if (res.status === 401 || res.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
-        localStorage.removeItem('mb_token');
         localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
@@ -190,14 +186,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   }, []);
 
   const fetchWatchlist = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) return;
     try {
-      const authHeader = `Bearer ${token}`;
-      const response = await fetch(`${API_URL}/api/watchlist`, { headers: { 'Authorization': authHeader } });
+      const response = await fetch(`${API_URL}/api/watchlist`, { credentials: 'include' });
       const d = await safeJsonParse(response);
       if (response.status === 401 || response.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
-        localStorage.removeItem('mb_token');
         localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
@@ -207,13 +199,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   }, []);
 
   const handleToggleWatchlist = async (symbol: string) => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) return;
     const isAdding = !userWatchlist.find(s => s.symbol === symbol);
     try {
       const response = await fetch(`${API_URL}/api/watchlist${isAdding ? '' : `/${symbol}`}`, {
         method: isAdding ? 'POST' : 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: isAdding ? JSON.stringify({ symbol }) : undefined
       });
       if (response.ok) fetchWatchlist();
@@ -221,12 +212,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   };
 
   const handleUpdateHolding = async (symbol: string, quantity: number, buy_price: number) => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) return;
     try {
       const response = await fetch(`${API_URL}/api/watchlist/${symbol}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ quantity, buy_price })
       });
       if (response.ok) fetchWatchlist();
@@ -234,16 +224,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   };
 
   const handleImportHoldings = async (holdings: Array<Record<string, unknown>>, mode: 'merge' | 'overwrite' = 'merge') => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) return;
     setIsRefreshing(true);
     try {
       const response = await fetch(`${API_URL}/api/watchlist/bulk`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}` 
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ holdings, mode })
       });
       const resData = await safeJsonParse(response);
@@ -263,14 +251,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const handleClearPortfolio = async () => {
     if (!window.confirm("Are you sure you want to remove all old details/positions from your Wealth Desk? This action cannot be undone.")) return;
-    const token = localStorage.getItem('mb_token');
-    if (!token) return;
     setIsRefreshing(true);
     try {
-      const authHeader = `Bearer ${token}`;
       const response = await fetch(`${API_URL}/api/watchlist`, {
         method: 'DELETE',
-        headers: { 'Authorization': authHeader }
+        credentials: 'include'
       });
       if (response.ok) {
         toast("All old details removed successfully.");
@@ -286,19 +271,18 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   };
 
   const handleAddManualHolding = async (symbol: string, quantity: number, buyPrice: number) => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) return;
     try {
-      const authHeader = `Bearer ${token}`;
       const response = await fetch(`${API_URL}/api/watchlist`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ symbol: symbol.toUpperCase().trim() })
       });
       if (response.ok) {
         await fetch(`${API_URL}/api/watchlist/${symbol.toUpperCase().trim()}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ quantity, buy_price: buyPrice })
         });
         fetchWatchlist();
@@ -345,9 +329,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     setIsRefreshing(true);
     setError(null);
     try {
-      const authHeader = `Bearer ${localStorage.getItem('mb_token')}`;
       const response = await fetch(`${API_URL}/api/backtest/audit?basket=${encodeURIComponent(activeBasket)}&strategy=${encodeURIComponent(strategyId)}`, {
-        headers: { 'Authorization': authHeader }
+        credentials: 'include'
       });
       const d = await safeJsonParse(response);
       
@@ -359,7 +342,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       }
 
       if (response.status === 401 || response.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
-        localStorage.removeItem('mb_token');
         localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;

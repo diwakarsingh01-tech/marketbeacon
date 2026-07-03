@@ -29,30 +29,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const API_URL = getApiUrl();
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('mb_token'));
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('mb_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('mb_user');
-    localStorage.removeItem('mb_token');
+    fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
   }, []);
 
   const refreshAuth = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
     try {
       const response = await fetch(`${API_URL}/api/auth/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
       });
-      
       const data = await safeJsonParse(response);
       if (response.ok && !data.error) {
         const verifiedUser = data.user || data;
@@ -63,8 +58,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e) {
       console.error('Auth refresh failed:', e);
-      const savedUser = localStorage.getItem('mb_user');
-      if (savedUser) setUser(JSON.parse(savedUser));
     } finally {
       setLoading(false);
     }
@@ -78,6 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, password: pass })
     });
     
@@ -90,13 +84,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     setToken(t);
     localStorage.setItem('mb_user', JSON.stringify(userData));
-    localStorage.setItem('mb_token', t);
   };
 
   const googleLogin = async (credential: string) => {
     const response = await fetch(`${API_URL}/api/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ token: credential })
     });
     
@@ -109,13 +103,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     setToken(t);
     localStorage.setItem('mb_user', JSON.stringify(userData));
-    localStorage.setItem('mb_token', t);
   };
 
   const sendMobileOtp = async (mobile: string) => {
     const res = await fetch(`${API_URL}/api/auth/mobile-send-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ mobile })
     });
     const data = await safeJsonParse(res);
@@ -128,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await fetch(`${API_URL}/api/auth/mobile-verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ mobile, otp })
     });
     
@@ -140,13 +135,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     setToken(t);
     localStorage.setItem('mb_user', JSON.stringify(userData));
-    localStorage.setItem('mb_token', t);
   };
 
   const register = async (email: string, pass: string, name: string) => {
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ name, email, password: pass })
     });
 
@@ -159,7 +154,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     setToken(t);
     localStorage.setItem('mb_user', JSON.stringify(userData));
-    localStorage.setItem('mb_token', t);
   };
 
   return (

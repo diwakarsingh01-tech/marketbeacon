@@ -221,9 +221,8 @@ const AlphaHubPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('mb_token');
       const res = await fetch(`${API_URL}/api/backtest/alpha-40`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const d = await safeJsonParse(res);
       if (res.ok && !d.error) {
@@ -235,7 +234,6 @@ const AlphaHubPage: React.FC = () => {
           return;
         }
         if (res.status === 401 || res.status === 403 || d.error === 'Invalid token.' || d.error === 'Access denied.') {
-          localStorage.removeItem('mb_token');
           localStorage.removeItem('mb_user');
           window.location.href = '/login';
           return;
@@ -251,9 +249,8 @@ const AlphaHubPage: React.FC = () => {
 
   const fetchBacktestComparison = async () => {
     try {
-      const token = localStorage.getItem('mb_token');
       const res = await fetch(`${API_URL}/api/backtest/nifty-comparison`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const d = await safeJsonParse(res);
       if (res.ok && !d.error) setBacktestComparison(d);
@@ -269,14 +266,13 @@ const AlphaHubPage: React.FC = () => {
     if (!voucherCode.trim()) return;
     setRedeeming(true);
     setVoucherError(null);
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ code: voucherCode.trim().toUpperCase() })
       });
       const d = await safeJsonParse(res);

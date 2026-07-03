@@ -48,15 +48,12 @@ const ProfilePage: React.FC = () => {
   const [twoFaLoading, setTwoFaLoading] = useState(false);
 
   const fetchProfile = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) { setLoading(false); return; }
     try {
       const res = await fetch(`${API_URL}/api/user/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const data = await safeJsonParse(res);
       if (res.status === 401 || res.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
-        localStorage.removeItem('mb_token');
         localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
@@ -85,10 +82,10 @@ const ProfilePage: React.FC = () => {
     if (pwNew.length < 6) { setPwError('New password must be at least 6 characters'); return; }
     setPwLoading(true);
     try {
-      const token = localStorage.getItem('mb_token');
       const res = await fetch(`${API_URL}/api/user/password`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ currentPassword: pwCurrent, newPassword: pwNew })
       });
       const data = await safeJsonParse(res);
@@ -104,10 +101,9 @@ const ProfilePage: React.FC = () => {
     setTwoFaError('');
     setTwoFaLoading(true);
     try {
-      const token = localStorage.getItem('mb_token');
       const res = await fetch(`${API_URL}/api/user/2fa/setup`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const data = await safeJsonParse(res);
       if (!res.ok || data.error) { setTwoFaError(data.error || 'Setup failed'); return; }
@@ -123,10 +119,10 @@ const ProfilePage: React.FC = () => {
     if (!twoFaToken) { setTwoFaError('Enter the 6-digit code from your authenticator app'); return; }
     setTwoFaLoading(true);
     try {
-      const token = localStorage.getItem('mb_token');
       const res = await fetch(`${API_URL}/api/user/2fa/verify`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ token: twoFaToken })
       });
       const data = await safeJsonParse(res);
@@ -142,10 +138,9 @@ const ProfilePage: React.FC = () => {
   const handle2faDisable = async () => {
     setTwoFaLoading(true);
     try {
-      const token = localStorage.getItem('mb_token');
       const res = await fetch(`${API_URL}/api/user/2fa/disable`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const data = await safeJsonParse(res);
       if (!res.ok || data.error) { setTwoFaError(data.error || 'Disable failed'); return; }
