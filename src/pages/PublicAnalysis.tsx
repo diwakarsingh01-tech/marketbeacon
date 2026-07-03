@@ -250,6 +250,7 @@ const PublicAnalysisPage: React.FC = () => {
               </div>
             </div>
 
+            {!isProOrAbove && (
             <div className="space-y-4">
                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest pl-2">Locked Premium Logic</span>
                <div className="p-8 bg-[#0f172a]/40 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] relative overflow-hidden group">
@@ -269,6 +270,7 @@ const PublicAnalysisPage: React.FC = () => {
                   </div>
                </div>
             </div>
+            )}
           </div>
         </section>
 

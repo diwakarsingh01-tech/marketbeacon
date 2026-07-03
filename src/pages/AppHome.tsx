@@ -162,6 +162,8 @@ const AppHome: React.FC = () => {
       } catch {}
     };
     fetchAll();
+    const interval = setInterval(fetchAll, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   // Fetch prices for portfolio symbols
@@ -196,25 +198,25 @@ const AppHome: React.FC = () => {
     const token = localStorage.getItem('mb_token');
     if (!token) return;
     setLoadingZones(true);
-    fetch(`${API_URL}/api/backtest/audit?basket=Elite Basket&strategy=ENVELOPE_LONG`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(r => r.json())
-      .then((data: { allStocks?: AllStockItem[] }) => {
-        if (data?.allStocks) {
-          const buyZoneStocks = data.allStocks
-            .filter((s: AllStockItem) => s.isBuyZone && s.entryPrice && s.target)
-            .slice(0, 4)
-            .map((s: AllStockItem) => ({
-              symbol: s.symbol,
-              entryPrice: s.entryPrice || 0,
-              target: s.target || 0,
-              currentPrice: stockPrices[s.symbol] || s.currentPrice || 0,
-              score: s.score || 0,
-              strategy: s.strategy || 'Institutional',
-            }));
-          setBuyZones(buyZoneStocks);
-        }
+    Promise.all([
+      fetch(`${API_URL}/api/backtest/audit?basket=ALL`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(r => r.json()),
+    ])
+      .then(([data]) => {
+        const results = data.allStocks || [];
+        const buyZoneStocks = results
+          .filter((s: AllStockItem) => s.isBuyZone && s.entryPrice && s.target)
+          .sort((a: AllStockItem, b: AllStockItem) => (b.score || 0) - (a.score || 0))
+          .map((s: AllStockItem) => ({
+            symbol: s.symbol,
+            entryPrice: s.entryPrice || 0,
+            target: s.target || 0,
+            currentPrice: stockPrices[s.symbol] || s.currentPrice || 0,
+            score: s.score || 0,
+            strategy: s.strategy || 'Institutional',
+          }));
+        setBuyZones(buyZoneStocks);
       })
       .catch(() => {})
       .finally(() => setLoadingZones(false));
@@ -251,6 +253,7 @@ const AppHome: React.FC = () => {
   const portfolioSummary = useMemo(() => {
     let totalInv = 0, totalCur = 0, realizedPnL = 0;
     const capInv = { large: 0, mid: 0, small: 0 };
+    const capCur = { large: 0, mid: 0, small: 0 };
     const combinedMap: Record<string, { quantity: number; buy_price: number }> = {};
     watchlist.forEach(w => { combinedMap[w.symbol] = { quantity: w.quantity || 0, buy_price: w.buy_price || 0 }; });
     trades.filter(t => t.status === 'OPEN').forEach(t => {
@@ -266,11 +269,12 @@ const AppHome: React.FC = () => {
       const inv = h.quantity * h.buy_price;
       if (inv > 0) {
         totalInv += inv;
-        totalCur += h.quantity * (stockPrices[symbol] || h.buy_price);
+        const cur = h.quantity * (stockPrices[symbol] || h.buy_price);
+        totalCur += cur;
         const capCr = (stockCaps[symbol] || 0) / 10000000;
-        if (capCr >= 20000) capInv.large += inv;
-        else if (capCr >= 5000) capInv.mid += inv;
-        else capInv.small += inv;
+        if (capCr >= 20000) { capInv.large += inv; capCur.large += cur; }
+        else if (capCr >= 5000) { capInv.mid += inv; capCur.mid += cur; }
+        else { capInv.small += inv; capCur.small += cur; }
       }
     });
     const unrealizedPnL = totalCur - totalInv;
@@ -284,7 +288,12 @@ const AppHome: React.FC = () => {
       mid: totalInv > 0 ? (capInv.mid / totalInv) * 100 : 0,
       small: totalInv > 0 ? (capInv.small / totalInv) * 100 : 0,
     };
-    return { totalInvested: totalInv, totalCurrent: totalCur, unrealizedPnL, realizedPnL, totalPnL, pnlPct, capBreakdown };
+    const curCapBreakdown = {
+      large: totalCur > 0 ? (capCur.large / totalCur) * 100 : 0,
+      mid: totalCur > 0 ? (capCur.mid / totalCur) * 100 : 0,
+      small: totalCur > 0 ? (capCur.small / totalCur) * 100 : 0,
+    };
+    return { totalInvested: totalInv, totalCurrent: totalCur, unrealizedPnL, realizedPnL, totalPnL, pnlPct, capBreakdown, curCapBreakdown };
   }, [watchlist, trades, stockPrices, stockCaps]);
 
   const portfolioCount = useMemo(() => {
@@ -361,9 +370,9 @@ const AppHome: React.FC = () => {
 
       <div className="p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-6">
 
-        {/* ── Market Indices Ticker ── */}
+        {/* ── Market Indices + Alerts Ticker ── */}
         <div className="border border-[var(--border-primary)] rounded-xl bg-[var(--bg-secondary)]/50 overflow-hidden">
-          <div className="flex divide-x divide-[var(--border-primary)] overflow-x-auto py-2.5 px-4 whitespace-nowrap scrollbar-none text-[11px] font-black uppercase tracking-wider">
+          <div className="flex divide-x divide-[var(--border-primary)] overflow-x-auto py-2.5 px-4 whitespace-nowrap scrollbar-none text-[11px] font-black uppercase tracking-wider items-center">
             {indices.map((idx, i) => (
               <div key={i} className="flex items-center gap-2.5 px-5">
                 <span className="text-[var(--text-secondary)]">{idx.name}</span>
@@ -375,9 +384,38 @@ const AppHome: React.FC = () => {
               </div>
             ))}
             {indices.length === 0 && (
-              <div className="flex items-center gap-2 w-full justify-center text-[var(--text-muted)] text-[10px]">
+              <div className="flex items-center gap-2 text-[var(--text-muted)] text-[10px] px-5">
                 <RefreshCw className="w-3 h-3 animate-spin" /> Loading market data...
               </div>
+            )}
+            {notifications.length > 0 && (
+              <>
+                <div className="flex items-center gap-1.5 px-5 shrink-0">
+                  <Bell className="w-3.5 h-3.5 text-amber-400" />
+                </div>
+                <div className="flex-1 min-w-0 overflow-hidden relative h-4 px-5">
+                  <motion.div
+                    key={notifIndex}
+                    initial={{ y: 12, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -12, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0 flex items-center"
+                  >
+                    <span className="text-[10px] font-bold text-[var(--text-primary)] truncate">
+                      {notifications[notifIndex]?.title && (
+                        <span className="text-amber-400 mr-1.5">{notifications[notifIndex].title}:</span>
+                      )}
+                      {notifications[notifIndex]?.message || ''}
+                    </span>
+                  </motion.div>
+                </div>
+                {notifications.filter(n => n.unread).length > 0 && (
+                  <span className="text-[8px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full shrink-0 mr-3">
+                    {notifications.filter(n => n.unread).length} new
+                  </span>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -418,14 +456,14 @@ const AppHome: React.FC = () => {
           />
           <StatCard
             title="Total P&L"
-            value={portfolioSummary.totalInvested > 0 || portfolioSummary.realizedPnL !== 0 ? `${portfolioSummary.totalPnL >= 0 ? '+' : ''}${fmt(Math.abs(portfolioSummary.totalPnL))}` : '--'}
+            value={portfolioSummary.totalInvested > 0 || portfolioSummary.realizedPnL !== 0 ? `${portfolioSummary.totalPnL >= 0 ? '+' : '-'}${fmt(Math.abs(portfolioSummary.totalPnL))}` : '--'}
             icon={Activity}
             color={portfolioSummary.totalPnL >= 0 ? 'emerald' : 'rose'}
             change={dayPnL !== 0 ? {
-              value: `${dayPnL >= 0 ? '+' : ''}${fmt(Math.abs(dayPnL))} today`,
+              value: `${dayPnL >= 0 ? '+' : '-'}${fmt(Math.abs(dayPnL))} today`,
               positive: dayPnL >= 0,
             } : null}
-            subtitle={portfolioSummary.realizedPnL !== 0 ? `Realized ${portfolioSummary.realizedPnL >= 0 ? '+' : ''}${fmt(Math.abs(portfolioSummary.realizedPnL))}` : undefined}
+            subtitle={portfolioSummary.realizedPnL !== 0 ? `Realized ${portfolioSummary.realizedPnL >= 0 ? '+' : '-'}${fmt(Math.abs(portfolioSummary.realizedPnL))}` : undefined}
           />
           <StatCard
             title="Active Signals"
@@ -537,7 +575,7 @@ const AppHome: React.FC = () => {
                   }`}>
                     {portfolioSummary.totalPnL >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                     {portfolioSummary.totalInvested > 0 || portfolioSummary.realizedPnL !== 0
-                      ? `${portfolioSummary.totalPnL >= 0 ? '+' : ''}${fmt(Math.abs(portfolioSummary.totalPnL))}`
+                      ? `${portfolioSummary.totalPnL >= 0 ? '+' : '-'}${fmt(Math.abs(portfolioSummary.totalPnL))}`
                       : '--'}
                   </span>
                 </div>
@@ -545,13 +583,13 @@ const AppHome: React.FC = () => {
                   <span className="flex justify-between">
                     <span>Unrealized</span>
                     <span className={portfolioSummary.unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                      {portfolioSummary.totalInvested > 0 ? `${portfolioSummary.unrealizedPnL >= 0 ? '+' : ''}${fmt(Math.abs(portfolioSummary.unrealizedPnL))}` : '--'}
+                      {portfolioSummary.totalInvested > 0 ? `${portfolioSummary.unrealizedPnL >= 0 ? '+' : '-'}${fmt(Math.abs(portfolioSummary.unrealizedPnL))}` : '--'}
                     </span>
                   </span>
                   <span className="flex justify-between">
                     <span>Realized</span>
                     <span className={portfolioSummary.realizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                      {portfolioSummary.realizedPnL !== 0 ? `${portfolioSummary.realizedPnL >= 0 ? '+' : ''}${fmt(Math.abs(portfolioSummary.realizedPnL))}` : '--'}
+                      {portfolioSummary.realizedPnL !== 0 ? `${portfolioSummary.realizedPnL >= 0 ? '+' : '-'}${fmt(Math.abs(portfolioSummary.realizedPnL))}` : '--'}
                     </span>
                   </span>
                 </div>
@@ -564,24 +602,24 @@ const AppHome: React.FC = () => {
                     <div className="h-2 rounded-full bg-[var(--bg-tertiary)] overflow-hidden flex">
                       <div
                         className="h-full bg-blue-500 transition-all"
-                        style={{ width: `${Math.max(portfolioSummary.capBreakdown.large, portfolioSummary.capBreakdown.large > 0 ? 4 : 0)}%` }}
-                        title={`Large Cap ${portfolioSummary.capBreakdown.large.toFixed(0)}%`}
+                        style={{ width: `${Math.max(portfolioSummary.curCapBreakdown.large, portfolioSummary.curCapBreakdown.large > 0 ? 4 : 0)}%` }}
+                        title={`Large Cap ${portfolioSummary.curCapBreakdown.large.toFixed(0)}%`}
                       />
                       <div
                         className="h-full bg-amber-500 transition-all"
-                        style={{ width: `${Math.max(portfolioSummary.capBreakdown.mid, portfolioSummary.capBreakdown.mid > 0 ? 4 : 0)}%` }}
-                        title={`Mid Cap ${portfolioSummary.capBreakdown.mid.toFixed(0)}%`}
+                        style={{ width: `${Math.max(portfolioSummary.curCapBreakdown.mid, portfolioSummary.curCapBreakdown.mid > 0 ? 4 : 0)}%` }}
+                        title={`Mid Cap ${portfolioSummary.curCapBreakdown.mid.toFixed(0)}%`}
                       />
                       <div
                         className="h-full bg-emerald-500 transition-all"
-                        style={{ width: `${Math.max(portfolioSummary.capBreakdown.small, portfolioSummary.capBreakdown.small > 0 ? 4 : 0)}%` }}
-                        title={`Small/Micro Cap ${portfolioSummary.capBreakdown.small.toFixed(0)}%`}
+                        style={{ width: `${Math.max(portfolioSummary.curCapBreakdown.small, portfolioSummary.curCapBreakdown.small > 0 ? 4 : 0)}%` }}
+                        title={`Small/Micro Cap ${portfolioSummary.curCapBreakdown.small.toFixed(0)}%`}
                       />
                     </div>
                     <div className="flex justify-between text-[7px] text-[var(--text-muted)] font-medium mt-1">
-                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Large {portfolioSummary.capBreakdown.large.toFixed(0)}%</span>
-                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Mid {portfolioSummary.capBreakdown.mid.toFixed(0)}%</span>
-                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Small {portfolioSummary.capBreakdown.small.toFixed(0)}%</span>
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Large {portfolioSummary.curCapBreakdown.large.toFixed(0)}%</span>
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Mid {portfolioSummary.curCapBreakdown.mid.toFixed(0)}%</span>
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Small {portfolioSummary.curCapBreakdown.small.toFixed(0)}%</span>
                     </div>
                   </div>
                 )}
@@ -619,32 +657,30 @@ const AppHome: React.FC = () => {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}
                       onClick={() => navigate(`/analysis/${item.symbol}`)}
-                      className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-3 cursor-pointer hover:border-blue-500/30 transition-all group"
+                      className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl px-3 py-2 cursor-pointer hover:border-blue-500/30 transition-all group"
                     >
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-xs font-black text-[var(--text-primary)] group-hover:text-blue-400 transition-colors">{item.symbol}</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-[7px] font-black px-1.5 py-0.5 rounded ${
-                            item.pct >= 5 ? 'bg-emerald-500/10 text-emerald-400' :
-                            item.pct >= 0 ? 'bg-blue-500/10 text-blue-400' :
-                            'bg-rose-500/10 text-rose-400'
-                          }`}>
-                            {item.pct >= 0 ? '+' : ''}{item.pct.toFixed(1)}%
-                          </span>
-                          <span className={`text-[9px] font-black ${item.type === 'closed' ? 'text-[var(--text-muted)]' : 'text-emerald-400'}`}>
-                            {item.label}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-[8px] text-[var(--text-muted)] font-medium">
-                        {item.qty} shares @ ₹{item.entry.toLocaleString('en-IN')}
-                        {item.type === 'closed' && item.exitPrice
-                          ? ` → ₹${item.exitPrice.toLocaleString('en-IN')}`
-                          : stockPrices[item.symbol]
-                            ? ` · CMP: ₹${stockPrices[item.symbol].toLocaleString('en-IN')}`
-                            : ''}
-                        <span className={`ml-1.5 font-bold ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {item.pnl >= 0 ? '+' : ''}{fmt(item.pnl)}
+                      <div className="flex items-center gap-2 text-[9px]">
+                        <span className="text-xs font-black text-[var(--text-primary)] group-hover:text-blue-400 transition-colors shrink-0">{item.symbol}</span>
+                        <span className={`font-black shrink-0 ${
+                          item.pct >= 5 ? 'text-emerald-400' :
+                          item.pct >= 0 ? 'text-blue-400' :
+                          'text-rose-400'
+                        }`}>
+                          {item.pct >= 0 ? '+' : ''}{item.pct.toFixed(1)}%
+                        </span>
+                        <span className={`font-bold ${item.type === 'closed' ? 'text-[var(--text-muted)]' : 'text-emerald-400'} shrink-0`}>
+                          {item.label}
+                        </span>
+                        <span className="text-[var(--text-muted)] font-medium truncate">
+                          · {item.qty}sh @ ₹{item.entry.toLocaleString('en-IN')}
+                          {item.type === 'closed' && item.exitPrice
+                            ? ` → ₹${item.exitPrice.toLocaleString('en-IN')}`
+                            : stockPrices[item.symbol]
+                              ? ` · CMP ₹${stockPrices[item.symbol].toLocaleString('en-IN')}`
+                              : ''}
+                        </span>
+                        <span className={`font-bold shrink-0 ml-auto ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {item.pnl >= 0 ? '+' : '-'}{fmt(Math.abs(item.pnl))}
                         </span>
                       </div>
                     </motion.div>
@@ -661,40 +697,6 @@ const AppHome: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* ── Real Notifications Ticker ── */}
-        {notifications.length > 0 && (
-          <div className="border border-[var(--border-primary)] rounded-xl bg-[var(--bg-secondary)]/50 overflow-hidden">
-            <div className="flex items-center py-2.5 px-4 gap-3">
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Bell className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-[9px] font-black uppercase tracking-wider text-[var(--text-secondary)]">Alerts</span>
-              </div>
-              <div className="flex-1 min-w-0 overflow-hidden relative h-4">
-                <motion.div
-                  key={notifIndex}
-                  initial={{ y: 12, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -12, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute inset-0 flex items-center"
-                >
-                  <span className="text-[10px] font-bold text-[var(--text-primary)] truncate">
-                    {notifications[notifIndex]?.title && (
-                      <span className="text-amber-400 mr-1.5">{notifications[notifIndex].title}:</span>
-                    )}
-                    {notifications[notifIndex]?.message || ''}
-                  </span>
-                </motion.div>
-              </div>
-              {notifications.filter(n => n.unread).length > 0 && (
-                <span className="text-[8px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full shrink-0">
-                  {notifications.filter(n => n.unread).length} new
-                </span>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* ── Quick Actions ── */}
         <div>
@@ -715,42 +717,6 @@ const AppHome: React.FC = () => {
               </motion.button>
             ))}
           </div>
-        </div>
-
-        {/* ── Inline Symbol Search ── */}
-        <div className="relative" ref={dropdownRef}>
-          <div className="flex items-center gap-3 bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl px-4 py-3 focus-within:border-blue-500/50 transition-all">
-            <Search className="w-4 h-4 text-[var(--text-tertiary)] shrink-0" />
-            <input
-              type="text"
-              placeholder="Quick search any symbol (e.g. TCS, INFY, RELIANCE)..."
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setShowSearch(true); }}
-              onFocus={() => setShowSearch(true)}
-              className="bg-transparent border-none text-sm font-bold w-full outline-none placeholder-[var(--text-tertiary)] text-[var(--text-primary)]"
-            />
-            {searchQuery && (
-              <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] text-xs font-black p-1">
-                ✕
-              </button>
-            )}
-          </div>
-          {showSearch && searchResults.length > 0 && (
-            <div className="absolute left-0 right-0 mt-1.5 z-50 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl shadow-xl overflow-hidden">
-              {searchResults.map((sym) => (
-                <button
-                  key={sym}
-                  onClick={() => { navigate(`/analysis/${sym}`); setShowSearch(false); setSearchQuery(''); }}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-tertiary)] transition-colors text-left"
-                >
-                  <span className="text-sm font-black text-[var(--text-primary)]">{sym}</span>
-                  <span className="text-[8px] font-black text-blue-400 uppercase tracking-wider flex items-center gap-1">
-                    View Audit <ArrowRight className="w-3 h-3" />
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* ── Upgrade CTA for Free users ── */}
