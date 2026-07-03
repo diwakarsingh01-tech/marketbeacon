@@ -203,10 +203,10 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         {/* Desktop-only Pulse Status */}
         <div className="hidden md:flex flex-col h-8 justify-center">
           <div className="flex items-center space-x-2">
-              <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none">Pulse Status</span>
+              <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none">Pulse Status</span>
              <div className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
           </div>
-          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">{marketStatus} Mode</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">{marketStatus} Mode</span>
         </div>
       </div>
 
@@ -227,7 +227,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           />
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1.5 px-2 py-1 bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] rounded-md pointer-events-none opacity-50 shadow-sm">
             <Command className="h-2.5 w-2.5 text-[var(--text-tertiary)]" />
-            <span className="text-[10px] font-bold text-[var(--text-tertiary)]">K</span>
+            <span className="text-xs font-bold text-[var(--text-tertiary)]">K</span>
           </div>
         </form>
 
@@ -235,8 +235,8 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         {showSuggestions && suggestions.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-2.5 bg-[var(--bg-primary)] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-[var(--border-primary)] overflow-hidden z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="p-3 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] flex justify-between items-center">
-               <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider px-2">Institutional Match</span>
-               <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider px-2">Press Enter</span>
+               <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider px-2">Institutional Match</span>
+               <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider px-2">Press Enter</span>
             </div>
             <div className="max-h-80 overflow-y-auto overflow-x-hidden no-scrollbar p-1.5 space-y-0.5">
               {suggestions.map((stock) => (
@@ -253,7 +253,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                         <span className="text-sm font-bold text-[var(--text-primary)] tracking-tighter leading-none">{stock.symbol}</span>
                        <span className="flex flex-wrap gap-1 mt-1">
                          {stock.baskets?.map((b: string) => (
-                            <span key={b} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${basketColors[b] || 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-secondary)]'}`}>
+                            <span key={b} className={`text-xs font-bold px-1.5 py-0.5 rounded-md border ${basketColors[b] || 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-secondary)]'}`}>
                              {b.replace(' Basket', '')}
                            </span>
                          ))}
@@ -262,7 +262,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
                     {stock.strategies?.slice(0, 2).map((s) => (
-                      <span key={s.id} className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                      <span key={s.id} className="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md whitespace-nowrap">
                         {s.id.slice(0, 8)}
                       </span>
                     ))}
@@ -284,13 +284,13 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
              return (
               <div key={idx.name} className="flex flex-col items-start space-y-1">
                  <div className="flex items-center space-x-3">
-                    <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none">{idx.name}</span>
-                    <span className={`text-[11px] font-black font-mono leading-none ${idx.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none">{idx.name}</span>
+                    <span className={`text-xs font-bold font-mono leading-none ${idx.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                        {idx.price ? idx.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                     </span>
                  </div>
                  {idx.ath > 0 && athDiff > 0 && (
-                    <span className="text-[9px] font-bold text-rose-500 uppercase tracking-wider block leading-none">
+                    <span className="text-xs font-bold text-rose-500 uppercase tracking-wider block leading-none">
                      ▼ {athDiff.toFixed(2)}% from High (ATH: {idx.ath.toLocaleString(undefined, { maximumFractionDigits: 0 })})
                    </span>
                  )}
@@ -349,7 +349,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                           if (n.unread) markAsRead(n.id);
                         });
                       }}
-                       className="text-[10px] font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wider"
+                       className="text-xs font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wider"
                     >
                       Mark all read
                     </button>
@@ -403,8 +403,8 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                        </div>
                        <div className="flex-1 min-w-0 pr-2">
                           <p className="text-xs font-bold text-[var(--text-primary)] tracking-tight leading-none mb-1">{n.title}</p>
-                          <p className="text-[11px] font-medium text-[var(--text-muted)] leading-relaxed break-words">{n.message}</p>
-                           <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
+                          <p className="text-xs font-medium text-[var(--text-muted)] leading-relaxed break-words">{n.message}</p>
+                           <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
                         </div>
                       </motion.div>
                     ))
@@ -445,14 +445,14 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center space-x-3 p-1.5 pr-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-all rounded-[1.2rem] group border border-[var(--border-primary)]"
               >
-                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-[var(--text-primary)] font-black text-xs shadow-lg shadow-blue-500/20 group-hover:rotate-6 transition-transform">
+                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-[var(--text-primary)] font-bold text-xs shadow-lg shadow-blue-500/20 group-hover:rotate-6 transition-transform">
                    {user?.name?.[0].toUpperCase()}
                 </div>
                 <div className="flex flex-col items-start hidden sm:flex">
                     <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider leading-none">{user?.name}</span>
                    <div className="flex items-center space-x-1.5 mt-1">
                        <div className={`w-1.5 h-1.5 rounded-full ${user?.tier === 'alpha' ? 'bg-blue-400 animate-pulse' : 'bg-slate-400'}`} />
-                        <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{user?.tier || 'Free'} Node</span>
+                        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{user?.tier || 'Free'} Node</span>
                    </div>
                 </div>
               </button>
@@ -461,7 +461,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
               {showUserMenu && (
                 <div className="absolute right-0 top-full mt-3 w-56 bg-[var(--bg-primary)] rounded-[1.8rem] shadow-2xl border border-[var(--border-primary)] p-2.5 z-[100] animate-in zoom-in-95 duration-200">
                    <div className="px-4 py-3 border-b border-[var(--border-primary)] mb-1">
-                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Account Identity</p>
+                       <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Account Identity</p>
                        <p className="text-xs font-bold text-[var(--text-primary)] truncate">{user?.email}</p>
                    </div>
                    <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-tertiary)] rounded-2xl transition-all group">
@@ -518,7 +518,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           {suggestions.length > 0 && (
             <div className="mt-3 bg-[var(--bg-primary)] border border-[var(--border-primary)]/85 rounded-2xl shadow-2xl overflow-y-auto max-h-[70vh] p-1.5 space-y-0.5 z-[130] animate-in fade-in slide-in-from-top-1 duration-200">
               <div className="p-2.5 border-b border-[var(--border-primary)] bg-[var(--bg-tertiary)]/50 flex justify-between items-center rounded-t-xl">
-                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Match Suggestions</span>
+                  <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Match Suggestions</span>
               </div>
               {suggestions.map((stock) => (
                 <button
@@ -537,7 +537,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                         <span className="text-xs font-bold text-[var(--text-primary)] tracking-tighter leading-none">{stock.symbol}</span>
                        <span className="flex flex-wrap gap-1 mt-1">
                          {stock.baskets?.map((b: string) => (
-                            <span key={b} className={`text-[8px] font-bold px-1 py-0.5 rounded-sm border ${basketColors[b] || 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-secondary)]'}`}>
+                            <span key={b} className={`text-xs font-bold px-1 py-0.5 rounded-sm border ${basketColors[b] || 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-secondary)]'}`}>
                              {b.replace(' Basket', '')}
                            </span>
                          ))}
@@ -546,7 +546,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {stock.strategies?.slice(0, 1).map((s) => (
-                      <span key={s.id} className="text-[8px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-sm">
+                      <span key={s.id} className="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-sm">
                         {s.id.slice(0, 8)}
                       </span>
                     ))}

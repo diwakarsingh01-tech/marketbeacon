@@ -60,12 +60,12 @@ const LoginPage: React.FC = () => {
           )}
         </div>
         <div className="space-y-2 text-center max-w-xs">
-          <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Authenticating Node</p>
-          <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic">Syncing with Institutional Identity Hub...</p>
+          <p className="text-xs font-bold text-blue-500 uppercase tracking-[0.4em]">Authenticating Node</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider italic">Syncing with Institutional Identity Hub...</p>
           {showWakingMessage && (
-            <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest pt-4">
+            <p className="text-xs font-bold text-amber-500 uppercase tracking-wider pt-4">
               🚀 Server is waking up... <br />
-              <span className="text-[7px] text-slate-600 font-bold">This may take 30s on first load (Render Free Tier)</span>
+              <span className="text-[11px] text-slate-600 font-bold">This may take 30s on first load (Render Free Tier)</span>
             </p>
           )}
         </div>
@@ -83,7 +83,7 @@ const LoginPage: React.FC = () => {
            </div>
            <div className="space-y-1 pt-4">
               <h1 className="text-3xl font-black text-[var(--text-primary)] uppercase italic leading-none">Identity Audit</h1>
-              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Complete your institutional profile</p>
+              <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-[0.3em]">Complete your institutional profile</p>
            </div>
         </div>
         <form className="space-y-8 relative z-10" onSubmit={async (e) => {
@@ -101,10 +101,10 @@ const LoginPage: React.FC = () => {
           finally { setLoading(false); }
         }}>
            <div className="space-y-3">
-              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em] block pl-1">Full Legal Name</label>
-              <input type="text" placeholder="Ex: Diwakar Singh" className="w-full bg-[var(--bg-tertiary)] border-2 border-[var(--border-primary)] rounded-3xl px-8 py-5 text-sm font-black text-[var(--text-primary)] focus:bg-[var(--bg-primary)] focus:border-blue-500 transition-all outline-none" value={userName} onChange={(e) => setUserName(e.target.value)} required autoFocus />
+              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-[0.4em] block pl-1">Full Legal Name</label>
+              <input type="text" placeholder="Ex: Diwakar Singh" className="w-full bg-[var(--bg-tertiary)] border-2 border-[var(--border-primary)] rounded-3xl px-8 py-5 text-sm font-bold text-[var(--text-primary)] focus:bg-[var(--bg-primary)] focus:border-blue-500 transition-all outline-none" value={userName} onChange={(e) => setUserName(e.target.value)} required autoFocus />
            </div>
-           <button type="submit" disabled={loading} className="w-full py-6 bg-blue-600 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center space-x-3 transition-all hover:bg-blue-500">
+           <button type="submit" disabled={loading} className="w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-[2rem] text-xs font-bold uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center space-x-3 transition-all shadow-lg shadow-blue-500/20">
              <span>Initialize Terminal Access</span>
              <ArrowRight className="h-5 w-5" />
            </button>
@@ -133,7 +133,7 @@ const LoginPage: React.FC = () => {
               <BrandLogo variant="dark" size={36} />
            </div>
            <div className="space-y-2 pt-4">
-              <span className="text-[9px] font-black tracking-[0.45em] uppercase text-blue-500 block">
+              <span className="text-xs font-bold tracking-[0.45em] uppercase text-blue-500 block">
                 Authorized Access Only
               </span>
               <div className="flex items-center justify-center gap-2 pt-2">
@@ -144,7 +144,7 @@ const LoginPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Joined by 31,402 Traders
                 </p>
               </div>
@@ -154,7 +154,7 @@ const LoginPage: React.FC = () => {
         {error && (
           <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start space-x-4 text-rose-400 animate-in shake duration-500">
              <AlertCircle className="h-5 w-5 shrink-0" />
-             <span className="text-xs font-black uppercase tracking-tight leading-relaxed">{error}</span>
+             <span className="text-xs font-bold uppercase tracking-tight leading-relaxed">{error}</span>
           </div>
         )}
 
@@ -167,7 +167,7 @@ const LoginPage: React.FC = () => {
         </div>
 
         <div className="pt-10 text-center relative z-10 border-t border-white/5">
-           <Link to="/connect" className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] hover:text-blue-500 transition-colors flex items-center justify-center space-x-3">
+           <Link to="/connect" className="text-xs font-bold text-slate-600 uppercase tracking-[0.4em] hover:text-blue-500 transition-colors flex items-center justify-center space-x-3">
               <Globe className="h-4 w-4" />
                <span>Connectivity Hub</span>
            </Link>
