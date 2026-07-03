@@ -23,6 +23,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { authFetch } from '../lib/authFetch';
 import SEO from '../components/SEO';
 import { ConfidenceGauge } from '../components/ui/ConfidenceGauge';
 import type { HistoryQuote, FundamentalData, ABCDNode, AllStockItem } from '../types';
@@ -126,9 +127,7 @@ const ScreenerVerify: React.FC = () => {
   const fetchScreenerList = async (stratId: string) => {
     setLoadingList(true);
     try {
-      const response = await fetch(`${API_URL}/api/backtest/audit?strategy=${stratId}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` }
-      });
+      const response = await authFetch(`/api/backtest/audit?strategy=${stratId}`);
       const d = await safeJsonParse(response);
       if (response.ok && d.allStocks && d.allStocks.length > 0) {
         setAllStocks(d.allStocks);

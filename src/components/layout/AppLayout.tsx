@@ -55,13 +55,14 @@ const AppLayout: React.FC = () => {
         {!isBannerDismissed && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-1.5 md:py-2 text-center text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center justify-between gap-2 relative z-30 shrink-0 select-none">
             <span className="flex-1 text-center pr-2 md:pr-4 leading-tight">⚠️ DISCLAIMER: We are NOT a SEBI-registered Investment Adviser or Research Analyst. MarketBeacon provides purely educational & mathematical tools. No content constitutes investment advice or recommendations.</span>
-            <button
-              onClick={handleDismissBanner}
-              className="p-1 rounded-md hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 transition-colors cursor-pointer shrink-0 font-bold text-xs"
-              title="Dismiss"
-            >
-              ✕
-            </button>
+<button
+          onClick={handleDismissBanner}
+          aria-label="Dismiss banner"
+          className="p-1 rounded-md hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 transition-colors cursor-pointer shrink-0 font-bold text-xs"
+          title="Dismiss"
+        >
+          ✕
+        </button>
           </div>
         )}
         
@@ -94,6 +95,7 @@ const AppLayout: React.FC = () => {
       {/* Global Feedback Trigger (Safe-Guard Style) */}
       <button
         onClick={() => setIsFeedbackOpen(true)}
+        aria-label="Send feedback"
         className="fixed bottom-20 right-4 md:bottom-10 md:right-10 z-[150] w-12 h-12 md:w-16 md:h-16 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-[2rem] shadow-2xl hover:bg-blue-600 hover:scale-110 transition-all flex items-center justify-center group border border-[var(--border-primary)]"
       >
         <MessageSquarePlus className="h-6 w-6 md:h-7 md:w-7 transition-transform group-hover:rotate-12" />
