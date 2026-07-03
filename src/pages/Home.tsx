@@ -486,7 +486,7 @@ const HomePage: React.FC = () => {
                 ].map((item, i) => (
                     <div key={i} className={`bg-[var(--bg-secondary)]/80 backdrop-blur-sm p-10 rounded-[2.5rem] border border-[var(--border-primary)] hover:border-blue-500/50 transition-all group ${item.col}`}>
                         <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4 group-hover:text-blue-400 transition-colors">{item.title}</div>
-                        <div className="text-5xl font-bold text-[var(--text-primary)] mb-3 tracking-tighter">{item.val}</div>
+                        <div className="text-5xl font-black text-[var(--text-primary)] mb-3 tracking-tighter">{item.val}</div>
                         <div className="text-sm text-[var(--text-muted)] font-medium">{item.desc}</div>
                     </div>
                 ))}
