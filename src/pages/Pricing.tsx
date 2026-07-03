@@ -209,7 +209,7 @@ const PricingPage: React.FC = () => {
 
               <div className="mb-4 md:mb-6">
                 <div className="flex items-baseline space-x-1">
-                  <span className="text-3xl md:text-4xl font-bold text-slate-900">{currentPrice}</span>
+                  <span className="text-3xl md:text-4xl font-black text-slate-900">{currentPrice}</span>
                   <span className="text-slate-500 font-bold text-sm">/{tier.period}</span>
                 </div>
                 <p className="text-xs md:text-xs font-bold text-slate-500 mt-1 md:mt-2 leading-relaxed uppercase">{tier.desc}</p>
