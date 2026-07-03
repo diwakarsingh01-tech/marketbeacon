@@ -94,7 +94,7 @@ const PublicAnalysisPage: React.FC = () => {
   if (loading) return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center space-y-6">
       <div className="w-16 h-16 border-4 border-white/5 border-t-cyan-500 rounded-full animate-spin shadow-[0_0_20px_rgba(34,211,238,0.2)]" />
-      <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.4em]">Fetching Node Data</p>
+      <p className="text-xs font-bold text-cyan-400 uppercase tracking-[0.4em]">Fetching Node Data</p>
     </div>
   );
 
@@ -102,7 +102,7 @@ const PublicAnalysisPage: React.FC = () => {
     <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6 text-center">
       <div className="space-y-6">
         <h1 className="text-4xl font-black text-white italic tracking-tighter">NODE NOT FOUND</h1>
-        <Link to="/" className="inline-block px-10 py-4 bg-white text-[#020617] rounded-2xl font-black uppercase text-xs">Return to Alpha Hub</Link>
+        <Link to="/" className="inline-block px-10 py-4 bg-white text-[#020617] rounded-2xl font-bold uppercase text-xs">Return to Alpha Hub</Link>
       </div>
     </div>
   );
@@ -178,7 +178,7 @@ const PublicAnalysisPage: React.FC = () => {
           <div className="space-y-4">
             <div className="inline-flex items-center space-x-2 px-4 py-1.5 bg-cyan-500/10 rounded-full border border-cyan-500/20 mb-4">
               <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full shadow-[0_0_8px_#22d3ee]" />
-              <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">{data.basket} Node Audit</span>
+              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">{data.basket} Node Audit</span>
             </div>
             <h1 className="text-7xl md:text-9xl font-black text-white italic tracking-tighter leading-none">{data.symbol}</h1>
             <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto uppercase tracking-widest italic opacity-60">Verified Institutional Deep-Node Analysis</p>
@@ -187,31 +187,31 @@ const PublicAnalysisPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-10 bg-[#0f172a]/40 backdrop-blur-2xl border border-white/5 rounded-[3rem] space-y-3 relative overflow-hidden group">
                <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-600/5 blur-2xl -mr-12 -mt-12 group-hover:bg-cyan-600/10 transition-all" />
-               <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] relative z-10">Audit Score</span>
+               <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] relative z-10">Audit Score</span>
                <div className={`text-7xl font-black italic tracking-tighter relative z-10 ${data.score >= 70 ? 'text-emerald-400' : 'text-rose-400'}`}>
                  {data.score}
                </div>
                 <div className="flex items-center gap-2 relative z-10">
                    {data.isPass ? <BadgeCheck className="w-4 h-4 text-emerald-400" /> : <Info className="w-4 h-4 text-rose-400" />}
-                   <span className={`text-[10px] font-black uppercase tracking-widest ${data.isPass ? 'text-emerald-500' : 'text-rose-500'}`}>{data.isPass ? 'Passed Audit' : 'Audit Failed'}</span>
+                   <span className={`text-xs font-bold uppercase tracking-wider ${data.isPass ? 'text-emerald-500' : 'text-rose-500'}`}>{data.isPass ? 'Passed Audit' : 'Audit Failed'}</span>
                 </div>
             </div>
 
             <div className="p-10 bg-[#0f172a]/40 backdrop-blur-2xl border border-white/5 rounded-[3rem] space-y-3">
-               <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Institutional Holding</span>
+               <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">Institutional Holding</span>
                <div className="text-7xl font-black text-white italic tracking-tighter">{data.smartMoney?.toFixed(1)}%</div>
                <div className="flex items-center gap-2">
                   <Globe className="w-4 h-4 text-cyan-400" />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ownership Matrix Active</span>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ownership Matrix Active</span>
                </div>
             </div>
 
             <div className="p-10 bg-[#0f172a]/40 backdrop-blur-2xl border border-white/5 rounded-[3rem] space-y-3">
-               <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Growth Objective</span>
+               <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">Growth Objective</span>
                <div className="text-7xl font-black text-indigo-400 italic tracking-tighter">+{data.upside}%</div>
                <div className="flex items-center gap-2">
                   <Target className="w-4 h-4 text-indigo-400" />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Alpha Objective projection</span>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Alpha Objective projection</span>
                </div>
             </div>
           </div>
@@ -222,12 +222,12 @@ const PublicAnalysisPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-3xl font-black text-white italic tracking-tighter">Active Strategy <span className="text-cyan-500">Nodes.</span></h2>
             <div className="h-px flex-1 bg-white/5 mx-8 hidden md:block" />
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Institutional Verification v12.0</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em]">Institutional Verification v12.0</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest pl-2">Logic Zone</span>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider pl-2">Logic Zone</span>
               <div className="space-y-4">
                 {data.strategies?.length > 0 ? (
                   data.strategies.map((strat: any, i: number) => (
@@ -238,13 +238,13 @@ const PublicAnalysisPage: React.FC = () => {
                         </div>
                         <span className="text-lg font-black text-white uppercase tracking-tighter italic">{strat.name}</span>
                       </div>
-                      <span className="px-5 py-1.5 bg-emerald-500 text-[#020617] text-[10px] font-black rounded-xl italic tracking-widest">ACTIVE FLOOR</span>
+                      <span className="px-5 py-1.5 bg-emerald-500 text-[#020617] text-xs font-bold rounded-xl italic tracking-wider">ACTIVE FLOOR</span>
                     </div>
                   ))
                 ) : (
                   <div className="p-10 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-center flex-col space-y-4 text-center">
                     <Clock className="w-10 h-10 text-slate-700" />
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Monitoring for institutional activity...</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Monitoring for institutional activity...</p>
                   </div>
                 )}
               </div>
@@ -252,7 +252,7 @@ const PublicAnalysisPage: React.FC = () => {
 
             {!isProOrAbove && (
             <div className="space-y-4">
-               <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest pl-2">Locked Premium Logic</span>
+               <span className="text-xs font-bold text-slate-600 uppercase tracking-wider pl-2">Locked Premium Logic</span>
                <div className="p-8 bg-[#0f172a]/40 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] relative overflow-hidden group">
                   <div className="absolute inset-0 bg-[#020617]/40 backdrop-blur-[2px] z-10" />
                   <div className="relative z-20 space-y-8">
@@ -264,7 +264,7 @@ const PublicAnalysisPage: React.FC = () => {
                         <span className="text-lg font-black text-slate-500 uppercase tracking-tighter italic">Velocity Retest Node</span>
                         <Lock className="w-5 h-5 text-slate-600" />
                      </div>
-                     <Link to="/login" className="flex items-center justify-center gap-3 w-full py-5 bg-white text-[#020617] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all">
+                      <Link to="/login" className="flex items-center justify-center gap-3 w-full py-5 bg-gradient-to-r from-white to-slate-100 text-[#020617] rounded-2xl text-xs font-bold uppercase tracking-wider hover:scale-[1.02] transition-all shadow-lg shadow-white/20">
                         Unlock Full Research Node <ArrowUpRight className="w-4 h-4" />
                      </Link>
                   </div>
@@ -288,7 +288,7 @@ const PublicAnalysisPage: React.FC = () => {
                     <span className="text-xl font-black text-white italic tracking-tighter group-hover:text-cyan-400 transition-colors leading-none">{sym}</span>
                     <ArrowUpRight className="w-5 h-5 text-slate-700 group-hover:text-cyan-400 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                   </div>
-                  <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Institutional Audit Active</div>
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Institutional Audit Active</div>
                 </Link>
               ))}
            </div>
@@ -299,7 +299,7 @@ const PublicAnalysisPage: React.FC = () => {
           <div className="mb-8 flex justify-center">
             <BrandLogo variant="dark" size={24} />
           </div>
-          <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em] leading-relaxed max-w-xl mx-auto italic">
+          <p className="text-xs font-bold text-slate-600 uppercase tracking-[0.2em] leading-relaxed max-w-xl mx-auto italic">
             MarketBeacon Pro is a quantitative research tool for educational purposes only.
             We are NOT a SEBI-registered Investment Adviser or Research Analyst.
             Audit scores, strategy signals, and ABCD zones are pre-coded mathematical models.
@@ -319,9 +319,9 @@ const PublicAnalysisPage: React.FC = () => {
                </div>
                
                <div className="space-y-2">
-                  <h3 className="text-xl font-black uppercase tracking-tight text-white italic">PRO ANALYSIS LOCKED</h3>
+                   <h3 className="text-xl font-bold uppercase tracking-tight text-white italic">PRO ANALYSIS LOCKED</h3>
                   <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                     Detailed institutional stock reports, full fundamental scores, holding structures, and active strategy triggers for <span className="text-cyan-400 font-black">{symbol}</span> are locked.
+                      Detailed institutional stock reports, full fundamental scores, holding structures, and active strategy triggers for <span className="text-cyan-400 font-bold">{symbol}</span> are locked.
                   </p>
                </div>
 
@@ -329,14 +329,14 @@ const PublicAnalysisPage: React.FC = () => {
                   {user ? (
                      <button 
                        onClick={() => setShowUpgrade(true)}
-                       className="w-full py-4 bg-cyan-600 text-slate-950 hover:bg-cyan-500 rounded-xl font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-cyan-900/20 flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-slate-950 rounded-xl font-bold uppercase tracking-wider text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2"
                      >
                         <Sparkles className="w-4 h-4 text-slate-950" /> Upgrade to Pro Execution
                      </button>
                   ) : (
                      <Link 
                        to="/login"
-                       className="w-full py-4 bg-cyan-600 text-slate-950 hover:bg-cyan-500 rounded-xl font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] active:scale-95 transition-all text-center block"
+                        className="w-full py-4 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-slate-950 rounded-xl font-bold uppercase tracking-wider text-xs hover:scale-[1.02] active:scale-95 transition-all text-center block shadow-lg shadow-cyan-500/20"
                      >
                         Sign In to Unlock
                      </Link>
@@ -344,7 +344,7 @@ const PublicAnalysisPage: React.FC = () => {
                   
                   <Link 
                     to="/license-desk"
-                    className="block text-[10px] font-black text-slate-450 hover:text-white transition-colors uppercase tracking-widest"
+                    className="block text-xs font-bold text-slate-450 hover:text-white transition-colors uppercase tracking-wider"
                   >
                      Compare Plans & Pricing
                   </Link>
@@ -352,8 +352,8 @@ const PublicAnalysisPage: React.FC = () => {
 
                <div className="border-t border-white/5 pt-6 space-y-4">
                   <div className="space-y-1">
-                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Have a Coupon or Voucher Code?</span>
-                     <p className="text-[10px] text-slate-500">Redeem code for a 7-day free trial of all premium features.</p>
+                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Have a Coupon or Voucher Code?</span>
+                     <p className="text-xs text-slate-500">Redeem code for a 7-day free trial of all premium features.</p>
                   </div>
                   
                   <div className="flex gap-2">
@@ -362,19 +362,19 @@ const PublicAnalysisPage: React.FC = () => {
                        placeholder="Enter voucher (e.g. ALPHA7)..."
                        value={voucherCode}
                        onChange={(e) => setVoucherCode(e.target.value)}
-                       className="flex-1 bg-slate-900 border border-slate-800 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-white outline-none focus:border-cyan-500"
+                        className="flex-1 bg-slate-900 border border-slate-800 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-white outline-none focus:border-cyan-500"
                      />
                      <button
                        onClick={handleRedeemVoucher}
                        disabled={redeeming}
-                       className="px-5 py-3 bg-white text-slate-950 hover:bg-slate-100 disabled:bg-slate-800 disabled:text-slate-650 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                        className="px-5 py-3 bg-gradient-to-r from-white to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-950 disabled:bg-slate-800 disabled:text-slate-650 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-white/20"
                      >
                        {redeeming ? 'Applying...' : 'Apply'}
                      </button>
                   </div>
 
                   {voucherError && (
-                     <p className="text-[10px] font-black text-rose-500 uppercase tracking-wider">{voucherError}</p>
+                     <p className="text-xs font-bold text-rose-500 uppercase tracking-wider">{voucherError}</p>
                   )}
 
                   <button 
@@ -383,7 +383,7 @@ const PublicAnalysisPage: React.FC = () => {
                         setVoucherCode('ALPHA7');
                         setVoucherError(null);
                      }}
-                     className="text-[9px] font-black text-cyan-400 hover:text-cyan-300 uppercase tracking-wider block mx-auto underline transition-colors"
+                     className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 uppercase tracking-wider block mx-auto underline transition-colors"
                   >
                      Quick Apply: ALPHA7 (7-Day Free Trial)
                   </button>
