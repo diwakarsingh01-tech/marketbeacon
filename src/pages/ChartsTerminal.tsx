@@ -723,12 +723,12 @@ const ChartsTerminal: React.FC = () => {
         <h1 class="text-lg font-black tracking-tight uppercase italic text-[var(--text-primary)] flex items-center gap-1.5">
           MarketBeacon <span class="text-blue-500">Terminal</span>
         </h1>
-        <p class="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Offline / Standalone Portable Instance</p>
+        <p class="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Offline / Standalone Portable Instance</p>
       </div>
     </div>
     
     <div class="flex items-center gap-4">
-      <div class="px-3 py-1.5 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-xs font-black tracking-wider text-[var(--text-secondary)]">
+      <div class="px-3 py-1.5 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-xs font-bold tracking-wider text-[var(--text-secondary)]">
         ACTIVE SYMBOL: <span class="text-blue-400 font-bold">${symbol}</span>
       </div>
     </div>
@@ -740,17 +740,17 @@ const ChartsTerminal: React.FC = () => {
     <section class="lg:col-span-1 space-y-6">
       <div class="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] p-5 rounded-3xl space-y-4 shadow-sm neon-border">
         <div class="flex justify-between items-center border-b border-[var(--border-primary)] pb-3">
-          <span class="text-sm font-black text-[var(--text-secondary)] uppercase tracking-wider">Fundamentals</span>
-          <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase">
+          <span class="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">Fundamentals</span>
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase">
             \${fundamentals.audit?.universe || 'WATCHLIST'}
           </span>
         </div>
         
         <div class="space-y-4">
           <div>
-            <span class="text-[10px] text-[var(--text-tertiary)] uppercase font-bold tracking-wider">Price</span>
+            <span class="text-xs text-[var(--text-tertiary)] uppercase font-bold tracking-wider">Price</span>
             <div class="flex items-baseline gap-2">
-              <span class="text-2xl font-black text-[var(--text-primary)] italic">₹ \${Number(fundamentals.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+              <span class="text-2xl font-bold text-[var(--text-primary)] italic">₹ \${Number(fundamentals.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
               <span class="text-xs font-bold \${fundamentals.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
                 \${fundamentals.change >= 0 ? '+' : ''}\${Number(fundamentals.change).toFixed(2)}%
               </span>
@@ -759,12 +759,12 @@ const ChartsTerminal: React.FC = () => {
 
           <div class="grid grid-cols-2 gap-4 border-t border-[var(--border-primary)] pt-3">
             <div>
-              <span class="text-[9px] text-[var(--text-tertiary)] uppercase font-bold tracking-wider">Audit Score</span>
-              <p class="text-lg font-black text-blue-400 italic">\${fundamentals.audit?.score}/100</p>
+              <span class="text-[11px] text-[var(--text-tertiary)] uppercase font-bold tracking-wider">Audit Score</span>
+              <p class="text-lg font-bold text-blue-400 italic">\${fundamentals.audit?.score}/100</p>
             </div>
             <div>
-              <span class="text-[9px] text-[var(--text-tertiary)] uppercase font-bold tracking-wider">PE Ratio</span>
-              <p class="text-lg font-black text-[var(--text-secondary)] italic">\${Number(fundamentals.peRatio || 0).toFixed(1)}</p>
+              <span class="text-[11px] text-[var(--text-tertiary)] uppercase font-bold tracking-wider">PE Ratio</span>
+              <p class="text-lg font-bold text-[var(--text-secondary)] italic">\${Number(fundamentals.peRatio || 0).toFixed(1)}</p>
             </div>
           </div>
 
@@ -792,8 +792,8 @@ const ChartsTerminal: React.FC = () => {
       <!-- Strategy Confidence Profile -->
       <div id="confidence-card" class="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] p-5 rounded-3xl space-y-4 shadow-sm neon-border hidden">
         <div class="flex justify-between items-center border-b border-[var(--border-primary)] pb-3">
-          <span class="text-xs font-black text-[var(--text-secondary)] uppercase tracking-wider">Strategy Confidence</span>
-          <span id="conf-badge" class="px-2 py-0.5 rounded-full text-[8px] font-black tracking-wider uppercase border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
+          <span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Strategy Confidence</span>
+          <span id="conf-badge" class="px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
             BUY ZONE
           </span>
         </div>
@@ -810,9 +810,9 @@ const ChartsTerminal: React.FC = () => {
                 <stop offset="100%" stop-color="#10b981" />
               </linearGradient>
             </defs>
-            <text id="conf-gauge-text" x="50" y="45" text-anchor="middle" class="text-lg font-black fill-white">0%</text>
+            <text id="conf-gauge-text" x="50" y="45" text-anchor="middle" class="text-lg font-bold fill-white">0%</text>
           </svg>
-          <span id="conf-level-text" class="text-[9px] font-black uppercase tracking-widest text-[var(--text-tertiary)] mt-2">MODERATE CONFIDENCE</span>
+          <span id="conf-level-text" class="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mt-2">MODERATE CONFIDENCE</span>
         </div>
 
         <!-- Progress bar visual range -->
@@ -825,12 +825,12 @@ const ChartsTerminal: React.FC = () => {
             
             <!-- Pins -->
             <div id="conf-price-pin" class="absolute -top-3 flex flex-col items-center transition-all duration-300" style="left: 50%; transform: translateX(-50%);">
-              <div id="conf-price-val" class="px-1 py-0.2 rounded bg-blue-600 text-[7px] font-black text-[var(--text-primary)]">₹0</div>
+              <div id="conf-price-val" class="px-1 py-0.2 rounded bg-blue-600 text-[9px] font-bold text-[var(--text-primary)]">₹0</div>
               <div class="w-1.5 h-1.5 rounded-full bg-[var(--bg-primary)] border border-blue-600 mt-0.5"></div>
             </div>
           </div>
           
-          <div class="flex justify-between text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
+          <div class="flex justify-between text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
             <span id="conf-floor-lbl">FLOOR: ₹0</span>
             <span id="conf-entry-lbl">ENTRY: ₹0</span>
             <span id="conf-target-lbl">TARGET: ₹0</span>
@@ -860,7 +860,7 @@ const ChartsTerminal: React.FC = () => {
   </main>
 
   <!-- Footer -->
-  <footer class="border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/80 py-4 text-center text-[10px] text-[var(--text-muted)] uppercase tracking-widest">
+  <footer class="border-t border-[var(--border-primary)] bg-[var(--bg-primary)]/80 py-4 text-center text-xs text-[var(--text-muted)] uppercase tracking-wider">
     Generated via MarketBeacon Pro • Institutional Research Suite
   </footer>
 
@@ -1053,7 +1053,7 @@ const ChartsTerminal: React.FC = () => {
       
       const badge = document.getElementById('conf-badge');
       badge.textContent = badgeText;
-      badge.className = 'px-2 py-0.5 rounded-full text-[8px] font-black tracking-wider uppercase border ' + badgeClass;
+      badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border ' + badgeClass;
       
       // Update confidence bar ranges
       let bottom = entry;
@@ -1358,11 +1358,11 @@ const ChartsTerminal: React.FC = () => {
         <div className="flex justify-between items-center mb-5 border-b border-[var(--border-primary)]/60 pb-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-blue-500" />
-            <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">
+            <span className="text-xs font-extrabold text-[var(--text-muted)] uppercase tracking-wider">
               Institutional Entry Confidence Profile
             </span>
           </div>
-          <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase ${confidence.bg} ${confidence.color} border border-current/20`}>
+          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${confidence.bg} ${confidence.color} border border-current/20`}>
             {confidence.level}
           </span>
         </div>
@@ -1372,7 +1372,7 @@ const ChartsTerminal: React.FC = () => {
 
           {/* Range Slider / Shape */}
           <div className="md:col-span-2 space-y-5">
-            <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest block">
+            <span className="text-xs text-[var(--text-muted)] font-extrabold uppercase tracking-wider block">
               Confidence Range Visualization (Safe Entry vs Target Progression)
             </span>
             
@@ -1397,7 +1397,7 @@ const ChartsTerminal: React.FC = () => {
                 style={{ left: `${bottomPct}%`, transform: 'translateX(-50%)' }}
               >
                 <div className="h-4 w-1 bg-slate-500" />
-                <span className="text-[8px] font-black text-[var(--text-muted)] mt-1">FLOOR (₹{Math.round(bottom)})</span>
+                <span className="text-[9px] font-bold text-[var(--text-muted)] mt-1">FLOOR (₹{Math.round(bottom)})</span>
               </div>
 
               <div 
@@ -1405,7 +1405,7 @@ const ChartsTerminal: React.FC = () => {
                 style={{ left: `${entryPct}%`, transform: 'translateX(-50%)' }}
               >
                 <div className="h-4 w-1.5 bg-emerald-500" />
-                <span className="text-[8px] font-black text-emerald-400 mt-1">ENTRY (₹{Math.round(entry)})</span>
+                <span className="text-[9px] font-bold text-emerald-400 mt-1">ENTRY (₹{Math.round(entry)})</span>
               </div>
 
               <div 
@@ -1413,7 +1413,7 @@ const ChartsTerminal: React.FC = () => {
                 style={{ left: `${targetPct}%`, transform: 'translateX(-50%)' }}
               >
                 <div className="h-4 w-1.5 bg-blue-500" />
-                <span className="text-[8px] font-black text-blue-400 mt-1">TARGET (₹{Math.round(target)})</span>
+                <span className="text-[9px] font-bold text-blue-400 mt-1">TARGET (₹{Math.round(target)})</span>
               </div>
 
               {/* Pin pointing to current price */}
@@ -1421,7 +1421,7 @@ const ChartsTerminal: React.FC = () => {
                 className="absolute -top-4 flex flex-col items-center z-10 transition-all duration-300"
                 style={{ left: `${currentPct}%`, transform: 'translateX(-50%)' }}
               >
-                <div className="px-2 py-0.5 rounded bg-blue-600 text-[8px] font-black text-[var(--text-primary)] shadow-md">
+                <div className="px-2 py-0.5 rounded bg-blue-600 text-[9px] font-bold text-[var(--text-primary)] shadow-md">
                   ₹{Math.round(price)}
                 </div>
                 <div className="w-2.5 h-2.5 rounded-full bg-[var(--bg-primary)] border-2 border-blue-600 mt-0.5" />
@@ -1459,7 +1459,7 @@ const ChartsTerminal: React.FC = () => {
     }`}>
       
       {/* Ticker Bar (Top) */}
-      <div className={`border-b text-[11px] font-black uppercase tracking-wider overflow-hidden \${
+      <div className={`border-b text-[11px] font-bold uppercase tracking-wider overflow-hidden \${
         'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-tertiary)]'
       }`}>
         <div className="flex divide-x divide-slate-800 overflow-x-auto py-2 px-4 whitespace-nowrap scrollbar-none">
@@ -1467,7 +1467,7 @@ const ChartsTerminal: React.FC = () => {
             <div key={i} className="flex items-center gap-2 px-6">
               <span className={'text-[var(--text-secondary)]'}>{idx.name}</span>
               <span className="font-bold">₹ {idx.price.toLocaleString('en-IN')}</span>
-              <span className={`flex items-center text-[10px] font-black \${
+              <span className={`flex items-center text-xs font-bold \${
                 idx.change >= 0 ? 'text-emerald-500' : 'text-rose-500'
               }`}>
                 {idx.change >= 0 ? <TrendingUp className="h-2.5 w-2.5 mr-0.5 inline" /> : <TrendingDown className="h-2.5 w-2.5 mr-0.5 inline" />}
@@ -1498,7 +1498,7 @@ const ChartsTerminal: React.FC = () => {
               }`}>
                 MarketBeacon <span className="text-blue-500">Terminal</span>
               </h1>
-              <p className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Interactive Market Desk</p>
+              <p className="text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider">Interactive Market Desk</p>
             </div>
           </Link>
         </div>
@@ -1511,7 +1511,7 @@ const ChartsTerminal: React.FC = () => {
             <div className={`flex items-center rounded-2xl border px-3 py-2 transition-all ${
               'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50'
             }`}>
-              <span className="text-[9px] font-black uppercase text-[var(--text-tertiary)] mr-1.5 tracking-wider">Basket:</span>
+              <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)] mr-1.5 tracking-wider">Basket:</span>
               <select
                 value={selectedBasket}
                 onChange={(e) => handleBasketChange(e.target.value)}
@@ -1527,7 +1527,7 @@ const ChartsTerminal: React.FC = () => {
             <div className={`flex items-center rounded-2xl border px-3 py-2 transition-all ${
               'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50'
             }`}>
-              <span className="text-[9px] font-black uppercase text-[var(--text-tertiary)] mr-1.5 tracking-wider">Stock:</span>
+              <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)] mr-1.5 tracking-wider">Stock:</span>
               <select
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value)}
@@ -1544,7 +1544,7 @@ const ChartsTerminal: React.FC = () => {
 
           {/* Active Buy Strategy Badge */}
           {activeBuyStrategy && (
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-wider animate-pulse">
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider animate-pulse">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
               <span>BUY: {activeBuyStrategy}</span>
             </div>
@@ -1587,10 +1587,10 @@ const ChartsTerminal: React.FC = () => {
                     }`}
                   >
                     <div>
-                      <span className="text-xs font-black tracking-wide text-[var(--text-secondary)]">{item.symbol}</span>
+                      <span className="text-xs font-bold tracking-wide text-[var(--text-secondary)]">{item.symbol}</span>
                       <div className="flex gap-1.5 mt-0.5">
                         {(item.baskets || []).map((b, idx) => (
-                          <span key={idx} className="text-[8px] font-bold tracking-wider uppercase px-1.5 py-0.2 bg-blue-500/5 text-blue-400 border border-blue-500/10 rounded">
+                          <span key={idx} className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.2 bg-blue-500/5 text-blue-400 border border-blue-500/10 rounded">
                             {b.replace(' Basket', '')}
                           </span>
                         ))}
@@ -1598,7 +1598,7 @@ const ChartsTerminal: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <span className="text-xs font-bold block">₹ {item.price.toLocaleString('en-IN')}</span>
-                      <span className={`text-[10px] font-black \${item.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      <span className={`text-xs font-bold \${item.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                         {item.change >= 0 ? '+' : ''}{item.change.toFixed(2)}%
                       </span>
                     </div>
@@ -1624,7 +1624,7 @@ const ChartsTerminal: React.FC = () => {
             <button
               onClick={downloadStandaloneTerminal}
               title="Download Standalone HTML Chart"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-[var(--text-primary)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-blue-600/15 transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-blue-500/20 transition-all"
             >
               <Download className="h-4 w-4" />
               <span>Export Portable</span>
@@ -1645,7 +1645,7 @@ const ChartsTerminal: React.FC = () => {
             {/* Chart Toolbar */}
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
-                <span className={`text-xs font-black tracking-wider uppercase ${
+                <span className={`text-xs font-bold tracking-wider uppercase ${
                   'text-[var(--text-tertiary)]'
                 }`}>NSE Chart Terminal</span>
                 {chartLoading && <RefreshCw className="h-3.5 w-3.5 animate-spin text-blue-500" />}
@@ -1689,7 +1689,7 @@ const ChartsTerminal: React.FC = () => {
               {historyData.length === 0 && !chartLoading && (
                 <div className="flex flex-col items-center justify-center h-[520px] text-[var(--text-muted)]">
                   <Info className="h-8 w-8 mb-2 text-slate-600" />
-                  <p className="text-xs font-black uppercase tracking-widest">No Historical Quotes Available</p>
+                  <p className="text-xs font-bold uppercase tracking-wider">No Historical Quotes Available</p>
                 </div>
               )}
             </div>
@@ -1700,7 +1700,7 @@ const ChartsTerminal: React.FC = () => {
             }`}>
               {/* Toggles */}
               <div className="flex flex-wrap gap-4 items-center">
-                <span className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">Overlays:</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Overlays:</span>
                 <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs font-bold">
                   <input 
                     type="checkbox" 
@@ -1740,7 +1740,7 @@ const ChartsTerminal: React.FC = () => {
               </div>
 
               {/* Legend */}
-              <div className="flex flex-wrap gap-3.5 items-center text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+              <div className="flex flex-wrap gap-3.5 items-center text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3.5 h-0.5 bg-emerald-500" />
                   <span>Entry</span>
@@ -1769,7 +1769,7 @@ const ChartsTerminal: React.FC = () => {
               }`}>
                 <div className="flex items-center gap-2 mb-4 border-b border-[var(--border-primary)]/60 pb-3">
                   <Layers className="h-4 w-4 text-blue-500" />
-                  <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Active Entry Strategies</span>
+                  <span className="text-xs font-extrabold text-[var(--text-muted)] uppercase tracking-wider">Active Entry Strategies</span>
                 </div>
 
                 {loading || !fundamentals || !fundamentals.strategies ? (
@@ -1792,19 +1792,19 @@ const ChartsTerminal: React.FC = () => {
                           }`}
                         >
                           <div className="space-y-0.5">
-                            <span className="text-xs font-black tracking-wide block truncate max-w-[140px]">{displayName}</span>
+                            <span className="text-xs font-bold tracking-wide block truncate max-w-[140px]">{displayName}</span>
                             {hasZone && value.tranche && (
-                              <span className="text-[8px] font-bold tracking-wider uppercase text-[var(--text-muted)]">
+                              <span className="text-[9px] font-bold tracking-wider uppercase text-[var(--text-muted)]">
                                 Tranche {value.tranche}
                               </span>
                             )}
                           </div>
                           {isBuy ? (
-                            <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase tracking-wider">
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase tracking-wider">
                               BUY ZONE
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)] uppercase tracking-wider">
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)] uppercase tracking-wider">
                               HOLD
                             </span>
                           )}
@@ -1830,9 +1830,9 @@ const ChartsTerminal: React.FC = () => {
                     <div className="flex justify-between items-start border-b border-[var(--border-primary)]/60 pb-4">
                       <div>
                         <h2 className="text-xl font-black italic tracking-tight">{fundamentals.symbol}</h2>
-                        <p className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">{fundamentals.industry}</p>
+                        <p className="text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider">{fundamentals.industry}</p>
                       </div>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase ${
+                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${
                         fundamentals.audit?.universe === 'INSTITUTIONAL'
                           ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
                           : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
@@ -1843,10 +1843,10 @@ const ChartsTerminal: React.FC = () => {
 
                     {/* Price Box */}
                     <div>
-                      <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Current Price</span>
+                      <span className="text-xs text-[var(--text-muted)] font-extrabold uppercase tracking-wider">Current Price</span>
                       <div className="flex items-baseline gap-2 mt-1">
-                        <span className="text-3xl font-black italic">₹ {Number(fundamentals.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                        <span className={`text-xs font-black ${fundamentals.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        <span className="text-3xl font-bold italic">₹ {Number(fundamentals.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                        <span className={`text-xs font-bold ${fundamentals.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                           {fundamentals.change >= 0 ? '+' : ''}{Number(fundamentals.change).toFixed(2)}%
                         </span>
                       </div>
@@ -1857,8 +1857,8 @@ const ChartsTerminal: React.FC = () => {
                       'bg-[var(--bg-primary)]/60 border-[var(--border-primary)]'
                     }`}>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Audit Score</span>
-                        <h3 className="text-2xl font-black italic text-blue-500">{fundamentals.audit?.score}/100</h3>
+                        <span className="text-[11px] text-[var(--text-muted)] font-extrabold uppercase tracking-wider">Audit Score</span>
+                        <h3 className="text-2xl font-bold italic text-blue-500">{fundamentals.audit?.score}/100</h3>
                       </div>
                       <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/15 text-blue-500">
                         <ShieldCheck className="h-5 w-5" />
@@ -1867,7 +1867,7 @@ const ChartsTerminal: React.FC = () => {
 
                     {/* Valuation Multiples */}
                     <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
-                      <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Valuation & Growth</span>
+                      <span className="text-xs text-[var(--text-muted)] font-extrabold uppercase tracking-wider">Valuation & Growth</span>
                       
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-[var(--text-tertiary)] font-medium">PE Ratio:</span>
@@ -1890,7 +1890,7 @@ const ChartsTerminal: React.FC = () => {
 
                     {/* Efficiency & Balance Sheet */}
                     <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
-                      <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest">Safety & Efficiency</span>
+                      <span className="text-xs text-[var(--text-muted)] font-extrabold uppercase tracking-wider">Safety & Efficiency</span>
                       
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-[var(--text-tertiary)] font-medium">Return on Equity (ROE):</span>
@@ -1915,7 +1915,7 @@ const ChartsTerminal: React.FC = () => {
 
                     {/* Sales & Profit vs ATH */}
                     <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
-                      <span className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-widest flex items-center gap-1">
+                      <span className="text-xs text-[var(--text-muted)] font-extrabold uppercase tracking-wider flex items-center gap-1">
                         <Sparkles className="h-3 w-3 text-blue-500" /> High Growth Potential
                       </span>
                       
@@ -1961,10 +1961,10 @@ const ChartsTerminal: React.FC = () => {
                 }`}>
                   <div className="flex items-center gap-2 border-b border-[var(--border-primary)]/60 pb-3">
                     <Sparkles className="h-4 w-4 text-blue-500" />
-                    <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Strategic Narrative</span>
+                    <span className="text-xs font-extrabold text-[var(--text-muted)] uppercase tracking-wider">Strategic Narrative</span>
                   </div>
                   <div>
-                    <h3 className="text-xs font-black uppercase text-[var(--text-secondary)]">{STRATEGY_NAMES[activeStrategyId || ''] || activeStrategyId}</h3>
+                    <h3 className="text-xs font-bold uppercase text-[var(--text-secondary)]">{STRATEGY_NAMES[activeStrategyId || ''] || activeStrategyId}</h3>
                     <p className="text-[11px] text-[var(--text-tertiary)] mt-2 font-medium leading-relaxed bg-[var(--bg-primary)]/45 p-3 rounded-2xl border border-slate-900/50">
                       {getStorytellingText()}
                     </p>
@@ -1996,12 +1996,12 @@ const ChartsTerminal: React.FC = () => {
                   <div className="flex justify-between items-center mb-5 border-b border-[var(--border-primary)]/60 pb-3">
                     <div className="flex items-center gap-2">
                       <Target className="h-4 w-4 text-blue-500" />
-                      <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">
+                      <span className="text-xs font-extrabold text-[var(--text-muted)] uppercase tracking-wider">
                         ABCD Tranche Timeline
                       </span>
                     </div>
                     {activeStrategy.isBuyZone && (
-                      <div className="flex items-center gap-1 text-[9px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
                         <CheckCircle2 className="h-3 w-3" /> Safe Entry Active
                       </div>
                     )}
@@ -2028,13 +2028,13 @@ const ChartsTerminal: React.FC = () => {
                             }`}
                           >
                             <div className="flex justify-between items-center mb-1.5">
-                              <span className="text-[9px] font-extrabold uppercase tracking-widest">Tranche {key.toUpperCase()}</span>
+                              <span className="text-[11px] font-extrabold uppercase tracking-wider">Tranche {key.toUpperCase()}</span>
                               {isActive && (
                                 <span className="h-2.5 w-2.5 rounded-full bg-blue-500 animate-ping absolute top-3 right-3" />
                               )}
                             </div>
                             <div className="space-y-0.5">
-                              <h4 className="text-md font-black italic">₹ {Number(val.price).toLocaleString('en-IN')}</h4>
+                              <h4 className="text-md font-bold italic">₹ {Number(val.price).toLocaleString('en-IN')}</h4>
                               <p className="text-[7.5px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] truncate">
                                 {val.date ? `${val.date}` : 'Not Triggered'}
                               </p>
@@ -2046,15 +2046,15 @@ const ChartsTerminal: React.FC = () => {
                   ) : (
                     <div className="py-6 text-center text-xs text-[var(--text-muted)] flex flex-col items-center justify-center gap-2">
                       <AlertTriangle className="h-5 w-5 text-amber-500" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">No ABCD Tranche settings for this strategy.</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">No ABCD Tranche settings for this strategy.</span>
                       <div className="grid grid-cols-2 gap-4 w-full mt-2 border border-[var(--border-primary)] p-3 rounded-2xl bg-[var(--bg-primary)]/30">
                         <div className="text-left">
-                          <span className="text-[8px] text-[var(--text-muted)] uppercase font-extrabold">Entry</span>
-                          <p className="text-sm font-black text-emerald-400 italic">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</p>
+                          <span className="text-[9px] text-[var(--text-muted)] uppercase font-extrabold">Entry</span>
+                          <p className="text-sm font-bold text-emerald-400 italic">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</p>
                         </div>
                         <div className="text-left">
-                          <span className="text-[8px] text-[var(--text-muted)] uppercase font-extrabold">Target</span>
-                          <p className="text-sm font-black text-blue-400 italic">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</p>
+                          <span className="text-[9px] text-[var(--text-muted)] uppercase font-extrabold">Target</span>
+                          <p className="text-sm font-bold text-blue-400 italic">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</p>
                         </div>
                       </div>
                     </div>
@@ -2071,16 +2071,16 @@ const ChartsTerminal: React.FC = () => {
                   'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
                 }`}>
                   <div className="flex justify-between items-center mb-4 border-b border-[var(--border-primary)]/60 pb-3">
-                    <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Institutional Trust Dial</span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase ${confidence.bg} ${confidence.color} border border-current/20`}>
+                    <span className="text-xs font-extrabold text-[var(--text-muted)] uppercase tracking-wider">Institutional Trust Dial</span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${confidence.bg} ${confidence.color} border border-current/20`}>
                       {confidence.level.split(' / ')[0]}
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
                     <ConfidenceGauge score={confidence.score} size="sm" label="" className="shrink-0" />
                     <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider">Rating: {confidence.score}/100</h4>
-                      <p className="text-[9px] text-[var(--text-muted)] mt-1 font-bold">Measures technical support alignment & price zone safety.</p>
+                      <h4 className="text-xs font-bold uppercase tracking-wider">Rating: {confidence.score}/100</h4>
+                      <p className="text-[11px] text-[var(--text-muted)] mt-1 font-bold">Measures technical support alignment & price zone safety.</p>
                     </div>
                   </div>
 
@@ -2101,27 +2101,27 @@ const ChartsTerminal: React.FC = () => {
                       style={{ left: `${rangeInfo.bottomPct}%`, transform: 'translateX(-50%)' }}
                     >
                       <div className="h-3 w-0.5 bg-slate-500" />
-                      <span className="text-[6.5px] font-black text-[var(--text-muted)] mt-0.5">FLR</span>
+                      <span className="text-[6.5px] font-bold text-[var(--text-muted)] mt-0.5">FLR</span>
                     </div>
                     <div 
                       className="absolute -top-1.5 flex flex-col items-center"
                       style={{ left: `${rangeInfo.entryPct}%`, transform: 'translateX(-50%)' }}
                     >
                       <div className="h-3 w-1 bg-emerald-500" />
-                      <span className="text-[6.5px] font-black text-emerald-400 mt-0.5">ENT</span>
+                      <span className="text-[6.5px] font-bold text-emerald-400 mt-0.5">ENT</span>
                     </div>
                     <div 
                       className="absolute -top-1.5 flex flex-col items-center"
                       style={{ left: `${rangeInfo.targetPct}%`, transform: 'translateX(-50%)' }}
                     >
                       <div className="h-3 w-1 bg-blue-500" />
-                      <span className="text-[6.5px] font-black text-blue-400 mt-0.5">TGT</span>
+                      <span className="text-[6.5px] font-bold text-blue-400 mt-0.5">TGT</span>
                     </div>
                     <div 
                       className="absolute -top-4 flex flex-col items-center z-10 transition-all duration-300"
                       style={{ left: `${rangeInfo.currentPct}%`, transform: 'translateX(-50%)' }}
                     >
-                      <div className="px-1 py-0.2 rounded bg-blue-600 text-[6.5px] font-black text-[var(--text-primary)] shadow">
+                      <div className="px-1 py-0.2 rounded bg-blue-600 text-[6.5px] font-bold text-[var(--text-primary)] shadow">
                         ₹{Math.round(fundamentals.price)}
                       </div>
                       <div className="w-1.5 h-1.5 rounded-full bg-[var(--bg-primary)] border border-blue-600 mt-0.5" />
@@ -2135,14 +2135,14 @@ const ChartsTerminal: React.FC = () => {
                 'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
               }`}>
                 <div className="space-y-1">
-                  <span className="text-[8px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]">Deep Link verification</span>
-                  <p className="text-[10px] font-bold text-[var(--text-tertiary)]">Verify these exact levels inside your native TradingView charts.</p>
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-[var(--text-muted)]">Deep Link verification</span>
+                  <p className="text-xs font-bold text-[var(--text-tertiary)]">Verify these exact levels inside your native TradingView charts.</p>
                 </div>
                 <a
                   href={`https://www.tradingview.com/chart/?symbol=NSE:${symbol}&interval=1H`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-[var(--text-primary)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-blue-600/15 transition-all justify-center w-full"
+                  className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-blue-500/20 transition-all justify-center w-full"
                 >
                   <ArrowUpRight className="h-4 w-4" />
                   <span>Verify on TradingView</span>

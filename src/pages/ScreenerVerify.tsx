@@ -503,7 +503,7 @@ const ScreenerVerify: React.FC = () => {
           style={{ left: `${bottomPct}%`, transform: 'translateX(-50%)' }}
         >
           <div className="h-4 w-1 bg-slate-600" />
-          <span className="text-[8px] font-black text-[var(--text-muted)] mt-1">FLOOR (₹{Math.round(bottom)})</span>
+          <span className="text-[9px] font-bold text-[var(--text-muted)] mt-1">FLOOR (₹{Math.round(bottom)})</span>
         </div>
 
         <div 
@@ -511,7 +511,7 @@ const ScreenerVerify: React.FC = () => {
           style={{ left: `${entryPct}%`, transform: 'translateX(-50%)' }}
         >
           <div className="h-4 w-1.5 bg-emerald-500" />
-          <span className="text-[8px] font-black text-emerald-400 mt-1">ENTRY (₹{Math.round(entry)})</span>
+          <span className="text-[9px] font-bold text-emerald-400 mt-1">ENTRY (₹{Math.round(entry)})</span>
         </div>
 
         <div 
@@ -519,7 +519,7 @@ const ScreenerVerify: React.FC = () => {
           style={{ left: `${targetPct}%`, transform: 'translateX(-50%)' }}
         >
           <div className="h-4 w-1.5 bg-blue-500" />
-          <span className="text-[8px] font-black text-blue-400 mt-1">TARGET (₹{Math.round(target)})</span>
+          <span className="text-[9px] font-bold text-blue-400 mt-1">TARGET (₹{Math.round(target)})</span>
         </div>
 
         {/* Pin */}
@@ -527,7 +527,7 @@ const ScreenerVerify: React.FC = () => {
           className="absolute -top-4 flex flex-col items-center z-10 transition-all duration-300"
           style={{ left: `${currentPct}%`, transform: 'translateX(-50%)' }}
         >
-          <div className="px-2 py-0.5 rounded bg-blue-600 text-[8px] font-black text-[var(--text-primary)] shadow-md">
+          <div className="px-2 py-0.5 rounded bg-blue-600 text-[9px] font-bold text-[var(--text-primary)] shadow-md">
             ₹{Math.round(price)}
           </div>
           <div className="w-2.5 h-2.5 rounded-full bg-[var(--bg-primary)] border-2 border-blue-600 mt-0.5" />
@@ -559,18 +559,18 @@ const ScreenerVerify: React.FC = () => {
               <h1 className="text-lg font-black tracking-tight uppercase italic flex items-center gap-1.5 text-[var(--text-primary)]">
                 MarketBeacon <span className="text-blue-500">Trust Matrix</span>
               </h1>
-              <p className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-widest">Screener Verification Workspace</p>
+              <p className="text-[11px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider">Screener Verification Workspace</p>
             </div>
           </Link>
         </div>
 
         {/* Global Strategy Picker */}
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest hidden sm:inline">Scanner Model:</span>
+          <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider hidden sm:inline">Scanner Model:</span>
           <select
             value={strategyId}
             onChange={(e) => setStrategyId(e.target.value)}
-            className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider border outline-none bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-secondary)]"
+            className="px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border outline-none bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-secondary)]"
           >
             {Object.entries(STRATEGY_NAMES).map(([key, name]) => (
               <option key={key} value={key}>{name}</option>
@@ -589,7 +589,7 @@ const ScreenerVerify: React.FC = () => {
           <div className="p-5 rounded-3xl border bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]">
             <div className="flex items-center gap-2 mb-3 border-b border-[var(--border-primary)]/60 pb-2">
               <Layers className="h-4 w-4 text-blue-500" />
-              <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest">Scanner Entry Rules</span>
+              <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Scanner Entry Rules</span>
             </div>
             <ul className="space-y-2">
               {(STRATEGY_RULES[strategyId] || []).map((rule, idx) => (
@@ -604,8 +604,8 @@ const ScreenerVerify: React.FC = () => {
           {/* Card 2: Matching stocks list */}
           <div className="p-5 rounded-3xl border flex flex-col bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-extrabold text-[var(--text-tertiary)] uppercase tracking-widest">Scanned Matches</span>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <span className="text-xs font-extrabold text-[var(--text-tertiary)] uppercase tracking-wider">Scanned Matches</span>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 {filteredStocks.length} Stocks
               </span>
             </div>
@@ -625,7 +625,7 @@ const ScreenerVerify: React.FC = () => {
             {loadingList ? (
               <div className="py-12 text-center text-[var(--text-muted)] space-y-2">
                 <RefreshCw className="h-5 w-5 animate-spin mx-auto text-blue-500" />
-                <p className="text-[10px] font-bold uppercase tracking-wider">Loading Screener...</p>
+                <p className="text-xs font-bold uppercase tracking-wider">Loading Screener...</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
@@ -640,17 +640,17 @@ const ScreenerVerify: React.FC = () => {
                     }`}
                   >
                     <div>
-                      <span className="text-xs font-black block">{item.symbol}</span>
-                      <span className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-wider truncate block max-w-[150px]">
+                      <span className="text-xs font-bold block">{item.symbol}</span>
+                      <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider truncate block max-w-[150px]">
                         {item.reason}
                       </span>
                     </div>
                     {item.isBuyZone ? (
-                      <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                         BUY ZONE
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)]">
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)]">
                         HOLD
                       </span>
                     )}
@@ -673,7 +673,7 @@ const ScreenerVerify: React.FC = () => {
             {/* Chart controls */}
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black tracking-wider uppercase text-[var(--text-tertiary)]">TradingView Verified Chart</span>
+                <span className="text-xs font-bold tracking-wider uppercase text-[var(--text-tertiary)]">TradingView Verified Chart</span>
                 {loadingDetail && <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />}
               </div>
 
@@ -685,7 +685,7 @@ const ScreenerVerify: React.FC = () => {
                     <button
                       key={tf}
                       onClick={() => setTimeframe(tf)}
-                      className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase transition-all ${
+                      className={`px-2 py-0.5 rounded-lg text-xs font-bold uppercase transition-all ${
                       timeframe === tf
                         ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-tertiary)]'
@@ -700,7 +700,7 @@ const ScreenerVerify: React.FC = () => {
                 <div className="flex rounded-xl p-0.5 border bg-[var(--bg-primary)] border-[var(--border-primary)]/80">
                   <button
                     onClick={() => setChartType('candles')}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-all ${
+                    className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all ${
                       chartType === 'candles'
                         ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-tertiary)]'
@@ -710,7 +710,7 @@ const ScreenerVerify: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setChartType('line')}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-all ${
+                    className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all ${
                       chartType === 'line'
                         ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-tertiary)]'
@@ -731,7 +731,7 @@ const ScreenerVerify: React.FC = () => {
               {historyData.length === 0 && !loadingDetail && (
                 <div className="flex flex-col items-center justify-center h-[440px] text-[var(--text-muted)]">
                   <Info className="h-8 w-8 mb-2 text-[var(--text-tertiary)]" />
-                  <p className="text-xs font-black uppercase tracking-widest">No candlestick records available</p>
+                  <p className="text-xs font-bold uppercase tracking-wider">No candlestick records available</p>
                 </div>
               )}
             </div>
@@ -739,14 +739,14 @@ const ScreenerVerify: React.FC = () => {
             {/* Deep link verification bar */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 border-t border-[var(--border-primary)]/50 pt-4">
               <div>
-                <span className="text-[8px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]">Validation Verification Path</span>
-                <p className="text-[10px] font-bold text-[var(--text-tertiary)] mt-0.5">Validate these overlays directly inside your native TradingView charts.</p>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-[var(--text-muted)]">Validation Verification Path</span>
+                <p className="text-xs font-bold text-[var(--text-tertiary)] mt-0.5">Validate these overlays directly inside your native TradingView charts.</p>
               </div>
               <a
                 href={getTvDeepLink()}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-[var(--text-primary)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-blue-600/15 transition-all w-full sm:w-auto justify-center"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] font-extrabold text-xs tracking-wider uppercase shadow-lg shadow-blue-500/20 transition-all w-full sm:w-auto justify-center"
               >
                 <ExternalLink className="h-4 w-4" />
                 <span>Verify on TradingView.com</span>
@@ -761,8 +761,8 @@ const ScreenerVerify: React.FC = () => {
           {/* Card 1: SVG Confidence Dial */}
           <div className="p-5 rounded-3xl border bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]">
             <div className="flex justify-between items-center border-b border-[var(--border-primary)]/60 pb-3 mb-4">
-              <span className="text-[9px] font-extrabold text-[var(--text-tertiary)] uppercase tracking-widest">Verification conviction</span>
-              <span className={`px-2 py-0.5 rounded-full text-[8px] font-black tracking-wider uppercase border border-current/20 ${confidence.bg} ${confidence.color}`}>
+              <span className="text-[11px] font-extrabold text-[var(--text-tertiary)] uppercase tracking-wider">Verification conviction</span>
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase border border-current/20 ${confidence.bg} ${confidence.color}`}>
                 {confidence.level}
               </span>
             </div>
@@ -772,7 +772,7 @@ const ScreenerVerify: React.FC = () => {
             {/* Range progression slider */}
             {fundamentals && activeStrategy && (
               <div className="mt-5 space-y-2">
-                <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest block">Range Progression State</span>
+                <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">Range Progression State</span>
                 {renderRangeSlider()}
               </div>
             )}
@@ -782,7 +782,7 @@ const ScreenerVerify: React.FC = () => {
           <div className="p-5 rounded-3xl border bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]">
             <div className="flex items-center gap-2 mb-4 border-b border-[var(--border-primary)]/60 pb-3">
               <Target className="h-4 w-4 text-blue-500" />
-              <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest">Institutional Targets</span>
+              <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Institutional Targets</span>
             </div>
 
             {loadingDetail || !fundamentals || !activeStrategy ? (
