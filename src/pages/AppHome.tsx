@@ -36,27 +36,27 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, su
 
   return (
     <motion.div
-      whileHover={{ y: -2, scale: 1.02 }}
-      className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between min-h-[100px] transition-all hover:border-[var(--border-secondary)] hover:shadow-lg"
+      whileHover={{ y: -3, scale: 1.02 }}
+      className="card p-5 flex flex-col justify-between min-h-[110px]"
     >
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">{title}</span>
-        <div className={`p-1.5 rounded-lg border ${colors[color]} backdrop-blur-sm`}>
-          <Icon className="h-3.5 w-3.5" />
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">{title}</span>
+        <div className={`p-2 rounded-lg border ${colors[color]} backdrop-blur-sm`}>
+          <Icon className="h-4 w-4" />
         </div>
       </div>
       <div>
-        <div className="text-2xl font-black text-[var(--text-primary)] tracking-tight">{value}</div>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">{value}</div>
+        <div className="flex items-center gap-2 mt-1">
           {change && (
-            <span className={`text-[10px] font-black flex items-center gap-0.5 ${
+            <span className={`text-[11px] font-semibold flex items-center gap-1 ${
               change.positive ? 'text-emerald-400' : 'text-rose-400'
             }`}>
-              {change.positive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {change.positive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
               {change.value}
             </span>
           )}
-          {subtitle && <span className="text-[9px] text-[var(--text-muted)] font-medium">{subtitle}</span>}
+          {subtitle && <span className="text-[10px] text-[var(--text-muted)] font-medium">{subtitle}</span>}
         </div>
       </div>
     </motion.div>
@@ -368,32 +368,32 @@ const AppHome: React.FC = () => {
     <>
       <SEO title="Dashboard | MarketBeacon Pro" description="Your institutional audit command center" />
 
-      <div className="p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-6">
+      <div className="p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-8">
 
         {/* ── Market Indices + Alerts Ticker ── */}
-        <div className="border border-[var(--border-primary)] rounded-xl bg-[var(--bg-secondary)]/50 overflow-hidden">
-          <div className="flex divide-x divide-[var(--border-primary)] overflow-x-auto py-2.5 px-4 whitespace-nowrap scrollbar-none text-[11px] font-black uppercase tracking-wider items-center">
+        <div className="card overflow-hidden">
+          <div className="flex divide-x divide-[var(--border-primary)] overflow-x-auto py-3 px-4 whitespace-nowrap scrollbar-none text-xs font-bold uppercase tracking-wider items-center">
             {indices.map((idx, i) => (
-              <div key={i} className="flex items-center gap-2.5 px-5">
+              <div key={i} className="flex items-center gap-3 px-5">
                 <span className="text-[var(--text-secondary)]">{idx.name}</span>
                 <span className="font-bold text-[var(--text-primary)]">{idx.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                <span className={`flex items-center gap-0.5 text-[10px] font-black ${idx.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {idx.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                <span className={`flex items-center gap-0.5 text-[11px] font-semibold ${idx.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {idx.change >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                   {idx.change >= 0 ? '+' : ''}{idx.change.toFixed(2)}%
                 </span>
               </div>
             ))}
             {indices.length === 0 && (
-              <div className="flex items-center gap-2 text-[var(--text-muted)] text-[10px] px-5">
-                <RefreshCw className="w-3 h-3 animate-spin" /> Loading market data...
+              <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs px-5">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Loading market data...
               </div>
             )}
             {notifications.length > 0 && (
               <>
                 <div className="flex items-center gap-1.5 px-5 shrink-0">
-                  <Bell className="w-3.5 h-3.5 text-amber-400" />
+                  <Bell className="w-4 h-4 text-amber-400" />
                 </div>
-                <div className="flex-1 min-w-0 overflow-hidden relative h-4 px-5">
+                <div className="flex-1 min-w-0 overflow-hidden relative h-5 px-5">
                   <motion.div
                     key={notifIndex}
                     initial={{ y: 12, opacity: 0 }}
@@ -402,7 +402,7 @@ const AppHome: React.FC = () => {
                     transition={{ duration: 0.3 }}
                     className="absolute inset-0 flex items-center"
                   >
-                    <span className="text-[10px] font-bold text-[var(--text-primary)] truncate">
+                    <span className="text-xs font-semibold text-[var(--text-primary)] truncate">
                       {notifications[notifIndex]?.title && (
                         <span className="text-amber-400 mr-1.5">{notifications[notifIndex].title}:</span>
                       )}
@@ -411,7 +411,7 @@ const AppHome: React.FC = () => {
                   </motion.div>
                 </div>
                 {notifications.filter(n => n.unread).length > 0 && (
-                  <span className="text-[8px] font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full shrink-0 mr-3">
+                  <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full shrink-0 mr-3">
                     {notifications.filter(n => n.unread).length} new
                   </span>
                 )}
@@ -423,10 +423,10 @@ const AppHome: React.FC = () => {
         {/* ── Header ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--text-primary)]">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
               Welcome{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
             </h1>
-            <p className="text-xs text-[var(--text-muted)] font-medium mt-1 flex items-center gap-2">
+            <p className="text-sm text-[var(--text-muted)] font-medium mt-1 flex items-center gap-2">
               <span className={`w-1.5 h-1.5 rounded-full ${
                 tierColor === 'amber' ? 'bg-amber-400' : tierColor === 'blue' ? 'bg-blue-400' : 'bg-emerald-400'
               }`} />
@@ -435,14 +435,14 @@ const AppHome: React.FC = () => {
           </div>
           <Link
             to="/screener"
-            className="hidden md:flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-widest px-5 py-3 rounded-xl transition-all"
+            className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-[11px] font-bold uppercase tracking-wider px-5 py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20"
           >
-            <Search className="w-3 h-3" /> New Audit
+            <Search className="w-3.5 h-3.5" /> New Audit
           </Link>
         </div>
 
         {/* ── Stats Grid ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             title="Portfolio Value"
             value={portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalCurrent) : '₹0'}
@@ -482,22 +482,22 @@ const AppHome: React.FC = () => {
         </div>
 
         {/* ── Two Column: Buy Zones + Portfolio ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* ── Active Buy Zone Cards ── */}
           <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-1.5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[11px] font-bold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> Active Buy Zones
               </h2>
-              <Link to="/alpha-hub" className="text-[8px] font-black text-blue-400 uppercase tracking-widest hover:text-blue-300 transition-colors flex items-center gap-1">
-                View All <ChevronRight className="w-2.5 h-2.5" />
+              <Link to="/alpha-hub" className="text-[10px] font-bold text-blue-400 uppercase tracking-wider hover:text-blue-300 transition-colors flex items-center gap-1">
+                View All <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
             {loadingZones ? (
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-3">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-4 animate-pulse">
+                  <div key={i} className="card p-4 animate-pulse">
                     <div className="h-4 w-16 bg-[var(--bg-tertiary)] rounded mb-3" />
                     <div className="h-6 w-24 bg-[var(--bg-tertiary)] rounded mb-2" />
                     <div className="h-3 w-32 bg-[var(--bg-tertiary)] rounded" />
@@ -505,72 +505,71 @@ const AppHome: React.FC = () => {
                 ))}
               </div>
             ) : buyZones.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-3">
                 {buyZones.map((zone, i) => (
                   <motion.button
                     key={zone.symbol}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    whileHover={{ y: -1 }}
+                    whileHover={{ y: -2 }}
                     onClick={() => navigate(`/analysis/${zone.symbol}`)}
-                    className="bg-[var(--bg-secondary)]/50 border border-emerald-500/20 rounded-xl p-4 text-left hover:border-emerald-500/40 transition-all group relative overflow-hidden"
+                    className="card p-4 text-left group cursor-pointer"
                   >
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-bl-full" />
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-black text-[var(--text-primary)] group-hover:text-emerald-400 transition-colors">{zone.symbol}</span>
-                      <span className="text-[8px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">BUY</span>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-bold text-[var(--text-primary)] group-hover:text-emerald-400 transition-colors">{zone.symbol}</span>
+                      <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">BUY</span>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[9px]">
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-[10px]">
                         <span className="text-[var(--text-muted)]">Entry</span>
                         <span className="font-bold text-[var(--text-secondary)]">₹{zone.entryPrice.toLocaleString('en-IN')}</span>
                       </div>
-                      <div className="flex justify-between text-[9px]">
+                      <div className="flex justify-between text-[10px]">
                         <span className="text-[var(--text-muted)]">Target</span>
                         <span className="font-bold text-blue-400">₹{zone.target.toLocaleString('en-IN')}</span>
                       </div>
-                      <div className="flex justify-between text-[9px]">
+                      <div className="flex justify-between text-[10px]">
                         <span className="text-[var(--text-muted)]">Gain</span>
                         <span className="font-bold text-emerald-400">
                           +{(((zone.target - zone.entryPrice) / zone.entryPrice) * 100).toFixed(1)}%
                         </span>
                       </div>
                     </div>
-                    <div className="mt-2 pt-2 border-t border-[var(--border-primary)]/40 flex items-center gap-1 text-[7px] font-black uppercase tracking-wider text-[var(--text-muted)]">
-                      <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" /> {zone.strategy}
+                    <div className="mt-3 pt-2 border-t border-[var(--border-primary)]/40 flex items-center gap-1 text-[9px] font-semibold text-[var(--text-muted)]">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400" /> {zone.strategy}
                     </div>
                   </motion.button>
                 ))}
               </div>
             ) : (
-              <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-6 text-center">
+              <div className="card p-6 text-center">
                 <Info className="w-5 h-5 text-[var(--text-muted)] mx-auto mb-2" />
-                <p className="text-[11px] font-bold text-[var(--text-muted)]">No active buy zones right now</p>
-                <p className="text-[8px] text-[var(--text-muted)] mt-1">Check back after the next market scan</p>
+                <p className="text-xs font-semibold text-[var(--text-muted)]">No active buy zones right now</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">Check back after the next market scan</p>
               </div>
             )}
           </div>
 
           {/* ── Portfolio Allocation + Recent Activity ── */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Allocation */}
             <div>
-              <h2 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 flex items-center gap-1.5">
+              <h2 className="text-[11px] font-bold text-[var(--text-primary)] uppercase tracking-wider mb-4 flex items-center gap-1.5">
                 <PieChart className="w-3.5 h-3.5 text-blue-400" /> Portfolio
               </h2>
-              <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-4 space-y-3">
+              <div className="card p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Invested</span>
-                  <span className="text-sm font-black text-[var(--text-primary)]">{portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalInvested) : '₹0'}</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">Invested</span>
+                  <span className="text-sm font-bold text-[var(--text-primary)]">{portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalInvested) : '₹0'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Current</span>
-                  <span className="text-sm font-black text-[var(--text-primary)]">{portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalCurrent) : '--'}</span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">Current</span>
+                  <span className="text-sm font-bold text-[var(--text-primary)]">{portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalCurrent) : '--'}</span>
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-[var(--border-primary)]/40">
-                  <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-wider">P&L</span>
-                  <span className={`text-sm font-black flex items-center gap-1 ${
+                  <span className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">P&L</span>
+                  <span className={`text-sm font-bold flex items-center gap-1 ${
                     portfolioSummary.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'
                   }`}>
                     {portfolioSummary.totalPnL >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
@@ -579,7 +578,7 @@ const AppHome: React.FC = () => {
                       : '--'}
                   </span>
                 </div>
-                <div className="text-[8px] text-[var(--text-muted)] font-medium space-y-0.5 pt-1">
+                <div className="text-[9px] text-[var(--text-muted)] font-medium space-y-0.5 pt-1">
                   <span className="flex justify-between">
                     <span>Unrealized</span>
                     <span className={portfolioSummary.unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
@@ -595,28 +594,28 @@ const AppHome: React.FC = () => {
                 </div>
                 {portfolioSummary.totalInvested > 0 && (
                   <div className="pt-2">
-                    <div className="flex justify-between text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-wider mb-1.5">
+                    <div className="flex justify-between text-[9px] text-[var(--text-muted)] font-semibold uppercase tracking-wider mb-1.5">
                       <span>Allocation</span>
                       <span>{portfolioCount} holdings</span>
                     </div>
                     <div className="h-2 rounded-full bg-[var(--bg-tertiary)] overflow-hidden flex">
                       <div
-                        className="h-full bg-blue-500 transition-all"
+                        className="h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all"
                         style={{ width: `${Math.max(portfolioSummary.curCapBreakdown.large, portfolioSummary.curCapBreakdown.large > 0 ? 4 : 0)}%` }}
                         title={`Large Cap ${portfolioSummary.curCapBreakdown.large.toFixed(0)}%`}
                       />
                       <div
-                        className="h-full bg-amber-500 transition-all"
+                        className="h-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all"
                         style={{ width: `${Math.max(portfolioSummary.curCapBreakdown.mid, portfolioSummary.curCapBreakdown.mid > 0 ? 4 : 0)}%` }}
                         title={`Mid Cap ${portfolioSummary.curCapBreakdown.mid.toFixed(0)}%`}
                       />
                       <div
-                        className="h-full bg-emerald-500 transition-all"
+                        className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all"
                         style={{ width: `${Math.max(portfolioSummary.curCapBreakdown.small, portfolioSummary.curCapBreakdown.small > 0 ? 4 : 0)}%` }}
                         title={`Small/Micro Cap ${portfolioSummary.curCapBreakdown.small.toFixed(0)}%`}
                       />
                     </div>
-                    <div className="flex justify-between text-[7px] text-[var(--text-muted)] font-medium mt-1">
+                    <div className="flex justify-between text-[9px] text-[var(--text-muted)] font-medium mt-1">
                       <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Large {portfolioSummary.curCapBreakdown.large.toFixed(0)}%</span>
                       <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Mid {portfolioSummary.curCapBreakdown.mid.toFixed(0)}%</span>
                       <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Small {portfolioSummary.curCapBreakdown.small.toFixed(0)}%</span>
@@ -625,7 +624,7 @@ const AppHome: React.FC = () => {
                 )}
                 <Link
                   to="/portfolio"
-                  className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-blue-600/10 border border-blue-500/20 text-blue-400 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-blue-600/20 transition-all"
+                  className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-blue-600/10 border border-blue-500/20 text-blue-400 rounded-lg text-[9px] font-bold uppercase tracking-wider hover:bg-blue-600/20 transition-all"
                 >
                   View Wealth Desk <ArrowRight className="w-3 h-3" />
                 </Link>
@@ -634,7 +633,7 @@ const AppHome: React.FC = () => {
 
             {/* Recent Activity */}
             <div>
-              <h2 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest mb-3">Recent Activity</h2>
+              <h2 className="text-[11px] font-bold text-[var(--text-primary)] uppercase tracking-wider mb-4">Recent Activity</h2>
               <div className="space-y-2">
                 {(() => {
                   const openItems = watchlist.slice(0, 2).map((item) => {
@@ -657,11 +656,11 @@ const AppHome: React.FC = () => {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}
                       onClick={() => navigate(`/analysis/${item.symbol}`)}
-                      className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl px-3 py-2 cursor-pointer hover:border-blue-500/30 transition-all group"
+                      className="card py-2.5 px-3 cursor-pointer"
                     >
-                      <div className="flex items-center gap-2 text-[9px]">
-                        <span className="text-xs font-black text-[var(--text-primary)] group-hover:text-blue-400 transition-colors shrink-0">{item.symbol}</span>
-                        <span className={`font-black shrink-0 ${
+                      <div className="flex items-center gap-2 text-[10px]">
+                        <span className="text-sm font-bold text-[var(--text-primary)] group-hover:text-blue-400 transition-colors shrink-0">{item.symbol}</span>
+                        <span className={`font-semibold shrink-0 ${
                           item.pct >= 5 ? 'text-emerald-400' :
                           item.pct >= 0 ? 'text-blue-400' :
                           'text-rose-400'
@@ -679,15 +678,15 @@ const AppHome: React.FC = () => {
                               ? ` · CMP ₹${stockPrices[item.symbol].toLocaleString('en-IN')}`
                               : ''}
                         </span>
-                        <span className={`font-bold shrink-0 ml-auto ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <span className={`font-semibold shrink-0 ml-auto ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {item.pnl >= 0 ? '+' : '-'}{fmt(Math.abs(item.pnl))}
                         </span>
                       </div>
                     </motion.div>
                   )) : (
-                    <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-4 text-center">
-                      <p className="text-[10px] text-[var(--text-muted)] font-medium">No activity yet</p>
-                      <Link to="/screener" className="text-[8px] font-black text-blue-400 mt-1 inline-block hover:text-blue-300 transition-colors">
+                    <div className="card p-4 text-center">
+                      <p className="text-xs text-[var(--text-muted)] font-medium">No activity yet</p>
+                      <Link to="/screener" className="text-[10px] font-bold text-blue-400 mt-1 inline-block hover:text-blue-300 transition-colors">
                         Start screening stocks →
                       </Link>
                     </div>
@@ -700,20 +699,20 @@ const AppHome: React.FC = () => {
 
         {/* ── Quick Actions ── */}
         <div>
-          <h2 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest mb-3">Quick Actions</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          <h2 className="text-[11px] font-bold text-[var(--text-primary)] uppercase tracking-wider mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {quickLinks.map((link, i) => (
               <motion.button
                 key={i}
-                whileHover={{ y: -1 }}
+                whileHover={{ y: -2 }}
                 onClick={() => navigate(link.path)}
-                className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-xl p-4 text-left hover:border-blue-500/30 transition-all group"
+                className="card p-4 text-left cursor-pointer"
               >
-                <div className={`w-8 h-8 rounded-lg ${link.bg} ${link.border} flex items-center justify-center mb-2`}>
-                  <link.icon className={`w-4 h-4 ${link.iconCls}`} />
+                <div className={`w-9 h-9 rounded-lg ${link.bg} ${link.border} flex items-center justify-center mb-3`}>
+                  <link.icon className={`w-4.5 h-4.5 ${link.iconCls}`} />
                 </div>
-                <div className="text-[11px] font-black text-[var(--text-primary)] group-hover:text-blue-400 transition-colors">{link.label}</div>
-                <div className="text-[8px] text-[var(--text-muted)] font-medium mt-0.5">{link.desc}</div>
+                <div className="text-xs font-bold text-[var(--text-primary)] group-hover:text-blue-400 transition-colors">{link.label}</div>
+                <div className="text-[9px] text-[var(--text-muted)] font-medium mt-0.5">{link.desc}</div>
               </motion.button>
             ))}
           </div>
@@ -724,20 +723,20 @@ const AppHome: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-5 rounded-2xl bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/10 border border-blue-500/20 flex items-center justify-between flex-wrap gap-3"
+            className="p-6 rounded-2xl bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/10 border border-blue-500/20 flex items-center justify-between flex-wrap gap-4"
           >
             <div>
-              <h3 className="text-sm font-black text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+              <h3 className="text-base font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
                 <Star className="w-4 h-4 text-amber-400" />
                 Unlock Alpha Tier
               </h3>
-              <p className="text-[10px] text-[var(--text-muted)] font-medium mt-0.5">Get ABCD tranche entries, advanced strategies, and real-time alerts.</p>
+              <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5">Get ABCD tranche entries, advanced strategies, and real-time alerts.</p>
             </div>
             <Link
               to="/license-desk"
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-widest px-5 py-3 rounded-xl transition-all shrink-0"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-[11px] font-bold uppercase tracking-wider px-5 py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20 shrink-0"
             >
-              Upgrade <ArrowRight className="w-3 h-3" />
+              Upgrade <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </motion.div>
         )}
@@ -746,9 +745,9 @@ const AppHome: React.FC = () => {
         <div className="md:hidden">
           <Link
             to="/screener"
-            className="flex items-center justify-center gap-2 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest px-5 py-4 rounded-xl w-full"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-bold uppercase tracking-wider px-5 py-4 rounded-xl w-full shadow-lg shadow-blue-500/20"
           >
-            <Search className="w-3.5 h-3.5" /> New Audit
+            <Search className="w-4 h-4" /> New Audit
           </Link>
         </div>
       </div>
