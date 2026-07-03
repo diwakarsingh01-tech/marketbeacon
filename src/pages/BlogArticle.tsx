@@ -253,7 +253,7 @@ const BlogArticlePage: React.FC = () => {
       {/* CTA */}
       <section className="border-t border-slate-800 py-16 px-6 text-center bg-slate-900/30">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.4em] mb-4">Apply This Knowledge</p>
-        <h3 className="text-2xl md:text-4xl font-bold text-white tracking-tighter mb-3">
+        <h3 className="text-2xl md:text-4xl font-black text-white tracking-tighter mb-3">
           Start Using the System. <span className="text-blue-400">Free.</span>
         </h3>
         <p className="text-slate-500 text-sm mb-8 max-w-md mx-auto">
