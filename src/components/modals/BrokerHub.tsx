@@ -113,8 +113,8 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                     <Globe className="h-5 w-5 text-blue-400" />
                  </div>
                  <div>
-                    <h2 className="text-xl font-black tracking-tight uppercase italic leading-none">Broker Hub</h2>
-                    <p className="text-slate-500 text-[8px] font-black uppercase tracking-[0.3em] mt-1">Institutional Import</p>
+                    <h2 className="text-xl font-bold tracking-tight uppercase italic leading-none">Broker Hub</h2>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.3em] mt-1">Institutional Import</p>
                  </div>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white">
@@ -128,7 +128,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
            {step === 'upload' && (
               <button 
                 onClick={() => setStep('selection')}
-                className="text-[9px] font-black uppercase tracking-widest text-blue-600 flex items-center mb-6 hover:translate-x-[-4px] transition-transform"
+                className="text-xs font-bold uppercase tracking-wider text-blue-600 flex items-center mb-6 hover:translate-x-[-4px] transition-transform"
               >
                 <ChevronRight className="h-3 w-3 rotate-180 mr-1" /> Back to Selection
               </button>
@@ -137,8 +137,8 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
            {step === 'selection' ? (
               <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
                  <div className="mb-6">
-                    <h3 className="text-lg font-black text-slate-900 uppercase italic leading-none">Select Broker</h3>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2">Choose your environment to import holdings</p>
+                    <h3 className="text-lg font-bold text-slate-900 uppercase italic leading-none">Select Broker</h3>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-2">Choose your environment to import holdings</p>
                  </div>
 
                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pr-1 custom-scrollbar pb-2">
@@ -161,7 +161,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                    onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = 'none';
                                     const fallback = document.createElement('div');
-                                    fallback.className = `w-10 h-10 rounded-xl ${broker.color} flex items-center justify-center font-black text-slate-500 uppercase text-xs`;
+                                    fallback.className = `w-10 h-10 rounded-xl ${broker.color} flex items-center justify-center font-bold text-slate-500 uppercase text-xs`;
                                     fallback.innerText = broker.name[0];
                                     (e.target as HTMLImageElement).parentElement!.appendChild(fallback);
                                  }}
@@ -172,8 +172,8 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                                </div>
                              )}
                           </div>
-                          <span className="text-[9px] font-black text-slate-900 uppercase tracking-tight text-center">{broker.name}</span>
-                          {broker.id === 'other' && <div className="absolute top-2 right-2 px-2 py-0.5 bg-blue-100 text-blue-600 text-[5px] font-black rounded-full uppercase">Universal</div>}
+                          <span className="text-xs font-bold text-slate-900 uppercase tracking-tight text-center">{broker.name}</span>
+                          {broker.id === 'other' && <div className="absolute top-2 right-2 px-2 py-0.5 bg-blue-100 text-blue-600 text-xs font-bold rounded-full uppercase">Universal</div>}
                        </button>
                     ))}
                  </div>
@@ -185,8 +185,8 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                   </div>
                   
                   <div className="space-y-2 mb-6">
-                    <h3 className="text-xl font-black text-slate-900 uppercase italic leading-none">{BROKERS.find(b => b.id === selectedBroker)?.name}</h3>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest max-w-[240px] mx-auto leading-relaxed">
+                    <h3 className="text-xl font-bold text-slate-900 uppercase italic leading-none">{BROKERS.find(b => b.id === selectedBroker)?.name}</h3>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider max-w-[240px] mx-auto leading-relaxed">
                        Drop your holdings CSV file here to start institutional audit.
                     </p>
                  </div>
@@ -194,7 +194,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                  <div className="w-full max-w-sm space-y-4">
                     {/* Import Strategy Options */}
                     <div className="flex flex-col space-y-2 text-left">
-                       <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">Import Strategy</span>
+                       <span className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Import Strategy</span>
                        <div className="grid grid-cols-1 gap-2.5">
                           {/* Merge Option */}
                           <button 
@@ -212,8 +212,8 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                               {importMode === 'merge' && <Check className="h-2.5 w-2.5" />}
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Merge Portfolio</span>
-                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 leading-normal">
+                              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Merge Portfolio</span>
+                              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-0.5 leading-normal">
                                 Keep current positions and merge the newly uploaded holdings.
                               </span>
                             </div>
@@ -235,8 +235,8 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                               {importMode === 'overwrite' && <Check className="h-2.5 w-2.5" />}
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Remove Old & Upload New</span>
-                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 leading-normal">
+                              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Remove Old & Upload New</span>
+                              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-0.5 leading-normal">
                                 Delete all existing positions and upload new holdings.
                               </span>
                             </div>
@@ -253,16 +253,16 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                        />
                        <div className="py-6 border-2 border-dashed border-slate-200 rounded-[2rem] group-hover:border-blue-400 group-hover:bg-blue-50/30 transition-all flex flex-col items-center space-y-2">
                           <Upload className={`h-6 w-6 ${isParsing ? 'animate-bounce text-blue-600' : 'text-slate-300'}`} />
-                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                             {isParsing ? 'Processing...' : 'Select CSV'}
-                          </span>
+<span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                              {isParsing ? 'Processing...' : 'Select CSV'}
+                           </span>
                        </div>
                     </label>
 
                     {error && (
                        <div className="p-3 bg-red-50 rounded-2xl flex items-start space-x-2 text-left border border-red-100">
                           <AlertCircle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
-                          <p className="text-[9px] font-bold text-red-600 uppercase leading-relaxed">{error}</p>
+                          <p className="text-[11px] font-bold text-red-600 uppercase leading-relaxed">{error}</p>
                        </div>
                     )}
                  </div>
@@ -270,7 +270,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                  <div className="mt-8 flex flex-col items-center space-y-1 text-slate-300">
                     <div className="flex items-center space-x-2">
                        <ShieldCheck className="h-3 w-3" />
-                       <span className="text-[8px] font-black uppercase tracking-widest">Local-Only Secure Parsing</span>
+                       <span className="text-xs font-bold uppercase tracking-wider">Local-Only Secure Parsing</span>
                     </div>
                  </div>
               </div>

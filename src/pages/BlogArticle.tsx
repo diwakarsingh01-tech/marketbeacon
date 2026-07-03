@@ -162,12 +162,12 @@ const BlogArticlePage: React.FC = () => {
           <BrandLogo variant="dark" size={28} />
         </Link>
         <div className="flex items-center gap-4">
-          <Link to="/blog" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors hidden md:flex items-center gap-1.5">
+          <Link to="/blog" className="text-xs font-bold text-slate-500 hover:text-white uppercase tracking-wider transition-colors hidden md:flex items-center gap-1.5">
             <ArrowLeft className="w-3 h-3" /> All Articles
           </Link>
           <Link
             to="/login"
-            className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-colors"
+            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-lg shadow-blue-500/20"
           >
             Launch Terminal
           </Link>
@@ -183,17 +183,17 @@ const BlogArticlePage: React.FC = () => {
 
       {/* Article Header */}
       <header className="py-16 px-6 md:px-10 max-w-[780px] mx-auto">
-        <Link to="/blog" className="inline-flex items-center gap-2 text-[9px] font-black text-slate-500 hover:text-blue-400 uppercase tracking-widest transition-colors mb-8">
+        <Link to="/blog" className="inline-flex items-center gap-2 text-[11px] font-bold text-slate-500 hover:text-blue-400 uppercase tracking-wider transition-colors mb-8">
           <ArrowLeft className="w-3 h-3" /> Back to Blog
         </Link>
         <div className="flex items-center gap-3 mb-6">
-          <span className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${article.tagColor}`}>
+          <span className={`px-3 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wider ${article.tagColor}`}>
             {article.tag}
           </span>
-          <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+          <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
             <Clock className="w-3 h-3" />{article.readTime}
           </span>
-          <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{article.date}</span>
+          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{article.date}</span>
         </div>
         <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight mb-6">
           {article.title}
@@ -224,7 +224,7 @@ const BlogArticlePage: React.FC = () => {
 
         {/* Key Takeaways */}
         <div className="mt-12 bg-blue-500/5 border border-blue-500/20 rounded-[2rem] p-8">
-          <h3 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-5">Key Takeaways</h3>
+          <h3 className="text-xs font-bold text-blue-400 uppercase tracking-[0.3em] mb-5">Key Takeaways</h3>
           <ul className="space-y-3">
             {(article.keyTakeaways || []).map((point, i) => (
               <li key={i} className="flex items-start gap-3">
@@ -239,12 +239,12 @@ const BlogArticlePage: React.FC = () => {
 
         {/* Related Article */}
         <div className="mt-10">
-          <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">Read Next</p>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em] mb-4">Read Next</p>
           <Link
             to={`/blog/${article.relatedSlug}`}
             className="group flex items-center justify-between bg-slate-900/50 border border-slate-800 rounded-[1.5rem] p-6 hover:border-slate-600 transition-all"
           >
-            <span className="text-sm font-black text-white group-hover:text-blue-300 transition-colors">{article.relatedTitle}</span>
+            <span className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">{article.relatedTitle}</span>
             <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
           </Link>
         </div>
@@ -252,16 +252,16 @@ const BlogArticlePage: React.FC = () => {
 
       {/* CTA */}
       <section className="border-t border-slate-800 py-16 px-6 text-center bg-slate-900/30">
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4">Apply This Knowledge</p>
-        <h3 className="text-2xl md:text-4xl font-black text-white tracking-tighter mb-3">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.4em] mb-4">Apply This Knowledge</p>
+        <h3 className="text-2xl md:text-4xl font-bold text-white tracking-tighter mb-3">
           Start Using the System. <span className="text-blue-400">Free.</span>
         </h3>
         <p className="text-slate-500 text-sm mb-8 max-w-md mx-auto">
-          Live ABCD zones, 100-point audit scores, and smart money tracking — all in one terminal.
+          Live ABCD zones, 100-point audit scores, and smart money tracking &mdash; all in one terminal.
         </p>
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-blue-500 hover:scale-105 transition-all shadow-xl shadow-blue-900/30"
+          className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-bold uppercase tracking-wider text-sm hover:scale-105 transition-all shadow-xl shadow-blue-900/30 shadow-lg shadow-blue-500/20"
         >
           Launch Terminal Free <ArrowRight className="w-4 h-4" />
         </Link>

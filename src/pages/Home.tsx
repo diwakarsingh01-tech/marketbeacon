@@ -71,7 +71,7 @@ const EmailCapture: React.FC = () => {
         <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
           <CheckCircle className="w-8 h-8 text-emerald-400" />
         </div>
-        <h4 className="text-lg font-black text-[var(--text-primary)] tracking-tight">Request Saved!</h4>
+        <h4 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">Request Saved!</h4>
         <p className="text-[var(--text-muted)] text-sm max-w-xs mx-auto">
           We have saved your request. The ABCD Tranche Guide + Audit Checklist PDF will be delivered to your email shortly.
         </p>
@@ -110,7 +110,7 @@ const EmailCapture: React.FC = () => {
         id="email-lead-submit"
         type="submit"
         disabled={submitting}
-        className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-[var(--text-primary)] rounded-2xl font-black uppercase tracking-widest text-sm transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 shadow-xl shadow-blue-900/30"
+        className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-[var(--text-primary)] rounded-2xl font-bold uppercase tracking-wider text-sm transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
       >
         {submitting ? (
           <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending...</span>
@@ -286,7 +286,7 @@ const HomePage: React.FC = () => {
             "ITC: Zero-Debt High-SM Qualified",
             "BAJAJ AUTO: 52W High Momentum",
           ].map((text, i) => (
-            <div key={i} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+            <div key={i} className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
               <ShieldCheck className="w-3 h-3" />
               <span>{text}</span>
             </div>
@@ -300,7 +300,7 @@ const HomePage: React.FC = () => {
             "ITC: Zero-Debt High-SM Qualified",
             "BAJAJ AUTO: 52W High Momentum",
           ].map((text, i) => (
-            <div key={`d-${i}`} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)] opacity-80">
+            <div key={`d-${i}`} className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] opacity-80">
               <ShieldCheck className="w-3 h-3" />
               <span>{text}</span>
             </div>
@@ -314,22 +314,22 @@ const HomePage: React.FC = () => {
            <BrandLogo variant="dark" size={30} />
         </Link>
         <div className="hidden md:flex items-center space-x-6">
-           <Link to="/blog" className="text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-widest transition-colors flex items-center gap-1.5">
-              Blog <span className="text-[6px] font-black text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">NEW</span>
+           <Link to="/blog" className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors flex items-center gap-1.5">
+              Blog <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">NEW</span>
             </Link>
-            <Link to="/license-desk" className="text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-widest transition-colors">
+            <Link to="/license-desk" className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors">
               Pricing
             </Link>
            <div className="flex items-center space-x-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">31,402 Active Traders</span>
+              <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">31,402 Active Traders</span>
            </div>
-           <Link to="/login" className="px-6 py-2.5 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-xl text-xs font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-all">Launch Terminal</Link>
+           <Link to="/login" className="px-6 py-2.5 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg hover:scale-105 transition-all">Launch Terminal</Link>
         </div>
         {/* Mobile nav */}
         <div className="flex md:hidden items-center gap-3">
-          <Link to="/blog" className="text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-widest transition-colors">Blog</Link>
-          <Link to="/login" className="px-4 py-2 bg-blue-600 text-[var(--text-primary)] rounded-xl text-[10px] font-black uppercase tracking-widest">Login</Link>
+          <Link to="/blog" className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors">Blog</Link>
+          <Link to="/login" className="px-4 py-2 bg-blue-600 text-[var(--text-primary)] rounded-xl text-xs font-bold uppercase tracking-wider">Login</Link>
         </div>
       </nav>
 
@@ -369,7 +369,7 @@ const HomePage: React.FC = () => {
             <div className="space-y-4">
               <div className="inline-flex items-center space-x-2 px-3 py-1.5 bg-blue-500/10 rounded-full border border-blue-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest">Live Charts Terminal</span>
+                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Live Charts Terminal</span>
               </div>
               <h2 className="text-2xl md:text-4xl font-black tracking-tighter leading-none">
                 Institutional-Grade <br /><span className="text-blue-500">Charts & Analytics</span>
@@ -393,10 +393,10 @@ const HomePage: React.FC = () => {
                 ))}
               </ul>
               <div className="flex flex-wrap gap-2 pt-1">
-                <Link to="/charts" className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-500 hover:scale-105 transition-all shadow-lg shadow-blue-900/30">
+                <Link to="/charts" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-xs hover:from-blue-500 hover:to-indigo-500 hover:scale-105 transition-all shadow-lg shadow-blue-500/20">
                   Open Charts Terminal <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
-                <Link to="/education" className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--bg-primary)]/5 border border-white/10 text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-[var(--bg-primary)]/10 transition-all">
+                <Link to="/education" className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--bg-primary)]/5 border border-white/10 text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-xs hover:bg-[var(--bg-primary)]/10 transition-all">
                   Learn Chart Analysis
                 </Link>
               </div>
@@ -411,15 +411,15 @@ const HomePage: React.FC = () => {
                         <svg className="w-3 h-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                       </div>
                       <div>
-                        <p className="text-xs font-black text-[var(--text-primary)]">RELIANCE · NSE</p>
-                        <p className="text-[7px] text-emerald-400 font-black uppercase tracking-widest">LIVE · 2,845.30 <span className="text-emerald-400">+1.2%</span></p>
+                        <p className="text-xs font-bold text-[var(--text-primary)]">RELIANCE · NSE</p>
+                        <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider">LIVE · 2,845.30 <span className="text-emerald-400">+1.2%</span></p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
-                      <div className="w-5 h-5 rounded bg-[var(--bg-tertiary)] flex items-center justify-center text-[6px] font-black text-[var(--text-muted)]">1D</div>
-                      <div className="w-5 h-5 rounded bg-blue-600 text-white flex items-center justify-center text-[6px] font-black">1W</div>
-                      <div className="w-5 h-5 rounded bg-[var(--bg-tertiary)] flex items-center justify-center text-[6px] font-black text-[var(--text-muted)]">1M</div>
-                      <div className="w-5 h-5 rounded bg-[var(--bg-tertiary)] flex items-center justify-center text-[6px] font-black text-[var(--text-muted)]">1Y</div>
+                      <div className="w-5 h-5 rounded bg-[var(--bg-tertiary)] flex items-center justify-center text-xs font-bold text-[var(--text-muted)]">1D</div>
+                      <div className="w-5 h-5 rounded bg-blue-600 text-white flex items-center justify-center text-xs font-bold">1W</div>
+                      <div className="w-5 h-5 rounded bg-[var(--bg-tertiary)] flex items-center justify-center text-xs font-bold text-[var(--text-muted)]">1M</div>
+                      <div className="w-5 h-5 rounded bg-[var(--bg-tertiary)] flex items-center justify-center text-xs font-bold text-[var(--text-muted)]">1Y</div>
                     </div>
                   </div>
                   <div className="h-32 rounded-xl bg-gradient-to-b from-blue-600/[0.02] to-transparent border border-[var(--border-primary)] relative overflow-hidden">
@@ -440,8 +440,8 @@ const HomePage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="absolute top-2 left-2 flex gap-1.5">
-                      <div className="px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[6px] font-black text-blue-400 uppercase tracking-wider">ABCD: B</div>
-                      <div className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-[6px] font-black text-emerald-400 uppercase tracking-wider">Audit: 82/100</div>
+                      <div className="px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-xs font-bold text-blue-400 uppercase tracking-wider">ABCD: B</div>
+                      <div className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-xs font-bold text-emerald-400 uppercase tracking-wider">Audit: 82/100</div>
                     </div>
                   </div>
                   <div className="flex items-end gap-1 h-6 px-1">
@@ -451,7 +451,7 @@ const HomePage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/40 animate-pulse">
+              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider shadow-lg shadow-blue-900/40 animate-pulse">
                 Interactive
               </div>
             </div>
@@ -485,14 +485,14 @@ const HomePage: React.FC = () => {
                     { title: 'Trusted By', val: '31K+', desc: 'Retail & Institutional Traders', col: 'md:col-span-3' },
                 ].map((item, i) => (
                     <div key={i} className={`bg-[var(--bg-secondary)]/80 backdrop-blur-sm p-10 rounded-[2.5rem] border border-[var(--border-primary)] hover:border-blue-500/50 transition-all group ${item.col}`}>
-                        <div className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest mb-4 group-hover:text-blue-400 transition-colors">{item.title}</div>
-                        <div className="text-5xl font-black text-[var(--text-primary)] mb-3 tracking-tighter">{item.val}</div>
+                        <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4 group-hover:text-blue-400 transition-colors">{item.title}</div>
+                        <div className="text-5xl font-bold text-[var(--text-primary)] mb-3 tracking-tighter">{item.val}</div>
                         <div className="text-sm text-[var(--text-muted)] font-medium">{item.desc}</div>
                     </div>
                 ))}
            </div>
            <div className="mt-6 max-w-2xl mx-auto text-center">
-             <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider leading-relaxed">
                Backtest period: Jan 2020–Dec 2025 · Universe: Nifty 500 + Alpha 40 · 1,247 total signals · Slippage: 0.1% per trade · Transaction cost: 0.05% · Results are historical; past performance does not guarantee future returns. For educational reference only.
              </p>
            </div>
@@ -505,7 +505,7 @@ const HomePage: React.FC = () => {
       <section className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center mb-10">
-            <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.4em] mb-2">From Search to Entry</p>
+            <p className="text-xs font-bold text-blue-400 uppercase tracking-[0.4em] mb-2">From Search to Entry</p>
             <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)]">Full <span className="text-blue-400">ABCD Walkthrough</span></h2>
             <p className="text-xs text-[var(--text-muted)] mt-2 max-w-xl mx-auto">Step-by-step example of how a stock moves from search to ABCD zones.</p>
           </div>
@@ -513,36 +513,36 @@ const HomePage: React.FC = () => {
             <div className="flex flex-col md:flex-row items-start gap-6">
               <div className="flex-1 space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-black text-sm">1</div>
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-sm">1</div>
                   <div>
-                    <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Search</p>
-                    <p className="text-xs font-black text-[var(--text-primary)]">Type "TCS" in search → get audit score 90/100</p>
+                    <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">Search</p>
+                    <p className="text-xs font-bold text-[var(--text-primary)]">Type "TCS" in search → get audit score 90/100</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-black text-sm">2</div>
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-sm">2</div>
                   <div>
-                    <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Audit</p>
-                    <p className="text-xs font-black text-[var(--text-primary)]">Score 90/100 → Smart Money 95% → Qualified ✓</p>
+                    <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Audit</p>
+                    <p className="text-xs font-bold text-[var(--text-primary)]">Score 90/100 → Smart Money 95% → Qualified ✓</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-black text-sm">3</div>
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-bold text-sm">3</div>
                   <div>
-                    <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">ABCD Zones</p>
-                    <p className="text-xs font-black text-[var(--text-primary)]">A: ₹2,125 | B: ₹1,913 | C: ₹1,721 | D: ₹1,551</p>
+                    <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">ABCD Zones</p>
+                    <p className="text-xs font-bold text-[var(--text-primary)]">A: ₹2,125 | B: ₹1,913 | C: ₹1,721 | D: ₹1,551</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-black text-sm">4</div>
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-bold text-sm">4</div>
                   <div>
-                    <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Invalidation</p>
-                    <p className="text-xs font-black text-[var(--text-primary)]">If price closes below D zone (−27%), audit retriggers</p>
+                    <p className="text-xs font-bold text-purple-400 uppercase tracking-wider">Invalidation</p>
+                    <p className="text-xs font-bold text-[var(--text-primary)]">If price closes below D zone (−27%), audit retriggers</p>
                   </div>
                 </div>
               </div>
               <div className="flex-1 p-4 bg-[var(--bg-primary)] rounded-2xl border border-[var(--border-primary)]">
-                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Sample Capital Allocation</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Sample Capital Allocation</p>
                 <div className="space-y-2">
                   {[
                     { label: 'Tranche A (25%)', price: '₹2,125', pct: 'w-1/4', color: 'bg-blue-500' },
@@ -551,17 +551,17 @@ const HomePage: React.FC = () => {
                     { label: 'Tranche D (15%)', price: '₹1,551', pct: 'w-[15%]', color: 'bg-purple-500' },
                   ].map(t => (
                     <div key={t.label} className="flex items-center gap-3">
-                      <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest w-28 shrink-0">{t.label}</span>
+                      <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider w-28 shrink-0">{t.label}</span>
                       <div className={`h-2 ${t.pct} ${t.color} rounded-full opacity-70`} />
-                      <span className="text-[9px] font-bold text-[var(--text-muted)]">{t.price}</span>
+                      <span className="text-xs font-bold text-[var(--text-muted)]">{t.price}</span>
                     </div>
                   ))}
                 </div>
-                <p className="text-[8px] font-bold text-amber-400/70 uppercase tracking-widest mt-3 text-center">Educational example. Not investment advice.</p>
+                <p className="text-xs font-bold text-amber-400/70 uppercase tracking-wider mt-3 text-center">Educational example. Not investment advice.</p>
               </div>
             </div>
             <div className="text-center">
-              <Link to="/analysis/TCS" className="inline-flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-[var(--text-primary)] transition-colors">
+              <Link to="/analysis/TCS" className="inline-flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
                 View Live TCS Audit <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -577,14 +577,14 @@ const HomePage: React.FC = () => {
             <p className="text-[var(--text-muted)] font-bold uppercase tracking-[0.2em] text-xs">Comparison of All 10 Institutional Models</p>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-[10px]">
+            <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-[var(--border-primary)]">
-                  <th className="py-3 pr-4 font-black text-[var(--text-primary)]">Strategy</th>
-                  <th className="py-3 px-4 font-black text-[var(--text-primary)]">Best For</th>
-                  <th className="py-3 px-4 font-black text-[var(--text-primary)]">Timeframe</th>
-                  <th className="py-3 px-4 font-black text-[var(--text-primary)]">Signal Type</th>
-                  <th className="py-3 px-4 font-black text-[var(--text-primary)]">Risk Level</th>
+                  <th className="py-3 pr-4 font-bold text-[var(--text-primary)]">Strategy</th>
+                  <th className="py-3 px-4 font-bold text-[var(--text-primary)]">Best For</th>
+                  <th className="py-3 px-4 font-bold text-[var(--text-primary)]">Timeframe</th>
+                  <th className="py-3 px-4 font-bold text-[var(--text-primary)]">Signal Type</th>
+                  <th className="py-3 px-4 font-bold text-[var(--text-primary)]">Risk Level</th>
                 </tr>
               </thead>
               <tbody>
@@ -606,7 +606,7 @@ const HomePage: React.FC = () => {
                     <td className="py-2.5 px-4 text-[var(--text-muted)]">{row.t}</td>
                     <td className="py-2.5 px-4 text-[var(--text-muted)]">{row.st}</td>
                     <td className="py-2.5 px-4">
-                      <span className={`text-[8px] font-black uppercase tracking-widest ${
+                      <span className={`text-xs font-bold uppercase tracking-wider ${
                         row.r === 'Low' ? 'text-emerald-400' :
                         row.r === 'Low-Medium' ? 'text-emerald-300' :
                         row.r === 'Medium' ? 'text-amber-400' :
@@ -618,7 +618,7 @@ const HomePage: React.FC = () => {
               </tbody>
             </table>
           </div>
-          <p className="text-[8px] font-bold text-amber-400/70 uppercase tracking-widest mt-4 text-center">Educational classification. Performance varies by market regime.</p>
+          <p className="text-xs font-bold text-amber-400/70 uppercase tracking-wider mt-4 text-center">Educational classification. Performance varies by market regime.</p>
         </div>
       </section>
 
@@ -627,9 +627,9 @@ const HomePage: React.FC = () => {
          <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
             <div className="space-y-4">
                <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Trending Institutional Audits</h2>
-               <p className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-xs">Recently Analyzed High-Score Assets</p>
+               <p className="text-[var(--text-muted)] font-bold uppercase tracking-wider text-xs">Recently Analyzed High-Score Assets</p>
             </div>
-            <Link to="/login" className="flex items-center gap-2 text-blue-500 font-black uppercase tracking-widest text-xs hover:text-[var(--text-primary)] transition-colors">
+            <Link to="/login" className="flex items-center gap-2 text-blue-500 font-bold uppercase tracking-wider text-xs hover:text-[var(--text-primary)] transition-colors">
                View All 500+ Assets <ArrowRight className="w-4 h-4" />
             </Link>
          </div>
@@ -643,10 +643,10 @@ const HomePage: React.FC = () => {
                >
                   <div className="flex justify-between items-start mb-4">
                      <Zap className="w-4 h-4 text-blue-500 group-hover:animate-pulse" />
-                     <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded italic">QUALIFIED</span>
+                     <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded italic">QUALIFIED</span>
                   </div>
-                  <div className="text-xl font-black text-[var(--text-primary)] italic tracking-tighter mb-1">{sym}</div>
-                  <div className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Audit Matrix Active</div>
+                  <div className="text-xl font-bold text-[var(--text-primary)] italic tracking-tighter mb-1">{sym}</div>
+                  <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Audit Matrix Active</div>
                </Link>
             ))}
          </div>
@@ -666,13 +666,13 @@ const HomePage: React.FC = () => {
                <div className="space-y-8">
                   <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-500/10 rounded-full border border-blue-500/20">
                      <BookOpen className="h-4 w-4 text-blue-400" />
-                     <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Free Institutional Education</span>
+                     <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Free Institutional Education</span>
                   </div>
                    <h2 className="text-5xl md:text-6xl font-black tracking-tighter leading-none">Master the <br /><span className="text-blue-500">10 Institutional</span> Strategies.</h2>
                    <p className="text-[var(--text-muted)] text-lg font-medium leading-relaxed max-w-md">
                       Don't just follow triggers. Understand the institutional logic behind every setup—from SMA-ABCD Stacking to the 67% ATH Contrarian Reset.
                   </p>
-                  <Link to="/education" className="inline-flex items-center px-8 py-4 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-500 hover:text-[var(--text-primary)] transition-all">
+                  <Link to="/education" className="inline-flex items-center px-8 py-4 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-2xl font-bold uppercase tracking-wider text-xs hover:bg-blue-500 hover:text-[var(--text-primary)] transition-all">
                      Explore Knowledge Base <ChevronRight className="ml-2 w-4 h-4" />
                   </Link>
                </div>
@@ -686,8 +686,8 @@ const HomePage: React.FC = () => {
                    ].map((item, i) => (
                      <div key={i} className="p-6 bg-[var(--bg-primary)] rounded-3xl border border-[var(--border-primary)] hover:border-blue-500/30 transition-all">
                         <item.icon className="h-6 w-6 text-blue-500 mb-4" />
-                        <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-1">{item.title}</h4>
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{item.desc}</p>
+                        <h4 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-1">{item.title}</h4>
+                        <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{item.desc}</p>
                      </div>
                   ))}
                </div>
@@ -753,14 +753,14 @@ const HomePage: React.FC = () => {
           <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-[2rem] overflow-hidden">
             {/* Header */}
             <div className="grid grid-cols-3 border-b border-[var(--border-primary)]">
-              <div className="p-5 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Feature</div>
+              <div className="p-5 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Feature</div>
               <div className="p-5 text-center border-x border-[var(--border-primary)]">
-                <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Other Screeners</p>
-                <p className="text-[8px] text-slate-600 mt-0.5">(Screener.in, Charts)</p>
+                <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Other Screeners</p>
+                <p className="text-xs text-slate-600 mt-0.5">(Screener.in, Charts)</p>
               </div>
               <div className="p-5 text-center bg-blue-600/5">
-                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">MarketBeacon Pro</p>
-                <p className="text-[8px] text-blue-500/50 mt-0.5">Institutional Grade</p>
+                <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">MarketBeacon Pro</p>
+                <p className="text-xs text-blue-500/50 mt-0.5">Institutional Grade</p>
               </div>
             </div>
             {/* Rows */}
@@ -775,7 +775,7 @@ const HomePage: React.FC = () => {
               ['Institutional Strategy Triggers (12 models)', false, true],
             ].map(([feature, others, mb], i) => (
               <div key={i} className={`grid grid-cols-3 border-b border-[var(--border-primary)]/50 last:border-none ${i % 2 === 0 ? '' : 'bg-[var(--bg-primary)]/[0.01]'}`}>
-                <div className="px-5 py-4 text-[11px] font-bold text-[var(--text-secondary)]">{feature as string}</div>
+                <div className="px-5 py-4 text-xs font-bold text-[var(--text-secondary)]">{feature as string}</div>
                 <div className="px-5 py-4 text-center border-x border-[var(--border-primary)]/50">
                   {others === true
                     ? <span className="text-emerald-500 text-sm">✓</span>
@@ -794,7 +794,7 @@ const HomePage: React.FC = () => {
           <div className="text-center mt-8">
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-[var(--text-primary)] rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-500 hover:scale-105 transition-all shadow-xl shadow-blue-900/30"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-2xl font-bold uppercase tracking-wider text-xs hover:from-blue-500 hover:to-indigo-500 hover:scale-105 transition-all shadow-lg shadow-blue-500/20"
             >
               Try Institutional Screener Free <ChevronRight className="w-4 h-4" />
             </Link>
@@ -806,7 +806,7 @@ const HomePage: React.FC = () => {
       <section className="py-20 px-6 md:px-10 border-t border-[var(--border-primary)]/50">
         <div className="max-w-[900px] mx-auto">
           <div className="text-center mb-10">
-            <p className="text-[9px] font-black text-rose-400 uppercase tracking-[0.4em] mb-2">Avoiding Bad Trades</p>
+            <p className="text-xs font-bold text-rose-400 uppercase tracking-[0.4em] mb-2">Avoiding Bad Trades</p>
             <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)]">Why Stocks Get <span className="text-rose-400">Rejected</span></h2>
             <p className="text-xs text-[var(--text-muted)] mt-2">The audit score doesn't just find winners — it filters out 70% of the market.</p>
           </div>
@@ -823,17 +823,17 @@ const HomePage: React.FC = () => {
                 <span className="text-xl shrink-0">{item.icon}</span>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xs font-black text-[var(--text-primary)]">{item.reason}</h3>
-                    <span className={`text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                    <h3 className="text-xs font-bold text-[var(--text-primary)]">{item.reason}</h3>
+                    <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                       item.impact === 'Hard Reject' ? 'text-rose-400 bg-rose-500/10' : 'text-amber-400 bg-amber-500/10'
                     }`}>{item.impact}</span>
                   </div>
-                  <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">{item.desc}</p>
+                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
-          <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest text-center mt-6">These filters run automatically on every stock. Educational criteria, not investment advice.</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center mt-6">These filters run automatically on every stock. Educational criteria, not investment advice.</p>
         </div>
       </section>
 
@@ -842,7 +842,7 @@ const HomePage: React.FC = () => {
         <div className="max-w-[680px] mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-6">
             <Gift className="w-3.5 h-3.5 text-blue-400" />
-            <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.3em]">Free · No Credit Card</span>
+            <span className="text-xs font-bold text-blue-400 uppercase tracking-[0.3em]">Free · No Credit Card</span>
           </div>
           <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--text-primary)] mb-4 leading-tight">
             Get Your Free<br />
@@ -852,7 +852,7 @@ const HomePage: React.FC = () => {
             Download our 12-parameter Audit Checklist + ABCD Tranche Guide PDF. Join 31,402 traders using data over tips.
           </p>
           <EmailCapture />
-          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-5">
+          <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mt-5">
             No spam · Unsubscribe anytime · Educational content only · Not investment advice
           </p>
         </div>
@@ -876,12 +876,12 @@ const HomePage: React.FC = () => {
         <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
         </svg>
-        <span className="text-[11px] font-black uppercase tracking-widest">Chat with Us</span>
+        <span className="text-xs font-bold uppercase tracking-wider">Chat with Us</span>
       </a>
 
       {/* Mobile Sticky CTA */}
       <div className="fixed bottom-0 w-full p-3 md:hidden bg-[var(--bg-primary)]/95 border-t border-[var(--border-primary)] z-50 flex gap-2">
-        <Link to="/login" className="flex-1 flex items-center justify-center py-3.5 bg-blue-600 text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-xs shadow-xl">
+        <Link to="/login" className="flex-1 flex items-center justify-center py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-xs shadow-lg shadow-blue-500/20">
            Start Free
         </Link>
         <a
@@ -911,8 +911,8 @@ const HomePage: React.FC = () => {
           <div className="bg-[var(--bg-secondary)] rounded-[2rem] p-6 max-w-md w-full shadow-2xl border border-[var(--border-primary)] space-y-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight italic">Claim Alpha Access</h3>
-                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Enter your 7-day trial voucher</p>
+                <h3 className="text-xl font-bold text-[var(--text-primary)] uppercase tracking-tight italic">Claim Alpha Access</h3>
+                <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1">Enter your 7-day trial voucher</p>
               </div>
               <button onClick={() => setOpenVoucherModal(false)} className="p-1 hover:bg-[var(--bg-tertiary)] rounded-full transition-colors">
                 <X className="h-5 w-5 text-[var(--text-muted)]" />
@@ -922,7 +922,7 @@ const HomePage: React.FC = () => {
             {!user ? (
               <div className="space-y-4">
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">Please sign in to redeem a voucher code.</p>
-                <Link to="/login" className="block w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-blue-500 transition-all">
+                <Link to="/login" className="block w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider text-center hover:from-blue-500 hover:to-indigo-500 transition-all">
                   Sign In
                 </Link>
               </div>
@@ -934,23 +934,23 @@ const HomePage: React.FC = () => {
                     placeholder="Enter voucher (e.g. ALPHA7)..."
                     value={voucherCode}
                     onChange={(e) => setVoucherCode(e.target.value)}
-                    className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-[var(--text-primary)] outline-none focus:border-blue-500"
+                    className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] outline-none focus:border-blue-500"
                   />
                   <button
                     onClick={handleRedeemVoucher}
                     disabled={redeeming}
-                    className="px-5 py-3 bg-blue-600 text-white hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                    className="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
                   >
                     {redeeming ? 'Redeeming...' : 'Redeem'}
                   </button>
                 </div>
                 {voucherError && (
-                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-wider">{voucherError}</p>
+                  <p className="text-xs font-bold text-rose-500 uppercase tracking-wider">{voucherError}</p>
                 )}
                 <button
                   type="button"
                   onClick={() => { setVoucherCode('ALPHA7'); setVoucherError(null); }}
-                  className="text-[9px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
+                  className="text-xs font-bold text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
                 >
                   Quick Apply: ALPHA7 (7-Day Free Trial)
                 </button>
@@ -962,7 +962,7 @@ const HomePage: React.FC = () => {
 
       {/* Deployment Verification Tag */}
       <div className="fixed bottom-4 right-4 z-[100] opacity-20 hover:opacity-100 transition-opacity">
-        <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
           Build: v18.0.8-PRO-RENDER-VERIFY
         </span>
       </div>
