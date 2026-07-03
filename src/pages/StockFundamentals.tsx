@@ -137,33 +137,33 @@ const StockFundamentalsPage: React.FC = () => {
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center space-x-6">
               <div className="space-y-0.5">
-                 <div className="flex items-center space-x-2 text-[8px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">
+                 <div className="flex items-center space-x-2 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
                     <Link to="/alpha-hub" className="hover:text-blue-400">Alpha Hub</Link>
                     <ChevronRight className="h-2 w-2" />
                     <span className="text-[var(--text-primary)]">{symbol}</span>
                  </div>
                  <div className="flex items-center space-x-3">
                     <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase leading-none">{symbol}</h1>
-                    <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] rounded text-[9px] font-bold text-[var(--text-secondary)] uppercase tracking-tighter">{data?.industry || 'General'}</span>
-                    <div className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tighter ${universe === 'INSTITUTIONAL' ? 'bg-blue-600 text-[var(--text-primary)]' : 'bg-slate-700 text-[var(--text-primary)]'}`}>{universe}</div>
+                    <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] rounded text-xs font-bold text-[var(--text-secondary)] uppercase tracking-tighter">{data?.industry || 'General'}</span>
+                    <div className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-tighter ${universe === 'INSTITUTIONAL' ? 'bg-blue-600 text-[var(--text-primary)]' : 'bg-slate-700 text-[var(--text-primary)]'}`}>{universe}</div>
                  </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between md:justify-end w-full md:w-auto space-x-8">
                <div className="flex flex-col items-end">
-                 <span className="text-xl font-black text-[var(--text-primary)] tracking-tighter leading-none">₹{data?.price?.toLocaleString() || '-'}</span>
-                 <div className={`font-bold text-[9px] ${Number(data?.change) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                 <span className="text-xl font-bold text-[var(--text-primary)] tracking-tighter leading-none">₹{data?.price?.toLocaleString() || '-'}</span>
+                 <div className={`font-bold text-[11px] ${Number(data?.change) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                     {Number(data?.change) >= 0 ? '▲' : '▼'} {Math.abs(Number(data?.change) || 0).toFixed(2)}%
                  </div>
                </div>
                <div className="h-8 w-px bg-[var(--bg-tertiary)]" />
                <div className="text-right">
-                  <div className="text-2xl font-black tracking-tighter text-[var(--text-primary)] leading-none">
+                  <div className="text-2xl font-bold tracking-tighter text-[var(--text-primary)] leading-none">
                      {isProOrAbove ? score.toFixed(0) : '🔒'}
                      <span className="text-xs text-[var(--text-muted)] ml-0.5">/100</span>
                   </div>
-                  <span className="text-[8px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Audit Score</span>
+                  <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Audit Score</span>
                </div>
             </div>
         </div>
@@ -180,49 +180,49 @@ const StockFundamentalsPage: React.FC = () => {
         <div className={`lg:col-span-8 space-y-6 lg:overflow-y-auto pr-2 no-scrollbar transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
              <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-24 transition-all duration-200 hover:border-blue-500/30">
-                <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Market Cap</span>
-                <p className="text-lg font-black text-[var(--text-primary)] leading-tight font-mono">{formatCr(data?.marketCap)}</p>
+                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Market Cap</span>
+                <p className="text-lg font-bold text-[var(--text-primary)] leading-tight font-mono">{formatCr(data?.marketCap)}</p>
              </div>
              <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-24 transition-all duration-200 hover:border-blue-500/30">
-                <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Profitability (ROE)</span>
-                <p className="text-lg font-black text-[var(--text-primary)] leading-tight font-mono">{data?.returnOnEquity ? `${Number(data.returnOnEquity).toFixed(1)}%` : '-'}</p>
+                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Profitability (ROE)</span>
+                <p className="text-lg font-bold text-[var(--text-primary)] leading-tight font-mono">{data?.returnOnEquity ? `${Number(data.returnOnEquity).toFixed(1)}%` : '-'}</p>
              </div>
              <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-24 transition-all duration-200 hover:border-blue-500/30">
-                <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Efficiency (ROCE)</span>
-                <p className="text-lg font-black text-[var(--text-primary)] leading-tight font-mono">{data?.roce ? `${Number(data.roce).toFixed(1)}%` : '-'}</p>
+                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Efficiency (ROCE)</span>
+                <p className="text-lg font-bold text-[var(--text-primary)] leading-tight font-mono">{data?.roce ? `${Number(data.roce).toFixed(1)}%` : '-'}</p>
              </div>
              <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-24 transition-all duration-200 hover:border-blue-500/30">
-                <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Debt-To-Equity</span>
-                <p className={`text-lg font-black leading-tight font-mono ${Number(data?.netDebtToEquity) > 0.2 ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{Number(data?.netDebtToEquity).toFixed(2)}</p>
+                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Debt-To-Equity</span>
+                <p className={`text-lg font-bold leading-tight font-mono ${Number(data?.netDebtToEquity) > 0.2 ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{Number(data?.netDebtToEquity).toFixed(2)}</p>
              </div>
           </div>
 
           {/* Basket & Strategy Classifications */}
           <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl p-5 backdrop-blur-sm space-y-4">
-             <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] border-b border-[var(--border-primary)] pb-3">
+             <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] border-b border-[var(--border-primary)] pb-3">
                 <span className="text-[var(--text-primary)]">Basket & Strategy Matrix</span>
                 <span className="text-[var(--text-muted)]">Live Status</span>
              </div>
              
              {/* Baskets list */}
              <div className="space-y-2">
-                <span className="text-[8px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest block">Associated Baskets</span>
+                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider block">Associated Baskets</span>
                 <div className="flex flex-wrap gap-2">
                    {containingBaskets.length > 0 ? (
                       containingBaskets.map((bName) => (
-                         <span key={bName} className="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg text-[9px] font-black uppercase tracking-wider">
+                         <span key={bName} className="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-bold uppercase tracking-wider">
                             {bName}
                          </span>
                       ))
                    ) : (
-                      <span className="text-[9px] text-[var(--text-muted)] font-bold uppercase">None (Not in any predefined basket)</span>
+                      <span className="text-xs text-[var(--text-muted)] font-bold uppercase">None (Not in any predefined basket)</span>
                    )}
                 </div>
              </div>
 
              {/* Strategies table */}
              <div className="space-y-3 pt-2">
-                <span className="text-[8px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest block">Strategy Routing & Approval Status</span>
+                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider block">Strategy Routing & Approval Status</span>
                 <div className="grid grid-cols-1 gap-2.5">
                    {applicableStrategies.map((strat) => {
                       const stratResult = data?.strategies?.[strat.id];
@@ -252,11 +252,11 @@ const StockFundamentalsPage: React.FC = () => {
                       return (
                          <div key={strat.id} className="flex items-center justify-between p-3.5 bg-[var(--bg-primary)]/40 border border-[var(--border-primary)] rounded-xl hover:border-blue-500/30 transition-all">
                             <div className="space-y-1">
-                               <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-wide block">{strat.name}</span>
-                               <span className="text-[8px] text-[var(--text-muted)] font-semibold uppercase tracking-wider block">Basket: {matchingBasket}</span>
+                               <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide block">{strat.name}</span>
+                               <span className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-wider block">Basket: {matchingBasket}</span>
                             </div>
                             <div className="flex items-center gap-3">
-                               <span className={`px-2 py-0.5 rounded text-[8px] font-black tracking-wider border uppercase leading-none ${statusColor}`}>
+                               <span className={`px-2 py-0.5 rounded text-xs font-bold tracking-wider border uppercase leading-none ${statusColor}`}>
                                   {statusText}
                                   {stratResult?.reason && stratResult.reason !== 'QUALIFIED' && stratResult.reason !== 'OBSERVATION' && (
                                      <span className="block text-[6px] opacity-85 mt-0.5 normal-case font-bold">{stratResult.reason}</span>
@@ -264,7 +264,7 @@ const StockFundamentalsPage: React.FC = () => {
                                </span>
                                <Link 
                                   to={`/screener?strategy=${strat.id}&basket=${encodeURIComponent(matchingBasket)}&tab=${tabName}&search=${symbol}`}
-                                  className="p-1.5 bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg border border-blue-500/20 transition-all text-[8px] font-black uppercase tracking-wider flex items-center gap-1 active:scale-95"
+                                  className="p-1.5 bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg border border-blue-500/20 transition-all text-xs font-bold uppercase tracking-wider flex items-center gap-1 active:scale-95"
                                   title="View on Screener Matrix"
                                >
                                   <span>View Matrix</span>
@@ -276,7 +276,7 @@ const StockFundamentalsPage: React.FC = () => {
                    })}
                    {applicableStrategies.length === 0 && (
                       <div className="p-4 bg-[var(--bg-primary)]/20 border border-[var(--border-primary)] rounded-xl text-center">
-                         <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-wider">No applicable strategy for this stock's basket classification.</p>
+                         <p className="text-[11px] text-[var(--text-muted)] font-bold uppercase tracking-wider">No applicable strategy for this stock's basket classification.</p>
                       </div>
                    )}
                 </div>
@@ -285,7 +285,7 @@ const StockFundamentalsPage: React.FC = () => {
 
           {/* Strategy Backtest Section */}
           <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
-            <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+            <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
               <span className="text-[var(--text-primary)]">Strategy Backtest (20-Year History)</span>
               {backtestLoading && <div className="w-4 h-4 border-2 border-[var(--border-primary)] border-t-blue-500 rounded-full animate-spin" />}
               {backtestLoaded && !backtestLoading && <span className="text-emerald-500">Loaded</span>}
@@ -293,13 +293,13 @@ const StockFundamentalsPage: React.FC = () => {
             <div className="p-4 space-y-2">
               {!backtestLoaded && !backtestLoading && (
                 <div className="text-center py-6">
-                  <button onClick={loadBacktest} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-colors">
+                  <button onClick={loadBacktest} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-lg shadow-blue-500/20">
                     Load 20-Year Backtest
                   </button>
-                  <p className="text-[8px] text-[var(--text-muted)] mt-2">Computes all 10 strategies across 20 years of daily data. May take ~60s.</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-2">Computes all 10 strategies across 20 years of daily data. May take ~60s.</p>
                 </div>
               )}
-              {backtestLoading && <div className="p-4 text-center text-[9px] text-[var(--text-muted)]">Computing 20-year backtest...</div>}
+              {backtestLoading && <div className="p-4 text-center text-[11px] text-[var(--text-muted)]">Computing 20-year backtest...</div>}
               {backtestLoaded && !backtestLoading && backtestData ? (
                 Object.entries(backtestData).sort((a: [string, any], b: [string, any]) => b[1].totalTrades - a[1].totalTrades).map(([sid, r]: [string, any]) => (
                   <div key={sid} className="bg-[var(--bg-primary)]/40 border border-[var(--border-primary)] rounded-xl overflow-hidden">
@@ -307,12 +307,12 @@ const StockFundamentalsPage: React.FC = () => {
                       onClick={() => setExpandedStrategy(expandedStrategy === sid ? null : sid)}
                       className="w-full flex items-center justify-between p-3 hover:bg-[var(--bg-primary)]/60 transition-colors"
                     >
-                      <div className="flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest">
+                      <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider">
                         <span className="text-[var(--text-primary)]">{sid.replace(/_/g, ' ')}</span>
                         <span className="text-[var(--text-muted)]">{r.totalTrades} trades</span>
                         <span className={r.winRate >= 60 ? 'text-emerald-500' : r.winRate >= 40 ? 'text-amber-500' : 'text-red-500'}>{r.winRate}% WR</span>
                       </div>
-                      <div className="flex items-center gap-4 text-[9px] font-bold">
+                      <div className="flex items-center gap-4 text-[11px] font-bold">
                         <span className="text-blue-400">{r.avgRoi}% avg ROI</span>
                         <span className="text-[var(--text-muted)]">{r.avgDays}d avg</span>
                         {expandedStrategy === sid ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -320,9 +320,9 @@ const StockFundamentalsPage: React.FC = () => {
                     </button>
                     {expandedStrategy === sid && r.trades?.length > 0 && (
                       <div className="border-t border-[var(--border-primary)] overflow-x-auto">
-                        <table className="w-full text-[8px] font-mono">
+                        <table className="w-full text-xs font-mono">
                           <thead>
-                            <tr className="bg-[var(--bg-primary)]/60 text-[var(--text-muted)] uppercase tracking-widest">
+                            <tr className="bg-[var(--bg-primary)]/60 text-[var(--text-muted)] uppercase tracking-wider">
                               <th className="p-2 text-left">Entry</th>
                               <th className="p-2 text-left">Price</th>
                               <th className="p-2 text-left">Exit</th>
@@ -351,12 +351,12 @@ const StockFundamentalsPage: React.FC = () => {
                       </div>
                     )}
                     {expandedStrategy === sid && (!r.trades || r.trades.length === 0) && (
-                      <div className="p-4 text-center text-[9px] text-[var(--text-muted)]">No trades recorded for 20-year period</div>
+                      <div className="p-4 text-center text-[11px] text-[var(--text-muted)]">No trades recorded for 20-year period</div>
                     )}
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-center text-[9px] text-[var(--text-muted)]">
+                <div className="p-4 text-center text-[11px] text-[var(--text-muted)]">
                   {backtestLoading ? 'Computing 20-year backtest...' : 'Backtest data unavailable'}
                 </div>
               )}
@@ -364,7 +364,7 @@ const StockFundamentalsPage: React.FC = () => {
           </section>
 
           <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
-             <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+<div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                 <span className="text-[var(--text-primary)]">Institutional Audit Matrix</span>
                 <span className="text-[var(--text-muted)]">{audit?.reason}</span>
              </div>
@@ -372,16 +372,16 @@ const StockFundamentalsPage: React.FC = () => {
                 {weightedSegments.map((segment) => segment.data && (
                   <div key={segment.id} className="space-y-3">
                     <div className="flex items-center justify-between border-b border-[var(--border-primary)] pb-2">
-                      <h3 className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest flex items-center">
+                      <h3 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center">
                         {segment.icon} {segment.label}
                       </h3>
-                      <span className="text-[9px] font-bold text-[var(--text-primary)]">{segment.data.score}/{segment.data.max}</span>
+                      <span className="text-[11px] font-bold text-[var(--text-primary)]">{segment.data.score}/{segment.data.max}</span>
                     </div>
                     <div className="space-y-2">
                       {(segment.data.checks || []).map((check, idx: number) => (
                         <div key={idx} className="flex items-center justify-between">
-                           <span className="text-[9px] font-medium text-[var(--text-muted)] uppercase">{check.label}</span>
-                           <span className={`text-[9px] font-bold ${check.pass ? 'text-emerald-500' : 'text-amber-500'}`}>{check.value}</span>
+                           <span className="text-[11px] font-medium text-[var(--text-muted)] uppercase">{check.label}</span>
+                           <span className={`text-[11px] font-bold ${check.pass ? 'text-emerald-500' : 'text-amber-500'}`}>{check.value}</span>
                         </div>
                       ))}
                     </div>
@@ -398,7 +398,7 @@ const StockFundamentalsPage: React.FC = () => {
                { label: 'Beta', value: Number(data?.beta)?.toFixed(2) }
              ].map((item, i) => (
                <div key={i} className="space-y-1">
-                  <span className="text-[8px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest">{item.label}</span>
+                  <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">{item.label}</span>
                   <p className="text-xs font-bold text-[var(--text-primary)] uppercase leading-none font-mono">{item.value}</p>
                </div>
              ))}
@@ -407,18 +407,18 @@ const StockFundamentalsPage: React.FC = () => {
 
         <div className={`lg:col-span-4 space-y-6 h-full transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
            <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl p-6 space-y-6 backdrop-blur-sm">
-              <h3 className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest flex items-center">
+              <h3 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center">
                 <Target className="h-4 w-4 mr-2 text-blue-500" /> Valuation & Ownership
               </h3>
               <div className="space-y-4">
                  <div className="grid grid-cols-2 gap-4">
                     <div className={`p-4 rounded-xl border ${isPEOvervalued ? 'bg-red-500/10 border-red-500/30' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]'} transition-all duration-200 hover:scale-[1.02]`}>
-                       <p className={`text-[7px] font-bold uppercase ${isPEOvervalued ? 'text-red-500' : 'text-[var(--text-tertiary)]'}`}>Current PE</p>
-                       <p className={`text-lg font-black leading-none font-mono ${isPEOvervalued ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{peRatio.toFixed(1)}</p>
+                       <p className={`text-[11px] font-bold uppercase ${isPEOvervalued ? 'text-red-500' : 'text-[var(--text-tertiary)]'}`}>Current PE</p>
+                       <p className={`text-lg font-bold leading-none font-mono ${isPEOvervalued ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{peRatio.toFixed(1)}</p>
                     </div>
                     <div className="bg-[var(--bg-primary)] p-4 rounded-xl border border-[var(--border-primary)] text-center transition-all duration-200 hover:scale-[1.02]">
-                        <p className="text-[7px] font-bold text-[var(--text-tertiary)] uppercase">Median P/E (3Y / 5Y)</p>
-                        <p className="text-lg font-black text-[var(--text-primary)] leading-none font-mono">
+                        <p className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase">Median P/E (3Y / 5Y)</p>
+                        <p className="text-lg font-bold text-[var(--text-primary)] leading-none font-mono">
                            {hasMedian ? `${avgMedian.toFixed(1)}x` : '—'}
                         </p>
                         {hasMedian && (
@@ -435,7 +435,7 @@ const StockFundamentalsPage: React.FC = () => {
                       { label: 'Institutional', value: (data?.shareholding?.fii || 0) + (data?.shareholding?.dii || 0), color: 'bg-slate-500' }
                     ].map((holder, idx) => (
                       <div key={idx} className="space-y-2">
-                         <div className="flex justify-between items-center text-[9px] font-bold">
+                         <div className="flex justify-between items-center text-[11px] font-bold">
                             <span className="text-[var(--text-tertiary)] uppercase">{holder.label}</span>
                             <span className="text-[var(--text-primary)]">{holder.value?.toFixed(1)}%</span>
                          </div>
@@ -445,22 +445,22 @@ const StockFundamentalsPage: React.FC = () => {
                       </div>
                     ))}
                     <div className="pt-2 flex flex-col">
-                        <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">Smart Money Total</span>
-                        <span className="text-2xl font-black text-[var(--text-primary)] tracking-tighter leading-none font-mono">{data?.shareholding?.smartMoneyTotal?.toFixed(2)}%</span>
+                        <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase">Smart Money Total</span>
+                        <span className="text-2xl font-bold text-[var(--text-primary)] tracking-tighter leading-none font-mono">{data?.shareholding?.smartMoneyTotal?.toFixed(2)}%</span>
                     </div>
                  </div>
               </div>
            </div>
 
            <div className="bg-[var(--bg-primary)] rounded-2xl p-6 text-[var(--text-primary)] space-y-4 shadow-xl border border-[var(--border-primary)] backdrop-blur-sm">
-              <h3 className="text-xs font-black uppercase tracking-widest italic">Research Hub</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider italic">Research Hub</h3>
               <div className="grid grid-cols-1 gap-3">
                  <a href={`https://www.tradingview.com/symbols/NSE-${symbol}`} target="_blank" className="flex items-center justify-between p-4 bg-[var(--bg-primary)]/5 rounded-xl hover:bg-[var(--bg-primary)]/10 transition-all border border-white/10 group" rel="noreferrer">
-                    <span className="text-[9px] font-bold uppercase tracking-widest">Charts</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Charts</span>
                     <ArrowUpRight className="h-3 w-3 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
                  </a>
                  <a href={`https://www.screener.in/company/${symbol}/consolidated/`} target="_blank" className="flex items-center justify-between p-4 bg-[var(--bg-primary)]/5 rounded-xl hover:bg-[var(--bg-primary)]/10 transition-all border border-white/10 group" rel="noreferrer">
-                    <span className="text-[9px] font-bold uppercase tracking-widest">Screener</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Screener</span>
                     <ArrowUpRight className="h-3 w-3 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
                  </a>
               </div>
@@ -476,32 +476,32 @@ const StockFundamentalsPage: React.FC = () => {
                </div>
                
                <div className="space-y-3">
-                  <h3 className="text-xl font-black uppercase tracking-tight text-[var(--text-primary)] italic">PRO LICENSE REQUIRED</h3>
+                  <h3 className="text-xl font-bold uppercase tracking-tight text-[var(--text-primary)] italic">PRO LICENSE REQUIRED</h3>
                   <p className="text-xs text-[var(--text-tertiary)] font-medium leading-relaxed">
-                     Unlock deep fundamental analysis, institutional quality audits, valuation models, and active strategy indicators for <span className="text-blue-400 font-black">{symbol}</span>.
+                     Unlock deep fundamental analysis, institutional quality audits, valuation models, and active strategy indicators for <span className="text-blue-400 font-bold">{symbol}</span>.
                   </p>
                </div>
 
                <div className="space-y-4 pt-2">
                   <button 
                     onClick={() => setShowUpgrade(true)}
-                    className="w-full py-5 bg-blue-600 text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-500 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-blue-900/30 flex items-center justify-center gap-2"
+                    className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-blue-900/30 flex items-center justify-center gap-2"
                   >
                      <Sparkles className="w-4 h-4 text-blue-200" /> Upgrade to Pro Execution
                   </button>
                   
-                  <Link 
+<Link 
                     to="/license-desk"
-                    className="block text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors uppercase tracking-widest"
+                    className="block text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors uppercase tracking-wider"
                   >
-                     Compare Plans & Pricing
+                    Compare Plans & Pricing
                   </Link>
                </div>
 
                <div className="border-t border-[var(--border-primary)] pt-8 space-y-5">
                   <div className="space-y-2">
-                     <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest block">Have a Coupon or Voucher Code?</span>
-                     <p className="text-[10px] text-[var(--text-muted)]">Redeem code for a 7-day free trial of all premium features.</p>
+                     <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">Have a Coupon or Voucher Code?</span>
+                     <p className="text-xs text-[var(--text-muted)]">Redeem code for a 7-day free trial of all premium features.</p>
                   </div>
                   
                   <div className="flex gap-3">
@@ -510,31 +510,31 @@ const StockFundamentalsPage: React.FC = () => {
                        placeholder="Enter voucher (e.g. ALPHA7)..."
                        value={voucherCode}
                        onChange={(e) => setVoucherCode(e.target.value)}
-                       className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] px-5 py-4 rounded-xl text-xs font-black uppercase tracking-widest text-[var(--text-primary)] outline-none focus:border-blue-500 placeholder:text-slate-600"
+                       className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] px-5 py-4 rounded-xl text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] outline-none focus:border-blue-500 placeholder:text-slate-600"
                      />
-                     <button
-                       onClick={handleRedeemVoucher}
-                       disabled={redeeming}
-                       className="px-6 py-4 bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-slate-100 disabled:bg-[var(--bg-tertiary)] disabled:text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-                     >
-                       {redeeming ? 'Applying...' : 'Apply'}
-                     </button>
+<button
+                      onClick={handleRedeemVoucher}
+                      disabled={redeeming}
+                      className="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white disabled:opacity-50 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-blue-500/20"
+                    >
+                      {redeeming ? 'Applying...' : 'Apply'}
+                    </button>
                   </div>
 
                   {voucherError && (
-                     <p className="text-[10px] font-black text-red-500 uppercase tracking-wider">{voucherError}</p>
+                     <p className="text-xs font-bold text-red-500 uppercase tracking-wider">{voucherError}</p>
                   )}
 
-                  <button 
-                     type="button"
-                     onClick={() => {
+<button 
+                      type="button"
+                      onClick={() => {
                         setVoucherCode('ALPHA7');
                         setVoucherError(null);
-                     }}
-                     className="text-[9px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
-                  >
-                     Quick Apply: ALPHA7 (7-Day Free Trial)
-                  </button>
+                      }}
+                      className="text-xs font-bold text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
+                    >
+                      Quick Apply: ALPHA7 (7-Day Free Trial)
+                    </button>
                </div>
             </div>
           </div>

@@ -23,10 +23,10 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type }) => {
                     {type === 'risk' ? <ShieldAlert className="h-5 w-5 text-red-400" /> : <ShieldCheck className="h-5 w-5 text-blue-400" />}
                  </div>
                  <div>
-                    <h2 className="text-xl font-black tracking-tight uppercase italic leading-none">
+                    <h2 className="text-xl font-bold tracking-tight uppercase italic leading-none">
                        {type === 'risk' ? 'Risk Disclosure' : 'Legal Policy'}
                     </h2>
-                    <p className="text-slate-500 text-[8px] font-black uppercase tracking-[0.3em] mt-1">Regulatory Governance</p>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.3em] mt-1">Regulatory Governance</p>
                  </div>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white">
@@ -42,7 +42,7 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type }) => {
                  <div className="bg-red-50 p-6 rounded-3xl border border-red-100 flex items-start space-x-4">
                     <AlertTriangle className="h-6 w-6 text-red-600 shrink-0" />
                     <div className="space-y-2">
-                       <h3 className="text-xs font-black text-red-900 uppercase tracking-widest">High Risk Warning</h3>
+                       <h3 className="text-xs font-bold text-red-900 uppercase tracking-wider">High Risk Warning</h3>
                        <p className="text-[11px] font-bold text-red-800 leading-relaxed uppercase">
                           Trading stocks and derivatives involves substantial risk of loss and is not suitable for every investor.
                        </p>
@@ -51,21 +51,21 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type }) => {
 
                  <div className="space-y-6">
                     <section className="space-y-3">
-                       <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">1. NO SEBI REGISTRATION</h4>
+                       <h4 className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em]">1. NO SEBI REGISTRATION</h4>
                        <p className="text-xs text-slate-500 font-medium leading-relaxed uppercase tracking-tight">
                           WE ARE NOT SEBI REGISTERED INVESTMENT ADVISORS. MARKETBEACON PROVIDES ALGORITHMIC TOOLS AND RESEARCH DATA FOR EDUCATIONAL PURPOSES ONLY.
                        </p>
                     </section>
 
                     <section className="space-y-3">
-                       <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">2. NO GUARANTEES</h4>
+                       <h4 className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em]">2. NO GUARANTEES</h4>
                        <p className="text-xs text-slate-500 font-medium leading-relaxed uppercase tracking-tight">
                           PAST PERFORMANCE OF STRATEGIES (ENVELOPE, QUANTUM STACKING) IS NOT INDICATIVE OF FUTURE RESULTS. MARKET CONDITIONS CAN CHANGE RAPIDLY.
                        </p>
                     </section>
 
                     <section className="space-y-3">
-                       <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">3. CAPITAL LOSS</h4>
+                       <h4 className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em]">3. CAPITAL LOSS</h4>
                        <p className="text-xs text-slate-500 font-medium leading-relaxed uppercase tracking-tight">
                           YOU SHOULD ONLY TRADE WITH CAPITAL THAT YOU CAN AFFORD TO LOSE. DO NOT USE BORROWED MONEY OR ESSENTIAL LIVING EXPENSES FOR TRADING.
                        </p>
@@ -76,21 +76,21 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type }) => {
               <>
                  <div className="space-y-6">
                     <section className="space-y-3">
-                       <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Terms of Service</h4>
+                       <h4 className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em]">Terms of Service</h4>
                        <p className="text-xs text-slate-500 font-medium leading-relaxed uppercase tracking-tight">
                           BY USING MARKETBEACON TERMINAL, YOU AGREE THAT ALL RESEARCH GENERATED IS PROPRIETARY AND FOR PERSONAL USE ONLY. REDISTRIBUTION OF SIGNALS IS STRICTLY PROHIBITED.
                        </p>
                     </section>
 
                     <section className="space-y-3">
-                       <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Data Privacy</h4>
+                       <h4 className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em]">Data Privacy</h4>
                        <p className="text-xs text-slate-500 font-medium leading-relaxed uppercase tracking-tight">
                           WE USE BANK-GRADE ENCRYPTION TO PROTECT YOUR DATA. BROKER IMPORTS ARE PARSED LOCALLY IN YOUR BROWSER AND NEVER STORED ON OUR PERMANENT SERVERS WITHOUT CONSENT.
                        </p>
                     </section>
 
                     <section className="space-y-3">
-                       <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Subscription</h4>
+                       <h4 className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em]">Subscription</h4>
                        <p className="text-xs text-slate-500 font-medium leading-relaxed uppercase tracking-tight">
                           PRO AND ALPHA ACCESS ARE BILLED ANNUALLY. REFUNDS ARE PROCESSED AS PER INSTITUTIONAL BILLING GUIDELINES PROVIDED DURING CHECKOUT.
                        </p>
@@ -102,7 +102,7 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type }) => {
 
         {/* Footer */}
         <div className="p-6 bg-slate-50 border-t border-slate-100 text-center shrink-0">
-           <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em]">MarketBeacon Compliance v4.5 • Secure Document</p>
+           <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.3em]">MarketBeacon Compliance v4.5 • Secure Document</p>
         </div>
       </div>
     </div>

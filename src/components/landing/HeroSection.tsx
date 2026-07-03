@@ -141,7 +141,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                   </button>
                 )}
               </div>
-              <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-4 sm:px-8 py-2 sm:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-[0.75rem] sm:rounded-[2rem] font-bold uppercase tracking-wider text-[11px] sm:text-xs hover:from-blue-500 hover:to-indigo-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-blue-500/20 transform group-hover:scale-105 transition-all duration-300">
+              <button type="submit" disabled={isSearching} className="w-full sm:w-auto px-4 sm:px-8 py-2 sm:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-[0.75rem] sm:rounded-[2rem] font-bold uppercase tracking-wider text-xs sm:text-xs hover:from-blue-500 hover:to-indigo-600 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-blue-500/20 transform group-hover:scale-105 transition-all duration-300">
                 {isSearching ? (
                   <span className="flex items-center gap-2">
                     <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Auditing...
@@ -153,7 +153,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                 )}
               </button>
             </form>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center mt-2">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center mt-2">
               Educational stock audit · Not a buy/sell recommendation
             </p>
           <AnimatePresence>
@@ -211,19 +211,19 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                       <div className="hidden sm:flex items-center gap-2">
                         {item.strategies?.length > 0 ? (
                           item.strategies.slice(0, 2).map((s: any, idx: number) => (
-                            <span key={idx} className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[9px] font-bold text-blue-400 uppercase tracking-wider italic">
+                            <span key={idx} className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-xs font-bold text-blue-400 uppercase tracking-wider italic">
                               {s.name}
                             </span>
                           ))
                         ) : (
-                          <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider italic">Monitoring Node</span>
+                          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider italic">Monitoring Node</span>
                         )}
                         {item.strategies?.length > 2 && (
-                          <span className="text-[9px] font-semibold text-[var(--text-muted)] uppercase">+{item.strategies.length - 2}</span>
+                          <span className="text-xs font-semibold text-[var(--text-muted)] uppercase">+{item.strategies.length - 2}</span>
                         )}
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider italic group-hover:text-blue-400">Institutional Node</span>
+                    <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider italic group-hover:text-blue-400">Institutional Node</span>
                   </button>
                 ))}
               </motion.div>
@@ -233,7 +233,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
 
         <div className="max-w-3xl mx-auto -mt-4 mb-8 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
           <ShieldCheck className="w-4 h-4 text-amber-300 shrink-0" />
-          <p className="text-[11px] md:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-relaxed">
+          <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-relaxed">
             Educational research scan only. Strategy triggers and audit scores are not buy/sell advice.
           </p>
         </div>
@@ -260,9 +260,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                       <div className="space-y-1">
                          <div className="flex items-center gap-3">
                             <h3 className="text-3xl font-black text-[var(--text-primary)] italic tracking-tighter">{teaserData.symbol}</h3>
-                            <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-lg text-[10px] font-bold text-blue-400 uppercase tracking-wider italic">{teaserData.basket} Node</span>
+                            <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-lg text-xs font-bold text-blue-400 uppercase tracking-wider italic">{teaserData.basket} Node</span>
                             {teaserData.isPass && (
-                              <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-[8px] font-bold text-emerald-400 uppercase tracking-wider">
+                              <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-xs font-bold text-emerald-400 uppercase tracking-wider">
                                 BULLISH
                               </span>
                             )}
@@ -271,7 +271,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                             {teaserData.isPass && (
                                 <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
                                    <BadgeCheck className="w-3.5 h-3.5 text-emerald-400" />
-                                   <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Qualified on Fundamentals</span>
+                                   <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Qualified on Fundamentals</span>
                                 </div>
                              )}
                              <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider italic">Institutional Audit Pass</p>
@@ -281,10 +281,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                           <div className={`text-5xl font-black italic ${teaserData.score >= 80 ? 'text-emerald-400' : 'text-blue-400'} relative`}>
                             {isProOrAbove ? (teaserData.score || 0).toFixed(0) : '🔒'}
                             {teaserData.score >= 80 && (
-                              <span className="absolute -top-2 -right-2 text-[10px] font-bold text-emerald-500 uppercase tracking-wider">BUY</span>
+                              <span className="absolute -top-2 -right-2 text-xs font-bold text-emerald-500 uppercase tracking-wider">BUY</span>
                             )}
                           </div>
-                          <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Audit Score</div>
+                          <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Audit Score</div>
                        </div>
                     </div>
 
@@ -301,8 +301,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                                   <div className={`p-2 ${stat.bg} rounded-xl w-fit mb-2 group-hover:scale-110 transition-transform`}>
                                     <stat.icon className={`h-4 w-4 ${stat.color} group-hover:text-[var(--text-primary)] transition-colors`} />
                                   </div>
-                                  <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1 group-hover:text-[var(--text-secondary)] transition-colors">{stat.label}</p>
-                                  <p className={`text-sm font-black text-[var(--text-primary)] italic ${stat.color} group-hover:text-[var(--text-primary)] transition-colors`}>{stat.val}</p>
+                                  <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1 group-hover:text-[var(--text-secondary)] transition-colors">{stat.label}</p>
+                                  <p className={`text-sm font-bold text-[var(--text-primary)] italic ${stat.color} group-hover:text-[var(--text-primary)] transition-colors`}>{stat.val}</p>
                                </div>
                              ))}
                           </div>
@@ -313,15 +313,15 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                                    teaserData.strategies.map((s: any, i: number) => (
                                       <div key={i} className="card flex items-center gap-2 px-4 py-2 hover:border-blue-500/50 transition-all group hover:scale-105 hover:bg-blue-500/5">
                                          <Zap className="w-3 h-3 text-blue-500 group-hover:animate-pulse" />
-                                         <span className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider group-hover:text-blue-400 transition-colors">{s.name} Entry</span>
+                                         <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider group-hover:text-blue-400 transition-colors">{s.name} Entry</span>
                                          {i === 0 && (
-                                           <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-wider ml-1">PRIMARY</span>
+                                           <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider ml-1">PRIMARY</span>
                                          )}
                                      </div>
                                   ))
                                 ) : (
                                    <div className="card px-4 py-2 italic">
-                                      <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Monitoring for Institutional Entry</span>
+                                      <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Monitoring for Institutional Entry</span>
                                    </div>
                                )}
                              </div>
@@ -329,7 +329,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                              <div className="flex items-center justify-between border-t border-white/5 pt-4">
                                 <div className="flex items-center gap-2">
                                     <ShieldCheck className="w-4 h-4 text-slate-600" />
-                                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.3em]">Verified by Institutional Matrix v12.0</span>
+                                    <span className="text-xs font-bold text-slate-600 uppercase tracking-[0.3em]">Verified by Institutional Matrix v12.0</span>
                                 </div>
                                 <Link 
                                   to={`/analysis/${teaserData.symbol}`}
@@ -347,7 +347,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                                       <Layers className="h-3.5 w-3.5 text-blue-500" />
                                       <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">Institutional Entry Plan (HNI Edge)</h4>
                                    </div>
-                                   <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Cap: ₹10,00,000 (Sample)</span>
+                                   <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Cap: ₹10,00,000 (Sample)</span>
                                 </div>
                                 
                                 <div className="grid grid-cols-4 gap-2 relative z-10">
@@ -358,19 +358,19 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                                       { id: 'D', label: 'Tranche D', price: teaserData.abcd?.d?.price, weight: '25%', status: 'locked', color: 'bg-slate-700' },
                                    ].map((t, idx) => (
                                       <div key={idx} className="card p-3 flex flex-col items-center text-center space-y-1 relative group hover:scale-105 transition-all">
-                                          <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase">{t.label}</span>
+                                          <span className="text-xs font-bold text-[var(--text-muted)] uppercase">{t.label}</span>
                                           <span className="text-xs font-bold text-[var(--text-primary)] italic">{t.price}</span>
                                           <div className="w-full h-1 bg-[var(--bg-tertiary)] rounded-full mt-1 overflow-hidden">
                                              <div className={`h-full ${t.color} rounded-full transition-all duration-1000`} style={{ width: t.weight }} />
                                           </div>
-                                          <span className={`text-[9px] font-bold mt-1 ${t.status === 'active' ? 'text-emerald-400' : t.status === 'pending' ? 'text-blue-400' : 'text-[var(--text-muted)]'}`}>Alloc: ₹2.5L</span>
+                                          <span className={`text-xs font-bold mt-1 ${t.status === 'active' ? 'text-emerald-400' : t.status === 'pending' ? 'text-blue-400' : 'text-[var(--text-muted)]'}`}>Alloc: ₹2.5L</span>
                                          {t.status === 'active' && (
                                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                                          )}
                                       </div>
                                    ))}
                                 </div>
-                                <p className="text-[10px] text-[var(--text-muted)] italic text-center font-bold relative z-10">
+                                <p className="text-xs text-[var(--text-muted)] italic text-center font-bold relative z-10">
                                    "Institutional capital follows a laddered entry approach to maximize capital protection."
                                 </p>
                              </div>
@@ -387,7 +387,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                                 </div>
                                 <div className="space-y-1 relative z-10">
                                    <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">PRO STRATEGY MATRIX LOCKED</h4>
-                                   <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+                                   <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                                       Smart money details, upside targets, and strategy entry points for <span className="text-blue-400 font-bold">{teaserData.symbol}</span> require a Pro Execution tier license.
                                    </p>
                                 </div>
@@ -396,14 +396,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                                    {user ? (
                                       <button 
                                         onClick={() => setShowUpgrade(true)}
-                                          className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-[11px] hover:from-blue-500 hover:to-indigo-500 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/20 relative overflow-hidden group"
+                                          className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-xs hover:from-blue-500 hover:to-indigo-500 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/20 relative overflow-hidden group"
                                         >
                                            <span className="relative z-10">Unlock with Pro Execution</span>
                                       </button>
                                    ) : (
                                       <Link 
                                         to="/login"
-                                          className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-[11px] transition-all text-center shadow-lg shadow-blue-500/20"
+                                          className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-xs transition-all text-center shadow-lg shadow-blue-500/20"
                                         >
                                            <span className="relative z-10">Sign In to Unlock</span>
                                       </Link>
@@ -417,18 +417,18 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                                         placeholder="Enter voucher (ALPHA7)..."
                                         value={voucherCode}
                                         onChange={(e) => setVoucherCode(e.target.value)}
-                                        className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500"
+                                        className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none focus:border-blue-500"
                                       />
                                       <button
                                         onClick={handleRedeemVoucher}
                                         disabled={redeeming}
-                                        className="px-4 py-2 bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-slate-100 disabled:bg-[var(--bg-secondary)] disabled:text-slate-700 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all"
+                                        className="px-4 py-2 bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-slate-100 disabled:bg-[var(--bg-secondary)] disabled:text-slate-700 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
                                       >
                                          {redeeming ? '...' : 'Apply'}
                                       </button>
                                    </div>
                                    {voucherError && (
-                                      <p className="text-[11px] font-bold text-rose-500 uppercase tracking-wider">{voucherError}</p>
+                                      <p className="text-xs font-bold text-rose-500 uppercase tracking-wider">{voucherError}</p>
                                    )}
                                    <button 
                                       type="button"
@@ -436,7 +436,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                                          setVoucherCode('ALPHA7');
                                          setVoucherError(null);
                                       }}
-                                       className="text-[10px] font-bold text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
+                                       className="text-xs font-bold text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
                                    >
                                       Apply ALPHA7 (7-Day Trial)
                                    </button>
@@ -479,7 +479,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
         {/* Brand Heading */}
         <div className="inline-flex items-center space-x-2 px-3 py-1.5 md:px-4 md:py-2 bg-blue-950/50 backdrop-blur-sm rounded-full border border-blue-900 mb-4 md:mb-8">
            <ShieldCheck className="h-3 w-3 md:h-4 md:w-4 text-blue-400" />
-           <span className="text-[9px] md:text-xs font-bold text-blue-400 uppercase tracking-wider">For Educational & Research Purposes Only</span>
+           <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">For Educational & Research Purposes Only</span>
         </div>
         
         <h1 className="text-3xl md:text-[6rem] font-black tracking-tighter leading-[0.85] text-[var(--text-primary)] mb-3 md:mb-6 drop-shadow-2xl">
@@ -498,18 +498,18 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                   <Zap className="w-4 h-4 md:w-5 md:h-5 fill-current animate-pulse" />
                 </div>
                 <div className="text-left min-w-0">
-                  <h4 className="text-[11px] md:text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider leading-none mb-0.5 md:mb-1 truncate">Grand Alpha Launch Live</h4>
-                  <p className="text-[9px] md:text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider truncate">Free 7-Day Institutional Access</p>
+                  <h4 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider leading-none mb-0.5 md:mb-1 truncate">Grand Alpha Launch Live</h4>
+                  <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider truncate">Free 7-Day Institutional Access</p>
                 </div>
               </div>
               <Link to="/login"
-                className="px-3 md:px-5 py-1.5 md:py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-xl text-[10px] md:text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95 shrink-0 text-center shadow-lg shadow-blue-500/20"
+                className="px-3 md:px-5 py-1.5 md:py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-xl text-xs md:text-sm font-bold uppercase tracking-wider transition-all active:scale-95 shrink-0 text-center shadow-lg shadow-blue-500/20"
               >
                 Start 7-Day Free Trial →
               </Link>
             </div>
             <div className="absolute top-0 right-0 p-1">
-                   <div className="px-1 py-0.5 bg-emerald-500 text-[var(--text-primary)] text-[7px] md:text-[8px] font-bold uppercase rounded-bl-lg animate-bounce">Live</div>
+                   <div className="px-1 py-0.5 bg-emerald-500 text-[var(--text-primary)] text-xs font-bold uppercase rounded-bl-lg animate-bounce">Live</div>
             </div>
           </div>
         </div>
@@ -524,14 +524,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="text-lg md:text-xl font-black text-[var(--text-primary)] italic tracking-tighter">{teaserData?.symbol || 'TCS'}</span>
                   {teaserData?.isPass !== undefined && (
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
                        teaserData.isPass ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                      }`}>
                        {teaserData.isPass ? 'Qualified' : 'Audit Pending'}
                      </span>
                   )}
                 </div>
-                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
                   <Activity className="w-3 h-3 text-blue-400" /> Live
                 </span>
               </div>
@@ -542,7 +542,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                       <span className={`text-lg md:text-2xl font-black italic tracking-tighter ${
                         teaserData.score >= 70 ? 'text-emerald-400' : 'text-amber-400'
                       }`}>{teaserData.score}</span>
-                      <span className="text-[9px] md:text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider leading-tight">Audit<br/>Score</span>
+                      <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-tight">Audit<br/>Score</span>
                     </div>
                   )}
                   {teaserData?.smartMoney !== undefined && (
@@ -551,19 +551,19 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                   {teaserData?.smartMoney !== undefined && (
                     <div className="flex items-center gap-1.5">
                       <span className="text-lg md:text-2xl font-black text-blue-400 italic tracking-tighter">{teaserData.smartMoney.toFixed(0)}%</span>
-                      <span className="text-[9px] md:text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider leading-tight">Smart<br/>Money</span>
+                      <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-tight">Smart<br/>Money</span>
                     </div>
                   )}
                 </div>
                 <div className="flex items-center gap-1 text-blue-400">
-                  <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider">View Audit</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">View Audit</span>
                   <ArrowUpRight className="w-3 h-3 md:w-4 md:h-4" />
                 </div>
               </div>
               {!teaserData && (
                 <div className="flex items-center gap-2 text-[var(--text-muted)]">
                   <RefreshCw className="w-3 h-3 animate-spin" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider">Loading live audit data...</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">Loading live audit data...</span>
                 </div>
               )}
             </div>
@@ -591,9 +591,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+10}`} alt="Active trader on MarketBeacon Pro" loading="lazy" decoding="async" />
               </div>
             ))}
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 md:border-4 border-slate-950 bg-blue-600 flex items-center justify-center text-[9px] md:text-[11px] font-bold text-[var(--text-primary)] shadow-xl">+30K</div>
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 md:border-4 border-slate-950 bg-blue-600 flex items-center justify-center text-xs font-bold text-[var(--text-primary)] shadow-xl">+30K</div>
           </div>
-          <p className="text-[11px] md:text-xs font-bold text-[var(--text-muted)]">Trusted by <span className="text-[var(--text-primary)] font-bold">31,402</span> traders</p>
+          <p className="text-xs font-bold text-[var(--text-muted)]">Trusted by <span className="text-[var(--text-primary)] font-bold">31,402</span> traders</p>
         </div>
         </header>
     </>

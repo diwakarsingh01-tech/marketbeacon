@@ -506,7 +506,7 @@ const EducationPage: React.FC = () => {
               <h1 className="text-3xl md:text-5xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic leading-none">
                 Education Center
               </h1>
-              <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] mt-1">
+              <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-[0.3em] mt-1">
                 Strategy Guides · Platform Tour · Institutional Knowledge
               </p>
             </div>
@@ -516,7 +516,7 @@ const EducationPage: React.FC = () => {
           <div className="flex items-center bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl p-1 shadow-sm gap-1 w-fit">
             <button
               onClick={() => setMainTab('strategies')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
                 mainTab === 'strategies' ? 'bg-blue-600 text-white shadow' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
@@ -525,7 +525,7 @@ const EducationPage: React.FC = () => {
             </button>
             <button
               onClick={() => setMainTab('tour')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
                 mainTab === 'tour' ? 'bg-blue-600 text-white shadow' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
@@ -566,11 +566,11 @@ const EducationPage: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-[7px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${tb.cls}`}>
+                            <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${tb.cls}`}>
                               {tb.label}
                             </span>
                           </div>
-                          <p className={`text-[11px] font-black uppercase tracking-tight mt-0.5 truncate ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
+                          <p className={`text-xs font-bold uppercase tracking-tight mt-0.5 truncate ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                             {s.name}
                           </p>
                         </div>
@@ -600,17 +600,17 @@ const EducationPage: React.FC = () => {
                             <div className="flex items-start justify-between gap-4">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${tb.cls}`}>
+                                  <span className={`text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${tb.cls}`}>
                                     {tb.label}
                                   </span>
-                                  <span className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-full">
+                                  <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-full">
                                     {activeStrat.category}
                                   </span>
                                 </div>
                                 <h2 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic leading-tight mt-2">
                                   {activeStrat.name}
                                 </h2>
-                                <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{activeStrat.subtitle}</p>
+                                <p className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-wider">{activeStrat.subtitle}</p>
                               </div>
                               <div className={`p-3 rounded-2xl ${c.bg} border ${c.border} shrink-0`}>
                                 <activeStrat.icon className={`h-7 w-7 ${c.text}`} />
@@ -633,7 +633,7 @@ const EducationPage: React.FC = () => {
                                 >
                                   <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 rounded-full ${c.dot}`} />
-                                    <h4 className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">{sec.heading}</h4>
+                                    <h4 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{sec.heading}</h4>
                                   </div>
                                   <p className="text-[12px] font-bold text-[var(--text-secondary)] leading-relaxed">{sec.body}</p>
                                 </motion.div>
@@ -644,7 +644,7 @@ const EducationPage: React.FC = () => {
                             <div className="flex items-start gap-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5">
                               <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                               <div>
-                                <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Institutional Guardrail</p>
+                                <p className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">Institutional Guardrail</p>
                                 <p className="text-[12px] font-bold text-amber-300 leading-relaxed">{activeStrat.guardrail}</p>
                               </div>
                             </div>
@@ -686,8 +686,8 @@ const EducationPage: React.FC = () => {
                           <t.icon className={`h-4 w-4 ${isActive ? c.text : 'text-[var(--text-tertiary)]'}`} />
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t.path}</p>
-                          <p className={`text-[12px] font-black uppercase tracking-tight ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
+                          <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{t.path}</p>
+                          <p className={`text-xs font-bold uppercase tracking-tight ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                             {t.name}
                           </p>
                         </div>
@@ -714,7 +714,7 @@ const EducationPage: React.FC = () => {
                           <div className={`px-8 py-6 border-b border-[var(--border-primary)] ${c.bg}`}>
                             <div className="flex items-start justify-between gap-4">
                               <div className="space-y-1">
-                                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">{activeTourItem.path}</span>
+                                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{activeTourItem.path}</span>
                                 <h2 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic leading-none">
                                   {activeTourItem.name}
                                 </h2>
@@ -729,7 +729,7 @@ const EducationPage: React.FC = () => {
                           </div>
 
                           <div className="p-8 space-y-3">
-                            <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4 flex items-center gap-2">
                               <Eye className="h-3 w-3" /> What You Can Do Here
                             </p>
                             {(activeTourItem?.features || []).map((feature, i) => (
@@ -739,9 +739,9 @@ const EducationPage: React.FC = () => {
                                 className="flex items-start gap-3 p-4 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-colors"
                               >
                                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${c.bg} border ${c.border}`}>
-                                  <span className={`text-[8px] font-black ${c.text}`}>{String(i + 1).padStart(2, '0')}</span>
+                                  <span className={`text-xs font-bold ${c.text}`}>{String(i + 1).padStart(2, '0')}</span>
                                 </div>
-                                <p className="text-[11px] font-bold text-[var(--text-secondary)] leading-snug">{feature}</p>
+                                <p className="text-xs font-bold text-[var(--text-secondary)] leading-snug">{feature}</p>
                               </motion.div>
                             ))}
                           </div>

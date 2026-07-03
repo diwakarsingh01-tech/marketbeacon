@@ -28,8 +28,8 @@ const ICPCards: React.FC = () => {
             <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-2xl w-fit mb-6 group-hover:bg-blue-500/20 transition-colors">
               <TrendingUp className="h-6 w-6 text-blue-400 group-hover:text-blue-300 transition-colors" />
             </div>
-            <div className="mb-2 text-[11px] font-bold text-blue-400 uppercase tracking-[0.3em] group-hover:text-blue-300 transition-colors">Retail Trader</div>
-            <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-blue-100 transition-colors">Portfolio: ₹5L – ₹50L</h3>
+            <div className="mb-2 text-xs font-bold text-blue-400 uppercase tracking-[0.3em] group-hover:text-blue-300 transition-colors">Retail Trader</div>
+            <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-blue-100 transition-colors">Portfolio: ₹5L – ₹50L</h3>
             <p className="text-[var(--text-tertiary)] text-sm leading-relaxed flex-1 mb-6 group-hover:text-[var(--text-secondary)] transition-colors">
               "I never knew when to research entry vs wait for confirmation. — The ABCD Tranche system gives institutional clarity."
             </p>
@@ -42,7 +42,7 @@ const ICPCards: React.FC = () => {
                   <span className="relative">
                     {f}
                     {index === 0 && (
-                      <span className="absolute -top-1 -right-1 text-[8px] font-bold text-emerald-500 uppercase tracking-wider">NEW</span>
+                      <span className="absolute -top-1 -right-1 text-xs font-bold text-emerald-500 uppercase tracking-wider">NEW</span>
                     )}
                   </span>
                 </div>
@@ -55,14 +55,14 @@ const ICPCards: React.FC = () => {
 
           {/* Segment 2: Sub-broker / Advisor */}
           <div className="card group relative p-8 hover:border-emerald-400/60 transition-all hover:-translate-y-1 flex flex-col">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-[var(--text-primary)] px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shadow-lg">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-[var(--text-primary)] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap shadow-lg">
               Most Popular
             </div>
             <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl w-fit mb-6 mt-2 group-hover:bg-emerald-500/20 transition-colors">
               <Users className="h-6 w-6 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
             </div>
-            <div className="mb-2 text-[11px] font-bold text-emerald-400 uppercase tracking-[0.3em] group-hover:text-emerald-300 transition-colors">Sub-broker / Advisor</div>
-            <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-emerald-100 transition-colors">Client Portfolio Manager</h3>
+            <div className="mb-2 text-xs font-bold text-emerald-400 uppercase tracking-[0.3em] group-hover:text-emerald-300 transition-colors">Sub-broker / Advisor</div>
+            <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-emerald-100 transition-colors">Client Portfolio Manager</h3>
             <p className="text-[var(--text-tertiary)] text-sm leading-relaxed flex-1 mb-6 group-hover:text-[var(--text-secondary)] transition-colors">
               "I need to justify every research note to clients. — The Audit Score helps me back every call with data."
             </p>
@@ -75,7 +75,7 @@ const ICPCards: React.FC = () => {
                   <span className="relative">
                     {f}
                     {index === 1 && (
-                      <span className="absolute -top-1 -right-1 text-[8px] font-bold text-amber-500 uppercase tracking-wider">PRO</span>
+                      <span className="absolute -top-1 -right-1 text-xs font-bold text-amber-500 uppercase tracking-wider">PRO</span>
                     )}
                   </span>
                 </div>
@@ -91,8 +91,8 @@ const ICPCards: React.FC = () => {
             <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl w-fit mb-6 group-hover:bg-amber-500/20 transition-colors">
               <BarChart2 className="h-6 w-6 text-amber-400 group-hover:text-amber-300 transition-colors" />
             </div>
-            <div className="mb-2 text-[11px] font-bold text-amber-400 uppercase tracking-[0.3em] group-hover:text-amber-300 transition-colors">HNI / Family Office</div>
-            <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-amber-100 transition-colors">Portfolio: ₹50L+</h3>
+            <div className="mb-2 text-xs font-bold text-amber-400 uppercase tracking-[0.3em] group-hover:text-amber-300 transition-colors">HNI / Family Office</div>
+            <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-tighter mb-3 group-hover:text-amber-100 transition-colors">Portfolio: ₹50L+</h3>
             <p className="text-[var(--text-tertiary)] text-sm leading-relaxed flex-1 mb-6 group-hover:text-[var(--text-secondary)] transition-colors">
               "Risk management weak hai, capital protect nahi ho raha." — Tranche Laddering se capital systematic way mein deploy hota hai. No emotional decisions.
             </p>
@@ -105,7 +105,7 @@ const ICPCards: React.FC = () => {
                   <span className="relative">
                     {f}
                     {index === 2 && (
-                      <span className="absolute -top-1 -right-1 text-[8px] font-bold text-emerald-500 uppercase tracking-wider">EXCLUSIVE</span>
+                      <span className="absolute -top-1 -right-1 text-xs font-bold text-emerald-500 uppercase tracking-wider">EXCLUSIVE</span>
                     )}
                   </span>
                 </div>

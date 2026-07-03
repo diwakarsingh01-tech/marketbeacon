@@ -49,7 +49,7 @@ const DisclaimerPage: React.FC = () => {
         <Link to="/" className="hover:opacity-80 transition-opacity">
           <BrandLogo variant="dark" size={28} />
         </Link>
-        <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] hover:text-white uppercase tracking-widest transition-colors">
+        <Link to="/" className="inline-flex items-center gap-2 text-xs font-bold text-[var(--text-muted)] hover:text-white uppercase tracking-wider transition-colors">
           <ArrowLeft className="w-3 h-3" /> Back to Home
         </Link>
       </nav>
@@ -57,7 +57,7 @@ const DisclaimerPage: React.FC = () => {
       <header className="py-16 px-6 md:px-10 max-w-[800px] mx-auto">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full mb-6">
           <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-          <span className="text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">Regulatory · Risk · Compliance</span>
+          <span className="text-xs font-bold text-amber-400 uppercase tracking-[0.3em]">Regulatory · Risk · Compliance</span>
         </div>
         <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-4">Disclaimer</h1>
         <p className="text-[var(--text-muted)] text-sm">Effective Date: June 06, 2026 · MarketBeacon Technologies</p>
@@ -75,7 +75,7 @@ const DisclaimerPage: React.FC = () => {
         <div className="space-y-10">
           {sections.map((s, i) => (
             <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[1.5rem] p-8">
-              <h2 className="text-base font-black text-white mb-4 tracking-tight">{s.title}</h2>
+              <h2 className="text-base font-bold text-white mb-4 tracking-tight">{s.title}</h2>
               <div className="space-y-2">
                 {s.body.split('\n').map((line, j) => (
                   <p key={j} className={`text-sm leading-relaxed ${line.startsWith('•') ? 'text-slate-300 pl-4' : 'text-[var(--text-muted)]'}`}>
@@ -89,9 +89,9 @@ const DisclaimerPage: React.FC = () => {
       </main>
 
       <div className="border-t border-[var(--border-primary)] py-8 text-center">
-        <Link to="/" className="text-[10px] font-black text-[var(--text-muted)] hover:text-blue-400 uppercase tracking-widest transition-colors">
-          ← Back to MarketBeacon Pro
-        </Link>
+<Link to="/" className="text-xs font-bold text-[var(--text-muted)] hover:text-blue-400 uppercase tracking-wider transition-colors">
+            ← Back to MarketBeacon Pro
+          </Link>
       </div>
     </div>
   );
