@@ -53,15 +53,15 @@ const BlogTeaser: React.FC = () => {
       <div className="max-w-[1100px] mx-auto">
         <div className="flex flex-col md:flex-row items-end justify-between mb-10 gap-4">
           <div>
-            <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.4em] mb-2">Knowledge Base</p>
+            <p className="text-xs font-black text-blue-400 uppercase tracking-[0.4em] mb-2">Knowledge Base</p>
             <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)]">Latest <span className="text-blue-400">Insights</span></h2>
             {usingFallback && (
-              <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-2">
+              <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mt-2">
                 Curated starter reads while the live feed refreshes.
               </p>
             )}
           </div>
-          <Link to="/blog" className="flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-[var(--text-primary)] transition-colors shrink-0">
+          <Link to="/blog" className="flex items-center gap-2 text-blue-400 text-xs font-black uppercase tracking-widest hover:text-[var(--text-primary)] transition-colors shrink-0">
             All Articles <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -72,14 +72,14 @@ const BlogTeaser: React.FC = () => {
               to={`/blog/${a.slug}`}
               className="group bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-[1.5rem] p-6 flex flex-col gap-4 hover:border-slate-600 hover:-translate-y-1 transition-all"
             >
-              <span className={`self-start px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${TAG_COLORS[a.tag] || 'text-slate-400 border-slate-400/20 bg-slate-400/5'}`}>
+              <span className={`self-start px-3 py-1 rounded-full border text-xs font-black uppercase tracking-widest ${TAG_COLORS[a.tag] || 'text-slate-400 border-slate-400/20 bg-slate-400/5'}`}>
                 {a.tag}
               </span>
               <h3 className="text-sm font-black text-[var(--text-primary)] group-hover:text-blue-300 transition-colors leading-snug">
                 {a.title}
               </h3>
               <div className="flex items-center justify-between mt-auto">
-                <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1.5">
+                <span className="text-caption text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1.5">
                   <BookOpen className="w-3 h-3" />{a.read_time || '3 min read'}
                 </span>
                 <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />

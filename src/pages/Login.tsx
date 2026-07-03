@@ -65,7 +65,7 @@ const LoginPage: React.FC = () => {
           {showWakingMessage && (
             <p className="text-xs font-bold text-amber-500 uppercase tracking-wider pt-4">
               🚀 Server is waking up... <br />
-              <span className="text-[11px] text-slate-600 font-bold">This may take 30s on first load (Render Free Tier)</span>
+              <span className="text-xs text-slate-600 font-bold">This may take 30s on first load (Render Free Tier)</span>
             </p>
           )}
         </div>

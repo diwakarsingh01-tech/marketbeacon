@@ -48,14 +48,14 @@ const ICPCards: React.FC = () => {
                 </div>
               ))}
             </div>
-            <Link to="/login" className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-xl text-xs font-bold uppercase tracking-wider text-center transition-all shadow-lg shadow-blue-500/20">
+            <Link to="/login" className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-xl text-caption text-center transition-all shadow-lg shadow-blue-500/20">
               Start Free Trial
             </Link>
           </div>
 
           {/* Segment 2: Sub-broker / Advisor */}
           <div className="card group relative p-8 hover:border-emerald-400/60 transition-all hover:-translate-y-1 flex flex-col">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-[var(--text-primary)] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap shadow-lg">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-teal-500 text-[var(--text-primary)] px-4 py-1 rounded-full text-caption whitespace-nowrap shadow-lg">
               Most Popular
             </div>
             <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl w-fit mb-6 mt-2 group-hover:bg-emerald-500/20 transition-colors">
@@ -81,7 +81,7 @@ const ICPCards: React.FC = () => {
                 </div>
               ))}
             </div>
-            <Link to="/license-desk" className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-[var(--text-primary)] rounded-xl text-xs font-bold uppercase tracking-wider text-center transition-all shadow-lg shadow-emerald-500/20">
+            <Link to="/license-desk" className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-[var(--text-primary)] rounded-xl text-caption text-center transition-all shadow-lg shadow-emerald-500/20">
               Get Pro Access
             </Link>
           </div>
@@ -113,7 +113,7 @@ const ICPCards: React.FC = () => {
             </div>
             <button
               onClick={() => window.open(waLink('Hi Admin, I am interested in Alpha Access for my HNI portfolio.'), '_blank')}
-              className="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-[var(--text-primary)] rounded-xl text-xs font-bold uppercase tracking-wider text-center transition-all shadow-lg shadow-amber-500/20"
+              className="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-[var(--text-primary)] rounded-xl text-caption text-center transition-all shadow-lg shadow-amber-500/20"
             >
               Contact for Alpha
             </button>

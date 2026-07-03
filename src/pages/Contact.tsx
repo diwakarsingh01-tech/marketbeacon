@@ -94,7 +94,7 @@ const ContactPage: React.FC = () => {
                     <Mail className="h-4 w-4 text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-wider">Email</p>
+                    <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Email</p>
                     <a href="mailto:support@marketbeacon.pro" className="text-sm text-white hover:text-blue-400 transition-colors">support@marketbeacon.pro</a>
                   </div>
                 </div>
@@ -103,7 +103,7 @@ const ContactPage: React.FC = () => {
                     <Phone className="h-4 w-4 text-emerald-400" />
                   </div>
                   <div>
-                    <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-wider">WhatsApp</p>
+                    <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">WhatsApp</p>
                     <a href="https://wa.me/919251180183" target="_blank" rel="noopener noreferrer" className="text-sm text-white hover:text-emerald-400 transition-colors">+91-92511-80183</a>
                   </div>
                 </div>
@@ -125,7 +125,7 @@ const ContactPage: React.FC = () => {
             <h2 className="text-sm font-bold text-white mb-6">Send a Message</h2>
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Name *</label>
+                <label className="block text-caption text-[var(--text-muted)] uppercase tracking-wider mb-2">Name *</label>
                 <input
                   type="text"
                   name="name"
@@ -137,7 +137,7 @@ const ContactPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Email *</label>
+                <label className="block text-caption text-[var(--text-muted)] uppercase tracking-wider mb-2">Email *</label>
                 <input
                   type="email"
                   name="email"
@@ -149,7 +149,7 @@ const ContactPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Subject</label>
+                <label className="block text-caption text-[var(--text-muted)] uppercase tracking-wider mb-2">Subject</label>
                 <input
                   type="text"
                   name="subject"
@@ -160,7 +160,7 @@ const ContactPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Message *</label>
+                <label className="block text-caption text-[var(--text-muted)] uppercase tracking-wider mb-2">Message *</label>
                 <textarea
                   name="message"
                   value={form.message}

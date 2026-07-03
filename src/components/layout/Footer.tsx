@@ -30,7 +30,7 @@ const GlobalFooter: React.FC = () => {
             {/* Column 2: Core Terminal */}
             <div className="space-y-3">
               <button onClick={() => toggleSection('core')} className="w-full flex items-center justify-between md:cursor-default">
-                <h4 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Core Terminal</h4>
+                <h4 className="text-caption text-[var(--text-muted)] uppercase tracking-wider">Core Terminal</h4>
                 <span className="md:hidden text-[var(--text-muted)]">{expandedSections.core ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
               </button>
               <ul className={`space-y-2 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider overflow-hidden transition-all duration-300 md:max-h-none ${expandedSections.core ? 'max-h-96' : 'max-h-0 md:max-h-none'}`}>
@@ -42,7 +42,7 @@ const GlobalFooter: React.FC = () => {
             {/* Column 3: Portfolio Desk */}
             <div className="space-y-3">
               <button onClick={() => toggleSection('portfolio')} className="w-full flex items-center justify-between md:cursor-default">
-                <h4 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Portfolio Desk</h4>
+                <h4 className="text-caption text-[var(--text-muted)] uppercase tracking-wider">Portfolio Desk</h4>
                 <span className="md:hidden text-[var(--text-muted)]">{expandedSections.portfolio ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
               </button>
               <ul className={`space-y-2 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider overflow-hidden transition-all duration-300 md:max-h-none ${expandedSections.portfolio ? 'max-h-96' : 'max-h-0 md:max-h-none'}`}>
@@ -55,7 +55,7 @@ const GlobalFooter: React.FC = () => {
             {/* Column 4: Links & Channels */}
             <div className="space-y-3">
               <button onClick={() => toggleSection('external')} className="w-full flex items-center justify-between md:cursor-default">
-                <h4 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">External Link</h4>
+                <h4 className="text-caption text-[var(--text-muted)] uppercase tracking-wider">External Link</h4>
                 <span className="md:hidden text-[var(--text-muted)]">{expandedSections.external ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
               </button>
               <ul className={`space-y-2 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider overflow-hidden transition-all duration-300 md:max-h-none ${expandedSections.external ? 'max-h-96' : 'max-h-0 md:max-h-none'}`}>
@@ -84,11 +84,11 @@ const GlobalFooter: React.FC = () => {
 
             {isDisclaimerExpanded && (
               <div className="px-4 pb-6 md:px-6 md:pb-8 space-y-4 animate-in slide-in-from-top-2 duration-300">
-                <div className="space-y-3 text-[10px] md:text-xs uppercase font-bold text-[var(--text-muted)] tracking-wide leading-relaxed border-t border-[var(--border-primary)]/50 pt-4">
+                <div className="space-y-3 text-xs md:text-xs uppercase font-bold text-[var(--text-muted)] tracking-wide leading-relaxed border-t border-[var(--border-primary)]/50 pt-4">
                   <p>
                      Institutional protocol warning: MarketBeacon (Batch 9 Engine) is an institutional-grade research and asset discovery terminal. All technical signals, portfolio weights, and fundamental scores are provided for educational and research purposes only. MarketBeacon is not a SEBI registered investment advisor. Stock market trading involves significant financial risk. Historical results do not guarantee future performance. No Stop-Loss approach is considered a high-risk methodology.
                   </p>
-                  <p className="text-[10px] md:text-[11px] text-[var(--text-muted)] leading-normal lowercase first-letter:uppercase">
+                  <p className="text-xs md:text-xs text-[var(--text-muted)] leading-normal lowercase first-letter:uppercase">
                      Consult a certified financial professional before making any real money investments.
                   </p>
                 </div>

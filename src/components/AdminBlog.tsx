@@ -82,7 +82,7 @@ export default function AdminBlog() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-black uppercase tracking-widest">Blog Posts ({posts.length})</h2>
-        <button onClick={() => setEditor(emptyPost())} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all">
+        <button onClick={() => setEditor(emptyPost())} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-500 transition-all">
           <Plus className="w-4 h-4" /> New Post
         </button>
       </div>
@@ -97,7 +97,7 @@ export default function AdminBlog() {
                 <FileText className="w-5 h-5 text-slate-300 shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-900 truncate">{post.title}</p>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">/{post.slug} · {post.tag} · {post.date}</p>
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">/{post.slug} · {post.tag} · {post.date}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -128,45 +128,45 @@ export default function AdminBlog() {
             <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Title</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-1">Title</label>
                   <input value={editor.title} onChange={e => setEditor({ ...editor, title: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:bg-white transition-all" />
                 </div>
                 <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Slug (URL)</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-1">Slug (URL)</label>
                   <input value={editor.slug} onChange={e => setEditor({ ...editor, slug: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:bg-white transition-all" />
                 </div>
               </div>
 
               <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Meta Description</label>
+                <label className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-1">Meta Description</label>
                 <textarea value={editor.meta_description} onChange={e => setEditor({ ...editor, meta_description: e.target.value })} rows={2} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white transition-all" />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Tag</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-1">Tag</label>
                   <input value={editor.tag} onChange={e => setEditor({ ...editor, tag: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:bg-white transition-all" />
                 </div>
                 <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Read Time</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-1">Read Time</label>
                   <input value={editor.read_time} onChange={e => setEditor({ ...editor, read_time: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:bg-white transition-all" />
                 </div>
                 <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Date</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-1">Date</label>
                   <input value={editor.date} onChange={e => setEditor({ ...editor, date: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:bg-white transition-all" />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Content Sections</label>
-                  <button onClick={addSection} className="text-[9px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-400">+ Add Section</button>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500">Content Sections</label>
+                  <button onClick={addSection} className="text-xs font-black text-blue-500 uppercase tracking-widest hover:text-blue-400">+ Add Section</button>
                 </div>
                 {editor.sections.map((section: Section, i: number) => (
                   <div key={i} className="mb-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Section {i + 1}</span>
-                      <button onClick={() => removeSection(i)} className="text-red-400 hover:text-red-300 text-[9px] font-black uppercase tracking-widest">Remove</button>
+                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Section {i + 1}</span>
+                      <button onClick={() => removeSection(i)} className="text-red-400 hover:text-red-300 text-xs font-black uppercase tracking-widest">Remove</button>
                     </div>
                     <input value={section.heading || ''} onChange={e => updateSection(i, 'heading', e.target.value)} placeholder="Heading (optional)" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold mb-2 focus:bg-white transition-all" />
                     <textarea value={section.body} onChange={e => updateSection(i, 'body', e.target.value)} placeholder="Body text (use \n\n for paragraphs)" rows={5} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:bg-white transition-all" />
@@ -175,17 +175,17 @@ export default function AdminBlog() {
               </div>
 
               <div>
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Key Takeaways (one per line)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-1">Key Takeaways (one per line)</label>
                 <textarea value={(editor.key_takeaways || []).join('\n')} onChange={e => setEditor({ ...editor, key_takeaways: e.target.value.split('\n').filter((t: string) => t.trim()) })} rows={3} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white transition-all" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Related Article Slug</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-1">Related Article Slug</label>
                   <input value={editor.related_slug || ''} onChange={e => setEditor({ ...editor, related_slug: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:bg-white transition-all" />
                 </div>
                 <div>
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1">Related Article Title</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-1">Related Article Title</label>
                   <input value={editor.related_title || ''} onChange={e => setEditor({ ...editor, related_title: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:bg-white transition-all" />
                 </div>
               </div>
@@ -194,9 +194,9 @@ export default function AdminBlog() {
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={!!editor.published} onChange={e => setEditor({ ...editor, published: e.target.checked ? 1 : 0 })} className="rounded" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Published</span>
+                <span className="text-xs font-black uppercase tracking-widest text-slate-500">Published</span>
               </label>
-              <button onClick={save} disabled={saving} className="px-6 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all disabled:opacity-50">
+              <button onClick={save} disabled={saving} className="px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-500 transition-all disabled:opacity-50">
                 {saving ? 'Saving...' : 'Save Post'}
               </button>
             </div>

@@ -189,7 +189,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
             
             <div>
               <h2 className="text-2xl md:text-3xl font-black tracking-tight uppercase italic">{currentTier.name}</h2>
-              <p className="text-white/60 text-[11px] md:text-xs font-bold uppercase tracking-[0.2em] mt-2">Institutional Research License</p>
+              <p className="text-white/60 text-xs md:text-xs font-bold uppercase tracking-[0.2em] mt-2">Institutional Research License</p>
             </div>
 
             <div className="space-y-3 md:space-y-4 pt-4 border-t border-white/10">
@@ -207,7 +207,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
               <span className="text-4xl md:text-6xl font-black tracking-tighter">{currentPrice}</span>
               <span className="text-white/40 font-bold text-xs md:text-sm">/{billingCycle === 'monthly' ? 'cycle' : 'yr'}</span>
             </div>
-            <p className="text-[10px] md:text-[11px] font-bold text-white/40 uppercase tracking-wider mt-2 italic">Calendar Month Billing Cycle Active</p>
+            <p className="text-xs md:text-caption text-white/40 uppercase tracking-wider mt-2 italic">Calendar Month Billing Cycle Active</p>
           </div>
         </div>
 
@@ -232,7 +232,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                </div>
                <button 
                  onClick={onClose}
-                  className="w-full md:w-auto px-12 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-blue-500/20"
+                  className="w-full md:w-auto px-12 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-caption shadow-lg shadow-blue-500/20"
                >
                  Return to Terminal
                </button>
@@ -240,7 +240,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
           ) : step === 'plan' ? (
             <div className="flex-1 flex flex-col justify-center space-y-6 md:space-y-10 animate-in fade-in slide-in-from-right duration-500 pb-6 md:pb-0">
                <div className="space-y-2 text-center md:text-left">
-                   <span className="text-[11px] md:text-xs font-bold text-blue-600 uppercase tracking-[0.3em]">Step 1: Deployment Config</span>
+                   <span className="text-xs md:text-xs font-bold text-blue-600 uppercase tracking-[0.3em]">Step 1: Deployment Config</span>
                    <h3 className="text-2xl md:text-4xl font-bold text-[var(--text-primary)] uppercase italic leading-none">Upgrade Your Edge</h3>
                </div>
 
@@ -249,13 +249,13 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                   <div className="flex bg-[var(--bg-primary)] p-1 rounded-2xl border border-[var(--border-primary)] w-fit relative">
                      <button 
                        onClick={() => setBillingCycle('monthly')}
-                        className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[11px] md:text-xs font-bold uppercase tracking-wider transition-all z-10 ${billingCycle === 'monthly' ? 'text-white' : 'text-[var(--text-muted)]'}`}
+                        className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-caption transition-all z-10 ${billingCycle === 'monthly' ? 'text-white' : 'text-[var(--text-muted)]'}`}
                       >
                          Monthly
                       </button>
                       <button 
                         onClick={() => setBillingCycle('yearly')}
-                        className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[11px] md:text-xs font-bold uppercase tracking-wider transition-all z-10 ${billingCycle === 'yearly' ? 'text-white' : 'text-[var(--text-muted)]'}`}
+                        className={`px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-caption transition-all z-10 ${billingCycle === 'yearly' ? 'text-white' : 'text-[var(--text-muted)]'}`}
                      >
                         Yearly (-33%)
                      </button>
@@ -273,12 +273,12 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                         className={`w-full p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border-2 text-left transition-all flex items-center justify-between ${selectedTier === id ? 'border-blue-600 bg-blue-500/10' : 'border-[var(--border-primary)] hover:border-[var(--border-secondary)]'}`}
                      >
                        <div className="space-y-1">
-                          <span className="text-[11px] md:text-xs font-bold text-[var(--text-primary)] uppercase tracking-tight">{t.name}</span>
-                          <p className="text-[11px] md:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{id === 'pro' ? 'Structural Patterns' : 'Full Institutional Access'}</p>
+                          <span className="text-xs md:text-xs font-bold text-[var(--text-primary)] uppercase tracking-tight">{t.name}</span>
+                          <p className="text-xs md:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{id === 'pro' ? 'Structural Patterns' : 'Full Institutional Access'}</p>
                        </div>
                        <div className="text-right">
                           <span className="text-lg md:text-xl font-bold text-[var(--text-primary)] block">{billingCycle === 'monthly' ? t.monthly : t.yearly}</span>
-                          <span className="text-[10px] md:text-[11px] font-bold text-[var(--text-muted)] uppercase">{billingCycle}</span>
+                          <span className="text-xs md:text-caption text-[var(--text-muted)] uppercase">{billingCycle}</span>
                        </div>
                      </button>
                   ))}
@@ -288,14 +288,14 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                   <div className="border-t border-[var(--border-primary)] pt-5 mt-2 space-y-3">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                       <div className="text-left">
-                        <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">Have a Trial Voucher?</span>
-                        <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider block mt-0.5">Claim instant 7-day trial access</span>
+                        <span className="text-caption text-[var(--text-muted)] uppercase tracking-wider block">Have a Trial Voucher?</span>
+                        <span className="text-xs text-[var(--text-tertiary)] uppercase tracking-wider block mt-0.5">Claim instant 7-day trial access</span>
                       </div>
                       <button 
                         type="button"
                         onClick={() => handleRedeemVoucher('ALPHA7')}
                         disabled={redeeming}
-                        className="w-full sm:w-auto px-3.5 py-2 bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 text-indigo-400 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 text-center shrink-0"
+                        className="w-full sm:w-auto px-3.5 py-2 bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 text-indigo-400 rounded-xl text-caption transition-all active:scale-95 text-center shrink-0"
                       >
                         {redeeming ? '...' : 'Claim ALPHA7 Trial'}
                       </button>
@@ -306,19 +306,19 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                         placeholder="ENTER VOUCHER CODE"
                         value={voucherCode}
                         onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherError(null); }}
-                        className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl px-3.5 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none flex-1 focus:border-blue-600 transition-all placeholder:text-[var(--text-muted)]"
+                        className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl px-3.5 py-2.5 text-caption outline-none flex-1 focus:border-blue-600 transition-all placeholder:text-[var(--text-muted)]"
                       />
                       <button 
                         type="button"
                         onClick={() => handleRedeemVoucher()}
                         disabled={redeeming || !voucherCode.trim()}
-                        className="px-5 py-2.5 bg-blue-600 text-[var(--text-primary)] rounded-xl text-[11px] font-bold uppercase tracking-wider hover:bg-blue-500 transition-all disabled:opacity-40"
+                        className="px-5 py-2.5 bg-blue-600 text-[var(--text-primary)] rounded-xl text-caption hover:bg-blue-500 transition-all disabled:opacity-40"
                       >
                         {redeeming ? '...' : 'Apply'}
                       </button>
                     </div>
                     {voucherError && (
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-rose-500 text-left pl-1">{voucherError}</p>
+                      <p className="text-caption text-rose-500 text-left pl-1">{voucherError}</p>
                     )}
                   </div>
 
@@ -334,10 +334,10 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
             <div className="flex-1 flex flex-col justify-center space-y-6 md:space-y-8 animate-in fade-in slide-in-from-right duration-500 pb-8 md:pb-0">
                <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                      <span className="text-[11px] md:text-xs font-bold text-blue-600 uppercase tracking-[0.3em]">Step 2: Transfer Confirmation</span>
+                      <span className="text-xs md:text-xs font-bold text-blue-600 uppercase tracking-[0.3em]">Step 2: Transfer Confirmation</span>
                       <h3 className="text-xl md:text-2xl font-bold text-[var(--text-primary)] uppercase italic">Scan & Pay via UPI</h3>
                   </div>
-                  <button onClick={() => setStep('plan')} className="text-[11px] md:text-xs font-bold text-[var(--text-muted)] uppercase hover:text-[var(--text-primary)]">Change Plan</button>
+                  <button onClick={() => setStep('plan')} className="text-xs md:text-xs font-bold text-[var(--text-muted)] uppercase hover:text-[var(--text-primary)]">Change Plan</button>
                </div>
 
                 <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 p-6 md:p-8 bg-[var(--bg-primary)] rounded-[2rem] border border-[var(--border-primary)]">
@@ -349,14 +349,14 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                   </div>
                   <div className="space-y-4 flex-1 text-center md:text-left w-full">
                      <div className="space-y-1">
-                        <span className="text-[11px] md:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">Fixed Plan Amount ({billingCycle})</span>
+                        <span className="text-xs md:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">Fixed Plan Amount ({billingCycle})</span>
                         <div className="bg-[var(--bg-secondary)] px-5 py-3 rounded-2xl border border-[var(--border-primary)] w-fit mx-auto md:mx-0">
                            <p className="text-3xl md:text-4xl font-bold text-blue-600 tracking-tighter">{currentPrice}</p>
                         </div>
                      </div>
 
                      <div className="space-y-1.5">
-                       <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">Or transfer to UPI ID</span>
+                       <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">Or transfer to UPI ID</span>
                        <div className="flex items-center justify-between bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl p-2.5 max-w-sm mx-auto md:mx-0">
                          <span className="text-xs font-mono font-bold text-[var(--text-primary)] select-all tracking-tight">{upiId}</span>
                          <button 
@@ -371,7 +371,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
 
                      <a 
                        href={upiLink} 
-                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded-xl text-[11px] font-bold uppercase tracking-wider hover:bg-blue-500/20 transition-all active:scale-95"
+                       className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded-xl text-caption hover:bg-blue-500/20 transition-all active:scale-95"
                      >
                        <Smartphone className="h-3.5 w-3.5" />
                        <span>Pay via UPI App</span>
@@ -383,9 +383,9 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                <form onSubmit={handleSubmitTransaction} className="space-y-4">
                   <div className="space-y-1">
                      <div className="flex justify-between items-center pl-1">
-                       <label className="text-[11px] md:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">Transaction UTR (12 Digits)</label>
+                       <label className="text-xs md:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">Transaction UTR (12 Digits)</label>
                        {transactionId && (
-                          <span className={`text-[10px] font-bold uppercase tracking-wider ${/^\d{12}$/.test(transactionId) ? 'text-emerald-500' : 'text-rose-500'}`}>
+                          <span className={`text-caption ${/^\d{12}$/.test(transactionId) ? 'text-emerald-500' : 'text-rose-500'}`}>
                            {/^\d{12}$/.test(transactionId) ? '✓ Valid UTR' : `${transactionId.length} / 12 Digits`}
                          </span>
                        )}
@@ -407,7 +407,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                             }`}
                         />
                      </div>
-                     <p className="text-[10px] font-medium text-[var(--text-muted)] pl-1 leading-relaxed uppercase">
+                     <p className="text-xs font-medium text-[var(--text-muted)] pl-1 leading-relaxed uppercase">
                        Find the 12-digit UTR/Ref number in your Google Pay, PhonePe, or Paytm receipt.
                      </p>
                   </div>
@@ -416,7 +416,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                      <button 
                         type="submit"
                         disabled={isSubmitting || !/^\d{12}$/.test(transactionId)}
-                        className="py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-2 disabled:opacity-40 transition-all hover:scale-[1.02] shadow-lg shadow-blue-500/20 active:scale-95"
+                        className="py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-caption flex items-center justify-center space-x-2 disabled:opacity-40 transition-all hover:scale-[1.02] shadow-lg shadow-blue-500/20 active:scale-95"
                      >
                         <Send className="h-4 w-4" />
                         <span>{isSubmitting ? 'Verifying...' : 'Submit Proof'}</span>
@@ -424,7 +424,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                      <button 
                         type="button"
                         onClick={openWhatsApp}
-                        className="py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-2 transition-all hover:scale-[1.02] shadow-lg shadow-emerald-500/20 active:scale-95"
+                        className="py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-2xl text-caption flex items-center justify-center space-x-2 transition-all hover:scale-[1.02] shadow-lg shadow-emerald-500/20 active:scale-95"
                      >
                         <MessageSquare className="h-4 w-4" />
                         <span>Send WhatsApp</span>
@@ -436,7 +436,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                 <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-2xl p-4 space-y-2.5">
                    <div className="flex items-center gap-1.5 text-blue-400">
                       <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Live System Log</span>
+                      <span className="text-caption">Live System Log</span>
                    </div>
                   <div className="space-y-1.5">
                      {[
@@ -444,7 +444,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                         { name: "vikas***", plan: `Pro ${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'}`, time: "12m ago" },
                         { name: "amit***", plan: `Alpha ${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'}`, time: "24m ago" }
                      ].map((act, idx) => (
-                         <div key={idx} className="flex items-center justify-between text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                         <div key={idx} className="flex items-center justify-between text-xs font-bold text-[var(--text-muted)] uppercase tracking-tight">
                            <div className="flex items-center gap-1.5">
                               <span className="h-1 w-1 rounded-full bg-emerald-500" />
                               <span>User {act.name} activated {act.plan}</span>

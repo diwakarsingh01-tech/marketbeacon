@@ -95,14 +95,14 @@ const Methodology: React.FC = () => {
           </div>
 
           <div className="mt-16 p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20">
-            <p className="text-[11px] font-bold text-amber-400 uppercase tracking-wider mb-2">⚠ Educational Disclaimer</p>
+            <p className="text-caption text-amber-400 uppercase tracking-wider mb-2">⚠ Educational Disclaimer</p>
             <p className="text-xs text-[var(--text-muted)] leading-relaxed">
               MarketBeacon Pro is an educational platform for institutional audit research. Nothing on this website constitutes investment advice, a recommendation, or an offer to buy or sell securities. All strategies, backtests, and signals are for reference only. Always consult a SEBI-registered investment advisor before making trading decisions. Past performance is not indicative of future results.
             </p>
           </div>
 
           <div className="mt-10 text-center">
-            <Link to="/login" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-blue-500/20">
+            <Link to="/login" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-caption px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-blue-500/20">
               Start Free Audit <ArrowRight className="w-3 h-3" />
             </Link>
           </div>

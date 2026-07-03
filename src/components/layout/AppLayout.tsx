@@ -53,7 +53,7 @@ const AppLayout: React.FC = () => {
         
         {/* Sticky SEBI Compliance Banner */}
         {!isBannerDismissed && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-1.5 md:py-2 text-center text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center justify-between gap-2 relative z-30 shrink-0 select-none">
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-1.5 md:py-2 text-center text-caption text-amber-400 flex items-center justify-between gap-2 relative z-30 shrink-0 select-none">
             <span className="flex-1 text-center pr-2 md:pr-4 leading-tight">⚠️ DISCLAIMER: We are NOT a SEBI-registered Investment Adviser or Research Analyst. MarketBeacon provides purely educational & mathematical tools. No content constitutes investment advice or recommendations.</span>
 <button
           onClick={handleDismissBanner}
@@ -87,7 +87,7 @@ const AppLayout: React.FC = () => {
             `}
           >
             <item.icon className="h-5 w-5 mb-1" />
-            <span className="text-[11px] font-bold uppercase tracking-wider leading-none">{item.label}</span>
+            <span className="text-caption leading-none">{item.label}</span>
           </NavLink>
         ))}
       </div>
@@ -99,7 +99,7 @@ const AppLayout: React.FC = () => {
         className="fixed bottom-20 right-4 md:bottom-10 md:right-10 z-[150] w-12 h-12 md:w-16 md:h-16 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-[2rem] shadow-2xl hover:bg-blue-600 hover:scale-110 transition-all flex items-center justify-center group border border-[var(--border-primary)]"
       >
         <MessageSquarePlus className="h-6 w-6 md:h-7 md:w-7 transition-transform group-hover:rotate-12" />
-        <div className="absolute right-full mr-4 px-4 py-2 bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-xs font-bold uppercase tracking-wider rounded-2xl opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0 translate-x-4 whitespace-nowrap pointer-events-none shadow-2xl border border-[var(--border-primary)] hidden md:block">
+        <div className="absolute right-full mr-4 px-4 py-2 bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-caption rounded-2xl opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0 translate-x-4 whitespace-nowrap pointer-events-none shadow-2xl border border-[var(--border-primary)] hidden md:block">
           Institutional Signal Feedback
         </div>
       </button>

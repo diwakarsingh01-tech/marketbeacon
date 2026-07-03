@@ -88,7 +88,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   if (active && payload && payload.length) {
     return (
       <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] p-4 rounded-2xl shadow-2xl space-y-3">
-        <p className="text-[var(--text-muted)] text-xs font-bold uppercase tracking-wider border-b border-[var(--border-primary)] pb-2">{label}</p>
+        <p className="text-[var(--text-muted)] text-caption border-b border-[var(--border-primary)] pb-2">{label}</p>
         {payload.map((entry: TooltipEntry, index: number) => {
           const initial = entry.payload.initialCapital || 1;
           const roi = (((entry.value / initial) - 1) * 100).toFixed(1);
@@ -96,7 +96,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
             <div key={index} className="flex flex-col">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: entry.color }}></div>
-                <span className="text-[var(--text-primary)] text-xs font-bold uppercase tracking-wider">{entry.name}</span>
+                <span className="text-[var(--text-primary)] text-caption">{entry.name}</span>
               </div>
               <div className="flex items-end justify-between gap-6 pl-4">
                 <span className="text-[var(--text-primary)] text-sm font-mono font-bold">₹{entry.value.toLocaleString('en-IN')}</span>
@@ -393,7 +393,7 @@ const AlphaHubPage: React.FC = () => {
             </div>
             <button
               onClick={() => { setVoucherCode('ALPHA7'); setVoucherError(null); }}
-              className="w-full py-2.5 bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-2xl text-xs font-bold uppercase tracking-wider hover:bg-[var(--bg-tertiary)] transition-all active:scale-95"
+              className="w-full py-2.5 bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-2xl text-caption hover:bg-[var(--bg-tertiary)] transition-all active:scale-95"
             >
               Use Code: ALPHA7 (7 Days Free)
             </button>
@@ -403,18 +403,18 @@ const AlphaHubPage: React.FC = () => {
                 placeholder="VOUCHER CODE"
                 value={voucherCode}
                 onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherError(null); }}
-                className="bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-4 py-3 text-xs font-bold uppercase tracking-wider outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none flex-1 focus:border-blue-600 transition-all placeholder:text-[var(--text-secondary)]"
+                className="bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-4 py-3 text-caption outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none flex-1 focus:border-blue-600 transition-all placeholder:text-[var(--text-secondary)]"
               />
               <button
                 onClick={handleRedeemVoucher}
                 disabled={redeeming || !voucherCode.trim()}
-                className="px-6 py-3 bg-blue-600 text-[var(--text-primary)] rounded-2xl text-xs font-bold uppercase tracking-wider hover:bg-blue-500 transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20"
+                className="px-6 py-3 bg-blue-600 text-[var(--text-primary)] rounded-2xl text-caption hover:bg-blue-500 transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20"
               >
                 {redeeming ? '...' : 'Apply'}
               </button>
             </div>
             {voucherError && (
-              <p className="text-xs font-bold uppercase tracking-wider text-rose-500 text-left pl-1">{voucherError}</p>
+              <p className="text-caption text-rose-500 text-left pl-1">{voucherError}</p>
             )}
           </div>
         </div>
@@ -482,7 +482,7 @@ const AlphaHubPage: React.FC = () => {
                     s.step
                   )}
                 </div>
-                <span className={`text-xs font-bold uppercase tracking-wider ${
+                <span className={`text-caption ${
                   currentStep >= s.step ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
                 }`}>
                   {s.label}
@@ -529,7 +529,7 @@ const AlphaHubPage: React.FC = () => {
             <div id="calculator-section" className="card p-6 space-y-6">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded text-xs font-bold uppercase tracking-wider">Step 1</span>
+                  <span className="px-2 py-0.5 bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded text-caption">Step 1</span>
                   <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">Investment amount</h2>
                 </div>
                 <p className="text-xs font-medium text-[var(--text-tertiary)]">Choose mode and inputs to calculate quantities.</p>
@@ -564,7 +564,7 @@ const AlphaHubPage: React.FC = () => {
                       <button
                         key={amt}
                         onClick={() => setLumpSumAmount(amt)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${
+                        className={`px-3 py-1.5 rounded-lg text-caption transition-all border ${
                           lumpSumAmount === amt
                             ? 'bg-blue-600 text-[var(--text-primary)] border-blue-600 shadow-lg'
                             : 'bg-[var(--bg-tertiary)]/40 text-[var(--text-tertiary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
@@ -589,7 +589,7 @@ const AlphaHubPage: React.FC = () => {
               {totalCapital >= 50000 && baskets.length > 0 && (
                 <button
                   onClick={scrollToPortfolio}
-                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-caption transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
                 >
                   <BarChart3 className="h-4 w-4" />
                   Build My Portfolio →
@@ -613,9 +613,9 @@ const AlphaHubPage: React.FC = () => {
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded text-xs font-bold uppercase tracking-wider border border-[var(--border-primary)]">Step 2</span>
+                    <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded text-caption border border-[var(--border-primary)]">Step 2</span>
                     <h2 className="text-base font-bold text-[var(--text-primary)] uppercase tracking-tight">Qualified Stock Allocation</h2>
-                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 rounded text-xs font-bold uppercase tracking-wider">
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 rounded text-caption">
                       {qualifiedStocks.length} stocks
                     </span>
                   </div>
@@ -629,7 +629,7 @@ const AlphaHubPage: React.FC = () => {
               <div className="flex flex-wrap gap-1.5">
                 <button
                   onClick={() => setFilterBasket('all')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all ${
+                  className={`px-3 py-1.5 rounded-lg text-caption border transition-all ${
                     filterBasket === 'all'
                       ? 'bg-blue-600 text-[var(--text-primary)] border-blue-600 shadow-md'
                       : 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
@@ -641,7 +641,7 @@ const AlphaHubPage: React.FC = () => {
                   <button
                     key={b.id}
                     onClick={() => setFilterBasket(b.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-caption border transition-all ${
                       filterBasket === b.id
                         ? 'bg-blue-600 text-[var(--text-primary)] border-blue-600 shadow-md'
                         : 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
@@ -657,7 +657,7 @@ const AlphaHubPage: React.FC = () => {
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-[var(--bg-primary)]/40 border-b border-[var(--border-primary)] text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      <tr className="bg-[var(--bg-primary)]/40 border-b border-[var(--border-primary)] text-caption text-[var(--text-tertiary)]">
                         <th className="px-3 py-3.5 w-[15%]">Stock</th>
                         <th className="px-3 py-3.5 w-[12%]">Sector</th>
                         <th className="px-3 py-3.5 w-[12%] text-right">Base Price</th>
@@ -833,7 +833,7 @@ const AlphaHubPage: React.FC = () => {
             <div className="flex justify-center pt-2">
               <button
                 onClick={scrollToPerformance}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-2xl text-xs font-bold uppercase tracking-wider hover:bg-[var(--bg-tertiary)] transition-all border border-[var(--border-primary)]"
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-2xl text-caption hover:bg-[var(--bg-tertiary)] transition-all border border-[var(--border-primary)]"
               >
                 <BarChart3 className="h-4 w-4" />
                 View Performance History →
@@ -846,9 +846,9 @@ const AlphaHubPage: React.FC = () => {
             <div id="backtest-performance" className="scroll-mt-48 space-y-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded text-xs font-bold uppercase tracking-wider">Step 3</span>
+                  <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded text-caption">Step 3</span>
                   <h2 className="text-base font-bold text-[var(--text-primary)] uppercase tracking-tight">Backtest Performance History</h2>
-                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-xs font-bold uppercase tracking-wider">
+                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-caption">
                     {perfYears}Y data
                   </span>
                 </div>
@@ -864,7 +864,7 @@ const AlphaHubPage: React.FC = () => {
                   <button
                     key={y}
                     onClick={() => setPerfYears(y)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
+                    className={`px-4 py-2 rounded-xl text-caption transition-all border ${
                       perfYears === y
                         ? 'bg-blue-600 text-[var(--text-primary)] border-blue-600 shadow-md shadow-blue-500/10'
                         : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
@@ -1038,7 +1038,7 @@ const AlphaHubPage: React.FC = () => {
               >
                 <div className="flex items-center gap-3">
                   <ShieldCheck className="h-5 w-5 text-blue-400 shrink-0" />
-                  <span className="text-xs md:text-xs font-bold uppercase tracking-wider italic">Important Disclaimers</span>
+                  <span className="text-xs md:text-caption italic">Important Disclaimers</span>
                 </div>
                 {showDisclaimer ? <ChevronUp className="h-4 w-4 text-[var(--text-muted)] shrink-0" /> : <ChevronDown className="h-4 w-4 text-[var(--text-muted)] shrink-0" />}
               </button>

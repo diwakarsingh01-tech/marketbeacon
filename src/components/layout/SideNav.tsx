@@ -106,9 +106,9 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
                       </div>
                       <div className="flex flex-col flex-1">
                         <div className="flex items-center justify-between">
-                           <span className="text-[11px] font-bold uppercase tracking-wider leading-none">{item.label}</span>
+                           <span className="text-caption leading-none">{item.label}</span>
                            {item.tag && (
-                             <span className="bg-blue-500 text-[11px] font-bold text-white px-1.5 py-0.5 rounded uppercase leading-none tracking-wider shadow-lg shadow-blue-600/20">
+                             <span className="bg-blue-500 text-caption text-white px-1.5 py-0.5 rounded uppercase leading-none tracking-wider shadow-lg shadow-blue-600/20">
                                 {item.tag}
                              </span>
                            )}
@@ -141,7 +141,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
                  <Terminal className="h-4 w-4" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[11px] font-bold uppercase tracking-wider">Admin Control</span>
+                <span className="text-caption">Admin Control</span>
                 <span className="text-xs font-bold uppercase tracking-tighter text-slate-500">Command Center</span>
               </div>
             </NavLink>
@@ -161,7 +161,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
               </Link>
            </div>
            <div className="flex flex-col items-end">
-              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Link Protocol</span>
+              <span className="text-caption text-slate-600 uppercase tracking-wider">Link Protocol</span>
               <div className="flex items-center gap-1.5">
                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Live Node</span>
