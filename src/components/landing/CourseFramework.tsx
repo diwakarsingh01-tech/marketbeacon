@@ -40,7 +40,7 @@ const CourseFramework: React.FC = () => {
           <div className="lg:col-span-4 space-y-5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-              <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Course To Terminal Map</span>
+              <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">Course To Terminal Map</span>
             </div>
             <div className="space-y-3">
               <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)] leading-tight">
@@ -50,10 +50,10 @@ const CourseFramework: React.FC = () => {
                 MarketBeacon Pro should be used as an educational research terminal: learn the framework, scan objectively, verify risk, then journal the decision.
               </p>
             </div>
-            <p className="text-[10px] font-bold text-amber-300/90 uppercase tracking-widest leading-relaxed border border-amber-400/20 bg-amber-400/5 rounded-2xl p-4">
+            <p className="text-xs font-bold text-amber-300/90 uppercase tracking-wider leading-relaxed border border-amber-400/20 bg-amber-400/5 rounded-2xl p-4">
               Educational scan only. Audit scores and strategy triggers are not buy/sell recommendations or personalized investment advice.
             </p>
-            <Link to="/blog/abcd-tranche-laddering-guide" className="inline-flex items-center gap-2 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:text-[var(--text-primary)] transition-colors">
+            <Link to="/blog/abcd-tranche-laddering-guide" className="inline-flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
               Read ABCD Framework <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -74,8 +74,8 @@ const CourseFramework: React.FC = () => {
                     <step.icon className="w-5 h-5 text-blue-400" />
                   </div>
                   <div className="space-y-2">
-                    <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Step {index + 1}</span>
-                    <h3 className="text-sm md:text-base font-black text-[var(--text-primary)] uppercase tracking-widest">{step.title}</h3>
+                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.3em]">Step {index + 1}</span>
+                    <h3 className="text-sm md:text-base font-black text-[var(--text-primary)] uppercase tracking-wider">{step.title}</h3>
                     <p className="text-xs text-[var(--text-muted)] leading-relaxed font-medium">{step.desc}</p>
                   </div>
                 </div>
