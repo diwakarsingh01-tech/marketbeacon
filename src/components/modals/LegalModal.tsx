@@ -43,7 +43,7 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type }) => {
                     <AlertTriangle className="h-6 w-6 text-red-600 shrink-0" />
                     <div className="space-y-2">
                        <h3 className="text-xs font-bold text-red-900 uppercase tracking-wider">High Risk Warning</h3>
-                       <p className="text-[11px] font-bold text-red-800 leading-relaxed uppercase">
+                       <p className="text-caption text-red-800 leading-relaxed uppercase">
                           Trading stocks and derivatives involves substantial risk of loss and is not suitable for every investor.
                        </p>
                     </div>

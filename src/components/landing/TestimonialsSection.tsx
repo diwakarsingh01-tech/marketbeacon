@@ -7,7 +7,7 @@ const TestimonialsSection: React.FC = () => {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full mb-6">
             <span className="text-amber-400 text-sm">★★★★★</span>
-            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-[0.3em]">4.9 / 5 from 1,280 traders</span>
+            <span className="text-caption text-amber-400 uppercase tracking-[0.3em]">4.9 / 5 from 1,280 traders</span>
           </div>
           <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--text-primary)] mb-4">
             Traders Who Switched to <span className="text-blue-400">Institutional Logic</span>
@@ -80,14 +80,14 @@ const TestimonialsSection: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-[var(--text-primary)]">{t.name}</p>
-                    <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{t.role}</p>
+                    <p className="text-caption text-[var(--text-muted)] uppercase tracking-wider">{t.role}</p>
                   </div>
                 </div>
                 <div className="text-amber-400 text-xs tracking-tight">{'★'.repeat(t.stars)}</div>
               </div>
               <p className="text-[var(--text-secondary)] text-sm leading-relaxed flex-1 italic">{t.text}</p>
               <div className="pt-3 border-t border-[var(--border-primary)]">
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${t.statColor}`}>{t.stat}</span>
+                <span className={`text-caption ${t.statColor}`}>{t.stat}</span>
               </div>
             </div>
           ))}

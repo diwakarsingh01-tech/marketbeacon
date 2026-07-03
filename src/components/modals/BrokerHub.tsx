@@ -128,7 +128,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
            {step === 'upload' && (
               <button 
                 onClick={() => setStep('selection')}
-                className="text-xs font-bold uppercase tracking-wider text-blue-600 flex items-center mb-6 hover:translate-x-[-4px] transition-transform"
+                className="text-caption text-blue-600 flex items-center mb-6 hover:translate-x-[-4px] transition-transform"
               >
                 <ChevronRight className="h-3 w-3 rotate-180 mr-1" /> Back to Selection
               </button>
@@ -262,7 +262,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                     {error && (
                        <div className="p-3 bg-red-50 rounded-2xl flex items-start space-x-2 text-left border border-red-100">
                           <AlertCircle className="h-3.5 w-3.5 text-red-500 mt-0.5 shrink-0" />
-                          <p className="text-[11px] font-bold text-red-600 uppercase leading-relaxed">{error}</p>
+                          <p className="text-caption text-red-600 uppercase leading-relaxed">{error}</p>
                        </div>
                     )}
                  </div>
@@ -270,7 +270,7 @@ const BrokerHub: React.FC<BrokerHubProps> = ({ isOpen, onClose, onImportComplete
                  <div className="mt-8 flex flex-col items-center space-y-1 text-slate-300">
                     <div className="flex items-center space-x-2">
                        <ShieldCheck className="h-3 w-3" />
-                       <span className="text-xs font-bold uppercase tracking-wider">Local-Only Secure Parsing</span>
+                       <span className="text-caption">Local-Only Secure Parsing</span>
                     </div>
                  </div>
               </div>

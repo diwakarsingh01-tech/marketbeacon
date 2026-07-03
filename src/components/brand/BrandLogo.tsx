@@ -74,7 +74,7 @@ const BrandLogo: React.FC<LogoProps> = ({
                PRO
             </span>
           </div>
-          <span className={`text-[11px] font-bold uppercase tracking-[0.45em] mt-1.5 ml-0.5 ${isDark ? 'text-blue-400' : 'text-slate-400'}`}>
+          <span className={`text-caption uppercase tracking-[0.45em] mt-1.5 ml-0.5 ${isDark ? 'text-blue-400' : 'text-slate-400'}`}>
              Institutional Node
           </span>
         </div>

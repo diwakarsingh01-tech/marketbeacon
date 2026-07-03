@@ -516,7 +516,7 @@ const EducationPage: React.FC = () => {
           <div className="flex items-center bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl p-1 shadow-sm gap-1 w-fit">
             <button
               onClick={() => setMainTab('strategies')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-caption transition-all ${
                 mainTab === 'strategies' ? 'bg-blue-600 text-white shadow' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
@@ -525,7 +525,7 @@ const EducationPage: React.FC = () => {
             </button>
             <button
               onClick={() => setMainTab('tour')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-caption transition-all ${
                 mainTab === 'tour' ? 'bg-blue-600 text-white shadow' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
@@ -566,7 +566,7 @@ const EducationPage: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${tb.cls}`}>
+                            <span className={`text-caption px-2 py-0.5 rounded-full ${tb.cls}`}>
                               {tb.label}
                             </span>
                           </div>
@@ -600,10 +600,10 @@ const EducationPage: React.FC = () => {
                             <div className="flex items-start justify-between gap-4">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className={`text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${tb.cls}`}>
+                                  <span className={`text-caption px-2.5 py-1 rounded-full ${tb.cls}`}>
                                     {tb.label}
                                   </span>
-                                  <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-full">
+                                  <span className="text-caption px-2.5 py-1 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-full">
                                     {activeStrat.category}
                                   </span>
                                 </div>
@@ -714,7 +714,7 @@ const EducationPage: React.FC = () => {
                           <div className={`px-8 py-6 border-b border-[var(--border-primary)] ${c.bg}`}>
                             <div className="flex items-start justify-between gap-4">
                               <div className="space-y-1">
-                                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{activeTourItem.path}</span>
+                                <span className="text-caption text-[var(--text-muted)]">{activeTourItem.path}</span>
                                 <h2 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] tracking-tighter uppercase italic leading-none">
                                   {activeTourItem.name}
                                 </h2>

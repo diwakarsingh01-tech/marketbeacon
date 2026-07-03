@@ -28,7 +28,7 @@ const StrategyMatrix: React.FC = () => {
       className="py-16 md:py-20 px-6 md:px-10 bg-[var(--bg-secondary)]/30 border-y border-[var(--border-primary)]/40">
       <div className="max-w-[1200px] mx-auto">
         <div className="text-center mb-10">
-          <p className="text-[11px] font-bold text-blue-400 uppercase tracking-[0.4em] mb-3">Institutional Strategy Matrix</p>
+          <p className="text-caption text-blue-400 uppercase tracking-[0.4em] mb-3">Institutional Strategy Matrix</p>
           <h2 className="text-2xl md:text-4xl font-black tracking-tighter text-[var(--text-primary)]">10 Proprietary <span className="text-blue-400">Strategies.</span> One Terminal.</h2>
           <p className="text-xs md:text-sm text-[var(--text-muted)] mt-3 max-w-2xl mx-auto font-medium">
             The same quant frameworks used by institutional desks — now accessible through a single terminal. Each strategy is pre-coded, backtested, and ready to scan.
@@ -53,7 +53,7 @@ const StrategyMatrix: React.FC = () => {
                   : 'bg-amber-500/5 border-amber-500/20 hover:border-amber-400/40 hover:shadow-amber-500/10'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                  <span className={`text-caption px-2 py-0.5 rounded-full ${
                     s.tier === 'free' ? 'text-emerald-400 bg-emerald-500/10' : s.tier === 'pro' ? 'text-blue-400 bg-blue-500/10' : 'text-amber-400 bg-amber-500/10'
                   }`}>{s.tier === 'free' ? 'FREE' : s.tier === 'pro' ? 'PRO' : 'ALPHA'}</span>
                   <div className="flex items-center gap-1">
@@ -62,7 +62,7 @@ const StrategyMatrix: React.FC = () => {
                   </div>
                 </div>
                 <h3 className="text-xs md:text-sm font-black text-[var(--text-primary)] leading-tight mb-0.5">{s.name}</h3>
-                <p className="text-[10px] md:text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{s.sub}</p>
+                <p className="text-xs md:text-caption text-[var(--text-muted)] uppercase tracking-wider">{s.sub}</p>
               </div>
               <AnimatePresence>
                 {expanded === i && (
@@ -73,8 +73,8 @@ const StrategyMatrix: React.FC = () => {
                     className="mt-2 p-3 card text-xs text-[var(--text-muted)] leading-relaxed"
                   >
                     {s.how}
-                    <p className="text-[10px] font-bold text-amber-400/70 uppercase tracking-wider mt-2">Educational rule. Not a signal.</p>
-                    <Link to={s.blog} className="inline-flex items-center gap-1 text-blue-400 text-[10px] font-bold uppercase tracking-wider mt-2 hover:text-[var(--text-primary)] transition-colors">
+                    <p className="text-xs font-bold text-amber-400/70 uppercase tracking-wider mt-2">Educational rule. Not a signal.</p>
+                    <Link to={s.blog} className="inline-flex items-center gap-1 text-blue-400 text-caption mt-2 hover:text-[var(--text-primary)] transition-colors">
                       Read on Knowledge Base <ArrowRight className="w-2.5 h-2.5" />
                     </Link>
                   </motion.div>
@@ -84,10 +84,10 @@ const StrategyMatrix: React.FC = () => {
           ))}
         </div>
         <div className="text-center mt-8 flex flex-col items-center gap-3">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             All strategies are mathematical models for educational research. Past performance does not guarantee future results.
           </p>
-          <Link to="/education" className="inline-flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
+          <Link to="/education" className="inline-flex items-center gap-2 text-blue-400 text-caption hover:text-[var(--text-primary)] transition-colors">
             Understand Each Strategy <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
