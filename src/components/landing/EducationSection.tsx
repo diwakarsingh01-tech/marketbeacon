@@ -13,7 +13,7 @@ const EducationSection: React.FC<EducationSectionProps> = ({ simStage, setSimSta
         <div className="lg:col-span-5 space-y-6 text-left">
           <div className="inline-flex items-center space-x-2 px-3 py-1 bg-blue-500/10 rounded-full border border-blue-500/20">
             <Activity className="h-3.5 w-3.5 text-blue-400" />
-            <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Interactive Audit Simulator</span>
+            <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">Interactive Audit Simulator</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-black tracking-tighter leading-none uppercase italic">Visualizing the <br /><span className="text-blue-500">ABCD Tranche</span> Ladder</h2>
           <p className="text-[var(--text-muted)] text-sm leading-relaxed">
@@ -25,9 +25,9 @@ const EducationSection: React.FC<EducationSectionProps> = ({ simStage, setSimSta
               <button
                 key={stage}
                 onClick={() => setSimStage(stage)}
-                className={`py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
+                className={`py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
                   simStage === stage
-                    ? 'bg-blue-600 border-blue-500 text-[var(--text-primary)] shadow-lg shadow-blue-500/20'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-500 text-[var(--text-primary)] shadow-lg shadow-blue-500/20'
                     : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)]'
                 }`}
               >
@@ -37,13 +37,13 @@ const EducationSection: React.FC<EducationSectionProps> = ({ simStage, setSimSta
           </div>
         </div>
         
-        <div className="lg:col-span-7 bg-[var(--bg-secondary)]/40 border border-[var(--border-primary)] rounded-[2.5rem] p-8 md:p-10 relative overflow-hidden flex flex-col justify-between min-h-[300px]">
+        <div className="lg:col-span-7 card p-8 md:p-10 relative overflow-hidden flex flex-col justify-between min-h-[300px]">
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[80px] -mr-32 -mt-32 pointer-events-none" />
           
           <div className="space-y-4 text-left">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em]">Tranche Allocation</span>
-              <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest bg-blue-500/10 px-2 py-0.5 rounded">Active Matrix</span>
+              <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-[0.25em]">Tranche Allocation</span>
+              <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider bg-blue-500/10 px-2 py-0.5 rounded">Active Matrix</span>
             </div>
             
             <h3 className="text-xl font-black uppercase text-[var(--text-primary)] italic tracking-tight">
@@ -62,11 +62,11 @@ const EducationSection: React.FC<EducationSectionProps> = ({ simStage, setSimSta
           </div>
           
           <div className="pt-6 border-t border-[var(--border-primary)] flex items-center justify-between">
-            <div className="flex items-center gap-1.5 font-mono text-[9px] text-[var(--text-muted)] uppercase">
+            <div className="flex items-center gap-1.5 font-mono text-[11px] text-[var(--text-muted)] uppercase">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span>Simulation Active</span>
             </div>
-            <span className="text-[9px] font-black text-[var(--text-secondary)] font-mono uppercase tracking-widest">
+            <span className="text-[11px] font-bold text-[var(--text-secondary)] font-mono uppercase tracking-wider">
               {simStage === 'A' && "Alloc: 25% | Gap: 0%"}
               {simStage === 'B' && "Alloc: 50% | Gap: -10%"}
               {simStage === 'C' && "Alloc: 85% | Gap: -18%"}
