@@ -76,7 +76,7 @@ const ContactPage: React.FC = () => {
           <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
           <span className="text-xs font-bold text-amber-400 uppercase tracking-[0.3em]">Get In Touch</span>
         </div>
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-white mb-4">Contact Us</h1>
+        <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-white mb-4">Contact Us</h2>
         <p className="text-[var(--text-secondary)] text-sm leading-relaxed max-w-xl mx-auto">
           Have a question, feedback, or partnership inquiry? We'd love to hear from you.
         </p>

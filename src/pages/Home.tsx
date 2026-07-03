@@ -333,6 +333,7 @@ const HomePage: React.FC = () => {
         </div>
       </nav>
 
+      <main>
       <HeroSection
         searchQuery={searchQuery}
         setSearchSearchQuery={setSearchSearchQuery}
@@ -861,6 +862,8 @@ const HomePage: React.FC = () => {
       <FAQSection openFaq={openFaq} setOpenFaq={setOpenFaq} />
 
       <CTABanner />
+
+      </main>
 
       {/* Site Footer */}
       <SiteFooter />

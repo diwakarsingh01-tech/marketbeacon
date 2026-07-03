@@ -122,6 +122,7 @@ const BlogPage: React.FC = () => {
         </div>
       </nav>
 
+      <main>
       {/* Hero */}
       <header className="py-20 px-6 md:px-10 max-w-[1100px] mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-6">
@@ -233,6 +234,7 @@ const BlogPage: React.FC = () => {
           Launch Terminal <ArrowRight className="w-4 h-4" />
         </Link>
       </section>
+      </main>
       <SiteFooter />
     </div>
   );
