@@ -103,7 +103,7 @@ const ConnectivityHub: React.FC = () => {
                    <RefreshCw className="h-6 w-6 animate-spin" />}
                 </div>
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Node Status</span>
+                  <span className="text-caption text-slate-500">Node Status</span>
                   <h3 className="text-xl font-semibold uppercase tracking-tighter italic">
                     {status === 'online' ? 'Connected' : status === 'offline' ? 'Disconnected' : 'Syncing...'}
                   </h3>
@@ -116,7 +116,7 @@ const ConnectivityHub: React.FC = () => {
             <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.3em]">Environment</span>
             <div className="flex items-center space-x-2">
               <Server className="h-4 w-4 text-blue-400" />
-              <span className="text-xs font-bold uppercase tracking-wider">{isLocal ? 'Local Dev Instance' : 'Institutional AWS'}</span>
+              <span className="text-caption">{isLocal ? 'Local Dev Instance' : 'Institutional AWS'}</span>
             </div>
           </div>
         </div>
@@ -132,7 +132,7 @@ const ConnectivityHub: React.FC = () => {
               </h2>
               <button 
                 onClick={() => testConnection()}
-                className="text-xs font-bold uppercase tracking-wider text-blue-600 hover:text-slate-900 transition-colors"
+                className="text-caption text-blue-600 hover:text-slate-900 transition-colors"
               >
                 Force Refresh
               </button>
@@ -165,7 +165,7 @@ const ConnectivityHub: React.FC = () => {
                 <button 
                   onClick={handleSaveOverride}
                   disabled={isSaving || !newUrl}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-blue-500/20"
+                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-caption transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-blue-500/20"
                 >
                   {isSaving ? 'Saving...' : 'Switch Node'}
                 </button>
@@ -192,13 +192,13 @@ const ConnectivityHub: React.FC = () => {
           <div className="mt-auto pt-8 border-t border-slate-100 flex items-center justify-between">
             <button 
               onClick={handleReset}
-              className="text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-rose-600 transition-colors"
+              className="text-caption text-slate-500 hover:text-rose-600 transition-colors"
             >
               Reset to Institutional Defaults
             </button>
             <Link 
               to="/login"
-              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-bold uppercase tracking-wider transition-all flex items-center space-x-2 shadow-lg shadow-blue-500/20"
+              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-caption transition-all flex items-center space-x-2 shadow-lg shadow-blue-500/20"
             >
               <span>Return to Terminal</span>
               <ChevronRight className="h-3 w-3" />

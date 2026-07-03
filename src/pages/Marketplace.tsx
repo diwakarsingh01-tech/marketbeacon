@@ -25,7 +25,7 @@ const Badge = ({ children, color = 'blue' }: { children: React.ReactNode; color?
     rose: 'bg-rose-600/10 text-rose-600 border-rose-600/20',
   };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${colors[color]}`}>
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-caption border ${colors[color]}`}>
       {children}
     </span>
   );
@@ -42,7 +42,7 @@ const TrustStat = ({ value, label, icon: Icon }: { value: string; label: string;
     </div>
     <div className="text-left">
       <div className="text-lg font-bold text-white tracking-tighter leading-none">{value}</div>
-      <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-0.5 leading-tight">{label}</div>
+      <div className="text-caption text-slate-500 uppercase tracking-wider mt-0.5 leading-tight">{label}</div>
     </div>
   </motion.div>
 );
@@ -166,7 +166,7 @@ const MembershipPage: React.FC = () => {
                   navigate('/alpha-hub');
                 }
               }} 
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold uppercase tracking-wider border border-white/10 transition-all shadow-md active:scale-95"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-caption border border-white/10 transition-all shadow-md active:scale-95"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>Go Back</span>
@@ -177,7 +177,7 @@ const MembershipPage: React.FC = () => {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600/20 border border-blue-500/30 rounded-full mb-3">
               <Flame className="h-3 w-3 text-blue-400 animate-pulse" />
-              <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-blue-300">Access Licenses — License Desk</span>
+              <span className="text-caption uppercase tracking-[0.3em] text-blue-300">Access Licenses — License Desk</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase italic leading-none text-white">
               Unlock Your{' '}
@@ -214,13 +214,13 @@ const MembershipPage: React.FC = () => {
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5" />
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider">Active License</p>
-                <p className="text-[11px] text-emerald-200 uppercase tracking-wider font-bold mt-0.5">
+                <p className="text-caption">Active License</p>
+                <p className="text-xs text-emerald-200 uppercase tracking-wider font-bold mt-0.5">
                   {userTier.toUpperCase()} Tier — All features unlocked for your plan
                 </p>
               </div>
             </div>
-            <div className="px-3 py-1.5 bg-white/20 rounded-xl text-[11px] font-bold uppercase tracking-wider border border-white/20">
+            <div className="px-3 py-1.5 bg-white/20 rounded-xl text-caption border border-white/20">
               Active ✓
             </div>
           </motion.div>
@@ -228,13 +228,13 @@ const MembershipPage: React.FC = () => {
 
         {/* ── BILLING TOGGLE ── */}
         <div className="flex flex-col items-center space-y-3">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Billing Period</p>
+          <p className="text-caption text-slate-500 uppercase tracking-wider">Billing Period</p>
           <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 shadow-sm gap-1">
             {(['monthly', 'yearly'] as const).map(period => (
               <button
                 key={period}
                 onClick={() => setBilling(period)}
-                className={`relative px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                className={`relative px-6 py-2.5 rounded-xl text-caption transition-all ${
                   billing === period
                     ? 'bg-slate-900 text-white shadow-lg'
                     : 'text-slate-500 hover:text-slate-700'
@@ -250,7 +250,7 @@ const MembershipPage: React.FC = () => {
             ))}
           </div>
           {billing === 'yearly' && (
-            <p className="text-[11px] text-emerald-600 font-bold uppercase tracking-wider animate-in fade-in">
+            <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider animate-in fade-in">
               🎉 You save ₹{((prices.pro.monthly * 12) - prices.pro.yearly)} on Pro &amp; ₹{((prices.alpha.monthly * 12) - prices.alpha.yearly)} on Alpha
             </p>
           )}
@@ -267,7 +267,7 @@ const MembershipPage: React.FC = () => {
             <div className="space-y-1 mb-6">
               <Badge color="blue">Free</Badge>
               <h3 className="text-2xl font-bold text-slate-900 tracking-tighter uppercase italic mt-2">Institutional<br/>Free</h3>
-              <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Start exploring without commitment</p>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Start exploring without commitment</p>
             </div>
             <div className="flex items-baseline gap-1 mb-6">
               <span className="text-5xl font-bold text-slate-900 tracking-tighter">₹0</span>
@@ -277,9 +277,9 @@ const MembershipPage: React.FC = () => {
               {allFeatures.slice(0, 6).map(([label, free]) => (
                 <FeatureRow key={label as string} feature={label as string} included={!!free} />
               ))}
-              <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider pt-2 pl-1 italic">+ {allFeatures.length - 6} more features locked</p>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider pt-2 pl-1 italic">+ {allFeatures.length - 6} more features locked</p>
             </div>
-            <div className={`w-full py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-center border-2 ${
+            <div className={`w-full py-3.5 rounded-2xl text-caption text-center border-2 ${
               userTier === 'free'
                 ? 'border-slate-900 bg-slate-900 text-white'
                 : 'border-slate-200 text-slate-500 cursor-default'
@@ -299,18 +299,18 @@ const MembershipPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <Badge color="blue"><Zap className="h-2.5 w-2.5" /> Pro</Badge>
                 {isActive('pro') && userTier === 'pro' && (
-                  <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Active</span>
+                  <span className="text-caption text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Active</span>
                 )}
               </div>
               <h3 className="text-2xl font-bold text-slate-900 tracking-tighter uppercase italic mt-2">Pro<br/>Execution</h3>
-              <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Structural patterns &amp; all strategies</p>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Structural patterns &amp; all strategies</p>
             </div>
             <div className="flex items-baseline gap-1 mb-1">
               <span className="text-5xl font-bold text-slate-900 tracking-tighter">₹{priceMonthly('pro')}</span>
               <span className="text-slate-500 text-xs font-bold">/mo</span>
             </div>
             {billing === 'yearly' && (
-              <p className="text-[11px] text-slate-500 font-bold mb-5">Billed ₹{prices.pro.yearly}/yr</p>
+              <p className="text-xs text-slate-500 font-bold mb-5">Billed ₹{prices.pro.yearly}/yr</p>
             )}
             <div className="flex-1 space-y-0 mb-6 mt-4">
               {allFeatures.slice(0, 12).map(([label, , pro]) => (
@@ -318,14 +318,14 @@ const MembershipPage: React.FC = () => {
               ))}
             </div>
             {isActive('pro') && userTier !== 'alpha' ? (
-              <div className="w-full py-3.5 bg-emerald-600 text-white rounded-2xl text-xs font-bold uppercase tracking-wider text-center">
+              <div className="w-full py-3.5 bg-emerald-600 text-white rounded-2xl text-caption text-center">
                 ✓ Active License
               </div>
             ) : (
               <motion.button
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                 onClick={() => handleUpgrade('pro')}
-                className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 hover:from-blue-500 hover:to-indigo-500 transition-colors"
+                className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-caption shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 hover:from-blue-500 hover:to-indigo-500 transition-colors"
               >
                 Unlock Pro <ChevronRight className="h-3.5 w-3.5" />
               </motion.button>
@@ -340,7 +340,7 @@ const MembershipPage: React.FC = () => {
             {/* Glow */}
             <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/20 blur-[80px] -mr-24 -mt-24 pointer-events-none" />
             {/* Most Popular badge */}
-            <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-1.5 rounded-b-2xl text-[9px] font-bold uppercase tracking-wider shadow-xl whitespace-nowrap">
+            <div className="absolute -top-0 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-1.5 rounded-b-2xl text-caption shadow-xl whitespace-nowrap">
               ⭐ Institutional Choice
             </div>
 
@@ -348,11 +348,11 @@ const MembershipPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <Badge color="amber"><Crown className="h-2.5 w-2.5" /> Alpha</Badge>
                 {isActive('alpha') && (
-                  <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20">Active</span>
+                  <span className="text-caption text-emerald-400 uppercase tracking-wider bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20">Active</span>
                 )}
               </div>
               <h3 className="text-2xl font-bold text-white tracking-tighter uppercase italic mt-2">Alpha<br/>Priority</h3>
-              <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Full institutional terminal access</p>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Full institutional terminal access</p>
             </div>
 
             <div className="flex items-baseline gap-1 mb-1 relative z-10">
@@ -360,7 +360,7 @@ const MembershipPage: React.FC = () => {
               <span className="text-slate-500 text-xs font-bold">/mo</span>
             </div>
             {billing === 'yearly' && (
-              <p className="text-[11px] text-slate-500 font-bold mb-5">Billed ₹{prices.alpha.yearly}/yr</p>
+              <p className="text-xs text-slate-500 font-bold mb-5">Billed ₹{prices.alpha.yearly}/yr</p>
             )}
 
             <div className="flex-1 space-y-0 mb-6 mt-4 relative z-10">
@@ -375,14 +375,14 @@ const MembershipPage: React.FC = () => {
             </div>
 
             {isActive('alpha') ? (
-              <div className="w-full py-3.5 bg-emerald-600 text-white rounded-2xl text-xs font-bold uppercase tracking-wider text-center relative z-10">
+              <div className="w-full py-3.5 bg-emerald-600 text-white rounded-2xl text-caption text-center relative z-10">
                 ✓ Active License
               </div>
             ) : (
               <motion.button
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                 onClick={() => handleUpgrade('alpha')}
-                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-wider shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 relative z-10 hover:opacity-90 transition-opacity"
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-caption shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 relative z-10 hover:opacity-90 transition-opacity"
               >
                 <Zap className="h-4 w-4" />
                 Unlock Alpha Access
@@ -395,16 +395,16 @@ const MembershipPage: React.FC = () => {
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-8 py-6 border-b border-slate-100">
             <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter italic">Full Feature Comparison</h2>
-            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-1">Every strategy unlocked per tier</p>
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">Every strategy unlocked per tier</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-slate-100">
-                  <th className="px-8 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider">Feature</th>
-                  <th className="px-6 py-4 text-center text-[11px] font-bold text-slate-500 uppercase tracking-wider">Free</th>
-                  <th className="px-6 py-4 text-center text-[11px] font-bold text-blue-600 uppercase tracking-wider bg-blue-50/30">Pro</th>
-                  <th className="px-6 py-4 text-center text-[11px] font-bold text-indigo-600 uppercase tracking-wider bg-indigo-50/30">Alpha</th>
+                  <th className="px-8 py-4 text-left text-caption text-slate-500 uppercase tracking-wider">Feature</th>
+                  <th className="px-6 py-4 text-center text-caption text-slate-500 uppercase tracking-wider">Free</th>
+                  <th className="px-6 py-4 text-center text-caption text-blue-600 uppercase tracking-wider bg-blue-50/30">Pro</th>
+                  <th className="px-6 py-4 text-center text-caption text-indigo-600 uppercase tracking-wider bg-indigo-50/30">Alpha</th>
                 </tr>
               </thead>
               <tbody>
@@ -444,7 +444,7 @@ const MembershipPage: React.FC = () => {
             </div>
             <button 
               onClick={() => { setVoucherCode('ALPHA7'); setVoucherStatus('idle'); }}
-              className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-bold uppercase tracking-wider shadow-sm active:scale-95 transition-all shrink-0 text-center"
+              className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-caption shadow-sm active:scale-95 transition-all shrink-0 text-center"
             >
               Apply ALPHA7
             </button>
@@ -456,7 +456,7 @@ const MembershipPage: React.FC = () => {
                 <Gift className="h-4 w-4 text-indigo-500" />
                 <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Have a Voucher Code?</span>
               </div>
-              <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Redeem for instant trial access — no payment needed</p>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Redeem for instant trial access — no payment needed</p>
             </div>
             <div className="flex items-center gap-3 w-full md:w-auto">
               <div className={`flex items-center bg-slate-50 border-2 rounded-2xl px-4 py-2.5 gap-3 flex-1 md:w-72 transition-all ${
@@ -468,14 +468,14 @@ const MembershipPage: React.FC = () => {
                   placeholder="ENTER VOUCHER CODE"
                   value={voucherCode}
                   onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherStatus('idle'); }}
-                  className="bg-transparent text-xs font-bold uppercase tracking-wider outline-none flex-1 placeholder-slate-300 text-slate-900"
+                  className="bg-transparent text-caption outline-none flex-1 placeholder-slate-300 text-slate-900"
                 />
               </div>
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={handleRedeemVoucher}
                 disabled={redeeming || !voucherCode.trim()}
-                className="px-5 py-2.5 bg-slate-900 text-white rounded-2xl text-xs font-bold uppercase tracking-wider disabled:opacity-40 transition-all hover:bg-black"
+                className="px-5 py-2.5 bg-slate-900 text-white rounded-2xl text-caption disabled:opacity-40 transition-all hover:bg-black"
               >
                 {redeeming ? '...' : 'Apply'}
               </motion.button>
@@ -486,7 +486,7 @@ const MembershipPage: React.FC = () => {
             {voucherMsg && (
               <motion.p
                 initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                className={`mt-4 text-xs font-bold uppercase tracking-wider ${voucherStatus === 'success' ? 'text-emerald-600' : 'text-rose-600'}`}
+                className={`mt-4 text-caption ${voucherStatus === 'success' ? 'text-emerald-600' : 'text-rose-600'}`}
               >
                 {voucherMsg}
               </motion.p>
@@ -498,7 +498,7 @@ const MembershipPage: React.FC = () => {
         <div className="space-y-6">
           <div className="text-center">
             <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">How Activation Works</h2>
-            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-1">Simple 3-step process. Live within 15 minutes.</p>
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">Simple 3-step process. Live within 15 minutes.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -532,7 +532,7 @@ const MembershipPage: React.FC = () => {
             <div className="space-y-3 text-center md:text-left">
               <div className="flex items-center gap-2 justify-center md:justify-start text-blue-400">
                 <Shield className="h-4 w-4" />
-                <span className="text-[11px] font-bold uppercase tracking-[0.4em]">Corporate / Fund Access</span>
+                <span className="text-caption uppercase tracking-[0.4em]">Corporate / Fund Access</span>
               </div>
               <h3 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase italic">Need a Custom<br/>Deployment?</h3>
               <p className="text-slate-500 text-sm max-w-md leading-relaxed">
@@ -543,7 +543,7 @@ const MembershipPage: React.FC = () => {
               <motion.button
                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                 onClick={() => window.open(waLink('Hi Admin, I am interested in a Corporate Deployment for my fund.'), '_blank')}
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-wider shadow-xl shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 transition-colors flex items-center justify-center gap-3"
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-caption shadow-xl shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 transition-colors flex items-center justify-center gap-3"
               >
                 <span>WhatsApp Admin</span>
                 <ArrowUpRight className="h-4 w-4" />
@@ -551,7 +551,7 @@ const MembershipPage: React.FC = () => {
               <motion.button
                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                 onClick={() => window.open('https://t.me/asktoceo', '_blank')}
-                className="px-8 py-4 bg-white/10 text-white rounded-2xl text-[11px] font-bold uppercase tracking-wider border border-white/20 hover:bg-white/20 transition-all flex items-center justify-center gap-3"
+                className="px-8 py-4 bg-white/10 text-white rounded-2xl text-caption border border-white/20 hover:bg-white/20 transition-all flex items-center justify-center gap-3"
               >
                 <span>Join Telegram</span>
                 <TrendingUp className="h-4 w-4" />
@@ -561,7 +561,7 @@ const MembershipPage: React.FC = () => {
         </div>
 
         {/* Footer note */}
-        <p className="text-center text-[9px] text-slate-500 font-bold uppercase tracking-wider pb-4">
+        <p className="text-center text-xs text-slate-500 font-bold uppercase tracking-wider pb-4">
           MarketBeacon Terminal v14.0 · Institutional Hub · AES-256 Encrypted · India's Research OS
         </p>
       </div>

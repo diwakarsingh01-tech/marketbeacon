@@ -193,7 +193,7 @@ const PublicAnalysisPage: React.FC = () => {
                </div>
                 <div className="flex items-center gap-2 relative z-10">
                    {data.isPass ? <BadgeCheck className="w-4 h-4 text-emerald-400" /> : <Info className="w-4 h-4 text-rose-400" />}
-                   <span className={`text-xs font-bold uppercase tracking-wider ${data.isPass ? 'text-emerald-500' : 'text-rose-500'}`}>{data.isPass ? 'Passed Audit' : 'Audit Failed'}</span>
+                   <span className={`text-caption ${data.isPass ? 'text-emerald-500' : 'text-rose-500'}`}>{data.isPass ? 'Passed Audit' : 'Audit Failed'}</span>
                 </div>
             </div>
 
@@ -222,7 +222,7 @@ const PublicAnalysisPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-3xl font-black text-white italic tracking-tighter">Active Strategy <span className="text-cyan-500">Nodes.</span></h2>
             <div className="h-px flex-1 bg-white/5 mx-8 hidden md:block" />
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em]">Institutional Verification v12.0</span>
+            <span className="text-caption text-slate-500 uppercase tracking-[0.3em]">Institutional Verification v12.0</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -264,7 +264,7 @@ const PublicAnalysisPage: React.FC = () => {
                         <span className="text-lg font-black text-slate-500 uppercase tracking-tighter italic">Velocity Retest Node</span>
                         <Lock className="w-5 h-5 text-slate-600" />
                      </div>
-                      <Link to="/login" className="flex items-center justify-center gap-3 w-full py-5 bg-gradient-to-r from-white to-slate-100 text-[#020617] rounded-2xl text-xs font-bold uppercase tracking-wider hover:scale-[1.02] transition-all shadow-lg shadow-white/20">
+                      <Link to="/login" className="flex items-center justify-center gap-3 w-full py-5 bg-gradient-to-r from-white to-slate-100 text-[#020617] rounded-2xl text-caption hover:scale-[1.02] transition-all shadow-lg shadow-white/20">
                         Unlock Full Research Node <ArrowUpRight className="w-4 h-4" />
                      </Link>
                   </div>
@@ -288,7 +288,7 @@ const PublicAnalysisPage: React.FC = () => {
                     <span className="text-xl font-black text-white italic tracking-tighter group-hover:text-cyan-400 transition-colors leading-none">{sym}</span>
                     <ArrowUpRight className="w-5 h-5 text-slate-700 group-hover:text-cyan-400 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                   </div>
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Institutional Audit Active</div>
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Institutional Audit Active</div>
                 </Link>
               ))}
            </div>
@@ -352,7 +352,7 @@ const PublicAnalysisPage: React.FC = () => {
 
                <div className="border-t border-white/5 pt-6 space-y-4">
                   <div className="space-y-1">
-                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Have a Coupon or Voucher Code?</span>
+                     <span className="text-caption text-slate-500 uppercase tracking-wider block">Have a Coupon or Voucher Code?</span>
                      <p className="text-xs text-slate-500">Redeem code for a 7-day free trial of all premium features.</p>
                   </div>
                   
@@ -362,12 +362,12 @@ const PublicAnalysisPage: React.FC = () => {
                        placeholder="Enter voucher (e.g. ALPHA7)..."
                        value={voucherCode}
                        onChange={(e) => setVoucherCode(e.target.value)}
-                        className="flex-1 bg-slate-900 border border-slate-800 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-white outline-none focus:border-cyan-500"
+                        className="flex-1 bg-slate-900 border border-slate-800 px-4 py-3 rounded-xl text-caption text-white outline-none focus:border-cyan-500"
                      />
                      <button
                        onClick={handleRedeemVoucher}
                        disabled={redeeming}
-                        className="px-5 py-3 bg-gradient-to-r from-white to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-950 disabled:bg-slate-800 disabled:text-slate-650 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-white/20"
+                        className="px-5 py-3 bg-gradient-to-r from-white to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-950 disabled:bg-slate-800 disabled:text-slate-650 rounded-xl text-caption transition-all shadow-lg shadow-white/20"
                      >
                        {redeeming ? 'Applying...' : 'Apply'}
                      </button>
@@ -383,7 +383,7 @@ const PublicAnalysisPage: React.FC = () => {
                         setVoucherCode('ALPHA7');
                         setVoucherError(null);
                      }}
-                     className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 uppercase tracking-wider block mx-auto underline transition-colors"
+                     className="text-caption text-cyan-400 hover:text-cyan-300 uppercase tracking-wider block mx-auto underline transition-colors"
                   >
                      Quick Apply: ALPHA7 (7-Day Free Trial)
                   </button>

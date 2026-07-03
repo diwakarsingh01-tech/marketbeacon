@@ -46,10 +46,10 @@ export default function InstallPrompt() {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-black text-white uppercase tracking-wider">
+            <p className="text-xs font-black text-white uppercase tracking-wider">
               Install MarketBeacon
             </p>
-            <p className="text-[9px] font-medium text-slate-400 mt-1 leading-relaxed">
+            <p className="text-caption font-medium text-slate-400 mt-1 leading-relaxed">
               {isIOS
                 ? <>Tap <span className="text-blue-400">Share</span> → <span className="text-blue-400">Add to Home Screen</span></>
                 : <>Tap <span className="text-blue-400">Menu</span> → <span className="text-blue-400">Add to Home Screen</span></>}

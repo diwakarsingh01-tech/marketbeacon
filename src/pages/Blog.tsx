@@ -115,7 +115,7 @@ const BlogPage: React.FC = () => {
           </Link>
           <Link
             to="/login"
-            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-lg shadow-blue-500/20"
+            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-caption transition-colors shadow-lg shadow-blue-500/20"
           >
             Launch Terminal
           </Link>
@@ -146,7 +146,7 @@ const BlogPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <div className="space-y-5">
               <div className="flex items-center gap-3">
-                <span className={`px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wider ${articles[0].tagColor}`}>
+                <span className={`px-3 py-1 rounded-full border text-caption ${articles[0].tagColor}`}>
                   {articles[0].tag}
                 </span>
                 {articles[0].highlight && <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-bold text-amber-400 uppercase tracking-wider">
@@ -161,7 +161,7 @@ const BlogPage: React.FC = () => {
                 <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" />{articles[0].readTime}</span>
                 <span>{articles[0].date}</span>
               </div>
-              <div className="flex items-center gap-2 text-blue-400 text-[11px] font-bold uppercase tracking-wider group-hover:gap-3 transition-all">
+              <div className="flex items-center gap-2 text-blue-400 text-caption group-hover:gap-3 transition-all">
                 Read Article <ArrowRight className="w-4 h-4" />
               </div>
             </div>
@@ -174,7 +174,7 @@ const BlogPage: React.FC = () => {
                 { stage: 'D', pct: '100%', label: 'Breakout / Target', color: 'bg-emerald-500' },
               ].map(({ stage, pct, label, color }) => (
                 <div key={stage} className="space-y-1">
-                  <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider">
+                  <div className="flex justify-between text-caption">
                     <span className="text-slate-300">Stage {stage} — {label}</span>
                     <span className="text-slate-500">{pct}</span>
                   </div>
@@ -200,7 +200,7 @@ const BlogPage: React.FC = () => {
                 className="group bg-slate-900/50 border border-slate-800 rounded-[2rem] p-7 flex flex-col hover:border-slate-600 transition-all hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between mb-5">
-                  <span className={`px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wider ${article.tagColor}`}>
+                  <span className={`px-3 py-1 rounded-full border text-caption ${article.tagColor}`}>
                     {article.tag}
                   </span>
                   <Icon className={`w-4 h-4 ${article.iconColor}`} />
@@ -208,7 +208,7 @@ const BlogPage: React.FC = () => {
                 <h2 className="text-base font-bold text-white tracking-tight mb-3 leading-snug flex-1 group-hover:text-blue-300 transition-colors">
                   {article.title}
                 </h2>
-                <p className="text-[11px] text-slate-500 leading-relaxed mb-5 line-clamp-3">{article.excerpt}</p>
+                <p className="text-xs text-slate-500 leading-relaxed mb-5 line-clamp-3">{article.excerpt}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                     <Clock className="w-3 h-3" />{article.readTime}

@@ -164,7 +164,7 @@ const PricingPage: React.FC = () => {
             </div>
             <button 
               onClick={() => { setVoucherCode('ALPHA7'); }}
-              className="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg hover:scale-105 active:scale-95 transition-all shrink-0 text-center"
+              className="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-caption shadow-lg hover:scale-105 active:scale-95 transition-all shrink-0 text-center"
             >
               Apply ALPHA7
             </button>
@@ -174,7 +174,7 @@ const PricingPage: React.FC = () => {
 
         {/* Pricing Toggle */}
         <div className="flex items-center justify-center space-x-4">
-           <span className={`text-xs font-bold uppercase tracking-wider ${billingPeriod === 'monthly' ? 'text-slate-900' : 'text-slate-500'}`}>Monthly</span>
+           <span className={`text-caption ${billingPeriod === 'monthly' ? 'text-slate-900' : 'text-slate-500'}`}>Monthly</span>
            <button 
              onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
              className="w-14 h-7 bg-slate-100 rounded-full relative p-1 transition-all border border-slate-200"
@@ -182,8 +182,8 @@ const PricingPage: React.FC = () => {
               <div className={`h-5 w-5 bg-blue-600 rounded-full transition-all shadow-md ${billingPeriod === 'yearly' ? 'translate-x-7' : 'translate-x-0'}`} />
            </button>
            <div className="flex items-center space-x-2">
-              <span className={`text-xs font-bold uppercase tracking-wider ${billingPeriod === 'yearly' ? 'text-blue-600' : 'text-slate-500'}`}>Yearly</span>
-              <span className="bg-emerald-500 text-white text-[11px] font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter animate-pulse">Save ~33%</span>
+              <span className={`text-caption ${billingPeriod === 'yearly' ? 'text-blue-600' : 'text-slate-500'}`}>Yearly</span>
+              <span className="bg-emerald-500 text-white text-caption px-1.5 py-0.5 rounded uppercase tracking-tighter animate-pulse">Save ~33%</span>
            </div>
         </div>
       </div>
@@ -221,7 +221,7 @@ const PricingPage: React.FC = () => {
                     <div className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 rounded-full bg-emerald-50 flex items-center justify-center mt-0.5">
                       <Check className="h-2.5 w-2.5 md:h-3 md:w-3 text-emerald-600" />
                     </div>
-                    <span className="text-[11px] md:text-[12px] font-bold text-slate-600 leading-tight">{feature}</span>
+                    <span className="text-xs md:text-[12px] font-bold text-slate-600 leading-tight">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -242,7 +242,7 @@ const PricingPage: React.FC = () => {
 <button 
                     onClick={handleRedeemVoucher}
                     disabled={redeeming}
-                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-caption transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20"
                   >
                     {redeeming ? '...' : 'Apply'}
                   </button>
@@ -292,7 +292,7 @@ const PricingPage: React.FC = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] -mr-32 -mt-32" />
         <div className="z-10 space-y-1 md:space-y-2 text-center md:text-left">
           <h2 className="text-lg md:text-2xl font-black tracking-tight uppercase italic leading-none">Secure Institutional Billing</h2>
-          <p className="text-slate-400 font-bold text-[11px] md:text-xs uppercase tracking-[0.2em]">PCI Compliant • Bank Grade Encryption</p>
+          <p className="text-slate-400 font-bold text-xs md:text-xs uppercase tracking-[0.2em]">PCI Compliant • Bank Grade Encryption</p>
         </div>
         <div className="z-10 flex items-center space-x-3 md:space-x-6 grayscale opacity-50">
            <CreditCard className="h-6 w-6 md:h-8 md:w-8" />

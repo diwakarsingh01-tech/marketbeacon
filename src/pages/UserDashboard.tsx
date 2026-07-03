@@ -76,7 +76,7 @@ const UserDashboard: React.FC = () => {
             <div>
               <div className="inline-flex items-center space-x-2 px-3 py-1.5 bg-blue-950/50 backdrop-blur-sm rounded-full border border-blue-900 mb-4 w-fit">
                 <ShieldCheck className="h-3 w-3 text-blue-400" />
-                <span className="text-[9px] md:text-xs font-bold text-blue-400 uppercase tracking-wider">
+                <span className="text-xs md:text-xs font-bold text-blue-400 uppercase tracking-wider">
                   {user?.tier === 'alpha' ? 'Alpha Execution Plan' : user?.tier === 'pro' ? 'Pro Execution Plan' : 'Free Plan'}
                   {user?.daysRemaining !== null && user?.daysRemaining !== undefined && ` · ${user.daysRemaining} days remaining`}
                 </span>
@@ -92,7 +92,7 @@ const UserDashboard: React.FC = () => {
               {user?.tier === 'free' && (
                 <button 
                   onClick={() => setShowUpgrade(true)} 
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-[11px] font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-xl shadow-blue-900/30 flex items-center gap-2"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-caption hover:scale-105 transition-all shadow-xl shadow-blue-900/30 flex items-center gap-2"
                 >
                   <Sparkles className="w-3.5 h-3.5" /> Upgrade Plan
                 </button>
@@ -150,9 +150,9 @@ const UserDashboard: React.FC = () => {
                       <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-blue-400 transition-colors" />
                     </div>
                     <p className="text-2xl md:text-3xl font-bold text-[var(--text-primary)] tracking-tight">{item.value}</p>
-                    <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1.5">{item.title}</p>
+                    <p className="text-caption text-[var(--text-muted)] uppercase tracking-wider mt-1.5">{item.title}</p>
                     {'subtitle' in item && item.subtitle && (
-                      <p className="text-[11px] text-[var(--text-tertiary)] mt-1">{item.subtitle}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-1">{item.subtitle}</p>
                     )}
                   </Link>
                 </motion.div>
@@ -172,7 +172,7 @@ const UserDashboard: React.FC = () => {
             <div className="md:col-span-1">
               <div className="mb-4">
                 <h2 className="text-xs font-black text-blue-400 uppercase tracking-[0.3em]">Quick Access</h2>
-                <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Tools & Resources</p>
+                <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">Tools & Resources</p>
               </div>
               <div className="space-y-2">
                 {[
@@ -192,7 +192,7 @@ const UserDashboard: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-[var(--text-primary)] tracking-tight">{item.label}</p>
-                      <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mt-0.5">{item.desc}</p>
+                      <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-0.5">{item.desc}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-blue-400 transition-colors" />
                   </Link>
@@ -205,10 +205,10 @@ const UserDashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-xs font-black text-blue-400 uppercase tracking-[0.3em]">Recent Activity</h2>
-                  <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-wider mt-1">Your latest trades</p>
+                  <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">Your latest trades</p>
                 </div>
                 {trades.length > 0 && (
-                  <Link to="/trades" className="text-[11px] font-bold text-blue-400 hover:text-blue-300 uppercase tracking-wider transition-colors flex items-center gap-1">
+                  <Link to="/trades" className="text-caption text-blue-400 hover:text-blue-300 uppercase tracking-wider transition-colors flex items-center gap-1">
                     View All <ArrowRight className="w-3 h-3" />
                   </Link>
                 )}
@@ -229,10 +229,10 @@ const UserDashboard: React.FC = () => {
                   <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 tracking-tight">No Trades Yet</h3>
                   <p className="text-sm text-[var(--text-muted)] mb-8 max-w-md mx-auto">Start your analysis journey — scan stocks, build your portfolio, and track your performance.</p>
                   <div className="flex flex-wrap justify-center gap-3">
-                    <Link to="/alpha-hub" className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-[11px] font-bold uppercase tracking-wider hover:from-blue-500 hover:to-indigo-500 hover:scale-105 transition-all shadow-lg shadow-blue-500/20">
+                    <Link to="/alpha-hub" className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-caption hover:from-blue-500 hover:to-indigo-500 hover:scale-105 transition-all shadow-lg shadow-blue-500/20">
                       Go to Alpha Hub
                     </Link>
-                    <Link to="/screener" className="px-6 py-3 bg-[var(--bg-tertiary)]/50 text-[var(--text-primary)] rounded-xl text-[11px] font-bold uppercase tracking-wider border border-[var(--border-primary)] hover:border-blue-500/50 hover:bg-[var(--bg-tertiary)] transition-all">
+                    <Link to="/screener" className="px-6 py-3 bg-[var(--bg-tertiary)]/50 text-[var(--text-primary)] rounded-xl text-caption border border-[var(--border-primary)] hover:border-blue-500/50 hover:bg-[var(--bg-tertiary)] transition-all">
                       Open Screener
                     </Link>
                   </div>
@@ -253,7 +253,7 @@ const UserDashboard: React.FC = () => {
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-[var(--text-primary)] tracking-tight">{trade.symbol}</p>
-                          <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mt-0.5">
+                          <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-0.5">
                             {trade.action} · {trade.qty} shares · ₹{trade.entryPrice?.toLocaleString()}
                           </p>
                         </div>
@@ -262,7 +262,7 @@ const UserDashboard: React.FC = () => {
                         <p className={`text-sm font-bold tracking-tight ${trade.pnl && trade.pnl >= 0 ? 'text-emerald-400' : trade.pnl && trade.pnl < 0 ? 'text-rose-400' : 'text-[var(--text-muted)]'}`}>
                           {trade.pnl ? `${trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(0)}` : '—'}
                         </p>
-                        <p className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${trade.status === 'open' ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>
+                        <p className={`text-caption mt-0.5 ${trade.status === 'open' ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>
                           {trade.status}
                         </p>
                       </div>
@@ -292,7 +292,7 @@ const UserDashboard: React.FC = () => {
               </div>
               <button 
                 onClick={() => setShowUpgrade(true)} 
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-[11px] font-bold uppercase tracking-wider hover:scale-105 transition-all shadow-lg shadow-blue-900/30 whitespace-nowrap relative z-10"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-caption hover:scale-105 transition-all shadow-lg shadow-blue-900/30 whitespace-nowrap relative z-10"
               >
                 View Plans
               </button>

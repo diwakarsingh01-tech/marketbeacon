@@ -167,7 +167,7 @@ const ProfilePage: React.FC = () => {
        <ShieldCheck className="h-12 w-12 text-[var(--text-tertiary)]" />
        <h2 className="text-xl font-bold text-[var(--text-primary)] uppercase italic">Profile Unavailable</h2>
        <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Please try logging in again</p>
-       <button onClick={logout} className="px-8 py-3 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl text-xs font-bold uppercase tracking-wider border border-[var(--border-primary)]">Logout</button>
+       <button onClick={logout} className="px-8 py-3 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl text-caption border border-[var(--border-primary)]">Logout</button>
     </div>
   );
 
@@ -195,7 +195,7 @@ const ProfilePage: React.FC = () => {
            <div className="space-y-1">
               <div className="flex flex-col sm:flex-row items-center gap-2 sm:space-x-3">
                  <h1 className="text-3xl md:text-4xl font-bold text-[var(--text-primary)] tracking-tighter uppercase italic">{profileData.name}</h1>
-                 <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg shadow-lg ${tierInfo.badge}`}>{tierLabel}</span>
+                 <span className={`px-3 py-1 text-caption rounded-lg shadow-lg ${tierInfo.badge}`}>{tierLabel}</span>
               </div>
               <p className="text-xs md:text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center space-x-2">
                  <Clock className="h-3 w-3" />
@@ -207,7 +207,7 @@ const ProfilePage: React.FC = () => {
            <button onClick={fetchProfile} className="p-3 md:p-4 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl md:rounded-2xl text-[var(--text-secondary)] hover:text-blue-400 hover:border-blue-500/20 transition-all">
               <RefreshCw className="h-5 w-5" />
            </button>
-           <button onClick={logout} className="flex-1 md:flex-none px-6 md:px-8 py-3 md:py-4 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl md:rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center justify-center space-x-3 shadow-xl border border-[var(--border-primary)] hover:bg-[var(--bg-secondary)] transition-all">
+           <button onClick={logout} className="flex-1 md:flex-none px-6 md:px-8 py-3 md:py-4 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl md:rounded-2xl text-caption flex items-center justify-center space-x-3 shadow-xl border border-[var(--border-primary)] hover:bg-[var(--bg-secondary)] transition-all">
               <LogOut className="h-4 w-4" />
               <span>Terminate Session</span>
            </button>
@@ -395,8 +395,8 @@ const ProfilePage: React.FC = () => {
               <button onClick={() => setShowPasswordModal(false)} className="p-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"><X className="h-5 w-5" /></button>
             </div>
             <form onSubmit={handleChangePassword} className="space-y-5">
-              {pwError && <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs font-bold uppercase tracking-wider flex items-center space-x-2"><AlertTriangle className="h-3.5 w-3.5 shrink-0" /><span>{pwError}</span></div>}
-              {pwSuccess && <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs font-bold uppercase tracking-wider flex items-center space-x-2"><CheckCircle2 className="h-3.5 w-3.5 shrink-0" /><span>{pwSuccess}</span></div>}
+              {pwError && <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-caption flex items-center space-x-2"><AlertTriangle className="h-3.5 w-3.5 shrink-0" /><span>{pwError}</span></div>}
+              {pwSuccess && <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-caption flex items-center space-x-2"><CheckCircle2 className="h-3.5 w-3.5 shrink-0" /><span>{pwSuccess}</span></div>}
               <div>
                 <label className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider ml-1 mb-2 block">Current Password</label>
                 <input type="password" required value={pwCurrent} onChange={e => setPwCurrent(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-bold focus:border-blue-500 outline-none text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]" />
@@ -429,7 +429,7 @@ const ProfilePage: React.FC = () => {
               <button onClick={() => { setShow2faModal(false); setTwoFaStep('start'); setTwoFaToken(''); }} className="p-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"><X className="h-5 w-5" /></button>
             </div>
 
-            {twoFaError && <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs font-bold uppercase tracking-wider flex items-center space-x-2"><AlertTriangle className="h-3.5 w-3.5 shrink-0" /><span>{twoFaError}</span></div>}
+            {twoFaError && <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-caption flex items-center space-x-2"><AlertTriangle className="h-3.5 w-3.5 shrink-0" /><span>{twoFaError}</span></div>}
 
             {twoFaStep === 'start' && !twoFaEnabled && (
               <div className="space-y-5">
@@ -466,7 +466,7 @@ const ProfilePage: React.FC = () => {
                 <button onClick={handle2faDisable} disabled={twoFaLoading} className="w-full py-5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white rounded-2xl text-xs font-bold uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-rose-500/20">
                   {twoFaLoading ? 'Disabling...' : 'Disable 2FA'}
                 </button>
-                <button onClick={() => setShow2faModal(false)} className="w-full py-3 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-2xl text-xs font-bold uppercase tracking-wider border border-[var(--border-primary)] hover:text-[var(--text-primary)] transition-all">
+                <button onClick={() => setShow2faModal(false)} className="w-full py-3 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-2xl text-caption border border-[var(--border-primary)] hover:text-[var(--text-primary)] transition-all">
                   Cancel
                 </button>
               </div>

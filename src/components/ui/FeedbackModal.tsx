@@ -98,7 +98,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h3 className="text-lg font-black text-slate-900 leading-tight">Institutional Feedback</h3>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Continuous Quality Audit</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Continuous Quality Audit</p>
             </div>
           </div>
           <button 
@@ -121,7 +121,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
             {/* Star Rating */}
             <div className="space-y-3 text-center">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Overall Experience</label>
+              <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Overall Experience</label>
               <div className="flex items-center justify-center space-x-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -146,7 +146,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
 
             {/* Disposition Dropdown */}
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Feedback Type</label>
+              <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Feedback Type</label>
               <div className="grid grid-cols-2 gap-2">
                 {DISPOSITIONS.map((item) => {
                   const Icon = item.icon;
@@ -163,7 +163,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
                       }`}
                     >
                       <Icon className={`h-4 w-4 ${isActive ? 'text-blue-600' : 'text-slate-300'}`} />
-                      <span className="text-[11px] font-black tracking-tight">{item.label}</span>
+                      <span className="text-xs font-black tracking-tight">{item.label}</span>
                     </button>
                   );
                 })}
@@ -172,7 +172,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
 
             {/* Comment Area */}
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Additional Commentary</label>
+              <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Additional Commentary</label>
               <textarea
                 required
                 value={comment}

@@ -167,7 +167,7 @@ const BlogArticlePage: React.FC = () => {
           </Link>
           <Link
             to="/login"
-            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-lg shadow-blue-500/20"
+            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-caption transition-colors shadow-lg shadow-blue-500/20"
           >
             Launch Terminal
           </Link>
@@ -183,17 +183,17 @@ const BlogArticlePage: React.FC = () => {
 
       {/* Article Header */}
       <header className="py-16 px-6 md:px-10 max-w-[780px] mx-auto">
-        <Link to="/blog" className="inline-flex items-center gap-2 text-[11px] font-bold text-slate-500 hover:text-blue-400 uppercase tracking-wider transition-colors mb-8">
+        <Link to="/blog" className="inline-flex items-center gap-2 text-caption text-slate-500 hover:text-blue-400 uppercase tracking-wider transition-colors mb-8">
           <ArrowLeft className="w-3 h-3" /> Back to Blog
         </Link>
         <div className="flex items-center gap-3 mb-6">
-          <span className={`px-3 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wider ${article.tagColor}`}>
+          <span className={`px-3 py-1 rounded-full border text-caption ${article.tagColor}`}>
             {article.tag}
           </span>
-          <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          <span className="flex items-center gap-1.5 text-caption text-slate-500 uppercase tracking-wider">
             <Clock className="w-3 h-3" />{article.readTime}
           </span>
-          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{article.date}</span>
+          <span className="text-caption text-slate-600 uppercase tracking-wider">{article.date}</span>
         </div>
         <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight mb-6">
           {article.title}
@@ -239,7 +239,7 @@ const BlogArticlePage: React.FC = () => {
 
         {/* Related Article */}
         <div className="mt-10">
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.3em] mb-4">Read Next</p>
+          <p className="text-caption text-slate-500 uppercase tracking-[0.3em] mb-4">Read Next</p>
           <Link
             to={`/blog/${article.relatedSlug}`}
             className="group flex items-center justify-between bg-slate-900/50 border border-slate-800 rounded-[1.5rem] p-6 hover:border-slate-600 transition-all"
