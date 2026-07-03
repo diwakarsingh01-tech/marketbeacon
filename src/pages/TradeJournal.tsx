@@ -20,6 +20,7 @@ import {
 import Papa from 'papaparse';
 import { BASKETS, STRATEGIES } from '../data/stocks';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { authFetch } from '../lib/authFetch';
 import { toast } from 'sonner';
 import type { TradeRecord, StockPriceResult } from '../types';
 
@@ -79,9 +80,7 @@ const TradeJournalPage: React.FC = () => {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/trades`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await authFetch('/api/trades');
       const data = await safeJsonParse(res);
       if (res.status === 401 || res.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
         localStorage.removeItem('mb_token');
@@ -181,11 +180,9 @@ const TradeJournalPage: React.FC = () => {
 
   const handleBulkDelete = async () => {
     if (!window.confirm(`Delete ${selectedIds.length} records?`)) return;
-    const token = localStorage.getItem('mb_token');
     try {
-      const res = await fetch(`${API_URL}/api/trades/batch-delete`, {
+      const res = await authFetch('/api/trades/batch-delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ ids: selectedIds })
       });
       if (res.ok) { setSelectedIds([]); fetchTrades(); }
@@ -266,7 +263,6 @@ const TradeJournalPage: React.FC = () => {
       header: false,
       skipEmptyLines: 'greedy',
       complete: async (results) => {
-        const token = localStorage.getItem('mb_token');
         try {
           const rawRows = results.data as string[][];
           const headerIdx = rawRows.findIndex(r => r.some(c => ['stock', 'symbol', 'instrument'].includes(String(c).toLowerCase().trim())));
@@ -324,9 +320,8 @@ const TradeJournalPage: React.FC = () => {
             return; 
           }
 
-          const res = await fetch(`${API_URL}/api/trades/batch`, {
+          const res = await authFetch('/api/trades/batch', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ trades: tradesToImport })
           });
 
@@ -350,7 +345,6 @@ const TradeJournalPage: React.FC = () => {
   const handleAddTrade = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTrade.symbol) return;
-    const token = localStorage.getItem('mb_token');
     const entryPrice = parseFloat(newTrade.entry_price);
     const payload = { 
       ...newTrade, 
@@ -360,7 +354,7 @@ const TradeJournalPage: React.FC = () => {
       stop_loss: newTrade.stop_loss ? parseFloat(newTrade.stop_loss) : null
     };
     try {
-      const res = await fetch(`${API_URL}/api/trades`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
+      const res = await authFetch('/api/trades', { method: 'POST', body: JSON.stringify(payload) });
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) { 
         setShowAddModal(false); 
@@ -373,11 +367,9 @@ const TradeJournalPage: React.FC = () => {
 
   const handleConfirmClose = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('mb_token');
     try {
-      const res = await fetch(`${API_URL}/api/trades/${showCloseModal.id}/close`, {
+      const res = await authFetch(`/api/trades/${showCloseModal.id}/close`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ exit_price: parseFloat(closeTradeData.exit_price), exit_date: new Date().toISOString().split('T')[0], quantity_to_close: parseInt(closeTradeData.quantity_to_close), notes: closeTradeData.notes })
       });
       const data = await safeJsonParse(res);
@@ -542,7 +534,7 @@ const TradeJournalPage: React.FC = () => {
                              <td className={`${t.annualGain >= 0 ? 'text-blue-400' : 'text-rose-400'} px-4 py-3 text-right`}>{t.annualGain >= 0 ? '+' : ''}{t.annualGain.toFixed(0)}%</td>
                            </>
                          )}
-                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Re-open?')) { fetch(`${API_URL}/api/trades/${t.id}/reopen`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => { if(window.confirm('Delete?')) { fetch(`${API_URL}/api/trades/${t.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-[var(--bg-secondary)] text-[var(--text-tertiary)] rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
+                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Re-open?')) { authFetch(`/api/trades/${t.id}/reopen`, { method: 'PATCH' }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => { if(window.confirm('Delete?')) { authFetch(`/api/trades/${t.id}`, { method: 'DELETE' }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-[var(--bg-secondary)] text-[var(--text-tertiary)] rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
                       </tr>
                   ))}
                </tbody>
@@ -658,18 +650,18 @@ const TradeJournalPage: React.FC = () => {
                           </button>
                        ) : (
                           <button 
-                             onClick={() => { if(window.confirm('Re-open?')) { fetch(`${API_URL}/api/trades/${t.id}/reopen`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} 
-                             className="p-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-600 hover:text-white"
-                          >
-                             <RotateCcw className="h-3.5 w-3.5" />
+onClick={() => { if(window.confirm('Re-open?')) { authFetch(`/api/trades/${t.id}/reopen`, { method: 'PATCH' }).then(res => res.ok && fetchTrades()); } }}
+                              className="p-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-600 hover:text-white"
+                           >
+                              <RotateCcw className="h-3.5 w-3.5" />
                           </button>
                        )}
 
                        <button 
-                          onClick={() => { if(window.confirm('Delete?')) { fetch(`${API_URL}/api/trades/${t.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} 
+onClick={() => { if(window.confirm('Delete?')) { authFetch(`/api/trades/${t.id}`, { method: 'DELETE' }).then(res => res.ok && fetchTrades()); } }}
                           className="p-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white"
-                       >
-                          <Trash2 className="h-3.5 w-3.5" />
+                        >
+                           <Trash2 className="h-3.5 w-3.5" />
                        </button>
                     </div>
                  </div>

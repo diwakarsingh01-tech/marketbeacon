@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl, safeJsonParse } from '../lib/api-utils';
+import { authFetch } from '../lib/authFetch';
 import SEO from '../components/SEO';
 import { BASKETS } from '../data/stocks';
 import type { IndexResult, WatchlistItem, TradeRecord, StockPriceResult, AllStockItem, Notification } from '../types';
@@ -146,10 +147,9 @@ const AppHome: React.FC = () => {
 
     const fetchAll = async () => {
       try {
-        const auth = { headers: { 'Authorization': `Bearer ${token}` } };
         const [wRes, tRes] = await Promise.all([
-          fetch(`${API_URL}/api/watchlist`, auth),
-          fetch(`${API_URL}/api/trades`, auth),
+          authFetch('/api/watchlist'),
+          authFetch('/api/trades'),
         ]);
         if (wRes.ok) {
           const wd = await safeJsonParse(wRes);
@@ -199,9 +199,7 @@ const AppHome: React.FC = () => {
     if (!token) return;
     setLoadingZones(true);
     Promise.all([
-      fetch(`${API_URL}/api/backtest/audit?basket=ALL`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      }).then(r => r.json()),
+      authFetch('/api/backtest/audit?basket=ALL').then(r => r.json()),
     ])
       .then(([data]) => {
         const results = data.allStocks || [];
@@ -330,9 +328,7 @@ const AppHome: React.FC = () => {
     if (!token) return;
     const fetchNotifs = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/notifications`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const res = await authFetch('/api/notifications');
         if (!res.ok) return;
         const data = await safeJsonParse(res);
         if (Array.isArray(data)) setNotifications(data);
