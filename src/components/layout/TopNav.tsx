@@ -183,7 +183,10 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
   };
 
   return (
-    <nav className="h-20 bg-[var(--bg-primary)]/80 backdrop-blur-xl border-b border-[var(--border-primary)] flex items-center justify-between px-4 md:px-10 sticky top-0 z-[100] shadow-sm transition-all duration-300">
+    <nav className="h-20 bg-[var(--bg-primary)]/70 backdrop-blur-xl border-b border-[var(--border-primary)] flex items-center justify-between px-4 md:px-10 sticky top-0 z-[100] shadow-lg shadow-black/20 transition-all duration-300 relative">
+      {/* Gradient top-edge */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent pointer-events-none" />
+
       {/* Left: Menu (Mobile) & Market Pulse Status (Desktop) */}
       <div className="flex items-center space-x-4 shrink-0">
         <button 
@@ -201,12 +204,11 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         </div>
 
         {/* Desktop-only Pulse Status */}
-        <div className="hidden md:flex flex-col h-8 justify-center">
-          <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none">Pulse Status</span>
-             <div className={`w-1.5 h-1.5 rounded-full ${marketStatus === 'LIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+        <div className="hidden md:flex items-center gap-3 px-3 py-1.5 bg-[var(--bg-tertiary)]/40 rounded-xl border border-[var(--border-primary)]">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${marketStatus === 'LIVE' ? 'bg-emerald-500 animate-pulse shadow-sm shadow-emerald-500/50' : 'bg-slate-400'}`} />
+            <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{marketStatus} Mode</span>
           </div>
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">{marketStatus} Mode</span>
         </div>
       </div>
 
@@ -214,18 +216,18 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
       <div className="hidden lg:flex flex-1 max-w-3xl mx-8 relative">
         <form onSubmit={handleSearch} className="w-full relative group">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center space-x-2 pointer-events-none">
-            <Search className="h-4 w-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+            <Search className="h-4 w-4 text-slate-400 group-focus-within:text-blue-400 transition-colors" />
           </div>
           <input 
             type="text" 
             placeholder="Smart Search (e.g. RELAXO, TCS)..." 
-             className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] py-3.5 pl-12 pr-16 rounded-2xl text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none hover:border-blue-500/40 focus:bg-[var(--bg-elevated)] focus:border-blue-500/40 focus:shadow-2xl focus:shadow-black/50 transition-all duration-300"
+            className="w-full bg-[var(--bg-secondary)]/80 border border-[var(--border-primary)] py-3.5 pl-12 pr-16 rounded-2xl text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] outline-none transition-all duration-300 placeholder:text-slate-500"
             value={searchQuery}
             onChange={onSearchChange}
             onFocus={() => searchQuery.length >= 1 && setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1.5 px-2 py-1 bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] rounded-md pointer-events-none opacity-50 shadow-sm">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-1.5 px-2 py-1 bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] rounded-md pointer-events-none shadow-sm">
             <Command className="h-2.5 w-2.5 text-[var(--text-tertiary)]" />
             <span className="text-xs font-bold text-[var(--text-tertiary)]">K</span>
           </div>
@@ -278,20 +280,18 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
       {/* Right: Actions & User */}
       <div className="flex items-center space-x-3 md:space-x-6 shrink-0">
         {/* Indices Bar (Sleeker version) */}
-        <div className="hidden xl:flex items-center space-x-8 pr-6 border-r border-[var(--border-primary)]">
+        <div className="hidden xl:flex items-center gap-4 px-4 py-1.5 bg-[var(--bg-tertiary)]/30 rounded-xl border border-[var(--border-primary)]">
            {Array.isArray(indices) && indices.slice(0, 2).map((idx) => {
              const athDiff = idx.ath && idx.price ? ((idx.ath - idx.price) / idx.ath) * 100 : 0;
              return (
-              <div key={idx.name} className="flex flex-col items-start space-y-1">
-                 <div className="flex items-center space-x-3">
-                    <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none">{idx.name}</span>
-                    <span className={`text-xs font-bold font-mono leading-none ${idx.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                       {idx.price ? idx.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-                    </span>
-                 </div>
+              <div key={idx.name} className="flex items-center gap-3">
+                 <span className="text-[11px] font-bold text-[var(--text-muted)]">{idx.name}</span>
+                 <span className={`text-[11px] font-bold font-mono ${idx.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {idx.price ? idx.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                 </span>
                  {idx.ath > 0 && athDiff > 0 && (
-                    <span className="text-xs font-bold text-rose-500 uppercase tracking-wider block leading-none">
-                     ▼ {athDiff.toFixed(2)}% from High (ATH: {idx.ath.toLocaleString(undefined, { maximumFractionDigits: 0 })})
+                    <span className="text-[10px] font-bold text-rose-400/70">
+                     ▼ {athDiff.toFixed(2)}%
                    </span>
                  )}
               </div>
@@ -419,43 +419,43 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           href={WHATSAPP_BASE} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-[var(--text-primary)] rounded-xl transition-all shadow-sm border border-emerald-100 flex items-center space-x-2 group"
+          className="p-2.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white rounded-xl transition-all border border-emerald-500/20 hover:border-emerald-400 flex items-center space-x-2 group shadow-sm"
         >
           <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 group-hover:scale-110 transition-transform">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
           </svg>
-          <span className="text-xs font-bold uppercase tracking-wider hidden lg:inline">WhatsApp</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider hidden lg:inline">WhatsApp</span>
         </a>
         <a 
           href="https://t.me/asktoceo" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-[var(--text-primary)] rounded-xl transition-all shadow-sm border border-blue-100 flex items-center space-x-2 group"
+          className="p-2.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white rounded-xl transition-all border border-blue-500/20 hover:border-blue-400 flex items-center space-x-2 group shadow-sm"
         >
           <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 group-hover:scale-110 transition-transform">
             <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
           </svg>
-          <span className="text-xs font-bold uppercase tracking-wider hidden lg:inline">Join Community</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider hidden lg:inline">Join Community</span>
         </a>
 
         <div className="relative">
           {user ? (
             <>
-              <button 
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center space-x-3 p-1.5 pr-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-all rounded-[1.2rem] group border border-[var(--border-primary)]"
-              >
-                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-[var(--text-primary)] font-bold text-xs shadow-lg shadow-blue-500/20 group-hover:rotate-6 transition-transform">
-                   {user?.name?.[0].toUpperCase()}
-                </div>
-                <div className="flex flex-col items-start hidden sm:flex">
-                    <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider leading-none">{user?.name}</span>
-                   <div className="flex items-center space-x-1.5 mt-1">
-                       <div className={`w-1.5 h-1.5 rounded-full ${user?.tier === 'alpha' ? 'bg-blue-400 animate-pulse' : 'bg-slate-400'}`} />
-                        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{user?.tier || 'Free'} Node</span>
-                   </div>
-                </div>
-              </button>
+                <button 
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-3 p-1.5 pr-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-all rounded-[1.2rem] group border border-[var(--border-primary)] hover:border-blue-500/30"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-blue-500/30 group-hover:rotate-6 transition-transform">
+                     {user?.name?.[0].toUpperCase()}
+                  </div>
+                  <div className="flex flex-col items-start hidden sm:flex">
+                      <span className="text-[11px] font-bold text-[var(--text-primary)] uppercase tracking-wider leading-none">{user?.name}</span>
+                    <div className="flex items-center space-x-1.5 mt-1">
+                        <div className={`w-1.5 h-1.5 rounded-full ${user?.tier === 'alpha' ? 'bg-blue-400 animate-pulse' : 'bg-slate-400'}`} />
+                        <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{user?.tier || 'Free'} Node</span>
+                    </div>
+                  </div>
+                </button>
 
               {/* User Dropdown */}
               {showUserMenu && (
