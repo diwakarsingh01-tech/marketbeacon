@@ -4,7 +4,7 @@
   "description": "Institutional Fintech Terminal for Advanced Strategy Execution",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
+  "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
     {

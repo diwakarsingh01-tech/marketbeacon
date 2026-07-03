@@ -132,9 +132,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                   inputMode="search"
                 />
                 {searchQuery && (
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={handleReset}
+                    aria-label="Clear search"
                     className="p-1 md:p-2 mr-1 md:mr-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"
                   >
                     <X className="w-3 h-3 md:w-4 md:h-4" />

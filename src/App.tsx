@@ -73,7 +73,6 @@ function AnimatedRoutes() {
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:slug" element={<BlogArticlePage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-        <Route path="/terms" element={<PrivacyPolicyPage />} />
         <Route path="/methodology" element={<MethodologyPage />} />
         <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/disclaimer" element={<DisclaimerPage />} />

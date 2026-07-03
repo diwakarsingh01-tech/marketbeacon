@@ -9,6 +9,7 @@ import { WHATSAPP_BASE } from '../../lib/constants';
 
 import type { Notification, IndexResult, StockSearchResult } from '../../types';
 import { safeJsonParse, getApiUrl } from '../../lib/api-utils';
+import { authFetch } from '../../lib/authFetch';
 
 const API_URL = getApiUrl();
 
@@ -63,9 +64,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/notifications`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` }
-      });
+      const res = await authFetch('/api/notifications');
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) setNotifications(data || []);
     } catch (e) { console.error('Notifications fetch failed'); }
@@ -77,10 +76,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
   const markAsRead = async (id: number) => {
     try {
-      const res = await fetch(`${API_URL}/api/notifications/${id}/read`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` }
-      });
+      const res = await authFetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
       if (res.ok) {
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: 0 } : n));
       }
@@ -172,6 +168,18 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
     return () => clearInterval(interval);
   }, [fetchIndices]);
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setShowNotifications(false);
+      setShowUserMenu(false);
+      setShowSuggestions(false);
+      setShowMobileSearch(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
   const getTimeAgo = (ts: string) => {
     const diff = Date.now() - new Date(ts).getTime();
     const mins = Math.floor(diff / 60000);
@@ -189,8 +197,9 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
       {/* Left: Menu (Mobile) & Market Pulse Status (Desktop) */}
       <div className="flex items-center space-x-4 shrink-0">
-        <button 
+        <button
           onClick={onMenuClick}
+          aria-label="Open menu"
           className="p-2.5 -ml-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] md:hidden hover:bg-[var(--bg-tertiary)] rounded-xl transition-all"
         >
           <Menu className="h-6 w-6" />
@@ -299,8 +308,9 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
            })}
         </div>
         {/* Mobile Search Trigger Button */}
-        <button 
+        <button
           onClick={() => setShowMobileSearch(true)}
+          aria-label="Search stocks"
           className="p-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] lg:hidden hover:bg-[var(--bg-tertiary)] rounded-xl transition-all"
           title="Search Stocks"
         >
@@ -308,11 +318,14 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         </button>
 
         <div className="relative">
-          <button 
+          <button
             onClick={() => {
               setShowNotifications(!showNotifications);
               setShowUserMenu(false);
             }}
+            aria-label="Notifications"
+            aria-expanded={showNotifications}
+            aria-haspopup="menu"
             className={`relative p-2.5 rounded-xl transition-all flex ${showNotifications ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'}`}
           >
             <Bell className={`h-5 w-5 ${notifications.some(n => n.unread) ? 'animate-[ring_2s_ease-in-out_infinite]' : ''}`} />
@@ -338,6 +351,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
+              role="menu"
               className="absolute right-0 top-full mt-3 w-80 md:w-96 bg-[var(--bg-primary)] rounded-[1.8rem] shadow-2xl border border-[var(--border-primary)] p-3 z-[110] max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:w-auto"
             >
                <div className="px-4 py-3 border-b border-[var(--border-primary)] flex items-center justify-between mb-2">
@@ -441,8 +455,11 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         <div className="relative">
           {user ? (
             <>
-                <button 
+                <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
+                  aria-label="User menu"
+                  aria-expanded={showUserMenu}
+                  aria-haspopup="menu"
                   className="flex items-center space-x-3 p-1.5 pr-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-all rounded-[1.2rem] group border border-[var(--border-primary)] hover:border-blue-500/30"
                 >
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-blue-500/30 group-hover:rotate-6 transition-transform">
@@ -459,7 +476,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
               {/* User Dropdown */}
               {showUserMenu && (
-                <div className="absolute right-0 top-full mt-3 w-56 bg-[var(--bg-primary)] rounded-[1.8rem] shadow-2xl border border-[var(--border-primary)] p-2.5 z-[100] animate-in zoom-in-95 duration-200">
+                <div role="menu" className="absolute right-0 top-full mt-3 w-56 bg-[var(--bg-primary)] rounded-[1.8rem] shadow-2xl border border-[var(--border-primary)] p-2.5 z-[100] animate-in zoom-in-95 duration-200">
                    <div className="px-4 py-3 border-b border-[var(--border-primary)] mb-1">
                        <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Account Identity</p>
                        <p className="text-xs font-bold text-[var(--text-primary)] truncate">{user?.email}</p>
@@ -502,12 +519,13 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                 onChange={onSearchChange}
               />
             </form>
-            <button 
+            <button
               onClick={() => {
                 setShowMobileSearch(false);
                 setSearchQuery('');
                 setSuggestions([]);
               }}
+              aria-label="Close"
               className="p-3 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]/50 rounded-xl transition-all"
             >
               <X className="h-5 w-5" />
