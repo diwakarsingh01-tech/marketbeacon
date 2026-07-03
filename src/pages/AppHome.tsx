@@ -142,9 +142,6 @@ const AppHome: React.FC = () => {
 
   // Fetch portfolio/watchlist data
   useEffect(() => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) return;
-
     const fetchAll = async () => {
       try {
         const [wRes, tRes] = await Promise.all([
@@ -195,8 +192,6 @@ const AppHome: React.FC = () => {
 
   // Fetch active buy zones
   useEffect(() => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) return;
     setLoadingZones(true);
     Promise.all([
       authFetch('/api/backtest/audit?basket=ALL').then(r => r.json()),
@@ -324,8 +319,6 @@ const AppHome: React.FC = () => {
 
   // Fetch real notifications
   useEffect(() => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) return;
     const fetchNotifs = async () => {
       try {
         const res = await authFetch('/api/notifications');

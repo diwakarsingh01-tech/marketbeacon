@@ -46,9 +46,9 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
       const response = await fetch(`${API_URL}/api/feedback`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('mb_token')}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           rating,
           disposition,
@@ -59,7 +59,6 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
       });
 
       if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem('mb_token');
         localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;

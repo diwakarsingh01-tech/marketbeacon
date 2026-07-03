@@ -54,18 +54,16 @@ const AdminPanel: React.FC = () => {
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
-    const token = localStorage.getItem('mb_token');
     try {
       const [uRes, rRes, vRes, fRes, wRes] = await Promise.all([
-        fetch(`${API_URL}/api/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/admin/upgrade-requests`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/admin/vouchers`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/admin/feedback`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/admin/waitlist?status=pending`, { headers: { 'Authorization': `Bearer ${token}` } })
+        fetch(`${API_URL}/api/admin/users`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/admin/upgrade-requests`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/admin/vouchers`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/admin/feedback`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/admin/waitlist?status=pending`, { credentials: 'include' })
       ]);
 
       if (uRes.status === 401 || uRes.status === 403 || rRes.status === 401 || rRes.status === 403 || vRes.status === 401 || vRes.status === 403 || fRes.status === 401 || fRes.status === 403 || wRes.status === 401) {
-        localStorage.removeItem('mb_token');
         localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
@@ -92,11 +90,10 @@ const AdminPanel: React.FC = () => {
 
   const handleApprove = async (requestId: number) => {
     if (!window.confirm("Approve this payment and upgrade user?")) return;
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/upgrade-requests/${requestId}/approve`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) {
@@ -110,11 +107,10 @@ const AdminPanel: React.FC = () => {
 
   const handleDeleteItem = async (type: 'feedback' | 'vouchers' | 'upgrade-requests', id: number) => {
     if (!window.confirm(`Are you sure you want to delete this ${type.replace('-requests', '')}? This action is permanent.`)) return;
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/${type}/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         await fetchData();
@@ -127,14 +123,13 @@ const AdminPanel: React.FC = () => {
   const handleSendReply = async () => {
     if (!selectedFeedback || !replyText.trim()) return;
     setIsSubmittingReply(true);
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/feedback/${selectedFeedback.id}/reply`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ reply: replyText })
       });
       if (res.ok) {
@@ -149,14 +144,13 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleUpdateUser = async (userId: number, data: Record<string, unknown>) => {
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(data)
       });
       const result = await safeJsonParse(res);
@@ -172,11 +166,10 @@ const AdminPanel: React.FC = () => {
 
   const handleDeleteUser = async (userId: number) => {
     if (!window.confirm("DANGER: Permanently delete user and all data?")) return;
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) fetchData();
@@ -184,10 +177,9 @@ const AdminPanel: React.FC = () => {
   };
 
   const fetchWaitlist = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/waitlist?status=pending`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await safeJsonParse(res);
@@ -198,14 +190,13 @@ const AdminPanel: React.FC = () => {
 
   const handleApproveWaitlist = async (entryId: number) => {
     if (!window.confirm('Approve this user and generate a unique voucher code?')) return;
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/waitlist/${entryId}/approve`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ duration_days: 7 })
       });
       const data = await safeJsonParse(res);
@@ -220,11 +211,10 @@ const AdminPanel: React.FC = () => {
 
   const handleRejectWaitlist = async (entryId: number) => {
     if (!window.confirm('Reject this waitlist entry?')) return;
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/waitlist/${entryId}/reject`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         toast('Entry rejected');
@@ -937,6 +927,7 @@ const AdminPanel: React.FC = () => {
                     const res = await fetch(`${API_URL}/api/auth/register`, {
                        method: 'POST',
                        headers: { 'Content-Type': 'application/json' },
+                       credentials: 'include',
                        body: JSON.stringify({
                           name: fd.get('name'),
                           email: fd.get('email'),
@@ -1001,11 +992,11 @@ const AdminPanel: React.FC = () => {
               <form className="space-y-6" onSubmit={async (e) => {
                  e.preventDefault();
                  const fd = new FormData(e.currentTarget);
-                 const token = localStorage.getItem('mb_token');
                  try {
                     const res = await fetch(`${API_URL}/api/admin/vouchers`, {
                        method: 'POST',
-                       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                       headers: { 'Content-Type': 'application/json' },
+                       credentials: 'include',
                        body: JSON.stringify({
                           code: fd.get('code'),
                           tier: fd.get('tier'),

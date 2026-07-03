@@ -90,10 +90,10 @@ const LoginPage: React.FC = () => {
           e.preventDefault();
           setLoading(true);
           try {
-            const token = localStorage.getItem('mb_token');
             const res = await fetch(`${API_URL}/api/user/profile`, {
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
               body: JSON.stringify({ name: userName })
             });
             if (res.ok) { await refreshAuth(); navigate(from, { replace: true }); }

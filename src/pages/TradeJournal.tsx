@@ -73,17 +73,11 @@ const TradeJournalPage: React.FC = () => {
   }, []);
 
   const fetchTrades = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     try {
       const res = await authFetch('/api/trades');
       const data = await safeJsonParse(res);
       if (res.status === 401 || res.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
-        localStorage.removeItem('mb_token');
         localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
