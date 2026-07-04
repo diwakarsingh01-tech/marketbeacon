@@ -59,7 +59,6 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
       });
 
       if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
       }
