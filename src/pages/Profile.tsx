@@ -54,7 +54,6 @@ const ProfilePage: React.FC = () => {
       });
       const data = await safeJsonParse(res);
       if (res.status === 401 || res.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
-        localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
       }

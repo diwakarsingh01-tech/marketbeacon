@@ -234,7 +234,6 @@ const AlphaHubPage: React.FC = () => {
           return;
         }
         if (res.status === 401 || res.status === 403 || d.error === 'Invalid token.' || d.error === 'Access denied.') {
-          localStorage.removeItem('mb_user');
           window.location.href = '/login';
           return;
         }

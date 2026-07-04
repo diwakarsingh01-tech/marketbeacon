@@ -64,7 +64,6 @@ const AdminPanel: React.FC = () => {
       ]);
 
       if (uRes.status === 401 || uRes.status === 403 || rRes.status === 401 || rRes.status === 403 || vRes.status === 401 || vRes.status === 403 || fRes.status === 401 || fRes.status === 403 || wRes.status === 401) {
-        localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
       }
