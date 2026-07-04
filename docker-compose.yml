@@ -1,0 +1,91 @@
+networks:
+  mb-net:
+    driver: bridge
+
+services:
+  marketbeacon-backend:
+    build: ./marketbeacon-backend
+    container_name: mb-backend
+    environment:
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - TURSO_DATABASE_URL=${TURSO_DATABASE_URL}
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - TELEGRAM_CHANNEL=${TELEGRAM_CHANNEL}
+      - NODE_ENV=production
+    networks:
+      - mb-net
+    ports:
+      - 3001:3001
+    restart: unless-stopped
+    volumes:
+      - /opt/marketbeacon-backend/dist/index.js:/app/dist/index.js:rw
+      - /opt/marketbeacon-backend/market_snapshot.json:/app/market_snapshot.json:rw
+      - /opt/marketbeacon-backend/dist/services/worker.js:/app/dist/services/worker.js:rw
+      - /opt/marketbeacon-backend/dist/services/audit/strategyAudit.js:/app/dist/services/audit/strategyAudit.js:rw
+      - /opt/marketbeacon-backend/dist/services/audit/basketAudit.js:/app/dist/services/audit/basketAudit.js:rw
+
+  n8n:
+    container_name: mb-n8n
+    environment:
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_HOST=n8n.marketbeaconpro.com
+      - WEBHOOK_URL=https://n8n.marketbeaconpro.com/
+      - N8N_EDITOR_BASE_URL=https://n8n.marketbeaconpro.com
+      - N8N_PROTOCOL=https
+      - N8N_API_KEY=${N8N_API_KEY}
+    image: n8nio/n8n
+    networks:
+      - mb-net
+    ports:
+      - 5678:5678
+    restart: unless-stopped
+    user: root
+    volumes:
+      - ./n8n-data:/root/.n8n
+
+  pdh-pdl-api:
+    build: ./pdh-pdl-scalper
+    container_name: mb-algo
+    networks:
+      - mb-net
+    ports:
+      - 8100:8100
+    restart: unless-stopped
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml
+    command: [ "--config", "/app/config.yaml", "--port", "4000" ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - mb-net
+    restart: unless-stopped
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:v0.10.2
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    environment:
+      - OPENAI_API_BASE_URLS=http://litellm:4000/v1;https://openrouter.ai/api/v1
+      - OPENAI_API_KEYS=${OPENAI_API_KEYS}
+      - ENABLE_OLLAMA_API=False
+    volumes:
+      - open-webui:/app/backend/data
+    networks:
+      - mb-net
+    restart: unless-stopped
+
+volumes:
+  open-webui:
