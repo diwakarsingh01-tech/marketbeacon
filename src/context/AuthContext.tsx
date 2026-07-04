@@ -29,17 +29,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const API_URL = getApiUrl();
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('mb_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('mb_user');
     fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
   }, []);
 
@@ -50,18 +46,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       const data = await safeJsonParse(response);
       if (response.ok && !data.error) {
-        const verifiedUser = data.user || data;
-        setUser(verifiedUser);
-        localStorage.setItem('mb_user', JSON.stringify(verifiedUser));
+        setUser(data.user || data);
       } else {
-        logout();
+        setUser(null);
       }
     } catch (e) {
       console.error('Auth refresh failed:', e);
     } finally {
       setLoading(false);
     }
-  }, [logout]);
+  }, []);
 
   useEffect(() => {
     refreshAuth();
@@ -74,16 +68,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       credentials: 'include',
       body: JSON.stringify({ email, password: pass })
     });
-    
+
     const data = await safeJsonParse(response);
     if (!response.ok || data.error) {
       throw new Error(data.error || 'Login failed');
     }
 
-    const { token: t, user: userData } = data;
-    setUser(userData);
-    setToken(t);
-    localStorage.setItem('mb_user', JSON.stringify(userData));
+    setUser(data.user);
+    setToken(data.token);
   };
 
   const googleLogin = async (credential: string) => {
@@ -93,16 +85,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       credentials: 'include',
       body: JSON.stringify({ token: credential })
     });
-    
+
     const data = await safeJsonParse(response);
     if (!response.ok || data.error) {
       throw new Error(data.error || 'Google Login failed');
     }
 
-    const { token: t, user: userData } = data;
-    setUser(userData);
-    setToken(t);
-    localStorage.setItem('mb_user', JSON.stringify(userData));
+    setUser(data.user);
+    setToken(data.token);
   };
 
   const sendMobileOtp = async (mobile: string) => {
@@ -125,16 +115,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       credentials: 'include',
       body: JSON.stringify({ mobile, otp })
     });
-    
+
     const data = await safeJsonParse(res);
     if (!res.ok || data.error) {
       throw new Error(data.error || 'OTP verification failed');
     }
-    
-    const { token: t, user: userData } = data;
-    setUser(userData);
-    setToken(t);
-    localStorage.setItem('mb_user', JSON.stringify(userData));
+
+    setUser(data.user);
+    setToken(data.token);
   };
 
   const register = async (email: string, pass: string, name: string) => {
@@ -150,10 +138,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(data.error || 'Registration failed');
     }
 
-    const { token: t, user: userData } = data;
-    setUser(userData);
-    setToken(t);
-    localStorage.setItem('mb_user', JSON.stringify(userData));
+    setUser(data.user);
+    setToken(data.token);
   };
 
   return (

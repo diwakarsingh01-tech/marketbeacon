@@ -177,7 +177,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       const res = await fetch(`${API_URL}/api/trades`, { credentials: 'include' });
       const d = await safeJsonParse(res);
       if (res.status === 401 || res.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
-        localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
       }
@@ -190,7 +189,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       const response = await fetch(`${API_URL}/api/watchlist`, { credentials: 'include' });
       const d = await safeJsonParse(response);
       if (response.status === 401 || response.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
-        localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
       }
@@ -342,7 +340,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       }
 
       if (response.status === 401 || response.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
-        localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
       }
