@@ -2049,6 +2049,17 @@ function verifyN8n(req: any, res: any) {
   return true;
 }
 
+app.get('/api/n8n/users', async (req, res) => {
+  try {
+    if (!verifyN8n(req, res)) return;
+    const db = getDB();
+    const users = await db.all('SELECT email, name FROM users');
+    res.json({ users });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/n8n/qualified-stocks', async (req, res) => {
   try {
     if (!verifyN8n(req, res)) return;
