@@ -10,7 +10,7 @@ import {
   Zap, 
   Briefcase, 
   BookOpen, 
-  Store 
+  Bot
 } from 'lucide-react';
 
 const AppLayout: React.FC = () => {
@@ -29,9 +29,9 @@ const AppLayout: React.FC = () => {
     { icon: LayoutGrid, label: 'Home', path: '/app' },
     { icon: Zap, label: 'Alpha', path: '/alpha-hub' },
     { icon: Zap, label: 'Screener', path: '/screener' },
-    { icon: Briefcase, label: 'Manager', path: '/portfolio' },
+    { icon: Bot, label: 'Beacon', path: '/ai-assistant' },
+    { icon: Briefcase, label: 'Portfolio', path: '/portfolio' },
     { icon: BookOpen, label: 'Journal', path: '/trades' },
-    { icon: Store, label: 'Licenses', path: '/license-desk' },
   ];
 
   return (

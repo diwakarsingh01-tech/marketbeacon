@@ -345,11 +345,11 @@ const AdminPanel: React.FC = () => {
          <div className="flex items-center space-x-6 text-caption text-slate-500">
             <div className="flex items-center space-x-2">
                <div className="h-2 w-2 rounded-full bg-emerald-500" />
-               <span>{users.filter(u => getDaysRemaining(u.subscription_expiry) !== null && getDaysRemaining(u.subscription_expiry)! > 0).length} Active</span>
+               <span>{users.filter(u => getDaysRemaining(u.subscription_expiry || '') !== null && getDaysRemaining(u.subscription_expiry || '')! > 0).length} Active</span>
             </div>
             <div className="flex items-center space-x-2">
                <div className="h-2 w-2 rounded-full bg-red-500" />
-               <span>{users.filter(u => getDaysRemaining(u.subscription_expiry) === 0).length} Expired</span>
+               <span>{users.filter(u => getDaysRemaining(u.subscription_expiry || '') === 0).length} Expired</span>
             </div>
          </div>
       </div>
@@ -396,7 +396,7 @@ const AdminPanel: React.FC = () => {
                      <td className="px-8 py-6">
                         <div className="flex flex-col">
                            <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-600" style={{ width: `${(v.current_uses / v.max_uses) * 100}%` }} />
+                              <div className="h-full bg-blue-600" style={{ width: `${((v.current_uses || 0) / (v.max_uses || 1)) * 100}%` }} />
                            </div>
                            <span className="text-caption text-slate-500 mt-1 uppercase">{v.current_uses} / {v.max_uses} Redemptions</span>
                         </div>
@@ -414,7 +414,7 @@ const AdminPanel: React.FC = () => {
                  ))
                ) : activeTab === 'users' ? (
                  filteredUsers.map(u => {
-                   const days = getDaysRemaining(u.subscription_expiry);
+                   const days = getDaysRemaining(u.subscription_expiry || '');
                    return (
                     <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors">
                       <td className="px-8 py-6">
@@ -490,7 +490,7 @@ const AdminPanel: React.FC = () => {
                            {[1, 2, 3, 4, 5].map(star => (
                              <Star 
                                key={star} 
-                               className={`h-3 w-3 ${star <= f.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} 
+                               className={`h-3 w-3 ${star <= (f.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} 
                              />
                            ))}
                         </div>
@@ -516,13 +516,13 @@ const AdminPanel: React.FC = () => {
                              </a>
                            )}
                            <span className="text-caption text-slate-500 uppercase tracking-wider">
-                             {new Date(f.timestamp).toLocaleString()}
+                             {new Date(f.timestamp || '').toLocaleString()}
                            </span>
                            {f.reply_text && (
                              <div className="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
                                 <span className="text-[7.5px] font-bold text-emerald-600 uppercase block mb-1">Admin Resolution:</span>
                                 <p className="text-caption font-medium text-slate-700 leading-tight italic">"{f.reply_text}"</p>
-                                <span className="text-xs text-slate-400 mt-1 block uppercase">{new Date(f.replied_at).toLocaleString()}</span>
+                                <span className="text-xs text-slate-400 mt-1 block uppercase">{new Date(f.replied_at || '').toLocaleString()}</span>
                              </div>
                            )}
                         </div>
@@ -638,14 +638,14 @@ const AdminPanel: React.FC = () => {
                        <span className="text-[9.5px] font-bold text-slate-900 font-mono">{v.current_uses} / {v.max_uses}</span>
                     </div>
                     <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden shrink-0 ml-4">
-                       <div className="h-full bg-blue-600" style={{ width: `${(v.current_uses / v.max_uses) * 100}%` }} />
+                       <div className="h-full bg-blue-600" style={{ width: `${((v.current_uses || 0) / (v.max_uses || 1)) * 100}%` }} />
                     </div>
                  </div>
               </div>
             ))
           ) : activeTab === 'users' ? (
             filteredUsers.map(u => {
-              const days = getDaysRemaining(u.subscription_expiry);
+              const days = getDaysRemaining(u.subscription_expiry || '');
               return (
                 <div key={u.id} className="p-5 space-y-3.5 hover:bg-slate-50/40 transition-colors">
                    <div className="flex justify-between items-start">
@@ -709,7 +709,7 @@ const AdminPanel: React.FC = () => {
                        {[1, 2, 3, 4, 5].map(star => (
                          <Star 
                            key={star} 
-                           className={`h-3 w-3 ${star <= f.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} 
+                           className={`h-3 w-3 ${star <= (f.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} 
                          />
                        ))}
                     </div>
@@ -734,7 +734,7 @@ const AdminPanel: React.FC = () => {
                        </div>
                     )}
                     <div className="text-[7.5px] font-bold text-slate-500 uppercase tracking-wider pt-1">
-                       {new Date(f.timestamp).toLocaleString()}
+                       {new Date(f.timestamp || '').toLocaleString()}
                     </div>
                  </div>
               </div>
@@ -815,7 +815,7 @@ const AdminPanel: React.FC = () => {
                       <span>{entry.email}</span>
                       {entry.phone && <span>• {entry.phone}</span>}
                       <span>• {entry.tier_requested}</span>
-                      <span>• {new Date(entry.created_at).toLocaleDateString()}</span>
+                      <span>• {new Date(entry.created_at || '').toLocaleDateString()}</span>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">

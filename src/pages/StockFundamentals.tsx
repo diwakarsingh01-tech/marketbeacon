@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
-  Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight, Lock, Sparkles, ChevronDown, ChevronUp, BarChart3
+  Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight, Lock, Sparkles, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,7 @@ import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { BASKETS, STRATEGIES } from '../data/stocks';
+import AiSuggestionPanel from '../components/ai/AiSuggestionPanel';
 
 const API_URL = getApiUrl();
 
@@ -98,6 +99,7 @@ const StockFundamentalsPage: React.FC = () => {
   const audit = data?.audit || {};
   const score = Number(audit?.score) || 0;
   const universe = audit?.universe || 'WATCHLIST';
+  const isPass = audit.isPass || data?.audit?.isPass || universe === 'INSTITUTIONAL';
 
   const weightedSegments = [
     { id: 'profit', label: 'Profitability', data: audit?.profitabilityQuality, icon: <TrendingUp className="h-3 w-3 mr-1" /> },
@@ -117,6 +119,7 @@ const StockFundamentalsPage: React.FC = () => {
   const containingBaskets = Object.entries(BASKETS)
     .filter(([_, list]) => {
       const sym = symbol?.trim().toUpperCase();
+      if (!sym) return false;
       return list.some(s => {
         const u = s.trim().toUpperCase();
         return u === sym || u.replace('.NS', '') === sym || sym.replace('.NS', '') === u;
@@ -173,7 +176,7 @@ const StockFundamentalsPage: React.FC = () => {
         <div className="col-span-full">
           <Breadcrumbs items={[
             { label: 'Screener', href: '/screener' },
-            { label: symbol }
+            { label: symbol || '' }
           ]} />
         </div>
         <div className={`lg:col-span-8 space-y-6 lg:overflow-y-auto pr-2 no-scrollbar transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
@@ -225,24 +228,26 @@ const StockFundamentalsPage: React.FC = () => {
                 <div className="grid grid-cols-1 gap-2.5">
                    {applicableStrategies.map((strat) => {
                       const stratResult = data?.strategies?.[strat.id];
-                      let statusText = 'WATCHLIST';
-                      let statusColor = 'text-blue-400 bg-blue-500/5 border-blue-500/10';
-                      let tabName = 'watchlist';
+                       
+                      let statusText = '';
+                      let statusColor = '';
+                      let tabName = '';
 
-                      if (stratResult) {
-                         if (stratResult.status === 'QUALIFIED' || stratResult.isBuyZone) {
-                            statusText = 'APPROVED / BUY ZONE';
-                            statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-                            tabName = 'open';
-                         } else if (stratResult.status === 'OBSERVATION' || stratResult.isObservation) {
-                            statusText = 'OBSERVATION / NEUTRAL';
-                            statusColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-                            tabName = 'neutral';
-                         } else if (stratResult.status === 'REJECTED' || stratResult.status === 'REJECT' || stratResult.isPass === false) {
-                            statusText = 'REJECTED / AVOID';
-                            statusColor = 'text-rose-400 bg-rose-500/10 border-rose-500/20';
-                            tabName = 'rejected';
-                         }
+                      const isApproved = stratResult?.status === 'QUALIFIED' || stratResult?.isBuyZone;
+                      const isRejected = stratResult?.status === 'REJECTED' || stratResult?.status === 'REJECT' || stratResult?.isPass === false || !isPass;
+
+                      if (isApproved) {
+                         statusText = 'APPROVED / BUY ZONE';
+                         statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+                         tabName = 'open';
+                      } else if (isRejected) {
+                         statusText = 'REJECTED / AVOID';
+                         statusColor = 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+                         tabName = 'rejected';
+                      } else {
+                         statusText = 'OBSERVATION / NEUTRAL';
+                         statusColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+                         tabName = 'neutral';
                       }
 
                       // Find a basket that connects this stock and strategy
@@ -333,7 +338,7 @@ const StockFundamentalsPage: React.FC = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {r.trades.map((t, i: number) => (
+                            {r.trades.map((t: any, i: number) => (
                               <tr key={i} className="border-t border-[var(--border-primary)]/50 hover:bg-[var(--bg-primary)]/40">
                                 <td className="p-2 text-[var(--text-primary)]">{t.entryDate}</td>
                                 <td className="p-2 text-[var(--text-secondary)]">₹{t.entryPrice}</td>
@@ -363,7 +368,7 @@ const StockFundamentalsPage: React.FC = () => {
           </section>
 
           <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
-<div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-caption text-[var(--text-secondary)]">
+             <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-caption text-[var(--text-secondary)]">
                 <span className="text-[var(--text-primary)]">Institutional Audit Matrix</span>
                 <span className="text-[var(--text-muted)]">{audit?.reason}</span>
              </div>
@@ -377,7 +382,7 @@ const StockFundamentalsPage: React.FC = () => {
                       <span className="text-caption text-[var(--text-primary)]">{segment.data.score}/{segment.data.max}</span>
                     </div>
                     <div className="space-y-2">
-                      {(segment.data.checks || []).map((check, idx: number) => (
+                       {(segment.data.checks || []).map((check: any, idx: number) => (
                         <div key={idx} className="flex items-center justify-between">
                            <span className="text-caption font-medium text-[var(--text-muted)] uppercase">{check.label}</span>
                            <span className={`text-caption ${check.pass ? 'text-emerald-500' : 'text-amber-500'}`}>{check.value}</span>
@@ -451,8 +456,10 @@ const StockFundamentalsPage: React.FC = () => {
               </div>
            </div>
 
+           <AiSuggestionPanel symbol={symbol || ''} />
+
            <div className="bg-[var(--bg-primary)] rounded-2xl p-6 text-[var(--text-primary)] space-y-4 shadow-xl border border-[var(--border-primary)] backdrop-blur-sm">
-              <h3 className="text-caption italic">Research Hub</h3>
+               <h3 className="text-caption italic">Research Hub</h3>
               <div className="grid grid-cols-1 gap-3">
                  <a href={`https://www.tradingview.com/symbols/NSE-${symbol}`} target="_blank" className="flex items-center justify-between p-4 bg-[var(--bg-primary)]/5 rounded-xl hover:bg-[var(--bg-primary)]/10 transition-all border border-white/10 group" rel="noreferrer">
                     <span className="text-caption">Charts</span>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronRight, Zap, Gift, X, Mail, CheckCircle, BookOpen, ShieldCheck, RefreshCw, TrendingUp, Layers, Activity } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { waLink } from '../lib/constants';
 import type { StockSearchResult } from '../types';
@@ -132,7 +132,6 @@ const HomePage: React.FC = () => {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [simStage, setSimStage] = useState<'A' | 'B' | 'C' | 'D'>('A');
-  const navigate = useNavigate();
 
   const { user } = useAuth();
   const [showUpgrade, setShowUpgrade] = useState(false);

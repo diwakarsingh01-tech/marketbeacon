@@ -208,10 +208,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                         <span className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">{item.symbol}</span>
                       </div>
                       
-                      {/* Strategy Badges */}
                       <div className="hidden sm:flex items-center gap-2">
-                        {item.strategies?.length > 0 ? (
-                          item.strategies.slice(0, 2).map((s: any, idx: number) => (
+                        {(item.strategies || []).length > 0 ? (
+                          (item.strategies || []).slice(0, 2).map((s: any, idx: number) => (
                             <span key={idx} className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-xs font-bold text-blue-400 uppercase tracking-wider italic">
                               {s.name}
                             </span>
@@ -219,8 +218,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                         ) : (
                           <span className="text-xs font-bold text-slate-600 uppercase tracking-wider italic">Monitoring Node</span>
                         )}
-                        {item.strategies?.length > 2 && (
-                          <span className="text-xs font-semibold text-[var(--text-muted)] uppercase">+{item.strategies.length - 2}</span>
+                        {(item.strategies || []).length > 2 && (
+                          <span className="text-xs font-semibold text-[var(--text-muted)] uppercase">+{(item.strategies || []).length - 2}</span>
                         )}
                       </div>
                     </div>

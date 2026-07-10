@@ -128,7 +128,7 @@ export async function runAuditEngine(baskets?: Record<string, string[]>): Promis
     ``,
     `📎 Report: https://marketbeaconpro.com/admin/audit/${date}`
   ].join('\n');
-  await sendTelegramMessage(shortSummary, 'both').catch(() => {});
+  await sendTelegramMessage(shortSummary, 'dm').catch(() => {});
 
   console.log(`✅ [AUDIT ENGINE] Complete. Status: ${summary.status}`);
   return report;

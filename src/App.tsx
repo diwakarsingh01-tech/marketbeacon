@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'sonner';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
@@ -28,6 +28,7 @@ const BlogArticlePage = lazy(() => import('./pages/BlogArticle'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicy'));
 const MethodologyPage = lazy(() => import('./pages/Methodology'));
 const AppHomePage = lazy(() => import('./pages/AppHome'));
+const AiAssistantPage = lazy(() => import('./pages/AiAssistant'));
 const NotFoundPage = lazy(() => import('./pages/NotFound'));
 const ChartsTerminalPage = lazy(() => import('./pages/ChartsTerminal'));
 const ScreenerVerifyPage = lazy(() => import('./pages/ScreenerVerify'));
@@ -80,6 +81,7 @@ function AnimatedRoutes() {
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/marketplace" element={<Navigate to="/license-desk" replace />} />
         <Route path="/charts" element={<ChartsTerminalPage />} />
+        <Route path="/ai-assistant" element={<AiAssistantPage />} />
 
         {/* Authenticated SaaS Platform */}
         <Route 

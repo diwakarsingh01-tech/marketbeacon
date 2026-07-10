@@ -28,10 +28,11 @@ import { notifyAdmins } from './services/notificationService.js';
 import { runHealthCheck, runAndNotifyHealthCheck } from './services/healthCheck.js';
 import { scheduleAuditCron } from './cron/auditScheduler.js';
 import { backtestAllStrategies, backtestStrategy } from './services/backtestEngine.js';
+import { analyzeStock, chatWithAI } from './services/aiService.js';
 
 dotenv.config();
 
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'ajaythomasjohn@gmail.com,diwakarsingh01.tech@gmail.com').split(',').map(e => e.trim());
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'ajaythomasjohn@gmail.com,diwakarsingh01.tech@gmail.com,diwakar.singh01@gmail.com').split(',').map(e => e.trim());
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -149,7 +150,7 @@ const setAuthCookie = (res: any, token: string) => {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     maxAge: COOKIE_MAX_AGE,
     path: '/',
   });
@@ -427,6 +428,30 @@ app.post('/api/auth/google', async (req, res) => {
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
     setAuthCookie(res, token);
     res.json({ token, user });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// Dev-only login bypass (excluded from auth rate limiter by being on a different path)
+app.all('/api/dev/login', async (req, res) => {
+  try {
+    if (process.env.NODE_ENV === 'production') return res.status(403).json({ error: 'Not available in production' });
+    const email = req.body?.email || (req.query?.email as string);
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const db = getDB();
+    let user = await db.get('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
+    if (!user) {
+      const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+      const result = await db.run('INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)', [email.split('@')[0], email.toLowerCase(), 'DEV_BYPASS', isAdmin ? 'admin' : 'user', isAdmin ? 'alpha' : 'pro']);
+      user = { id: result.lastID, email: email.toLowerCase(), role: isAdmin ? 'admin' : 'user', tier: isAdmin ? 'alpha' : 'pro' };
+    }
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
+    setAuthCookie(res, token);
+    // Browser GET: redirect with token in hash; API POST: return JSON
+    if (req.method === 'GET') {
+      res.redirect(`http://localhost:5173/ai-assistant?token=${token}`);
+    } else {
+      res.json({ token, user });
+    }
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -858,6 +883,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
         score: audit.score,
         reason: audit.reason,
         universe: audit.isPass ? 'INSTITUTIONAL' : 'WATCHLIST',
+        isPass: audit.isPass || false,
         profitabilityQuality: audit.profitabilityQuality,
         balanceSheetSafety: audit.balanceSheetSafety,
         growthQuality: audit.growthQuality,
@@ -2127,6 +2153,35 @@ app.post('/api/n8n/blog-post', async (req, res) => {
       [title, slug, meta_description || '', JSON.stringify(content || []), tag || 'Analysis', tag_color || 'text-blue-400 bg-blue-400/10 border-blue-400/20', read_time || '3 min read', date || new Date().toISOString().split('T')[0], JSON.stringify(key_takeaways || []), related_slug || null, related_title || null]
     );
     res.json({ id: result.lastID, slug });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── AI Assistant Routes ──
+app.post('/api/ai/analyze-stock', async (req, res) => {
+  try {
+    const { symbol } = req.body;
+    if (!symbol) return res.status(400).json({ error: 'Symbol required' });
+    const cleanSym = symbol.trim().toUpperCase();
+    const snapshot = await getSnapshotFromCloud([cleanSym]);
+    let snap = snapshot[cleanSym] || snapshot[`${cleanSym}.NS`];
+    if (!snap) {
+      const k = Object.keys(snapshot).find(k => k.replace('.NS', '') === cleanSym);
+      if (k) snap = snapshot[k];
+    }
+    if (!snap) return res.status(404).json({ error: 'Symbol not found' });
+
+    const marketCap = snap.quote?.marketCap || 0;
+    const result = await analyzeStock(cleanSym, snap, marketCap, snap.quotes || [], MANUAL_SECTOR_MAP, STRATEGIES);
+    res.json(result);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/ai/chat', async (req, res) => {
+  try {
+    const { message, history } = req.body;
+    if (!message) return res.status(400).json({ error: 'Message required' });
+    const reply = await chatWithAI(message, history || []);
+    res.json({ reply });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
