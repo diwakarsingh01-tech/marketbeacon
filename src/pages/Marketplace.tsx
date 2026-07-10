@@ -550,7 +550,7 @@ const MembershipPage: React.FC = () => {
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                onClick={() => window.open('https://t.me/asktoceo', '_blank')}
+                onClick={() => window.open('https://t.me/+bANpkxNzTvdmYmI9', '_blank')}
                 className="px-8 py-4 bg-white/10 text-white rounded-2xl text-caption border border-white/20 hover:bg-white/20 transition-all flex items-center justify-center gap-3"
               >
                 <span>Join Telegram</span>

@@ -407,7 +407,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           <span className="text-caption hidden lg:inline">WhatsApp</span>
         </a>
         <a 
-          href="https://t.me/asktoceo" 
+          href="https://t.me/+bANpkxNzTvdmYmI9" 
           target="_blank" 
           rel="noopener noreferrer"
           className="p-2.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white rounded-xl transition-all border border-blue-500/20 hover:border-blue-400 flex items-center space-x-2 group shadow-sm"

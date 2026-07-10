@@ -2,7 +2,7 @@ import { getMarketSnapshot, getDynamicBasket } from '../screener.js';
 import { validateBatch9 } from './fundamentalAudit.js';
 import { runStrategyAnalysis } from './strategyService.js';
 import { STRATEGIES, BASKETS, MANUAL_SECTOR_MAP } from '../index.js';
-import { supabase } from '../db.js';
+import { supabase, getDB } from '../db.js';
 import { notifyAllUsers } from './notificationService.js';
 import { sendSignalNotification } from './telegramNotifier.js';
 import fs from 'fs';
@@ -48,8 +48,8 @@ const STRATEGY_BASKET_MAP: Record<string, string[]> = {
   'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket']
 };
 
-export async function precalculateAlpha40() {
-  console.log('👷 [WORKER] Pre-calculating Alpha-40 Snapshots (Cloud Mode)...');
+export async function precalculateAlpha40(isBootWarmup = false) {
+  console.log(`👷 [WORKER] Pre-calculating Alpha-40 Snapshots (Cloud Mode, isBootWarmup=${isBootWarmup})...`);
   try {
     const snapshot = getMarketSnapshot();
     const dynamicWealth = await getDynamicBasket();
@@ -139,8 +139,7 @@ export async function precalculateAlpha40() {
             if (!entryTime && snap.quotes.length > 0) {
               entryTime = new Date(snap.quotes[0].date).toISOString().split('T')[0];
             }
-
-            validSignals.push({ 
+             validSignals.push({ 
               symbol: sym, 
               stockName: sym,
               strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, 
@@ -159,14 +158,60 @@ export async function precalculateAlpha40() {
 
             // 📢 UNIVERSAL AUTOMATED NOTIFICATION: ALL BASKETS & STRATEGIES
             if (sd?.status === 'QUALIFIED') {
-               const stratName = STRATEGIES.find(s => s.id === stratId)?.name || stratId;
-               const title = `🚨 ${basketName}: ${sym}`;
-               const message = `${sym} has triggered for ${stratName} (Tranche ${sd.tranche || 'A'}). Objective: ${Math.round(target)}.`;
-               notifyAllUsers(title, message, 'audit');
-               // Send detailed signal to Telegram DM
-               sendSignalNotification(sym, stratName, basketName, entry, target, sd?.tranche || 'A').catch(() => {});
-            }
-          }
+                const stratName = STRATEGIES.find(s => s.id === stratId)?.name || stratId;
+                const trancheName = sd.tranche || 'A';
+                
+                if (isBootWarmup) {
+                   // Silently seed into notified signals database so we don't spam on boot/restarts
+                   try {
+                     const db = getDB();
+                     await db.run(
+                       'INSERT OR IGNORE INTO telegram_notified_signals (symbol, strategy, tranche) VALUES (?, ?, ?)',
+                       [sym, stratName, trancheName]
+                     );
+                   } catch (dbErr) {
+                     console.error('Failed to silently seed notified signal on boot:', dbErr);
+                   }
+                } else {
+                   // Prevent duplicate telegram/in-app alert spamming
+                   let alreadyNotified = false;
+                   try {
+                     const db = getDB();
+                     const existing = await db.get(
+                       'SELECT id FROM telegram_notified_signals WHERE symbol = ? AND strategy = ? AND tranche = ?',
+                       [sym, stratName, trancheName]
+                     );
+                     if (existing) {
+                       alreadyNotified = true;
+                     }
+                   } catch (dbErr) {
+                     console.error('Failed to query telegram_notified_signals:', dbErr);
+                   }
+
+                   if (!alreadyNotified) {
+                      const title = `🚨 ${basketName}: ${sym}`;
+                      const message = `${sym} has triggered for ${stratName} (Tranche ${trancheName}). Objective: ${Math.round(target)}.`;
+                      notifyAllUsers(title, message, 'audit');
+                      // Send detailed signal to Telegram DM / Channel
+                      sendSignalNotification(sym, stratName, basketName, entry, target, trancheName)
+                        .then(async (success) => {
+                          if (success) {
+                            try {
+                              const db = getDB();
+                              await db.run(
+                                'INSERT OR IGNORE INTO telegram_notified_signals (symbol, strategy, tranche) VALUES (?, ?, ?)',
+                                [sym, stratName, trancheName]
+                              );
+                            } catch (dbErr) {
+                              console.error('Failed to log notified signal:', dbErr);
+                            }
+                          }
+                        })
+                        .catch(() => {});
+                   }
+                }
+             }
+           }
 
           if (validSignals.length > 0) {
             // Logic: Highest ROI strategy wins for this stock
