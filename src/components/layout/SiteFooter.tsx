@@ -69,7 +69,7 @@ const SiteFooter: React.FC = () => {
                 </svg>
               </a>
               <a
-                href="https://t.me/asktoceo"
+                href="https://t.me/+bANpkxNzTvdmYmI9"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Telegram MarketBeacon Pro"

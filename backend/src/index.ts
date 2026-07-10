@@ -1307,6 +1307,25 @@ app.post('/api/user/upgrade-request', authenticateToken, async (req: any, res) =
 
     const db = getDB();
     
+    // Retrieve user's current tier
+    const user = await db.get('SELECT tier FROM users WHERE id = ?', [req.user.id]);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const tierWeights: { [key: string]: number } = {
+      free: 0,
+      pro: 1,
+      alpha: 2
+    };
+
+    const userWeight = tierWeights[user.tier || 'free'] || 0;
+    const requestedWeight = tierWeights[requested_tier.toLowerCase()] || 0;
+
+    if (userWeight >= requestedWeight) {
+      return res.status(400).json({ error: 'Cannot upgrade to a tier lower than or equal to your current tier.' });
+    }
+    
     // Check if transaction_id already exists (to prevent duplicate submissions)
     const existing = await db.get('SELECT id FROM upgrade_requests WHERE transaction_id = ?', [transaction_id]);
     if (existing) {
@@ -2368,12 +2387,12 @@ const startServer = async () => {
     await seedBlogPosts(db);
 
     // 8:30 PM IST - Daily Alpha-40 institutional recalculation
-    cron.schedule('30 20 * * *', precalculateAlpha40);
+    cron.schedule('30 20 * * *', () => precalculateAlpha40());
 
     // 7:00 PM IST - Daily system health check (after market close)
     cron.schedule('0 19 * * *', runAndNotifyHealthCheck);
 
-    setTimeout(precalculateAlpha40, 5000); // Warm cache on boot
+    setTimeout(() => precalculateAlpha40(true), 5000); // Warm cache on boot (silent seed)
     // Growth basket priming moved to cron only (blocks event loop for 5+ min on 281 symbols)
     scheduleAuditCron(BASKETS);
     app.listen(PORT, '0.0.0.0', () => {

@@ -24,13 +24,19 @@ import { safeJsonParse, getApiUrl } from '../../lib/api-utils';
 import { waLink } from '../../lib/constants';
 import { Confetti } from '../ui/Confetti';
 import { toast } from 'sonner';
+import { useAuth } from '../../context/AuthContext';
 
 const API_URL = getApiUrl();
 
 const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTier, userEmail }) => {
+  const { user } = useAuth();
   const [step, setStep] = useState<'plan' | 'payment'>('plan');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
-  const [selectedTier, setSelectedTier] = useState<'pro' | 'alpha'>(requiredTier);
+  const userTier = user?.tier || 'free';
+  const [selectedTier, setSelectedTier] = useState<'pro' | 'alpha'>(() => {
+    if (userTier === 'pro') return 'alpha';
+    return requiredTier;
+  });
   const [transactionId, setTransactionId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -170,10 +176,10 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300 overscroll-contain" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       {isSuccess && <Confetti />}
       {/* Modal Main container */}
-      <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] w-full max-w-5xl rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-y-auto max-h-[90vh] md:max-h-none flex flex-col-reverse md:flex-row animate-in zoom-in-95 duration-500 h-fit">
+      <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] w-full max-w-5xl rounded-[2rem] md:rounded-[3rem] shadow-2xl flex flex-col md:flex-row animate-in zoom-in-95 duration-500 overflow-hidden max-h-[95dvh] md:max-h-[90vh]">
         
-        {/* Left: Content/Marketing */}
-        <div className={`md:w-5/12 p-8 md:p-12 text-white flex flex-col justify-between relative overflow-hidden ${currentTier.color} transition-colors duration-500 shrink-0`}>
+        {/* Left: Content/Marketing — hidden on mobile to prioritise CTA */}
+        <div className={`hidden md:flex md:w-5/12 p-8 md:p-12 text-white flex-col justify-between relative overflow-hidden ${currentTier.color} transition-colors duration-500 shrink-0`}>
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-[100px] -mr-32 -mt-32" />
           
           <div className="space-y-6 relative z-10">
@@ -207,7 +213,18 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
 
         {/* Right: Interaction */}
         <div className="md:w-7/12 p-6 md:p-12 bg-[var(--bg-secondary)] flex flex-col overflow-y-auto">
-          <div className="flex justify-end mb-4 md:mb-6">
+          {/* Mobile-only top bar: plan summary + close */}
+          <div className={`flex md:hidden items-center justify-between rounded-2xl p-4 mb-5 text-white ${currentTier.color}`}>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-white/70">Selected Plan</p>
+              <p className="text-base font-black uppercase italic">{currentTier.name} · {currentPrice}/{billingCycle === 'monthly' ? 'mo' : 'yr'}</p>
+            </div>
+            <button onClick={onClose} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors">
+              <X className="h-5 w-5 text-white" />
+            </button>
+          </div>
+          {/* Desktop close button */}
+          <div className="hidden md:flex justify-end mb-4 md:mb-6">
             <button onClick={onClose} className="p-2 hover:bg-[var(--bg-tertiary)] rounded-full transition-colors text-[var(--text-muted)]">
               <X className="h-5 w-5 md:h-6 md:w-6 text-[var(--text-muted)]" />
             </button>
@@ -260,22 +277,42 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
                </div>
 
                <div className="grid grid-cols-1 gap-3 md:gap-4">
-                  {Object.entries(tiers).map(([id, t]) => (
-                     <button 
-                       key={id}
-                        onClick={() => setSelectedTier(id as 'pro' | 'alpha')}
-                        className={`w-full p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border-2 text-left transition-all flex items-center justify-between ${selectedTier === id ? 'border-blue-600 bg-blue-500/10' : 'border-[var(--border-primary)] hover:border-[var(--border-secondary)]'}`}
-                     >
-                       <div className="space-y-1">
-                          <span className="text-xs md:text-xs font-bold text-[var(--text-primary)] uppercase tracking-tight">{t.name}</span>
-                          <p className="text-xs md:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{id === 'pro' ? 'Structural Patterns' : 'Full Institutional Access'}</p>
-                       </div>
-                       <div className="text-right">
-                          <span className="text-lg md:text-xl font-bold text-[var(--text-primary)] block">{billingCycle === 'monthly' ? t.monthly : t.yearly}</span>
-                          <span className="text-xs md:text-caption text-[var(--text-muted)] uppercase">{billingCycle}</span>
-                       </div>
-                     </button>
-                  ))}
+                  {Object.entries(tiers).map(([id, t]) => {
+                     const tierWeights: Record<string, number> = {
+                       free: 0,
+                       pro: 1,
+                       alpha: 2
+                     };
+                     const userWeight = tierWeights[userTier] || 0;
+                     const targetWeight = tierWeights[id] || 0;
+                     const isOptionDisabled = userWeight >= targetWeight;
+
+                     return (
+                       <button 
+                         key={id}
+                         disabled={isOptionDisabled}
+                         onClick={() => setSelectedTier(id as 'pro' | 'alpha')}
+                         className={`w-full p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border-2 text-left transition-all flex items-center justify-between ${
+                           selectedTier === id 
+                             ? 'border-blue-600 bg-blue-500/10' 
+                             : 'border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
+                         } ${isOptionDisabled ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
+                       >
+                         <div className="space-y-1">
+                            <span className="text-xs md:text-xs font-bold text-[var(--text-primary)] uppercase tracking-tight">
+                              {t.name} {isOptionDisabled && '(Owned)'}
+                            </span>
+                            <p className="text-xs md:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                              {isOptionDisabled ? 'Active or higher plan already owned' : (id === 'pro' ? 'Structural Patterns' : 'Full Institutional Access')}
+                            </p>
+                         </div>
+                         <div className="text-right">
+                            <span className="text-lg md:text-xl font-bold text-[var(--text-primary)] block">{billingCycle === 'monthly' ? t.monthly : t.yearly}</span>
+                            <span className="text-xs md:text-caption text-[var(--text-muted)] uppercase">{billingCycle}</span>
+                         </div>
+                       </button>
+                     );
+                  })}
                </div>
 
                 {/* Voucher Section */}

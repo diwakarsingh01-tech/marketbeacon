@@ -59,7 +59,7 @@ const GlobalFooter: React.FC = () => {
                 <span className="md:hidden text-[var(--text-muted)]">{expandedSections.external ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
               </button>
               <ul className={`space-y-2 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider overflow-hidden transition-all duration-300 md:max-h-none ${expandedSections.external ? 'max-h-96' : 'max-h-0 md:max-h-none'}`}>
-                <li><a href="https://t.me/asktoceo" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors inline-flex items-center gap-1">Telegram Alerts <ArrowUpRight className="h-3 w-3 text-[var(--text-muted)]" /></a></li>
+                <li><a href="https://t.me/+bANpkxNzTvdmYmI9" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors inline-flex items-center gap-1">Telegram Alerts <ArrowUpRight className="h-3 w-3 text-[var(--text-muted)]" /></a></li>
                 <li><a href={WHATSAPP_BASE} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors inline-flex items-center gap-1">WhatsApp <ArrowUpRight className="h-3 w-3 text-[var(--text-muted)]" /></a></li>
                 <li><button onClick={() => setLegalModal({ open: true, type: 'policy' })} className="hover:text-blue-400 transition-colors text-left">Legal Protocol</button></li>
                 <li><button onClick={() => setLegalModal({ open: true, type: 'risk' })} className="hover:text-blue-400 transition-colors text-left">Risk Disclaimers</button></li>

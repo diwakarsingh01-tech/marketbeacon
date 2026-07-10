@@ -1,7 +1,7 @@
 {
   "name": "supertracker",
   "private": true,
-  "version": "18.1.0-PRO",
+  "version": "18.2.0-PRO",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
