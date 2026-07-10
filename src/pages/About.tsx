@@ -27,7 +27,7 @@ const AboutPage: React.FC = () => {
         <Link to="/" className="hover:opacity-80 transition-opacity">
           <BrandLogo variant="dark" size={28} />
         </Link>
-        <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] hover:text-white uppercase tracking-widest transition-colors">
+        <Link to="/" className="inline-flex items-center gap-2 text-xs font-bold text-[var(--text-muted)] hover:text-white uppercase tracking-wider transition-colors">
           <ArrowLeft className="w-3 h-3" /> Back to Home
         </Link>
       </nav>
@@ -35,7 +35,7 @@ const AboutPage: React.FC = () => {
       <header className="py-16 px-6 md:px-10 max-w-[800px] mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-6">
           <Target className="h-3.5 w-3.5 text-blue-400" />
-          <span className="text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">Our Story</span>
+          <span className="text-xs font-bold text-amber-400 uppercase tracking-[0.3em]">Our Story</span>
         </div>
         <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-4">About MarketBeacon Pro</h1>
         <p className="text-[var(--text-secondary)] text-sm leading-relaxed max-w-2xl mx-auto">
@@ -49,7 +49,7 @@ const AboutPage: React.FC = () => {
 
         {/* Mission */}
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[1.5rem] p-8">
-          <h2 className="text-lg font-black text-white mb-4 tracking-tight">Our Mission</h2>
+          <h2 className="text-lg font-bold text-white mb-4 tracking-tight">Our Mission</h2>
           <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
             To democratize institutional-quality stock analysis for every Indian retail trader. 
             We believe that access to advanced analytical tools should not require a crores-worth 
@@ -59,7 +59,7 @@ const AboutPage: React.FC = () => {
 
         {/* Problem */}
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[1.5rem] p-8">
-          <h2 className="text-lg font-black text-white mb-4 tracking-tight">The Problem We Solve</h2>
+          <h2 className="text-lg font-bold text-white mb-4 tracking-tight">The Problem We Solve</h2>
           <div className="space-y-3 text-sm text-[var(--text-secondary)] leading-relaxed">
             <p>Most retail traders rely on tips, news, or basic charts. Institutional desks use multi-factor scoring, layered entry strategies, and risk-weighted allocation models.</p>
             <p>MarketBeacon Pro bridges this gap by providing:</p>
@@ -86,7 +86,7 @@ const AboutPage: React.FC = () => {
 
         {/* Values */}
         <div>
-          <h2 className="text-lg font-black text-white mb-6 tracking-tight text-center">Our Core Principles</h2>
+          <h2 className="text-lg font-bold text-white mb-6 tracking-tight text-center">Our Core Principles</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {values.map((v, i) => (
               <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[1.5rem] p-6 flex gap-4 items-start">
@@ -94,7 +94,7 @@ const AboutPage: React.FC = () => {
                   <v.icon className="h-4 w-4 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-white mb-1">{v.title}</h3>
+                  <h3 className="text-sm font-bold text-white mb-1">{v.title}</h3>
                   <p className="text-xs text-[var(--text-muted)] leading-relaxed">{v.desc}</p>
                 </div>
               </div>
@@ -104,16 +104,16 @@ const AboutPage: React.FC = () => {
 
         {/* Team */}
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[1.5rem] p-8">
-          <h2 className="text-lg font-black text-white mb-6 tracking-tight">Team</h2>
+          <h2 className="text-lg font-bold text-white mb-6 tracking-tight">Team</h2>
           <div className="flex flex-wrap gap-6">
             {team.map((m, i) => (
               <div key={i} className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-sm font-black text-white">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-sm font-bold text-white">
                   {m.initials}
                 </div>
                 <div>
                   <p className="text-sm font-bold text-white">{m.name}</p>
-                  <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">{m.role}</p>
+                  <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{m.role}</p>
                 </div>
               </div>
             ))}
@@ -128,17 +128,17 @@ const AboutPage: React.FC = () => {
             { value: '12', label: 'Proprietary Strategies' },
           ].map((s, i) => (
             <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[1.5rem] p-6 text-center">
-              <p className="text-2xl font-black text-blue-400">{s.value}</p>
-              <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest mt-1">{s.label}</p>
+              <p className="text-2xl font-bold text-blue-400">{s.value}</p>
+              <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">{s.label}</p>
             </div>
           ))}
         </div>
 
         {/* CTA */}
         <div className="bg-gradient-to-br from-blue-600/10 to-indigo-600/10 border border-blue-500/20 rounded-[1.5rem] p-8 text-center">
-          <h2 className="text-lg font-black text-white mb-3">Ready to trade like institutions?</h2>
+          <h2 className="text-lg font-bold text-white mb-3">Ready to trade like institutions?</h2>
           <p className="text-sm text-[var(--text-secondary)] mb-6">Join 31,402+ traders using ABCD Tranche logic and institutional audit scores.</p>
-          <Link to="/login" className="inline-block px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black uppercase tracking-widest text-xs transition-all">
+          <Link to="/login" className="inline-block px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-lg shadow-blue-500/20">
             Launch Terminal Free
           </Link>
         </div>
@@ -146,9 +146,9 @@ const AboutPage: React.FC = () => {
       </main>
 
       <div className="border-t border-[var(--border-primary)] py-8 text-center">
-        <Link to="/" className="text-[10px] font-black text-[var(--text-muted)] hover:text-blue-400 uppercase tracking-widest transition-colors">
-          ← Back to MarketBeacon Pro
-        </Link>
+<Link to="/" className="text-xs font-bold text-[var(--text-muted)] hover:text-blue-400 uppercase tracking-wider transition-colors">
+            ← Back to MarketBeacon Pro
+          </Link>
       </div>
     </div>
   );

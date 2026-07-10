@@ -10,61 +10,144 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MarketBeacon Pro | Best Stock Analysis Tool India | FII DII Data & Audit Score</title>
+    <meta name="description" content="Check any stock's safety with India's #1 Institutional Audit Score. Get FII DII buying trends, safe entry levels, and multibagger stock analysis for Nifty 500. Stop guessing, start auditing." />
+    <link rel="canonical" href="https://marketbeaconpro.com" />
+    <!-- Phase 1 SEO: Indian Retail Keywords -->
+    <meta name="keywords" content="best stocks to buy today, share market audit score, FII DII data today, multibagger stocks 2026, safe stocks for long term, stock analysis report India, Nifty 500 entry exit levels, share market tips India, best stock screener app" />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="MarketBeacon Pro" />
+    
+    
+    <!-- <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', 'YOUR_PIXEL_ID');
+      fbq('track', 'PageView');
+    </script> -->
+
+    <!-- OpenGraph -->
+    <meta property="og:title" content="MarketBeacon Pro | Institutional Stock Research Tool India" />
+    <meta property="og:description" content="The ABCD Tranche Laddering & 100-point Audit System used by institutional desks — now available for retail traders. Educational research tool. Not investment advice." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://marketbeaconpro.com" />
+    <meta property="og:image" content="https://marketbeaconpro.com/og-preview.svg" />
+    <meta property="og:site_name" content="MarketBeacon Pro" />
     <meta property="og:locale" content="en_IN" />
-    <meta name="google-site-verification" content="gGhGB815jPLjU16YmzBVt0QuoaFHf51ymK9q3-kUsXw" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MarketBeacon Pro | Trade Like Institutions" />
+    <meta name="twitter:description" content="India's institutional stock research tool. ABCD Tranche Logic & real-time Audit Scores. For educational purposes only. Join 30,000+ traders." />
+    <meta name="twitter:image" content="https://marketbeaconpro.com/og-preview.svg" />
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
-    <script defer>
+    <script>
+      // 🚀 [Institutional Safe-Guard] Force Cache & Service Worker Purge
       (function() {
+        console.log('🛡️ [Safe-Guard] Executing Automated System Recovery...');
+        
+        // 1. Unregister all existing Service Workers immediately
         if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(r) { for(let reg of r) reg.unregister(); });
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+              registration.unregister();
+              console.log('✅ Service Worker Unregistered.');
+            }
+          });
         }
+
+        // 2. Clear all Caches
         if ('caches' in window) {
-          caches.keys().then(function(n) { for (let name of n) caches.delete(name); });
+          caches.keys().then(function(names) {
+            for (let name of names) caches.delete(name);
+            console.log('✅ Caches Purged.');
+          });
         }
-        localStorage.removeItem('mb_api_override');
+
+        // 3. Clear corrupted LocalStorage keys if any
+        const corruptKeys = ['mb_api_override'];
+        corruptKeys.forEach(k => localStorage.removeItem(k));
       })();
     </script>
-    <!-- GA4: Set VITE_GA_ID in .env to enable -->
-    <script defer>
-      (function() {
-        var gaId = '%VITE_GA_ID%';
-        if (gaId && gaId !== '%VITE' + '_GA_ID%') {
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          var s = document.createElement('script');
-          s.async = true;
-          s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
-          document.head.appendChild(s);
-          gtag('config', gaId, { anonymize_ip: true });
-        }
-      })();
+    <!-- Phase 3: Grand Launch Analytics Framework -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-YOUR-MEASUREMENT-ID', {
+        page_title: document.title,
+        page_location: window.location.href,
+        anonymize_ip: true
+      });
     </script>
-    <!-- Search Console verified via hardcoded meta tag above -->
-    <!-- Meta Pixel: Set VITE_META_PIXEL_ID in .env to enable -->
-    <script defer>
-      (function() {
-        var pixelId = '%VITE_META_PIXEL_ID%';
-        if (pixelId && pixelId !== '%VITE' + '_META_PIXEL_ID%') {
-          !function(f,b,e,v,n,t,s)
-          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;
-          t.src='https://connect.facebook.net/en_US/fbevents.js';
-          s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script');
-          fbq('init', pixelId);
-          fbq('track', 'PageView');
-        }
-      })();
+    
+    <!-- 
+    <meta name="google-site-verification" content="google7c0177b3e58e6612" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-F1C8SFWGQV"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag("js", new Date());
+      gtag("config", "G-F1C8SFWGQV", { anonymize_ip: true });
     </script>
+
+    <meta name="google-site-verification" content="YOUR_VERIFICATION_TOKEN_HERE" /> -->
+  
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"MarketBeacon Pro","operatingSystem":"Web","applicationCategory":"FinanceApplication","description":"India institutional stock research tool. ABCD Tranche Laddering and 100-point Audit Score system. Not investment advice.","url":"https://marketbeaconpro.com","offers":{"@type":"Offer","price":"0","priceCurrency":"INR"},"aggregateRating":{"@type":"AggregateRating","ratingValue":"4.9","ratingCount":"1280"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"MarketBeacon Pro","url":"https://marketbeaconpro.com","potentialAction":{"@type":"SearchAction","target":"https://marketbeaconpro.com/analysis/{symbol}","query-input":"required name=symbol"}}
+</script>
+
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <div id="root"><div style="min-height:100vh;background:#0b1120;color:white;font-family:system-ui,-apple-system,sans-serif">
+    <nav style="display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;border-bottom:1px solid rgba(255,255,255,0.08)">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div style="width:32px;height:32px;background:linear-gradient(135deg,#3b82f6,#6366f1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem">MB</div>
+        <span style="font-weight:800;font-size:1rem;letter-spacing:-0.02em">MarketBeacon <span style="color:#60a5fa">Pro</span></span>
+      </div>
+      <div style="display:flex;gap:1.5rem;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8"><span>Audit</span><span>Strategies</span><span>Education</span><span>Pricing</span></div>
+    </nav>
+    <main style="max-width:1200px;margin:0 auto;padding:2rem">
+      <div style="text-align:center;padding:3rem 0">
+        <h1 style="font-size:3.5rem;font-weight:900;letter-spacing:-0.03em;line-height:0.9;margin-bottom:1.5rem;background:linear-gradient(to right,white,#93c5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Institutional Stock Audit Score</h1>
+        <p style="color:#94a3b8;font-size:1.125rem;max-width:36rem;margin:0 auto 2rem;line-height:1.6">India #1 Institutional Audit Score for Nifty 500 stocks. ABCD Tranche Logic, FII DII trends and real-time screening.</p>
+        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:2rem">
+          <div style="background:#2563eb;padding:0.75rem 2rem;border-radius:12px;font-weight:800;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em">Start Free - No Card Needed</div>
+          <div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);padding:0.75rem 2rem;border-radius:12px;font-weight:800;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em">View Pricing</div>
+        </div>
+      </div>
+    </main>
+    <div style="max-width:1200px;margin:0 auto;padding:2rem;border-top:1px solid rgba(255,255,255,0.08);color:#64748b;font-size:0.75rem;text-align:center">
+  <div style="max-width:1200px;margin:2rem auto 0;padding:2rem;border-top:1px solid rgba(255,255,255,0.08)">
+    <h2 style="font-size:1.5rem;font-weight:800;color:white;margin-bottom:1.5rem">Frequently Asked Questions</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem">
+      <div style="background:rgba(15,23,42,0.5);border-radius:1rem;padding:1.5rem">
+        <h3 style="font-size:0.875rem;font-weight:700;color:white;margin-bottom:0.5rem">What is an Institutional Stock Audit?</h3>
+        <p style="font-size:0.75rem;color:#94a3b8;line-height:1.5">An institutional stock audit measures an asset against 100 quantitative data points including fundamental safety, debt leverage, valuation percentiles, and institutional demand floors to assign a conviction score out of 100.</p>
+      </div>
+      <div style="background:rgba(15,23,42,0.5);border-radius:1rem;padding:1.5rem">
+        <h3 style="font-size:0.875rem;font-weight:700;color:white;margin-bottom:0.5rem">How does ABCD Tranche Laddering work?</h3>
+        <p style="font-size:0.75rem;color:#94a3b8;line-height:1.5">Instead of allocating 100% capital at one price, the ABCD Ladder divides buying into four tranches A B C and D triggered by historical pullback milestones.</p>
+      </div>
+      <div style="background:rgba(15,23,42,0.5);border-radius:1rem;padding:1.5rem">
+        <h3 style="font-size:0.875rem;font-weight:700;color:white;margin-bottom:0.5rem">Is MarketBeacon Pro investment advice?</h3>
+        <p style="font-size:0.75rem;color:#94a3b8;line-height:1.5">No. MarketBeacon Pro is a quantitative research tool for educational purposes only. Not SEBI-registered investment advice. Consult a SEBI-registered advisor.</p>
+      </div>
+    </div>
+  </div>
+Institutional Build | For Educational Use Only | Not Investment Advice</div>
+  </div></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
 </html>

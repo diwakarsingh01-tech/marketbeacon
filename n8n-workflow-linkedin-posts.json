@@ -1,0 +1,221 @@
+{
+  "id": "g5X7rlRYw1h7nFf6",
+  "name": "LinkedIn MarketBecon Posts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "id": "sched",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        304
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "runnow-li",
+      "name": "Run Now",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://mb-backend:3001/api/market-indices",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "mb_linkedin_2026_secret_key"
+            }
+          ]
+        }
+      },
+      "id": "fetch-market",
+      "name": "Fetch Market Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        464,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const mktData = $input.first().json;\nconst results = mktData.results || [];\n\nconst nifty = results.find(r => r.name === 'NIFTY 50') || {};\nconst bankNifty = results.find(r => r.name === 'BANK NIFTY') || {};\nconst sensex = results.find(r => r.name === 'SENSEX') || {};\n\nconst fmt = (p) => p ? Number(p).toLocaleString('en-IN', {maximumFractionDigits: 2}) : 'N/A';\nconst fmtChg = (c) => c !== undefined ? (c >= 0 ? '+' : '') + Number(c).toFixed(2) + '%' : 'N/A';\n\nconst niftyPrice = fmt(nifty.price);\nconst niftyChange = fmtChg(nifty.change);\nconst bankNiftyPrice = fmt(bankNifty.price);\nconst bankNiftyChange = fmtChg(bankNifty.change);\nconst sensexPrice = fmt(sensex.price);\nconst marketStatus = mktData.status || 'CLOSED';\n\n// Unique daily seed \u2014 prevents duplicate topics week over week\nconst now = new Date();\nconst startOfYear = new Date(now.getFullYear(), 0, 1);\nconst weekNum = Math.floor((now - startOfYear) / (7 * 24 * 60 * 60 * 1000));\nconst day = now.getDay();\nconst uniqueSeed = weekNum * 10 + day;\n\nconst sectors = ['Banking & Finance', 'IT Services', 'Auto & EV', 'Energy & Oil', 'FMCG & Consumer', 'Pharma & Healthcare', 'Realty & Infrastructure', 'Metals & Mining', 'Telecom', 'Defence & Aerospace'];\nconst featuredStocks = ['HDFCBANK', 'ICICIBANK', 'TCS', 'INFY', 'RELIANCE', 'NTPC', 'HEROMOTOCO', 'TATAMOTORS', 'SUNPHARMA', 'MARUTI', 'WIPRO', 'ADANIPORTS', 'LT', 'BAJFINANCE', 'ZOMATO'];\n\nconst sector = sectors[uniqueSeed % sectors.length];\nconst stock = featuredStocks[uniqueSeed % featuredStocks.length];\n\nconst marketSummary = `Market Snapshot (${marketStatus}):\\nNIFTY 50: ${niftyPrice} (${niftyChange})\\nBANK NIFTY: ${bankNiftyPrice} (${bankNiftyChange})\\nSENSEX: ${sensexPrice}`;\n\nconst cta = `Want data-backed market insights? Visit marketbeaconpro.com and use code ALPHA7 for 7 days free access. Track 40+ stocks across multiple sectors with 10+ strategies in one dashboard.`;\nconst hashtags = '#MarketBeacon #StockMarketIndia #NSE #BSE #Nifty50 #Trading #InvestmentResearch #SwingTrading #IndianStocks #MarketAnalysis';\nconst disclaimer = 'Disclaimer: This is for educational and informational purposes only. Not investment advice. Not a recommendation to buy, sell, or hold any security. Please consult a SEBI-registered investment advisor before making any investment decisions.';\n\nconst style = `STYLE: 200-250 words. Short paragraphs. Use emojis naturally. Start with a strong hook. Mention smart money and operators. Sound human, not corporate. Plain text only. No asterisks. No markdown formatting.`;\n\nlet prompt;\n\nif (day === 1) {\n  prompt = `${style}\\n\\nWrite a LinkedIn post titled: \"Weekly Market Outlook: NIFTY and Sector Rotation Analysis\"\\n\\nUSE THESE EXACT PRICES (do not change them):\\n${marketSummary}\\n\\nCover:\\n1. NIFTY at ${niftyPrice} - what this level means structurally\\n2. BANK NIFTY at ${bankNiftyPrice} - momentum check\\n3. ${sector} sector smart money signals\\n4. Key levels to watch this week\\n\\nEnd with:\\n${cta}\\n${disclaimer}\\n\\nHashtags: #WeeklyOutlook #NiftyAnalysis #BankNifty ${hashtags}`;\n} else if (day === 2) {\n  prompt = `${style}\\n\\nWrite a LinkedIn post titled: \"Sector Spotlight: ${sector}\"\\n\\nMarket context:\\n${marketSummary}\\n\\nCover:\\n1. Why ${sector} is catching smart money attention this week\\n2. Top stocks showing institutional accumulation patterns\\n3. Key metrics making this sector interesting\\n4. Price action levels to watch\\n\\nEnd with:\\n${cta}\\n${disclaimer}\\n\\nHashtags: #SectorSpotlight #${sector.replace(/[^a-zA-Z0-9]/g,'')} #SectorRotation ${hashtags}`;\n} else if (day === 3) {\n  prompt = `${style}\\n\\nWrite a LinkedIn post titled: \"Stock in Focus: ${stock}\"\\n\\nMarket context:\\n${marketSummary}\\n\\nCover:\\n1. Why ${stock} is on radar with NIFTY at ${niftyPrice}\\n2. Fundamental check - ROCE, Debt-to-Equity, promoter holding\\n3. FII and DII smart money signals\\n4. Technical setup - breakout, retest, or consolidation\\n\\nEnd with:\\n${cta}\\n${disclaimer}\\n\\nHashtags: #${stock} #StockInFocus #StockAnalysis ${hashtags}`;\n} else if (day === 4) {\n  prompt = `${style}\\n\\nWrite a LinkedIn post titled: \"How MarketBeacon Institutional Audit Score Works\"\\n\\nMarket context:\\n${marketSummary}\\n\\nCover:\\n1. The problem: too many stocks to track manually every morning\\n2. What the Institutional Audit Score measures - quality plus strategy alignment\\n3. How 10+ strategies run simultaneously to find multi-aligned stocks\\n4. Data over emotions - a practical example from today's market\\n\\nEnd with:\\n${cta}\\n${disclaimer}\\n\\nHashtags: #TradingEducation #StockMarket #AuditScore #InvestSmart ${hashtags}`;\n} else if (day === 5) {\n  prompt = `${style}\\n\\nWrite a LinkedIn post titled: \"Weekly Market Wrap: Key Takeaways for Traders\"\\n\\nThis week closing data:\\n${marketSummary}\\n\\nCover:\\n1. NIFTY closed at ${niftyPrice} - was it a bullish or bearish week\\n2. BANK NIFTY at ${bankNiftyPrice} - what the price action signals\\n3. Best and worst sectors - where did smart money flow\\n4. ${stock} weekly operator signals\\n5. What to watch for next week\\n\\nEnd with:\\n${cta}\\n${disclaimer}\\n\\nHashtags: #WeeklyWrap #MarketRecap #NiftyWrap ${hashtags}`;\n} else if (day === 6) {\n  prompt = `${style}\\n\\nWrite a LinkedIn post titled: \"Behind MarketBeacon: Building a Better Stock Dashboard\"\\n\\nMarkets are closed today. ${marketSummary}\\n\\nCover:\\n1. The problem: checking 20+ stocks manually every morning\\n2. The solution: one dashboard for 40+ stocks, 10+ strategies, live indices\\n3. Features: institutional audit scoring, sector rotation signals, real-time NIFTY tracking\\n4. Built by traders for traders - 15 minutes a day, data-backed decisions\\n\\nEnd with:\\n${cta}\\n${disclaimer}\\n\\nHashtags: #MarketBeacon #BuiltByTraders #TradingTools #Fintech ${hashtags}`;\n} else {\n  prompt = `${style}\\n\\nWrite a LinkedIn post titled: \"Weekend Reflection: Lessons from Smart Money\"\\n\\nThis week in markets:\\n${marketSummary}\\n\\nCover:\\n1. NIFTY at ${niftyPrice} - what this tells smart traders looking ahead\\n2. Data beats emotions - key lesson from this week\\n3. Questions every swing trader should ask before Monday\\n4. What MarketBeacon has on its radar for next week\\n\\nEnd with:\\n${cta}\\n${disclaimer}\\n\\nHashtags: #WeekendReflection #TradingPsychology #MindsetMatters ${hashtags}`;\n}\n\nreturn [{ json: { dayPrompt: prompt, sector, stock, niftyPrice, bankNiftyPrice, marketStatus, day, uniqueSeed } }];\n"
+      },
+      "id": "prompt",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_GROQ_API_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\": \"llama-3.3-70b-versatile\", \"messages\": [{\"role\": \"system\", \"content\": \"You are a professional Indian stock market analyst writing LinkedIn posts. CRITICAL: Always use the EXACT prices provided in the prompt. Never guess, fabricate, or round market prices. If prices are given, use them verbatim.\"}, {\"role\": \"user\", \"content\": \"={{ $json.dayPrompt }}\"}], \"temperature\": 0.75, \"max_tokens\": 800}"
+      },
+      "id": "callai",
+      "name": "Call AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        912,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst commentary = input.choices?.[0]?.message?.content || '';\nconst author = 'urn:li:person:HfsN9dKuZE';\nreturn [{ json: { author, commentary, visibility: 'PUBLIC', distribution: { feedDistribution: 'MAIN_FEED', targetEntities: [], thirdPartyDistributionChannels: [] }, lifecycleState: 'PUBLISHED' } }];"
+      },
+      "id": "parse",
+      "name": "Format LinkedIn Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/rest/posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            },
+            {
+              "name": "LinkedIn-Version",
+              "value": "202606"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer AQVKqjwQ3vbS41k6Ad3idkAKULWxw41kAcN-r73DNPvSgrmNk74xzFtzliwHK2D_rnnBv4PxZZ-76rufIibwA6nMP5XPP9xPpEKUNkpwBeiIKmOVk454xrM4DtDcV4ekE4GM2ZD1Lzq9_-KltEJfLW4wkI_8xGyxDRAiiapQM5dYUPRWdJO1qgC23CDvQQBDkdlIzOoKblQsl_JbbZ-6umWdp_Vph-AFjnNzNWULRe7uk5AtgHV1aIe8mA4OEHPCiL3zKllb7QxwvU0rLOB3no2ZqQKlYSeb_MLvSHJdgORHle4KitPKi4taW0gnKNXV__d-eMyKn-3Iln9zSFVjyoudCrqu0w"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ author: $json.author, commentary: $json.commentary, visibility: $json.visibility, distribution: $json.distribution, lifecycleState: $json.lifecycleState }) }}"
+      },
+      "id": "postli",
+      "name": "Post to LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1360,
+        304
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Market Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Now": {
+      "main": [
+        [
+          {
+            "node": "Fetch Market Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Market Data": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Call AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call AI": {
+      "main": [
+        [
+          {
+            "node": "Format LinkedIn Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format LinkedIn Payload": {
+      "main": [
+        [
+          {
+            "node": "Post to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

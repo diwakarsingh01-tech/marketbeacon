@@ -1,0 +1,55 @@
+@context({
+  "@type": "Organization",
+  "@id": "https://marketbeaconpro.com/#organization",
+  "name": "MarketBeaconPro",
+  "url": "https://marketbeaconpro.com",
+  "logo": "https://marketbeaconpro.com/wp-content/uploads/2023/01/logo.png",
+  "sameAs": [
+    "https://www.facebook.com/marketbeaconpro",
+    "https://twitter.com/marketbeaconpro",
+    "https://www.linkedin.com/company/marketbeaconpro",
+    "https://www.instagram.com/marketbeaconpro"
+  ],
+  "contactPoint": [
+    {
+      "@type": "ContactPoint",
+      "telephone": "+1-555-123-4567",
+      "email": "info@marketbeaconpro.com",
+      "contactType": "customer service"
+    }
+  ]
+}
+
+@context({
+  "@type": "WebSite",
+  "@id": "https://marketbeaconpro.com/#website",
+  "url": "https://marketbeaconpro.com",
+  "name": "MarketBeaconPro - Digital Marketing Services",
+  "description": "MarketBeaconPro provides comprehensive digital marketing services including SEO, PPC, social media marketing, and content marketing to help businesses grow online.",
+  "publisher": {
+    "@id": "https://marketbeaconpro.com/#organization"
+  }
+}
+
+@context({
+  "@type": "FAQPage",
+  "@id": "https://marketbeaconpro.com/faq",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What digital marketing services do you offer?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "We offer comprehensive digital marketing services including SEO, PPC advertising, social media marketing, content marketing, email marketing, and analytics."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How long does it take to see results?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SEO results typically start appearing within 2-3 months, while PPC campaigns can generate immediate traffic."
+      }
+    }
+  ]
+}

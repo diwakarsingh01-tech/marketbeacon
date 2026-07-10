@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.local
+*.pem
+
+# Output directories
+output/
+content/
+cache/
+
+# Logs
+logs/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+*.coverage
+
+# Docker
+.docker/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Secrets
+*_secret_*
+*_key_*
+*.key
+
+# Temp
+tmp/
+temp/

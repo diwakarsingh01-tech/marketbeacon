@@ -3,12 +3,40 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import BrandLogo from '../components/brand/BrandLogo';
-import { AlertCircle, ArrowRight, UserPlus, Globe } from 'lucide-react';
+import { AlertCircle, ArrowRight, UserPlus, Globe, Bug } from 'lucide-react';
 import { getApiUrl } from '../lib/api-utils';
 import SEO from '../components/SEO';
 import { OrganizationSchema } from '../components/StructuredData';
 
 const API_URL = getApiUrl();
+
+const DevLoginForm: React.FC<{ onLogin: (token: string) => void; setError: (err: string | null) => void }> = ({ onLogin, setError }) => {
+  const handleDevLogin = async () => {
+    try {
+      setError(null);
+      const res = await fetch('http://localhost:3001/api/dev/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: 'diwakar.singh01@gmail.com' }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Login failed'); return; }
+      onLogin(data.token);
+    } catch (e: any) {
+      setError(e.message || 'Network error');
+    }
+  };
+  return (
+    <div className="space-y-3">
+      <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider text-center">Dev Login (Local Only)</p>
+      <button onClick={handleDevLogin}
+         className="w-full px-4 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition-all text-center">
+        <Bug className="h-3.5 w-3.5 inline mr-2" />Login as diwakar.singh01@gmail.com
+      </button>
+    </div>
+  );
+};
 
 const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +69,11 @@ const LoginPage: React.FC = () => {
     const wakeTimer = setTimeout(() => setShowWakingMessage(true), 3000);
 
     try {
-      await googleLogin(response.credential);
+      if (response.credential) {
+        await googleLogin(response.credential);
+      } else {
+        throw new Error('Google Authentication Failed: No credential received.');
+      }
       clearTimeout(wakeTimer);
     } catch (err: unknown) {
       clearTimeout(wakeTimer);
@@ -60,12 +92,12 @@ const LoginPage: React.FC = () => {
           )}
         </div>
         <div className="space-y-2 text-center max-w-xs">
-          <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Authenticating Node</p>
-          <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic">Syncing with Institutional Identity Hub...</p>
+          <p className="text-xs font-bold text-blue-500 uppercase tracking-[0.4em]">Authenticating Node</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider italic">Syncing with Institutional Identity Hub...</p>
           {showWakingMessage && (
-            <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest pt-4">
+            <p className="text-xs font-bold text-amber-500 uppercase tracking-wider pt-4">
               🚀 Server is waking up... <br />
-              <span className="text-[7px] text-slate-600 font-bold">This may take 30s on first load (Render Free Tier)</span>
+              <span className="text-xs text-slate-600 font-bold">This may take 30s on first load (Render Free Tier)</span>
             </p>
           )}
         </div>
@@ -83,17 +115,17 @@ const LoginPage: React.FC = () => {
            </div>
            <div className="space-y-1 pt-4">
               <h1 className="text-3xl font-black text-[var(--text-primary)] uppercase italic leading-none">Identity Audit</h1>
-              <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Complete your institutional profile</p>
+              <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-[0.3em]">Complete your institutional profile</p>
            </div>
         </div>
         <form className="space-y-8 relative z-10" onSubmit={async (e) => {
           e.preventDefault();
           setLoading(true);
           try {
-            const token = localStorage.getItem('mb_token');
             const res = await fetch(`${API_URL}/api/user/profile`, {
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
               body: JSON.stringify({ name: userName })
             });
             if (res.ok) { await refreshAuth(); navigate(from, { replace: true }); }
@@ -101,10 +133,10 @@ const LoginPage: React.FC = () => {
           finally { setLoading(false); }
         }}>
            <div className="space-y-3">
-              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em] block pl-1">Full Legal Name</label>
-              <input type="text" placeholder="Ex: Diwakar Singh" className="w-full bg-[var(--bg-tertiary)] border-2 border-[var(--border-primary)] rounded-3xl px-8 py-5 text-sm font-black text-[var(--text-primary)] focus:bg-[var(--bg-primary)] focus:border-blue-500 transition-all outline-none" value={userName} onChange={(e) => setUserName(e.target.value)} required autoFocus />
+              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-[0.4em] block pl-1">Full Legal Name</label>
+              <input type="text" placeholder="Ex: Diwakar Singh" className="w-full bg-[var(--bg-tertiary)] border-2 border-[var(--border-primary)] rounded-3xl px-8 py-5 text-sm font-bold text-[var(--text-primary)] focus:bg-[var(--bg-primary)] focus:border-blue-500 transition-all outline-none" value={userName} onChange={(e) => setUserName(e.target.value)} required autoFocus />
            </div>
-           <button type="submit" disabled={loading} className="w-full py-6 bg-blue-600 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center space-x-3 transition-all hover:bg-blue-500">
+           <button type="submit" disabled={loading} className="w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-[2rem] text-xs font-bold uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center space-x-3 transition-all shadow-lg shadow-blue-500/20">
              <span>Initialize Terminal Access</span>
              <ArrowRight className="h-5 w-5" />
            </button>
@@ -133,7 +165,7 @@ const LoginPage: React.FC = () => {
               <BrandLogo variant="dark" size={36} />
            </div>
            <div className="space-y-2 pt-4">
-              <span className="text-[9px] font-black tracking-[0.45em] uppercase text-blue-500 block">
+              <span className="text-xs font-bold tracking-[0.45em] uppercase text-blue-500 block">
                 Authorized Access Only
               </span>
               <div className="flex items-center justify-center gap-2 pt-2">
@@ -144,7 +176,7 @@ const LoginPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Joined by 31,402 Traders
                 </p>
               </div>
@@ -154,20 +186,27 @@ const LoginPage: React.FC = () => {
         {error && (
           <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start space-x-4 text-rose-400 animate-in shake duration-500">
              <AlertCircle className="h-5 w-5 shrink-0" />
-             <span className="text-xs font-black uppercase tracking-tight leading-relaxed">{error}</span>
+             <span className="text-xs font-bold uppercase tracking-tight leading-relaxed">{error}</span>
           </div>
         )}
 
-        <div className="space-y-8 relative z-10">
-          <div className="space-y-8">
-             <div className="flex justify-center transform hover:scale-[1.02] transition-transform">
-                <GoogleLogin onSuccess={onGoogleSuccess} onError={() => setError('Google Authentication Failed')} theme="filled_blue" shape="pill" size="large" text="continue_with" width="100%" />
-             </div>
+          <div className="space-y-8 relative z-10">
+            <div className="space-y-8">
+                <div className="flex justify-center transform hover:scale-[1.02] transition-transform">
+                  <GoogleLogin onSuccess={onGoogleSuccess} onError={() => setError('Google Authentication Failed')} theme="filled_blue" shape="pill" size="large" text="continue_with" width="100%" />
+                </div>
+            </div>
           </div>
-        </div>
 
-        <div className="pt-10 text-center relative z-10 border-t border-white/5">
-           <Link to="/connect" className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] hover:text-blue-500 transition-colors flex items-center justify-center space-x-3">
+          {/* Dev Login Bypass — only works on localhost */}
+          {window.location.hostname === 'localhost' && (
+            <div className="relative z-10 pt-4">
+              <DevLoginForm onLogin={(_token) => { window.location.href = '/app/ai-assistant'; }} setError={setError} />
+            </div>
+          )}
+
+          <div className="pt-10 text-center relative z-10 border-t border-white/5">
+           <Link to="/connect" className="text-xs font-bold text-slate-600 uppercase tracking-[0.4em] hover:text-blue-500 transition-colors flex items-center justify-center space-x-3">
               <Globe className="h-4 w-4" />
                <span>Connectivity Hub</span>
            </Link>

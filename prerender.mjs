@@ -1,168 +1,52 @@
-import { spawn } from 'child_process';
-import { request } from 'http';
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import puppeteer from 'puppeteer';
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DIST = join(__dirname, 'dist');
-const PORT = 4173;
-const BASE = 'http://localhost:' + PORT;
+const DIST = existsSync(join(__dirname, "frontend", "dist")) ? join(__dirname, "frontend", "dist") : join(__dirname, "dist");
 
-const ROUTES = [
-  '/',
-  '/pricing',
-  '/login',
-  '/privacy-policy',
-  '/terms',
-  '/disclaimer',
-  '/charts',
-  '/about',
-  '/contact',
-  '/methodology',
+const routes = [
+
+  { path: "/about",       title: "About MarketBeacon Pro — Institutional Stock Research",    desc: "Learn about MarketBeacon Pro, our ABCD Tranche logic, and the team behind India institutional stock research platform." },
+  { path: "/contact",     title: "Contact MarketBeacon Pro — Support & Inquiries",              desc: "Get in touch with MarketBeacon Pro for support, partnerships, and feedback. We typically respond within 24 hours." },
+  { path: "/privacy-policy", title: "Privacy Policy — MarketBeacon Pro",                      desc: "MarketBeacon Pro privacy policy. Learn how we collect, use, and protect your data." },
+  { path: "/terms",       title: "Terms of Service — MarketBeacon Pro",                       desc: "MarketBeacon Pro terms of service governing use of our stock research platform." },
+  { path: "/disclaimer",  title: "Disclaimer — SEBI & Risk Disclosure — MarketBeacon Pro",    desc: "Important regulatory and risk disclosures. MarketBeacon Pro is not SEBI-registered investment advice." },
+  { path: "/charts",     title: "Live Charts Terminal — Institutional Grade Charts & Analytics", desc: "Professional candlestick charts with FII/DII overlays, ABCD tranche levels, and 50+ technical indicators." },
+
+
+  { path: "/",           title: "Institutional Stock Audit Score",                          desc: "India #1 Institutional Audit Score for Nifty 500 stocks. ABCD Tranche Logic, FII DII trends and real-time screening." },
+  { path: "/login",      title: "Login - MarketBeacon Pro",                                 desc: "Sign in to access your institutional stock audit dashboard and ABCD Tranche analysis tools." },
+  { path: "/pricing",    title: "Pricing - MarketBeacon Pro",                               desc: "Choose your plan. Free trial available for retail traders. Pro access for sub-brokers and HNIs." },
+  { path: "/blog",       title: "Stock Market Insights Blog - MarketBeacon Pro",             desc: "Learn ABCD Tranche laddering, institutional audit scores and FII DII analysis strategies." },
+  { path: "/education",  title: "Education - MarketBeacon Pro",                             desc: "Master the 12 proprietary institutional strategies." },
+  { path: "/analysis/RELIANCE",  title: "RELIANCE Stock Audit Score - MarketBeacon Pro",    desc: "Check RELIANCE institutional audit score. ABCD entry zones, FII DII data and safe entry levels." },
+  { path: "/analysis/TCS",       title: "TCS Stock Audit Score - MarketBeacon Pro",         desc: "Check TCS institutional audit score. ABCD entry zones, FII DII data and safe entry levels." },
+  { path: "/analysis/HDFCBANK",  title: "HDFCBANK Stock Audit Score - MarketBeacon Pro",    desc: "Check HDFCBANK institutional audit score. ABCD entry zones, FII DII data and safe entry levels." },
+  { path: "/analysis/INFY",      title: "INFY Stock Audit Score - MarketBeacon Pro",        desc: "Check INFY institutional audit score. ABCD entry zones, FII DII data and safe entry levels." },
+  { path: "/analysis/ITC",       title: "ITC Stock Audit Score - MarketBeacon Pro",         desc: "Check ITC institutional audit score. ABCD entry zones, FII DII data and safe entry levels." },
 ];
 
-const API_BASE = process.env.API_URL || 'http://localhost:3001';
+const baseHtml = readFileSync(join(DIST, "index.html"), "utf-8");
 
-async function fetchStockSymbols() {
-  try {
-    const res = await fetch(`${API_BASE}/api/stocks?limit=100`);
-    if (!res.ok) throw new Error('API unavailable');
-    const stocks = await res.json();
-    return stocks.map(s => `/analysis/${s.symbol}`);
-  } catch {
-    return [
-      '/analysis/RELIANCE', '/analysis/TCS', '/analysis/HDFCBANK', '/analysis/INFY',
-      '/analysis/ICICIBANK', '/analysis/ITC', '/analysis/SBIN', '/analysis/BHARTIARTL',
-      '/analysis/HINDUNILVR', '/analysis/ADANIENT', '/analysis/BAJFINANCE', '/analysis/KOTAKBANK',
-      '/analysis/TITAN', '/analysis/ASIANPAINT', '/analysis/MARUTI', '/analysis/SUNPHARMA',
-      '/analysis/HCLTECH', '/analysis/NTPC', '/analysis/ONGC', '/analysis/POWERGRID',
-    ];
-  }
+for (const route of routes) {
+  const rel = route.path === "/" ? "index" : route.path.replace(/^\//, "");
+  const outPath = join(DIST, rel, "index.html");
+  mkdirSync(dirname(outPath), { recursive: true });
+
+  const url = `https://marketbeaconpro.com${route.path}`;
+  let html = baseHtml
+    .replace(/<title>[^<]*<\/title>/, `<title>${route.title}</title>`)
+    .replace(/<meta name="description" content="[^"]*"/, `<meta name="description" content="${route.desc}"`)
+    .replace(/<meta property="og:title" content="[^"]*"/, `<meta property="og:title" content="${route.title}"`)
+    .replace(/<meta property="og:description" content="[^"]*"/, `<meta property="og:description" content="${route.desc}"`)
+    .replace(/<meta name="twitter:title" content="[^"]*"/, `<meta name="twitter:title" content="${route.title}"`)
+    .replace(/<meta name="twitter:description" content="[^"]*"/, `<meta name="twitter:description" content="${route.desc}"`)
+    .replace(/<link rel="canonical" href="[^"]*"/, `<link rel="canonical" href="${url}"`)
+    .replace(/<meta property="og:url" content="[^"]*"/, `<meta property="og:url" content="${url}"`);
+
+  writeFileSync(outPath, html);
+  console.log(`  ${route.path}`);
 }
 
-async function fetchArticleSlugs() {
-  try {
-    const res = await fetch(`${API_BASE}/api/blog`);
-    if (!res.ok) throw new Error('API unavailable');
-    const articles = await res.json();
-    return articles.map(a => `/blog/${a.slug}`);
-  } catch {
-    return [
-      '/blog/abcd-tranche-laddering-guide',
-      '/blog/what-is-sebi-compliant-stock-screener',
-      '/blog/how-to-trade-like-fii-dii-india',
-      '/blog/institutional-audit-score-explained',
-    ];
-  }
-}
-
-function waitForServer(url, timeout = 30000) {
-  return new Promise((resolve, reject) => {
-    const start = Date.now();
-    const check = () => {
-      const req = request(url, { method: 'HEAD' }, (res) => {
-        resolve();
-      });
-      req.on('error', () => {
-        if (Date.now() - start > timeout) {
-          reject(new Error('Server did not start in time'));
-        } else {
-          setTimeout(check, 500);
-        }
-      });
-      req.end();
-    };
-    check();
-  });
-}
-
-function deduplicateHeadTags(html) {
-  const dedup = (regex) => {
-    const parts = html.split(regex);
-    if (parts.length <= 2) return;
-    const matches = html.match(regex);
-    const before = parts.slice(0, -1).join('');
-    const after = parts[parts.length - 1];
-    html = before + matches[matches.length - 1] + after;
-  };
-  dedup(/<title>.*?<\/title>/gi);
-  dedup(/<link rel="canonical".*?\/?>/gi);
-  dedup(/<meta name="description" content=".*?"\/?>/gi);
-  dedup(/<meta property="og:title" content=".*?"\/?>/gi);
-  dedup(/<meta property="og:description" content=".*?"\/?>/gi);
-  dedup(/<meta property="og:url" content=".*?"\/?>/gi);
-  dedup(/<meta property="og:image" content=".*?"\/?>/gi);
-  dedup(/<meta property="og:type" content=".*?"\/?>/gi);
-  dedup(/<meta property="og:site_name" content=".*?"\/?>/gi);
-  dedup(/<meta name="twitter:title" content=".*?"\/?>/gi);
-  dedup(/<meta name="twitter:description" content=".*?"\/?>/gi);
-  dedup(/<meta name="twitter:image" content=".*?"\/?>/gi);
-  return html;
-}
-
-async function prerender() {
-  console.log('[Prerender] Starting preview server...');
-  const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
-    cwd: __dirname,
-    stdio: 'pipe',
-    shell: true,
-  });
-
-  try {
-    await waitForServer(BASE);
-    console.log('[Prerender] Server ready.');
-
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    });
-
-    const stockRoutes = await fetchStockSymbols();
-    const articleRoutes = await fetchArticleSlugs();
-    const allRoutes = [...ROUTES, ...stockRoutes, ...articleRoutes];
-
-    for (const route of allRoutes) {
-      const url = BASE + route;
-      console.log(`[Prerender] Rendering ${route}...`);
-      const page = await browser.newPage();
-      await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
-      await new Promise(r => setTimeout(r, 2000));
-
-      const title = await page.title();
-      console.log(`  Title: "${title}"`);
-
-      let html = await page.content();
-      // Override page title with the one detected by puppeteer (post-navigation)
-      const pageTitle = title;
-      html = html.replace(/<title>.*?<\/title>/gi, `<title>${pageTitle}</title>`);
-      html = deduplicateHeadTags(html);
-      await page.close();
-
-      let outPath;
-      if (route === '/') {
-        outPath = join(DIST, 'index.html');
-      } else {
-        outPath = join(DIST, route.slice(1), 'index.html');
-      }
-      const dir = dirname(outPath);
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
-      }
-      writeFileSync(outPath, html);
-      console.log(`  Saved: ${outPath}`);
-    }
-
-    await browser.close();
-    console.log('[Prerender] Done!');
-  } finally {
-    server.kill('SIGTERM');
-    setTimeout(() => process.exit(0), 1000);
-  }
-}
-
-prerender().catch((err) => {
-  console.error('[Prerender] Failed:', err);
-  process.exit(1);
-});
+console.log(`\nPrerendered ${routes.length} routes`);
