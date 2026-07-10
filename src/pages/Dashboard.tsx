@@ -20,7 +20,6 @@ import {
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import BrokerHub from '../components/modals/BrokerHub';
-import LegalModal from '../components/modals/LegalModal';
 
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { toast } from 'sonner';
@@ -73,11 +72,7 @@ interface DashboardPageProps {
   defaultTab?: 'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral';
 }
 
-const BASKET_LABELS: Record<string, string> = {
-  'Elite Basket': 'Elite Basket Universe',
-  'Quality Basket': 'Quality Basket Universe',
-  'Growth Basket': 'Growth Basket Universe'
-};
+
 
 const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) => {
   const location = useLocation();
@@ -323,7 +318,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   };
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const fetchData = useCallback(async (forceRefresh = false) => {
+  const fetchData = useCallback(async (_forceRefresh = false) => {
     setIsRefreshing(true);
     setError(null);
     try {
@@ -347,7 +342,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           console.log(`[DASHBOARD] Successfully fetched ${d.allStocks?.length || 0} nodes for basket: ${activeBasket}`);
           setData(d);
           const portfolioSymbols = [...(userWatchlist || []).map(w => w.symbol), ...(trades || []).map(t => t.symbol)];
-          const symbolsToFetch = Array.from(new Set([...(d.allStocks?.map(s => s.symbol) || []), ...portfolioSymbols]));
+          const symbolsToFetch = Array.from(new Set([...(d.allStocks?.map((s: any) => s.symbol) || []), ...portfolioSymbols]));
           fetchStockPrices(symbolsToFetch);
       } else {
           setError(d.error || `Data Sync Failed`);
@@ -497,8 +492,12 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     const headers = ['Symbol', 'Observation', 'Strategy', 'Sector', 'Market Cap', 'Level A (Base)', 'CMP', 'ATH', 'Model Objective', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
     const rows = data.allStocks.map((t: AllStockItem) => {
       const ath = stockATHs[t.symbol] || t.ath || 0;
-      const gap = t.entryPrice > 0 ? (((t.currentPrice - t.entryPrice)/t.entryPrice) * 100).toFixed(2) : '0.00';
-      const roi = t.currentPrice > 0 ? (((t.target - t.currentPrice)/t.currentPrice) * 100).toFixed(2) : '0.00';
+      const entry = Number(t.entryPrice) || 0;
+      const current = Number(t.currentPrice) || 0;
+      const target = Number(t.target) || 0;
+      
+      const gap = entry > 0 ? (((current - entry)/entry) * 100).toFixed(2) : '0.00';
+      const roi = current > 0 ? (((target - current)/current) * 100).toFixed(2) : '0.00';
       
       return [
         t.symbol,
@@ -506,14 +505,14 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         t.strategy || 'Institutional Matrix',
         t.sector,
         t.marketCap,
-        t.entryPrice?.toFixed(2),
-        t.currentPrice?.toFixed(2),
-        ath?.toFixed(2),
-        t.target?.toFixed(2),
-        roi + '%',
-        gap + '%',
-        t.score + '/100',
-        t.reason || 'Institutional Audit Active'
+        entry.toFixed(2),
+        current.toFixed(2),
+        ath.toFixed(2),
+        target.toFixed(2),
+        roi,
+        gap,
+        t.score || '-',
+        t.reason || '-'
       ];
     });
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -766,7 +765,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                      onToggleWatchlist={handleToggleWatchlist}
                      onUpdateHolding={handleUpdateHolding}
                      activeTab={activeTab}
-                     setActiveTab={handleSetActiveTab}
+                     setActiveTab={(tab) => handleSetActiveTab(tab as any)}
                      strategyId={strategyId}
                      portfolioCount={portfolioCount}
                      openCount={openCount}

@@ -13,10 +13,11 @@ import {
   Clock,
   Sparkles
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { useAuth } from '../context/AuthContext';
+import AiSuggestionPublicPanel from '../components/ai/AiSuggestionPublicPanel';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import { toast } from 'sonner';
@@ -125,7 +126,7 @@ const PublicAnalysisPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-cyan-500/30 font-sans">
-      <SEO title={`${symbol} Fundamental Audit`} description={`Research analysis for ${symbol} — Audit Score, peer comparison & key metrics.`} url={`/analysis/${symbol}`} image={`https://marketbeaconpro.com/api/og/${symbol}`} />
+      <SEO title={`${symbol} Fundamental Audit`} description={desc} url={`/analysis/${symbol}`} image={`https://marketbeaconpro.com/api/og/${symbol}`} />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify({
           '@context': 'https://schema.org',
@@ -308,6 +309,9 @@ const PublicAnalysisPage: React.FC = () => {
           </p>
         </footer>
         </div>
+
+        {/* AI Strategy Alignment (outside locked section) */}
+        <AiSuggestionPublicPanel symbol={symbol || ''} />
 
         {/* Lock Overlay */}
         {!isProOrAbove && (

@@ -3,12 +3,40 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import BrandLogo from '../components/brand/BrandLogo';
-import { AlertCircle, ArrowRight, UserPlus, Globe } from 'lucide-react';
+import { AlertCircle, ArrowRight, UserPlus, Globe, Bug } from 'lucide-react';
 import { getApiUrl } from '../lib/api-utils';
 import SEO from '../components/SEO';
 import { OrganizationSchema } from '../components/StructuredData';
 
 const API_URL = getApiUrl();
+
+const DevLoginForm: React.FC<{ onLogin: (token: string) => void; setError: (err: string | null) => void }> = ({ onLogin, setError }) => {
+  const handleDevLogin = async () => {
+    try {
+      setError(null);
+      const res = await fetch('http://localhost:3001/api/dev/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: 'diwakar.singh01@gmail.com' }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Login failed'); return; }
+      onLogin(data.token);
+    } catch (e: any) {
+      setError(e.message || 'Network error');
+    }
+  };
+  return (
+    <div className="space-y-3">
+      <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider text-center">Dev Login (Local Only)</p>
+      <button onClick={handleDevLogin}
+         className="w-full px-4 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition-all text-center">
+        <Bug className="h-3.5 w-3.5 inline mr-2" />Login as diwakar.singh01@gmail.com
+      </button>
+    </div>
+  );
+};
 
 const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +69,11 @@ const LoginPage: React.FC = () => {
     const wakeTimer = setTimeout(() => setShowWakingMessage(true), 3000);
 
     try {
-      await googleLogin(response.credential);
+      if (response.credential) {
+        await googleLogin(response.credential);
+      } else {
+        throw new Error('Google Authentication Failed: No credential received.');
+      }
       clearTimeout(wakeTimer);
     } catch (err: unknown) {
       clearTimeout(wakeTimer);
@@ -158,15 +190,22 @@ const LoginPage: React.FC = () => {
           </div>
         )}
 
-        <div className="space-y-8 relative z-10">
-          <div className="space-y-8">
-             <div className="flex justify-center transform hover:scale-[1.02] transition-transform">
-                <GoogleLogin onSuccess={onGoogleSuccess} onError={() => setError('Google Authentication Failed')} theme="filled_blue" shape="pill" size="large" text="continue_with" width="100%" />
-             </div>
+          <div className="space-y-8 relative z-10">
+            <div className="space-y-8">
+                <div className="flex justify-center transform hover:scale-[1.02] transition-transform">
+                  <GoogleLogin onSuccess={onGoogleSuccess} onError={() => setError('Google Authentication Failed')} theme="filled_blue" shape="pill" size="large" text="continue_with" width="100%" />
+                </div>
+            </div>
           </div>
-        </div>
 
-        <div className="pt-10 text-center relative z-10 border-t border-white/5">
+          {/* Dev Login Bypass — only works on localhost */}
+          {window.location.hostname === 'localhost' && (
+            <div className="relative z-10 pt-4">
+              <DevLoginForm onLogin={(_token) => { window.location.href = '/app/ai-assistant'; }} setError={setError} />
+            </div>
+          )}
+
+          <div className="pt-10 text-center relative z-10 border-t border-white/5">
            <Link to="/connect" className="text-xs font-bold text-slate-600 uppercase tracking-[0.4em] hover:text-blue-500 transition-colors flex items-center justify-center space-x-3">
               <Globe className="h-4 w-4" />
                <span>Connectivity Hub</span>

@@ -3,30 +3,20 @@ import { Link } from 'react-router-dom';
 import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { 
-  TrendingUp, 
-  TrendingDown, 
   Search, 
-  Download, 
-  Activity, 
-  ShieldCheck, 
-  Target, 
   Info,
-  RefreshCw,
-  Sparkles,
-  ArrowUpRight,
-  ChevronRight,
-  Layers,
   CheckCircle2,
-  AlertTriangle,
-  Play,
   ExternalLink,
-  ShieldAlert
+  Activity,
+  Layers,
+  RefreshCw,
+  Target
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { authFetch } from '../lib/authFetch';
 import SEO from '../components/SEO';
 import { ConfidenceGauge } from '../components/ui/ConfidenceGauge';
-import type { HistoryQuote, FundamentalData, ABCDNode, AllStockItem } from '../types';
+import type { HistoryQuote, FundamentalData, AllStockItem } from '../types';
 
 const API_URL = getApiUrl();
 
@@ -317,7 +307,7 @@ const ScreenerVerify: React.FC = () => {
       let bottomVal = entryVal;
       if (activeStrat.abcd) {
         const prices = Object.values(activeStrat.abcd)
-          .map(v => Number(v?.price))
+          .map((v: any) => Number(v?.price))
           .filter(p => !isNaN(p) && p > 0);
         if (prices.length > 0) {
           bottomVal = Math.min(...prices);
@@ -395,7 +385,7 @@ const ScreenerVerify: React.FC = () => {
         score += 15;
         if (activeStrategy.abcd) {
           const prices = Object.values(activeStrategy.abcd)
-            .map(v => Number(v?.price))
+            .map((v: any) => Number(v?.price))
             .filter(p => !isNaN(p) && p > 0);
           if (prices.length > 0) {
             const bottom = Math.min(...prices);
@@ -458,7 +448,7 @@ const ScreenerVerify: React.FC = () => {
     let bottom = entry;
     if (activeStrategy.abcd) {
       const prices = Object.values(activeStrategy.abcd)
-        .map(v => Number(v?.price))
+        .map((v: any) => Number(v?.price))
         .filter(p => !isNaN(p) && p > 0);
       if (prices.length > 0) {
         bottom = Math.min(...prices);
@@ -812,7 +802,7 @@ const ScreenerVerify: React.FC = () => {
 
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[var(--text-tertiary)] font-medium">Fund. Audit Score:</span>
-                  <span className={`font-extrabold ${fundamentals.audit?.score >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  <span className={`font-extrabold ${(fundamentals.audit?.score || 0) >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
                     {fundamentals.audit?.score || 0} / 100
                   </span>
                 </div>

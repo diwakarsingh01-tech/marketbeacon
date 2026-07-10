@@ -1,40 +1,42 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, TrendingUp, Wallet, BarChart3, Activity,
   Zap, BookOpen, Store, ArrowRight, ChevronRight,
-  ShieldCheck, AlertTriangle, Clock, Target, RefreshCw,
-  IndianRupee, Sparkles
+  ShieldCheck, RefreshCw, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import SEO from '../components/SEO';
+import type { TradeRecord } from '../types';
 
 const API_URL = getApiUrl();
 
-interface Trade {
-  id: number;
-  symbol: string;
-  action: 'BUY' | 'SELL';
-  qty: number;
-  entryPrice: number;
-  currentPrice?: number;
-  pnl?: number;
-  status: 'open' | 'closed';
-  createdAt: string;
-  strategy?: string;
-}
-
 const UserDashboard: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [trades, setTrades] = useState<Trade[]>([]);
+  const [trades, setTrades] = useState<TradeRecord[]>([]);
+  const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
+
+  const fetchStockPrices = useCallback(async (symbols: string[]) => {
+    if (symbols.length === 0) return;
+    try {
+      const res = await fetch(`${API_URL}/api/stock-prices?symbols=${symbols.join(',')}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const pMap: Record<string, number> = {};
+        data.forEach(s => { pMap[s.symbol] = s.price; });
+        setStockPrices(pMap);
+      }
+    } catch (e) {
+      console.error('Fetch prices error:', e);
+    }
+  }, []);
 
   const fetchTrades = useCallback(async () => {
     try {
@@ -42,22 +44,47 @@ const UserDashboard: React.FC = () => {
         credentials: 'include'
       });
       const d = await safeJsonParse(res);
-      if (res.ok && !d?.error) setTrades(d || []);
+      if (res.ok && !d?.error) {
+        const tradesList: TradeRecord[] = d || [];
+        setTrades(tradesList);
+        const symbols = Array.from(new Set(tradesList.map(t => t.symbol)));
+        fetchStockPrices(symbols);
+      }
     } catch (e) {
       console.error('Fetch trades error:', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchStockPrices]);
 
   useEffect(() => { fetchTrades(); }, [fetchTrades]);
 
-  const openTrades = trades.filter(t => t.status === 'open');
-  const totalInvested = trades.reduce((sum, t) => sum + (t.entryPrice * t.qty), 0);
-  const currentValue = trades.reduce((sum, t) => sum + ((t.currentPrice || t.entryPrice) * t.qty), 0);
+  const openTrades = trades.filter(t => t.status === 'OPEN');
+  
+  const totalInvested = trades.reduce((sum, t) => {
+    const qty = Number(t.quantity) || 0;
+    const price = Number(t.entry_price) || 0;
+    return sum + (price * qty);
+  }, 0);
+
+  const currentValue = trades.reduce((sum, t) => {
+    const qty = Number(t.quantity) || 0;
+    const entryPrice = Number(t.entry_price) || 0;
+    const exitPrice = Number(t.exit_price) || 0;
+    
+    if (t.status === 'CLOSED') {
+      return sum + (exitPrice * qty);
+    } else {
+      const livePrice = stockPrices[t.symbol] || entryPrice;
+      return sum + (livePrice * qty);
+    }
+  }, 0);
+
   const pnl = currentValue - totalInvested;
   const pnlPercent = totalInvested > 0 ? ((pnl / totalInvested) * 100).toFixed(1) : '0.0';
-  const recentTrades = [...trades].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const recentTrades = [...trades]
+    .sort((a, b) => new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime())
+    .slice(0, 5);
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] font-sans">
@@ -74,7 +101,7 @@ const UserDashboard: React.FC = () => {
             <div>
               <div className="inline-flex items-center space-x-2 px-3 py-1.5 bg-blue-950/50 backdrop-blur-sm rounded-full border border-blue-900 mb-4 w-fit">
                 <ShieldCheck className="h-3 w-3 text-blue-400" />
-                <span className="text-xs md:text-xs font-bold text-blue-400 uppercase tracking-wider">
+                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
                   {user?.tier === 'alpha' ? 'Alpha Execution Plan' : user?.tier === 'pro' ? 'Pro Execution Plan' : 'Free Plan'}
                   {user?.daysRemaining !== null && user?.daysRemaining !== undefined && ` · ${user.daysRemaining} days remaining`}
                 </span>
@@ -111,7 +138,7 @@ const UserDashboard: React.FC = () => {
               { title: 'Open Positions', value: openTrades.length.toString(), icon: Activity, color: 'emerald', link: '/portfolio' },
               { 
                 title: 'Portfolio Value', 
-                value: `₹${(totalInvested / 100000).toFixed(1)}L`, 
+                value: `₹${(currentValue / 100000).toFixed(1)}L`, 
                 subtitle: totalInvested > 0 ? `${openTrades.length} active` : 'No capital deployed',
                 icon: Wallet, 
                 color: 'amber', 
@@ -120,7 +147,7 @@ const UserDashboard: React.FC = () => {
               { 
                 title: 'P&L', 
                 value: `${pnl >= 0 ? '+' : ''}${pnlPercent}%`, 
-                subtitle: `₹${Math.abs(pnl).toLocaleString('en-IN')}`,
+                subtitle: `₹${Math.round(Math.abs(pnl)).toLocaleString('en-IN')}`,
                 icon: TrendingUp, 
                 color: pnl >= 0 ? 'emerald' : 'rose', 
                 link: '/trades' 
@@ -237,35 +264,44 @@ const UserDashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {recentTrades.map((trade, i) => (
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      key={trade.id}
-                      className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--border-primary)] hover:border-blue-500/40 transition-all group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`p-2.5 rounded-xl ${trade.action === 'BUY' ? 'bg-gradient-to-br from-emerald-600/20 to-emerald-600/5 border border-emerald-500/20' : 'bg-gradient-to-br from-rose-600/20 to-rose-600/5 border border-rose-500/20'}`}>
-                          <TrendingUp className={`w-3.5 h-3.5 ${trade.action === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`} />
+                  {recentTrades.map((trade, i) => {
+                    const isClosed = trade.status === 'CLOSED';
+                    const entryPrice = Number(trade.entry_price) || 0;
+                    const exitPrice = Number(trade.exit_price) || 0;
+                    const livePrice = stockPrices[trade.symbol] || entryPrice;
+                    const currentPrice = isClosed ? exitPrice : livePrice;
+                    const tradePnL = (currentPrice - entryPrice) * (trade.quantity || 0);
+
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        key={trade.id}
+                        className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--border-primary)] hover:border-blue-500/40 transition-all group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`p-2.5 rounded-xl ${trade.status === 'OPEN' ? 'bg-gradient-to-br from-emerald-600/20 to-emerald-600/5 border border-emerald-500/20' : 'bg-gradient-to-br from-rose-600/20 to-rose-600/5 border border-rose-500/20'}`}>
+                            <TrendingUp className={`w-3.5 h-3.5 ${trade.status === 'OPEN' ? 'text-emerald-400' : 'text-rose-400'}`} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-[var(--text-primary)] tracking-tight">{trade.symbol}</p>
+                            <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-0.5">
+                              {trade.status === 'OPEN' ? 'BUY' : 'BOOKED'} · {trade.quantity} shares · ₹{entryPrice?.toLocaleString()}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-[var(--text-primary)] tracking-tight">{trade.symbol}</p>
-                          <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-0.5">
-                            {trade.action} · {trade.qty} shares · ₹{trade.entryPrice?.toLocaleString()}
+                        <div className="text-right shrink-0 ml-3">
+                          <p className={`text-sm font-bold tracking-tight ${tradePnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {tradePnL >= 0 ? '+' : ''}{Math.round(tradePnL).toLocaleString()}
+                          </p>
+                          <p className={`text-caption mt-0.5 ${trade.status === 'OPEN' ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>
+                            {trade.status.toLowerCase()}
                           </p>
                         </div>
-                      </div>
-                      <div className="text-right shrink-0 ml-3">
-                        <p className={`text-sm font-bold tracking-tight ${trade.pnl && trade.pnl >= 0 ? 'text-emerald-400' : trade.pnl && trade.pnl < 0 ? 'text-rose-400' : 'text-[var(--text-muted)]'}`}>
-                          {trade.pnl ? `${trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(0)}` : '—'}
-                        </p>
-                        <p className={`text-caption mt-0.5 ${trade.status === 'open' ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>
-                          {trade.status}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </div>

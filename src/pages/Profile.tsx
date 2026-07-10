@@ -23,7 +23,7 @@ const TIER_COLORS: Record<string, { badge: string; sub: string }> = {
 };
 
 const ProfilePage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

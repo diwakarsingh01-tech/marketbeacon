@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Settings,
   HelpCircle,
-  LineChart
+  LineChart,
+  Bot
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -52,6 +53,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
       title: 'System Access',
       items: [
         { icon: ShieldCheck, label: 'Education', path: '/education', desc: 'SOP Guides' },
+        { icon: Bot, label: 'BeaconAI', path: '/ai-assistant', desc: 'Strategy AI', tag: 'NEW' },
       ]
     }
   ];

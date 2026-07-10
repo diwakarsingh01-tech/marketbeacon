@@ -34,7 +34,6 @@ export const getApiUrl = () => {
   try {
     const h = window.location.hostname;
     const p = window.location.protocol;
-    const port = window.location.port;
 
     // 1. Manual Overrides
     const override = localStorage.getItem('mb_api_override');

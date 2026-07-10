@@ -26,7 +26,7 @@ export async function notifyAdmins(title: string, message: string, type: 'audit'
     }
     console.log(`🔔 [NOTIFICATION] Admin notification sent to ${admins.length} admins: ${title}`);
     // Also send to Telegram
-    await sendTelegramMessage(`🔔 *Admin Alert*\n\n${title}\n${message}`, 'both');
+    await sendTelegramMessage(`🔔 *Admin Alert*\n\n${title}\n${message}`, 'dm');
   } catch (e: any) {
     console.error(`❌ [NOTIFICATION ERROR] Admin notify failed: ${e.message}`);
   }
@@ -51,7 +51,9 @@ export async function notifyAllUsers(title: string, message: string, type: 'audi
     
     console.log(`🔔 [NOTIFICATION] Global notification sent to ${users.length} users: ${title}`);
     // Also send to Telegram
-    await sendTelegramMessage(`📢 *${title}*\n\n${message}`, 'both');
+    if (type !== 'audit') {
+      await sendTelegramMessage(`📢 *${title}*\n\n${message}`, 'both');
+    }
   } catch (e: any) {
     console.error(`❌ [NOTIFICATION ERROR] Global notify failed: ${e.message}`);
   }

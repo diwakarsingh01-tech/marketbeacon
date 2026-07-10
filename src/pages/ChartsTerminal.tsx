@@ -11,11 +11,9 @@ import {
   ShieldCheck, 
   Target, 
   Info,
-  Maximize2,
   RefreshCw,
   Sparkles,
   ArrowUpRight,
-  ChevronRight,
   Layers,
   CheckCircle2,
   AlertTriangle
@@ -586,38 +584,38 @@ const ChartsTerminal: React.FC = () => {
     // Head & Shoulders annotations or standard trigger markers
     if (activeStrategyId === 'RHS_ABCD' && showPatterns && sortedHistory.length > 80) {
       const len = sortedHistory.length;
-      createSeriesMarkers(mainSeries, [
+      createSeriesMarkers(mainSeries as any, [
         {
-          time: sortedHistory[len - 60].time,
+          time: sortedHistory[len - 60].time as any,
           position: 'belowBar',
           color: '#3b82f6',
           shape: 'arrowUp',
-          text: 'Left Shoulder',
+          text: 'LEFT SHOULDER',
         },
         {
-          time: sortedHistory[len - 40].time,
+          time: sortedHistory[len - 40].time as any,
           position: 'belowBar',
           color: '#f59e0b',
           shape: 'arrowUp',
-          text: 'HEAD (Bottom)',
+          text: 'HEAD (SWING LOW)',
         },
         {
-          time: sortedHistory[len - 20].time,
+          time: sortedHistory[len - 20].time as any,
           position: 'belowBar',
           color: '#3b82f6',
           shape: 'arrowUp',
-          text: 'Right Shoulder',
-        }
+          text: 'RIGHT SHOULDER',
+        },
       ]);
-    } else {
-      const markers = [];
-      if (fundamentals && fundamentals.strategies && activeStrategyId) {
-        const strat = fundamentals.strategies[activeStrategyId];
+    } else if (showPatterns) {
+      const markers: any[] = [];
+      for (const stratId of Object.keys(fundamentals?.strategies || {})) {
+        const strat = fundamentals?.strategies?.[stratId];
         if (strat && strat.triggerDate) {
           const matchCandle = sortedHistory.find(q => q.time === strat.triggerDate);
           if (matchCandle) {
             markers.push({
-              time: matchCandle.time,
+              time: matchCandle.time as any,
               position: 'belowBar',
               color: '#10b981',
               shape: 'arrowUp',
@@ -626,7 +624,7 @@ const ChartsTerminal: React.FC = () => {
           }
         }
       }
-      createSeriesMarkers(mainSeries, markers);
+      createSeriesMarkers(mainSeries as any, markers as any);
     }
 
     // Add volume series below if toggled
@@ -869,7 +867,7 @@ const ChartsTerminal: React.FC = () => {
     lucide.createIcons();
 
     // Data injected from app
-    const data = \${jsonData};
+    const data = ${jsonData};
 
     // TradingView Chart implementation
     const chartElement = document.getElementById('chart');
@@ -1319,147 +1317,15 @@ const ChartsTerminal: React.FC = () => {
     };
   }
 
-  const renderConfidenceProfile = () => {
-    if (!activeStrategy) return null;
-    const price = Number(fundamentals.price);
-    const entry = Number(activeStrategy.entryPrice || 0);
-    const target = Number(activeStrategy.target || 0);
-    
-    let bottom = entry;
-    if (activeStrategy.abcd) {
-      const prices = Object.values(activeStrategy.abcd)
-        .map(v => Number(v?.price))
-        .filter(p => !isNaN(p) && p > 0);
-      if (prices.length > 0) {
-        bottom = Math.min(...prices);
-      }
-    }
-    if (bottom === entry) {
-      bottom = entry * 0.9;
-    }
-    
-    const rangeMin = bottom * 0.95;
-    const rangeMax = target * 1.05;
-    const totalRange = rangeMax - rangeMin;
-    
-    const getPct = (val: number) => {
-      return Math.max(0, Math.min(100, ((val - rangeMin) / totalRange) * 100));
-    };
-    
-    const currentPct = getPct(price);
-    const entryPct = getPct(entry);
-    const targetPct = getPct(target);
-    const bottomPct = getPct(bottom);
-    
-    return (
-      <div className={`p-6 rounded-3xl border ${
-        'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
-      }`}>
-        <div className="flex justify-between items-center mb-5 border-b border-[var(--border-primary)]/60 pb-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-blue-500" />
-            <span className="text-xs font-extrabold text-[var(--text-muted)] uppercase tracking-wider">
-              Institutional Entry Confidence Profile
-            </span>
-          </div>
-          <span className={`px-2.5 py-0.5 rounded-full text-caption ${confidence.bg} ${confidence.color} border border-current/20`}>
-            {confidence.level}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-          <ConfidenceGauge score={confidence.score} className="p-4 border border-[var(--border-primary)]/40 rounded-2xl bg-[var(--bg-primary)]/20" />
-
-          {/* Range Slider / Shape */}
-          <div className="md:col-span-2 space-y-5">
-            <span className="text-xs text-[var(--text-muted)] font-extrabold uppercase tracking-wider block">
-              Confidence Range Visualization (Safe Entry vs Target Progression)
-            </span>
-            
-            <div className="relative pt-6 pb-2 px-1">
-              {/* Slider Track */}
-              <div className="h-2 w-full bg-[var(--bg-tertiary)] rounded-full relative">
-                {/* Safe Accumulation Band */}
-                <div 
-                  className="absolute h-full bg-emerald-500/30 rounded-full"
-                  style={{ left: `${bottomPct}%`, right: `${100 - entryPct}%` }}
-                />
-                {/* Progression to Target */}
-                <div 
-                  className="absolute h-full bg-blue-500/20 rounded-full"
-                  style={{ left: `${entryPct}%`, right: `${100 - targetPct}%` }}
-                />
-              </div>
-
-              {/* Markers */}
-              <div 
-                className="absolute -top-1 flex flex-col items-center"
-                style={{ left: `${bottomPct}%`, transform: 'translateX(-50%)' }}
-              >
-                <div className="h-4 w-1 bg-slate-500" />
-                <span className="text-caption text-[var(--text-muted)] mt-1">FLOOR (₹{Math.round(bottom)})</span>
-              </div>
-
-              <div 
-                className="absolute -top-1 flex flex-col items-center"
-                style={{ left: `${entryPct}%`, transform: 'translateX(-50%)' }}
-              >
-                <div className="h-4 w-1.5 bg-emerald-500" />
-                <span className="text-caption text-emerald-400 mt-1">ENTRY (₹{Math.round(entry)})</span>
-              </div>
-
-              <div 
-                className="absolute -top-1 flex flex-col items-center"
-                style={{ left: `${targetPct}%`, transform: 'translateX(-50%)' }}
-              >
-                <div className="h-4 w-1.5 bg-blue-500" />
-                <span className="text-caption text-blue-400 mt-1">TARGET (₹{Math.round(target)})</span>
-              </div>
-
-              {/* Pin pointing to current price */}
-              <div 
-                className="absolute -top-4 flex flex-col items-center z-10 transition-all duration-300"
-                style={{ left: `${currentPct}%`, transform: 'translateX(-50%)' }}
-              >
-                <div className="px-2 py-0.5 rounded bg-blue-600 text-caption text-[var(--text-primary)] shadow-md">
-                  ₹{Math.round(price)}
-                </div>
-                <div className="w-2.5 h-2.5 rounded-full bg-[var(--bg-primary)] border-2 border-blue-600 mt-0.5" />
-              </div>
-            </div>
-
-            {/* Assessment info */}
-            <div className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center justify-between ${
-              price <= entry
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                : price <= target
-                  ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
-                  : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-            }`}>
-              <div className="flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                <span>
-                  {price <= entry 
-                    ? `Price is in high-confidence Accumulation Zone (Below Entry: ₹${Math.round(entry)}).` 
-                    : price <= target 
-                      ? `Price is moving towards Target: ₹${Math.round(target)}. Entry zone has passed.` 
-                      : `Target achieved! Price is above Target: ₹${Math.round(target)}. Profit booking zone.`}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // renderConfidenceProfile was unused and deleted to satisfy TS compiler
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 \${
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
       'bg-[var(--bg-primary)] text-[var(--text-primary)]'
     }`}>
       
       {/* Ticker Bar (Top) */}
-      <div className={`border-b text-caption overflow-hidden \${
+      <div className={`border-b text-caption overflow-hidden ${
         'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-tertiary)]'
       }`}>
         <div className="flex divide-x divide-slate-800 overflow-x-auto py-2 px-4 whitespace-nowrap scrollbar-none">
@@ -1467,7 +1333,7 @@ const ChartsTerminal: React.FC = () => {
             <div key={i} className="flex items-center gap-2 px-6">
               <span className={'text-[var(--text-secondary)]'}>{idx.name}</span>
               <span className="font-bold">₹ {idx.price.toLocaleString('en-IN')}</span>
-              <span className={`flex items-center text-xs font-bold \${
+              <span className={`flex items-center text-xs font-bold ${
                 idx.change >= 0 ? 'text-emerald-500' : 'text-rose-500'
               }`}>
                 {idx.change >= 0 ? <TrendingUp className="h-2.5 w-2.5 mr-0.5 inline" /> : <TrendingDown className="h-2.5 w-2.5 mr-0.5 inline" />}
@@ -1484,7 +1350,7 @@ const ChartsTerminal: React.FC = () => {
       </div>
 
       {/* Main Header */}
-      <header className={`border-b px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 \${
+      <header className={`border-b px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 ${
         'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80'
       }`}>
         <div className="flex items-center gap-3">
@@ -1493,7 +1359,7 @@ const ChartsTerminal: React.FC = () => {
               <Activity className="h-6 w-6" />
             </div>
             <div>
-              <h1 className={`text-lg font-black tracking-tight uppercase italic flex items-center gap-1.5 \${
+              <h1 className={`text-lg font-black tracking-tight uppercase italic flex items-center gap-1.5 ${
                 'text-[var(--text-primary)]'
               }`}>
                 MarketBeacon <span className="text-blue-500">Terminal</span>
@@ -1552,7 +1418,7 @@ const ChartsTerminal: React.FC = () => {
 
           {/* Autocomplete Search input */}
           <div className="relative w-full sm:w-64" ref={dropdownRef}>
-            <div className={`flex items-center rounded-2xl border px-3.5 py-2 transition-all \${
+            <div className={`flex items-center rounded-2xl border px-3.5 py-2 transition-all ${
               'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50'
             }`}>
               <Search className="h-4 w-4 text-[var(--text-tertiary)] mr-2.5" />
@@ -1571,7 +1437,7 @@ const ChartsTerminal: React.FC = () => {
 
             {/* Dropdown Results */}
             {showDropdown && searchResults.length > 0 && (
-              <div className={`absolute left-0 right-0 mt-2 z-[100] rounded-2xl border shadow-xl max-h-[50vh] overflow-y-auto p-1.5 \${
+              <div className={`absolute left-0 right-0 mt-2 z-[100] rounded-2xl border shadow-xl max-h-[50vh] overflow-y-auto p-1.5 ${
                 'bg-[var(--bg-secondary)] border-[var(--border-primary)]'
               }`}>
                 {searchResults.map((item, i) => (
@@ -1582,7 +1448,7 @@ const ChartsTerminal: React.FC = () => {
                       setSearchQuery('');
                       setShowDropdown(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors \${
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors ${
                       'hover:bg-[var(--bg-tertiary)]'
                     }`}
                   >
@@ -1598,7 +1464,7 @@ const ChartsTerminal: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <span className="text-xs font-bold block">₹ {item.price.toLocaleString('en-IN')}</span>
-                      <span className={`text-xs font-bold \${item.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      <span className={`text-xs font-bold ${item.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                         {item.change >= 0 ? '+' : ''}{item.change.toFixed(2)}%
                       </span>
                     </div>
@@ -1846,8 +1712,8 @@ const ChartsTerminal: React.FC = () => {
                       <span className="text-xs text-[var(--text-muted)] font-extrabold uppercase tracking-wider">Current Price</span>
                       <div className="flex items-baseline gap-2 mt-1">
                         <span className="text-3xl font-bold italic">₹ {Number(fundamentals.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                        <span className={`text-xs font-bold ${fundamentals.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {fundamentals.change >= 0 ? '+' : ''}{Number(fundamentals.change).toFixed(2)}%
+                        <span className={`text-xs font-bold ${(fundamentals.change || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                          {(fundamentals.change || 0) >= 0 ? '+' : ''}{Number(fundamentals.change || 0).toFixed(2)}%
                         </span>
                       </div>
                     </div>
@@ -1928,7 +1794,7 @@ const ChartsTerminal: React.FC = () => {
                           <div className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-blue-500 rounded-full"
-                              style={{ width: `${Math.min(100, (fundamentals.currentSales / (fundamentals.athSales || 1)) * 100)}%` }}
+                              style={{ width: `${Math.min(100, ((fundamentals.currentSales || 0) / (fundamentals.athSales || 1)) * 100)}%` }}
                             />
                           </div>
                         </div>
@@ -1941,7 +1807,7 @@ const ChartsTerminal: React.FC = () => {
                           <div className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-emerald-500 rounded-full"
-                              style={{ width: `${Math.min(100, (fundamentals.currentNetProfit / (fundamentals.athNetProfit || 1)) * 100)}%` }}
+                              style={{ width: `${Math.min(100, ((fundamentals.currentNetProfit || 0) / (fundamentals.athNetProfit || 1)) * 100)}%` }}
                             />
                           </div>
                         </div>

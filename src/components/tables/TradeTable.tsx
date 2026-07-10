@@ -19,7 +19,7 @@ import {
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import type { TradeRecord } from '../../types';
+// import type { TradeRecord } from '../../types';
 
 interface EnrichedTrade {
   symbol: string;
@@ -182,6 +182,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
   );
 };
 
+/*
 const CircularGauge = ({ value, size = 32, strokeWidth = 3 }: { value: number, size?: number, strokeWidth?: number }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -203,6 +204,7 @@ const CircularGauge = ({ value, size = 32, strokeWidth = 3 }: { value: number, s
     </div>
   );
 };
+*/
 
 const getMarketCapTag = (cap: number, symbol: string) => {
   if (['NIFTYBEES', 'BANKBEES'].includes(symbol)) {
@@ -226,11 +228,11 @@ const TradeTable: React.FC<TradeTableProps> = ({
   strategyId, 
   onToggleWatchlist, 
   onUpdateHolding,
-  portfolioCount,
+  portfolioCount: _portfolioCount,
   openCount,
   neutralCount,
   rejectedCount,
-  watchlistCount,
+  watchlistCount: _watchlistCount,
   onAddPositionClick,
   onConnectNodeClick
 }) => {
@@ -319,7 +321,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
       (athData?.[t.symbol] || t.ath || 0).toFixed(2),
       t.target?.toFixed(2),
       t.targetGap?.toFixed(2) + '%',
-      (t.entryPrice > 0 ? (((t.livePrice || t.currentPrice) - t.entryPrice)/t.entryPrice) * 100 : 0).toFixed(2) + '%',
+      (((t.entryPrice || 0) > 0 ? ((((t.livePrice || t.currentPrice || 0) - (t.entryPrice || 0)) / (t.entryPrice || 1)) * 100) : 0).toFixed(2) + '%'),
       t.score + '/100',
       t.reason || 'Institutional Audit Active'
     ]);
@@ -567,7 +569,6 @@ const TradeTable: React.FC<TradeTableProps> = ({
                   {paginatedTrades.map((trade, idx) => {
                     const capTag = getMarketCapTag(trade.marketCap, trade.symbol);
                     const isStarred = userWatchlist?.includes(trade.symbol);
-                    const ath = athData?.[trade.symbol] || trade.ath || 0;
 
                     if (activeTab === 'portfolio') {
                       const invested = (trade.quantity || 0) * (trade.buy_price || 0);
@@ -759,7 +760,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                           <td className="px-4 py-2.5 text-right">
                              <div className="flex flex-col items-end">
                                 <span className="text-xs font-bold text-orange-400 italic">
-                                   {trade.entryPrice > 0 ? (((trade.livePrice - trade.entryPrice)/trade.entryPrice) * 100).toFixed(1) : '0.0'}%
+                                   {((trade.entryPrice || 0) > 0 ? ((((trade.livePrice || trade.currentPrice || 0) - (trade.entryPrice || 0)) / (trade.entryPrice || 1)) * 100).toFixed(1) : '0.0')}%
                                 </span>
                                 <span className="text-xs text-[var(--text-tertiary)] uppercase font-bold tracking-wider mt-0.5">Level Window</span>
                              </div>
@@ -768,11 +769,11 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         {visibleColumns.fundamentals && (
                           <td className="px-6 py-2.5 text-right">
                             <div className="flex items-center justify-end space-x-3">
-                               {trade.peRatio > 0 && (
+                               {(trade.peRatio || 0) > 0 && (
                                  <div className="flex flex-col items-end mr-2">
                                     {(() => {
                                       const avgMedian = (Number(trade.peMedians?.pe3Y || 0) + Number(trade.peMedians?.pe5Y || 0)) / 2;
-                                      const isHigh = avgMedian > 0 && trade.peRatio > avgMedian;
+                                      const isHigh = avgMedian > 0 && (trade.peRatio || 0) > avgMedian;
                                       return (
                                         <>
                                           <span className={`text-xs font-bold italic ${isHigh ? 'text-rose-400 animate-pulse' : 'text-[var(--text-secondary)]'}`}>{trade.peRatio?.toFixed(1)}</span>
@@ -1066,7 +1067,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                 <span className="font-bold text-[var(--text-primary)]">{trade.score || 0}</span>
                              </div>
                              <div className="flex items-center gap-2">
-                               {trade.peRatio > 0 && (
+                                {(trade.peRatio || 0) > 0 && (
                                   <div className="flex items-center space-x-1 font-mono">
                                      <span className="font-extrabold text-[var(--text-muted)] uppercase text-xs tracking-wider">PE:</span>
                                      <span className="font-bold text-[var(--text-primary)]">{trade.peRatio?.toFixed(1)}</span>

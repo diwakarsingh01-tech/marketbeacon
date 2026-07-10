@@ -10,13 +10,10 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  IndianRupee,
-  Target,
   Info,
   TrendingUp,
   BarChart3,
-  ArrowUpRight,
-  Filter
+  ArrowUpRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -25,8 +22,7 @@ import type { AlphaHubStock, AlphaHubData, BacktestData, BasketConfig } from '..
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import SEO from '../components/SEO';
 
 const API_URL = getApiUrl();
@@ -167,7 +163,6 @@ const buildBaskets = (stocks: AlphaHubStock[], totalCapital: number): BasketConf
 // --- Main Page ---
 
 const AlphaHubPage: React.FC = () => {
-  const { theme } = useTheme();
   const { user } = useAuth();
   const [data, setData] = useState<AlphaHubData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -178,7 +173,6 @@ const AlphaHubPage: React.FC = () => {
   const [redeeming, setRedeeming] = useState(false);
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [expandedBasket, setExpandedBasket] = useState<string | null>(null);
   const [showBookProfitInfo, setShowBookProfitInfo] = useState(false);
   const [filterBasket, setFilterBasket] = useState<string>('all');
   const [expandedStock, setExpandedStock] = useState<string | null>(null);
@@ -194,7 +188,6 @@ const AlphaHubPage: React.FC = () => {
   // Filter stocks: only include grades A/B/C/D — exclude NONE-grade stocks
   const validGrades = ['A', 'B', 'C', 'D'];
   const qualifiedStocks = (data?.stocks || []).filter(s => s.tranche && validGrades.includes(s.tranche.toUpperCase()));
-  const excludedStockCount = (data?.stocks || []).length - qualifiedStocks.length;
 
   // Build baskets from qualified stocks only
   const baskets = buildBaskets(qualifiedStocks, totalCapital);
@@ -673,7 +666,7 @@ const AlphaHubPage: React.FC = () => {
                           const price = stock.currentPrice || stock.entryPrice || 1;
                           const amount = qty * price;
                           const weightPct = ((amount / totalPortfolioAmount) * 100);
-                          const isDown = stock.currentPrice < stock.entryPrice;
+                          const isDown = (stock.currentPrice || 0) < (stock.entryPrice || 0);
                           const targetPct = stock.target && stock.entryPrice
                             ? (((stock.target - stock.entryPrice) / stock.entryPrice) * 100).toFixed(1)
                             : '—';
@@ -739,7 +732,7 @@ const AlphaHubPage: React.FC = () => {
                     const price = stock.currentPrice || stock.entryPrice || 1;
                     const amount = qty * price;
                     const weightPct = ((amount / totalPortfolioAmount) * 100);
-                    const isDown = stock.currentPrice < stock.entryPrice;
+                    const isDown = (stock.currentPrice || 0) < (stock.entryPrice || 0);
                     const isExpanded = expandedStock === stock.symbol;
                     const targetPct = stock.target && stock.entryPrice
                       ? (((stock.target - stock.entryPrice) / stock.entryPrice) * 100).toFixed(1)
