@@ -1,0 +1,167 @@
+[
+    {
+        "id": "weeklyNewsletter2026",
+        "name": "Weekly Market Wrap Newsletter",
+        "active": false,
+        "nodes": [
+            {
+                "parameters": {
+                    "rule": {
+                        "interval": [
+                            {
+                                "field": "cronExpression",
+                                "cronExpression": "30 17 * * 5"
+                            }
+                        ]
+                    }
+                },
+                "id": "sched-trigger",
+                "name": "Schedule Trigger",
+                "type": "n8n-nodes-base.scheduleTrigger",
+                "typeVersion": 1.2,
+                "position": [
+                    100,
+                    200
+                ]
+            },
+            {
+                "parameters": {},
+                "id": "manual-trigger",
+                "name": "Run Now",
+                "type": "n8n-nodes-base.manualTrigger",
+                "typeVersion": 1,
+                "position": [
+                    100,
+                    360
+                ]
+            },
+            {
+                "parameters": {
+                    "url": "http://mb-backend:3001/api/n8n/users",
+                    "headers": {
+                        "parameter": [
+                            {
+                                "name": "x-api-key",
+                                "value": "mb_linkedin_2026_secret_key"
+                            }
+                        ]
+                    },
+                    "options": {}
+                },
+                "id": "fetch-users",
+                "name": "Fetch Users",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 4.2,
+                "position": [
+                    320,
+                    200
+                ]
+            },
+            {
+                "parameters": {
+                    "url": "https://docs.google.com/spreadsheets/d/1KKFDTk4TN5JLEGqImM8DhoYqqWdrcpwH-2AE0Q8XkVg/gviz/tq?tqx=out:csv&sheet=Top_Bullish",
+                    "responseFormat": "text",
+                    "options": {}
+                },
+                "id": "get-bullish",
+                "name": "Get Bullish CSV",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 4.2,
+                "position": [
+                    540,
+                    200
+                ]
+            },
+            {
+                "parameters": {
+                    "jsCode": "const users = $('Fetch Users').first().json.users || [];\nconst bullishText = $('Get Bullish CSV').first().json.data || '';\n\nfunction parseCSV(text) {\n  if (!text) return [];\n  const lines = text.split('\\n').map(line => line.trim()).filter(line => line.length > 0);\n  if (lines.length < 2) return [];\n  \n  const headers = lines[0].split(',').map(h => h.replace(/\"/g, '').trim());\n  const results = [];\n  \n  for (let i = 1; i < lines.length; i++) {\n    const currentLine = lines[i].split(',').map(val => val.replace(/\"/g, '').trim());\n    if (currentLine.length < headers.length) continue;\n    \n    const row = {};\n    headers.forEach((header, index) => {\n      row[header] = currentLine[index];\n    });\n    results.push(row);\n  }\n  return results;\n}\n\nconst bullishStocks = parseCSV(bullishText).slice(0, 5);\n\n// Build stock rows HTML\nlet stocksHtml = '';\nbullishStocks.forEach(s => {\n  const change = parseFloat(s.Price_Change_Pct || '0');\n  const changeText = change >= 0 ? `+${change.toFixed(1)}%` : `${change.toFixed(1)}%`;\n  stocksHtml += `\n    <tr style=\"border-bottom: 1px solid rgba(255,255,255,0.05);\">\n      <td style=\"padding: 12px 8px; font-weight: bold; color: #22d3ee;\">${s.Ticker}</td>\n      <td style=\"padding: 12px 8px; color: #ffffff;\">₹${parseFloat(s.Close).toFixed(1)}</td>\n      <td style=\"padding: 12px 8px; color: #34d399; font-weight: bold;\">${s.Score}</td>\n      <td style=\"padding: 12px 8px; color: #34d399;\">${changeText}</td>\n    </tr>\n  `;\n});\n\nreturn users.map(u => {\n  const htmlContent = `\n    <!DOCTYPE html>\n    <html>\n    <head>\n      <meta charset=\"utf-8\">\n      <title>MarketBeacon Pro: Weekly Wrap</title>\n    </head>\n    <body style=\"margin: 0; padding: 0; background-color: #020617; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #cbd5e1; -webkit-font-smoothing: antialiased;\">\n      <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"background-color: #020617; padding: 40px 20px;\">\n        <tr>\n          <td align=\"center\">\n            <table width=\"600\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"background-color: #0f172a; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.05); overflow: hidden; padding: 40px;\">\n              <tr>\n                <td align=\"center\" style=\"padding-bottom: 30px;\">\n                  <h2 style=\"margin: 0; font-size: 28px; font-weight: 900; color: #ffffff; letter-spacing: -0.05em; font-style: italic;\">\n                    MARKETBEACON <span style=\"color: #22d3ee;\">PRO</span>\n                  </h2>\n                  <p style=\"margin: 5px 0 0 0; font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.2em;\">WEEKLY RESEARCH NODE WRAP</p>\n                </td>\n              </tr>\n              <tr>\n                <td style=\"font-size: 15px; line-height: 1.6; color: #cbd5e1; padding-bottom: 20px;\">\n                  Hi <strong>${u.name || 'Trader'}</strong>,\n                  <br><br>\n                  Here is your weekly institutional market wrap and breakout watchlists from MarketBeacon Pro. The Indian stock markets have closed the week, and our pre-coded momentum models have flagged new institutional accumulation setups.\n                </td>\n              </tr>\n              <tr>\n                <td style=\"padding-bottom: 30px;\">\n                  <h3 style=\"margin: 0 0 15px 0; font-size: 16px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 5px;\">🔥 Top Bullish Momentum Corridors</h3>\n                  <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"font-size: 14px; text-align: left;\">\n                    <thead>\n                      <tr style=\"color: #64748b; font-weight: bold;\">\n                        <th style=\"padding: 8px;\">TICKER</th>\n                        <th style=\"padding: 8px;\">CLOSE</th>\n                        <th style=\"padding: 8px;\">SCORE</th>\n                        <th style=\"padding: 8px;\">GAIN</th>\n                      </tr>\n                    </thead>\n                    <tbody>\n                      ${stocksHtml}\n                    </tbody>\n                  </table>\n                </td>\n              </tr>\n              <tr>\n                <td align=\"center\" style=\"padding-bottom: 30px;\">\n                  <table border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n                    <tr>\n                      <td align=\"center\" bgcolor=\"#22d3ee\" style=\"border-radius: 12px;\">\n                        <a href=\"https://marketbeaconpro.com/screener\" target=\"_blank\" style=\"display: inline-block; padding: 14px 30px; font-size: 13px; font-weight: bold; color: #020617; text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em;\">Open Research Dashboard</a>\n                      </td>\n                    </tr>\n                  </table>\n                </td>\n              </tr>\n              <tr>\n                <td style=\"font-size: 12px; line-height: 1.6; color: #64748b; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 25px;\">\n                  <strong>Disclaimer:</strong> MarketBeacon Pro is an educational research tool. We are not SEBI-registered advisors. Investments are subject to market risks. Read all related documents before investing.\n                  <br><br>\n                  &copy; 2026 MarketBeacon Pro. All rights reserved.\n                </td>\n              </tr>\n            </table>\n          </td>\n        </tr>\n      </table>\n    </body>\n    </html>\n  `;\n\n  return {\n    json: {\n      email: u.email,\n      name: u.name,\n      subject: \"MarketBeacon Pro: Weekly Wrap & Breakout Opportunities 📈\",\n      html: htmlContent\n    }\n  };\n});"
+                },
+                "id": "format-emails",
+                "name": "Format Emails",
+                "type": "n8n-nodes-base.code",
+                "typeVersion": 2,
+                "position": [
+                    760,
+                    200
+                ]
+            },
+            {
+                "parameters": {
+                    "toEmail": "={{ $json.email }}",
+                    "subject": "={{ $json.subject }}",
+                    "html": "={{ $json.html }}",
+                    "options": {}
+                },
+                "id": "send-email",
+                "name": "Send Email",
+                "type": "n8n-nodes-base.emailSend",
+                "typeVersion": 1,
+                "position": [
+                    980,
+                    200
+                ]
+            }
+        ],
+        "connections": {
+            "Schedule Trigger": {
+                "main": [
+                    [
+                        {
+                            "node": "Fetch Users",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Run Now": {
+                "main": [
+                    [
+                        {
+                            "node": "Fetch Users",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Fetch Users": {
+                "main": [
+                    [
+                        {
+                            "node": "Get Bullish CSV",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Get Bullish CSV": {
+                "main": [
+                    [
+                        {
+                            "node": "Format Emails",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Format Emails": {
+                "main": [
+                    [
+                        {
+                            "node": "Send Email",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            }
+        },
+        "settings": {
+            "executionOrder": "v1",
+            "timezone": "Asia/Kolkata"
+        }
+    }
+]
