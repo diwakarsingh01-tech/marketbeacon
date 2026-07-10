@@ -18,7 +18,7 @@ import {
   Share2
 } from 'lucide-react';
 import Papa from 'papaparse';
-import { BASKETS, STRATEGIES } from '../data/stocks';
+import { STRATEGIES } from '../data/stocks';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { authFetch } from '../lib/authFetch';
 import { toast } from 'sonner';
@@ -106,16 +106,7 @@ const TradeJournalPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [trades, fetchLivePrices]);
 
-  const stats = useMemo(() => {
-    const openTrades = trades.filter(t => t.status === 'OPEN');
-    const closedTrades = trades.filter(t => t.status === 'CLOSED');
-    const totalRealized = closedTrades.reduce((acc, t) => acc + ( ((t.exit_price || 0) - (t.entry_price || 0)) * (t.quantity || 0) ), 0);
-    const totalUnrealized = openTrades.reduce((acc, t) => {
-      const cmp = livePrices[t.symbol] || t.entry_price;
-      return acc + ( (cmp - t.entry_price) * t.quantity );
-    }, 0);
-    return { totalRealized, totalUnrealized };
-  }, [trades, livePrices]);
+  // stats was declared but unused, removed to satisfy TS6133
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -149,8 +140,8 @@ const TradeJournalPage: React.FC = () => {
     });
     if (sortConfig) {
       tradeData.sort((a, b) => {
-        const valA = a[sortConfig.key];
-        const valB = b[sortConfig.key];
+        const valA = (a as any)[sortConfig.key];
+        const valB = (b as any)[sortConfig.key];
         if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
         if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
@@ -231,7 +222,7 @@ const TradeJournalPage: React.FC = () => {
     const isClosed = trade.status === 'CLOSED';
     const text = isClosed 
       ? `✅ *Trade Booked: ${trade.symbol}*
-📈 Yield: ${trade.pnlPer.toFixed(2)}% (+₹${Math.abs(trade.pnl).toLocaleString()})
+📈 Yield: ${(trade.pnlPer || 0).toFixed(2)}% (+₹${Math.abs(trade.pnl || 0).toLocaleString()})
 ⚡️ Strategy: ${trade.strategy}
 📅 Duration: ${trade.days} Days
 
@@ -239,7 +230,7 @@ const TradeJournalPage: React.FC = () => {
       : `🔥 *Research Tracking: ${trade.symbol}*
 ⚡️ Strategy: ${trade.strategy}
 🎯 Objective: ₹${trade.target_price || '-'}
-📊 Live ROI: ${trade.pnlPer.toFixed(2)}%
+📊 Live ROI: ${(trade.pnlPer || 0).toFixed(2)}%
 
 #MarketBeacon #LiveResearch #TradingTerminal`;
 
@@ -360,6 +351,7 @@ const TradeJournalPage: React.FC = () => {
 
   const handleConfirmClose = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!showCloseModal || !showCloseModal.id) return;
     try {
       const res = await authFetch(`/api/trades/${showCloseModal.id}/close`, {
         method: 'POST',
@@ -461,7 +453,7 @@ const TradeJournalPage: React.FC = () => {
             <table className="w-full text-left border-collapse">
                <thead>
                   <tr className="bg-[var(--bg-secondary)] text-caption text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-primary)] sticky top-0 z-10">
-                     <th className="px-6 py-4 w-10"><button onClick={() => { if (selectedIds.length === processedTrades.length) setSelectedIds([]); else setSelectedIds(processedTrades.map(t => t.id)); }} className="text-[var(--text-tertiary)]">{selectedIds.length === processedTrades.length && processedTrades.length > 0 ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></th>
+                     <th className="px-6 py-4 w-10"><button onClick={() => { if (selectedIds.length === processedTrades.length) setSelectedIds([]); else setSelectedIds(processedTrades.map(t => t.id!).filter(Boolean)); }} className="text-[var(--text-tertiary)]">{selectedIds.length === processedTrades.length && processedTrades.length > 0 ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></th>
                      <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('symbol')}>Instrument {SortIcon('symbol')}</th>
                      {activeSegment === 'OPEN' ? (
                        <>
@@ -492,8 +484,8 @@ const TradeJournalPage: React.FC = () => {
                </thead>
                <tbody className="divide-y divide-[var(--border-primary)] text-xs font-bold">
                   {processedTrades.map((t) => (
-                      <tr key={t.id} className={`hover:bg-[var(--bg-secondary)] transition-colors group ${selectedIds.includes(t.id) ? 'bg-blue-500/10' : ''}`}>
-                         <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])} className={selectedIds.includes(t.id) ? 'text-blue-400' : 'text-[var(--text-tertiary)]'}>{selectedIds.includes(t.id) ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></td>
+                      <tr key={t.id} className={`hover:bg-[var(--bg-secondary)] transition-colors group ${selectedIds.includes(t.id!) ? 'bg-blue-500/10' : ''}`}>
+                         <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id!) ? prev.filter(x => x !== t.id!) : [...prev, t.id!])} className={selectedIds.includes(t.id!) ? 'text-blue-400' : 'text-[var(--text-tertiary)]'}>{selectedIds.includes(t.id!) ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></td>
                          <td className="px-4 py-3">
                             <div className="flex flex-col uppercase tracking-tighter relative group/item">
                                <div className="flex items-center space-x-2">
@@ -527,7 +519,7 @@ const TradeJournalPage: React.FC = () => {
                              <td className={`${t.annualGain >= 0 ? 'text-blue-400' : 'text-rose-400'} px-4 py-3 text-right`}>{t.annualGain >= 0 ? '+' : ''}{t.annualGain.toFixed(0)}%</td>
                            </>
                          )}
-                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Re-open?')) { authFetch(`/api/trades/${t.id}/reopen`, { method: 'PATCH' }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => { if(window.confirm('Delete?')) { authFetch(`/api/trades/${t.id}`, { method: 'DELETE' }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-[var(--bg-secondary)] text-[var(--text-tertiary)] rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
+                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Re-open?')) { authFetch(`/api/trades/${t.id}/reopen`, { method: 'PATCH' }).then(res => { if (res.ok) fetchTrades(); }); } }} className="p-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => { if(window.confirm('Delete?')) { authFetch(`/api/trades/${t.id}`, { method: 'DELETE' }).then(res => { if (res.ok) fetchTrades(); }); } }} className="p-1 bg-[var(--bg-secondary)] text-[var(--text-tertiary)] rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
                       </tr>
                   ))}
                </tbody>
@@ -643,7 +635,7 @@ const TradeJournalPage: React.FC = () => {
                           </button>
                        ) : (
                           <button 
-onClick={() => { if(window.confirm('Re-open?')) { authFetch(`/api/trades/${t.id}/reopen`, { method: 'PATCH' }).then(res => res.ok && fetchTrades()); } }}
+                             onClick={() => { if(window.confirm('Re-open?')) { authFetch(`/api/trades/${t.id}/reopen`, { method: 'PATCH' }).then(res => { if (res.ok) fetchTrades(); }); } }}
                               className="p-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-600 hover:text-white"
                            >
                               <RotateCcw className="h-3.5 w-3.5" />
@@ -651,7 +643,7 @@ onClick={() => { if(window.confirm('Re-open?')) { authFetch(`/api/trades/${t.id}
                        )}
 
                        <button 
-onClick={() => { if(window.confirm('Delete?')) { authFetch(`/api/trades/${t.id}`, { method: 'DELETE' }).then(res => res.ok && fetchTrades()); } }}
+                          onClick={() => { if(window.confirm('Delete?')) { authFetch(`/api/trades/${t.id}`, { method: 'DELETE' }).then(res => { if (res.ok) fetchTrades(); }); } }}
                           className="p-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white"
                         >
                            <Trash2 className="h-3.5 w-3.5" />

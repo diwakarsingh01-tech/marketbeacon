@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getApiUrl } from '../lib/api-utils';
 import { toast } from 'sonner';
 import { FileText, Plus, Trash2, Eye, EyeOff, Edit3, X } from 'lucide-react';

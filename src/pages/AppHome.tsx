@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  LayoutGrid, Zap, Briefcase, BookOpen, TrendingUp, LineChart,
-  Search, ArrowRight, Activity, BarChart3, Shield, Star,
-  Clock, Target, Wallet, AlertTriangle, TrendingDown,
+  LayoutGrid, Zap, Briefcase, BookOpen, TrendingUp,
+  Search, ArrowRight, Activity, BarChart3, Star,
+  Wallet, TrendingDown,
   RefreshCw, PieChart, Sparkles, ChevronRight, Bell,
   CheckCircle2, Info
 } from 'lucide-react';
@@ -95,7 +95,6 @@ interface BuyZoneCard {
 const AppHome: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Market indices
   const [indices, setIndices] = useState<IndexResult[]>([]);
@@ -105,16 +104,9 @@ const AppHome: React.FC = () => {
   const [trades, setTrades] = useState<TradeRecord[]>([]);
   const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
   const [stockCaps, setStockCaps] = useState<Record<string, number>>({});
-  const [stockChange, setStockChange] = useState<Record<string, number>>({});
-
   // Buy zones
   const [buyZones, setBuyZones] = useState<BuyZoneCard[]>([]);
   const [loadingZones, setLoadingZones] = useState(true);
-
-  // Search
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<string[]>([]);
-  const [showSearch, setShowSearch] = useState(false);
 
   // Day P&L tracking
   const [dayPnL, setDayPnL] = useState<number>(0);
@@ -215,31 +207,10 @@ const AppHome: React.FC = () => {
       .finally(() => setLoadingZones(false));
   }, [stockPrices]);
 
-  // Symbol search
   const ALL_SYMBOLS = useMemo(() => {
     const s = new Set<string>();
     Object.values(BASKETS).forEach(list => list.forEach(sym => s.add(sym)));
     return Array.from(s);
-  }, []);
-
-  useEffect(() => {
-    if (searchQuery.length < 1) {
-      setSearchResults([]);
-      return;
-    }
-    const q = searchQuery.toUpperCase();
-    const filtered = ALL_SYMBOLS.filter(s => s.includes(q)).slice(0, 6);
-    setSearchResults(filtered);
-  }, [searchQuery, ALL_SYMBOLS]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowSearch(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Calculate portfolio summary (open + closed) + cap allocation
@@ -248,14 +219,16 @@ const AppHome: React.FC = () => {
     const capInv = { large: 0, mid: 0, small: 0 };
     const capCur = { large: 0, mid: 0, small: 0 };
     const combinedMap: Record<string, { quantity: number; buy_price: number }> = {};
-    watchlist.forEach(w => { combinedMap[w.symbol] = { quantity: w.quantity || 0, buy_price: w.buy_price || 0 }; });
+    watchlist.forEach(w => { combinedMap[w.symbol] = { quantity: Number(w.quantity) || 0, buy_price: Number(w.buy_price) || 0 }; });
     trades.filter(t => t.status === 'OPEN').forEach(t => {
+      const tQty = Number(t.quantity) || 0;
+      const tPrice = Number(t.entry_price) || 0;
       if (combinedMap[t.symbol]) {
         const ex = combinedMap[t.symbol];
-        const nQty = ex.quantity + (t.quantity || 0);
-        if (nQty > 0) { ex.buy_price = ((ex.buy_price * ex.quantity) + (t.entry_price * t.quantity)) / nQty; ex.quantity = nQty; }
+        const nQty = ex.quantity + tQty;
+        if (nQty > 0) { ex.buy_price = ((ex.buy_price * ex.quantity) + (tPrice * tQty)) / nQty; ex.quantity = nQty; }
       } else {
-        combinedMap[t.symbol] = { quantity: t.quantity || 0, buy_price: t.entry_price || 0 };
+        combinedMap[t.symbol] = { quantity: tQty, buy_price: tPrice };
       }
     });
     Object.entries(combinedMap).forEach(([symbol, h]) => {
@@ -272,7 +245,10 @@ const AppHome: React.FC = () => {
     });
     const unrealizedPnL = totalCur - totalInv;
     trades.filter(t => t.status === 'CLOSED' && t.exit_price).forEach(t => {
-      realizedPnL += (t.exit_price! - t.entry_price) * t.quantity;
+      const exitPrice = Number(t.exit_price) || 0;
+      const entryPrice = Number(t.entry_price) || 0;
+      const qty = Number(t.quantity) || 0;
+      realizedPnL += (exitPrice - entryPrice) * qty;
     });
     const totalPnL = unrealizedPnL + realizedPnL;
     const pnlPct = totalInv > 0 ? (totalPnL / totalInv) * 100 : (realizedPnL !== 0 ? 100 : 0);
@@ -344,8 +320,8 @@ const AppHome: React.FC = () => {
   // Closed trades for recent activity
   const closedTrades = useMemo(() => {
     return trades.filter(t => t.status === 'CLOSED').sort((a, b) => {
-      const da = a.exit_date || a.entry_date;
-      const db = b.exit_date || b.entry_date;
+      const da = a.exit_date || a.entry_date || '';
+      const db = b.exit_date || b.entry_date || '';
       return db.localeCompare(da);
     });
   }, [trades]);
@@ -626,11 +602,12 @@ const AppHome: React.FC = () => {
               <div className="space-y-2">
                 {(() => {
                   const openItems = watchlist.slice(0, 2).map((item) => {
-                    const pnl = item.quantity && stockPrices[item.symbol]
-                      ? (stockPrices[item.symbol] - (item.buy_price || 0)) * item.quantity
-                      : 0;
-                    const pct = item.buy_price ? (pnl / (item.quantity * item.buy_price)) * 100 : 0;
-                    return { type: 'open' as const, symbol: item.symbol, qty: item.quantity || 0, entry: item.buy_price || 0, pnl, pct, label: 'In Portfolio' as const };
+                    const qty = Number(item.quantity) || 0;
+                    const buyPrice = Number(item.buy_price) || 0;
+                    const currentPrice = stockPrices[item.symbol] || buyPrice;
+                    const pnl = qty > 0 ? (currentPrice - buyPrice) * qty : 0;
+                    const pct = buyPrice > 0 ? ((currentPrice - buyPrice) / buyPrice) * 100 : 0;
+                    return { type: 'open' as const, symbol: item.symbol, qty, entry: buyPrice, pnl, pct, label: 'In Portfolio' as const };
                   });
                   const closedItems = closedTrades.slice(0, 2).map((t) => {
                     const pnl = t.exit_price ? (t.exit_price - t.entry_price) * t.quantity : 0;

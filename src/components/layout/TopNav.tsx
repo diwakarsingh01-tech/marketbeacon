@@ -16,41 +16,7 @@ const API_URL = getApiUrl();
 // Build a flat list of unique stocks for search
 const ALL_STOCKS = Array.from(new Set(Object.values(BASKETS).flat())).sort();
 
-const COMPANY_NAMES: Record<string, string> = {
-  'TCS': 'Tata Consultancy Services Ltd',
-  'INFY': 'Infosys Limited',
-  'HDFCBANK': 'HDFC Bank Limited',
-  'ICICIBANK': 'ICICI Bank Limited',
-  'RELIANCE': 'Reliance Industries Ltd',
-  'KOTAKBANK': 'Kotak Mahindra Bank Ltd',
-  'AXISBANK': 'Axis Bank Limited',
-  'SBIN': 'State Bank of India',
-  'LT': 'Larsen & Toubro Limited',
-  'ITC': 'ITC Limited',
-  'HINDUNILVR': 'Hindustan Unilever Ltd',
-  'ASIANPAINT': 'Asian Paints Limited',
-  'TITAN': 'Titan Company Limited',
-  'BAJFINANCE': 'Bajaj Finance Limited',
-  'BAJAJFINSV': 'Bajaj Finserv Limited',
-  'BHARTIARTL': 'Bharti Airtel Limited',
-  'M&M': 'Mahindra & Mahindra Ltd',
-  'MARUTI': 'Maruti Suzuki India Ltd',
-  'SUNPHARMA': 'Sun Pharmaceutical Industries',
-  'DRREDDY': 'Dr. Reddys Laboratories',
-  'CIPLA': 'Cipla Limited',
-  'ULTRACEMCO': 'UltraTech Cement Ltd',
-  'NESTLEIND': 'Nestle India Limited',
-  'BRITANNIA': 'Britannia Industries Ltd',
-  'JSWSTEEL': 'JSW Steel Limited',
-  'TATASTEEL': 'Tata Steel Limited',
-  'NTPC': 'NTPC Limited',
-  'ONGC': 'Oil & Natural Gas Corp Ltd',
-  'POWERGRID': 'Power Grid Corp of India',
-  'COALINDIA': 'Coal India Limited',
-  'PIDILITIND': 'Pidilite Industries Ltd',
-  'HAVELLS': 'Havells India Limited',
-  'EICHERMOT': 'Eicher Motors Limited'
-};
+
 
 interface TopNavProps {
   onMenuClick?: () => void;
@@ -418,7 +384,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                        <div className="flex-1 min-w-0 pr-2">
                           <p className="text-xs font-bold text-[var(--text-primary)] tracking-tight leading-none mb-1">{n.title}</p>
                           <p className="text-xs font-medium text-[var(--text-muted)] leading-relaxed break-words">{n.message}</p>
-                           <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1 block">{getTimeAgo(n.created_at || n.timestamp)}</span>
+                           <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1 block">{getTimeAgo(n.created_at || n.timestamp || '')}</span>
                         </div>
                       </motion.div>
                     ))

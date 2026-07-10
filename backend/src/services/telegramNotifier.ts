@@ -90,5 +90,5 @@ export async function sendSignalNotification(
 export async function sendDailyAuditSummary(summaryText: string): Promise<boolean> {
   const header = `🛡️ *Audit Summary*`;
   const message = `${header}\n\n${summaryText}`;
-  return sendTelegramMessage(message, 'both');
+  return sendTelegramMessage(message, 'dm');
 }
