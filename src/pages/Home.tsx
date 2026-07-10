@@ -316,6 +316,9 @@ const HomePage: React.FC = () => {
            <Link to="/blog" className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors flex items-center gap-1.5">
               Blog <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">NEW</span>
             </Link>
+            <Link to="/check" className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors">
+              Free Scanner
+            </Link>
             <Link to="/license-desk" className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors">
               Pricing
             </Link>
@@ -327,6 +330,7 @@ const HomePage: React.FC = () => {
         </div>
         {/* Mobile nav */}
         <div className="flex md:hidden items-center gap-3">
+          <Link to="/check" className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors">Scanner</Link>
           <Link to="/blog" className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors">Blog</Link>
           <Link to="/login" className="px-4 py-2 bg-blue-600 text-[var(--text-primary)] rounded-xl text-caption">Login</Link>
         </div>

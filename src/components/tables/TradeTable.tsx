@@ -140,7 +140,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
               <span>Chat Now</span>
             </a>
             <a 
-              href="https://t.me/asktoceo" 
+              href="https://t.me/+bANpkxNzTvdmYmI9" 
               target="_blank" 
               rel="noopener noreferrer"
               className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl text-caption hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-500/20 flex items-center space-x-1.5 group"

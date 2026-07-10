@@ -120,7 +120,7 @@ export async function analyzeStock(
     thresholds,
     isBank,
     fundamentals: {
-      netProfit: Math.round(netProfit / 10000000 * 100) / 100,
+      netProfit: Math.round(netProfit * 100) / 100,
       roce: Math.round(roce * 100) / 100,
       roe: Math.round(roe * 100) / 100,
       peRatio: Math.round(peRatio * 100) / 100,

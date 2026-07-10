@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
-  Bot, Send, User
+  Bot, Send, User, ArrowLeft
 } from 'lucide-react';
 import { getApiUrl, safeJsonParse } from '../lib/api-utils';
 import SEO from '../components/SEO';
@@ -24,6 +25,7 @@ const QUICK_ACTIONS = [
 ];
 
 const AiAssistantPage: React.FC = () => {
+  const navigate = useNavigate();
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
@@ -177,6 +179,14 @@ I analyze stocks using **MarketBeacon Pro's proprietary Multi-List Swing Trading
       <div className="bg-[var(--bg-primary)]/95 backdrop-blur-md border-b border-[var(--border-primary)] py-4 shrink-0">
         <div className="max-w-4xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/screener')}
+              className="p-2 hover:bg-[var(--bg-secondary)] rounded-xl transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-2 text-xs font-bold uppercase tracking-wider group"
+            >
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </button>
+            <div className="w-px h-6 bg-[var(--border-primary)]" />
             <div className="p-2.5 bg-gradient-to-br from-emerald-600/20 to-blue-600/20 border border-emerald-500/20 rounded-xl">
               <Bot className="h-5 w-5 text-emerald-400" />
             </div>

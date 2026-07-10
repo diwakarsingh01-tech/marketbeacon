@@ -123,6 +123,20 @@ const PricingPage: React.FC = () => {
   ];
 
   const handleCheckout = (tierName: string) => {
+    const tierWeights: Record<string, number> = {
+      free: 0,
+      pro: 1,
+      alpha: 2
+    };
+    const userTier = user?.tier || 'free';
+    const userWeight = tierWeights[userTier] || 0;
+    const cardTier = tierName.toLowerCase();
+    const cardWeight = tierWeights[cardTier] || 0;
+
+    if (user && userWeight >= cardWeight) {
+      return;
+    }
+
     if (tierName === 'Free') {
        window.location.href = '/screener';
        return;
@@ -189,6 +203,29 @@ const PricingPage: React.FC = () => {
         {tiers.map((tier) => {
           const Icon = tier.icon;
           const currentPrice = billingPeriod === 'monthly' ? tier.price.monthly : tier.price.yearly;
+          
+          const tierWeights: Record<string, number> = {
+            free: 0,
+            pro: 1,
+            alpha: 2
+          };
+          const userTier = user?.tier || 'free';
+          const userWeight = tierWeights[userTier] || 0;
+          const cardTier = tier.name.toLowerCase();
+          const cardWeight = tierWeights[cardTier] || 0;
+          
+          const isActive = userTier === cardTier;
+          const isLower = userWeight > cardWeight;
+          const isButtonDisabled = user && (isActive || isLower);
+          
+          let buttonText = tier.button;
+          if (user) {
+            if (isActive) {
+              buttonText = 'Active Plan';
+            } else if (isLower) {
+              buttonText = cardTier === 'free' ? 'Active' : `Included in ${userTier.toUpperCase()}`;
+            }
+          }
           return (
             <div key={tier.name} className={`relative rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-8 flex flex-col transition-all md:hover:scale-[1.02] ${tier.featured ? 'bg-white border-2 border-blue-600 shadow-2xl z-10' : 'bg-white border border-slate-100'}`}>
               {tier.featured && (
@@ -236,22 +273,23 @@ const PricingPage: React.FC = () => {
                         className="w-full bg-transparent pl-8 md:pl-10 pr-2 py-2 text-xs font-bold uppercase placeholder:text-slate-300 outline-none"
                       />
                     </div>
-<button 
-                    onClick={handleRedeemVoucher}
-                    disabled={redeeming}
-                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-caption transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20"
-                  >
-                    {redeeming ? '...' : 'Apply'}
-                  </button>
+                    <button 
+                      onClick={handleRedeemVoucher}
+                      disabled={redeeming}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-caption transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20"
+                    >
+                      {redeeming ? '...' : 'Apply'}
+                    </button>
                   </div>
                 )}
                 
                 <button 
                   onClick={() => handleCheckout(tier.name)}
-                  className={`w-full py-4 md:py-5 rounded-2xl md:rounded-[2rem] font-bold text-xs md:text-[12px] uppercase tracking-wider flex items-center justify-center space-x-2 transition-all active:scale-95 shadow-xl ${tier.color}`}
+                  disabled={!!isButtonDisabled}
+                  className={`w-full py-4 md:py-5 rounded-2xl md:rounded-[2rem] font-bold text-xs md:text-[12px] uppercase tracking-wider flex items-center justify-center space-x-2 transition-all active:scale-95 shadow-xl ${tier.color} ${isButtonDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none shadow-none' : ''}`}
                 >
-                  <span>{tier.button}</span>
-                  <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <span>{buttonText}</span>
+                  {!isButtonDisabled && <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />}
                 </button>
               </div>
             </div>

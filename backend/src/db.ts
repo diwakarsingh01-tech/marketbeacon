@@ -243,6 +243,17 @@ export async function initDB() {
     )
   `);
 
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS telegram_notified_signals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      symbol TEXT NOT NULL,
+      strategy TEXT NOT NULL,
+      tranche TEXT NOT NULL,
+      notified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(symbol, strategy, tranche)
+    )
+  `);
+
   db = {
     get: async (sql: string, params: any[] = []) => {
       const result = await tursoClient!.execute({ sql, args: params });
