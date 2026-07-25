@@ -1,8 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { WHATSAPP_BASE } from '../../lib/constants';
 import { 
   ChevronUp as ChevronUpIcon, 
-  ChevronDown as ChevronDownIcon, 
+  ChevronDown as ChevronDownIcon,
   Search as SearchIcon, 
   Filter as FilterIcon, 
   Zap as ZapIcon, 
@@ -14,12 +12,17 @@ import {
   Share2,
   ExternalLink,
   ChevronRight,
-  Trash2
+  Trash2,
+  BarChart3,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { useState, useMemo, useEffect } from 'react';
 // import type { TradeRecord } from '../../types';
+import { Card, TableHeader } from '../ui/UnifiedComponents';
+
+const WHATSAPP_BASE = 'https://wa.me/918888888888';
 
 interface EnrichedTrade {
   symbol: string;
@@ -36,7 +39,7 @@ interface EnrichedTrade {
   reason?: string;
   abcd?: Record<string, { price: number; label?: string; date?: string } | number>;
   peRatio?: number;
-  peMedians?: { pe3Y?: number; pe5Y?: number };
+  peMedians?: { pe3Y?: number; pe5Y?: number; pe10Y?: number };
   buy_price?: number;
   change?: number;
   isBuyZone?: boolean;
@@ -91,7 +94,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
   onGoToScreener?: () => void;
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-16 px-6 max-w-md mx-auto animate-in fade-in duration-500">
+    <Card variant="elevated" padding="lg" className="flex flex-col items-center justify-center text-center py-16 px-6 max-w-md mx-auto animate-in fade-in duration-500">
       <div className="w-12 h-12 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl flex items-center justify-center mb-5 shadow-sm">
         <ZapIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
       </div>
@@ -178,7 +181,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
           </p>
         </>
       )}
-    </div>
+    </Card>
   );
 };
 
@@ -249,9 +252,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
       return [];
     }
     return [
-      { id: 'open', label: 'Passed Audit', count: openCount || 0 },
-      { id: 'neutral', label: 'Observation', count: neutralCount || 0 },
-      { id: 'rejected', label: 'Audit Fails', count: rejectedCount || 0 },
+      { id: 'open', label: 'Active Setups', count: openCount || 0 },
+      { id: 'neutral', label: 'On Radar', count: neutralCount || 0 },
+      { id: 'rejected', label: 'Under Review', count: rejectedCount || 0 },
     ];
   }, [activeTab, openCount, neutralCount, rejectedCount]);
   
@@ -289,7 +292,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
     });
   }, [activeTab, strategyId]);
 
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ 
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ 
     key: 'entryTime', 
     direction: 'desc' 
   });
@@ -438,7 +441,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
   return (
     <div className="space-y-6">
       {/* Search and Settings Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between bg-[var(--bg-secondary)]/50 backdrop-blur-md px-6 py-4 rounded-[2rem] border border-[var(--border-primary)] gap-4 shadow-sm">
+      <div className="sticky top-0 z-20 flex flex-col lg:flex-row lg:items-center justify-between bg-[var(--bg-secondary)]/95 backdrop-blur-md px-6 py-4 rounded-[2rem] border border-[var(--border-primary)] gap-4 shadow-sm -mx-0.5">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3.5 flex-1 w-full">
           {/* Search Input */}
           <div className="relative w-full md:max-w-xs">
@@ -452,21 +455,25 @@ const TradeTable: React.FC<TradeTableProps> = ({
             />
           </div>
           
-          {/* Compact Pill Tabs */}
+          {/* Compact Pill Tabs with brand green */}
           {setActiveTab && visibleTabs.length > 0 && (
-            <div className="grid grid-cols-3 bg-[var(--bg-tertiary)] p-1 rounded-xl border border-[var(--border-primary)] gap-0.5 w-full md:flex md:w-auto overflow-x-auto no-scrollbar">
+            <div className="grid grid-cols-3 gap-1 bg-[var(--bg-tertiary)] p-1 rounded-xl border border-[var(--border-primary)] w-full overflow-x-auto no-scrollbar">
                {visibleTabs.map(tab => (
                  <button
                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as string)}
-                   className={`px-3 py-1.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all whitespace-nowrap w-full flex items-center justify-center ${
+                   onClick={() => setActiveTab(tab.id as string)}
+                   className={`px-2 py-1.5 rounded-lg text-[9px] md:text-xs font-extrabold uppercase tracking-wider transition-all w-full flex items-center justify-center leading-tight ${
                      activeTab === tab.id 
-                        ? 'bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-md border border-[var(--border-primary)]' 
-                       : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]/20'
+                        ? 'bg-white text-[#00d09c] shadow-md border border-[#00d09c]/30 font-black' 
+                       : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/50'
                    }`}
                  >
                    <span>{tab.label}</span>
-                    <span className={`ml-1.5 px-2 py-0.5 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-lg text-xs font-bold ${activeTab === tab.id ? 'bg-[var(--bg-primary)] text-white' : ''}`}>
+                   <span className={`ml-1.5 px-2 py-0.5 rounded-lg text-[10px] font-bold ${
+                     activeTab === tab.id 
+                       ? 'bg-[#00d09c]/10 text-[#00d09c]' 
+                       : 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]'
+                   }`}>
                      {tab.count}
                    </span>
                  </button>
@@ -478,10 +485,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
         <div className="flex items-center gap-3 shrink-0 justify-between md:justify-end w-full lg:w-auto">
           <button 
             onClick={handleExportCSV} 
-            className="flex-1 md:flex-initial flex items-center justify-center gap-3 px-5 py-2.5 bg-[var(--bg-tertiary)] text-white rounded-2xl text-caption hover:bg-black transition-all shadow-xl shadow-slate-900/10 group border border-white/5"
-           
+            className="flex-1 md:flex-initial flex items-center justify-center gap-3 px-5 py-2.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-2xl text-caption hover:bg-[var(--bg-secondary)] border border-[var(--border-primary)] transition-all shadow-md group"
           >
-            <DownloadIcon className="h-3.5 w-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
+            <DownloadIcon className="h-3.5 w-3.5 text-[#00d09c] group-hover:scale-110 transition-transform" />
             <span>
               <span className="hidden sm:inline">Export Matrix</span>
               <span className="sm:hidden">Export</span>
@@ -489,8 +495,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
           </button>
           <button 
             onClick={() => setShowColumnSettings(!showColumnSettings)} 
-            className={`p-2.5 rounded-2xl border transition-all ${showColumnSettings ? 'bg-[var(--bg-tertiary)] text-white border-blue-500/30' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--border-primary)] hover:bg-[var(--bg-secondary)]'}`}
-           
+            className={`p-2.5 rounded-2xl border transition-all ${showColumnSettings ? 'bg-[var(--border-accent)] text-white border-transparent shadow-lg shadow-[var(--border-accent)]/20' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--border-primary)] hover:bg-[var(--bg-tertiary)]'}`}
           >
             <SettingsIcon className="h-4 w-4" />
           </button>
@@ -525,28 +530,106 @@ const TradeTable: React.FC<TradeTableProps> = ({
             <thead className="sticky top-0 z-10">
               {activeTab === 'portfolio' ? (
                 <tr className="bg-[var(--bg-secondary)] text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-primary)] italic">
-                  <th className="px-6 py-3.5 text-left">Asset Node</th>
-                  <th className="px-4 py-3.5 text-center">Qty</th>
-                  <th className="px-4 py-3.5 text-right">Level Base</th>
-                  <th className="px-4 py-3.5 text-right">CMP</th>
-                  <th className="px-4 py-3.5 text-right">Invested Value</th>
-                  <th className="px-4 py-3.5 text-right">Current Node</th>
-                  <th className="px-4 py-3.5 text-right">Yield %</th>
-                  <th className="px-6 py-3.5 text-right">Audit</th>
+                  <TableHeader>Asset Node</TableHeader>
+                  <TableHeader align="center">Qty</TableHeader>
+                  <TableHeader align="right">Level Base</TableHeader>
+                  <TableHeader align="right">CMP</TableHeader>
+                  <TableHeader align="right">Invested Value</TableHeader>
+                  <TableHeader align="right">Current Node</TableHeader>
+                  <TableHeader align="right">Yield %</TableHeader>
+                  <TableHeader align="right">Audit</TableHeader>
                 </tr>
               ) : (
                 <tr className="bg-[var(--bg-secondary)] text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-primary)] italic">
-                  {visibleColumns.observation && <th className="px-6 py-3.5 cursor-pointer hover:text-blue-400 transition-colors" onClick={() => handleSort('entryTime')}><div className="flex items-center gap-1">Obs <SortIcon column="entryTime" /></div></th>}
-                  {visibleColumns.symbol && <th className="px-4 py-3.5 cursor-pointer hover:text-blue-400 transition-colors" onClick={() => handleSort('symbol')}><div className="flex items-center gap-1">Asset Node <SortIcon column="symbol" /></div></th>}
-                  {visibleColumns.marketCap && <th className="px-4 py-3.5 cursor-pointer hover:text-blue-400 transition-colors text-center" onClick={() => handleSort('marketCap')}><div className="flex items-center justify-center gap-1">Tier <SortIcon column="marketCap" /></div></th>}
-                  {visibleColumns.abcd && <th className="px-4 py-3.5 text-center">ABCD Ladder</th>}
-                  {visibleColumns.basePrice && <th className="px-4 py-3.5 text-right">Base</th>}
-                  {visibleColumns.cmp && <th className="px-4 py-3.5 text-right cursor-pointer hover:text-blue-400 transition-colors" onClick={() => handleSort('price')}><div className="flex items-center justify-end text-blue-400 gap-1">CMP <SortIcon column="price" /></div></th>}
-                  {visibleColumns.dfh && <th className="px-4 py-3.5 text-right cursor-pointer hover:text-blue-400 transition-colors" onClick={() => handleSort('dfh')}><div className="flex items-center justify-end gap-1">DFH% <SortIcon column="dfh" /></div></th>}
-                  {visibleColumns.objective && <th className="px-4 py-3.5 text-right cursor-pointer hover:text-blue-400 transition-colors" onClick={() => handleSort('target')}><div className="flex items-center justify-end gap-1">Objective <SortIcon column="target" /></div></th>}
-                  {visibleColumns.roi && <th className="px-4 py-3.5 text-right cursor-pointer hover:text-blue-400 transition-colors" onClick={() => handleSort('roi')}><div className="flex items-center justify-end gap-1 text-emerald-400">ROI% (Alpha) <SortIcon column="roi" /></div></th>}
-                  {visibleColumns.pending && <th className="px-4 py-3.5 text-right cursor-pointer hover:text-blue-400 transition-colors" onClick={() => handleSort('pending')}><div className="flex items-center justify-end gap-1">Gap% (Window) <SortIcon column="pending" /></div></th>}
-                  {visibleColumns.fundamentals && <th className="px-6 py-3.5 text-right">Audit</th>}
+                  {visibleColumns.observation && (
+                    <TableHeader 
+                      sortable 
+                      sortKey="entryTime" 
+                      currentSort={sortConfig} 
+                      onSort={handleSort}
+                    >
+                      <div className="flex items-center gap-1">Obs <SortIcon column="entryTime" /></div>
+                    </TableHeader>
+                  )}
+                  {visibleColumns.symbol && (
+                    <TableHeader 
+                      sortable 
+                      sortKey="symbol" 
+                      currentSort={sortConfig} 
+                      onSort={handleSort}
+                    >
+                      <div className="flex items-center gap-1">Asset Node <SortIcon column="symbol" /></div>
+                    </TableHeader>
+                  )}
+                  {visibleColumns.marketCap && (
+                    <TableHeader 
+                      sortable 
+                      sortKey="marketCap" 
+                      currentSort={sortConfig} 
+                      onSort={handleSort}
+                      align="center"
+                    >
+                      <div className="flex items-center justify-center gap-1">Tier <SortIcon column="marketCap" /></div>
+                    </TableHeader>
+                  )}
+                  {visibleColumns.abcd && <TableHeader align="center">ABCD Ladder</TableHeader>}
+                  {visibleColumns.basePrice && <TableHeader align="right">Base</TableHeader>}
+                  {visibleColumns.cmp && (
+                    <TableHeader 
+                      sortable 
+                      sortKey="price" 
+                      currentSort={sortConfig} 
+                      onSort={handleSort}
+                      align="right"
+                    >
+                      <div className="flex items-center justify-end text-blue-400 gap-1">CMP <SortIcon column="price" /></div>
+                    </TableHeader>
+                  )}
+                  {visibleColumns.dfh && (
+                    <TableHeader 
+                      sortable 
+                      sortKey="dfh" 
+                      currentSort={sortConfig} 
+                      onSort={handleSort}
+                      align="right"
+                    >
+                      <div className="flex items-center justify-end gap-1">DFH% <SortIcon column="dfh" /></div>
+                    </TableHeader>
+                  )}
+                  {visibleColumns.objective && (
+                    <TableHeader 
+                      sortable 
+                      sortKey="target" 
+                      currentSort={sortConfig} 
+                      onSort={handleSort}
+                      align="right"
+                    >
+                      <div className="flex items-center justify-end gap-1">Objective <SortIcon column="target" /></div>
+                    </TableHeader>
+                  )}
+                  {visibleColumns.roi && (
+                    <TableHeader 
+                      sortable 
+                      sortKey="roi" 
+                      currentSort={sortConfig} 
+                      onSort={handleSort}
+                      align="right"
+                    >
+                      <div className="flex items-center justify-end gap-1 text-emerald-400">ROI% (Alpha) <SortIcon column="roi" /></div>
+                    </TableHeader>
+                  )}
+                  {visibleColumns.pending && (
+                    <TableHeader 
+                      sortable 
+                      sortKey="pending" 
+                      currentSort={sortConfig} 
+                      onSort={handleSort}
+                      align="right"
+                    >
+                      <div className="flex items-center justify-end gap-1">Gap% (Window) <SortIcon column="pending" /></div>
+                    </TableHeader>
+                  )}
+                  {visibleColumns.fundamentals && <TableHeader align="right">Audit</TableHeader>}
                 </tr>
               )}
             </thead>
@@ -637,10 +720,13 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                  </div>
                                </div>
                                <div className="flex items-center gap-1 shrink-0">
-                                  <Link to={`/stock/${trade.symbol}`} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-white transition-all shrink-0">
-                                     <InfoIcon className="h-3.5 w-3.5" />
-                                  </Link>
-                                  <button onClick={(e) => { e.preventDefault(); if (window.confirm(`Remove ${trade.symbol} from portfolio?`)) onToggleWatchlist?.(trade.symbol); }} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-rose-600 hover:text-white transition-all">
+                                   <Link to={`/stock/${trade.symbol}`} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all shrink-0">
+                                      <ExternalLink className="h-4 w-4" />
+                                   </Link>
+                                   <Link to={`/charts?symbol=${trade.symbol}&return=/dashboard`} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all shrink-0" title="Open in Charts Terminal">
+                                      <BarChart3 className="h-3.5 w-3.5" />
+                                   </Link>
+                                   <button onClick={(e) => { e.preventDefault(); if (window.confirm(`Remove ${trade.symbol} from portfolio?`)) onToggleWatchlist?.(trade.symbol); }} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-rose-600 hover:text-white transition-all">
                                     <Trash2 className="h-3.5 w-3.5" />
                                  </button>
                                </div>
@@ -685,7 +771,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                  </div>
                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-auto pr-2 shrink-0">
                                    <button onClick={() => handleShareSignal(trade, 'telegram')} className="p-2.5 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Share2 className="h-3 w-3" /></button>
-                                   <Link to={`/stock/${trade.symbol}`} className="p-2.5 bg-[var(--bg-secondary)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--bg-tertiary)] hover:text-white transition-all"><ExternalLink className="h-3 w-3" /></Link>
+                                    <Link to={`/charts?symbol=${trade.symbol}&return=/dashboard`} className="p-2.5 bg-[var(--bg-secondary)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all" title="Open in Charts Terminal"><BarChart3 className="h-3 w-3" /></Link>
+                                    <Link to={`/stock/${trade.symbol}`} className="p-2.5 bg-[var(--bg-secondary)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all"><ExternalLink className="h-3 w-3" /></Link>
                                </div>
                             </div>
                           </td>
@@ -713,14 +800,14 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                 );
                               })}
                             </div>
-                            <div className={`absolute left-1/2 -translate-x-1/2 z-[200] hidden group-hover/ladder:block bg-[var(--bg-tertiary)] text-white shadow-2xl rounded-xl p-4 animate-in fade-in duration-300 min-w-[200px] ${
+                            <div className={`absolute left-1/2 -translate-x-1/2 z-[200] hidden group-hover/ladder:block bg-slate-900 text-white shadow-2xl rounded-xl p-4 animate-in fade-in duration-300 min-w-[200px] ${
                               idx < 2 
                                 ? 'top-full mt-3 slide-in-from-top-2' 
                                 : 'bottom-full mb-3 slide-in-from-bottom-2'
                             }`}>
                                <div className="space-y-2">
                                   <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1.5">
-                                     <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider italic">Institutional Ladder</span>
+                                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider italic">Institutional Ladder</span>
                                      <ShieldCheck className="h-3 w-3 text-emerald-400" />
                                   </div>
                                   {['a', 'b', 'c', 'd'].map((l) => {
@@ -731,8 +818,8 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                     return (
                                       <div key={l} className="flex justify-between items-center text-xs">
                                         <div className="flex flex-col text-left">
-                                          <span className={`font-bold ${l === 'a' ? 'text-blue-400' : l === 'd' ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>Level {l.toUpperCase()}</span>
-                                          {date && <span className="text-xs text-[var(--text-muted)] font-bold uppercase">{date}</span>}
+                                          <span className={`font-bold ${l === 'a' ? 'text-blue-400' : l === 'd' ? 'text-emerald-400' : 'text-slate-300'}`}>Level {l.toUpperCase()}</span>
+                                          {date && <span className="text-xs text-slate-400 font-bold uppercase">{date}</span>}
                                         </div>
                                         <span className="font-bold text-white italic">₹{price?.toLocaleString()}</span>
                                       </div>
@@ -772,7 +859,11 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                {(trade.peRatio || 0) > 0 && (
                                  <div className="flex flex-col items-end mr-2">
                                     {(() => {
-                                      const avgMedian = (Number(trade.peMedians?.pe3Y || 0) + Number(trade.peMedians?.pe5Y || 0)) / 2;
+                                      const pe3y = Number(trade.peMedians?.pe3Y || 0);
+                                      const pe5y = Number(trade.peMedians?.pe5Y || 0);
+                                      const pe10y = Number(trade.peMedians?.pe10Y || 0);
+                                      const medianCount = [pe3y, pe5y, pe10y].filter(v => v > 0).length || 1;
+                                      const avgMedian = (pe3y + pe5y + pe10y) / medianCount;
                                       const isHigh = avgMedian > 0 && (trade.peRatio || 0) > avgMedian;
                                       return (
                                         <>
@@ -804,7 +895,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                     <span className="text-xs text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider mt-0.5">Audit</span>
                                   </div>
                                 </div>
-                                <Link to={`/stock/${trade.symbol}`} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-white transition-all shrink-0">
+                                <Link to={`/stock/${trade.symbol}`} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all shrink-0">
                                    <InfoIcon className="h-3.5 w-3.5" />
                                 </Link>
                             </div>
@@ -930,11 +1021,14 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                  <span className="font-extrabold text-[var(--text-secondary)]">Audit Score:</span>
                                  <span className="font-bold text-[var(--text-primary)]">{trade.score || 0}</span>
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <Link to={`/stock/${trade.symbol}`} className="p-1.5 bg-[var(--bg-secondary)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--bg-tertiary)] hover:text-white transition-all shrink-0">
-                                   <InfoIcon className="h-3.5 w-3.5" />
-                                </Link>
-                                <button onClick={(e) => { e.preventDefault(); if (window.confirm(`Remove ${trade.symbol} from portfolio?`)) onToggleWatchlist?.(trade.symbol); }} className="p-1.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-rose-600 hover:text-white transition-all">
+                              <div className="flex items-center gap-2">
+                                 <Link to={`/stock/${trade.symbol}`} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all shrink-0">
+                                    <InfoIcon className="h-3.5 w-3.5" />
+                                 </Link>
+                                 <Link to={`/charts?symbol=${trade.symbol}&return=/dashboard`} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all shrink-0" title="Open in Charts Terminal">
+                                    <BarChart3 className="h-3 w-3" />
+                                 </Link>
+                                 <button onClick={(e) => { e.preventDefault(); if (window.confirm(`Remove ${trade.symbol} from portfolio?`)) onToggleWatchlist?.(trade.symbol); }} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-rose-600 hover:text-white transition-all">
                                    <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               </div>
@@ -1046,7 +1140,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                <span className="text-xs font-bold font-mono text-[var(--text-primary)]">₹{trade.entryPrice?.toLocaleString()}</span>
                             </div>
                             <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-[var(--border-primary)] text-center flex flex-col justify-center shadow-sm">
-                               <span className="text-[7.5px] font-bold text-fuchsia-500 uppercase tracking-wider leading-none mb-1">Target</span>
+                               <span className="text-[7.5px] font-bold text-fuchsia-500 uppercase tracking-wider leading-none mb-1">Projection</span>
                                <span className="text-xs font-bold font-mono text-fuchsia-400">₹{trade.target?.toLocaleString()}</span>
                             </div>
                             <div className="bg-[var(--bg-secondary)] p-2.5 rounded-[0.75rem] border border-[var(--border-primary)] text-center flex flex-col justify-center shadow-sm">
@@ -1077,7 +1171,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                           </div>
                           {trade.isPass === false && (
                             <div className="bg-amber-50/50 border border-amber-200/50 rounded-[0.75rem] px-3 py-2 text-xs">
-                              <span className="font-bold text-amber-400 uppercase tracking-wider text-xs">Reason: </span>
+                              <span className="font-bold text-amber-700 uppercase tracking-wider text-xs">Reason: </span>
                               <span className="font-medium text-amber-800">
                                 {trade.reason === 'Pattern Not Found'
                                   ? 'Score ' + (trade.score || 0) + '/60 - Audit threshold not met'
@@ -1090,7 +1184,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                          <div className="flex items-center gap-2 pt-1">
                             <button 
                                onClick={(e) => { e.stopPropagation(); onToggleWatchlist?.(trade.symbol); }}
-                               className={`flex-1 py-2 rounded-xl text-caption flex items-center justify-center gap-1.5 border transition-all ${
+                               className={`flex-1 py-2.5 rounded-xl text-caption flex items-center justify-center gap-1.5 border transition-all ${
                                   isStarred 
                                      ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/10' 
                                      : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--border-secondary)] hover:bg-[var(--bg-secondary)]'
@@ -1102,18 +1196,26 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
                             <button 
                                onClick={(e) => { e.stopPropagation(); handleShareSignal(trade, 'telegram'); }}
-                               className="px-3.5 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center"
+                               className="p-2.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center"
                             >
                                <Share2 className="h-3.5 w-3.5" />
                             </button>
 
-                            <Link 
-                               to={`/stock/${trade.symbol}`}
-                               className="flex-1 py-2 bg-[var(--bg-tertiary)] text-white text-caption rounded-xl shadow-md flex items-center justify-center gap-1 hover:bg-black transition-all"
-                            >
-                               <InfoIcon className="h-3.5 w-3.5" />
-                               Audit details
-                            </Link>
+                             <Link 
+                                to={`/stock/${trade.symbol}`}
+                                className="flex-1 py-2.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-caption rounded-xl shadow-sm border border-[var(--border-primary)] flex items-center justify-center gap-1 hover:bg-[var(--bg-secondary)] transition-all"
+                             >
+                                <InfoIcon className="h-3.5 w-3.5" />
+                                Audit details
+                             </Link>
+
+                             <Link
+                                to={`/charts?symbol=${trade.symbol}&return=/dashboard`}
+                                className="p-2.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl shadow-sm border border-[var(--border-primary)] flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-all"
+                                title="Open in Charts Terminal"
+                             >
+                                <BarChart3 className="h-3.5 w-3.5" />
+                             </Link>
                          </div>
                       </div>
                    )}

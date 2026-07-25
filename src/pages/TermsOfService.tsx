@@ -69,7 +69,7 @@ const TermsOfServicePage: React.FC = () => {
         <Link to="/" className="hover:opacity-80 transition-opacity">
           <BrandLogo variant="dark" size={28} />
         </Link>
-        <Link to="/" className="inline-flex items-center gap-2 text-xs font-bold text-[var(--text-muted)] hover:text-white uppercase tracking-wider transition-colors">
+        <Link to="/" className="inline-flex items-center gap-2 text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors">
           <ArrowLeft className="w-3 h-3" /> Back to Home
         </Link>
       </nav>
@@ -79,7 +79,7 @@ const TermsOfServicePage: React.FC = () => {
           <Scale className="h-3.5 w-3.5 text-blue-400" />
           <span className="text-xs font-bold text-amber-400 uppercase tracking-[0.3em]">Legal Agreement</span>
         </div>
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-white mb-4">Terms of Service</h1>
+        <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-[var(--text-primary)] mb-4">Terms of Service</h1>
         <p className="text-[var(--text-muted)] text-sm">Effective Date: June 06, 2026 · MarketBeacon Technologies</p>
         <p className="text-[var(--text-muted)] text-sm mt-3 leading-relaxed max-w-xl">
           By using MarketBeacon Pro, you agree to these terms. Please read them carefully — they affect your legal rights.
@@ -90,10 +90,10 @@ const TermsOfServicePage: React.FC = () => {
         <div className="space-y-10">
           {sections.map((s, i) => (
             <div key={i} className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[1.5rem] p-8">
-              <h2 className="text-base font-bold text-white mb-4 tracking-tight">{s.title}</h2>
+              <h2 className="text-base font-bold text-[var(--text-primary)] mb-4 tracking-tight">{s.title}</h2>
               <div className="space-y-2">
                 {s.body.split('\n').map((line, j) => (
-                  <p key={j} className={`text-sm leading-relaxed ${line.startsWith('•') ? 'text-slate-300 pl-4' : 'text-[var(--text-muted)]'}`}>
+                  <p key={j} className={`text-sm leading-relaxed ${line.startsWith('•') ? 'text-[var(--text-secondary)] pl-4' : 'text-[var(--text-muted)]'}`}>
                     {line}
                   </p>
                 ))}
@@ -103,7 +103,7 @@ const TermsOfServicePage: React.FC = () => {
         </div>
         <div className="mt-10 bg-blue-500/5 border border-blue-500/20 rounded-[1.5rem] p-8">
           <h3 className="text-xs font-bold text-blue-400 uppercase tracking-[0.3em] mb-3">Questions?</h3>
-          <p className="text-slate-300 text-sm leading-relaxed">
+          <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
             Email: support@marketbeacon.pro · WhatsApp: +91-70566-33633
           </p>
         </div>

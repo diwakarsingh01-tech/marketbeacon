@@ -2,31 +2,116 @@
 set -e
 KEY=~/.ssh/marketbeacon
 HOST=diwakar@165.99.223.76
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+VERSION=$(node -p "require('./package.json').version")
+SLACK_WEBHOOK="${SLACK_WEBHOOK:-}"
+
+notify() {
+  local level="$1" msg="$2"
+  echo "[$level] $msg"
+  if [ -n "$SLACK_WEBHOOK" ]; then
+    curl -s -X POST "$SLACK_WEBHOOK" -H 'Content-type: application/json' \
+      -d "{\"text\":\"[$level] MarketBeacon Deploy ($VERSION): $msg\"}" 2>/dev/null || true
+  fi
+}
+
+cleanup() {
+  rm -f /tmp/mb-be-"$TIMESTAMP".tar.gz /tmp/mb-fe-"$TIMESTAMP".tar.gz
+  echo "Cleaned up temp files"
+}
+trap cleanup EXIT
+
+echo "=== Pre-deploy checks ==="
+if [ ! -f "package.json" ]; then echo "Run from project root"; exit 1; fi
+if [ ! -d "backend" ]; then echo "backend/ not found"; exit 1; fi
+if [ ! -f "$KEY" ]; then echo "SSH key $KEY not found"; exit 1; fi
 
 echo "=== Building backend ==="
-(cd backend && npm run build)
+(cd backend && npm run build) || { notify "FAIL" "Backend build failed"; exit 1; }
+
 echo "=== Building frontend + prerender ==="
-npm run build:prerender
+npm run build:prerender || { notify "FAIL" "Frontend build failed"; exit 1; }
 
 echo "=== Packaging ==="
-tar czf /tmp/mb-be.tar.gz -C backend/dist .
-tar czf /tmp/mb-fe.tar.gz -C dist .
+tar czf /tmp/mb-be-"$TIMESTAMP".tar.gz -C backend/dist .
+tar czf /tmp/mb-fe-"$TIMESTAMP".tar.gz -C dist .
 
 echo "=== Uploading to staging ==="
-ssh -i $KEY -o StrictHostKeyChecking=no $HOST "
-  mkdir -p /tmp/mb-deploy
-  rm -rf /tmp/mb-deploy/*
+ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
+  mkdir -p /tmp/mb-deploy-${TIMESTAMP}
+  sudo mkdir -p /opt/marketbeacon-backend/backups /var/www/marketbeacon/frontend/backups
 "
-scp -i $KEY -o StrictHostKeyChecking=no /tmp/mb-be.tar.gz /tmp/mb-fe.tar.gz $HOST:/tmp/mb-deploy/
-ssh -i $KEY -o StrictHostKeyChecking=no $HOST "
+scp -i "$KEY" -o StrictHostKeyChecking=no /tmp/mb-be-"$TIMESTAMP".tar.gz /tmp/mb-fe-"$TIMESTAMP".tar.gz "$HOST:/tmp/mb-deploy-${TIMESTAMP}/"
+
+ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
+  set -e
+  echo '=== Rolling backup ==='
+  if [ -d /opt/marketbeacon-backend/current ]; then
+    sudo cp -a /opt/marketbeacon-backend/current /opt/marketbeacon-backend/backups/backup-${TIMESTAMP}
+    echo 'Backend backup saved'
+  fi
+  if [ -d /var/www/marketbeacon/frontend/current ]; then
+    sudo cp -a /var/www/marketbeacon/frontend/current /var/www/marketbeacon/frontend/backups/backup-${TIMESTAMP}
+    echo 'Frontend backup saved'
+  fi
+
+  echo '=== Deploying to staging ==='
   sudo mkdir -p /opt/marketbeacon-backend/staging /var/www/marketbeacon/frontend/staging
   sudo rm -rf /opt/marketbeacon-backend/staging/* /var/www/marketbeacon/frontend/staging/*
-  sudo tar xzf /tmp/mb-deploy/mb-be.tar.gz -C /opt/marketbeacon-backend/staging/
-  sudo tar xzf /tmp/mb-deploy/mb-fe.tar.gz -C /var/www/marketbeacon/frontend/staging/
-  rm -rf /tmp/mb-deploy
-  echo 'Staging ready, triggering webhook...'
+  sudo tar xzf /tmp/mb-deploy-${TIMESTAMP}/mb-be-${TIMESTAMP}.tar.gz -C /opt/marketbeacon-backend/staging/
+  sudo tar xzf /tmp/mb-deploy-${TIMESTAMP}/mb-fe-${TIMESTAMP}.tar.gz -C /var/www/marketbeacon/frontend/staging/
+
+  echo '=== Atomic swap ==='
+  sudo rm -rf /opt/marketbeacon-backend/previous /var/www/marketbeacon/frontend/previous
+  if [ -d /opt/marketbeacon-backend/current ]; then sudo mv /opt/marketbeacon-backend/current /opt/marketbeacon-backend/previous; fi
+  if [ -d /var/www/marketbeacon/frontend/current ]; then sudo mv /var/www/marketbeacon/frontend/current /var/www/marketbeacon/frontend/previous; fi
+  sudo mv /opt/marketbeacon-backend/staging /opt/marketbeacon-backend/current
+  sudo mv /var/www/marketbeacon/frontend/staging /var/www/marketbeacon/frontend/current
+  rm -rf /tmp/mb-deploy-${TIMESTAMP}
+  echo 'Staging ready, restarting services...'
+  # Sync frontend current -> dist (nginx serves from dist)
+  echo '=== Syncing frontend current -> dist ==='
+  sudo rm -rf /var/www/marketbeacon/frontend/dist
+  sudo cp -a /var/www/marketbeacon/frontend/current /var/www/marketbeacon/frontend/dist
+  sudo chown -R www-data:www-data /var/www/marketbeacon/frontend/dist
+
+  echo '=== Restarting backend service ==='
+  pm2 restart marketbeacon-backend
+  echo 'Services restarted'
 "
 
-echo "=== Triggering deploy ==="
-ssh -i $KEY -o StrictHostKeyChecking=no $HOST "curl -s -X POST http://127.0.0.1:3099/deploy -H 'x-deploy-key: mb-deploy-2026'" | python3 -m json.tool
-rm -f /tmp/mb-be.tar.gz /tmp/mb-fe.tar.gz
+echo "=== Post-deploy health check ==="
+sleep 5
+HEALTH_HTTP=$(ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/health")
+if [ "$HEALTH_HTTP" != "200" ]; then
+  notify "FAIL" "Backend health check returned $HEALTH_HTTP, initiating rollback..."
+  ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
+    echo '=== Rolling back ==='
+    if [ -d /opt/marketbeacon-backend/previous ]; then
+      sudo rm -rf /opt/marketbeacon-backend/current
+      sudo mv /opt/marketbeacon-backend/previous /opt/marketbeacon-backend/current
+      echo 'Backend rolled back'
+    fi
+    if [ -d /var/www/marketbeacon/frontend/previous ]; then
+      sudo rm -rf /var/www/marketbeacon/frontend/dist
+      sudo mv /var/www/marketbeacon/frontend/previous /var/www/marketbeacon/frontend/dist
+      echo 'Frontend rolled back'
+    fi
+    pm2 restart marketbeacon-backend
+    echo 'Rollback complete'
+  "
+  exit 1
+fi
+
+echo "=== Post-deploy health check ==="
+sleep 3
+HEALTH=$(curl -s -o /dev/null -w '%{http_code}' https://marketbeaconpro.com/)
+if [ "$HEALTH" != "200" ]; then
+  notify "WARN" "Site returned $HEALTH after deploy"
+else
+  notify "OK" "Deploy v$VERSION ($TIMESTAMP) successful"
+fi
+
+echo "=== Done ==="
+echo "Version: $VERSION"
+echo "Timestamp: $TIMESTAMP"

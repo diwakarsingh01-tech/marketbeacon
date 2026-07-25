@@ -48,16 +48,6 @@ export async function runStrategyChecks(): Promise<AuditCheck[]> {
     autoFixable: false, autoFixed: false
   });
 
-  // SL-2: RHS signals have target/entry >= 1.30
-  const rhsSignals = signals.filter((s: any) => s.strategy?.includes('Head and Shoulder'));
-  const rhsBad = rhsSignals.filter((s: any) => (s.target / s.entryPrice) < 1.29);
-  checks.push({
-    id: 'SL-2', category: 'strategy', name: 'RHS entry→target gap ≥ 30%', severity: 'critical',
-    status: rhsBad.length === 0 ? 'pass' : 'fail',
-    details: rhsBad.length === 0 ? `${rhsSignals.length} RHS signals OK` : `${rhsBad.map((s: any) => s.symbol).join(', ')} below threshold`,
-    autoFixable: false, autoFixed: false
-  });
-
   // SL-3: Cup & Handle signals have target/entry >= 1.30
   const cupSignals = signals.filter((s: any) => s.strategy?.includes('Cup'));
   const cupBad = cupSignals.filter((s: any) => (s.target / s.entryPrice) < 1.29);

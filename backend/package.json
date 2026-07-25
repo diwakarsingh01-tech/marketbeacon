@@ -10,7 +10,8 @@
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +29,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "google-auth-library": "^10.6.2",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "node-cron": "^4.2.1",
     "otplib": "^13.4.1",
@@ -46,6 +48,7 @@
     "@types/qrcode": "^1.5.6",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
   }
 }

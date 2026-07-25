@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries, createSeriesMarkers } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { 
-  TrendingUp, 
-  TrendingDown, 
   Search, 
   Download, 
   Activity, 
@@ -14,23 +12,24 @@ import {
   RefreshCw,
   Sparkles,
   ArrowUpRight,
+  ArrowLeft,
   Layers,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  BarChart3
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import type { HistoryQuote, FundamentalData, ABCDNode } from '../types';
 import { BASKETS } from '../data/stocks';
+import { InfoTooltip } from '../components/ui/InfoTooltip';
+import DataFreshnessBadge from '../components/ui/DataFreshnessBadge';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
+import { FUNDA_INFO_MAP } from '../data/fundaInfo';
+import TierGate from '../components/gates/TierGate';
 
 const API_URL = getApiUrl();
 
-interface IndexResult {
-  name: string;
-  price: number;
-  ath: number;
-  openPrice: number;
-  change: number;
-}
+
 
 interface StockSearchResult {
   symbol: string;
@@ -40,6 +39,7 @@ interface StockSearchResult {
   peMedians: {
     pe3Y?: number;
     pe5Y?: number;
+    pe10Y?: number;
   };
 }
 
@@ -49,7 +49,6 @@ const STRATEGY_NAMES: Record<string, string> = {
   'BOLLINGER': 'Bollinger Band',
   '52W_HIGH_LOW': '52-Week High/Low',
   'CUP_HANDLE_ABCD': 'Cup & Handle + ABCD',
-  'RHS_ABCD': 'Reverse H&S + ABCD',
   'SMA_BCD': 'SMA + BCD',
   'SR_STRATEGY': 'Support & Resistance (S&R)',
   'SIXTY_SEVEN_FUNDA': 'Institutional Reset (67%)',
@@ -58,9 +57,23 @@ const STRATEGY_NAMES: Record<string, string> = {
 
 import { useTheme } from '../context/ThemeContext';
 import { ConfidenceGauge } from '../components/ui/ConfidenceGauge';
+import { useWakeLock } from '../hooks/useWakeLock';
 
 const ChartsTerminal: React.FC = () => {
-  const [symbol, setSymbol] = useState<string>('RELIANCE');
+  return (
+    <TierGate requiredTier="pro">
+      <ChartsTerminalContent />
+    </TierGate>
+  );
+};
+
+const ChartsTerminalContent: React.FC = () => {
+  useWakeLock();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const initialSymbol = searchParams.get('symbol') || 'RELIANCE';
+  const returnPath = searchParams.get('return') || '/';
+  const [symbol, setSymbol] = useState<string>(initialSymbol);
   const [selectedBasket, setSelectedBasket] = useState<string>('Elite Basket');
   const { theme } = useTheme();
   const [chartType, setChartType] = useState<'candles' | 'line'>('candles');
@@ -68,7 +81,6 @@ const ChartsTerminal: React.FC = () => {
   // Data States
   const [historyData, setHistoryData] = useState<HistoryQuote[]>([]);
   const [fundamentals, setFundamentals] = useState<FundamentalData | null>(null);
-  const [indices, setIndices] = useState<IndexResult[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [chartLoading, setChartLoading] = useState<boolean>(true);
   
@@ -107,7 +119,7 @@ const ChartsTerminal: React.FC = () => {
     const foundBasket = Object.keys(BASKETS).find(basketKey => 
       (BASKETS[basketKey] || []).includes(symbol)
     );
-    if (foundBasket && ['Elite Basket', 'Quality Basket', 'Growth Basket'].includes(foundBasket)) {
+    if (foundBasket && ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'].includes(foundBasket)) {
       setSelectedBasket(foundBasket);
     }
   }, [symbol]);
@@ -119,25 +131,6 @@ const ChartsTerminal: React.FC = () => {
       setSymbol(stocksInBasket[0]);
     }
   };
-
-  // Fetch Market Indices (Ticker Bar)
-  const fetchIndices = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/market-indices`);
-      const data = await safeJsonParse(response);
-      if (response.ok && data.results) {
-        setIndices(data.results);
-      }
-    } catch (e) {
-      console.error('Failed to fetch indices', e);
-    }
-  };
-
-  useEffect(() => {
-    fetchIndices();
-    const interval = setInterval(fetchIndices, 30000); // refresh indices every 30s
-    return () => clearInterval(interval);
-  }, []);
 
   // Handle autocomplete search
   useEffect(() => {
@@ -168,7 +161,7 @@ const ChartsTerminal: React.FC = () => {
       const fundData = await safeJsonParse(fundRes);
       if (fundRes.ok && !fundData.error) {
         setFundamentals(fundData);
-        // Auto-select first active buy-zone strategy
+        // Auto-select first active setup strategy
         if (fundData.strategies) {
           const buyZoneStrat = Object.keys(fundData.strategies).find(
             k => fundData.strategies[k].isBuyZone
@@ -215,7 +208,7 @@ const ChartsTerminal: React.FC = () => {
     }
 
     const containerWidth = chartContainerRef.current.clientWidth;
-    const containerHeight = 520;
+    const containerHeight = Math.min(520, typeof window !== 'undefined' && window.innerWidth < 768 ? Math.floor(window.innerHeight * 0.45) : 520);
 
     const isDark = true;
     
@@ -399,7 +392,7 @@ const ChartsTerminal: React.FC = () => {
           });
         }
 
-        // 5. Shaded Accumulation Buy-Zone Band
+        // 5. Shaded Accumulation Setup Zone
         if (strat.entryPrice) {
           const entry = Number(strat.entryPrice);
           let bottomLimit = entry;
@@ -426,7 +419,7 @@ const ChartsTerminal: React.FC = () => {
                 lineWidth: 1,
                 lineStyle: 0, // Solid
                 axisLabelVisible: false,
-                title: i === Math.floor(steps / 2) ? 'ACCUMULATION ZONE (SAFE BUY BAND)' : '',
+                title: i === Math.floor(steps / 2) ? 'ACCUMULATION ZONE (SAFE VALUE BAND)' : '',
               });
             }
           }
@@ -581,50 +574,70 @@ const ChartsTerminal: React.FC = () => {
       handleSeries.setData(handleData);
     }
 
-    // Head & Shoulders annotations or standard trigger markers
-    if (activeStrategyId === 'RHS_ABCD' && showPatterns && sortedHistory.length > 80) {
-      const len = sortedHistory.length;
-      createSeriesMarkers(mainSeries as any, [
-        {
-          time: sortedHistory[len - 60].time as any,
-          position: 'belowBar',
-          color: '#3b82f6',
-          shape: 'arrowUp',
-          text: 'LEFT SHOULDER',
-        },
-        {
-          time: sortedHistory[len - 40].time as any,
-          position: 'belowBar',
-          color: '#f59e0b',
-          shape: 'arrowUp',
-          text: 'HEAD (SWING LOW)',
-        },
-        {
-          time: sortedHistory[len - 20].time as any,
-          position: 'belowBar',
-          color: '#3b82f6',
-          shape: 'arrowUp',
-          text: 'RIGHT SHOULDER',
-        },
-      ]);
-    } else if (showPatterns) {
+    // Standard trigger markers for active strategy
+    if (showPatterns) {
       const markers: any[] = [];
-      for (const stratId of Object.keys(fundamentals?.strategies || {})) {
-        const strat = fundamentals?.strategies?.[stratId];
-        if (strat && strat.triggerDate) {
-          const matchCandle = sortedHistory.find(q => q.time === strat.triggerDate);
-          if (matchCandle) {
-            markers.push({
-              time: matchCandle.time as any,
-              position: 'belowBar',
-              color: '#10b981',
-              shape: 'arrowUp',
-              text: 'BUY TRIGGER',
-            });
-          }
+      const targetStratId = activeStrategyId;
+      const strat = targetStratId ? fundamentals?.strategies?.[targetStratId] : null;
+      if (strat && strat.triggerDate) {
+        const matchCandle = sortedHistory.find(q => q.time === strat.triggerDate);
+        if (matchCandle) {
+          markers.push({
+            time: matchCandle.time as any,
+            position: 'belowBar',
+            color: '#10b981',
+            shape: 'arrowUp',
+            text: 'SETUP TRIGGER',
+          });
         }
       }
       createSeriesMarkers(mainSeries as any, markers as any);
+    }
+
+    // ── Strategy-specific visual indicators for strategies without custom overlays ──
+    if (showPatterns && fundamentals?.strategies) {
+      const strat = fundamentals.strategies[activeStrategyId || ''];
+      const entryPrice = strat?.entryPrice;
+      const targetPrice = strat?.target;
+      const sortedPrices = [...sortedHistory].sort((a,b) => a.close - b.close);
+
+      // 52W_HIGH/LOW
+      if (activeStrategyId === '52W_HIGH_LOW' && sortedHistory.length > 0) {
+        const high52 = sortedPrices[sortedPrices.length - 1]?.close;
+        const low52 = sortedPrices[0]?.close;
+        if (high52 && low52) {
+          chart.addSeries(LineSeries, { color: '#8b5cf6', lineWidth: 1, lineStyle: 2, lastValueVisible: false, priceFormat: { type: 'price' } }).setData([{ time: sortedHistory[0].time, value: high52 }, { time: sortedHistory[sortedHistory.length - 1].time, value: high52 }]);
+          chart.addSeries(LineSeries, { color: '#a78bfa', lineWidth: 1, lineStyle: 2, lastValueVisible: false, priceFormat: { type: 'price' } }).setData([{ time: sortedHistory[0].time, value: low52 }, { time: sortedHistory[sortedHistory.length - 1].time, value: low52 }]);
+        }
+      }
+
+      // SMA 50/200 for SMA_BCD
+      if (activeStrategyId === 'SMA_BCD' && sortedHistory.length > 200) {
+        const sma50 = sortedHistory.slice(-50).reduce((acc: number, item: any) => item.close + acc, 0) / 50;
+        const sma200 = sortedHistory.slice(-200).reduce((acc: number, item: any) => item.close + acc, 0) / 200;
+        const t1 = sortedHistory[0].time;
+        const t2 = sortedHistory[sortedHistory.length - 1].time;
+        chart.addSeries(LineSeries, { color: '#f97316', lineWidth: 2, lastValueVisible: false, priceFormat: { type: 'price' } }).setData([{ time: t1, value: sma50 }, { time: t2, value: sma50 }]);
+        chart.addSeries(LineSeries, { color: '#3b82f6', lineWidth: 2, lineStyle: 3, lastValueVisible: false, priceFormat: { type: 'price' } }).setData([{ time: t1, value: sma200 }, { time: t2, value: sma200 }]);
+      }
+
+      // 67% retracement for SIXTY_SEVEN_FUNDA
+      if (activeStrategyId === 'SIXTY_SEVEN_FUNDA' && entryPrice && targetPrice && targetPrice !== entryPrice) {
+        const retrace67 = entryPrice + (targetPrice - entryPrice) * 0.67;
+        const tt1 = sortedHistory[0].time;
+        const tt2 = sortedHistory[sortedHistory.length - 1].time;
+        chart.addSeries(LineSeries, { color: '#f59e0b', lineWidth: 1, lineStyle: 2, lastValueVisible: false, priceFormat: { type: 'price' } }).setData([{ time: tt1, value: retrace67 }, { time: tt2, value: retrace67 }]);
+      }
+
+      // 20% rally zone for TWENTY_RALLY_RETEST
+      if (activeStrategyId === 'TWENTY_RALLY_RETEST' && entryPrice) {
+        const rally20 = entryPrice * 1.2;
+        const retestFloor = entryPrice * 0.95;
+        const tt1 = sortedHistory[0].time;
+        const tt2 = sortedHistory[sortedHistory.length - 1].time;
+        chart.addSeries(LineSeries, { color: '#ec4899', lineWidth: 2, lastValueVisible: false, priceFormat: { type: 'price' } }).setData([{ time: tt1, value: rally20 }, { time: tt2, value: rally20 }]);
+        chart.addSeries(LineSeries, { color: '#10b981', lineWidth: 1, lineStyle: 2, lastValueVisible: false, priceFormat: { type: 'price' } }).setData([{ time: tt1, value: retestFloor }, { time: tt2, value: retestFloor }]);
+      }
     }
 
     // Add volume series below if toggled
@@ -671,7 +684,8 @@ const ChartsTerminal: React.FC = () => {
   const formatPct = (val: unknown) => {
     const n = Number(val);
     if (isNaN(n)) return '—';
-    return `${(n * 100).toFixed(2)} %`;
+    // Backend returns values as percentages already (e.g. 23.8 for 23.8%)
+    return `${n.toFixed(1)}%`;
   };
 
   // Compile and Download Standalone HTML Terminal File
@@ -792,7 +806,7 @@ const ChartsTerminal: React.FC = () => {
         <div class="flex justify-between items-center border-b border-[var(--border-primary)] pb-3">
           <span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Strategy Confidence</span>
           <span id="conf-badge" class="px-2 py-0.5 rounded-full text-caption border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
-            BUY ZONE
+            SETUP ZONE
           </span>
         </div>
         
@@ -985,7 +999,7 @@ const ChartsTerminal: React.FC = () => {
               lineWidth: 1,
               lineStyle: 0,
               axisLabelVisible: false,
-              title: i === Math.floor(steps / 2) ? 'ACCUMULATION ZONE (SAFE BUY BAND)' : ''
+              title: i === Math.floor(steps / 2) ? 'ACCUMULATION ZONE (SAFE VALUE BAND)' : ''
             });
           }
         }
@@ -1036,10 +1050,10 @@ const ChartsTerminal: React.FC = () => {
       score = Math.max(0, Math.min(100, score));
       
       let level = 'MODERATE';
-      let badgeText = isBuy ? 'BUY ZONE' : 'HOLD';
+      let badgeText = isBuy ? 'SETUP ZONE' : 'HOLD';
       let badgeClass = isBuy ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-[var(--bg-tertiary)] border-[var(--border-secondary)] text-[var(--text-muted)]';
       
-      if (score >= 85) level = 'STRONG BUY / MAX CONFIDENCE';
+      if (score >= 85) level = 'HIGH CONVICTION / INSTITUTIONAL GRADE';
       else if (score >= 70) level = 'SAFE ACCUMULATION';
       else if (score >= 45) level = 'HOLD / MONITOR';
       else level = 'HIGH RISK / TAKE PROFIT';
@@ -1172,7 +1186,7 @@ const ChartsTerminal: React.FC = () => {
     
     let score = 50; // Base score
     
-    // 1. Buy zone bonus
+    // 1. Setup zone bonus
     if (isBuy) {
       score += 20;
     }
@@ -1218,7 +1232,7 @@ const ChartsTerminal: React.FC = () => {
     let bg = 'bg-amber-500/10';
     
     if (score >= 85) {
-      level = 'STRONG BUY / MAX CONFIDENCE';
+      level = 'HIGH CONVICTION / INSTITUTIONAL GRADE';
       color = 'text-emerald-500';
       bg = 'bg-emerald-500/10';
     } else if (score >= 70) {
@@ -1246,13 +1260,13 @@ const ChartsTerminal: React.FC = () => {
     
     switch (activeStrategyId) {
       case 'BOLLINGER':
-        return `${symbol} crossed below its lower Bollinger Band at ₹${entry}, triggering a momentum exhaust rebound setup. 1H RSI is oversold. Accumulation buy range is active up to ₹${entry} with target objectives set at ₹${target}.`;
+        return `${symbol} crossed below its lower Bollinger Band at ₹${entry}, triggering a momentum exhaust rebound setup. 1H RSI is oversold. Accumulation setup range is active up to ₹${entry} with target objectives set at ₹${target}.`;
       case 'ENVELOPE_LONG':
-        return `${symbol} is trading within the extreme lower bounds of its 200 EMA envelope channel. Long-term accumulation is active in the optimal green buy corridor under ₹${entry} with key profit booking target targets placed at ₹${target}.`;
+        return `${symbol} is trading within the extreme lower bounds of its 200 EMA envelope channel. Long-term accumulation is active in the optimal green corridor under ₹${entry} with key target objectives placed at ₹${target}.`;
       case '52W_HIGH_LOW':
         return `${symbol} has entered a key consolidation range near its 52-week parameters. A technical breakout trigger is set at ₹${entry} with a target of ₹${target}.`;
       default:
-        return `${symbol} has matched all technical qualifiers for the ${displayName} strategy. A safe entry buy zone is currently active at ₹${entry} with a projected target potential gain of +${(((target - entry) / Math.max(1, entry)) * 100).toFixed(1)}% targeting ₹${target}.`;
+        return `${symbol} has matched all technical qualifiers for the ${displayName} strategy. A technical entry zone is currently active at ₹${entry} with a projected target range of +${(((target - entry) / Math.max(1, entry)) * 100).toFixed(1)}% targeting ₹${target}.`;
     }
   };
 
@@ -1324,29 +1338,13 @@ const ChartsTerminal: React.FC = () => {
       'bg-[var(--bg-primary)] text-[var(--text-primary)]'
     }`}>
       
-      {/* Ticker Bar (Top) */}
-      <div className={`border-b text-caption overflow-hidden ${
-        'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-tertiary)]'
-      }`}>
-        <div className="flex divide-x divide-slate-800 overflow-x-auto py-2 px-4 whitespace-nowrap scrollbar-none">
-          {(indices || []).map((idx, i) => (
-            <div key={i} className="flex items-center gap-2 px-6">
-              <span className={'text-[var(--text-secondary)]'}>{idx.name}</span>
-              <span className="font-bold">₹ {idx.price.toLocaleString('en-IN')}</span>
-              <span className={`flex items-center text-xs font-bold ${
-                idx.change >= 0 ? 'text-emerald-500' : 'text-rose-500'
-              }`}>
-                {idx.change >= 0 ? <TrendingUp className="h-2.5 w-2.5 mr-0.5 inline" /> : <TrendingDown className="h-2.5 w-2.5 mr-0.5 inline" />}
-                {idx.change >= 0 ? '+' : ''}{idx.change.toFixed(2)}%
-              </span>
-            </div>
-          ))}
-          {indices.length === 0 && (
-            <div className="flex items-center justify-center w-full text-[var(--text-muted)]">
-              <RefreshCw className="h-3 w-3 animate-spin mr-2" /> Connecting Market Feeds...
-            </div>
-          )}
-        </div>
+
+
+      <div className="px-6 pt-4">
+        <Breadcrumbs items={[
+          { label: 'Charts Terminal', href: '/charts' },
+          ...(symbol ? [{ label: symbol }] : [{ label: 'Select Stock' }])
+        ]} />
       </div>
 
       {/* Main Header */}
@@ -1354,19 +1352,28 @@ const ChartsTerminal: React.FC = () => {
         'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80'
       }`}>
         <div className="flex items-center gap-3">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-500 group-hover:scale-105 transition-transform">
+          {returnPath !== '/' && (
+            <button
+              onClick={() => navigate(returnPath)}
+              className="p-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-primary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-blue-500/30 transition-all active:scale-95"
+              title={`Back to previous page`}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-500">
               <Activity className="h-6 w-6" />
             </div>
             <div>
               <h1 className={`text-lg font-black tracking-tight uppercase italic flex items-center gap-1.5 ${
                 'text-[var(--text-primary)]'
               }`}>
-                MarketBeacon <span className="text-blue-500">Terminal</span>
+                Charts <span className="text-blue-500">Terminal</span>
               </h1>
               <p className="text-xs font-extrabold text-[var(--text-muted)] uppercase tracking-wider">Interactive Market Desk</p>
             </div>
-          </Link>
+          </div>
         </div>
 
         {/* Search & Toolbar */}
@@ -1386,6 +1393,7 @@ const ChartsTerminal: React.FC = () => {
                 <option value="Elite Basket" className={'bg-[#0f172a]'}>Elite</option>
                 <option value="Quality Basket" className={'bg-[#0f172a]'}>Quality</option>
                 <option value="Growth Basket" className={'bg-[#0f172a]'}>Growth</option>
+                <option value="Fallen Value Basket" className={'bg-[#0f172a]'}>Fallen Value</option>
               </select>
             </div>
 
@@ -1408,16 +1416,16 @@ const ChartsTerminal: React.FC = () => {
             </div>
           </div>
 
-          {/* Active Buy Strategy Badge */}
+          {/* Active Strategy Badge */}
           {activeBuyStrategy && (
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-caption animate-pulse">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-              <span>BUY: {activeBuyStrategy}</span>
+              <span>SETUP: {activeBuyStrategy}</span>
             </div>
           )}
 
           {/* Autocomplete Search input */}
-          <div className="relative w-full sm:w-64" ref={dropdownRef}>
+          <div data-tour="chart-search" className="relative w-full sm:w-64" ref={dropdownRef}>
             <div className={`flex items-center rounded-2xl border px-3.5 py-2 transition-all ${
               'bg-[var(--bg-primary)] border-[var(--border-primary)] focus-within:border-blue-500/50'
             }`}>
@@ -1609,11 +1617,11 @@ const ChartsTerminal: React.FC = () => {
               <div className="flex flex-wrap gap-3.5 items-center text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3.5 h-0.5 bg-emerald-500" />
-                  <span>Entry</span>
+                  <span>Setup Level</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3.5 h-0.5 bg-blue-500" />
-                  <span>Target</span>
+                  <span>Projection</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-2 bg-emerald-500/20 rounded" />
@@ -1622,6 +1630,47 @@ const ChartsTerminal: React.FC = () => {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Fundamentals Panel */}
+        <section className={`p-5 rounded-3xl border ${
+          'bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]'
+        }`}>
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="h-4 w-4 text-blue-500" />
+            <span className="text-xs font-extrabold text-[var(--text-muted)] uppercase tracking-wider">Key Fundamentals</span>
+            {loading && <RefreshCw className="h-3 w-3 animate-spin text-blue-500 ml-1" />}
+          </div>
+          {!fundamentals ? (
+            <div className="text-xs text-[var(--text-muted)] text-center py-4">Loading fundamental data...</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+              <div className="p-3 rounded-2xl bg-[var(--bg-primary)]/50 border border-[var(--border-primary)]/60">
+                <span className="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Audit Score</span>
+                <span className="block text-lg font-black italic text-blue-500 mt-0.5">{fundamentals.audit?.score || '—'}/100</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-[var(--bg-primary)]/50 border border-[var(--border-primary)]/60">
+                <span className="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Market Cap</span>
+                <span className="block text-lg font-black italic text-[var(--text-primary)] mt-0.5">{formatCr(fundamentals.marketCap)}</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-[var(--bg-primary)]/50 border border-[var(--border-primary)]/60">
+                <span className="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">P/E Ratio</span>
+                <span className="block text-lg font-black italic text-[var(--text-primary)] mt-0.5">{Number(fundamentals.peRatio || 0).toFixed(1)}</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-[var(--bg-primary)]/50 border border-[var(--border-primary)]/60">
+                <span className="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">ROE</span>
+                <span className="block text-lg font-black italic text-emerald-400 mt-0.5">{formatPct(fundamentals.returnOnEquity)}</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-[var(--bg-primary)]/50 border border-[var(--border-primary)]/60">
+                <span className="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">ROCE</span>
+                <span className="block text-lg font-black italic text-[var(--text-primary)] mt-0.5">{formatPct(fundamentals.roce)}</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-[var(--bg-primary)]/50 border border-[var(--border-primary)]/60">
+                <span className="block text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">D/E Ratio</span>
+                <span className="block text-lg font-black italic text-[var(--text-primary)] mt-0.5">{Number(fundamentals.netDebtToEquity || 0).toFixed(2)}</span>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Bottom Part: Options, Metrics, and Analysis Grid */}
@@ -1667,7 +1716,7 @@ const ChartsTerminal: React.FC = () => {
                           </div>
                           {isBuy ? (
                             <span className="px-2 py-0.5 rounded-full text-caption bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 uppercase tracking-wider">
-                              BUY ZONE
+                              SETUP ZONE
                             </span>
                           ) : (
                             <span className="px-2 py-0.5 rounded-full text-caption bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)] uppercase tracking-wider">
@@ -1723,7 +1772,7 @@ const ChartsTerminal: React.FC = () => {
                       'bg-[var(--bg-primary)]/60 border-[var(--border-primary)]'
                     }`}>
                       <div className="space-y-0.5">
-                        <span className="text-xs text-[var(--text-muted)] font-extrabold uppercase tracking-wider">Audit Score</span>
+                        <span className="text-xs text-[var(--text-muted)] font-extrabold uppercase tracking-wider flex items-center gap-1">Audit Score <InfoTooltip entry={FUNDA_INFO_MAP.auditScore} size="sm" /></span>
                         <h3 className="text-2xl font-bold italic text-blue-500">{fundamentals.audit?.score}/100</h3>
                       </div>
                       <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/15 text-blue-500">
@@ -1731,25 +1780,28 @@ const ChartsTerminal: React.FC = () => {
                       </div>
                     </div>
 
+                    <DataFreshnessBadge lastUpdated={fundamentals.lastUpdated} size="xs" className="mt-1" />
+
                     {/* Valuation Multiples */}
                     <div className="space-y-3 border-t border-[var(--border-primary)]/60 pt-4">
                       <span className="text-xs text-[var(--text-muted)] font-extrabold uppercase tracking-wider">Valuation & Growth</span>
                       
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-[var(--text-tertiary)] font-medium">PE Ratio:</span>
+                        <span className="text-[var(--text-tertiary)] font-medium flex items-center gap-1">PE Ratio: <InfoTooltip entry={FUNDA_INFO_MAP.peRatio} size="sm" /></span>
                         <span className="font-extrabold">{Number(fundamentals.peRatio || 0).toFixed(1)}</span>
                       </div>
                       
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-[var(--text-tertiary)] font-medium">Median PE (3Y/5Y):</span>
+                        <span className="text-[var(--text-tertiary)] font-medium flex items-center gap-1">Median PE (3Y/5Y): <InfoTooltip entry={FUNDA_INFO_MAP.peMedian} size="sm" /></span>
                         <span className="font-extrabold">
                           {fundamentals.peMedians?.pe3Y ? Number(fundamentals.peMedians.pe3Y).toFixed(1) : '—'} / 
                           {fundamentals.peMedians?.pe5Y ? Number(fundamentals.peMedians.pe5Y).toFixed(1) : '—'}
+                          {fundamentals.peMedians?.pe10Y ? ` / ${Number(fundamentals.peMedians.pe10Y).toFixed(1)}` : ''}
                         </span>
                       </div>
 
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-[var(--text-tertiary)] font-medium">Market Capitalization:</span>
+                        <span className="text-[var(--text-tertiary)] font-medium flex items-center gap-1">Market Capitalization: <InfoTooltip entry={FUNDA_INFO_MAP.marketCap} size="sm" /></span>
                         <span className="font-extrabold">{formatCr(fundamentals.marketCap)}</span>
                       </div>
                     </div>
@@ -1759,22 +1811,22 @@ const ChartsTerminal: React.FC = () => {
                       <span className="text-xs text-[var(--text-muted)] font-extrabold uppercase tracking-wider">Safety & Efficiency</span>
                       
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-[var(--text-tertiary)] font-medium">Return on Equity (ROE):</span>
+                        <span className="text-[var(--text-tertiary)] font-medium flex items-center gap-1">Return on Equity (ROE): <InfoTooltip entry={FUNDA_INFO_MAP.roe} size="sm" /></span>
                         <span className="font-extrabold">{formatPct(fundamentals.returnOnEquity)}</span>
                       </div>
 
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-[var(--text-tertiary)] font-medium">ROCE:</span>
+                        <span className="text-[var(--text-tertiary)] font-medium flex items-center gap-1">ROCE: <InfoTooltip entry={FUNDA_INFO_MAP.roce} size="sm" /></span>
                         <span className="font-extrabold">{formatPct(fundamentals.roce)}</span>
                       </div>
 
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-[var(--text-tertiary)] font-medium">Net Debt to Equity:</span>
+                        <span className="text-[var(--text-tertiary)] font-medium flex items-center gap-1">Net Debt to Equity: <InfoTooltip entry={FUNDA_INFO_MAP.debtToEquity} size="sm" /></span>
                         <span className="font-extrabold">{Number(fundamentals.netDebtToEquity || 0).toFixed(2)}</span>
                       </div>
 
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-[var(--text-tertiary)] font-medium">52W Range High:</span>
+                        <span className="text-[var(--text-tertiary)] font-medium flex items-center gap-1">52W Range High: <InfoTooltip entry={FUNDA_INFO_MAP.fiftyTwoWeekHigh} size="sm" /></span>
                         <span className="font-extrabold text-[var(--text-secondary)]">₹ {Number(fundamentals.fiftyTwoWeekHigh || 0).toLocaleString('en-IN')}</span>
                       </div>
                     </div>
@@ -1788,7 +1840,7 @@ const ChartsTerminal: React.FC = () => {
                       <div className="space-y-2.5">
                         <div>
                           <div className="flex justify-between text-xs mb-1">
-                            <span className="text-[var(--text-tertiary)]">Sales (vs ATH):</span>
+                            <span className="text-[var(--text-tertiary)] flex items-center gap-1">Sales (vs ATH): <InfoTooltip entry={FUNDA_INFO_MAP.salesAth} size="sm" /></span>
                             <span className="font-bold">{formatCr(fundamentals.currentSales)} / {formatCr(fundamentals.athSales)}</span>
                           </div>
                           <div className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
@@ -1801,7 +1853,7 @@ const ChartsTerminal: React.FC = () => {
 
                         <div>
                           <div className="flex justify-between text-xs mb-1">
-                            <span className="text-[var(--text-tertiary)]">Net Profit (vs ATH):</span>
+                            <span className="text-[var(--text-tertiary)] flex items-center gap-1">Net Profit (vs ATH): <InfoTooltip entry={FUNDA_INFO_MAP.profitAth} size="sm" /></span>
                             <span className="font-bold">{formatCr(fundamentals.currentNetProfit)} / {formatCr(fundamentals.athNetProfit)}</span>
                           </div>
                           <div className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
@@ -1915,11 +1967,11 @@ const ChartsTerminal: React.FC = () => {
                       <span className="text-caption">No ABCD Tranche settings for this strategy.</span>
                       <div className="grid grid-cols-2 gap-4 w-full mt-2 border border-[var(--border-primary)] p-3 rounded-2xl bg-[var(--bg-primary)]/30">
                         <div className="text-left">
-                          <span className="text-xs text-[var(--text-muted)] uppercase font-extrabold">Entry</span>
+                          <span className="text-xs text-[var(--text-muted)] uppercase font-extrabold">Setup Level</span>
                           <p className="text-sm font-bold text-emerald-400 italic">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</p>
                         </div>
                         <div className="text-left">
-                          <span className="text-xs text-[var(--text-muted)] uppercase font-extrabold">Target</span>
+                          <span className="text-xs text-[var(--text-muted)] uppercase font-extrabold">Projection</span>
                           <p className="text-sm font-bold text-blue-400 italic">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</p>
                         </div>
                       </div>

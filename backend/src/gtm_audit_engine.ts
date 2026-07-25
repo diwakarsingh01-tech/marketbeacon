@@ -8,10 +8,9 @@ import {
   calculateSMAStacking, 
   calculate52WeekStrategy, 
   calculateSRStrategy, 
-  calculateRHS, 
   calculateCupHandle, 
   calculateSixtySevenFunda, 
-  calculateTwentyRallyRetest 
+  calculateTwentyRallyRetest
 } from './strategies/index.js';
 
 // --- DATA PATHS ---
@@ -52,7 +51,6 @@ async function runMasterAudit() {
         { id: 'SMA_BCD', res: calculateSMAStacking(snap.quotes) },
         { id: '52W_HIGH_LOW', res: calculate52WeekStrategy(snap.quotes) },
         { id: 'SR_STRATEGY', res: calculateSRStrategy(snap.quotes, snap.screener) },
-        { id: 'RHS_ABCD', res: calculateRHS(snap.quotes) },
         { id: 'CUP_HANDLE_ABCD', res: calculateCupHandle(snap.quotes) },
         { id: 'SIXTY_SEVEN_FUNDA', res: calculateSixtySevenFunda(snap.quotes, snap.screener) },
         { id: 'TWENTY_RALLY_RETEST', res: calculateTwentyRallyRetest(snap.quotes) }

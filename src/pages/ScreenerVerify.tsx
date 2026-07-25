@@ -10,12 +10,17 @@ import {
   Activity,
   Layers,
   RefreshCw,
-  Target
+  Target,
+  BarChart3
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { authFetch } from '../lib/authFetch';
 import SEO from '../components/SEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { ConfidenceGauge } from '../components/ui/ConfidenceGauge';
+import { InfoTooltip } from '../components/ui/InfoTooltip';
+import DataFreshnessBadge from '../components/ui/DataFreshnessBadge';
+import { FUNDA_INFO_MAP } from '../data/fundaInfo';
 import type { HistoryQuote, FundamentalData, AllStockItem } from '../types';
 
 const API_URL = getApiUrl();
@@ -26,7 +31,6 @@ const STRATEGY_NAMES: Record<string, string> = {
   'BOLLINGER': 'Bollinger Band',
   '52W_HIGH_LOW': '52-Week High/Low',
   'CUP_HANDLE_ABCD': 'Cup & Handle + ABCD',
-  'RHS_ABCD': 'Reverse H&S + ABCD',
   'SMA_BCD': 'SMA + BCD',
   'SR_STRATEGY': 'Support & Resistance (S&R)',
   'SIXTY_SEVEN_FUNDA': 'Institutional Reset (67%)',
@@ -59,15 +63,10 @@ const STRATEGY_RULES: Record<string, string[]> = {
     'Support confirmed at the handle base.',
     'Target projected at the breakout neck line level.'
   ],
-  'RHS_ABCD': [
-    'Reverse Head & Shoulders pattern breakout neckline breach.',
-    'RSI is in neutral-to-bullish zone (> 50).',
-    'Tranche entry level D triggered with safety buffer.'
-  ],
   'SMA_BCD': [
     '50-period SMA acts as support with bullish bounce.',
     'Bullish MACD crossover on 1-hour timeframe.',
-    'Audit conviction score exceeds 75/100.'
+    'Audit score exceeds 75/100.'
   ],
   'SR_STRATEGY': [
     'Price rebounds from dynamic major Support/Resistance lines.',
@@ -76,14 +75,14 @@ const STRATEGY_RULES: Record<string, string[]> = {
   ],
   'SIXTY_SEVEN_FUNDA': [
     'Price drops by 67% or more from All-Time High (ATH).',
-    'Strong fundamental audit score indicating safe business structure.',
+    'Strong fundamental audit score indicating sound business structure.',
     'Institutional accumulation phase active.'
   ],
   'TWENTY_RALLY_RETEST': [
     'Stock triggers 20% or more green candle velocity rally.',
     'Pullback tests major support floor (200 EMA).',
     'Entry triggered on the first successful support retest.'
-  ]
+  ],
 };
 
 interface StockSearchResult {
@@ -121,9 +120,9 @@ const ScreenerVerify: React.FC = () => {
       const d = await safeJsonParse(response);
       if (response.ok && d.allStocks && d.allStocks.length > 0) {
         setAllStocks(d.allStocks);
-        // Default to first buy zone stock or first symbol
-        const buyStock = d.allStocks.find((s: AllStockItem) => s.isBuyZone && s.isPass);
-        setSymbol(buyStock ? buyStock.symbol : d.allStocks[0].symbol);
+        // Default to first setup zone stock or first symbol
+        const setupStock = d.allStocks.find((s: AllStockItem) => s.isBuyZone && s.isPass);
+        setSymbol(setupStock ? setupStock.symbol : d.allStocks[0].symbol);
       } else {
         // Fallback mock data if token unavailable or empty results
         const fallbacks: StockSearchResult[] = [
@@ -196,7 +195,7 @@ const ScreenerVerify: React.FC = () => {
     }
 
     const containerWidth = chartContainerRef.current.clientWidth;
-    const containerHeight = 440;
+    const containerHeight = Math.min(440, typeof window !== 'undefined' && window.innerWidth < 768 ? Math.floor(window.innerHeight * 0.4) : 440);
     const isDark = true;
     
     const chart = createChart(chartContainerRef.current, {
@@ -317,7 +316,7 @@ const ScreenerVerify: React.FC = () => {
         bottomVal = entryVal * 0.9;
       }
 
-      // 4. Shaded Accumulation Buy-Zone Band
+      // 4. Shaded Accumulation Setup Zone
       if (entryVal > bottomVal) {
         const steps = 10;
         const stepSize = (entryVal - bottomVal) / steps;
@@ -329,7 +328,7 @@ const ScreenerVerify: React.FC = () => {
             lineWidth: 1,
             lineStyle: 0,
             axisLabelVisible: false,
-            title: i === Math.floor(steps / 2) ? 'ACCUMULATION ZONE (SAFE BUY BAND)' : '',
+            title: i === Math.floor(steps / 2) ? 'ACCUMULATION ZONE (SAFE VALUE BAND)' : '',
           });
         }
       }
@@ -416,7 +415,7 @@ const ScreenerVerify: React.FC = () => {
     let bg = 'bg-amber-500/10';
     
     if (score >= 85) {
-      level = 'STRONG BUY / MAX CONFIDENCE';
+      level = 'HIGH CONVICTION / INSTITUTIONAL GRADE';
       color = 'text-emerald-500';
       bg = 'bg-emerald-500/10';
     } else if (score >= 70) {
@@ -474,7 +473,7 @@ const ScreenerVerify: React.FC = () => {
     return (
       <div className="relative pt-6 pb-2 px-1">
         <div className="h-1.5 w-full bg-[var(--bg-tertiary)] rounded-full relative">
-          {/* Shaded Buy Zone */}
+          {/* Shaded Setup Zone */}
           <div 
             className="absolute h-full bg-emerald-500/30 rounded-full"
             style={{ left: `${bottomPct}%`, right: `${100 - entryPct}%` }}
@@ -536,6 +535,9 @@ const ScreenerVerify: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col font-sans transition-colors duration-200 bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <SEO title="Trust Screener Matrix" description="Verify technical strategy signals with live TradingView interactive chart overlays." />
+      <div className="px-6 pt-4">
+        <Breadcrumbs items={[{ label: 'Screener', href: '/screener' }, { label: 'Trust Matrix' }]} />
+      </div>
 
       {/* Main Header */}
       <header className="border-b px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80">
@@ -619,7 +621,7 @@ const ScreenerVerify: React.FC = () => {
             ) : (
               <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
                 {filteredStocks.map((item, idx) => (
-                  <button
+                    <button
                     key={idx}
                     onClick={() => setSymbol(item.symbol)}
                     className={`w-full flex items-center justify-between p-3 rounded-2xl border text-left transition-all ${
@@ -634,15 +636,25 @@ const ScreenerVerify: React.FC = () => {
                         {item.reason}
                       </span>
                     </div>
-                    {item.isBuyZone ? (
-                      <span className="px-2 py-0.5 rounded-full text-caption bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                        BUY ZONE
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full text-caption bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)]">
-                        HOLD
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to={`/charts?symbol=${item.symbol}&return=/screener`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1.5 rounded-lg bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] hover:text-blue-400 hover:bg-[var(--bg-primary)] transition-all"
+                        title="Open in Charts Terminal"
+                      >
+                        <BarChart3 className="h-3 w-3" />
+                      </Link>
+                      {item.isBuyZone ? (
+                        <span className="px-2 py-0.5 rounded-full text-caption bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                          SETUP ZONE
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-caption bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)]">
+                          HOLD
+                        </span>
+                      )}
+                    </div>
                   </button>
                 ))}
                 {filteredStocks.length === 0 && (
@@ -750,7 +762,7 @@ const ScreenerVerify: React.FC = () => {
           {/* Card 1: SVG Confidence Dial */}
           <div className="p-5 rounded-3xl border bg-[var(--bg-secondary)]/40 border-[var(--border-primary)]">
             <div className="flex justify-between items-center border-b border-[var(--border-primary)]/60 pb-3 mb-4">
-              <span className="text-xs font-extrabold text-[var(--text-tertiary)] uppercase tracking-wider">Verification conviction</span>
+              <span className="text-xs font-extrabold text-[var(--text-tertiary)] uppercase tracking-wider">Verification score</span>
               <span className={`px-2 py-0.5 rounded-full text-caption border border-current/20 ${confidence.bg} ${confidence.color}`}>
                 {confidence.level}
               </span>
@@ -801,11 +813,12 @@ const ScreenerVerify: React.FC = () => {
                 </div>
 
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[var(--text-tertiary)] font-medium">Fund. Audit Score:</span>
+                  <span className="text-[var(--text-tertiary)] font-medium flex items-center gap-1">Fund. Audit Score: <InfoTooltip entry={FUNDA_INFO_MAP.auditScore} size="sm" /></span>
                   <span className={`font-extrabold ${(fundamentals.audit?.score || 0) >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
                     {fundamentals.audit?.score || 0} / 100
                   </span>
                 </div>
+                <DataFreshnessBadge lastUpdated={fundamentals.lastUpdated} size="xs" className="mt-1" />
               </div>
             )}
           </div>

@@ -36,7 +36,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
+    localStorage.removeItem('mb_has_pin');
+    localStorage.removeItem('mb_pin_email');
     fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+    window.location.href = '/';
   }, []);
 
   const refreshAuth = useCallback(async () => {

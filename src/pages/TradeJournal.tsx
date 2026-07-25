@@ -15,18 +15,31 @@ import {
   ArrowUpDown,
   Square,
   CheckSquare,
-  Share2
+  Share2,
+  BarChart3,
+  AlertCircle,
+  Info
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import Papa from 'papaparse';
 import { STRATEGIES } from '../data/stocks';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { authFetch } from '../lib/authFetch';
 import { toast } from 'sonner';
-import type { TradeRecord, StockPriceResult } from '../types';
+import { useAuth } from '../context/AuthContext';
+import type { TradeRecord } from '../types';
+import { motion } from 'framer-motion';
 
 const API_URL = getApiUrl();
+const PAPER_TRADES_KEY = 'mb_paper_trades';
+const PAPER_TRADES_VERSION = '1.0';
 
 const TradeJournalPage: React.FC = () => {
+  const { user } = useAuth();
+  const isFreeUser = user?.tier === 'free' || !user;
+  const usePaperMode = isFreeUser;
+  
   const [trades, setTrades] = useState<TradeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSegment, setActiveSegment] = useState<'OPEN' | 'CLOSED'>('OPEN');
@@ -38,6 +51,7 @@ const TradeJournalPage: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'entry_date', direction: 'desc' });
+  const [showPaperDisclaimer, setShowPaperDisclaimer] = useState(false);
 
   const [newTrade, setNewTrade] = useState({
     symbol: '',
@@ -64,7 +78,7 @@ const TradeJournalPage: React.FC = () => {
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) {
         const prices: Record<string, number> = {};
-        data.forEach((s: StockPriceResult) => {
+        data.forEach((s: any) => {
           if (s.price) prices[s.symbol] = s.price;
         });
         setLivePrices(prices);
@@ -72,41 +86,98 @@ const TradeJournalPage: React.FC = () => {
     } catch (e) { console.error('Price fetch failed:', e); }
   }, []);
 
-  const fetchTrades = useCallback(async () => {
-    setLoading(true);
+  // Paper Trading Functions
+  const loadPaperTrades = useCallback((): TradeRecord[] => {
     try {
-      const res = await authFetch('/api/trades');
-      const data = await safeJsonParse(res);
-      if (res.status === 401 || res.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
-        window.location.href = '/login';
-        return;
+      const stored = localStorage.getItem(PAPER_TRADES_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.version === PAPER_TRADES_VERSION && Array.isArray(parsed.trades)) {
+          return parsed.trades.map((t: any) => ({
+            ...t,
+            isPaper: true,
+            paperId: t.paperId || `paper_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          }));
+        }
       }
-      if (res.ok && !data.error) {
-        setTrades(data);
-        if (data.length > 0) fetchLivePrices(data.map((t: TradeRecord) => t.symbol));
-      }
-    } catch (e) { console.error('Trades fetch failed:', e); }
-    finally { setLoading(false); }
-  }, [fetchLivePrices]);
+    } catch (e) {
+      console.error('Failed to load paper trades:', e);
+    }
+    return [];
+  }, []);
+
+  const savePaperTrades = useCallback((tradesToSave: TradeRecord[]) => {
+    try {
+      const paperTrades = tradesToSave.filter(t => (t as any).isPaper);
+      localStorage.setItem(PAPER_TRADES_KEY, JSON.stringify({
+        version: PAPER_TRADES_VERSION,
+        trades: paperTrades,
+        updatedAt: new Date().toISOString()
+      }));
+    } catch (e) {
+      console.error('Failed to save paper trades:', e);
+    }
+  }, []);
+
+  const addPaperTrade = useCallback((trade: Omit<TradeRecord, 'id'> & { paperId?: string }) => {
+    const paperTrade: TradeRecord = {
+      ...trade,
+      isPaper: true,
+      paperId: `paper_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: undefined // Paper trades don't have server IDs
+    } as TradeRecord;
+    const updated = [...trades, paperTrade];
+    setTrades(updated);
+    savePaperTrades(updated);
+    return paperTrade;
+  }, [trades, savePaperTrades]);
+
+  const updatePaperTrade = useCallback((paperId: string, updates: Partial<TradeRecord>) => {
+    const updated = trades.map(t => 
+      (t as any).paperId === paperId ? { ...t, ...updates } : t
+    );
+    setTrades(updated);
+    savePaperTrades(updated);
+  }, [trades, savePaperTrades]);
+
+  const deletePaperTrade = useCallback((paperId: string) => {
+    const updated = trades.filter(t => (t as any).paperId !== paperId);
+    setTrades(updated);
+    savePaperTrades(updated);
+  }, [trades, savePaperTrades]);
+
+  const fetchTrades = useCallback(async () => {
+    if (usePaperMode) {
+      // Paper trading mode: load from localStorage
+      setLoading(true);
+      try {
+        const paperTrades = loadPaperTrades();
+        setTrades(paperTrades);
+        if (paperTrades.length > 0) fetchLivePrices(paperTrades.map((t: TradeRecord) => t.symbol));
+      } catch (e) { console.error('Paper trades load failed:', e); }
+      finally { setLoading(false); }
+    } else {
+      // Authenticated mode: fetch from server
+      setLoading(true);
+      try {
+        const res = await authFetch('/api/trades');
+        const data = await safeJsonParse(res);
+        if (res.status === 401 || res.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
+          window.location.href = '/login';
+          return;
+        }
+        if (res.ok && !data.error) {
+          setTrades(data);
+          if (data.length > 0) fetchLivePrices(data.map((t: TradeRecord) => t.symbol));
+        }
+      } catch (e) { console.error('Trades fetch failed:', e); }
+      finally { setLoading(false); }
+    }
+  }, [usePaperMode, fetchLivePrices, loadPaperTrades]);
 
   useEffect(() => { 
     fetchTrades(); 
   }, [fetchTrades]);
-
-  // Polling for Live Prices
-  useEffect(() => {
-    const openSymbols = Array.from(new Set(
-      trades.filter(t => t.status === 'OPEN').map(t => t.symbol)
-    ));
-
-    if (openSymbols.length === 0) return;
-
-    fetchLivePrices(openSymbols);
-    const interval = setInterval(() => fetchLivePrices(openSymbols), 30000); // 30s poll
-    return () => clearInterval(interval);
-  }, [trades, fetchLivePrices]);
-
-  // stats was declared but unused, removed to satisfy TS6133
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -330,21 +401,37 @@ const TradeJournalPage: React.FC = () => {
     e.preventDefault();
     if (!newTrade.symbol) return;
     const entryPrice = parseFloat(newTrade.entry_price);
-    const payload = { 
-      ...newTrade, 
-      entry_price: entryPrice, 
-      quantity: parseInt(newTrade.quantity), 
-      target_price: newTrade.target_price ? parseFloat(newTrade.target_price) : (entryPrice * 1.25),
-      stop_loss: newTrade.stop_loss ? parseFloat(newTrade.stop_loss) : null
+    const targetPrice = newTrade.target_price ? parseFloat(newTrade.target_price) : (entryPrice * 1.25);
+    const stopLoss = newTrade.stop_loss ? parseFloat(newTrade.stop_loss) : undefined;
+    const payload = {
+      ...newTrade,
+      entry_price: entryPrice,
+      quantity: parseInt(newTrade.quantity),
+      target_price: targetPrice,
+      stop_loss: stopLoss,
     };
     try {
-      const res = await authFetch('/api/trades', { method: 'POST', body: JSON.stringify(payload) });
-      const data = await safeJsonParse(res);
-      if (res.ok && !data.error) { 
-        setShowAddModal(false); 
-        setNewTrade({ symbol: '', entry_price: '', quantity: '', target_price: '', stop_loss: '', level: 'A', entry_date: new Date().toISOString().split('T')[0], strategy: STRATEGIES[0].name, notes: '' }); 
-        setSymbolSearch(''); 
-        fetchTrades(); 
+      if (usePaperMode) {
+        // Paper trading mode: save to localStorage
+        addPaperTrade({
+          ...payload,
+          status: 'OPEN',
+          paperId: `paper_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          isPaper: true,
+        });
+        setShowAddModal(false);
+        setNewTrade({ symbol: '', entry_price: '', quantity: '', target_price: '', stop_loss: '', level: 'A', entry_date: new Date().toISOString().split('T')[0], strategy: STRATEGIES[0].name, notes: '' });
+        setSymbolSearch('');
+        toast.success(`${payload.symbol} added to Paper Trading ledger!`);
+      } else {
+        const res = await authFetch('/api/trades', { method: 'POST', body: JSON.stringify(payload) });
+        const data = await safeJsonParse(res);
+        if (res.ok && !data.error) { 
+          setShowAddModal(false); 
+          setNewTrade({ symbol: '', entry_price: '', quantity: '', target_price: '', stop_loss: '', level: 'A', entry_date: new Date().toISOString().split('T')[0], strategy: STRATEGIES[0].name, notes: '' }); 
+          setSymbolSearch(''); 
+          fetchTrades(); 
+        }
       }
     } catch (e) { console.error(e); }
   };
@@ -353,12 +440,28 @@ const TradeJournalPage: React.FC = () => {
     e.preventDefault();
     if (!showCloseModal || !showCloseModal.id) return;
     try {
-      const res = await authFetch(`/api/trades/${showCloseModal.id}/close`, {
-        method: 'POST',
-        body: JSON.stringify({ exit_price: parseFloat(closeTradeData.exit_price), exit_date: new Date().toISOString().split('T')[0], quantity_to_close: parseInt(closeTradeData.quantity_to_close), notes: closeTradeData.notes })
-      });
-      const data = await safeJsonParse(res);
-      if (res.ok && !data.error) { setShowCloseModal(null); fetchTrades(); }
+      if (usePaperMode) {
+        // Paper trading mode: update locally
+        const paperId = (showCloseModal as any).paperId;
+        if (paperId) {
+          updatePaperTrade(paperId, {
+            status: 'CLOSED',
+            exit_price: parseFloat(closeTradeData.exit_price),
+            exit_date: new Date().toISOString().split('T')[0],
+            quantity: parseInt(closeTradeData.quantity_to_close),
+            notes: closeTradeData.notes
+          });
+          setShowCloseModal(null);
+          toast.success(`${showCloseModal.symbol} closed in Paper Trading ledger!`);
+        }
+      } else {
+        const res = await authFetch(`/api/trades/${showCloseModal.id}/close`, {
+          method: 'POST',
+          body: JSON.stringify({ exit_price: parseFloat(closeTradeData.exit_price), exit_date: new Date().toISOString().split('T')[0], quantity_to_close: parseInt(closeTradeData.quantity_to_close), notes: closeTradeData.notes })
+        });
+        const data = await safeJsonParse(res);
+        if (res.ok && !data.error) { setShowCloseModal(null); fetchTrades(); }
+      }
     } catch (e) { console.error(e); }
   };
 
@@ -370,21 +473,125 @@ const TradeJournalPage: React.FC = () => {
   if (loading) return <div className="flex-1 flex items-center justify-center"><div className="w-10 h-10 border-4 border-[var(--border-primary)] border-t-blue-600 rounded-full animate-spin" /></div>;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 py-6 px-4 md:px-8 lg:px-10 space-y-6 overflow-hidden font-sans bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col min-h-0 py-6 px-4 md:px-8 lg:px-10 space-y-6 overflow-hidden font-sans bg-[var(--bg-primary)] pb-24 md:pb-0">
+      <Breadcrumbs items={[{ label: 'Trade Journal', href: '#' }]} />
+      {/* Paper Trading Mode Banner for Free Users */}
+      {usePaperMode && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-amber-500/10 to-amber-500/5 border border-amber-500/30 rounded-2xl p-4 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-500" />
+            <div>
+              <p className="text-sm font-bold text-amber-700">Paper Trading Mode Active</p>
+              <p className="text-xs text-amber-600">You're on the Free Plan. Trades are saved locally in your browser (localStorage) for paper trading practice. Data persists across sessions but is not synced to the cloud. Upgrade to Pro for cloud sync, alerts, and full history.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setShowPaperDisclaimer(true)}
+              className="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-500/10 border border-amber-500/30 rounded-lg hover:bg-amber-500/20 transition-all"
+            >
+              Learn More
+            </button>
+            <Link 
+              to="/license-desk" 
+              className="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all"
+            >
+              Upgrade to Pro
+            </Link>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Paper Trading Disclaimer Modal */}
+      {showPaperDisclaimer && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[var(--bg-primary)]/60 backdrop-blur-md"
+          onClick={() => setShowPaperDisclaimer(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[var(--bg-secondary)] w-full max-w-md rounded-[2.5rem] shadow-2xl p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                <Info className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-[var(--text-primary)]">Paper Trading Mode</h3>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">Free Plan feature</p>
+              </div>
+            </div>
+            <div className="space-y-4 text-sm text-[var(--text-secondary)]">
+              <div className="flex items-start gap-3 p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-[var(--text-primary)]">Local Storage Only</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Trades saved in your browser's localStorage. Data persists across browser sessions but is tied to this device/browser.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-[var(--text-primary)]">No Cloud Sync</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Paper trades are not synced to MarketBeacon servers. Clearing browser data or using a different device will not show your paper trades.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-[var(--text-primary)]">Live Prices Still Work</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">CMP and P&L calculations use real-time market data from our API.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-primary)]">
+                <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-[var(--text-primary)]">Upgrade Benefits</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Pro/Alpha tiers unlock cloud sync, price alerts, detailed analytics, Alpha Hub access, and institutional audit scores.</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex space-x-3 mt-8">
+              <button 
+                onClick={() => setShowPaperDisclaimer(false)}
+                className="flex-1 py-3 bg-[var(--bg-tertiary)] text-[var(--text-muted)] rounded-2xl text-xs font-bold uppercase hover:bg-slate-200 transition-all"
+              >
+                Got It
+              </button>
+              <Link 
+                to="/license-desk" 
+                onClick={() => setShowPaperDisclaimer(false)}
+                className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-xs font-bold uppercase text-center shadow-lg shadow-blue-500/20"
+              >
+                Upgrade to Pro
+              </Link>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[var(--border-primary)] pb-6 gap-6 shrink-0">
         <div className="space-y-1">
           <div className="flex items-center space-x-2 px-3 py-1 bg-blue-500/10 w-fit rounded-lg border border-blue-500/20 mb-3"><BookOpen className="h-3 w-3 text-blue-400" /><span className="text-xs font-bold text-blue-400 uppercase tracking-wider leading-none">Journal</span></div>
           <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tighter italic uppercase leading-none">Trade Ledger</h1>
           <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1">Institutional Order Execution Audit</p>
         </div>
-        <div className="flex items-center space-x-3">
-           <div className="flex items-center space-x-2 ml-4">
+        <div className="flex items-center space-x-3 flex-shrink-0">
+           <div className="flex items-center space-x-2 ml-4 flex-wrap gap-y-2">
               <button onClick={() => handleDownloadTemplate('OPEN')} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-blue-500/10 hover:text-blue-400 transition-all flex items-center space-x-2" title="Download Template for Open Trades"><Download className="h-4 w-4" /><span className="text-caption">Tpl (Open)</span></button>
               <button onClick={() => handleDownloadTemplate('CLOSED')} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-indigo-500/10 hover:text-indigo-400 transition-all flex items-center space-x-2" title="Download Template for Closed History"><Download className="h-4 w-4" /><span className="text-caption">Tpl (Closed)</span></button>
               <button onClick={handleExportTrades} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-emerald-500/10 hover:text-emerald-400 transition-all flex items-center space-x-2" title="Export Your Trades"><Download className="h-4 w-4" /><span className="text-caption">Export</span></button>
               <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleCSVUpload} />
               <button onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-[var(--bg-secondary)] flex items-center space-x-2"><Upload className={`h-4 w-4 ${isImporting ? 'animate-bounce' : ''}`} /><span className="text-caption">Import</span></button>
-              <button onClick={() => setShowAddModal(true)} className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-caption shadow-lg shadow-blue-500/20 flex items-center space-x-2 hover:from-blue-500 hover:to-indigo-500"><Plus className="h-4 w-4" /><span>Record</span></button>
+              <button data-tour="journal-add" onClick={() => setShowAddModal(true)} className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-caption shadow-lg shadow-blue-500/20 flex items-center space-x-2 hover:from-blue-500 hover:to-indigo-500"><Plus className="h-4 w-4" /><span>Record</span></button>
            </div>
         </div>
       </div>
@@ -448,7 +655,23 @@ const TradeJournalPage: React.FC = () => {
          {selectedIds.length > 0 && <button onClick={handleBulkDelete} className="flex items-center space-x-2 px-6 py-3 bg-rose-500/10 text-rose-400 rounded-2xl text-caption border border-rose-500/20 hover:bg-rose-600 hover:text-white transition-all"><Trash2 className="h-3 w-3" /><span>Delete ({selectedIds.length})</span></button>}
       </div>
 
-      <div className="hidden md:flex flex-1 flex flex-col min-h-0 bg-[var(--bg-secondary)] rounded-[2.5rem] border border-[var(--border-primary)] shadow-xl overflow-hidden relative">
+      {processedTrades.length === 0 && (
+        <div className="flex-1 flex flex-col items-center justify-center min-h-[300px] bg-[var(--bg-secondary)] rounded-[2.5rem] border border-[var(--border-primary)] border-dashed shadow-xl p-12 text-center">
+           <BookOpen className="h-12 w-12 text-[var(--text-muted)] mb-4 opacity-40" />
+           <h3 className="text-lg font-bold text-[var(--text-primary)] uppercase tracking-tighter italic mb-2">Empty Ledger</h3>
+           <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider max-w-md mb-6">
+              {activeSegment === 'OPEN'
+                ? 'No open positions yet. Record your first trade to start tracking institutional performance.'
+                : 'No closed trades yet. Trades will appear here once you complete them.'}
+           </p>
+           <button onClick={() => setShowAddModal(true)} className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-[2rem] text-xs font-bold uppercase tracking-[0.2em] shadow-2xl shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95 flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>Record First Trade</span>
+           </button>
+        </div>
+      )}
+
+      {processedTrades.length > 0 && (<div className="hidden md:flex flex-1 flex flex-col min-h-0 bg-[var(--bg-secondary)] rounded-[2.5rem] border border-[var(--border-primary)] shadow-xl overflow-hidden relative">
          <div className="flex-1 overflow-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
                <thead>
@@ -489,8 +712,9 @@ const TradeJournalPage: React.FC = () => {
                          <td className="px-4 py-3">
                             <div className="flex flex-col uppercase tracking-tighter relative group/item">
                                <div className="flex items-center space-x-2">
-                                  <span className="text-[var(--text-primary)] font-bold">{t.symbol}</span>
-                                  <button onClick={() => handleShareTrade(t)} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-[var(--bg-tertiary)] rounded text-[var(--text-tertiary)]" title="Share Trade"><Share2 className="h-2.5 w-2.5" /></button>
+                                   <span className="text-[var(--text-primary)] font-bold">{t.symbol}</span>
+                                   <Link to={`/charts?symbol=${t.symbol}&return=/trade-journal`} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-[var(--bg-tertiary)] rounded text-[var(--text-tertiary)]" title="Open in Charts Terminal"><BarChart3 className="h-2.5 w-2.5" /></Link>
+                                   <button onClick={() => handleShareTrade(t)} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-[var(--bg-tertiary)] rounded text-[var(--text-tertiary)]" title="Share Trade"><Share2 className="h-2.5 w-2.5" /></button>
                                </div>
                                <span className="text-xs text-[var(--text-tertiary)]">{t.strategy}</span>
                             </div>
@@ -519,16 +743,19 @@ const TradeJournalPage: React.FC = () => {
                              <td className={`${t.annualGain >= 0 ? 'text-blue-400' : 'text-rose-400'} px-4 py-3 text-right`}>{t.annualGain >= 0 ? '+' : ''}{t.annualGain.toFixed(0)}%</td>
                            </>
                          )}
-                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Re-open?')) { authFetch(`/api/trades/${t.id}/reopen`, { method: 'PATCH' }).then(res => { if (res.ok) fetchTrades(); }); } }} className="p-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => { if(window.confirm('Delete?')) { authFetch(`/api/trades/${t.id}`, { method: 'DELETE' }).then(res => { if (res.ok) fetchTrades(); }); } }} className="p-1 bg-[var(--bg-secondary)] text-[var(--text-tertiary)] rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
+                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : usePaperMode ? <button onClick={() => { if(window.confirm('Re-open?')) { 
+        const paperId = (t as any).paperId;
+        if (paperId) { updatePaperTrade(paperId, { status: 'OPEN', exit_price: undefined, exit_date: undefined }); toast.success(`${t.symbol} re-opened in Paper Trading ledger!`); }
+      } }} className="p-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Re-open?')) { authFetch(`/api/trades/${t.id}/reopen`, { method: 'PATCH' }).then(res => { if (res.ok) fetchTrades(); }); } }} className="p-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} {usePaperMode && (t as any).paperId ? <button onClick={() => { if(window.confirm('Delete paper trade?')) { deletePaperTrade((t as any).paperId); } }} className="p-1 bg-[var(--bg-secondary)] text-[var(--text-tertiary)] rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Delete?')) { authFetch(`/api/trades/${t.id}`, { method: 'DELETE' }).then(res => { if (res.ok) fetchTrades(); }); } }} className="p-1 bg-[var(--bg-secondary)] text-[var(--text-tertiary)] rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button>}</div></td>
                       </tr>
                   ))}
                </tbody>
             </table>
          </div>
-      </div>
+      </div>)}
 
       {/* Mobile Positions / History Card List */}
-      <div className="md:hidden space-y-3 px-2 flex-1 overflow-auto py-2 custom-scrollbar">
+      {processedTrades.length > 0 && (<div className="md:hidden space-y-3 px-2 flex-1 overflow-auto py-2 custom-scrollbar">
          {processedTrades.map((t) => {
             const isGain = t.pnl >= 0;
             return (
@@ -540,7 +767,8 @@ const TradeJournalPage: React.FC = () => {
                  <div className="flex justify-between items-start">
                     <div className="flex flex-col">
                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight font-mono uppercase">{t.symbol}</span>
+                           <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight font-mono uppercase">{t.symbol}</span>
+                           <Link to={`/charts?symbol=${t.symbol}&return=/trade-journal`} className="p-1 hover:bg-[var(--bg-tertiary)] rounded text-[var(--text-tertiary)]" title="Open in Charts Terminal"><BarChart3 className="h-3 w-3" /></Link>
                           {activeSegment === 'OPEN' && (
                              <span className={`px-1.5 py-0.5 rounded-[0.25rem] text-[6.5px] font-bold border tracking-wider leading-none ${
                                 t.level === 'A' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
@@ -653,7 +881,7 @@ const TradeJournalPage: React.FC = () => {
               </div>
             );
          })}
-      </div>
+      </div>)}
 
       {showAddModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[var(--bg-primary)]/60 backdrop-blur-md animate-in fade-in duration-300">

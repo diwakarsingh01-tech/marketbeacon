@@ -35,6 +35,7 @@ const GlobalFooter: React.FC = () => {
               </button>
               <ul className={`space-y-2 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider overflow-hidden transition-all duration-300 md:max-h-none ${expandedSections.core ? 'max-h-96' : 'max-h-0 md:max-h-none'}`}>
                 <li><Link to="/alpha-hub" className="hover:text-blue-400 transition-colors flex items-center gap-1.5"><Layers className="h-3 w-3" /> Alpha Hub</Link></li>
+                <li><Link to="/guide" className="hover:text-blue-400 transition-colors flex items-center gap-1.5"><BookOpen className="h-3 w-3" /> Quick Guide</Link></li>
                 <li><Link to="/screener" className="hover:text-blue-400 transition-colors flex items-center gap-1.5"><Zap className="h-3 w-3 text-amber-400" /> Screener Matrix</Link></li>
               </ul>
             </div>

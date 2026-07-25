@@ -57,11 +57,11 @@ export async function runHealthCheck(): Promise<{ results: HealthResult[]; passe
   {
     const snap = getMarketSnapshot();
     const symbols = Object.keys(snap);
-    const strategyIds = ['ENVELOPE_LONG', 'ENVELOPE_SHORT', 'BOLLINGER', '52W_HIGH_LOW', 'SMA_BCD', 'RHS_ABCD', 'CUP_HANDLE_ABCD', 'SR_STRATEGY', 'TWENTY_RALLY_RETEST', 'SIXTY_SEVEN_FUNDA'];
+    const strategyIds = ['ENVELOPE_LONG', 'ENVELOPE_SHORT', 'BOLLINGER', '52W_HIGH_LOW', 'SMA_BCD', 'CUP_HANDLE_ABCD', 'SR_STRATEGY', 'TWENTY_RALLY_RETEST', 'SIXTY_SEVEN_FUNDA'];
     for (const stratId of strategyIds) {
       await measure(results, `Strategy: ${stratId}`, async () => {
         const sampleSymbol = symbols.find(s => snap[s]?.quotes?.length > 400) || symbols[0];
-        const result = runStrategyAnalysis(stratId, snap[sampleSymbol], snap[sampleSymbol]?.quote?.marketCap || 1, 'Elite Basket');
+        const result = await runStrategyAnalysis(stratId, snap[sampleSymbol], snap[sampleSymbol]?.quote?.marketCap || 1, 'Elite Basket');
         if (result === null || result === undefined) return { status: 'warn', detail: `Returned null/undefined for ${sampleSymbol}` };
         if (typeof result.isBuyZone !== 'boolean') return { status: 'warn', detail: `Missing isBuyZone field for ${sampleSymbol}` };
         return { status: 'pass', detail: `isBuyZone=${result.isBuyZone} for ${sampleSymbol}` };

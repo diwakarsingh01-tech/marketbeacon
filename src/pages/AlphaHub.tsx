@@ -6,6 +6,7 @@ import {
   ShieldCheck,
   Activity,
   Lock,
+  Zap,
   CheckCircle2,
   Sparkles,
   ChevronDown,
@@ -13,11 +14,14 @@ import {
   Info,
   TrendingUp,
   BarChart3,
-  ArrowUpRight
+  ArrowUpRight,
+  Heart,
+  HeartOff
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { authFetch } from '../lib/authFetch';
 import type { AlphaHubStock, AlphaHubData, BacktestData, BasketConfig } from '../types';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
@@ -26,6 +30,78 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import SEO from '../components/SEO';
 
 const API_URL = getApiUrl();
+
+// Watchlist button component
+const WatchlistButton: React.FC<{ symbol: string }> = ({ symbol }) => {
+  const { user } = useAuth();
+  const [isInWatchlist, setIsInWatchlist] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+
+  const checkWatchlist = async () => {
+    if (!user) return;
+    try {
+      const res = await authFetch('/api/watchlist');
+      if (res.ok) {
+        const watchlist = await res.json();
+        setIsInWatchlist(watchlist.some((item: any) => item.symbol === symbol));
+      }
+    } catch (e) {
+      console.error('Failed to check watchlist:', e);
+    }
+  };
+
+  React.useEffect(() => {
+    checkWatchlist();
+  }, [symbol, user]);
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) {
+      window.location.href = '/login';
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (isInWatchlist) {
+        const res = await authFetch(`/api/watchlist/${symbol}`, { method: 'DELETE' });
+        if (res.ok) setIsInWatchlist(false);
+      } else {
+        const res = await authFetch('/api/watchlist', {
+          method: 'POST',
+          body: JSON.stringify({ symbol })
+        });
+        if (res.ok) setIsInWatchlist(true);
+      }
+    } catch (e) {
+      console.error('Watchlist error:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading || !user}
+      className={`p-1.5 rounded-lg transition-all ${
+        isInWatchlist 
+          ? 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20' 
+          : 'bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] hover:bg-[var(--bg-primary)] hover:text-red-400'} 
+        border border-[var(--border-primary)] inline-flex items-center justify-center min-w-[36px] min-h-[36px]
+      `}
+      title={isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+    >
+      {isInWatchlist ? (
+        <Heart className="h-4 w-4 fill-current" />
+      ) : (
+        <HeartOff className="h-4 w-4" />
+      )}
+    </button>
+  );
+};
 
 // --- Reusable helpers ---
 
@@ -210,34 +286,44 @@ const AlphaHubPage: React.FC = () => {
   const avgDays = backtestComparison?.strategy?.avgDays || 0;
   const backtestYears = backtestComparison?.nifty50?.years || 20;
 
-  const fetchAlphaHub = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API_URL}/api/backtest/alpha-40`, {
-        credentials: 'include'
-      });
-      const d = await safeJsonParse(res);
-      if (res.ok && !d.error) {
-        setData(d);
-      } else {
-        if (res.status === 403 && d.requiredTier) {
-          setError('ALPHA_REQUIRED');
-          setShowUpgradeModal(true);
-          return;
-        }
-        if (res.status === 401 || res.status === 403 || d.error === 'Invalid token.' || d.error === 'Access denied.') {
-          window.location.href = '/login';
-          return;
-        }
-        setError(d.error || 'Failed to sync Alpha Terminal');
-      }
-    } catch (e) {
-      setError('Terminal connection failed. Please ensure backend is reachable.');
-    } finally {
-      setLoading(false);
-    }
-  };
+   const fetchAlphaHub = async (retryCount = 0) => {
+     setLoading(true);
+     setError(null);
+     try {
+       const res = await fetch(`${API_URL}/api/backtest/alpha-40`, {
+         credentials: 'include'
+       });
+       const d = await safeJsonParse(res);
+       if (res.ok && !d.error) {
+         setData(d);
+       } else {
+         if (res.status === 403 && d.requiredTier) {
+           setError('ALPHA_REQUIRED');
+           setShowUpgradeModal(true);
+           return;
+         }
+         if (res.status === 401 || res.status === 403 || d.error === 'Invalid token.' || d.error === 'Access denied.') {
+           window.location.href = '/login';
+           return;
+         }
+         if ((res.status === 503 || res.status === 502 || res.status === 504) && retryCount < 1) {
+           await new Promise(r => setTimeout(r, 3000));
+           fetchAlphaHub(retryCount + 1);
+           return;
+         }
+         setError(d.error || 'Failed to sync Alpha Terminal');
+       }
+     } catch (e) {
+       if (retryCount < 1) {
+         await new Promise(r => setTimeout(r, 3000));
+         fetchAlphaHub(retryCount + 1);
+         return;
+       }
+       setError('Terminal connection failed. Please ensure backend is reachable.');
+     } finally {
+       setLoading(false);
+     }
+   };
 
   const fetchBacktestComparison = async () => {
     try {
@@ -337,7 +423,7 @@ const AlphaHubPage: React.FC = () => {
           <h2 className="text-red-600 font-bold uppercase tracking-wider text-xs mb-2 italic">Something went wrong</h2>
           <p className="text-red-500 text-xs font-bold leading-relaxed">{error}</p>
         </div>
-        <button onClick={fetchAlphaHub} className="px-12 py-3 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-xs active:scale-95 transition-all shadow-xl">
+        <button onClick={() => fetchAlphaHub()} className="px-12 py-3 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-xs active:scale-95 transition-all shadow-xl">
           Try again
         </button>
       </div>
@@ -641,7 +727,7 @@ const AlphaHubPage: React.FC = () => {
               </div>
 
               {/* Desktop Stock Table */}
-              <div className="hidden md:block bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl overflow-hidden shadow-2xl">
+              <div data-tour="alpha-table" className="hidden md:block bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-2xl overflow-hidden shadow-2xl">
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse">
                     <thead>
@@ -655,6 +741,7 @@ const AlphaHubPage: React.FC = () => {
                         <th className="px-3 py-3.5 w-[8%] text-right bg-blue-500/5 text-blue-400">Qty</th>
                         <th className="px-3 py-3.5 w-[12%] text-right bg-blue-500/5 text-blue-400">Amount</th>
                         <th className="px-3 py-3.5 w-[8%] text-right font-medium text-[var(--text-tertiary)]">Weight</th>
+                        <th className="px-3 py-3.5 w-[6%] text-center">Watch</th>
                         <th className="px-3 py-3.5 w-[6%] text-center">View</th>
                       </tr>
                     </thead>
@@ -711,6 +798,9 @@ const AlphaHubPage: React.FC = () => {
                               <td className="px-3 py-3 text-right font-bold bg-blue-500/5 text-[var(--text-primary)]">₹{Math.round(amount).toLocaleString()}</td>
                               <td className="px-3 py-3 text-right text-xs font-bold text-[var(--text-tertiary)]">{weightPct.toFixed(1)}%</td>
                               <td className="px-3 py-3 text-center">
+                                <WatchlistButton symbol={stock.symbol} />
+                              </td>
+                              <td className="px-3 py-3 text-center">
                                 <Link to={`/stock/${stock.symbol}`} className="p-1.5 bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-all inline-flex items-center rounded-lg shadow-sm border border-[var(--border-primary)]">
                                   <ArrowUpRight className="h-3.5 w-3.5" />
                                 </Link>
@@ -763,6 +853,7 @@ const AlphaHubPage: React.FC = () => {
                             </div>
                             <div className="text-right shrink-0 ml-2 flex items-center gap-2">
                               <span className="text-sm font-bold text-blue-400 font-mono">{qty} qty</span>
+                              <WatchlistButton symbol={stock.symbol} />
                               <ChevronDown className={`h-3.5 w-3.5 text-[var(--text-muted)] transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                             </div>
                           </div>
@@ -1054,21 +1145,25 @@ const AlphaHubPage: React.FC = () => {
               )}
             </div>
 
-            {/* System Status Footer */}
-            <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider border-t border-[var(--border-primary)] pt-6">
-              <div className="flex items-center gap-2">
-                <Activity className="h-3 w-3 text-emerald-400" />
-                Alpha Desk sync: <span className="text-emerald-400">Optimal</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Database className="h-3 w-3" />
-                20-year historical data active
-              </div>
-              <div className="flex items-center gap-2">
-                <Lock className="h-3 w-3" />
-                End-to-end encrypted
-              </div>
-            </div>
+             {/* System Status Footer */}
+             <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider border-t border-[var(--border-primary)] pt-6">
+               <div className="flex items-center gap-2">
+                 <Activity className="h-3 w-3 text-emerald-400" />
+                 Alpha Desk sync: <span className="text-emerald-400">Optimal</span>
+               </div>
+               <div className="flex items-center gap-2">
+                 <Database className="h-3 w-3" />
+                 20-year historical data active
+               </div>
+               <div className="flex items-center gap-2">
+                 <Lock className="h-3 w-3" />
+                 End-to-end encrypted
+               </div>
+               <div className="flex items-center gap-2">
+                 <Zap className="h-3 w-3" />
+                 Strategy: Alpha-40 Multi-Basket
+               </div>
+             </div>
             </div>
           )}
           </div>

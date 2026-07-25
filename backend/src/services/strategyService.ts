@@ -1,23 +1,23 @@
 import { validateBatch9 } from '../services/fundamentalAudit.js';
-import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateSRStrategy, calculateRHS, calculateCupHandle, calculateSixtySevenFunda, calculateTwentyRallyRetest } from '../strategies/index.js';
+import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateSRStrategy, calculateCupHandle, calculateSixtySevenFunda, calculateTwentyRallyRetest } from '../strategies/index.js';
 
-export const runStrategyAnalysis = (stratId: string, snap: any, marketCap: number, basketName: string = 'ALL') => {
+export const runStrategyAnalysis = async (stratId: string, snap: any, marketCap: number, basketName: string = 'ALL') => {
     const isElite = basketName === 'Elite Basket';
     const isQuality = basketName === 'Quality Basket';
     const isGrowth = basketName === 'Growth Basket';
 
     // 🛡️ INSTITUTIONAL BASKET AUTHORIZATION
     const authorizedBaskets: Record<string, string[]> = {
-        'ENVELOPE_LONG': ['Elite Basket'],
-        'ENVELOPE_SHORT': ['Elite Basket'],
-        'BOLLINGER': ['Elite Basket'],
-        '52W_HIGH_LOW': ['Elite Basket'],
+        'ENVELOPE_LONG': ['Elite Basket', 'Quality Basket'],
+        'ENVELOPE_SHORT': ['Elite Basket', 'Quality Basket'],
+        'BOLLINGER': ['Elite Basket', 'Quality Basket'],
+        '52W_HIGH_LOW': ['Elite Basket', 'Quality Basket'],
         'SMA_BCD': ['Elite Basket', 'Quality Basket'],
-        'RHS_ABCD': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
-        'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
+
+        'CUP_HANDLE_ABCD': ['Quality Basket', 'Elite Basket'],
         'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
         'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
-        'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket']
+        'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
     };
 
     const allowed = authorizedBaskets[stratId] || [];
@@ -25,17 +25,34 @@ export const runStrategyAnalysis = (stratId: string, snap: any, marketCap: numbe
         return { isBuyZone: false, reason: 'Basket Not Authorized' };
     }
 
+    let result: any = null;
     switch (stratId) {
-        case 'ENVELOPE_LONG': return calculateEnvelope(snap.quotes);
-        case 'ENVELOPE_SHORT': return processShortEnvelope(snap.quotes);
-        case 'BOLLINGER': return calculateBollingerBand(snap.quotes);
-        case '52W_HIGH_LOW': return calculate52WeekStrategy(snap.quotes);
-        case 'SMA_BCD': return calculateSMAStacking(snap.quotes);
-        case 'CUP_HANDLE_ABCD': return calculateCupHandle(snap.quotes);
-        case 'RHS_ABCD': return calculateRHS(snap.quotes);
-        case 'SR_STRATEGY': return calculateSRStrategy(snap.quotes, snap.screener);
-        case 'TWENTY_RALLY_RETEST': return calculateTwentyRallyRetest(snap.quotes);
-        case 'SIXTY_SEVEN_FUNDA': return calculateSixtySevenFunda(snap.quotes, snap.screener);
+        case 'ENVELOPE_LONG': result = calculateEnvelope(snap.quotes); break;
+        case 'ENVELOPE_SHORT': result = processShortEnvelope(snap.quotes); break;
+        case 'BOLLINGER': result = calculateBollingerBand(snap.quotes); break;
+        case '52W_HIGH_LOW': result = calculate52WeekStrategy(snap.quotes); break;
+        case 'SMA_BCD': result = calculateSMAStacking(snap.quotes); break;
+        case 'CUP_HANDLE_ABCD': result = calculateCupHandle(snap.quotes); break;
+
+        case 'SR_STRATEGY': result = calculateSRStrategy(snap.quotes, snap.screener); break;
+        case 'TWENTY_RALLY_RETEST': result = calculateTwentyRallyRetest(snap.quotes); break;
+        case 'SIXTY_SEVEN_FUNDA': result = calculateSixtySevenFunda(snap.quotes, snap.screener); break;
         default: return null;
     }
+
+    if (result && result.isBuyZone) {
+      const sym = snap.sym || snap.symbol || '';
+      if (sym) {
+        try {
+          const audit = await validateBatch9(sym, snap, basketName);
+          if (!audit.isPass) {
+            return { isBuyZone: false, reason: `Fundamental Gate: ${audit.reason} (Score: ${audit.score})` };
+          }
+        } catch {
+          return { isBuyZone: false, reason: 'Fundamental Gate: Audit Error' };
+        }
+      }
+    }
+
+    return result;
 };

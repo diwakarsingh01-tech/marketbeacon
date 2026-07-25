@@ -1,0 +1,452 @@
+[
+  {
+    "updatedAt": "2026-07-12T12:18:35.000Z",
+    "createdAt": "2026-06-25T08:05:31.639Z",
+    "id": "O8gnKHByX4rktbXO",
+    "name": "Auto Blog - Stock Analysis",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {},
+        "id": "manual-trigger",
+        "name": "Run Now",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          256,
+          384
+        ]
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 20,
+                "triggerAtMinute": 45
+              }
+            ]
+          }
+        },
+        "id": "schedule-trigger",
+        "name": "Schedule Trigger",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          256,
+          208
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://mb-backend:3001/api/n8n/qualified-stocks",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "basket",
+                "value": "Elite Basket"
+              }
+            ]
+          },
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "mb_linkedin_2026_secret_key"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "get-qualified",
+        "name": "Get Qualified Stocks",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          480,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "url": "http://mb-backend:3001/api/blog",
+          "options": {}
+        },
+        "id": "get-published-blogs",
+        "name": "Get Published Blogs",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          480,
+          160
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Get qualified stocks (from Get Qualified Stocks node)\nconst qualifiedInput = $('Get Qualified Stocks').all();\n// Get already published blogs (from Get Published Blogs node)\nconst publishedInput = $('Get Published Blogs').all();\n\nif (!qualifiedInput || qualifiedInput.length === 0) {\n  return [{ json: { skip: true, message: 'No data from API' } }];\n}\n\n// Parse qualified stocks - handle all response shapes\nlet allStocks = [];\nif (Array.isArray(qualifiedInput[0].json)) {\n  allStocks = qualifiedInput[0].json;\n} else if (qualifiedInput.length > 1 && qualifiedInput[0].json && qualifiedInput[0].json.symbol) {\n  allStocks = qualifiedInput.map(s => s.json);\n} else if (qualifiedInput[0].json && Array.isArray(qualifiedInput[0].json.stocks)) {\n  allStocks = qualifiedInput[0].json.stocks;\n} else {\n  allStocks = [qualifiedInput[0].json];\n}\n\n// Filter: must have score >= 80 or be marked pass, and have a valid symbol\nconst qualified = allStocks.filter(s => s && s.symbol && (s.score >= 80 || s.isPass === true));\nif (qualified.length === 0) {\n  return [{ json: { skip: true, message: 'No qualified stocks today' } }];\n}\n\n// Parse already-published blogs to find which symbols have recent articles\nlet publishedSlugs = [];\nif (publishedInput && publishedInput.length > 0) {\n  const allBlogs = Array.isArray(publishedInput[0].json)\n    ? publishedInput[0].json\n    : publishedInput.map(b => b.json);\n  // Get current month/year to allow re-publishing after 30 days\n  const now = new Date();\n  const cutoff = new Date(now.getFullYear(), now.getMonth(), 1); // first of current month\n  publishedSlugs = allBlogs\n    .filter(b => b && b.slug && new Date(b.created_at || b.date || 0) >= cutoff)\n    .map(b => b.slug.toLowerCase());\n}\n\n// Determine which stocks have NOT been published this month\n// A stock is considered \"already published\" if its symbol appears in any recent slug\nconst unpublished = qualified.filter(s => {\n  const sym = s.symbol.toLowerCase();\n  // Check if this symbol appears in any recently published slug\n  return !publishedSlugs.some(slug => slug.includes(sym));\n});\n\n// If all stocks published this month, reset and pick from all qualified\nconst pool = unpublished.length > 0 ? unpublished : qualified;\n\n// Shuffle pool using date-seeded deterministic randomness\n// This ensures same stock isn't picked twice in a row even across restarts\nconst today = new Date();\nconst seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();\nconst shuffled = pool.slice().sort(() => {\n  const x = Math.sin(seed + pool.indexOf(pool[0])) * 10000;\n  return x - Math.floor(x) - 0.5;\n});\n// Fisher-Yates shuffle with seeded index\nfor (let i = shuffled.length - 1; i > 0; i--) {\n  const j = Math.floor(((Math.sin(seed + i) * 10000) - Math.floor(Math.sin(seed + i) * 10000)) * (i + 1));\n  [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];\n}\n\n// Pick the FIRST stock from the shuffled pool\nconst picked = shuffled[0];\n\nconsole.log(`[Blog Picker] Pool: ${pool.length} unpublished stocks. Picked: ${picked.symbol} (score: ${picked.score})`);\nconsole.log(`[Blog Picker] Published this month: ${publishedSlugs.join(', ') || 'none'}`);\n\nreturn [{ json: picked }];"
+        },
+        "id": "pick-one-stock",
+        "name": "Pick Next Stock",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          720,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=http://mb-backend:3001/api/n8n/stock-data/{{ $json.symbol }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "mb_linkedin_2026_secret_key"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "get-stock-data",
+        "name": "Get Stock Data",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          960,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Merge qualified stock meta + detailed stock data into one context object\nconst stockData = $input.first().json;\nconst pickedStock = $('Pick Next Stock').first().json;\n\n// Merge both objects (stockData takes priority for price/fundamentals)\nconst merged = { ...pickedStock, ...stockData };\n\n// Ensure key fields exist with safe fallbacks\nmerged.symbol = merged.symbol || pickedStock.symbol || 'UNKNOWN';\nmerged.sector = merged.sector || 'Diversified';\nmerged.price = merged.price || merged.currentPrice || 0;\nmerged.marketCap = merged.marketCap || 0;\nmerged.peRatio = merged.peRatio || merged.trailingPE || 'N/A';\nmerged.returnOnEquity = merged.returnOnEquity !== undefined ? (merged.returnOnEquity * 100).toFixed(1) : 'N/A';\nmerged.roce = merged.roce || merged.returnOnCapitalEmployed || 'N/A';\nmerged.debtToEquity = merged.debtToEquity !== undefined ? merged.debtToEquity : 'N/A';\nmerged.beta = merged.beta || 'N/A';\nmerged.fiftyTwoWeekHigh = merged.fiftyTwoWeekHigh || merged.yearHigh || 'N/A';\nmerged.fiftyTwoWeekLow = merged.fiftyTwoWeekLow || merged.yearLow || 'N/A';\nmerged.upside = merged.upside || 'N/A';\nmerged.auditScore = merged.score || merged.auditScore || 0;\nmerged.isQualified = merged.isPass || merged.isQualified || false;\n\n// Stringify complex objects for the prompt\nmerged.profitabilityQualityText = JSON.stringify(merged.profitabilityQuality || {});\nmerged.balanceSheetSafetyText = JSON.stringify(merged.balanceSheetSafety || {});\nmerged.growthQualityText = JSON.stringify(merged.growthQuality || {});\nmerged.strategiesText = (merged.strategies || []).map(s => (s && (s.name || s))).filter(Boolean).join(', ') || 'None active';\n\nreturn [{ json: merged }];"
+        },
+        "id": "merge-stock-data",
+        "name": "Merge Stock Data",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1168,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://litellm:4000/v1/chat/completions",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"model\": \"llama-3.3-70b-versatile\", \"messages\": [{\"role\": \"user\", \"content\": \"You are a professional stock research analyst at MarketBeacon Pro.\\n\\nWrite a detailed stock analysis article for {{ $json.symbol }} with the following data:\\n\\n**Company Profile**\\n- Symbol: {{ $json.symbol }}\\n- Sector: {{ $json.sector }}\\n- Current Price: \u20b9{{ $json.price }}\\n- Market Cap: {{ ($json.marketCap / 10000000).toFixed(2) }} Cr\\n- P/E Ratio: {{ $json.peRatio }}\\n- 52-Week Range: \u20b9{{ $json.fiftyTwoWeekLow }} - \u20b9{{ $json.fiftyTwoWeekHigh }}\\n\\n**Fundamentals**\\n- Return on Equity (ROE): {{ $json.returnOnEquity }}%\\n- ROCE: {{ $json.roce }}%\\n- Debt-to-Equity: {{ $json.debtToEquity }}\\n- Beta: {{ $json.beta }}\\n\\n**Institutional Audit Score: {{ $json.auditScore }}/100**\\n- {{ $json.isQualified ? 'QUALIFIED - Passes institutional screening' : 'Under Review' }}\\n- Active Strategies: {{ $json.strategiesText }}\\n- Upside Potential: {{ $json.upside }}%\\n\\nWrite a 1000+ word article with 6 sections. Each section as JSON with 'heading' and 'body':\\n1. Executive Summary\\n2. Fundamental Strength\\n3. Institutional Audit Score Breakdown\\n4. Valuation & Technical Setup\\n5. Key Risks to Monitor\\n6. Final Verdict\\n\\nAlso provide:\\n- title: compelling headline (max 80 chars)\\n- meta_description: 120-155 chars SEO description\\n- key_takeaways: array of 5 strings\\n- slug: {{ $json.symbol.toLowerCase() }}-stock-analysis-{{ new Date().toLocaleString('default', {month:'short'}).toLowerCase() }}-{{ new Date().getFullYear() }}-{{ Math.random().toString(36).substr(2,4) }}\\n- read_time: e.g. '5 min read'\\n- linkedin_post: A highly engaging, professional LinkedIn post of 1500-2500 characters summarizing the analysis. It must start with an attention-grabbing hook, present key metrics and strategy signals in bullet points, outline the investment thesis, and conclude with relevant professional hashtags (e.g. #Investing, #StockMarket, #StockAnalysis). DO NOT include any links, domain names, or website/brand promotion (do not mention MarketBeacon or its website URL).\\n\\nCRITICAL: Return ONLY valid JSON, no markdown fences:\\n{\\n  \\\"title\\\": \\\"...\\\",\\n  \\\"slug\\\": \\\"...\\\",\\n  \\\"meta_description\\\": \\\"...\\\",\\n  \\\"tag\\\": \\\"Analysis\\\",\\n  \\\"tag_color\\\": \\\"text-blue-400 bg-blue-400/10 border-blue-400/20\\\",\\n  \\\"read_time\\\": \\\"...\\\",\\n  \\\"linkedin_post\\\": \\\"...\\\",\\n  \\\"key_takeaways\\\": [\\\"...\\\",\\\"...\\\",\\\"...\\\",\\\"...\\\",\\\"...\\\"],\\n  \\\"content\\\": [\\n    {\\\"heading\\\": \\\"Executive Summary\\\", \\\"body\\\": \\\"...\\\"},\\n    {\\\"heading\\\": \\\"Fundamental Strength\\\", \\\"body\\\": \\\"...\\\"},\\n    {\\\"heading\\\": \\\"Institutional Audit Score Breakdown\\\", \\\"body\\\": \\\"...\\\"},\\n    {\\\"heading\\\": \\\"Valuation & Technical Setup\\\", \\\"body\\\": \\\"...\\\"},\\n    {\\\"heading\\\": \\\"Key Risks to Monitor\\\", \\\"body\\\": \\\"...\\\"},\\n    {\\\"heading\\\": \\\"Final Verdict\\\", \\\"body\\\": \\\"...\\\"}\\n  ]\\n}\"}], \"temperature\": 0.7, \"response_format\": {\"type\": \"json_object\"}}",
+          "options": {}
+        },
+        "id": "generate-with-ai",
+        "name": "Generate Article",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1360,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $input.all();\nconst rawContent = input[0].json.choices[0].message.content;\nlet parsed = {};\ntry {\n  const cleanStr = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();\n  parsed = JSON.parse(cleanStr);\n} catch (e) {\n  throw new Error('Failed to parse LLM JSON: ' + e.message + '. Content: ' + rawContent.substring(0, 200));\n}\n\n// Ensure slug is unique by appending a timestamp suffix if it doesn't have one\nif (parsed.slug && !parsed.slug.match(/-[a-z0-9]{4,8}$/)) {\n  const suffix = Date.now().toString(36).slice(-4);\n  parsed.slug = `${parsed.slug}-${suffix}`;\n}\n\nreturn [{ json: parsed }];"
+        },
+        "id": "parse-json",
+        "name": "Parse JSON",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1568,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://mb-backend:3001/api/n8n/blog-post",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "mb_linkedin_2026_secret_key"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "title",
+                "value": "={{ $json.title }}"
+              },
+              {
+                "name": "slug",
+                "value": "={{ $json.slug }}"
+              },
+              {
+                "name": "meta_description",
+                "value": "={{ $json.meta_description }}"
+              },
+              {
+                "name": "content",
+                "value": "={{ $json.content }}"
+              },
+              {
+                "name": "tag",
+                "value": "={{ $json.tag || 'Analysis' }}"
+              },
+              {
+                "name": "tag_color",
+                "value": "={{ $json.tag_color || 'text-blue-400 bg-blue-400/10 border-blue-400/20' }}"
+              },
+              {
+                "name": "read_time",
+                "value": "={{ $json.read_time }}"
+              },
+              {
+                "name": "key_takeaways",
+                "value": "={{ $json.key_takeaways }}"
+              },
+              {
+                "name": "date",
+                "value": "={{ new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "publish-blog",
+        "name": "Publish Blog Post",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1760,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.telegram.org/bot8655611972:AAGpD3ctlNziHyngc8ov5MSVlggYl5Qg7UM/sendPhoto",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"chat_id\": \"-1003707897105\", \"photo\": \"https://marketbeaconpro.com/api/n8n/stock-chart/{{ $('Pick Next Stock').first().json.symbol }}\", \"caption\": \"\ud83d\udcdd *New Stock Analysis Published!*\\n\\n*{{ $('Parse JSON').first().json.title }}*\\n\\n{{ $('Parse JSON').first().json.meta_description }}\\n\\n\ud83d\udd17 Read full analysis:\\nhttps://marketbeaconpro.com/blog/{{ $('Parse JSON').first().json.slug }}\", \"parse_mode\": \"Markdown\", \"reply_markup\": {\"inline_keyboard\": [[{\"text\": \"\ud83d\udcd6 Read full Blog Article\", \"url\": \"https://marketbeaconpro.com/blog/{{ $('Parse JSON').first().json.slug }}\"}], [{\"text\": \"\ud83d\udcca View live Chart\", \"url\": \"https://marketbeaconpro.com/screener?symbol={{ $('Pick Next Stock').first().json.symbol }}\"}]]}}",
+          "options": {}
+        },
+        "id": "notify-telegram",
+        "name": "Notify Telegram Group",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1968,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.linkedin.com/rest/posts",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "X-Restli-Protocol-Version",
+                "value": "2.0.0"
+              },
+              {
+                "name": "LinkedIn-Version",
+                "value": "202606"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer AQVKqjwQ3vbS41k6Ad3idkAKULWxw41kAcN-r73DNPvSgrmNk74xzFtzliwHK2D_rnnBv4PxZZ-76rufIibwA6nMP5XPP9xPpEKUNkpwBeiIKmOVk454xrM4DtDcV4ekE4GM2ZD1Lzq9_-KltEJfLW4wkI_8xGyxDRAiiapQM5dYUPRWdJO1qgC23CDvQQBDkdlIzOoKblQsl_JbbZ-6umWdp_Vph-AFjnNzNWULRe7uk5AtgHV1aIe8mA4OEHPCiL3zKllb7QxwvU0rLOB3no2ZqQKlYSeb_MLvSHJdgORHle4KitPKi4taW0gnKNXV__d-eMyKn-3Iln9zSFVjyoudCrqu0w"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"author\": \"urn:li:person:HfsN9dKuZE\", \"commentary\": \"{{ $('Parse JSON').first().json.linkedin_post }}\\n\\nRead full analysis here: https://marketbeaconpro.com/blog/{{ $('Parse JSON').first().json.slug }}\", \"visibility\": \"PUBLIC\", \"distribution\": {\"feedDistribution\": \"MAIN_FEED\", \"targetEntities\": [], \"thirdPartyDistributionChannels\": []}, \"lifecycleState\": \"PUBLISHED\"}",
+          "options": {}
+        },
+        "id": "linkedin-post",
+        "name": "Post to LinkedIn",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1968,
+          464
+        ]
+      }
+    ],
+    "connections": {
+      "Pick Next Stock": {
+        "main": [
+          [
+            {
+              "node": "Get Stock Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Stock Data": {
+        "main": [
+          [
+            {
+              "node": "Merge Stock Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Stock Data": {
+        "main": [
+          [
+            {
+              "node": "Generate Article",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate Article": {
+        "main": [
+          [
+            {
+              "node": "Parse JSON",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse JSON": {
+        "main": [
+          [
+            {
+              "node": "Publish Blog Post",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Publish Blog Post": {
+        "main": [
+          [
+            {
+              "node": "Notify Telegram Group",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Post to LinkedIn",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Run Now": {
+        "main": [
+          [
+            {
+              "node": "Get Qualified Stocks",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "Get Qualified Stocks",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Qualified Stocks": {
+        "main": [
+          [
+            {
+              "node": "Get Published Blogs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Published Blogs": {
+        "main": [
+          [
+            {
+              "node": "Pick Next Stock",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "binaryMode": "separate",
+      "timeSavedMode": "fixed",
+      "timezone": "Asia/Kolkata",
+      "callerPolicy": "workflowsFromSameOwner",
+      "availableInMCP": false
+    },
+    "staticData": {
+      "node:Schedule Daily": {
+        "recurrenceRules": []
+      },
+      "node:Schedule Trigger": {
+        "recurrenceRules": []
+      }
+    },
+    "meta": null,
+    "nodeGroups": [],
+    "pinData": {},
+    "versionId": "4d5b0804-3897-4243-914f-567ee1db3b90",
+    "activeVersionId": "4d5b0804-3897-4243-914f-567ee1db3b90",
+    "versionCounter": 92,
+    "triggerCount": 1,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-06-25T08:05:31.641Z",
+        "createdAt": "2026-06-25T08:05:31.641Z",
+        "role": "workflow:owner",
+        "workflowId": "O8gnKHByX4rktbXO",
+        "projectId": "xcOx9W4wWXfoSCiJ",
+        "project": {
+          "updatedAt": "2026-07-10T11:41:41.841Z",
+          "createdAt": "2026-06-16T12:12:34.162Z",
+          "id": "xcOx9W4wWXfoSCiJ",
+          "name": "Diwakar Singh <diwakar.singh01@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "creatorId": "d3fabb70-deaa-45fe-a740-1773e8a43741"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

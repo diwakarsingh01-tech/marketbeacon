@@ -22,6 +22,10 @@ import {
   Send,
   X,
   FileText,
+  Activity,
+  ScrollText,
+  AlertTriangle,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
@@ -38,7 +42,7 @@ const AdminPanel: React.FC = () => {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users' | 'vouchers' | 'feedback' | 'waitlist' | 'blog'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'users' | 'vouchers' | 'feedback' | 'waitlist' | 'blog' | 'health' | 'audit'>('pending');
   const [search, setSearch] = useState('');
   
   // Modals
@@ -51,11 +55,39 @@ const AdminPanel: React.FC = () => {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [tempPassword, setTempPassword] = useState('');
   const [isAddVoucherModalOpen, setIsAddVoucherModalOpen] = useState(false);
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean; title: string; message: string; confirmLabel?: string;
+    variant?: 'danger' | 'warning'; onConfirm: () => void;
+  }>({ open: false, title: '', message: '', onConfirm: () => {} });
+  const [healthData, setHealthData] = useState<any>(null);
+  const [isHealthLoading, setIsHealthLoading] = useState(false);
+  const [auditData, setAuditData] = useState<any>(null);
+  const [isAuditLoading, setIsAuditLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const rowsPerPage = 20;
+
+  const paginate = <T,>(items: T[]): T[] => items.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const totalPages = (items: unknown[]) => Math.max(1, Math.ceil(items.length / rowsPerPage));
+
+  const Pagination = ({ items }: { items: unknown[] }) => {
+    const tp = totalPages(items);
+    if (tp <= 1) return null;
+    return (
+      <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/30">
+        <span className="text-xs text-slate-500 font-bold">{items.length} total</span>
+        <div className="flex items-center space-x-2">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 transition-all">Prev</button>
+          <span className="text-xs font-bold text-slate-600 px-3">{page} / {tp}</span>
+          <button onClick={() => setPage(p => Math.min(tp, p + 1))} disabled={page >= tp} className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 transition-all">Next</button>
+        </div>
+      </div>
+    );
+  };
 
   const fetchData = useCallback(async () => {
-    setIsLoading(true);
     try {
-      const [uRes, rRes, vRes, fRes, wRes] = await Promise.all([
+      const results = await Promise.allSettled([
         fetch(`${API_URL}/api/admin/users`, { credentials: 'include' }),
         fetch(`${API_URL}/api/admin/upgrade-requests`, { credentials: 'include' }),
         fetch(`${API_URL}/api/admin/vouchers`, { credentials: 'include' }),
@@ -63,16 +95,27 @@ const AdminPanel: React.FC = () => {
         fetch(`${API_URL}/api/admin/waitlist?status=pending`, { credentials: 'include' })
       ]);
 
-      if (uRes.status === 401 || uRes.status === 403 || rRes.status === 401 || rRes.status === 403 || vRes.status === 401 || vRes.status === 403 || fRes.status === 401 || fRes.status === 403 || wRes.status === 401) {
+      const [uRes, rRes, vRes, fRes, wRes] = results.map(r => r.status === 'fulfilled' ? r.value : null);
+
+      if (results.some(r => r.status === 'rejected')) {
+        console.warn('Some admin endpoints failed to fetch');
+      }
+
+      // Check for auth failures
+      if ((uRes && (uRes.status === 401 || uRes.status === 403))
+        || (rRes && (rRes.status === 401 || rRes.status === 403))
+        || (vRes && (vRes.status === 401 || vRes.status === 403))
+        || (fRes && (fRes.status === 401 || fRes.status === 403))
+        || (wRes && wRes.status === 401)) {
         window.location.href = '/login';
         return;
       }
 
-      if (uRes.ok) setUsers(await safeJsonParse(uRes) || []);
-      if (rRes.ok) setRequests(await safeJsonParse(rRes) || []);
-      if (vRes.ok) setVouchers(await safeJsonParse(vRes) || []);
-      if (fRes.ok) setFeedbacks(await safeJsonParse(fRes) || []);
-      if (wRes.ok) {
+      if (uRes?.ok) setUsers(await safeJsonParse(uRes) || []);
+      if (rRes?.ok) setRequests(await safeJsonParse(rRes) || []);
+      if (vRes?.ok) setVouchers(await safeJsonParse(vRes) || []);
+      if (fRes?.ok) setFeedbacks(await safeJsonParse(fRes) || []);
+      if (wRes?.ok) {
         const wData = await safeJsonParse(wRes);
         setWaitlist(wData?.data || []);
       }
@@ -222,6 +265,72 @@ const AdminPanel: React.FC = () => {
     } catch (e) { toast('Reject failed'); }
   };
 
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  };
+  const toggleSelectAll = (ids: number[]) => {
+    if (selectedIds.size === ids.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(ids));
+  };
+  const handleBulkDelete = async (type: 'feedback' | 'vouchers' | 'upgrade-requests') => {
+    const ids = Array.from(selectedIds);
+    for (const id of ids) { await fetch(`${API_URL}/api/admin/${type}/${id}`, { method: 'DELETE', credentials: 'include' }); }
+    setSelectedIds(new Set()); await fetchData(); toast(`Deleted ${ids.length} items`);
+  };
+  const handleBulkApprove = async () => {
+    const ids = Array.from(selectedIds);
+    for (const id of ids) { await fetch(`${API_URL}/api/admin/upgrade-requests/${id}/approve`, { method: 'POST', credentials: 'include' }); }
+    setSelectedIds(new Set()); await fetchData(); toast(`Approved ${ids.length} requests`);
+  };
+  const exportToCSV = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
+    const header = columns.map(c => c.label).join(',');
+    const rows = data.map(item => columns.map(c => {
+      const val = String(item[c.key as keyof typeof item] ?? '');
+      return val.includes(',') ? `"${val}"` : val;
+    }).join(','));
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${filename}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const confirmThen = (title: string, message: string, onConfirm: () => void, variant?: 'danger' | 'warning') => {
+    setConfirmState({ open: true, title, message, onConfirm, variant, confirmLabel: variant === 'danger' ? 'Delete' : 'Confirm' });
+  };
+  const fetchHealthData = useCallback(async () => {
+    setIsHealthLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/health-check`, { credentials: 'include' });
+      if (res.ok) setHealthData(await safeJsonParse(res));
+    } catch (e) { console.error("Health fetch failed:", e); }
+    finally { setIsHealthLoading(false); }
+  }, []);
+  const runHealthCheck = async () => {
+    setIsHealthLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/health-check/run`, { method: 'POST', credentials: 'include' });
+      if (res.ok) { setHealthData(await safeJsonParse(res)); toast("Health check completed"); }
+    } catch (e) { toast("Health check failed"); }
+    finally { setIsHealthLoading(false); }
+  };
+  const fetchAuditData = useCallback(async () => {
+    setIsAuditLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/audit/latest`, { credentials: 'include' });
+      if (res.ok) setAuditData(await safeJsonParse(res));
+    } catch (e) { console.error("Audit fetch failed:", e); }
+    finally { setIsAuditLoading(false); }
+  }, []);
+  const runAudit = async () => {
+    setIsAuditLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/audit/run`, { method: 'POST', credentials: 'include' });
+      if (res.ok) { setAuditData(await safeJsonParse(res)); toast("Audit completed"); }
+    } catch (e) { toast("Audit failed"); }
+    finally { setIsAuditLoading(false); }
+  };
   const filteredRequests = (requests || []).filter(r => {
     if (!r) return false;
     const status = (r.status || 'pending').toLowerCase();
@@ -241,6 +350,39 @@ const AdminPanel: React.FC = () => {
     return Math.max(0, days);
   };
 
+  class AdminErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean; error: Error | null}> {
+    state = { hasError: false, error: null as Error | null };
+    static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
+    render() {
+      if (this.state.hasError) {
+        return (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <AlertTriangle className="h-12 w-12 text-rose-500" />
+            <h3 className="text-lg font-black text-slate-900">Something went wrong</h3>
+            <p className="text-xs text-slate-500 max-w-md text-center">{this.state.error?.message || 'An unexpected error occurred'}</p>
+            <button onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }} className="px-6 py-3 bg-slate-900 text-white rounded-xl text-caption hover:bg-blue-600 transition-all">Reload</button>
+          </div>
+        );
+      }
+      return this.props.children;
+    }
+  }
+
+  const SkeletonRow = ({ cols = 5 }: { cols?: number }) => (
+    <tr className="animate-pulse">
+      {Array.from({ length: cols }).map((_, i) => (
+        <td key={i} className="px-8 py-6"><div className="h-4 bg-slate-100 rounded-lg w-3/4" /></td>
+      ))}
+    </tr>
+  );
+  const SkeletonCard = () => (
+    <div className="p-5 space-y-3 animate-pulse">
+      <div className="h-4 bg-slate-100 rounded-lg w-1/2" />
+      <div className="h-3 bg-slate-100 rounded-lg w-3/4" />
+      <div className="h-3 bg-slate-100 rounded-lg w-1/3" />
+    </div>
+  );
+
   if (currentUser?.role !== 'admin') {
     return (
       <div className="flex flex-col items-center justify-center h-screen space-y-4">
@@ -251,6 +393,7 @@ const AdminPanel: React.FC = () => {
   }
 
   return (
+    <AdminErrorBoundary>
     <div className="px-4 md:px-8 lg:px-10 py-6 md:py-10 max-w-7xl mx-auto space-y-10 min-h-screen bg-[#f8fafc]">
       {/* 1. Header with Stats */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -282,14 +425,23 @@ const AdminPanel: React.FC = () => {
               <Gift className="h-4 w-4" />
               <span className="text-caption">Voucher</span>
            </button>
-           <button onClick={fetchData} className="p-3 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm text-slate-500 flex items-center justify-center">
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-           </button>
-        </div>
-      </div>
+            <button onClick={() => {
+              const data = activeTab === 'users' ? filteredUsers : activeTab === 'vouchers' ? vouchers : activeTab === 'feedback' ? feedbacks : filteredRequests;
+              const columns = activeTab === 'users' ? [{key:'name',label:'Name'},{key:'email',label:'Email'},{key:'tier',label:'Tier'},{key:'subscription_expiry',label:'Expiry'}] :
+                activeTab === 'vouchers' ? [{key:'code',label:'Code'},{key:'tier',label:'Tier'},{key:'duration_days',label:'Days'},{key:'current_uses',label:'Uses'},{key:'max_uses',label:'Max'}] :
+                activeTab === 'feedback' ? [{key:'user_name',label:'Name'},{key:'rating',label:'Rating'},{key:'message',label:'Message'}] :
+                [{key:'name',label:'Name'},{key:'email',label:'Email'},{key:'tier',label:'Tier'},{key:'status',label:'Status'}];
+              exportToCSV(data, `admin-${activeTab}`, columns);
+            }} className="p-3 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm text-slate-500 flex items-center justify-center" title="Export CSV">
+               <Download className="h-4 w-4" />
+            </button>
+             <button onClick={fetchData} className="p-3 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm text-slate-500 flex items-center justify-center">
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+             </button>
+         </div>
+       </div>
 
-      {/* 2. Controls & Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
          <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 w-full max-w-full overflow-x-auto no-scrollbar">
             <button 
               onClick={() => setActiveTab('pending')}
@@ -340,6 +492,20 @@ const AdminPanel: React.FC = () => {
               <UserPlus className="h-4 w-4" />
               <span>Waitlist ({waitlist.length})</span>
             </button>
+            <button 
+              onClick={() => { setActiveTab('health'); fetchHealthData(); }}
+              className={`px-8 py-3 rounded-xl text-caption transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'health' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}
+            >
+              <Activity className="h-4 w-4" />
+              <span>Health</span>
+            </button>
+            <button 
+              onClick={() => { setActiveTab('audit'); fetchAuditData(); }}
+              className={`px-8 py-3 rounded-xl text-caption transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'audit' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500'}`}
+            >
+              <ScrollText className="h-4 w-4" />
+              <span>Audit</span>
+            </button>
          </div>
          
          <div className="flex items-center space-x-6 text-caption text-slate-500">
@@ -359,10 +525,31 @@ const AdminPanel: React.FC = () => {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
              <thead>
-               <tr className="border-b border-slate-50 bg-slate-50/30">
-                  <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    {activeTab === 'users' ? 'Member Profile' : activeTab === 'vouchers' ? 'Voucher Code' : activeTab === 'feedback' ? 'Member Profile' : 'Approval Request'}
-                  </th>
+                <tr className="border-b border-slate-50 bg-slate-50/30">
+                   {(activeTab === 'vouchers' || activeTab === 'users' || activeTab === 'feedback' || activeTab === 'pending' || activeTab === 'approved') && (
+                     <th className="px-4 py-5 w-10">
+                       <input type="checkbox"
+                         onChange={() => {
+                           const ids = activeTab === 'users' ? filteredUsers.map(u => u.id) :
+                             activeTab === 'feedback' ? feedbacks.map(f => f.id) :
+                             activeTab === 'vouchers' ? vouchers.map(v => v.id) :
+                             filteredRequests.map(r => r.id);
+                           toggleSelectAll(ids);
+                         }}
+                         checked={(() => {
+                           const ids = activeTab === 'users' ? filteredUsers.map(u => u.id) :
+                             activeTab === 'feedback' ? feedbacks.map(f => f.id) :
+                             activeTab === 'vouchers' ? vouchers.map(v => v.id) :
+                             filteredRequests.map(r => r.id);
+                           return ids.length > 0 && selectedIds.size === ids.length;
+                         })()}
+                         className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                       />
+                   </th>
+                   )}
+                   <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                     {activeTab === 'users' ? 'Member Profile' : activeTab === 'vouchers' ? 'Voucher Code' : activeTab === 'feedback' ? 'Member Profile' : 'Approval Request'}
+                   </th>
                   <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
                     {activeTab === 'feedback' ? 'Rating' : 'Status'}
                   </th>
@@ -375,11 +562,16 @@ const AdminPanel: React.FC = () => {
                   <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                </tr>
              </thead>
-             <tbody className="divide-y divide-slate-50">
-               {activeTab === 'vouchers' ? (
-                 (vouchers || []).map(v => (
-                   <tr key={v.id} className="group hover:bg-slate-50/50 transition-colors">
-                     <td className="px-8 py-6 font-mono font-bold text-slate-900 text-xs select-all">{v.code}</td>
+              <tbody className="divide-y divide-slate-50">
+                 {isLoading ? (
+                   Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={5} />)
+                 ) : activeTab === 'vouchers' ? (
+                   paginate(vouchers || []).map(v => (
+                    <tr key={v.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-6 w-10">
+                        <input type="checkbox" checked={selectedIds.has(v.id)} onChange={() => toggleSelect(v.id)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                      </td>
+                      <td className="px-8 py-6 font-mono font-bold text-slate-900 text-xs select-all">{v.code}</td>
                      <td className="px-8 py-6">
                         <div className="flex justify-center">
                           <span className={`px-2 py-1 rounded text-caption uppercase ${v.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
@@ -412,13 +604,16 @@ const AdminPanel: React.FC = () => {
                      </td>
                    </tr>
                  ))
-               ) : activeTab === 'users' ? (
-                 filteredUsers.map(u => {
+                ) : activeTab === 'users' ? (
+                  paginate(filteredUsers).map(u => {
                    const days = getDaysRemaining(u.subscription_expiry || '');
                    return (
-                    <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors">
-                      <td className="px-8 py-6">
-                         <div className="flex items-center space-x-4">
+                     <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors">
+                       <td className="px-4 py-6 w-10">
+                         <input type="checkbox" checked={selectedIds.has(u.id)} onChange={() => toggleSelect(u.id)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                       </td>
+                       <td className="px-8 py-6">
+                          <div className="flex items-center space-x-4">
                             <div className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs uppercase italic">
                                {u.name?.substring(0,2)}
                             </div>
@@ -476,11 +671,14 @@ const AdminPanel: React.FC = () => {
                     </tr>
                    );
                  })
-               ) : activeTab === 'feedback' ? (
-                  (feedbacks || []).map(f => (
-                    <tr key={f.id} className="group hover:bg-slate-50/50 transition-colors">
-                      <td className="px-8 py-6">
-                        <div className="flex flex-col">
+                ) : activeTab === 'feedback' ? (
+                    paginate(feedbacks || []).map(f => (
+                     <tr key={f.id} className="group hover:bg-slate-50/50 transition-colors">
+                       <td className="px-4 py-6 w-10">
+                         <input type="checkbox" checked={selectedIds.has(f.id)} onChange={() => toggleSelect(f.id)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                       </td>
+                       <td className="px-8 py-6">
+                         <div className="flex flex-col">
                            <span className="text-[13px] font-bold text-slate-900 leading-none">{f.user_name || 'System User'}</span>
                            <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter mt-1">{f.user_email}</span>
                         </div>
@@ -550,10 +748,13 @@ const AdminPanel: React.FC = () => {
                     </tr>
                   ))
                 ) : (
-                 filteredRequests.map(req => (
-                  <tr key={req.id} className="group hover:bg-slate-50/50 transition-colors">
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col">
+                  paginate(filteredRequests).map(req => (
+                   <tr key={req.id} className="group hover:bg-slate-50/50 transition-colors">
+                     <td className="px-4 py-6 w-10">
+                       <input type="checkbox" checked={selectedIds.has(req.id)} onChange={() => toggleSelect(req.id)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                     </td>
+                     <td className="px-8 py-6">
+                       <div className="flex flex-col">
                          <span className="text-[13px] font-bold text-slate-900 leading-none">{req.name}</span>
                          <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter mt-1">{req.email || req.mobile}</span>
                       </div>
@@ -602,14 +803,26 @@ const AdminPanel: React.FC = () => {
                   </tr>
                  ))
                )}
-             </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Card View */}
+              </tbody>
+           </table>
+            {selectedIds.size > 0 && (
+              <div className="flex items-center justify-between px-6 py-3 bg-blue-50 border-t border-blue-100">
+                <span className="text-xs font-bold text-blue-700">{selectedIds.size} selected</span>
+                <div className="flex items-center space-x-2">
+                  {(activeTab === 'pending' || activeTab === 'approved') && (
+                    <button onClick={() => { confirmThen('Bulk Approve', `Approve ${selectedIds.size} upgrade requests?`, handleBulkApprove); }} className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-all">Approve All</button>
+                  )}
+                  <button onClick={() => { const type = activeTab === 'feedback' ? 'feedback' : activeTab === 'vouchers' ? 'vouchers' : 'upgrade-requests'; confirmThen('Bulk Delete', `Delete ${selectedIds.size} items?`, () => handleBulkDelete(type), 'danger'); }} className="px-3 py-1.5 text-xs font-bold text-white bg-rose-600 rounded-lg hover:bg-rose-700 transition-all">Delete Selected</button>
+                </div>
+              </div>
+            )}
+            <Pagination items={activeTab === 'vouchers' ? vouchers : activeTab === 'users' ? filteredUsers : activeTab === 'feedback' ? feedbacks : filteredRequests} />
+         </div>
         <div className="md:hidden divide-y divide-slate-100">
-          {activeTab === 'vouchers' ? (
-            (vouchers || []).map(v => (
+           {isLoading ? (
+             Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+           ) : activeTab === 'vouchers' ? (
+             paginate(vouchers || []).map(v => (
               <div key={v.id} className="p-5 space-y-3.5 hover:bg-slate-50/40 transition-colors">
                  <div className="flex justify-between items-start">
                     <div>
@@ -644,7 +857,7 @@ const AdminPanel: React.FC = () => {
               </div>
             ))
           ) : activeTab === 'users' ? (
-            filteredUsers.map(u => {
+            paginate(filteredUsers).map(u => {
               const days = getDaysRemaining(u.subscription_expiry || '');
               return (
                 <div key={u.id} className="p-5 space-y-3.5 hover:bg-slate-50/40 transition-colors">
@@ -698,7 +911,7 @@ const AdminPanel: React.FC = () => {
               );
             })
           ) : activeTab === 'feedback' ? (
-            (feedbacks || []).map(f => (
+            paginate(feedbacks || []).map(f => (
               <div key={f.id} className="p-5 space-y-3 hover:bg-slate-50/40 transition-colors">
                  <div className="flex justify-between items-start">
                     <div>
@@ -740,7 +953,7 @@ const AdminPanel: React.FC = () => {
               </div>
             ))
           ) : (
-            filteredRequests.map(req => (
+            paginate(filteredRequests).map(req => (
               <div key={req.id} className="p-5 space-y-3.5 hover:bg-slate-50/40 transition-colors">
                  <div className="flex justify-between items-start">
                     <div>
@@ -777,6 +990,7 @@ const AdminPanel: React.FC = () => {
             ))
           )}
         </div>
+        <Pagination items={activeTab === 'vouchers' ? vouchers : activeTab === 'users' ? filteredUsers : activeTab === 'feedback' ? feedbacks : filteredRequests} />
       </div>
 
       {/* 3b. Blog Tab */}
@@ -836,6 +1050,99 @@ const AdminPanel: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3d. Health Tab */}
+      {activeTab === 'health' && (
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden p-6 md:p-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+              <Activity className="h-4 w-4 text-emerald-600" />
+              <span>System Health</span>
+            </h3>
+            <button
+              onClick={runHealthCheck}
+              disabled={isHealthLoading}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-caption hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center space-x-1.5"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isHealthLoading ? 'animate-spin' : ''}`} />
+              <span>{isHealthLoading ? 'Running...' : 'Run Check'}</span>
+            </button>
+          </div>
+          {healthData ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {['api', 'database', 'cron'].map(service => (
+                <div key={service} className={`rounded-2xl p-5 border ${healthData[service]?.status === 'ok' ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold text-slate-900 uppercase tracking-wider">{service}</span>
+                    <span className={`h-2.5 w-2.5 rounded-full ${healthData[service]?.status === 'ok' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                  </div>
+                  <p className="text-xs text-slate-500">{healthData[service]?.message || 'No data'}</p>
+                  {healthData[service]?.latency_ms && <p className="text-xs text-slate-400 mt-1">{healthData[service].latency_ms}ms</p>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 text-slate-400">
+              <Activity className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <p className="text-caption">Click "Run Check" to test system health</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3e. Audit Tab */}
+      {activeTab === 'audit' && (
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden p-6 md:p-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+              <ScrollText className="h-4 w-4 text-amber-600" />
+              <span>Audit Log</span>
+            </h3>
+            <button
+              onClick={runAudit}
+              disabled={isAuditLoading}
+              className="px-4 py-2 bg-amber-600 text-white rounded-xl text-caption hover:bg-amber-700 transition-all disabled:opacity-50 flex items-center space-x-1.5"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isAuditLoading ? 'animate-spin' : ''}`} />
+              <span>{isAuditLoading ? 'Running...' : 'Run Audit'}</span>
+            </button>
+          </div>
+          {auditData ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-slate-50 rounded-2xl p-5">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Checks</p>
+                  <p className="text-2xl font-black text-slate-900 mt-1">{auditData.total_checks || 0}</p>
+                </div>
+                <div className="bg-slate-50 rounded-2xl p-5">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Passed</p>
+                  <p className="text-2xl font-black text-emerald-600 mt-1">{auditData.passed || 0}</p>
+                </div>
+                <div className="bg-slate-50 rounded-2xl p-5">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Failed</p>
+                  <p className="text-2xl font-black text-rose-600 mt-1">{auditData.failed || 0}</p>
+                </div>
+              </div>
+              {auditData.issues && auditData.issues.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Issues</h4>
+                  {auditData.issues.map((issue: any, i: number) => (
+                    <div key={i} className="bg-rose-50 border border-rose-200 rounded-xl p-4">
+                      <p className="text-sm font-bold text-slate-900">{issue.type}</p>
+                      <p className="text-xs text-slate-600 mt-1">{issue.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-16 text-slate-400">
+              <ScrollText className="h-12 w-12 mx-auto mb-4 opacity-30" />
+              <p className="text-caption">Click "Run Audit" to perform a system audit</p>
             </div>
           )}
         </div>
@@ -1100,7 +1407,40 @@ const AdminPanel: React.FC = () => {
            </div>
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      {confirmState.open && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2rem] p-6 md:p-8 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-500">
+            <div className="flex items-start justify-between">
+              <div className={`p-2 rounded-xl ${confirmState.variant === 'danger' ? 'bg-rose-100' : 'bg-amber-100'}`}>
+                <AlertTriangle className={`h-5 w-5 ${confirmState.variant === 'danger' ? 'text-rose-600' : 'text-amber-600'}`} />
+              </div>
+              <button onClick={() => setConfirmState(prev => ({ ...prev, open: false }))} className="p-1 hover:bg-slate-50 rounded-full transition-all text-slate-300">
+                <XCircle className="h-5 w-5" />
+              </button>
+            </div>
+            <h3 className="text-lg font-black text-slate-900">{confirmState.title}</h3>
+            <p className="text-xs text-slate-600">{confirmState.message}</p>
+            <div className="flex space-x-3 pt-2">
+              <button
+                onClick={() => setConfirmState(prev => ({ ...prev, open: false }))}
+                className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-caption font-bold hover:bg-slate-200 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { confirmState.onConfirm(); setConfirmState(prev => ({ ...prev, open: false })); }}
+                className={`flex-1 py-3 text-white rounded-xl text-caption font-bold transition-all ${confirmState.variant === 'danger' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+              >
+                {confirmState.confirmLabel || 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    </AdminErrorBoundary>
   );
 };
 

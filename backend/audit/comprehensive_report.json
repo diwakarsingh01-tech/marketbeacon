@@ -1,0 +1,2439 @@
+{
+  "timestamp": "2026-07-18T17:35:50.125Z",
+  "summary": {
+    "total": 370,
+    "missing": 2,
+    "audited": 368,
+    "qualified": 26,
+    "observation": 253,
+    "rejected": 82,
+    "anomalies": 7
+  },
+  "baskets": {
+    "Elite Basket": {
+      "qualified": 15,
+      "observation": 20,
+      "rejected": 3,
+      "anomalies": 2,
+      "total": 40,
+      "missing": 0,
+      "details": [
+        {
+          "symbol": "TCS",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "INFY",
+          "status": "QUALIFIED",
+          "score": 90,
+          "strategies": [
+            "52W_HIGH_LOW",
+            "SMA_BCD",
+            "SR_STRATEGY"
+          ]
+        },
+        {
+          "symbol": "HDFCBANK",
+          "status": "QUALIFIED",
+          "score": 80,
+          "strategies": [
+            "ENVELOPE_LONG",
+            "ENVELOPE_SHORT",
+            "BOLLINGER",
+            "52W_HIGH_LOW"
+          ]
+        },
+        {
+          "symbol": "ICICIBANK",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "RELIANCE",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "KOTAKBANK",
+          "status": "ANOMALY",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": [
+            "BOLLINGER",
+            "52W_HIGH_LOW"
+          ]
+        },
+        {
+          "symbol": "AXISBANK",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "SBIN",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "LT",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "ITC",
+          "status": "QUALIFIED",
+          "score": 75,
+          "strategies": [
+            "ENVELOPE_LONG",
+            "BOLLINGER",
+            "52W_HIGH_LOW"
+          ]
+        },
+        {
+          "symbol": "HINDUNILVR",
+          "status": "QUALIFIED",
+          "score": 90,
+          "strategies": [
+            "ENVELOPE_LONG",
+            "ENVELOPE_SHORT",
+            "BOLLINGER",
+            "52W_HIGH_LOW"
+          ]
+        },
+        {
+          "symbol": "ASIANPAINT",
+          "status": "QUALIFIED",
+          "score": 75,
+          "strategies": [
+            "ENVELOPE_LONG",
+            "ENVELOPE_SHORT"
+          ]
+        },
+        {
+          "symbol": "TITAN",
+          "status": "REJECTED",
+          "score": 70,
+          "reason": "Failed Hard Reject Criteria",
+          "strategies": []
+        },
+        {
+          "symbol": "BAJFINANCE",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "BAJAJFINSV",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "BHARTIARTL",
+          "status": "QUALIFIED",
+          "score": 75,
+          "strategies": [
+            "ENVELOPE_SHORT"
+          ]
+        },
+        {
+          "symbol": "M&M",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "MARUTI",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "TMCV",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "SUNPHARMA",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "DRREDDY",
+          "status": "ANOMALY",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": [
+            "ENVELOPE_SHORT"
+          ]
+        },
+        {
+          "symbol": "CIPLA",
+          "status": "QUALIFIED",
+          "score": 65,
+          "strategies": [
+            "SMA_BCD"
+          ]
+        },
+        {
+          "symbol": "ULTRACEMCO",
+          "status": "QUALIFIED",
+          "score": 70,
+          "strategies": [
+            "ENVELOPE_SHORT"
+          ]
+        },
+        {
+          "symbol": "NESTLEIND",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "BRITANNIA",
+          "status": "QUALIFIED",
+          "score": 95,
+          "strategies": [
+            "BOLLINGER"
+          ]
+        },
+        {
+          "symbol": "ADANIPORTS",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "ADANIENT",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "JSWSTEEL",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "TATASTEEL",
+          "status": "QUALIFIED",
+          "score": 60,
+          "strategies": [
+            "ENVELOPE_SHORT"
+          ]
+        },
+        {
+          "symbol": "NTPC",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "ONGC",
+          "status": "QUALIFIED",
+          "score": 60,
+          "strategies": [
+            "ENVELOPE_LONG",
+            "ENVELOPE_SHORT"
+          ]
+        },
+        {
+          "symbol": "POWERGRID",
+          "status": "QUALIFIED",
+          "score": 70,
+          "strategies": [
+            "ENVELOPE_LONG",
+            "BOLLINGER"
+          ]
+        },
+        {
+          "symbol": "COALINDIA",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "SHRIRAMFIN",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "APOLLOHOSP",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "PIDILITIND",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "HAVELLS",
+          "status": "QUALIFIED",
+          "score": 90,
+          "strategies": [
+            "ENVELOPE_SHORT"
+          ]
+        },
+        {
+          "symbol": "EICHERMOT",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "NIFTYBEES",
+          "status": "QUALIFIED",
+          "score": 75,
+          "strategies": [
+            "BOLLINGER"
+          ]
+        },
+        {
+          "symbol": "BANKBEES",
+          "status": "QUALIFIED",
+          "score": 75,
+          "strategies": [
+            "ENVELOPE_SHORT"
+          ]
+        }
+      ]
+    },
+    "Quality Basket": {
+      "qualified": 6,
+      "observation": 27,
+      "rejected": 4,
+      "anomalies": 1,
+      "total": 39,
+      "missing": 1,
+      "details": [
+        {
+          "symbol": "RELAXO",
+          "status": "QUALIFIED",
+          "score": 85,
+          "strategies": [
+            "SIXTY_SEVEN_FUNDA"
+          ]
+        },
+        {
+          "symbol": "FINCABLES",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "SYMPHONY",
+          "status": "ANOMALY",
+          "score": 40,
+          "reason": "Low Institutional Score",
+          "strategies": [
+            "SR_STRATEGY"
+          ]
+        },
+        {
+          "symbol": "TEAMLEASE",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "SFL",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "RAJESHEXPO",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "CERA",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "TASTYBITE",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "HONAUT",
+          "status": "QUALIFIED",
+          "score": 95,
+          "strategies": [
+            "RHS_ABCD"
+          ]
+        },
+        {
+          "symbol": "SIS",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "VGUARD",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "SUNTV",
+          "status": "QUALIFIED",
+          "score": 70,
+          "strategies": [
+            "SMA_BCD"
+          ]
+        },
+        {
+          "symbol": "OFSS",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "BAYERCROP",
+          "status": "QUALIFIED",
+          "score": 95,
+          "strategies": [
+            "SMA_BCD"
+          ]
+        },
+        {
+          "symbol": "TTKPRESTIG",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "VIPIND",
+          "status": "REJECTED",
+          "score": 25,
+          "reason": "Failed Hard Reject Criteria",
+          "strategies": []
+        },
+        {
+          "symbol": "JCHAC",
+          "status": "MISSING"
+        },
+        {
+          "symbol": "KAJARIACER",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "VINATIORGA",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "CAPLIPOINT",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "GODREJCP",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "FINEORG",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "DIXON",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "KEI",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "ERIS",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "ASTRAZEN",
+          "status": "QUALIFIED",
+          "score": 95,
+          "strategies": [
+            "SMA_BCD"
+          ]
+        },
+        {
+          "symbol": "AVANTIFEED",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "PGHL",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "LALPATHLAB",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "BOSCHLTD",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "MOTILALOFS",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "3MINDIA",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "UJJIVANSFB",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "TVSMOTOR",
+          "status": "REJECTED",
+          "score": 75,
+          "reason": "Failed Hard Reject Criteria",
+          "strategies": []
+        },
+        {
+          "symbol": "HEROMOTOCO",
+          "status": "QUALIFIED",
+          "score": 95,
+          "strategies": [
+            "SMA_BCD"
+          ]
+        },
+        {
+          "symbol": "RADICO",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "EICHERMOT",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "POLYCAB",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "MCX",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        }
+      ]
+    },
+    "Growth Basket": {
+      "qualified": 3,
+      "observation": 202,
+      "rejected": 72,
+      "anomalies": 4,
+      "total": 282,
+      "missing": 1,
+      "details": [
+        {
+          "symbol": "RELIANCE",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "HDFCBANK",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "ICICIBANK",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "SBIN",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "TCS",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "HINDUNILVR",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "INFY",
+          "status": "QUALIFIED",
+          "score": 90,
+          "strategies": [
+            "SR_STRATEGY"
+          ]
+        },
+        {
+          "symbol": "SUNPHARMA",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "MARUTI",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "AXISBANK",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "KOTAKBANK",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "ITC",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "ONGC",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "ULTRACEMCO",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "HCLTECH",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "BEL",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "COALINDIA",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "HAL",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "DMART",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "NESTLEIND",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "ASIANPAINT",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "HINDZINC",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "WIPRO",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "EICHERMOT",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "VBL",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "DIVISLAB",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "SOLARINDS",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "IDEA",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "CUMMINSIND",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "BSE",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "ABB",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "PIDILITIND",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "TRENT",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "CGPOWER",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "POLYCAB",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "DLF",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "BANKBARODA",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "TMCV",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "BHEL",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "SIEMENS",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "TECHM",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "UNIONBANK",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "HDFCLIFE",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "BRITANNIA",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "CANBK",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "PNB",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "JINDALSTEL",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "BAJAJHLDNG",
+          "status": "REJECTED",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "INDIANB",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "CIPLA",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "GAIL",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "BOSCHLTD",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "HDFCAMC",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "DRREDDY",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "MARICO",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "AMBUJACEM",
+          "status": "QUALIFIED",
+          "score": 65,
+          "strategies": [
+            "SR_STRATEGY"
+          ]
+        },
+        {
+          "symbol": "LUPIN",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "GODREJCP",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "MAZDOCK",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "HEROMOTOCO",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "INDHOTEL",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "SHREECEM",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "OFSS",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "AUROPHARMA",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "NMDC",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "SRF",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "PERSISTENT",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "IDBI",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "LAURUSLABS",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "SUZLON",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "DABUR",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "FEDERALBNK",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "YESBANK",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "FORTIS",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "NATIONALUM",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "AUBANK",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "HAVELLS",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "MCX",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "NAM-INDIA",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "INDUSINDBK",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "ICICIPRULI",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "DIXON",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "GICRE",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "BIOCON",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "BANKINDIA",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "NAUKRI",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "IOB",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "SCHAEFFLER",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "ALKEM",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "PHOENIXLTD",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "IDFCFIRSTB",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "GLENMARK",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "MAHABANK",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "TIINDIA",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "LINDEINDIA",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "COFORGE",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "OBEROIRLTY",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "BERGEPAINT",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "JSL",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "MFSL",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "TATAMOTORS",
+          "status": "MISSING"
+        },
+        {
+          "symbol": "THERMAX",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "COLPAL",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "COROMANDEL",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "MRF",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "KEI",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "HINDCOPPER",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "APLAPOLLO",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "RADICO",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "SUPREMEIND",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "MPHASIS",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "AIAENG",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "VOLTAS",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "IPCALAB",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "BALKRISIND",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "PIIND",
+          "status": "REJECTED",
+          "score": 40,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "ASTRAL",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "PETRONET",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "COCHINSHIP",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "KPRMILL",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "AJANTPHARM",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "GLAXO",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "WELCORP",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "NAVINFLUOR",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "3MINDIA",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "ENDURANCE",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "GODFRYPHLP",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "UBL",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "JBCHEPHARM",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "HSCL",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "CONCOR",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "LTTS",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "EXIDEIND",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "TATAINVEST",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "BLUESTARCO",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "UCOBANK",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "WOCKPHARMA",
+          "status": "REJECTED",
+          "score": 40,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "ESCORTS",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "NBCC",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "HFCL",
+          "status": "REJECTED",
+          "score": 40,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "CRISIL",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "CENTRALBK",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "TIMKEN",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "TATAELXSI",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "LALPATHLAB",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "CDSL",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "APOLLOTYRE",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "ACC",
+          "status": "REJECTED",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "NIACL",
+          "status": "REJECTED",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "MTARTECH",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "IGL",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "DEEPAKNTR",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "KAYNES",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "TRITURBINE",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "RBLBANK",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "GRINDWELL",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "GMDCLTD",
+          "status": "REJECTED",
+          "score": 35,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "GESHIP",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "RAMCOCEM",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "KPITTECH",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "PFIZER",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "SUNTV",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "CARBORUNIV",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "ATUL",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "BAYERCROP",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "ELGIEQUIP",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "GRANULES",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "CAMS",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "CHAMBLFERT",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "REDINGTON",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "VTL",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "EIHOTEL",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "SUNDRMFAST",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "CHENNPETRO",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "SYNGENE",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "KAJARIACER",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "KANSAINER",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "EMAMILTD",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "J&KBANK",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "FINCABLES",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "NATCOPHARM",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "JINDALSAW",
+          "status": "REJECTED",
+          "score": 40,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "DCMSHRIRAM",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "GSPL",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "CAPLIPOINT",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "AVANTIFEED",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "INOXWIND",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "BASF",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "FINEORG",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "BEML",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "APLLTD",
+          "status": "REJECTED",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "SOBHA",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "ZENTEC",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "GRAPHITE",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "KFINTECH",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "VGUARD",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "VINATIORGA",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "ENGINERSIN",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "EIDPARRY",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "ECLERX",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "TRIDENT",
+          "status": "REJECTED",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "SOUTHBANK",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "ZENSARTECH",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "IEX",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "ZEEL",
+          "status": "REJECTED",
+          "score": 35,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "MGL",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "FINPIPE",
+          "status": "REJECTED",
+          "score": 30,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "BBTC",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "SHILPAMED",
+          "status": "OBSERVATION",
+          "score": 65,
+          "strategies": []
+        },
+        {
+          "symbol": "HEG",
+          "status": "REJECTED",
+          "score": 40,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "INTELLECT",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "RAILTEL",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "MMTC",
+          "status": "REJECTED",
+          "score": 35,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "WHIRLPOOL",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "RITES",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "WABAG",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "KTKBANK",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Failed Hard Reject Criteria",
+          "strategies": []
+        },
+        {
+          "symbol": "CYIENT",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "NCC",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "PCJEWELLER",
+          "status": "ANOMALY",
+          "score": 40,
+          "reason": "Low Institutional Score",
+          "strategies": [
+            "SR_STRATEGY"
+          ]
+        },
+        {
+          "symbol": "TIMETECHNO",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "STARCEMENT",
+          "status": "REJECTED",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "MAHSEAMLES",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "THYROCARE",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "KRBL",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "SHARDACROP",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "SKFINDIA",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "NESCO",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "GPPL",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "BIRLACORPN",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "GNFC",
+          "status": "REJECTED",
+          "score": 40,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "JYOTHYLAB",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "SONATSOFTW",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "SANOFI",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "TTKPRESTIG",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "BAJAJCON",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "CERA",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "SFL",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "SPARC",
+          "status": "OBSERVATION",
+          "score": 90,
+          "strategies": []
+        },
+        {
+          "symbol": "TANLA",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "LATENTVIEW",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "JKPAPER",
+          "status": "ANOMALY",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": [
+            "TWENTY_RALLY_RETEST"
+          ]
+        },
+        {
+          "symbol": "GSFC",
+          "status": "REJECTED",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "GALAXYSURF",
+          "status": "REJECTED",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "FDC",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "NEWGEN",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "MOIL",
+          "status": "REJECTED",
+          "score": 40,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "ITDC",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "PTC",
+          "status": "REJECTED",
+          "score": 30,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "IFBIND",
+          "status": "OBSERVATION",
+          "score": 95,
+          "strategies": []
+        },
+        {
+          "symbol": "ICRA",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "JAMNAAUTO",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "CARERATING",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "MAPMYINDIA",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "BLISSGVS",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "GULFOILLUB",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "JUSTDIAL",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "THOMASCOOK",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "RALLIS",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "KSCL",
+          "status": "OBSERVATION",
+          "score": 80,
+          "strategies": []
+        },
+        {
+          "symbol": "VSTIND",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "SUNTECK",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "ADVENZYMES",
+          "status": "OBSERVATION",
+          "score": 60,
+          "strategies": []
+        },
+        {
+          "symbol": "GHCL",
+          "status": "ANOMALY",
+          "score": 40,
+          "reason": "Low Institutional Score",
+          "strategies": [
+            "SR_STRATEGY"
+          ]
+        },
+        {
+          "symbol": "LUXIND",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "KNRCON",
+          "status": "REJECTED",
+          "score": 30,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "DBCORP",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "QUESS",
+          "status": "REJECTED",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "ASHOKA",
+          "status": "QUALIFIED",
+          "score": 65,
+          "strategies": [
+            "SR_STRATEGY"
+          ]
+        },
+        {
+          "symbol": "RELINFRA",
+          "status": "REJECTED",
+          "score": 40,
+          "reason": "Failed Hard Reject Criteria",
+          "strategies": []
+        },
+        {
+          "symbol": "ROUTE",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "BALMLAWRIE",
+          "status": "REJECTED",
+          "score": 40,
+          "reason": "Failed Hard Reject Criteria",
+          "strategies": []
+        },
+        {
+          "symbol": "DCAL",
+          "status": "ANOMALY",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": [
+            "SR_STRATEGY"
+          ]
+        },
+        {
+          "symbol": "HERITGFOOD",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "RAJESHEXPO",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "TEAMLEASE",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "JAICORPLTD",
+          "status": "REJECTED",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "HATHWAY",
+          "status": "REJECTED",
+          "score": 45,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "NILKAMAL",
+          "status": "REJECTED",
+          "score": 50,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "DELTACORP",
+          "status": "REJECTED",
+          "score": 25,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "JAGRAN",
+          "status": "REJECTED",
+          "score": 35,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "RUPA",
+          "status": "REJECTED",
+          "score": 35,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        }
+      ]
+    },
+    "Fallen Value Basket": {
+      "qualified": 2,
+      "observation": 4,
+      "rejected": 3,
+      "anomalies": 0,
+      "total": 9,
+      "missing": 0,
+      "details": [
+        {
+          "symbol": "BANDHANBNK",
+          "status": "QUALIFIED",
+          "score": 90,
+          "strategies": [
+            "SIXTY_SEVEN_FUNDA"
+          ]
+        },
+        {
+          "symbol": "VENKEYS",
+          "status": "QUALIFIED",
+          "score": 70,
+          "strategies": [
+            "SIXTY_SEVEN_FUNDA"
+          ]
+        },
+        {
+          "symbol": "ZEEL",
+          "status": "REJECTED",
+          "score": 35,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "DELTACORP",
+          "status": "REJECTED",
+          "score": 25,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        },
+        {
+          "symbol": "IEX",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "NEWGEN",
+          "status": "OBSERVATION",
+          "score": 85,
+          "strategies": []
+        },
+        {
+          "symbol": "MAPMYINDIA",
+          "status": "OBSERVATION",
+          "score": 75,
+          "strategies": []
+        },
+        {
+          "symbol": "JUSTDIAL",
+          "status": "OBSERVATION",
+          "score": 70,
+          "strategies": []
+        },
+        {
+          "symbol": "SKFINDIA",
+          "status": "REJECTED",
+          "score": 55,
+          "reason": "Low Institutional Score",
+          "strategies": []
+        }
+      ]
+    }
+  }
+}
