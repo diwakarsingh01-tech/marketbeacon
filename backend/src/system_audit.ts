@@ -4,7 +4,6 @@ import {
   calculateEnvelope, 
   calculateBollingerBand, 
   calculateSRStrategy, 
-  calculateRHS, 
   calculateCupHandle,
   checkInstitutionalMandates 
 } from './strategies/index.js';
@@ -28,12 +27,11 @@ async function performAudit() {
     const mandate = checkInstitutionalMandates(screener);
     
     const sr = calculateSRStrategy(quotes, screener);
-    const rhs = calculateRHS(quotes);
     const ch = calculateCupHandle(quotes);
     const env = calculateEnvelope(quotes);
     const bb = calculateBollingerBand(quotes);
 
-    const activeStrategies = [sr, rhs, ch, env, bb].filter(s => s && s.isBuyZone);
+    const activeStrategies = [sr, ch, env, bb].filter(s => s && s.isBuyZone);
 
     if (activeStrategies.length > 0) {
       console.log(`\n[SYMBOL] ${sym} | Price: ${snap.quote.regularMarketPrice}`);

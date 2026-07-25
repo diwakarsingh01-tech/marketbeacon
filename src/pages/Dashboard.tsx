@@ -2,20 +2,23 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import TradeTable from '../components/tables/TradeTable';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { BASKETS, STRATEGIES } from '../data/stocks';
 import { 
   Download, 
   ChevronRight, 
   RefreshCw, 
   TrendingUp, 
-  Wallet, 
   X, 
   ShieldAlert, 
   Zap, 
   Globe, 
-  Activity, 
-  PieChart, 
-  Trash2
+  Trash2,
+  TrendingDown,
+  BarChart3,
+  BookOpen,
+  Briefcase,
+  GraduationCap,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
@@ -24,49 +27,10 @@ import BrokerHub from '../components/modals/BrokerHub';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { toast } from 'sonner';
 import SEO from '../components/SEO';
-import type { AllStockItem, AuditData, WatchlistItem, TradeRecord, StockPriceResult } from '../types';
+import DataFreshnessBadge from '../components/ui/DataFreshnessBadge';
+import type { AllStockItem, AuditData, WatchlistItem, TradeRecord, StockPriceResult, IndexResult } from '../types';
 
 const API_URL = getApiUrl();
-
-// --- PREMIUM DASHBOARD COMPONENTS ---
-
-interface DashboardStatProps {
-  title: string;
-  value: string | number;
-  icon: React.FC<React.SVGProps<SVGSVGElement>>;
-  color?: string;
-  subtitle?: string;
-}
-
-const DashboardStat: React.FC<DashboardStatProps> = ({ title, value, icon: Icon, color = "blue", subtitle }) => {
-  const iconColors: Record<string, string> = {
-    blue: "text-blue-500 bg-blue-500/10 border-blue-500/30",
-    emerald: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30",
-    rose: "text-rose-400 bg-rose-500/10 border-rose-500/30",
-    slate: "text-[var(--text-tertiary)] bg-slate-500/10 border-slate-500/30",
-    amber: "text-amber-400 bg-amber-500/10 border-amber-500/30"
-  };
-
-  return (
-    <motion.div 
-      whileHover={{ y: -2, scale: 1.02 }}
-      className="card p-5 flex flex-col justify-between min-h-[110px] transition-all duration-200 hover:border-[var(--border-secondary)] hover:shadow-lg hover:shadow-black/50"
-    >
-      <div className="flex justify-between items-center mb-3">
-        <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">{title}</span>
-        <div className={`p-1.5 rounded-lg border ${iconColors[color]} backdrop-blur-sm`}>
-          <Icon className="h-3.5 w-3.5" />
-        </div>
-      </div>
-      <div className="space-y-0.5">
-        <h3 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight font-mono">{value}</h3>
-        {subtitle && (
-          <p className="text-label text-[var(--text-muted)] uppercase tracking-wider">{subtitle}</p>
-        )}
-      </div>
-    </motion.div>
-  );
-};
 
 interface DashboardPageProps {
   defaultTab?: 'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral';
@@ -87,6 +51,21 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       : 'ENVELOPE_LONG';
   const strategyId = searchParams.get('strategy') || defaultStrategyId;
 
+  // Market indices
+  const [indices, setIndices] = useState<IndexResult[]>([]);
+  useEffect(() => {
+    const fetchIndices = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/market-indices`);
+        const data = await safeJsonParse(res);
+        if (res.ok && data.results) setIndices(data.results);
+      } catch {}
+    };
+    fetchIndices();
+    const interval = setInterval(fetchIndices, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
 
 
   // Determine route context so tabs never bleed between screener and portfolio
@@ -98,6 +77,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const [data, setData] = useState<AuditData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(() => localStorage.getItem('mb_screener_last_updated'));
   const [activeBasket, setActiveBasket] = useState<string>(() => {
     const paramBasket = searchParams.get('basket');
     if (paramBasket && STRATEGIES.some(s => s.baskets.includes(paramBasket))) {
@@ -341,6 +321,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       if (response.ok && !d.error) {
           console.log(`[DASHBOARD] Successfully fetched ${d.allStocks?.length || 0} nodes for basket: ${activeBasket}`);
           setData(d);
+          const now = new Date().toISOString();
+          setLastUpdated(now);
+          localStorage.setItem('mb_screener_last_updated', now);
           const portfolioSymbols = [...(userWatchlist || []).map(w => w.symbol), ...(trades || []).map(t => t.symbol)];
           const symbolsToFetch = Array.from(new Set([...(d.allStocks?.map((s: any) => s.symbol) || []), ...portfolioSymbols]));
           fetchStockPrices(symbolsToFetch);
@@ -487,6 +470,21 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     return (BASKETS[activeBasket] || []).length || 0;
   }, [activeBasket]);
 
+  // Tier info
+  const tierColor = user?.tier === 'alpha' ? 'amber' : user?.tier === 'pro' ? 'blue' : 'emerald';
+  const tierLabel = user?.tier === 'alpha' ? 'Alpha' : user?.tier === 'pro' ? 'Pro' : 'Free';
+
+  // Quick action links
+  const quickLinks = [
+    { icon: Zap, label: 'Alpha Hub', path: '/alpha-hub', desc: 'Active institutional setups', bg: 'bg-purple-500/10', border: 'border-purple-500/20', iconCls: 'text-purple-400' },
+    { icon: BarChart3, label: 'Charts Terminal', path: '/charts', desc: 'Advanced charting suite', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', iconCls: 'text-[#00d09c]' },
+    { icon: Briefcase, label: 'Wealth Desk', path: '/portfolio', desc: 'Track holdings & P&L', bg: 'bg-amber-500/10', border: 'border-amber-500/20', iconCls: 'text-amber-400' },
+    { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Verify & log trades', bg: 'bg-blue-400/10', border: 'border-blue-400/20', iconCls: 'text-blue-400' },
+    { icon: GraduationCap, label: 'Education', path: '/education', desc: 'Learn institutional methods', bg: 'bg-rose-500/10', border: 'border-rose-500/20', iconCls: 'text-rose-400' },
+  ];
+
+  const niftyObj = indices.find(idx => idx.name === 'NIFTY 50');
+
   const handleMasterExport = () => {
     if (!data?.allStocks?.length) return;
     const headers = ['Symbol', 'Observation', 'Strategy', 'Sector', 'Market Cap', 'Level A (Base)', 'CMP', 'ATH', 'Model Objective', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
@@ -525,7 +523,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   if (!data && isRefreshing) {
     return (
-      <div className="flex-1 flex flex-col py-8 md:py-12 px-6 md:px-10 space-y-8 bg-[var(--bg-primary)] animate-in fade-in duration-500">
+      <div className="flex-1 flex flex-col py-6 md:py-8 px-6 md:px-10 space-y-6 bg-[var(--bg-primary)] animate-in fade-in duration-500">
+        {/* Market ticker skeleton */}
+        <div className="flex gap-4 overflow-hidden">
+          {[1,2,3].map(i => <div key={i} className="h-10 w-48 bg-[var(--bg-tertiary)] rounded-xl animate-pulse shrink-0" />)}
+        </div>
         <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-[var(--border-primary)] pb-8 gap-8">
            <div className="space-y-4">
               <div className="w-64 h-10 bg-[var(--bg-tertiary)] rounded-xl animate-pulse" />
@@ -537,7 +539,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
            </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-           {[1,2,3,4].map(i => <div key={i} className="h-40 bg-[var(--bg-primary)] rounded-2xl border border-[var(--border-primary)] animate-pulse" />)}
+           {[1,2,3,4].map(i => <div key={i} className="h-32 bg-[var(--bg-primary)] rounded-2xl border border-[var(--border-primary)] animate-pulse" />)}
         </div>
         <div className="h-96 bg-[var(--bg-primary)] rounded-3xl border border-[var(--border-primary)] animate-pulse" />
       </div>
@@ -545,71 +547,127 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   }
 
   return (
-    <div className="flex-1 flex flex-col py-6 md:py-8 px-6 md:px-10 space-y-8 bg-[var(--bg-primary)] overflow-y-auto no-scrollbar terminal-scan">
-      <SEO title="Stock Screener" description="Real-time stock screener with Institutional Audit Scores, ABCD entry levels, and multi-strategy analysis for Nifty 500." />
-      {/* Institutional Header (Safe-Guard Rule #9) */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-[var(--border-primary)] pb-8 gap-8">
-        <div className="space-y-4">
-           <div className="flex items-center space-x-3 text-[var(--text-tertiary)]">
-              <div className="w-10 h-10 bg-blue-600/20 text-blue-400 rounded-xl flex items-center justify-center shadow-xl border border-blue-500/30">
-                 <Zap className="h-5 w-5 text-blue-400" />
+    <div className="flex-1 flex flex-col py-4 md:py-6 px-4 md:px-8 lg:px-10 space-y-5 md:space-y-6 bg-[var(--bg-primary)] overflow-y-auto no-scrollbar terminal-scan">
+      <SEO title={isPortfolioRoute ? 'Wealth Desk' : isMarketRoute ? 'Market Watch' : 'Matrix Screener'} description="Real-time stock screener with Institutional Audit Scores, ABCD entry levels, and multi-strategy analysis for Nifty 500." />
+      
+      {/* ── Market Ticker Strip ── */}
+      <motion.div 
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex items-center gap-3 md:gap-5 overflow-x-auto no-scrollbar py-1.5 -mx-4 md:-mx-0 px-4 md:px-0"
+      >
+        <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider shrink-0">INDICES</span>
+        {indices.length > 0 ? indices.slice(0, 4).map(idx => (
+          <div key={idx.name} className="flex items-center gap-2 shrink-0 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-lg px-3 py-1.5 min-w-[140px]">
+            <span className="text-xs font-bold text-[var(--text-primary)]">{idx.name.replace(' ', '')}</span>
+            <span className="text-xs font-bold font-mono text-[var(--text-primary)]">{idx.price.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+            <span className={`text-[10px] font-bold flex items-center gap-0.5 ${idx.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+              {idx.change >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+              {idx.change >= 0 ? '+' : ''}{idx.change.toFixed(2)}%
+            </span>
+          </div>
+        )) : (
+          <div className="flex gap-3">
+            {[1,2,3].map(i => <div key={i} className="h-8 w-36 bg-[var(--bg-tertiary)] rounded-lg animate-pulse" />)}
+          </div>
+        )}
+        <div className="flex-1" />
+        <span className="text-[9px] text-[var(--text-muted)] font-medium shrink-0 opacity-50">
+          <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${true ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+          {true ? 'Market Open' : 'Closed'} · NSE
+        </span>
+      </motion.div>
+
+      {/* ── Breadcrumbs ── */}
+      <Breadcrumbs items={[
+        { label: isPortfolioRoute ? 'Wealth Desk' : isMarketRoute ? 'Market Watch' : 'Matrix Screener', href: '#' }
+      ]} />
+
+      {/* ── Enhanced Header ── */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between border-b border-[var(--border-primary)] pb-6 gap-6">
+        <div className="space-y-3">
+          {/* Top row: User greeting + tier badge */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 bg-gradient-to-br from-[#00d09c]/20 to-emerald-500/10 rounded-xl flex items-center justify-center shadow-sm border border-[#00d09c]/30">
+                <Zap className="h-4 w-4 text-[#00d09c]" />
               </div>
               <div className="flex flex-col">
-                 <span className="text-xs font-bold uppercase tracking-[0.4em] leading-none text-blue-400">Matrix Node</span>
-                 <span className="text-label text-[var(--text-muted)] uppercase tracking-wider mt-1 italic">Real-time Terminal Monitor</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em] leading-none text-[#00d09c]">MarketBeacon</span>
+                <span className="text-[9px] text-[var(--text-muted)] tracking-wider mt-0.5">Institutional Terminal</span>
               </div>
-           </div>
-            <div className="space-y-1">
-               <h1 className="text-3xl md:text-5xl font-black text-[var(--text-primary)] tracking-tighter uppercase leading-none">
-                 {isPortfolioRoute ? 'Wealth Desk' : isMarketRoute ? 'Market Watch' : 'Matrix Screener'}
-               </h1>
-               <p className="text-xs font-bold text-blue-400 uppercase tracking-[0.2em] pl-1">
-                 {isPortfolioRoute ? 'Custom Portfolio Asset Ledger' : currentStrategy.name}
-               </p>
             </div>
+            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+              tierColor === 'amber' ? 'bg-amber-50 border-amber-200 text-amber-700' : 
+              tierColor === 'blue' ? 'bg-blue-50 border-blue-200 text-blue-600' :
+              'bg-emerald-50 border-emerald-200 text-[#00d09c]'
+            }`}>{tierLabel} Tier</span>
+            {niftyObj && (
+              <span className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--bg-tertiary)] border border-[var(--border-primary)] px-2 py-0.5 rounded-full">
+                <span className={`w-1.5 h-1.5 rounded-full ${niftyObj.change >= 0 ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500 animate-pulse'}`} />
+                NIFTY {niftyObj.price.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                <span className={niftyObj.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}>
+                  {niftyObj.change >= 0 ? '+' : ''}{niftyObj.change.toFixed(2)}%
+                </span>
+              </span>
+            )}
+          </div>
+          
+          {/* Title row */}
+          <div className="space-y-0.5">
+            <h1 className="text-2xl md:text-4xl font-black text-[var(--text-primary)] tracking-tight leading-none">
+              {isPortfolioRoute ? 'Wealth Desk' : isMarketRoute ? 'Market Watch' : 'Matrix Screener'}
+            </h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.15em]">
+                {isPortfolioRoute ? 'Custom Portfolio Asset Ledger' : currentStrategy.name}
+              </p>
+              <DataFreshnessBadge lastUpdated={lastUpdated} dataType="Screener Scan" size="sm" className="ml-2" />
+            </div>
+          </div>
         </div>
-        
-        <div className="flex flex-col md:flex-row md:items-end gap-5 w-full lg:w-auto">
+
+        {/* ── Action Buttons ── */}
+        <div className="flex flex-col md:flex-row md:items-end gap-4 w-full lg:w-auto">
           {isPortfolioRoute && (
-            <div className="flex items-center gap-2.5 w-full md:w-auto">
-              <div className="grid grid-cols-3 gap-2.5 w-full md:flex md:w-auto">
-                <button 
-                  onClick={handleClearPortfolio} 
-                  className="px-4 py-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-caption shadow-sm flex items-center justify-center space-x-1.5 hover:bg-rose-100/50 hover:border-rose-300 transition-all active:scale-95 animate-in fade-in"
-                >
-                  <Trash2 className="h-4 w-4 text-rose-400" />
-                  <span className="hidden sm:inline">Remove Old Details</span>
-                  <span className="sm:hidden">Reset</span>
-                </button>
-                <button 
-                  onClick={() => setShowAddManualModal(true)} 
-                  className="px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl text-caption shadow-sm flex items-center justify-center space-x-1.5 hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] hover:border-blue-500/40 transition-all active:scale-95"
-                >
-                  <span>+ Add</span>
-                </button>
-                <button 
-                  onClick={() => setShowBrokerHub(true)} 
-                  className="px-5 py-3 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl text-caption shadow-lg flex items-center justify-center space-x-2 hover:bg-[var(--bg-primary)] transition-all active:scale-95 border border-white/5"
-                >
-                  <Globe className="h-4 w-4 text-blue-500" />
-                  <span className="hidden sm:inline">Upload New Details</span>
-                  <span className="sm:hidden">Upload</span>
-                </button>
-              </div>
+            <div className="grid grid-cols-4 sm:flex sm:items-center gap-2 w-full md:w-auto">
+              <button 
+                onClick={handleClearPortfolio} 
+                className="px-3 sm:px-4 py-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 hover:bg-rose-500/20 transition-all active:scale-95 min-h-[44px]"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Remove Old Details</span>
+                <span className="sm:hidden">Reset</span>
+              </button>
+              <button 
+                onClick={() => setShowAddManualModal(true)} 
+                className="px-3 sm:px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 hover:bg-[var(--bg-secondary)] transition-all active:scale-95 min-h-[44px]"
+              >
+                <span className="text-sm leading-none">+</span>
+                <span className="hidden sm:inline text-[11px]">Add</span>
+              </button>
+              <button 
+                onClick={() => setShowBrokerHub(true)} 
+                className="px-3 sm:px-4 py-3 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl text-[11px] font-bold flex items-center justify-center gap-2 hover:bg-[var(--bg-primary)] transition-all active:scale-95 border border-white/5 min-h-[44px]"
+              >
+                <Globe className="h-3.5 w-3.5 text-blue-500" />
+                <span className="hidden sm:inline">Upload</span>
+              </button>
               <button 
                 onClick={() => fetchData(true)} 
-                className={`p-2.5 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-tertiary)] shadow-sm hover:bg-[var(--bg-secondary)] transition-all shrink-0 ${isRefreshing ? 'animate-spin text-blue-500' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+                className={`p-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] transition-all shrink-0 flex items-center justify-center min-h-[44px] ${isRefreshing ? 'animate-spin text-blue-500' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="h-3.5 w-3.5" />
               </button>
             </div>
           )}
 
           {!isPortfolioRoute && (
-            <div className="grid grid-cols-2 md:flex md:flex-row md:items-end gap-3.5 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full">
               <div className="flex flex-col space-y-1">
-                <span className="text-caption text-[var(--text-tertiary)] uppercase tracking-[0.2em] pl-1.5">Active Universe</span>
-                <div className="relative group">
+                <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.2em] pl-1.5">Universe</span>
+                <div className="relative">
                   <select 
                     value={activeBasket} 
                     onChange={(e) => {
@@ -618,26 +676,25 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                       const supportsNewBasket = STRATEGIES.find(s => s.id === strategyId)?.baskets.includes(newBasket);
                       if (!supportsNewBasket) {
                         const firstAvailable = STRATEGIES.find(s => s.isLocked && s.baskets.includes(newBasket));
-                        if (firstAvailable) {
-                          navigate(`?strategy=${firstAvailable.id}`);
-                        }
+                        if (firstAvailable) navigate(`?strategy=${firstAvailable.id}`);
                       }
                     }} 
-                    className="appearance-none bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl pl-4 pr-10 py-2.5 text-xs font-bold uppercase outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500/50 shadow-sm cursor-pointer hover:border-blue-500/40 hover:text-[var(--text-primary)] transition-all w-full md:min-w-[150px]"
+                    className="appearance-none bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl pl-3.5 pr-9 py-2.5 text-[11px] font-bold uppercase outline-none focus-visible:ring-2 focus-visible:ring-[#00d09c]/50 focus-visible:border-[#00d09c]/50 shadow-sm cursor-pointer hover:border-[#00d09c]/40 hover:text-[var(--text-primary)] transition-all w-full sm:min-w-[160px]"
                   >
-                    {['Elite Basket', 'Quality Basket', 'Growth Basket'].map(b => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
+                    {['Elite Basket', 'Quality Basket', 'Growth Basket'].map(b => {
+                      const count = (BASKETS[b] || []).length;
+                      return <option key={b} value={b}>{b} · {count} stocks</option>;
+                    })}
                   </select>
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-tertiary)]">
-                    <ChevronRight className="w-3.5 h-3.5 rotate-90" />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-tertiary)]">
+                    <ChevronRight className="w-3 h-3 rotate-90" />
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col space-y-1">
-                <span className="text-caption text-[var(--text-tertiary)] uppercase tracking-[0.2em] pl-1.5">Model Matrix</span>
-                <div className="relative group">
+                <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.2em] pl-1.5">Strategy</span>
+                <div className="relative">
                   <select 
                     value={strategyId} 
                     onChange={(e) => {
@@ -649,7 +706,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                       }
                       navigate(`?strategy=${e.target.value}`);
                     }} 
-                    className="appearance-none bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl pl-4 pr-10 py-2.5 text-xs font-bold uppercase outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500/50 shadow-sm cursor-pointer hover:border-blue-500/40 hover:text-[var(--text-primary)] transition-all w-full md:min-w-[180px]"
+                    className="appearance-none bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl pl-3.5 pr-9 py-2.5 text-[11px] font-bold uppercase outline-none focus-visible:ring-2 focus-visible:ring-[#00d09c]/50 focus-visible:border-[#00d09c]/50 shadow-sm cursor-pointer hover:border-[#00d09c]/40 hover:text-[var(--text-primary)] transition-all w-full sm:min-w-[190px]"
                   >
                     {lockedStrategies.map(s => (
                       <option key={s.id} value={s.id}>
@@ -657,34 +714,34 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                       </option>
                     ))}
                   </select>
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-tertiary)]">
-                    <ChevronRight className="w-3.5 h-3.5 rotate-90" />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-tertiary)]">
+                    <ChevronRight className="w-3 h-3 rotate-90" />
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 col-span-2 md:col-span-1 w-full md:w-auto md:pb-0.5">
+              <div className="flex items-center gap-2 sm:pb-0.5">
                 <button 
                   onClick={handleMasterExport}
-                  className="flex-1 md:flex-initial flex items-center justify-center space-x-2 px-5 py-2.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl text-caption hover:bg-[var(--bg-secondary)] transition-all shadow-md group border border-[var(--border-primary)]"
+                  className="px-4 py-3 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl text-[11px] font-bold hover:bg-[var(--bg-secondary)] transition-all shadow-sm group border border-[var(--border-primary)] flex items-center gap-2 min-h-[44px]"
                 >
-                  <Download className="h-4 w-4 text-blue-500 group-hover:scale-110 transition-transform" />
-                  <span>Export Audit</span>
+                  <Download className="h-3.5 w-3.5 text-[#00d09c] group-hover:scale-110 transition-transform" />
+                  <span className="hidden sm:inline">Export</span>
                 </button>
                 
                 <Link 
                   to="/alpha-hub"
-                  className="flex-1 md:flex-initial flex items-center justify-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-caption hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md group"
+                  className="px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-[11px] font-bold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md flex items-center gap-2 min-h-[44px]"
                 >
-                  <Zap className="h-4 w-4 text-yellow-300 group-hover:scale-110 transition-transform" />
+                  <Zap className="h-3.5 w-3.5 text-yellow-300" />
                   <span>Alpha Hub</span>
                 </Link>
 
                 <button 
                   onClick={() => fetchData(true)} 
-                  className={`p-2.5 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-tertiary)] shadow-sm hover:bg-[var(--bg-secondary)] transition-all shrink-0 ${isRefreshing ? 'animate-spin text-blue-500' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+                  className={`p-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] transition-all shrink-0 flex items-center justify-center min-h-[44px] ${isRefreshing ? 'animate-spin text-blue-500' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <RefreshCw className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
@@ -692,42 +749,175 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
         </div>
       </div>
 
-      {/* Unified Portfolio Summary — only on Wealth Desk (/portfolio) */}
-      {isPortfolioRoute && (
+      {/* ── Stats Cards — Clean & Impactful ── */}
+      {isPortfolioRoute ? (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-3 duration-500"
+          className="grid grid-cols-2 md:grid-cols-4 gap-3"
         >
-          <DashboardStat 
-            title="Total Invested" 
-            value={`₹${portfolioSummary.totalInvested.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-            icon={Wallet} 
-            color="blue" 
-          />
-          <DashboardStat 
-            title="Valuation" 
-            value={`₹${portfolioSummary.totalCurrent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-            icon={TrendingUp} 
-            color="emerald" 
-          />
-          <DashboardStat 
-            title="Absolute P&L" 
-            value={`${portfolioSummary.totalPnL >= 0 ? '+' : '-'}₹${Math.abs(portfolioSummary.totalPnL).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-            icon={Activity} 
-            color={portfolioSummary.totalPnL >= 0 ? "emerald" : "rose"} 
-            subtitle={portfolioSummary.totalInvested > 0 ? `${((portfolioSummary.totalPnL / portfolioSummary.totalInvested) * 100).toFixed(2)}% PnL` : undefined}
-          />
-          <DashboardStat 
-            title="Cap Architecture" 
-            value={`L:${portfolioSummary.capBreakdown.large.toFixed(0)}% M:${portfolioSummary.capBreakdown.mid.toFixed(0)}% S:${portfolioSummary.capBreakdown.small.toFixed(0)}%`} 
-            icon={PieChart} 
-            color="amber" 
-            subtitle="Large / Mid / Small Cap Mix"
-          />
+          <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Total Invested</span>
+            <span className="text-xl md:text-2xl font-bold text-[var(--text-primary)] tabular-nums font-mono">₹{portfolioSummary.totalInvested.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+            <span className="text-[10px] text-[var(--text-muted)]">Capital deployed · {portfolioCount} holdings</span>
+          </div>
+          <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Current Value</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl md:text-2xl font-bold text-[var(--text-primary)] tabular-nums font-mono">₹{portfolioSummary.totalCurrent.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+              <span className={`text-[10px] font-bold ${portfolioSummary.totalPnL >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {portfolioSummary.totalPnL >= 0 ? '+' : ''}{portfolioSummary.totalInvested > 0 ? ((portfolioSummary.totalPnL / portfolioSummary.totalInvested) * 100).toFixed(1) : '0'}%
+              </span>
+            </div>
+            <span className="text-[10px] text-[var(--text-muted)]">Market valuation</span>
+          </div>
+          <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Total P&amp;L</span>
+            <span className={`text-xl md:text-2xl font-bold tabular-nums font-mono ${portfolioSummary.totalPnL >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+              {portfolioSummary.totalPnL >= 0 ? '+' : '-'}₹{Math.abs(portfolioSummary.totalPnL).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </span>
+            <span className={`text-[10px] ${portfolioSummary.totalPnL >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
+              Realized: {portfolioSummary.realizedGain >= 0 ? '+' : '-'}₹{Math.abs(portfolioSummary.realizedGain).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </span>
+          </div>
+          <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Cap Architecture</span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xl md:text-2xl font-bold text-[var(--text-primary)] tabular-nums font-mono">{portfolioSummary.capBreakdown.large.toFixed(0)}%</span>
+                <div className="flex-1 h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${portfolioSummary.capBreakdown.large}%` }} />
+                </div>
+              </div>
+              <div className="flex gap-2 text-[9px] font-semibold text-[var(--text-muted)]">
+                <span className="text-blue-400">L {portfolioSummary.capBreakdown.large.toFixed(0)}%</span>
+                <span className="text-amber-400">M {portfolioSummary.capBreakdown.mid.toFixed(0)}%</span>
+                <span className="text-emerald-400">S {portfolioSummary.capBreakdown.small.toFixed(0)}%</span>
+              </div>
+            </div>
+            <span className="text-[10px] text-[var(--text-muted)]">Large/Mid/Small split</span>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-3"
+        >
+          <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Audit Pass Rate</span>
+            <span className="text-xl md:text-2xl font-bold text-emerald-500 tabular-nums font-mono">
+              {data ? `${((data.allStocks.filter((s: AllStockItem) => s.isPass).length / Math.max(data.allStocks.length, 1)) * 100).toFixed(1)}%` : '—'}
+            </span>
+            <span className="text-[10px] text-[var(--text-muted)]">Institutional filter pass</span>
+          </div>
+          <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Avg Audit Score</span>
+            <span className="text-xl md:text-2xl font-bold text-blue-500 tabular-nums font-mono">
+              {data ? `${(data.allStocks.reduce((a: number, s: AllStockItem) => a + (s.score || 0), 0) / Math.max(data.allStocks.length, 1)).toFixed(0)}` : '—'}
+            </span>
+            <span className="text-[10px] text-[var(--text-muted)]">Mean institutional score</span>
+          </div>
+          <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Rejection Rate</span>
+            <span className="text-xl md:text-2xl font-bold text-amber-500 tabular-nums font-mono">{data ? `${((rejectedCount / Math.max(data.allStocks?.length || 1, 1)) * 100).toFixed(0)}%` : '70%+'}</span>
+            <span className="text-[10px] text-[var(--text-muted)]">Quality filter</span>
+          </div>
+          <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">{isScreenerRoute ? 'Active Setups' : 'In Universe'}</span>
+            <span className="text-xl md:text-2xl font-bold text-purple-500 tabular-nums font-mono">{isScreenerRoute ? openCount : watchlistCount}</span>
+            <span className="text-[10px] text-[var(--text-muted)]">{isScreenerRoute ? 'Active signals today' : 'Qualified stocks'}</span>
+          </div>
         </motion.div>
       )}
 
+      {/* ── Quick Action Cards ── */}
+      {!isPortfolioRoute && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            {quickLinks.map((link, i) => (
+              <Link
+                key={i}
+                to={link.path}
+                className="flex items-center gap-2.5 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl px-3 py-2.5 hover:border-[#00d09c]/30 hover:bg-[var(--bg-secondary)] transition-all group min-h-[44px]"
+              >
+                <div className={`w-7 h-7 rounded-lg ${link.bg} border ${link.border} flex items-center justify-center group-hover:scale-110 transition-transform shrink-0`}>
+                  <link.icon className={`w-3.5 h-3.5 ${link.iconCls}`} />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-bold text-[var(--text-primary)] group-hover:text-[#00d09c] transition-colors truncate">{link.label}</span>
+                  <span className="text-[8px] text-[var(--text-muted)] font-medium truncate">{link.desc}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Top Holdings Preview (Portfolio only) ── */}
+      {isPortfolioRoute && portfolioCount > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Top Holdings</span>
+              <span className="text-[9px] text-[var(--text-muted)]">{portfolioCount} total positions</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              {(() => {
+                const combinedMap: Record<string, { quantity: number; buy_price: number }> = {};
+                (userWatchlist || []).forEach(w => { combinedMap[w.symbol] = { quantity: w.quantity || 0, buy_price: w.buy_price || 0 }; });
+                (trades || []).filter(t => t.status === 'OPEN').forEach(t => {
+                  if (combinedMap[t.symbol]) {
+                    const ex = combinedMap[t.symbol];
+                    const nQty = ex.quantity + (t.quantity || 0);
+                    if (nQty > 0) { ex.buy_price = ((ex.buy_price * ex.quantity) + (t.entry_price * t.quantity)) / nQty; ex.quantity = nQty; }
+                  } else { combinedMap[t.symbol] = { quantity: t.quantity || 0, buy_price: t.entry_price || 0 }; }
+                });
+                return Object.entries(combinedMap)
+                  .filter(([_, h]) => h.quantity > 0)
+                  .sort(([, a], [, b]) => (b.quantity * b.buy_price) - (a.quantity * a.buy_price))
+                  .slice(0, 4)
+                  .map(([symbol, h]) => {
+                    const curr = stockPrices[symbol] || h.buy_price;
+                    const invested = h.quantity * h.buy_price;
+                    const currentVal = h.quantity * curr;
+                    const pnl = currentVal - invested;
+                    const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+                    return { symbol, invested, currentVal, pnl, pnlPct, qty: h.quantity };
+                  });
+              })().map((item) => (
+                <div key={item.symbol} className="flex items-center gap-3 bg-[var(--bg-secondary)]/40 rounded-lg px-3 py-2.5 border border-[var(--border-primary)]">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--accent)]/20 to-emerald-500/10 flex items-center justify-center text-[10px] font-black text-[var(--text-muted)]">
+                    {item.symbol.slice(0, 2)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-[var(--text-primary)] truncate">{item.symbol}</span>
+                      <span className={`text-[9px] font-bold ${item.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {item.pnl >= 0 ? '+' : ''}{item.pnlPct.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] text-[var(--text-muted)] font-mono">₹{item.invested.toLocaleString()}</span>
+                      <span className="text-[9px] text-[var(--text-tertiary)]">{item.qty} shares</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Main Table Section ── */}
       <AnimatePresence mode="wait">
          <motion.section 
            key={activeTab + activeBasket}
@@ -737,25 +927,25 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
            className="flex-1 min-h-0"
          >
            {error ? (
-             <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-3xl h-96 flex flex-col items-center justify-center space-y-6 shadow-2xl p-8 backdrop-blur-sm">
+             <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-2xl h-96 flex flex-col items-center justify-center space-y-6 shadow-xl p-8 backdrop-blur-sm">
                <div className="p-6 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 max-w-md text-center">
                   <ShieldAlert className="h-10 w-10 mx-auto mb-4 animate-pulse" />
-                  <h2 className="text-lg font-black uppercase tracking-tighter mb-2 italic">Institutional Link Severed</h2>
-                  <p className="text-caption leading-relaxed opacity-80">{error}</p>
+                  <h2 className="text-lg font-black uppercase tracking-tighter mb-2 italic">Connection Error</h2>
+                  <p className="text-xs leading-relaxed opacity-80">{error}</p>
                </div>
                <div className="flex items-center space-x-4">
                  <button 
                    onClick={() => { localStorage.removeItem('mb_api_override'); window.location.reload(); }} 
-                   className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-xs font-bold uppercase tracking-[0.3em] shadow-lg shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 transition-all active:scale-95"
+                   className="px-6 py-3 bg-gradient-to-r from-[#00d09c] to-emerald-600 text-white rounded-xl text-xs font-bold uppercase tracking-[0.2em] shadow-md hover:from-[#00bda0] hover:to-emerald-700 transition-all active:scale-95"
                  >
-                   Authorize Node Reset
+                   Reset & Retry
                  </button>
-                 <Link to="/connect" className="px-6 py-3.5 bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-secondary)] rounded-xl text-xs font-bold uppercase tracking-[0.2em] hover:text-[var(--text-primary)] transition-all">Connectivity Hub</Link>
+                 <Link to="/connect" className="px-5 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-secondary)] rounded-xl text-xs font-bold hover:text-[var(--text-primary)] transition-all">Connectivity Hub</Link>
                </div>
              </div>
            ) : (
-             <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-3xl shadow-2xl flex flex-col overflow-hidden h-full relative group/table backdrop-blur-sm">
-                <div className="flex-1 overflow-auto custom-scrollbar">
+             <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-2xl shadow-lg flex flex-col relative" style={{ minHeight: 0 }}>
+                <div className="flex-1 overflow-auto custom-scrollbar rounded-2xl">
                    <TradeTable 
                      trades={getTradesForTab()} 
                      livePrices={stockPrices} 
@@ -782,27 +972,19 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-[var(--bg-primary)]/80 backdrop-blur-md flex items-center justify-center z-10 rounded-3xl"
+                    className="absolute inset-0 bg-[var(--bg-primary)]/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-2xl"
                   >
-                    <div className="flex flex-col items-center space-y-4">
-                      <div className="relative w-16 h-16">
-                        <div className="absolute inset-0 border-4 border-[var(--border-primary)] rounded-full" />
-                        <div className="absolute inset-0 border-4 border-transparent border-t-blue-500 rounded-full animate-spin" />
-                        <div className="absolute inset-0 border-4 border-transparent border-b-emerald-500 rounded-full animate-spin" style={{ animationDuration: '0.8s', transform: 'rotate(180deg)' }} />
+                    <div className="flex flex-col items-center space-y-3">
+                      <div className="relative w-12 h-12">
+                        <div className="absolute inset-0 border-3 border-[var(--border-primary)] rounded-full" />
+                        <div className="absolute inset-0 border-3 border-transparent border-t-[#00d09c] rounded-full animate-spin" />
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                      </div>
-                      <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-[0.3em] animate-pulse">
-                        Scanning Institutional Matrix
+                      <p className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.3em] animate-pulse">
+                        Scanning Matrix...
                       </p>
                     </div>
                   </motion.div>
                 )}
-                {/* Institutional Border Highlight */}
-                <div className="absolute inset-0 border border-blue-600/0 group-hover/table:border-blue-600/20 rounded-3xl pointer-events-none transition-all duration-700" />
              </div>
            )}
          </motion.section>
@@ -811,45 +993,41 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
        <BrokerHub isOpen={showBrokerHub} onClose={() => setShowBrokerHub(false)} onImportComplete={handleImportHoldings} />
 
       {showAddManualModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-[var(--bg-primary)]/80 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[var(--bg-primary)]/80 backdrop-blur-md animate-in fade-in duration-300">
            <motion.div 
              initial={{ scale: 0.95, opacity: 0 }}
              animate={{ scale: 1, opacity: 1 }}
-             className="bg-[var(--bg-primary)] w-full max-w-md rounded-3xl shadow-2xl p-8 border border-[var(--border-primary)]"
+             className="bg-[var(--bg-primary)] w-full max-w-md rounded-2xl shadow-2xl p-6 border border-[var(--border-primary)]"
            >
-              <div className="flex items-center justify-between border-b border-[var(--border-primary)] pb-4 mb-6">
+              <div className="flex items-center justify-between border-b border-[var(--border-primary)] pb-4 mb-5">
                  <div className="space-y-1">
-                    <h3 className="text-xl font-black text-[var(--text-primary)] uppercase italic leading-none">Add Asset Node</h3>
-                    <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider mt-1.5">Manual Portfolio Entry</p>
+                    <h3 className="text-lg font-black text-[var(--text-primary)] uppercase leading-none">Add Asset</h3>
+                    <p className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mt-1">Manual Portfolio Entry</p>
                  </div>
-                 <button onClick={() => setShowAddManualModal(false)} className="p-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"><X className="h-5 w-5" /></button>
+                 <button onClick={() => setShowAddManualModal(false)} className="p-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"><X className="h-4 w-4" /></button>
               </div>
               <form onSubmit={async (e) => {
                  e.preventDefault();
                  if (!manualSymbol) return;
-                 const qty = parseInt(manualQty) || 0;
-                 const pr = parseFloat(manualPrice) || 0;
-                 await handleAddManualHolding(manualSymbol, qty, pr);
+                 await handleAddManualHolding(manualSymbol, parseInt(manualQty) || 0, parseFloat(manualPrice) || 0);
                  setShowAddManualModal(false);
-                 setManualSymbol('');
-                 setManualQty('');
-                 setManualPrice('');
-              }} className="space-y-6 text-left">
+                 setManualSymbol(''); setManualQty(''); setManualPrice('');
+              }} className="space-y-5">
                  <div>
-                    <label className="text-caption text-[var(--text-tertiary)] uppercase tracking-wider ml-1 mb-2 block">Stock Symbol</label>
-                    <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-bold focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]" />
+                    <label className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider ml-1 mb-1.5 block">Stock Symbol</label>
+                    <input type="text" required placeholder="e.g. TCS" value={manualSymbol} onChange={(e) => setManualSymbol(e.target.value.toUpperCase())} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-4 py-3 text-sm font-bold focus:border-[#00d09c] focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-[#00d09c]/30 text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]" />
                  </div>
-                 <div className="grid grid-cols-2 gap-6">
+                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                       <label className="text-caption text-[var(--text-tertiary)] uppercase tracking-wider ml-1 mb-2 block">Quantity</label>
-                       <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-bold focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]" />
+                       <label className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider ml-1 mb-1.5 block">Quantity</label>
+                       <input type="number" required placeholder="0" value={manualQty} onChange={(e) => setManualQty(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-4 py-3 text-sm font-bold focus:border-[#00d09c] transition-all outline-none focus-visible:ring-2 focus-visible:ring-[#00d09c]/30 text-[var(--text-primary)]" />
                     </div>
                     <div>
-                       <label className="text-caption text-[var(--text-tertiary)] uppercase tracking-wider ml-1 mb-2 block">Buy Price</label>
-                       <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-6 py-4 text-sm font-bold focus:border-blue-500 focus:bg-[var(--bg-primary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]" />
+                       <label className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider ml-1 mb-1.5 block">Buy Price</label>
+                       <input type="number" step="0.05" required placeholder="0.00" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} className="w-full bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] rounded-xl px-4 py-3 text-sm font-bold focus:border-[#00d09c] transition-all outline-none focus-visible:ring-2 focus-visible:ring-[#00d09c]/30 text-[var(--text-primary)]" />
                     </div>
                  </div>
-                  <button type="submit" className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-2xl text-xs font-bold uppercase tracking-[0.2em] shadow-2xl shadow-blue-500/20 transition-all active:scale-95 hover:from-blue-500 hover:to-indigo-500">
+                  <button type="submit" className="w-full py-4 bg-gradient-to-r from-[#00d09c] to-emerald-600 text-white rounded-xl text-xs font-bold uppercase tracking-[0.15em] shadow-lg shadow-[#00d09c]/20 transition-all active:scale-95 hover:from-[#00bda0] hover:to-emerald-700">
                      Add to Portfolio
                   </button>
                </form>

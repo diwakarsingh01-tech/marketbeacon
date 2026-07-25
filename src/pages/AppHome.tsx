@@ -5,7 +5,7 @@ import {
   LayoutGrid, Zap, Briefcase, BookOpen, TrendingUp,
   Search, ArrowRight, Activity, BarChart3, Star,
   Wallet, TrendingDown,
-  RefreshCw, PieChart, Sparkles, ChevronRight, Bell,
+  PieChart, Sparkles, ChevronRight,
   CheckCircle2, Info
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -13,9 +13,10 @@ import { getApiUrl, safeJsonParse } from '../lib/api-utils';
 import { authFetch } from '../lib/authFetch';
 import SEO from '../components/SEO';
 import { BASKETS } from '../data/stocks';
-import type { IndexResult, WatchlistItem, TradeRecord, StockPriceResult, AllStockItem, Notification } from '../types';
+import type { IndexResult, WatchlistItem, TradeRecord, StockPriceResult, AllStockItem } from '../types';
 
 const API_URL = getApiUrl();
+
 
 interface StatCardProps {
   title: string;
@@ -27,42 +28,45 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, subtitle, change }) => {
-  const colors: Record<string, string> = {
-    blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
-    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
-    purple: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
-    rose: 'bg-rose-500/10 border-rose-500/20 text-rose-400',
+  const iconColorMap: Record<string, string> = {
+    blue: 'text-[var(--signal-buy)]',
+    emerald: 'text-[var(--signal-buy)]',
+    amber: 'text-[var(--accent-amber)]',
+    purple: 'text-[var(--accent-purple)]',
+    rose: 'text-[var(--signal-sell)]',
   };
+  const iconCls = iconColorMap[color] || iconColorMap.emerald;
 
   return (
     <motion.div
-      whileHover={{ y: -3, scale: 1.02 }}
-      className="card p-5 flex flex-col justify-between min-h-[110px]"
+      whileHover={{ y: -3 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+      className="card p-5 flex flex-col justify-between min-h-[118px] cursor-default"
     >
-      <div className="flex justify-between items-center mb-3">
-        <span className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">{title}</span>
-        <div className={`p-2 rounded-lg border ${colors[color]} backdrop-blur-sm`}>
-          <Icon className="h-4 w-4" />
+      <div className="flex justify-between items-start mb-3">
+        <span className="text-caption text-[var(--text-muted)]">{title}</span>
+        <div className="p-2 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border-primary)]">
+          <Icon className={`h-4 w-4 ${iconCls}`} />
         </div>
       </div>
+
       <div>
-        <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">{value}</div>
-        <div className="flex items-center gap-2 mt-1">
+        <div className="text-2xl font-black text-[var(--text-primary)] tracking-tight leading-none tabular-nums">{value}</div>
+        <div className="flex items-center gap-2 mt-1.5">
           {change && (
-            <span className={`text-label flex items-center gap-1 ${
-              change.positive ? 'text-emerald-400' : 'text-rose-400'
-            }`}>
+            <span className={`text-xs font-bold flex items-center gap-1 ${change.positive ? 'text-[var(--signal-buy)]' : 'text-[var(--signal-sell)]'}`}>
               {change.positive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
               {change.value}
             </span>
           )}
-          {subtitle && <span className="text-xs text-[var(--text-muted)] font-medium">{subtitle}</span>}
+          {subtitle && <span className="text-[11px] text-[var(--text-muted)] font-medium">{subtitle}</span>}
         </div>
       </div>
     </motion.div>
   );
 };
+
 
 interface QuickLink {
   icon: React.FC<React.SVGProps<SVGSVGElement>>;
@@ -75,12 +79,12 @@ interface QuickLink {
 }
 
 const quickLinks: QuickLink[] = [
-  { icon: Search, label: 'Audit a Stock', path: '/screener', desc: 'Search & score any NSE/BSE stock', bg: 'bg-blue-500/10', border: 'border-blue-500/20', iconCls: 'text-blue-400' },
-  { icon: TrendingUp, label: 'Alpha Signals', path: '/alpha-hub', desc: 'Active institutional setups', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', iconCls: 'text-emerald-400' },
-  { icon: Briefcase, label: 'Portfolio', path: '/portfolio', desc: 'Track holdings & P&L', bg: 'bg-amber-500/10', border: 'border-amber-500/20', iconCls: 'text-amber-400' },
-  { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Verify & log trades', bg: 'bg-purple-500/10', border: 'border-purple-500/20', iconCls: 'text-purple-400' },
-  { icon: LayoutGrid, label: 'Screener Matrix', path: '/screener', desc: 'Real-time stock matrix', bg: 'bg-rose-500/10', border: 'border-rose-500/20', iconCls: 'text-rose-400' },
-  { icon: BarChart3, label: 'Charts Terminal', path: '/charts', desc: 'Advanced charting suite', bg: 'bg-blue-500/10', border: 'border-blue-500/20', iconCls: 'text-blue-400' },
+  { icon: Search, label: 'Audit a Stock', path: '/screener', desc: 'Search & score any NSE/BSE stock', bg: 'bg-[var(--signal-buy)]/10', border: 'border-[var(--signal-buy)]/20', iconCls: 'text-[var(--signal-buy)]' },
+  { icon: TrendingUp, label: 'Alpha Signals', path: '/alpha-hub', desc: 'Active institutional setups', bg: 'bg-[var(--signal-buy)]/10', border: 'border-[var(--signal-buy)]/20', iconCls: 'text-[var(--signal-buy)]' },
+  { icon: Briefcase, label: 'Portfolio', path: '/portfolio', desc: 'Track holdings & P&L', bg: 'bg-[var(--accent-amber)]/10', border: 'border-[var(--accent-amber)]/20', iconCls: 'text-[var(--accent-amber)]' },
+  { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Verify & log trades', bg: 'bg-[var(--accent-purple)]/10', border: 'border-[var(--accent-purple)]/20', iconCls: 'text-[var(--accent-purple)]' },
+  { icon: LayoutGrid, label: 'Screener Matrix', path: '/screener', desc: 'Real-time stock matrix', bg: 'bg-[var(--signal-sell)]/10', border: 'border-[var(--signal-sell)]/20', iconCls: 'text-[var(--signal-sell)]' },
+  { icon: BarChart3, label: 'Charts Terminal', path: '/charts', desc: 'Advanced charting suite', bg: 'bg-[var(--signal-buy)]/10', border: 'border-[var(--signal-buy)]/20', iconCls: 'text-[var(--signal-buy)]' },
 ];
 
 interface BuyZoneCard {
@@ -104,19 +108,15 @@ const AppHome: React.FC = () => {
   const [trades, setTrades] = useState<TradeRecord[]>([]);
   const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
   const [stockCaps, setStockCaps] = useState<Record<string, number>>({});
-  // Buy zones
+  // Active setup zones
   const [buyZones, setBuyZones] = useState<BuyZoneCard[]>([]);
   const [loadingZones, setLoadingZones] = useState(true);
 
-  // Day P&L tracking
-  const [dayPnL, setDayPnL] = useState<number>(0);
+   // Day P&L tracking
+   const [dayPnL, setDayPnL] = useState<number>(0);
 
-  // Notifications
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [notifIndex, setNotifIndex] = useState(0);
-
-  const tierColor = user?.tier === 'alpha' ? 'amber' : user?.tier === 'pro' ? 'blue' : 'emerald';
-  const tierLabel = user?.tier === 'alpha' ? 'Alpha' : user?.tier === 'pro' ? 'Pro' : 'Free';
+   const tierColor = user?.tier === 'alpha' ? 'amber' : user?.tier === 'pro' ? 'blue' : 'emerald';
+   const tierLabel = user?.tier === 'alpha' ? 'Alpha' : user?.tier === 'pro' ? 'Pro' : 'Free';
 
   // Fetch market indices
   useEffect(() => {
@@ -182,7 +182,7 @@ const AppHome: React.FC = () => {
       .catch(() => {});
   }, [watchlist, trades]);
 
-  // Fetch active buy zones
+  // Fetch active setup zones
   useEffect(() => {
     setLoadingZones(true);
     Promise.all([
@@ -190,7 +190,7 @@ const AppHome: React.FC = () => {
     ])
       .then(([data]) => {
         const results = data.allStocks || [];
-        const buyZoneStocks = results
+        const setupZoneStocks = results
           .filter((s: AllStockItem) => s.isBuyZone && s.entryPrice && s.target)
           .sort((a: AllStockItem, b: AllStockItem) => (b.score || 0) - (a.score || 0))
           .map((s: AllStockItem) => ({
@@ -201,7 +201,7 @@ const AppHome: React.FC = () => {
             score: s.score || 0,
             strategy: s.strategy || 'Institutional',
           }));
-        setBuyZones(buyZoneStocks);
+        setBuyZones(setupZoneStocks);
       })
       .catch(() => {})
       .finally(() => setLoadingZones(false));
@@ -293,31 +293,7 @@ const AppHome: React.FC = () => {
     } catch {}
   }, [portfolioSummary.totalCurrent]);
 
-  // Fetch real notifications
-  useEffect(() => {
-    const fetchNotifs = async () => {
-      try {
-        const res = await authFetch('/api/notifications');
-        if (!res.ok) return;
-        const data = await safeJsonParse(res);
-        if (Array.isArray(data)) setNotifications(data);
-      } catch {}
-    };
-    fetchNotifs();
-    const interval = setInterval(fetchNotifs, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Rotate notification ticker
-  useEffect(() => {
-    if (notifications.length < 2) return;
-    const t = setInterval(() => {
-      setNotifIndex(prev => (prev + 1) % notifications.length);
-    }, 4000);
-    return () => clearInterval(t);
-  }, [notifications]);
-
-  // Closed trades for recent activity
+   // Closed trades for recent activity
   const closedTrades = useMemo(() => {
     return trades.filter(t => t.status === 'CLOSED').sort((a, b) => {
       const da = a.exit_date || a.entry_date || '';
@@ -329,78 +305,47 @@ const AppHome: React.FC = () => {
   // Format large numbers
   const fmt = (n: number) => `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+
+  const niftyObj = indices.find(idx => idx.name === 'NIFTY 50') || { name: 'NIFTY 50', price: 24323.85, change: 0.56, ath: 26373 };
+
+
+
+
+
   return (
     <>
       <SEO title="Dashboard | MarketBeacon Pro" description="Your institutional audit command center" />
 
-      <div className="p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-8">
-
-        {/* ── Market Indices + Alerts Ticker ── */}
-        <div className="card overflow-hidden">
-          <div className="flex divide-x divide-[var(--border-primary)] overflow-x-auto py-3 px-4 whitespace-nowrap scrollbar-none text-caption items-center">
-            {indices.map((idx, i) => (
-              <div key={i} className="flex items-center gap-3 px-5">
-                <span className="text-[var(--text-secondary)]">{idx.name}</span>
-                <span className="font-bold text-[var(--text-primary)]">{idx.price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                <span className={`flex items-center gap-0.5 text-label ${idx.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {idx.change >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                  {idx.change >= 0 ? '+' : ''}{idx.change.toFixed(2)}%
-                </span>
-              </div>
-            ))}
-            {indices.length === 0 && (
-              <div className="flex items-center gap-2 text-[var(--text-muted)] text-xs px-5">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Loading market data...
-              </div>
-            )}
-            {notifications.length > 0 && (
-              <>
-                <div className="flex items-center gap-1.5 px-5 shrink-0">
-                  <Bell className="w-4 h-4 text-amber-400" />
-                </div>
-                <div className="flex-1 min-w-0 overflow-hidden relative h-5 px-5">
-                  <motion.div
-                    key={notifIndex}
-                    initial={{ y: 12, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -12, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute inset-0 flex items-center"
-                  >
-                    <span className="text-xs font-semibold text-[var(--text-primary)] truncate">
-                      {notifications[notifIndex]?.title && (
-                        <span className="text-amber-400 mr-1.5">{notifications[notifIndex].title}:</span>
-                      )}
-                      {notifications[notifIndex]?.message || ''}
-                    </span>
-                  </motion.div>
-                </div>
-                {notifications.filter(n => n.unread).length > 0 && (
-                  <span className="text-caption text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full shrink-0 mr-3">
-                    {notifications.filter(n => n.unread).length} new
-                  </span>
-                )}
-              </>
-            )}
-          </div>
-        </div>
+       <div className="p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-6">
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-              Welcome{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--text-primary)]">
+              {(() => {
+                const h = new Date().getHours();
+                const greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+                return <>{greeting}{user?.name ? <span className="text-[var(--signal-buy)]">, {user.name.split(' ')[0]}</span> : ''}</>;
+              })()}
             </h1>
-            <p className="text-sm text-[var(--text-muted)] font-medium mt-1 flex items-center gap-2">
-              <span className={`w-1.5 h-1.5 rounded-full ${
-                tierColor === 'amber' ? 'bg-amber-400' : tierColor === 'blue' ? 'bg-blue-400' : 'bg-emerald-400'
-              }`} />
-              {tierLabel} Tier · {indices[0] ? `NIFTY ${indices[0].price.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : 'Market Open'}
-            </p>
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              <span className={`text-caption px-2 py-0.5 rounded-full border ${
+                tierColor === 'amber' ? 'bg-[var(--accent-amber)]/10 border-[var(--accent-amber)]/20 text-[var(--accent-amber)]' : 'bg-[var(--signal-buy)]/10 border-[var(--signal-buy)]/20 text-[var(--signal-buy)]'
+              }`}>{tierLabel} Tier</span>
+              {niftyObj && (
+                <span className="flex items-center gap-1.5 text-caption text-[var(--text-secondary)] bg-[var(--bg-tertiary)] border border-[var(--border-primary)] px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--signal-buy)] animate-pulse" />
+                  NIFTY {niftyObj.price.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                  <span className={`${niftyObj.change >= 0 ? 'text-[var(--signal-buy)]' : 'text-[var(--signal-sell)]'}`}>
+                    {niftyObj.change >= 0 ? '+' : ''}{niftyObj.change.toFixed(2)}%
+                  </span>
+                </span>
+              )}
+            </div>
           </div>
           <Link
             to="/screener"
-            className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-caption px-5 py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20"
+            className="hidden md:flex items-center gap-2 bg-[var(--signal-buy)] hover:opacity-90 text-white text-caption px-5 py-3 rounded-xl transition-all font-bold"
           >
             <Search className="w-3.5 h-3.5" /> New Audit
           </Link>
@@ -435,7 +380,7 @@ const AppHome: React.FC = () => {
             value={buyZones.length}
             icon={Zap}
             color="blue"
-            subtitle="Buy zone stocks"
+            subtitle="Setup signals"
           />
           <StatCard
             title="Watchlist"
@@ -446,16 +391,16 @@ const AppHome: React.FC = () => {
           />
         </div>
 
-        {/* ── Two Column: Buy Zones + Portfolio ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* ── Two Column: Active Setups + Portfolio ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* ── Active Buy Zone Cards ── */}
+          {/* ── Active Setup Cards ── */}
           <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-caption text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> Active Buy Zones
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-caption text-[var(--text-primary)] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--signal-buy)]" /> Active Setups
               </h2>
-              <Link to="/alpha-hub" className="text-xs font-bold text-blue-400 uppercase tracking-wider hover:text-blue-300 transition-colors flex items-center gap-1">
+              <Link to="/alpha-hub" className="text-caption text-[var(--signal-buy)] hover:opacity-80 transition-all flex items-center gap-1">
                 View All <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
@@ -470,47 +415,63 @@ const AppHome: React.FC = () => {
                 ))}
               </div>
             ) : buyZones.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {buyZones.map((zone, i) => (
-                  <motion.button
-                    key={zone.symbol}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    whileHover={{ y: -2 }}
-                    onClick={() => navigate(`/analysis/${zone.symbol}`)}
-                    className="card p-4 text-left group cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-bold text-[var(--text-primary)] group-hover:text-emerald-400 transition-colors">{zone.symbol}</span>
-                      <span className="text-caption text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">BUY</span>
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-[var(--text-muted)]">Entry</span>
-                        <span className="font-bold text-[var(--text-secondary)]">₹{zone.entryPrice.toLocaleString('en-IN')}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+                {buyZones.map((zone, i) => {
+                  const gainPct = ((zone.target - zone.entryPrice) / zone.entryPrice) * 100;
+                  return (
+                    <motion.button
+                      key={zone.symbol}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.06 }}
+                      whileHover={{ y: -3 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => navigate(`/analysis/${zone.symbol}`)}
+                      className="card p-4 sm:p-5 text-left group cursor-pointer relative overflow-hidden min-h-[220px] flex flex-col"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm sm:text-base font-black text-[var(--text-primary)] group-hover:text-[var(--signal-buy)] transition-colors truncate">{zone.symbol}</span>
+                        <span className="text-xs text-[var(--signal-buy)] bg-[var(--signal-buy)]/10 border border-[var(--signal-buy)]/20 px-2 py-0.5 rounded-full flex-shrink-0">SETUP</span>
                       </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-[var(--text-muted)]">Target</span>
-                        <span className="font-bold text-blue-400">₹{zone.target.toLocaleString('en-IN')}</span>
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3">
+                        <div className="bg-[var(--bg-tertiary)] rounded-xl p-3">
+                          <div className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Setup Level</div>
+                          <div className="text-sm sm:text-base font-bold text-[var(--text-primary)] tabular-nums truncate">₹{zone.entryPrice.toLocaleString('en-IN')}</div>
+                        </div>
+                        <div className="bg-[var(--bg-tertiary)] rounded-xl p-3">
+                          <div className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Projection</div>
+                          <div className="text-sm sm:text-base font-bold text-[var(--signal-buy)] tabular-nums truncate">₹{zone.target.toLocaleString('en-IN')}</div>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-[var(--text-muted)]">Gain</span>
-                        <span className="font-bold text-emerald-400">
-                          +{(((zone.target - zone.entryPrice) / zone.entryPrice) * 100).toFixed(1)}%
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] sm:text-[10px] text-[var(--text-muted)]">Upside</span>
+                          <span className="text-sm sm:text-base font-extrabold text-[var(--signal-buy)]">+{gainPct.toFixed(1)}%</span>
+                        </div>
+                        <span className="text-xs font-semibold text-[var(--signal-buy)] bg-[var(--signal-buy)]/10 px-2 py-0.5 rounded-full flex-shrink-0">INSTITUTIONAL</span>
+                      </div>
+                      <div className="relative mt-auto pt-3 border-t border-[var(--border-primary)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[9px] sm:text-[10px] text-[var(--text-muted)] font-medium">
+                        <span className="flex items-center gap-1 truncate max-w-[160px]">
+                          <CheckCircle2 className="w-3 h-3 text-[var(--signal-buy)] flex-shrink-0" />
+                          <span className="truncate max-w-[160px]">{zone.strategy}</span>
                         </span>
+                        <Link
+                          to={`/charts?symbol=${zone.symbol}&return=/`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="ml-auto p-1.5 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--accent-blue)] transition-all flex-shrink-0"
+                          title="Open in Charts Terminal"
+                        >
+                          <BarChart3 className="w-3.5 h-3.5" />
+                        </Link>
                       </div>
-                    </div>
-                    <div className="mt-3 pt-2 border-t border-[var(--border-primary)]/40 flex items-center gap-1 text-label text-[var(--text-muted)]">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" /> {zone.strategy}
-                    </div>
-                  </motion.button>
-                ))}
+                    </motion.button>
+                  );
+                })}
               </div>
             ) : (
               <div className="card p-6 text-center">
                 <Info className="w-5 h-5 text-[var(--text-muted)] mx-auto mb-2" />
-                <p className="text-xs font-semibold text-[var(--text-muted)]">No active buy zones right now</p>
+                <p className="text-xs font-semibold text-[var(--text-muted)]">No active setups right now</p>
                 <p className="text-xs text-[var(--text-muted)] mt-1">Check back after the next market scan</p>
               </div>
             )}
@@ -520,22 +481,22 @@ const AppHome: React.FC = () => {
           <div className="space-y-6">
             {/* Allocation */}
             <div>
-              <h2 className="text-caption text-[var(--text-primary)] uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                <PieChart className="w-3.5 h-3.5 text-blue-400" /> Portfolio
+              <h2 className="text-caption text-[var(--text-primary)] mb-3 flex items-center gap-1.5">
+                <PieChart className="w-3.5 h-3.5 text-[var(--signal-buy)]" /> Portfolio
               </h2>
               <div className="card p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-wider">Invested</span>
-                  <span className="text-sm font-bold text-[var(--text-primary)]">{portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalInvested) : '₹0'}</span>
+                  <span className="text-caption text-[var(--text-muted)]">Invested</span>
+                  <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">{portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalInvested) : '₹0'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-wider">Current</span>
-                  <span className="text-sm font-bold text-[var(--text-primary)]">{portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalCurrent) : '--'}</span>
+                  <span className="text-caption text-[var(--text-muted)]">Current</span>
+                  <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">{portfolioSummary.totalInvested > 0 ? fmt(portfolioSummary.totalCurrent) : '--'}</span>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-[var(--border-primary)]/40">
-                  <span className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-wider">P&L</span>
-                  <span className={`text-sm font-bold flex items-center gap-1 ${
-                    portfolioSummary.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                <div className="flex items-center justify-between pt-2 border-t border-[var(--border-primary)]">
+                  <span className="text-caption text-[var(--text-muted)]">P&L</span>
+                  <span className={`text-sm font-bold flex items-center gap-1 tabular-nums ${
+                    portfolioSummary.totalPnL >= 0 ? 'text-[var(--signal-buy)]' : 'text-[var(--signal-sell)]'
                   }`}>
                     {portfolioSummary.totalPnL >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                     {portfolioSummary.totalInvested > 0 || portfolioSummary.realizedPnL !== 0
@@ -546,50 +507,50 @@ const AppHome: React.FC = () => {
                 <div className="text-xs text-[var(--text-muted)] font-medium space-y-0.5 pt-1">
                   <span className="flex justify-between">
                     <span>Unrealized</span>
-                    <span className={portfolioSummary.unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                    <span className={`tabular-nums ${portfolioSummary.unrealizedPnL >= 0 ? 'text-[var(--signal-buy)]' : 'text-[var(--signal-sell)]'}`}>
                       {portfolioSummary.totalInvested > 0 ? `${portfolioSummary.unrealizedPnL >= 0 ? '+' : '-'}${fmt(Math.abs(portfolioSummary.unrealizedPnL))}` : '--'}
                     </span>
                   </span>
                   <span className="flex justify-between">
                     <span>Realized</span>
-                    <span className={portfolioSummary.realizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                    <span className={`tabular-nums ${portfolioSummary.realizedPnL >= 0 ? 'text-[var(--signal-buy)]' : 'text-[var(--signal-sell)]'}`}>
                       {portfolioSummary.realizedPnL !== 0 ? `${portfolioSummary.realizedPnL >= 0 ? '+' : '-'}${fmt(Math.abs(portfolioSummary.realizedPnL))}` : '--'}
                     </span>
                   </span>
                 </div>
                 {portfolioSummary.totalInvested > 0 && (
                   <div className="pt-2">
-                    <div className="flex justify-between text-xs text-[var(--text-muted)] font-semibold uppercase tracking-wider mb-1.5">
+                    <div className="flex justify-between text-caption text-[var(--text-muted)] mb-1.5">
                       <span>Allocation</span>
                       <span>{portfolioCount} holdings</span>
                     </div>
                     <div className="h-2 rounded-full bg-[var(--bg-tertiary)] overflow-hidden flex">
                       <div
-                        className="h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all"
+                        className="h-full bg-[var(--signal-buy)] transition-all"
                         style={{ width: `${Math.max(portfolioSummary.curCapBreakdown.large, portfolioSummary.curCapBreakdown.large > 0 ? 4 : 0)}%` }}
                         title={`Large Cap ${portfolioSummary.curCapBreakdown.large.toFixed(0)}%`}
                       />
                       <div
-                        className="h-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all"
+                        className="h-full bg-[var(--accent-amber)] transition-all"
                         style={{ width: `${Math.max(portfolioSummary.curCapBreakdown.mid, portfolioSummary.curCapBreakdown.mid > 0 ? 4 : 0)}%` }}
                         title={`Mid Cap ${portfolioSummary.curCapBreakdown.mid.toFixed(0)}%`}
                       />
                       <div
-                        className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all"
+                        className="h-full bg-[var(--accent-blue)] transition-all"
                         style={{ width: `${Math.max(portfolioSummary.curCapBreakdown.small, portfolioSummary.curCapBreakdown.small > 0 ? 4 : 0)}%` }}
                         title={`Small/Micro Cap ${portfolioSummary.curCapBreakdown.small.toFixed(0)}%`}
                       />
                     </div>
                     <div className="flex justify-between text-xs text-[var(--text-muted)] font-medium mt-1">
-                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Large {portfolioSummary.curCapBreakdown.large.toFixed(0)}%</span>
-                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Mid {portfolioSummary.curCapBreakdown.mid.toFixed(0)}%</span>
-                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Small {portfolioSummary.curCapBreakdown.small.toFixed(0)}%</span>
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[var(--signal-buy)]" /> Large {portfolioSummary.curCapBreakdown.large.toFixed(0)}%</span>
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-amber)]" /> Mid {portfolioSummary.curCapBreakdown.mid.toFixed(0)}%</span>
+                      <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-blue)]" /> Small {portfolioSummary.curCapBreakdown.small.toFixed(0)}%</span>
                     </div>
                   </div>
                 )}
                 <Link
                   to="/portfolio"
-                  className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-blue-600/10 border border-blue-500/20 text-blue-400 rounded-lg text-caption hover:bg-blue-600/20 transition-all"
+                  className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-[var(--signal-buy)]/10 border border-[var(--signal-buy)]/20 text-[var(--signal-buy)] rounded-lg text-caption hover:bg-[var(--signal-buy)]/20 transition-all"
                 >
                   View Wealth Desk <ArrowRight className="w-3 h-3" />
                 </Link>
@@ -598,7 +559,7 @@ const AppHome: React.FC = () => {
 
             {/* Recent Activity */}
             <div>
-              <h2 className="text-caption text-[var(--text-primary)] uppercase tracking-wider mb-4">Recent Activity</h2>
+              <h2 className="text-caption text-[var(--text-primary)] mb-3">Recent Activity</h2>
               <div className="space-y-2">
                 {(() => {
                   const openItems = watchlist.slice(0, 2).map((item) => {
@@ -625,15 +586,15 @@ const AppHome: React.FC = () => {
                       className="card py-2.5 px-3 cursor-pointer"
                     >
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="text-sm font-bold text-[var(--text-primary)] group-hover:text-blue-400 transition-colors shrink-0">{item.symbol}</span>
+                        <span className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[var(--signal-buy)] transition-colors shrink-0">{item.symbol}</span>
                         <span className={`font-semibold shrink-0 ${
-                          item.pct >= 5 ? 'text-emerald-400' :
-                          item.pct >= 0 ? 'text-blue-400' :
-                          'text-rose-400'
+                          item.pct >= 5 ? 'text-[var(--signal-buy)]' :
+                          item.pct >= 0 ? 'text-[var(--signal-buy)]' :
+                          'text-[var(--signal-sell)]'
                         }`}>
                           {item.pct >= 0 ? '+' : ''}{item.pct.toFixed(1)}%
                         </span>
-                        <span className={`font-bold ${item.type === 'closed' ? 'text-[var(--text-muted)]' : 'text-emerald-400'} shrink-0`}>
+                        <span className={`font-bold ${item.type === 'closed' ? 'text-[var(--text-muted)]' : 'text-[var(--signal-buy)]'} shrink-0`}>
                           {item.label}
                         </span>
                         <span className="text-[var(--text-muted)] font-medium truncate">
@@ -644,7 +605,7 @@ const AppHome: React.FC = () => {
                               ? ` · CMP ₹${stockPrices[item.symbol].toLocaleString('en-IN')}`
                               : ''}
                         </span>
-                        <span className={`font-semibold shrink-0 ml-auto ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <span className={`font-semibold shrink-0 ml-auto tabular-nums ${item.pnl >= 0 ? 'text-[var(--signal-buy)]' : 'text-[var(--signal-sell)]'}`}>
                           {item.pnl >= 0 ? '+' : '-'}{fmt(Math.abs(item.pnl))}
                         </span>
                       </div>
@@ -652,8 +613,8 @@ const AppHome: React.FC = () => {
                   )) : (
                     <div className="card p-4 text-center">
                       <p className="text-xs text-[var(--text-muted)] font-medium">No activity yet</p>
-                      <Link to="/screener" className="text-xs font-bold text-blue-400 mt-1 inline-block hover:text-blue-300 transition-colors">
-                        Start screening stocks →
+                      <Link to="/screener" className="text-xs font-bold text-[var(--signal-buy)] mt-1 inline-block hover:opacity-80 transition-all">
+                        Start screening stock →
                       </Link>
                     </div>
                   );
@@ -665,20 +626,24 @@ const AppHome: React.FC = () => {
 
         {/* ── Quick Actions ── */}
         <div>
-          <h2 className="text-caption text-[var(--text-primary)] uppercase tracking-wider mb-4">Quick Actions</h2>
+          <h2 className="text-caption text-[var(--text-primary)] mb-3">Quick Actions</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {quickLinks.map((link, i) => (
               <motion.button
                 key={i}
-                whileHover={{ y: -2 }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => navigate(link.path)}
-                className="card p-4 text-left cursor-pointer"
+                className="card p-4 text-left cursor-pointer overflow-hidden relative group"
               >
-                <div className={`w-9 h-9 rounded-lg ${link.bg} ${link.border} flex items-center justify-center mb-3`}>
-                  <link.icon className={`w-4.5 h-4.5 ${link.iconCls}`} />
+                <div className={`w-9 h-9 rounded-xl ${link.bg} border ${link.border} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                  <link.icon className={`w-4 h-4 ${link.iconCls}`} />
                 </div>
-                <div className="text-xs font-bold text-[var(--text-primary)] group-hover:text-blue-400 transition-colors">{link.label}</div>
-                <div className="text-xs text-[var(--text-muted)] font-medium mt-0.5">{link.desc}</div>
+                <div className="text-xs font-bold text-[var(--text-primary)] group-hover:text-[var(--signal-buy)] transition-colors leading-snug">{link.label}</div>
+                <div className="text-[10px] text-[var(--text-muted)] font-medium mt-0.5 leading-snug">{link.desc}</div>
               </motion.button>
             ))}
           </div>
@@ -689,18 +654,18 @@ const AppHome: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-6 rounded-2xl bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/10 border border-blue-500/20 flex items-center justify-between flex-wrap gap-4"
+            className="card p-6 flex items-center justify-between flex-wrap gap-4"
           >
             <div>
               <h3 className="text-base font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
-                <Star className="w-4 h-4 text-amber-400" />
+                <Star className="w-4 h-4 text-[var(--accent-amber)]" />
                 Unlock Alpha Tier
               </h3>
               <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5">Get ABCD tranche entries, advanced strategies, and real-time alerts.</p>
             </div>
             <Link
               to="/license-desk"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-caption px-5 py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20 shrink-0"
+              className="flex items-center gap-2 bg-[var(--signal-buy)] hover:opacity-90 text-white text-caption px-5 py-3 rounded-xl transition-all shrink-0 font-bold"
             >
               Upgrade <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -711,7 +676,7 @@ const AppHome: React.FC = () => {
         <div className="md:hidden">
           <Link
             to="/screener"
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-caption px-5 py-4 rounded-xl w-full shadow-lg shadow-blue-500/20"
+            className="flex items-center justify-center gap-2 bg-[var(--signal-buy)] hover:opacity-90 text-white text-caption px-5 py-4 rounded-xl w-full font-bold"
           >
             <Search className="w-4 h-4" /> New Audit
           </Link>

@@ -65,6 +65,9 @@ export async function initDB() {
     ALTER TABLE users ADD COLUMN twofa_enabled INTEGER DEFAULT 0
   `).catch(() => {});
   await tursoClient.execute(`
+    ALTER TABLE users ADD COLUMN pin_hash TEXT
+  `).catch(() => {});
+  await tursoClient.execute(`
     CREATE TABLE IF NOT EXISTS upgrade_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -125,6 +128,21 @@ export async function initDB() {
     } catch (e) {
       // Ignore errors if columns already exist
     }
+  }
+
+  // ── Robust column existence check for `mobile` ──────────────────────────
+  // Some older databases may not have the mobile column. The ALTER TABLE
+  // above silently fails if the column exists, but if the table was created
+  // by an even older version without the column, we need to add it.
+  try {
+    const cols = await tursoClient.execute('PRAGMA table_info(users)');
+    const hasMobile = cols.rows.some((r: any) => r[1] === 'mobile');
+    if (!hasMobile) {
+      await tursoClient.execute('ALTER TABLE users ADD COLUMN mobile TEXT');
+      console.log('🔧 Added missing `mobile` column to users table');
+    }
+  } catch (e: any) {
+    console.warn('⚠️ Could not verify/add mobile column:', e.message);
   }
 
   await tursoClient.execute(`
@@ -254,24 +272,75 @@ export async function initDB() {
     )
   `);
 
+  // Growth Lab — async analysis runs (admin-only tool). Each run stores the
+  // submitted symbol list, the per-stock GrowthMetrics results, and a status
+  // ('running' | 'complete' | 'failed'). The full results_json is kept so the
+  // admin can re-open any past run without re-scraping.
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS growth_lab_runs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      symbols_json TEXT NOT NULL,
+      results_json TEXT,
+      status TEXT DEFAULT 'running',
+      total INTEGER DEFAULT 0,
+      done INTEGER DEFAULT 0,
+      pass_count INTEGER DEFAULT 0,
+      watch_count INTEGER DEFAULT 0,
+      reject_count INTEGER DEFAULT 0,
+      error_message TEXT,
+      quarter TEXT,
+      created_by INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      completed_at DATETIME,
+      FOREIGN KEY (created_by) REFERENCES users(id)
+    )
+  `);
+
+  // Published quarterly lists — one row per published quarter. Each PUBLISHED
+  // list is a snapshot of pass/watch symbols at that moment, kept for archive +
+  // for tracking "names that consistently pass across quarters". The
+  // individual GrowthMetrics per stock are stored in results_json.
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS growth_picks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      quarter TEXT NOT NULL,
+      label TEXT NOT NULL,
+      results_json TEXT NOT NULL,
+      pass_count INTEGER DEFAULT 0,
+      watch_count INTEGER DEFAULT 0,
+      reject_count INTEGER DEFAULT 0,
+      published_by INTEGER,
+      published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(quarter),
+      FOREIGN KEY (published_by) REFERENCES users(id)
+    )
+  `);
+
+  const withTimeout = async <T>(promise: Promise<T>, ms: number = 10000): Promise<T> => {
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`DB query timed out after ${ms}ms`)), ms);
+      promise.then(v => { clearTimeout(timer); resolve(v); }).catch(e => { clearTimeout(timer); reject(e); });
+    });
+  };
+
   db = {
     get: async (sql: string, params: any[] = []) => {
-      const result = await tursoClient!.execute({ sql, args: params });
-      return result.rows[0] ? Object.fromEntries(result.columns.map((col, i) => [col, result.rows[0][i]])) : null;
+      const result: any = await withTimeout(tursoClient!.execute({ sql, args: params }), 10000);
+      return result.rows[0] ? Object.fromEntries(result.columns.map((col: any, i: any) => [col, result.rows[0][i]])) : null;
     },
     all: async (sql: string, params: any[] = []) => {
-      const result = await tursoClient!.execute({ sql, args: params });
-      return result.rows.map(row => Object.fromEntries(result.columns.map((col, i) => [col, row[i]])));
+      const result: any = await withTimeout(tursoClient!.execute({ sql, args: params }), 10000);
+      return result.rows.map((row: any) => Object.fromEntries(result.columns.map((col: any, i: any) => [col, row[i]])));
     },
     run: async (sql: string, params: any[] = []) => {
-      const result = await tursoClient!.execute({ sql, args: params });
+      const result: any = await withTimeout(tursoClient!.execute({ sql, args: params }), 10000);
       return { lastID: Number(result.lastInsertRowid) };
     },
     exec: async (sql: string) => {
-      return await tursoClient!.execute(sql);
+      return await withTimeout(tursoClient!.execute(sql), 10000);
     },
     batch: async (queries: any[]) => {
-      return await tursoClient!.batch(queries);
+      return await withTimeout(tursoClient!.batch(queries), 15000);
     }
   };
 

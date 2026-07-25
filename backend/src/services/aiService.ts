@@ -50,7 +50,7 @@ OUTPUT FORMAT (respond in JSON only):
 }`;
 
 function getMarketCapCategory(marketCap: number): string {
-  if (marketCap >= 50000e7) return 'Large Cap';
+  if (marketCap >= 20000e7) return 'Large Cap';
   if (marketCap >= 5000e7) return 'Mid Cap';
   return 'Small Cap';
 }
@@ -92,9 +92,11 @@ export async function analyzeStock(
   const sh = { ...scrSh, ...quoteSh };
 
   const netProfit = screener.currentNetProfit || screener.netProfit || 0;
-  const roce = screener.roce || 0;
-  const roe = screener.returnOnEquity || snap?.quote?.roe || 0;
-  const peRatio = snap?.quote?.pe || screener.peRatio || 0;
+  let roce = screener.roce || 0;
+  if (Math.abs(roce) > 0 && Math.abs(roce) < 1) roce *= 100;
+  let roe = screener.returnOnEquity || snap?.quote?.roe || 0;
+  if (Math.abs(roe) > 0 && Math.abs(roe) < 1) roe *= 100;
+  const peRatio = screener.peRatio || snap?.quote?.pe || 0;
   const netDte = screener.netDebtToEquity || (snap?.quote?.debtToEquity / 100) || 0;
   const promoterHolding = Number(sh.promoter) || audit?.metrics?.promoter || 0;
   const publicHolding = Number(sh.public) || Math.max(0, 100 - promoterHolding - Number(sh.fii || 0) - Number(sh.dii || 0));
@@ -103,7 +105,7 @@ export async function analyzeStock(
   const strategiesRun: Record<string, any> = {};
   for (const s of strategies) {
     try {
-      const result = runStrategyAnalysis(s.id, snap, marketCap, 'Elite Basket');
+      const result = await runStrategyAnalysis(s.id, snap, marketCap, 'Elite Basket');
       if (result) strategiesRun[s.id] = result;
     } catch {}
   }
@@ -135,42 +137,52 @@ export async function analyzeStock(
     technical: technicalDesc,
   };
 
-  if (!GEMINI_API_KEY) {
-    return buildFallbackResponse(dataPayload);
-  }
+  const fallback = buildFallbackResponse(dataPayload);
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: HJ_SYSTEM_PROMPT }] },
-          contents: [{
-            parts: [{
-              text: `Analyze the following stock for Hemant Jain Swing Trading strategy alignment:\n\n${JSON.stringify(dataPayload, null, 2)}\n\nRespond with the JSON output format specified in your instructions.`
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 2048,
-          }
-        })
+  // Always start with deterministic fundamental scorecard (accurate, not random)
+  // Use Gemini AI only for the textual description enhancement if available
+  if (GEMINI_API_KEY) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: HJ_SYSTEM_PROMPT }] },
+            contents: [{
+              parts: [{
+                text: `Analyze the following stock for Hemant Jain Swing Trading strategy alignment:\n\n${JSON.stringify(dataPayload, null, 2)}\n\nRespond with the JSON output format specified in your instructions.`
+              }]
+            }],
+            generationConfig: {
+              temperature: 0,
+              maxOutputTokens: 2048,
+            }
+          })
+        }
+      );
+
+      const result: any = await response.json();
+      const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const aiResult = JSON.parse(jsonMatch[0]);
+        // Merge: keep deterministic fundamentalScorecard, use AI for text fields only
+        return {
+          ...fallback,
+          technicalAlignment: aiResult.technicalAlignment || fallback.technicalAlignment,
+          executionPlan: aiResult.executionPlan || fallback.executionPlan,
+          finalStatus: fallback.finalStatus, // Always use deterministic status
+          reason: aiResult.reason || fallback.reason,
+        };
       }
-    );
-
-    const result: any = await response.json();
-    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+    } catch (err: any) {
+      console.error('Gemini API error (non-blocking):', err.message);
     }
-    return buildFallbackResponse(dataPayload);
-  } catch (err: any) {
-    console.error('Gemini API error:', err.message);
-    return buildFallbackResponse(dataPayload);
   }
+
+  return fallback;
 }
 
 function buildTechnicalDescription(
@@ -265,7 +277,7 @@ export async function chatWithAI(userMessage: string, history: { role: string; c
           },
           contents,
           generationConfig: {
-            temperature: 0.5,
+            temperature: 0,
             maxOutputTokens: 2048,
           }
         })

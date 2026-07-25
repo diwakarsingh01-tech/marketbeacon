@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-07-18T15:38:37.788Z",
+  "summary": {
+    "total": 5,
+    "critical": 0,
+    "high": 0,
+    "medium": 3,
+    "low": 2
+  },
+  "issues": [
+    {
+      "id": "A1",
+      "severity": "MEDIUM",
+      "category": "strategy",
+      "title": "Buy zone tolerance 2.2% used in 5 strategies",
+      "detail": "All strategies use uniform 2.2% entry tolerance. No per-volatility adjustment.",
+      "evidence": "backend/src/strategies/index.ts"
+    },
+    {
+      "id": "A2",
+      "severity": "LOW",
+      "category": "strategy",
+      "title": "67 Funda entry locked at ATH × 0.33",
+      "detail": "Entry price is now locked at the max qualifying price (ATH × 0.33). Target = entry × 2.0 is fixed.",
+      "evidence": "backend/src/strategies/index.ts:639"
+    },
+    {
+      "id": "A3",
+      "severity": "LOW",
+      "category": "backtest",
+      "title": "NIFTY comparison uses all 10 strategies on all Elite Basket stocks",
+      "detail": "Scope expanded to full strategy suite across all Elite Basket stocks.",
+      "evidence": "backend/src/index.ts:727-733"
+    },
+    {
+      "id": "A4",
+      "severity": "MEDIUM",
+      "category": "backtest",
+      "title": "Backtest engine has no stop-loss or time-based exit",
+      "detail": "Positions held indefinitely until target hit. Overstates win rate and CAGR.",
+      "evidence": "backend/src/services/backtestEngine.ts:122-127"
+    },
+    {
+      "id": "A5",
+      "severity": "MEDIUM",
+      "category": "infra",
+      "title": "Alpha-40 cache uses fragile path detection",
+      "detail": "Worker tries 5 paths for alpha_40_results.json. Cache miss returns 503.",
+      "evidence": "backend/src/services/worker.ts:14-28"
+    }
+  ],
+  "meta": {
+    "nodeVersion": "v24.14.1",
+    "platform": "darwin",
+    "backendDirExists": true,
+    "frontendSrcExists": true
+  }
+}

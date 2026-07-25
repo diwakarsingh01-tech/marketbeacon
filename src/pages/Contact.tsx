@@ -66,7 +66,7 @@ const ContactPage: React.FC = () => {
         <Link to="/" className="hover:opacity-80 transition-opacity">
           <BrandLogo variant="dark" size={28} />
         </Link>
-        <Link to="/" className="inline-flex items-center gap-2 text-xs font-bold text-[var(--text-muted)] hover:text-white uppercase tracking-wider transition-colors">
+        <Link to="/" className="inline-flex items-center gap-2 text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors">
           <ArrowLeft className="w-3 h-3" /> Back to Home
         </Link>
       </nav>
@@ -76,7 +76,7 @@ const ContactPage: React.FC = () => {
           <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
           <span className="text-xs font-bold text-amber-400 uppercase tracking-[0.3em]">Get In Touch</span>
         </div>
-        <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-white mb-4">Contact Us</h2>
+        <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-[var(--text-primary)] mb-4">Contact Us</h2>
         <p className="text-[var(--text-secondary)] text-sm leading-relaxed max-w-xl mx-auto">
           Have a question, feedback, or partnership inquiry? We'd love to hear from you.
         </p>
@@ -87,7 +87,7 @@ const ContactPage: React.FC = () => {
           {/* Contact Info */}
           <div className="space-y-6">
             <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[1.5rem] p-6">
-              <h2 className="text-sm font-bold text-white mb-4">Contact Information</h2>
+              <h2 className="text-sm font-bold text-[var(--text-primary)] mb-4">Contact Information</h2>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-xl">
@@ -95,7 +95,7 @@ const ContactPage: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Email</p>
-                    <a href="mailto:support@marketbeacon.pro" className="text-sm text-white hover:text-blue-400 transition-colors">support@marketbeacon.pro</a>
+                    <a href="mailto:support@marketbeacon.pro" className="text-sm text-[var(--text-primary)] hover:text-blue-400 transition-colors">support@marketbeacon.pro</a>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -104,14 +104,14 @@ const ContactPage: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">WhatsApp</p>
-                    <a href="https://wa.me/919251180183" target="_blank" rel="noopener noreferrer" className="text-sm text-white hover:text-emerald-400 transition-colors">+91-92511-80183</a>
+                    <a href="https://wa.me/919251180183" target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--text-primary)] hover:text-emerald-400 transition-colors">+91-92511-80183</a>
                   </div>
                 </div>
               </div>
             </div>
             <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[1.5rem] p-6">
-              <h2 className="text-sm font-bold text-white mb-3">Response Time</h2>
-              <p className="text-sm text-[var(--text-secondary)]">We typically respond within <strong className="text-slate-200">24 hours</strong> on business days.</p>
+              <h2 className="text-sm font-bold text-[var(--text-primary)] mb-3">Response Time</h2>
+              <p className="text-sm text-[var(--text-secondary)]">We typically respond within <strong className="text-[var(--text-primary)]">24 hours</strong> on business days.</p>
               <p className="text-sm text-[var(--text-secondary)] mt-2">For urgent issues, reach us on WhatsApp for fastest resolution.</p>
             </div>
             <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[1.5rem] p-6">

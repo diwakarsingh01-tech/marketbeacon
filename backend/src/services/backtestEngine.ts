@@ -1,7 +1,7 @@
 import {
   calculateEnvelope, processShortEnvelope, calculateBollingerBand,
   calculateSMAStacking, calculate52WeekStrategy, calculateSRStrategy,
-  calculateRHS, calculateCupHandle, calculateSixtySevenFunda,
+  calculateCupHandle, calculateSixtySevenFunda,
   calculateTwentyRallyRetest, checkInstitutionalMandates, Quote
 } from '../strategies/index.js';
 
@@ -37,7 +37,8 @@ const STRATEGY_NAMES: Record<string, string> = {
   SMA_BCD: 'MA Stacking',
   '52W_HIGH_LOW': '52-Week High/Low',
   SR_STRATEGY: 'Supply-Demand',
-  RHS_ABCD: 'RHS (Reverse H&S)',
+
+
   CUP_HANDLE_ABCD: 'Cup & Handle',
   SIXTY_SEVEN_FUNDA: '67% Funda',
   TWENTY_RALLY_RETEST: 'Velocity Retest',
@@ -50,7 +51,8 @@ const MIN_LOOKBACK: Record<string, number> = {
   SMA_BCD: 320,
   '52W_HIGH_LOW': 280,
   SR_STRATEGY: 200,
-  RHS_ABCD: 420,
+
+
   CUP_HANDLE_ABCD: 420,
   SIXTY_SEVEN_FUNDA: 280,
   TWENTY_RALLY_RETEST: 280,
@@ -64,7 +66,7 @@ function runStrategyById(stratId: string, quotes: Quote[], screenerData?: any) {
     case 'SMA_BCD': return calculateSMAStacking(quotes);
     case '52W_HIGH_LOW': return calculate52WeekStrategy(quotes);
     case 'SR_STRATEGY': return calculateSRStrategy(quotes, screenerData);
-    case 'RHS_ABCD': return calculateRHS(quotes);
+
     case 'CUP_HANDLE_ABCD': return calculateCupHandle(quotes);
     case 'SIXTY_SEVEN_FUNDA': return calculateSixtySevenFunda(quotes, screenerData || {});
     case 'TWENTY_RALLY_RETEST': return calculateTwentyRallyRetest(quotes);

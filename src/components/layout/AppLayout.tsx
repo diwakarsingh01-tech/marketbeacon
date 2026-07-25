@@ -10,7 +10,8 @@ import {
   Zap, 
   Briefcase, 
   BookOpen, 
-  Bot
+  Search,
+  LineChart
 } from 'lucide-react';
 
 const AppLayout: React.FC = () => {
@@ -27,9 +28,9 @@ const AppLayout: React.FC = () => {
 
   const mobileNavItems = [
     { icon: LayoutGrid, label: 'Home', path: '/app' },
-    { icon: Zap, label: 'Alpha', path: '/alpha-hub' },
-    { icon: Zap, label: 'Screener', path: '/screener' },
-    { icon: Bot, label: 'Beacon', path: '/ai-assistant' },
+    { icon: Zap, label: 'Alpha Hub', path: '/alpha-hub' },
+    { icon: Search, label: 'Screener', path: '/screener' },
+    { icon: LineChart, label: 'Charts', path: '/charts' },
     { icon: Briefcase, label: 'Portfolio', path: '/portfolio' },
     { icon: BookOpen, label: 'Journal', path: '/trades' },
   ];
@@ -39,7 +40,7 @@ const AppLayout: React.FC = () => {
       {/* Mobile Sidebar Backdrop */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[105] md:hidden animate-in fade-in duration-300"
+          className="fixed inset-0 bg-slate-950/20 backdrop-blur-sm z-[105] animate-in fade-in duration-300"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -83,7 +84,7 @@ const AppLayout: React.FC = () => {
             to={item.path}
             className={({ isActive }) => `
               flex flex-col items-center justify-center flex-1 py-1 transition-all duration-300
-              ${isActive ? 'text-blue-500' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}
+              ${isActive ? 'text-[var(--border-accent)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}
             `}
           >
             <item.icon className="h-5 w-5 mb-1" />
@@ -96,7 +97,7 @@ const AppLayout: React.FC = () => {
       <button
         onClick={() => setIsFeedbackOpen(true)}
         aria-label="Send feedback"
-        className="fixed bottom-20 right-4 md:bottom-10 md:right-10 z-[150] w-12 h-12 md:w-16 md:h-16 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-[2rem] shadow-2xl hover:bg-blue-600 hover:scale-110 transition-all flex items-center justify-center group border border-[var(--border-primary)]"
+        className="fixed bottom-20 right-4 md:bottom-10 md:right-10 z-[150] w-12 h-12 md:w-16 md:h-16 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-[2rem] shadow-2xl hover:bg-[var(--border-accent)] hover:scale-110 transition-all flex items-center justify-center group border border-[var(--border-primary)]"
       >
         <MessageSquarePlus className="h-6 w-6 md:h-7 md:w-7 transition-transform group-hover:rotate-12" />
         <div className="absolute right-full mr-4 px-4 py-2 bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-caption rounded-2xl opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0 translate-x-4 whitespace-nowrap pointer-events-none shadow-2xl border border-[var(--border-primary)] hidden md:block">

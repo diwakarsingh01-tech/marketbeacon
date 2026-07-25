@@ -245,11 +245,15 @@ export function calculateSMAStacking(quotes: Quote[]) {
     else if (state === 'C_ACTIVE' && quotes[i].low <= d_entry * 1.01) { state = 'D_ACTIVE'; const dV = quotes[i].date; d_date = (typeof dV === 'string' ? dV : (dV as Date).toISOString()).split('T')[0]; }
   }
   let activeE = 0, activeT = 0, activeTr = 'NONE';
+  // SMA-BCD: A = TRIGGER ONLY (signal detection). No buy at A.
+  // Buy zone starts at B. B/C/D are the actual staggered buys.
   if (state === 'A_ACTIVE') { activeE = a_entry; activeT = a_target; activeTr = 'A'; }
   else if (state === 'B_ACTIVE') { activeE = b_entry; activeT = a_entry; activeTr = 'B'; }
   else if (state === 'C_ACTIVE') { activeE = c_entry; activeT = b_entry; activeTr = 'C'; }
   else if (state === 'D_ACTIVE') { activeE = d_entry; activeT = c_entry; activeTr = 'D'; }
-  return { isBuyZone: (activeTr !== 'NONE') && Math.abs(currentPrice - activeE) / activeE <= 0.022, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: a_date, tranche: activeTr, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date }, gap: 10 }, isLocked: true };
+  // Buy zone: only B/C/D (A is signal-only for SMA-BCD)
+  const isBuyZoneForSMA = (activeTr === 'B' || activeTr === 'C' || activeTr === 'D') && Math.abs(currentPrice - activeE) / activeE <= 0.022;
+  return { isBuyZone: isBuyZoneForSMA, entryPrice: activeE, target: activeT, currentPrice: Math.round(currentPrice), triggerDate: a_date, tranche: activeTr, abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date }, gap: 10 }, isLocked: true };
 }
 
 /**
@@ -451,52 +455,6 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
 }
 
 /**
- * STRATEGY 7: Dynamic Reversal (Parallel Symmetric RHS)
- * Rules: 30% ATH Drawdown + 30% Pattern Depth + 30% Target
- */
-export function calculateRHS(quotes: Quote[]) {
-  if (!quotes || quotes.length < 400) return { isBuyZone: false };
-  const currentPrice = quotes[quotes.length - 1].close, ath = Math.max(...quotes.map(q => q.high)), dr = ((ath - currentPrice) / ath) * 100;
-  
-  // Rule 1: 30% ATH Drawdown
-  if (dr < 30) return { isBuyZone: false };
-  
-  const window = 15, lows: any[] = [], highs: any[] = [];
-  for (let i = window; i < quotes.length - window; i++) {
-    const lS = quotes.slice(i - window, i + window + 1).map(q => q.low), hS = quotes.slice(i - window, i + window + 1).map(q => q.high);
-    if (quotes[i].low === Math.min(...lS)) lows.push({ price: quotes[i].low, idx: i, date: quotes[i].date });
-    if (quotes[i].high === Math.max(...hS)) highs.push({ price: quotes[i].high, idx: i, date: quotes[i].date });
-  }
-  for (let hIdx = lows.length - 2; hIdx >= 1; hIdx--) {
-    const head = lows[hIdx], s1A = lows.filter(l => l.idx < head.idx && l.idx > head.idx - 150), s2A = lows.filter(l => l.idx > head.idx && l.idx < head.idx + 150);
-    if (s1A.length > 0 && s2A.length > 0) {
-      const s1 = s1A[s1A.length - 1], s2 = s2A[0];
-      const peaks = highs.filter(h => h.idx > head.idx && h.idx < s2.idx);
-      if (peaks.length > 0) {
-        const neckline = peaks[0];
-        
-        // Rule 2: 30% Pattern Depth (Neckline to Head)
-        const depth = (neckline.price - head.price) / neckline.price;
-        if (depth < 0.30) continue;
-
-        const corr = ((neckline.price - s2.price) / neckline.price) * 100;
-        if (corr >= 8 && corr <= 18) {
-          const target = neckline.price + (neckline.price - head.price);
-          
-          // Rule 3: 30% Target Upside Gap
-          const targetGap = (target / s2.price) - 1;
-          const priceDist = Math.abs(currentPrice - s2.price) / s2.price;
-          if (targetGap >= 0.30 && priceDist <= 0.022) {
-            return { isBuyZone: true, entryPrice: Math.round(s2.price), target: Math.round(target), currentPrice: Math.round(currentPrice), triggerDate: s2.date, correction: corr.toFixed(1), isLocked: true };
-          }
-        }
-      }
-    }
-  }
-  return { isBuyZone: false };
-}
-
-/**
  * STRATEGY 8: Structural Pivot (Cup & Handle)
  * Rules: 30% ATH Drawdown + 30% Pattern Depth + 30% Target
  */
@@ -553,7 +511,7 @@ export function calculateCupHandle(quotes: Quote[]) {
  *   1. Stock ≥67% down from ATH
  *   2. Min 100% profit potential from entry to ATH
  *   3. Net Profit > ₹50 Cr (avoid SME/junk)
- *   4. D/E < 1 (or < 8 for finance)
+ *   4. D/E < 0.5 (or < 4 for finance)
  *   5. PE below 3Y median
  *   6. Quarterly sales & profit improving
  *
@@ -595,11 +553,24 @@ export function calculateSixtySevenFunda(quotes: Quote[], data: any) {
   const pe = parseFloat(data?.peRatio) || 0;
   const peMedians = data?.peMedians || {};
   const pe3Y = peMedians.pe3Y || 0;
+  const pe5Y = peMedians.pe5Y || 0;
   const netProfit = parseFloat(data?.netProfit) || 0;
   const de = parseFloat(data?.netDebtToEquity) || 0;
   const sector = (data?.industry || '').trim();
   const isFinance = ['Banking', 'Finance', 'NBFC', 'Financial Services', 'Asset Management'].includes(sector) || sector.toLowerCase().includes('finance');
-  const debtLimit = isFinance ? 8.0 : 1.0;
+  const isCapitalIntensive67 = ['EPC/Infra', 'Automobile', 'Infrastructure', 'Power', 'Steel', 'Telecom', 'Cement', 'Metal', 'Engineering', 'Industrial/Power', 'Utilities',
+    'Oil & Gas', 'Energy/Conglomerate', 'Oil, Gas & Consumable Fuels', 'Petrochemicals',
+    'Pharma', 'Pharmaceuticals', 'Chemicals', 'Mining', 'Logistics',
+    'Textiles', 'Media', 'Entertainment', 'Electricals', 'Electronics Mfg',
+    'Healthcare', 'Hospitality', 'Food Processing'
+  ].includes(sector)
+    || sector.toLowerCase().includes('infra') || sector.toLowerCase().includes('power') || sector.toLowerCase().includes('steel') || sector.toLowerCase().includes('telecom') || sector.toLowerCase().includes('auto')
+    || sector.toLowerCase().includes('oil') || sector.toLowerCase().includes('gas') || sector.toLowerCase().includes('energy')
+    || sector.toLowerCase().includes('pharma') || sector.toLowerCase().includes('chemical')
+    || sector.toLowerCase().includes('mining') || sector.toLowerCase().includes('logistic')
+    || sector.toLowerCase().includes('textile') || sector.toLowerCase().includes('media')
+    || sector.toLowerCase().includes('electrical') || sector.toLowerCase().includes('healthcare');
+  const debtLimit = isFinance ? 7.0 : (isCapitalIntensive67 ? 1.5 : 0.5);
 
   // RULE 3: Net Profit > ₹50 Cr
   if (netProfit > 0 && netProfit < 50) { failed.push(`Net profit ₹${netProfit}Cr < ₹50Cr`); }
@@ -610,41 +581,50 @@ export function calculateSixtySevenFunda(quotes: Quote[], data: any) {
   const athSales = parseFloat(data?.athSales) || 0;
   const athNetProfit = parseFloat(data?.athNetProfit) || 0;
   if (currentSales > 0 && athSales > 0) {
-    const salesNearATH = currentSales >= athSales * 0.8;
-    const profitNearATH = netProfit >= athNetProfit * 0.8;
-    if (!salesNearATH) { failed.push(`Sales ₹${currentSales}Cr < 80% of ATH ₹${athSales}Cr`); }
-    else { checklist.push(`Sales ₹${currentSales}Cr ≥ 80% of ATH`); }
-    if (!profitNearATH) { failed.push(`Net profit ₹${netProfit}Cr < 80% of ATH ₹${athNetProfit}Cr`); }
-    else { checklist.push(`Net profit ₹${netProfit}Cr ≥ 80% of ATH`); }
+    const salesNearATH = currentSales >= athSales * 0.95;
+    const profitNearATH = netProfit >= athNetProfit * 0.95;
+    if (!salesNearATH) { failed.push(`Sales ₹${currentSales}Cr < 95% of ATH ₹${athSales}Cr`); }
+    else { checklist.push(`Sales ₹${currentSales}Cr ≥ 95% of ATH`); }
+    if (!profitNearATH) { failed.push(`Net profit ₹${netProfit}Cr < 95% of ATH ₹${athNetProfit}Cr`); }
+    else { checklist.push(`Net profit ₹${netProfit}Cr ≥ 95% of ATH`); }
   } else {
     checklist.push("Quarterly improvement — manual check required");
   }
 
-  // RULE 5: D/E < 1 (or < 8 for finance)
+  // RULE 5: D/E < 0.5 (or < 4 for finance)
   if (de > debtLimit) { failed.push(`D/E ${de.toFixed(2)} > ${debtLimit}`); }
   else if (de > 0) { checklist.push(`D/E ${de.toFixed(2)} ≤ ${debtLimit}`); }
 
   // PE sanity
   if (pe > 0 && pe > 60) { failed.push(`P/E ${pe.toFixed(1)} > 60`); }
-  if (pe3Y > 0 && pe > pe3Y * 1.02) { failed.push(`P/E ${pe.toFixed(1)} > 3Y median ${pe3Y.toFixed(1)}`); }
+  if (pe3Y > 0 && pe > pe3Y) { failed.push(`P/E ${pe.toFixed(1)} > 3Y median ${pe3Y.toFixed(1)}`); }
+  if (pe5Y > 0 && pe > pe5Y) { failed.push(`P/E ${pe.toFixed(1)} > 5Y median ${pe5Y.toFixed(1)}`); }
 
   if (failed.length > 0) {
     return { isBuyZone: false, reason: failed.join("; "), drawdown: dr.toFixed(1), profitPotential: (profitPotential * 100).toFixed(0) + "%", triggerDate: "" };
   }
 
-  // Entry: current price is anywhere at or below 67% of ATH
+  // Entry: lock at max qualifying price (ATH * 0.33) — does not float with CMP
   const isEntryZone = currentPrice <= ath * 0.33;
+  const entryPrice = ath * 0.33;
 
-  // Target: exit at 100% gain (course Rule 8)
-  const entryPrice = currentPrice;
+  // Target 1: +67% within 1 year (primary target)
+  const target67 = Math.round(entryPrice * 1.67);
+  // Target 2: +100% if 67% not reached within 1 year (fallback)
   const target100 = Math.round(entryPrice * 2.0);
   const targetATH = Math.round(ath);
+
+  // Closer target is the active one — 67% is the first milestone
+  const primaryTarget = Math.min(target67, target100);
 
   return {
     isBuyZone: isEntryZone,
     entryPrice: Math.round(entryPrice),
-    target: target100,
+    target: primaryTarget,
+    target67,         // +67% in 1yr
+    target100,        // +100% fallback
     targetATH,
+    targetLogic: "Target 1: +67% in 1yr. If not met: roll to +100%.",
     currentPrice: Math.round(currentPrice),
     triggerDate: new Date().toISOString().split('T')[0],
     drawdown: dr.toFixed(1) + "%",
@@ -654,7 +634,7 @@ export function calculateSixtySevenFunda(quotes: Quote[], data: any) {
       "Why did the stock fall? (sentiment / business / fundamental)",
       "Does that reason no longer exist?",
       "Future growth prospects (industry outlook, business moat, competitive advantage)",
-      "Exit rule: sell at 100% if within 1yr, else hold to ATH or 3x"
+      "Exit rule: sell at +67% if within 1yr, else hold to +100% or ATH"
     ],
     isLocked: true
   };
@@ -760,8 +740,50 @@ export function calculateABCDLevels(anchorPrice: number, marketCap: number = 0) 
 }
 
 /**
- * GLOBAL MANDATE: Hard Reject Audit
- * Enforces D/E <= 1.0 and Smart Money >= 70%
+ * Calculates Relative Strength Index (RSI)
+ */
+export function calculateRSI(prices: number[], length: number): number[] {
+  const rsi: number[] = new Array(prices.length).fill(50);
+  if (prices.length < length + 1) return rsi;
+
+  let gain = 0, loss = 0;
+  for (let i = 1; i <= length; i++) {
+    const diff = prices[i] - prices[i - 1];
+    if (diff >= 0) gain += diff; else loss -= diff;
+  }
+
+  let avgGain = gain / length;
+  let avgLoss = loss / length;
+  rsi[length] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+
+  for (let i = length + 1; i < prices.length; i++) {
+    const diff = prices[i] - prices[i - 1];
+    avgGain = (avgGain * (length - 1) + (diff > 0 ? diff : 0)) / length;
+    avgLoss = (avgLoss * (length - 1) + (diff < 0 ? -diff : 0)) / length;
+    rsi[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+  }
+
+  return rsi;
+}
+
+/**
+ * Calculates Momentum (price - price[n] periods ago)
+ */
+export function calculateMomentum(prices: number[], length: number): number[] {
+  const mom: number[] = new Array(prices.length).fill(0);
+  for (let i = length; i < prices.length; i++) {
+    mom[i] = prices[i] - prices[i - length];
+  }
+  return mom;
+}
+
+/**
+ * GLOBAL MANDATE: Hard Reject Audit</think>
+
+<｜DSML｜tool_calls>
+<｜DSML｜invoke name="edit">
+<｜DSML｜parameter name="filePath" string="true">/Users/diwakarsingh/marketbeacon/backend/src/strategies/index.ts
+ * Enforces D/E limits and Smart Money >= 70%
  */
 export function checkInstitutionalMandates(screenerData: any, symbol: string = '') {
   if (!screenerData) return { passed: true };
@@ -777,18 +799,33 @@ export function checkInstitutionalMandates(screenerData: any, symbol: string = '
 
   const isFinance = ['Banking', 'Finance', 'Banking ETF', 'NBFC', 'Financial Services', 'Asset Management', 'Exchange/Depository', 'Financial Infrastructure'].includes(sector)
     || sector.toLowerCase().includes('finance') || sector.toLowerCase().includes('nbfc');
-  const isCapitalIntensive = ['EPC/Infra', 'Automobile', 'Infrastructure', 'Power', 'Steel', 'Telecom', 'Cement', 'Metal', 'Engineering', 'Industrial/Power', 'Utilities'].includes(sector)
-    || ['LT', 'BHARTIARTL', 'M&M', 'ADANIPORTS', 'ADANIENT', 'JSWSTEEL', 'TATASTEEL', 'NTPC', 'POWERGRID', 'TMCV'].includes(symbol)
-    || sector.toLowerCase().includes('infra') || sector.toLowerCase().includes('steel') || sector.toLowerCase().includes('telecom') || sector.toLowerCase().includes('auto');
+  const isCapitalIntensive = ['EPC/Infra', 'Automobile', 'Infrastructure', 'Power', 'Steel', 'Telecom', 'Cement', 'Metal', 'Engineering', 'Industrial/Power', 'Utilities',
+    'Oil & Gas', 'Energy/Conglomerate', 'Oil, Gas & Consumable Fuels', 'Petrochemicals',
+    'Pharma', 'Pharmaceuticals', 'Chemicals', 'Mining', 'Logistics',
+    'Textiles', 'Media', 'Entertainment', 'Electricals', 'Electronics Mfg',
+    'Healthcare', 'Hospitality', 'Food Processing'
+  ].includes(sector)
+    || ['LT', 'BHARTIARTL', 'M&M', 'ADANIPORTS', 'ADANIENT', 'JSWSTEEL', 'TATASTEEL', 'NTPC', 'POWERGRID', 'TMCV',
+        'RELIANCE', 'ONGC', 'BPCL', 'IOC', 'GAIL', 'SUNPHARMA', 'DRREDDY', 'CIPLA', 'DIVISLAB',
+        'APOLLOHOSP', 'LALPATHLAB', 'HINDALCO', 'HINDZINC', 'NATIONALUM', 'NMDC',
+        'JSWENERGY', 'TORNTPOWER', 'ADANIGREEN', 'SUZLON', 'SIEMENS', 'ABB'
+    ].includes(symbol)
+    || sector.toLowerCase().includes('infra') || sector.toLowerCase().includes('steel') || sector.toLowerCase().includes('telecom') || sector.toLowerCase().includes('auto')
+    || sector.toLowerCase().includes('oil') || sector.toLowerCase().includes('gas') || sector.toLowerCase().includes('energy')
+    || sector.toLowerCase().includes('pharma') || sector.toLowerCase().includes('chemical')
+    || sector.toLowerCase().includes('mining') || sector.toLowerCase().includes('logistic')
+    || sector.toLowerCase().includes('textile') || sector.toLowerCase().includes('media')
+    || sector.toLowerCase().includes('electrical') || sector.toLowerCase().includes('healthcare');
 
-  const debtLimit = isFinance ? 8.0 : (isCapitalIntensive ? 2.0 : 1.0);
+  const debtLimit = isFinance ? 7.0 : (isCapitalIntensive ? 1.5 : 0.5);
 
   const reasons = [];
   if (de > debtLimit) reasons.push(`D/E High (${de.toFixed(2)})`);
   if (sm < 30) reasons.push(`SM Critical (${sm.toFixed(1)}%)`);
   if (pe > 60) reasons.push(`P/E High (${pe.toFixed(1)})`);
-  if (pe3Y > 0 && pe > pe3Y * 1.02) reasons.push(`P/E > 3Y Median (${pe.toFixed(1)} vs ${pe3Y.toFixed(1)})`);
-  if (pe5Y > 0 && pe > pe5Y * 1.02) reasons.push(`P/E > 5Y Median (${pe.toFixed(1)} vs ${pe5Y.toFixed(1)})`);
+  // PE vs median: current PE must be ≤ both 3Y and 5Y median
+  if (pe3Y > 0 && pe > pe3Y) reasons.push(`P/E > 3Y Median (${pe.toFixed(1)} vs ${pe3Y.toFixed(1)})`);
+  if (pe5Y > 0 && pe > pe5Y) reasons.push(`P/E > 5Y Median (${pe.toFixed(1)} vs ${pe5Y.toFixed(1)})`);
 
   return {
     passed: reasons.length === 0,

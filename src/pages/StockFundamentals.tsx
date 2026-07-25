@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
-  Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight, Lock, Sparkles, ChevronDown, ChevronUp
+  Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight, Lock, Sparkles, ChevronDown, ChevronUp, BarChart3, Bot
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,9 @@ import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { BASKETS, STRATEGIES } from '../data/stocks';
+import { InfoTooltip } from '../components/ui/InfoTooltip';
+import { FUNDA_INFO_MAP } from '../data/fundaInfo';
+import DataFreshnessBadge from '../components/ui/DataFreshnessBadge';
 import AiSuggestionPanel from '../components/ai/AiSuggestionPanel';
 
 const API_URL = getApiUrl();
@@ -86,7 +89,7 @@ const StockFundamentalsPage: React.FC = () => {
 
   if (loading) return (
     <div className="flex-1 flex items-center justify-center min-h-screen bg-[var(--bg-primary)]">
-      <div className="w-10 h-10 border-4 border-[var(--border-primary)] border-t-blue-500 rounded-full animate-spin" />
+      <div className="w-10 h-10 border-4 border-[var(--border-primary)] border-t-[#00d09c] rounded-full animate-spin" />
     </div>
   );
 
@@ -95,6 +98,9 @@ const StockFundamentalsPage: React.FC = () => {
     if (isNaN(n) || n === 0) return '—';
     return `₹ ${(n / 10000000).toLocaleString(undefined, { maximumFractionDigits: 0 })} Cr.`;
   };
+
+  const dataAge = data?.dataAge || {};
+  const globalLastUpdated = dataAge.lastUpdated || data?.lastUpdated || null;
 
   const audit = data?.audit || {};
   const score = Number(audit?.score) || 0;
@@ -111,9 +117,17 @@ const StockFundamentalsPage: React.FC = () => {
   const peRatio = Number(data?.peRatio || 0);
   const pe3Y = Number(data?.peMedians?.pe3Y || 0);
   const pe5Y = Number(data?.peMedians?.pe5Y || 0);
-  const avgMedian = (pe3Y + pe5Y) / 2;
-  const hasMedian = avgMedian > 0;
-  const isPEOvervalued = peRatio > avgMedian && hasMedian;
+  const pe10Y = Number(data?.peMedians?.pe10Y || 0);
+  // Rule: Current PE must be ≤ 3Y median AND ≤ 5Y median.
+  // If either median is available, it must not be exceeded.
+  const hasPe3Y = pe3Y > 0;
+  const hasPe5Y = pe5Y > 0;
+  const hasMedian = hasPe3Y || hasPe5Y;
+  const isPEOvervalued = hasMedian && (
+    (hasPe3Y && peRatio > pe3Y) || (hasPe5Y && peRatio > pe5Y)
+  );
+  // For display: pick the most conservative (lowest) available median
+  const referenceMedian = hasPe3Y && hasPe5Y ? Math.min(pe3Y, pe5Y) : (hasPe3Y ? pe3Y : (hasPe5Y ? pe5Y : 0));
 
   // Find all baskets that contain this stock
   const containingBaskets = Object.entries(BASKETS)
@@ -132,7 +146,7 @@ const StockFundamentalsPage: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col font-sans text-[var(--text-secondary)] bg-[var(--bg-primary)] lg:h-screen lg:overflow-hidden overflow-y-auto pb-24 md:pb-0 relative terminal-scan">
+    <div className="flex-1 flex flex-col font-sans text-[var(--text-secondary)] bg-[var(--bg-primary)] min-h-screen overflow-y-auto pb-24 md:pb-0 relative terminal-scan">
       
       {/* COMPACT HEADER */}
       <div className="bg-[var(--bg-primary)]/95 backdrop-blur-md border-b border-[var(--border-primary)] py-4 sticky top-0 z-10 shadow-xl">
@@ -140,14 +154,14 @@ const StockFundamentalsPage: React.FC = () => {
             <div className="flex items-center space-x-6">
               <div className="space-y-0.5">
                  <div className="flex items-center space-x-2 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
-                    <Link to="/alpha-hub" className="hover:text-blue-400">Alpha Hub</Link>
+                    <Link to="/alpha-hub" className="hover:text-[#00d09c]">Alpha Hub</Link>
                     <ChevronRight className="h-2 w-2" />
                     <span className="text-[var(--text-primary)]">{symbol}</span>
                  </div>
                  <div className="flex items-center space-x-3">
                     <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase leading-none">{symbol}</h1>
                     <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] rounded text-xs font-bold text-[var(--text-secondary)] uppercase tracking-tighter">{data?.industry || 'General'}</span>
-                    <div className={`px-2 py-0.5 rounded text-caption uppercase tracking-tighter ${universe === 'INSTITUTIONAL' ? 'bg-blue-600 text-[var(--text-primary)]' : 'bg-slate-700 text-[var(--text-primary)]'}`}>{universe}</div>
+                    <div className={`px-2 py-0.5 rounded text-caption uppercase tracking-tighter ${universe === 'INSTITUTIONAL' ? 'bg-[#00d09c] text-white' : 'bg-slate-200 text-slate-700'}`}>{universe}</div>
                  </div>
               </div>
             </div>
@@ -166,36 +180,54 @@ const StockFundamentalsPage: React.FC = () => {
                      <span className="text-xs text-[var(--text-muted)] ml-0.5">/100</span>
                   </div>
                   <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Audit Score</span>
+                  <DataFreshnessBadge 
+                    lastUpdated={globalLastUpdated} 
+                    dataType="Fundamental Data" 
+                    showLabel={true} 
+                    className="mt-1"
+                  />
                </div>
             </div>
         </div>
       </div>
 
       {/* FIT-TO-SCREEN CONTENT */}
-      <main className="max-w-[1600px] mx-auto w-full flex-1 lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-6 px-6 md:px-8 lg:px-10 py-8 relative">
+      <main className="max-w-[1600px] mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 px-6 md:px-8 lg:px-10 py-8 relative">
         <div className="col-span-full">
           <Breadcrumbs items={[
             { label: 'Screener', href: '/screener' },
             { label: symbol || '' }
           ]} />
         </div>
-        <div className={`lg:col-span-8 space-y-6 lg:overflow-y-auto pr-2 no-scrollbar transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
+        <div className={`lg:col-span-8 space-y-6 pr-2 no-scrollbar transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-             <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-24 transition-all duration-200 hover:border-blue-500/30">
-                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Market Cap</span>
-                <p className="text-lg font-bold text-[var(--text-primary)] leading-tight font-mono">{formatCr(data?.marketCap)}</p>
+             <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-28 transition-all duration-200 hover:border-[#00d09c]/30">
+                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1">Market Cap <InfoTooltip entry={FUNDA_INFO_MAP.marketCap} /></span>
+                <div>
+                  <p className="text-lg font-bold text-[var(--text-primary)] leading-tight font-mono">{formatCr(data?.marketCap)}</p>
+                  <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} className="mt-1" />
+                </div>
              </div>
-             <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-24 transition-all duration-200 hover:border-blue-500/30">
-                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Profitability (ROE)</span>
-                <p className="text-lg font-bold text-[var(--text-primary)] leading-tight font-mono">{data?.returnOnEquity ? `${Number(data.returnOnEquity).toFixed(1)}%` : '-'}</p>
+             <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-28 transition-all duration-200 hover:border-[#00d09c]/30">
+                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1">Profitability (ROE) <InfoTooltip entry={FUNDA_INFO_MAP.roe} /></span>
+                <div>
+                  <p className="text-lg font-bold text-[var(--text-primary)] leading-tight font-mono">{data?.returnOnEquity ? `${Number(data.returnOnEquity).toFixed(1)}%` : '-'}</p>
+                  <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} className="mt-1" />
+                </div>
              </div>
-             <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-24 transition-all duration-200 hover:border-blue-500/30">
-                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Efficiency (ROCE)</span>
-                <p className="text-lg font-bold text-[var(--text-primary)] leading-tight font-mono">{data?.roce ? `${Number(data.roce).toFixed(1)}%` : '-'}</p>
+             <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-28 transition-all duration-200 hover:border-[#00d09c]/30">
+                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1">Efficiency (ROCE) <InfoTooltip entry={FUNDA_INFO_MAP.roce} /></span>
+                <div>
+                  <p className="text-lg font-bold text-[var(--text-primary)] leading-tight font-mono">{data?.roce ? `${Number(data.roce).toFixed(1)}%` : '-'}</p>
+                  <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} className="mt-1" />
+                </div>
              </div>
-             <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-24 transition-all duration-200 hover:border-blue-500/30">
-                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Debt-To-Equity</span>
-                <p className={`text-lg font-bold leading-tight font-mono ${Number(data?.netDebtToEquity) > 0.2 ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{Number(data?.netDebtToEquity).toFixed(2)}</p>
+             <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-28 transition-all duration-200 hover:border-[#00d09c]/30">
+                <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1">Debt-To-Equity <InfoTooltip entry={FUNDA_INFO_MAP.debtToEquity} /></span>
+                <div>
+                  <p className={`text-lg font-bold leading-tight font-mono ${Number(data?.netDebtToEquity) > 0.2 ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{Number(data?.netDebtToEquity).toFixed(2)}</p>
+                  <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} className="mt-1" />
+                </div>
              </div>
           </div>
 
@@ -203,7 +235,7 @@ const StockFundamentalsPage: React.FC = () => {
           <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl p-5 backdrop-blur-sm space-y-4">
              <div className="flex justify-between items-center text-caption text-[var(--text-secondary)] border-b border-[var(--border-primary)] pb-3">
                 <span className="text-[var(--text-primary)]">Basket & Strategy Matrix</span>
-                <span className="text-[var(--text-muted)]">Live Status</span>
+                <DataFreshnessBadge isLive={true} dataType="Strategy Engine" size="sm" />
              </div>
              
              {/* Baskets list */}
@@ -212,7 +244,7 @@ const StockFundamentalsPage: React.FC = () => {
                 <div className="flex flex-wrap gap-2">
                    {containingBaskets.length > 0 ? (
                       containingBaskets.map((bName) => (
-                         <span key={bName} className="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg text-caption">
+                         <span key={bName} className="px-2.5 py-1 bg-[#00d09c]/10 text-[#00d09c] border border-[#00d09c]/20 rounded-lg text-caption">
                             {bName}
                          </span>
                       ))
@@ -237,7 +269,7 @@ const StockFundamentalsPage: React.FC = () => {
                       const isRejected = stratResult?.status === 'REJECTED' || stratResult?.status === 'REJECT' || stratResult?.isPass === false || !isPass;
 
                       if (isApproved) {
-                         statusText = 'APPROVED / BUY ZONE';
+                         statusText = 'APPROVED / SETUP ZONE';
                          statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
                          tabName = 'open';
                       } else if (isRejected) {
@@ -254,7 +286,7 @@ const StockFundamentalsPage: React.FC = () => {
                       const matchingBasket = strat.baskets.find(b => containingBaskets.includes(b)) || strat.baskets[0];
 
                       return (
-                         <div key={strat.id} className="flex items-center justify-between p-3.5 bg-[var(--bg-primary)]/40 border border-[var(--border-primary)] rounded-xl hover:border-blue-500/30 transition-all">
+                         <div key={strat.id} className="flex items-center justify-between p-3.5 bg-[var(--bg-primary)]/40 border border-[var(--border-primary)] rounded-xl hover:border-[#00d09c]/30 transition-all">
                             <div className="space-y-1">
                                <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide block">{strat.name}</span>
                                <span className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-wider block">Basket: {matchingBasket}</span>
@@ -268,7 +300,7 @@ const StockFundamentalsPage: React.FC = () => {
                                </span>
                                <Link 
                                   to={`/screener?strategy=${strat.id}&basket=${encodeURIComponent(matchingBasket)}&tab=${tabName}&search=${symbol}`}
-                                  className="p-1.5 bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg border border-blue-500/20 transition-all text-caption flex items-center gap-1 active:scale-95"
+                                  className="p-1.5 bg-[#00d09c]/10 hover:bg-[#00d09c] text-[#00d09c] hover:text-white rounded-lg border border-[#00d09c]/20 transition-all text-caption flex items-center gap-1 active:scale-95"
                                   title="View on Screener Matrix"
                                >
                                   <span>View Matrix</span>
@@ -287,17 +319,151 @@ const StockFundamentalsPage: React.FC = () => {
              </div>
           </section>
 
-          {/* Strategy Backtest Section */}
+
+          <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl backdrop-blur-sm">
+             <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-caption text-[var(--text-secondary)]">
+                <span className="text-[var(--text-primary)]">Institutional Audit Matrix</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[var(--text-muted)]">{audit?.reason}</span>
+                  <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} />
+                </div>
+             </div>
+             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                {weightedSegments.some(s => s.data) ? (
+                  weightedSegments.map((segment) => segment.data && (
+                  <div key={segment.id} className="space-y-3">
+                    <div className="flex items-center justify-between border-b border-[var(--border-primary)] pb-2">
+                      <h3 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center">
+                        {segment.icon} {segment.label} <InfoTooltip entry={FUNDA_INFO_MAP[segment.id === 'valuation' ? 'valuationScore' : segment.id === 'profit' ? 'profitabilityQuality' : segment.id === 'safety' ? 'balanceSheetSafety' : 'growthQuality']} size="sm" className="ml-1" />
+                      </h3>
+                      <span className="text-caption text-[var(--text-primary)]">{segment.data.score}/{segment.data.max}</span>
+                    </div>
+                    <div className="space-y-2">
+                       {(segment.data.checks || []).map((check: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between">
+                           <span className="text-caption font-medium text-[var(--text-muted)] uppercase">{check.label}</span>
+                           <span className={`text-caption ${check.pass ? 'text-emerald-500' : 'text-amber-500'}`}>{check.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )))
+                : (
+                  <div className="col-span-full text-center py-10">
+                    <p className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-wider">Audit data not available for this stock</p>
+                    <p className="text-[10px] text-[var(--text-muted)] mt-1">Fundamental audit scoring requires complete financial data</p>
+                  </div>
+                )}
+             </div>
+          </section>
+
+          <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl p-6 grid grid-cols-2 md:grid-cols-4 gap-6 backdrop-blur-sm">
+             {[
+               { label: 'ATH Sales', value: data?.athSales ? `₹${Number(data.athSales).toLocaleString()} Cr.` : '-', infoKey: 'salesAth' as const },
+               { label: 'ATH Profit', value: data?.athNetProfit ? `₹${Number(data.athNetProfit).toLocaleString()} Cr.` : '-', infoKey: 'profitAth' as const },
+               { label: '52W High', value: `₹${Number(data?.fiftyTwoWeekHigh || 0).toLocaleString()}`, infoKey: 'fiftyTwoWeekHigh' as const },
+               { label: 'Beta', value: Number(data?.beta)?.toFixed(2), infoKey: 'beta' as const }
+             ].map((item, i) => (
+               <div key={i} className="space-y-1">
+                  <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1">{item.label} <InfoTooltip entry={FUNDA_INFO_MAP[item.infoKey]} /></span>
+                  <p className="text-xs font-bold text-[var(--text-primary)] uppercase leading-none font-mono">{item.value}</p>
+                  <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} />
+               </div>
+             ))}
+          </section>
+
+
+
+        </div>
+
+        <div className={`lg:col-span-4 space-y-6 pr-2 no-scrollbar transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
+           <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl p-6 space-y-6 backdrop-blur-sm">
+              <h3 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center">
+                <Target className="h-4 w-4 mr-2 text-[#00d09c]" /> Valuation & Ownership
+              </h3>
+              <div className="space-y-4">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className={`p-4 rounded-xl border ${isPEOvervalued ? 'bg-red-500/10 border-red-500/30' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]'} transition-all duration-200 hover:scale-[1.02]`}>
+                       <p className={`text-caption uppercase flex items-center gap-1 ${isPEOvervalued ? 'text-red-500' : 'text-[var(--text-tertiary)]'}`}>Current PE <InfoTooltip entry={FUNDA_INFO_MAP.peRatio} size="sm" /></p>
+                       <p className={`text-lg font-bold leading-none font-mono ${isPEOvervalued ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{peRatio.toFixed(1)}</p>
+                       <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} className="mt-1" />
+                    </div>
+                    <div className="bg-[var(--bg-primary)] p-4 rounded-xl border border-[var(--border-primary)] text-center transition-all duration-200 hover:scale-[1.02]">
+                        <p className="text-caption text-[var(--text-tertiary)] uppercase flex items-center justify-center gap-1">Median P/E (3Y / 5Y) <InfoTooltip entry={FUNDA_INFO_MAP.peMedian} size="sm" /></p>
+                        <p className="text-lg font-bold text-[var(--text-primary)] leading-none font-mono">
+                           {hasMedian ? `${referenceMedian.toFixed(1)}x` : '—'}
+                        </p>
+                        {hasMedian && (
+                           <p className="text-[6px] text-[var(--text-muted)] leading-tight mt-0.5">
+                              3Y: {pe3Y.toFixed(1)}x &middot; 5Y: {pe5Y.toFixed(1)}x{pe10Y > 0 ? ` &middot; 10Y: ${pe10Y.toFixed(1)}x` : ''}
+                           </p>
+                        )}
+                        <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} className="mt-1" />
+                    </div>
+                 </div>
+                 
+                 <div className="space-y-3">
+                    {[
+                      { label: 'Promoters', value: data?.shareholding?.promoter, infoKey: 'promoterHolding', color: 'bg-[var(--bg-secondary)]' },
+                      { label: 'Institutional', value: (data?.shareholding?.fii || 0) + (data?.shareholding?.dii || 0), infoKey: 'fiiDiiCombined', color: 'bg-slate-500' }
+                    ].map((holder, idx) => (
+                      <div key={idx} className="space-y-2">
+                         <div className="flex justify-between items-center text-caption">
+                            <span className="text-[var(--text-tertiary)] uppercase flex items-center gap-1">{holder.label} <InfoTooltip entry={FUNDA_INFO_MAP[holder.infoKey]} size="sm" /></span>
+                            <span className="text-[var(--text-primary)]">{holder.value?.toFixed(1)}%</span>
+                         </div>
+                         <div className="w-full h-2 bg-[var(--bg-primary)] rounded-full overflow-hidden">
+                            <div className={`h-full ${holder.color} rounded-full transition-all duration-500`} style={{ width: `${holder.value || 0}%` }} />
+                         </div>
+                         <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} />
+                      </div>
+                    ))}
+                    <div className="pt-2 flex flex-col">
+                        <span className="text-caption text-[var(--text-tertiary)] uppercase flex items-center gap-1">Smart Money Total <InfoTooltip entry={FUNDA_INFO_MAP.smartMoney} size="sm" /></span>
+                        <span className="text-2xl font-bold text-[var(--text-primary)] tracking-tighter leading-none font-mono">{data?.shareholding?.smartMoneyTotal?.toFixed(2)}%</span>
+                        <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} className="mt-1" />
+                    </div>
+                 </div>
+              </div>
+           </div>
+
+           <AiSuggestionPanel symbol={symbol || ''} />
+
+           <div className="bg-[var(--bg-primary)] rounded-2xl p-6 text-[var(--text-primary)] space-y-4 shadow-xl border border-[var(--border-primary)] backdrop-blur-sm">
+               <h3 className="text-caption italic">Research Hub</h3>
+              <div className="grid grid-cols-1 gap-3">
+                  <a href={`https://www.tradingview.com/symbols/NSE-${symbol}`} target="_blank" className="flex items-center justify-between p-4 bg-[var(--bg-primary)]/5 rounded-xl hover:bg-[var(--bg-primary)]/10 transition-all border border-white/10 group" rel="noreferrer">
+                     <span className="text-caption">Charts</span>
+                     <ArrowUpRight className="h-3 w-3 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
+                  </a>
+                  <Link to={`/charts?symbol=${symbol}&return=/stock/${symbol}`} className="flex items-center justify-between p-4 bg-[var(--bg-primary)]/5 rounded-xl hover:bg-[var(--bg-primary)]/10 transition-all border border-white/10 group">
+                     <span className="text-caption">Terminal</span>
+                     <BarChart3 className="h-3 w-3 text-[var(--text-tertiary)] group-hover:text-blue-400 transition-colors" />
+                  </Link>
+                 <a href={`https://www.screener.in/company/${symbol}/consolidated/`} target="_blank" className="flex items-center justify-between p-4 bg-[var(--bg-primary)]/5 rounded-xl hover:bg-[var(--bg-primary)]/10 transition-all border border-white/10 group" rel="noreferrer">
+                    <span className="text-caption">Screener</span>
+                    <ArrowUpRight className="h-3 w-3 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
+                 </a>
+                  <Link to={`/ai-assistant?symbol=${symbol}`} className="flex items-center justify-between p-4 bg-[var(--bg-primary)]/5 rounded-xl hover:bg-[var(--bg-primary)]/10 transition-all border border-white/10 group">
+                     <span className="text-caption">Ask Beacon AI</span>
+                     <Bot className="h-3 w-3 text-[var(--text-tertiary)] group-hover:text-blue-400 transition-colors" />
+                  </Link>
+              </div>
+           </div>
+        </div>
+
+        {/* Full-Width: 20-Year Strategy Backtest */}
+        <div className="col-span-full">
           <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
             <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-caption text-[var(--text-secondary)]">
               <span className="text-[var(--text-primary)]">Strategy Backtest (20-Year History)</span>
-              {backtestLoading && <div className="w-4 h-4 border-2 border-[var(--border-primary)] border-t-blue-500 rounded-full animate-spin" />}
-              {backtestLoaded && !backtestLoading && <span className="text-emerald-500">Loaded</span>}
+              {backtestLoading && <div className="w-4 h-4 border-2 border-[var(--border-primary)] border-t-[#00d09c] rounded-full animate-spin" />}
+              {backtestLoaded && !backtestLoading && <DataFreshnessBadge isLive={true} dataType="Computed On-Demand" size="sm" />}
             </div>
             <div className="p-4 space-y-2">
               {!backtestLoaded && !backtestLoading && (
                 <div className="text-center py-6">
-                  <button onClick={loadBacktest} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-caption transition-colors shadow-lg shadow-blue-500/20">
+                  <button onClick={loadBacktest} className="px-4 py-2 bg-[#00d09c] hover:bg-[#00bda0] text-white rounded-lg text-caption transition-colors shadow-md shadow-[#00d09c]/15">
                     Load 20-Year Backtest
                   </button>
                   <p className="text-xs text-[var(--text-muted)] mt-2">Computes all 10 strategies across 20 years of daily data. May take ~60s.</p>
@@ -317,7 +483,7 @@ const StockFundamentalsPage: React.FC = () => {
                         <span className={r.winRate >= 60 ? 'text-emerald-500' : r.winRate >= 40 ? 'text-amber-500' : 'text-red-500'}>{r.winRate}% WR</span>
                       </div>
                       <div className="flex items-center gap-4 text-caption">
-                        <span className="text-blue-400">{r.avgRoi}% avg ROI</span>
+                        <span className="text-[#00d09c]">{r.avgRoi}% avg ROI</span>
                         <span className="text-[var(--text-muted)]">{r.avgDays}d avg</span>
                         {expandedStrategy === sid ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       </div>
@@ -327,11 +493,11 @@ const StockFundamentalsPage: React.FC = () => {
                         <table className="w-full text-xs font-mono">
                           <thead>
                             <tr className="bg-[var(--bg-primary)]/60 text-[var(--text-muted)] uppercase tracking-wider">
-                              <th className="p-2 text-left">Entry</th>
+                              <th className="p-2 text-left">Setup Level</th>
                               <th className="p-2 text-left">Price</th>
                               <th className="p-2 text-left">Exit</th>
                               <th className="p-2 text-left">Price</th>
-                              <th className="p-2 text-left">Target</th>
+                              <th className="p-2 text-left">Projection</th>
                               <th className="p-2 text-left">Hit?</th>
                               <th className="p-2 text-right">ROI</th>
                               <th className="p-2 text-right">Days</th>
@@ -366,134 +532,29 @@ const StockFundamentalsPage: React.FC = () => {
               )}
             </div>
           </section>
-
-          <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
-             <div className="px-6 py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/50 flex justify-between items-center text-caption text-[var(--text-secondary)]">
-                <span className="text-[var(--text-primary)]">Institutional Audit Matrix</span>
-                <span className="text-[var(--text-muted)]">{audit?.reason}</span>
-             </div>
-             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                {weightedSegments.map((segment) => segment.data && (
-                  <div key={segment.id} className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-[var(--border-primary)] pb-2">
-                      <h3 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center">
-                        {segment.icon} {segment.label}
-                      </h3>
-                      <span className="text-caption text-[var(--text-primary)]">{segment.data.score}/{segment.data.max}</span>
-                    </div>
-                    <div className="space-y-2">
-                       {(segment.data.checks || []).map((check: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between">
-                           <span className="text-caption font-medium text-[var(--text-muted)] uppercase">{check.label}</span>
-                           <span className={`text-caption ${check.pass ? 'text-emerald-500' : 'text-amber-500'}`}>{check.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-             </div>
-          </section>
-
-          <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl p-6 grid grid-cols-2 md:grid-cols-4 gap-6 backdrop-blur-sm">
-             {[
-               { label: 'ATH Sales', value: data?.athSales ? `₹${Number(data.athSales).toLocaleString()} Cr.` : '-' },
-               { label: 'ATH Profit', value: data?.athNetProfit ? `₹${Number(data.athNetProfit).toLocaleString()} Cr.` : '-' },
-               { label: '52W High', value: `₹${Number(data?.fiftyTwoWeekHigh || 0).toLocaleString()}` },
-               { label: 'Beta', value: Number(data?.beta)?.toFixed(2) }
-             ].map((item, i) => (
-               <div key={i} className="space-y-1">
-                  <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">{item.label}</span>
-                  <p className="text-xs font-bold text-[var(--text-primary)] uppercase leading-none font-mono">{item.value}</p>
-               </div>
-             ))}
-          </section>
-        </div>
-
-        <div className={`lg:col-span-4 space-y-6 h-full transition-all duration-300 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
-           <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl p-6 space-y-6 backdrop-blur-sm">
-              <h3 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center">
-                <Target className="h-4 w-4 mr-2 text-blue-500" /> Valuation & Ownership
-              </h3>
-              <div className="space-y-4">
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className={`p-4 rounded-xl border ${isPEOvervalued ? 'bg-red-500/10 border-red-500/30' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]'} transition-all duration-200 hover:scale-[1.02]`}>
-                       <p className={`text-caption uppercase ${isPEOvervalued ? 'text-red-500' : 'text-[var(--text-tertiary)]'}`}>Current PE</p>
-                       <p className={`text-lg font-bold leading-none font-mono ${isPEOvervalued ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{peRatio.toFixed(1)}</p>
-                    </div>
-                    <div className="bg-[var(--bg-primary)] p-4 rounded-xl border border-[var(--border-primary)] text-center transition-all duration-200 hover:scale-[1.02]">
-                        <p className="text-caption text-[var(--text-tertiary)] uppercase">Median P/E (3Y / 5Y)</p>
-                        <p className="text-lg font-bold text-[var(--text-primary)] leading-none font-mono">
-                           {hasMedian ? `${avgMedian.toFixed(1)}x` : '—'}
-                        </p>
-                        {hasMedian && (
-                           <p className="text-[6px] text-[var(--text-muted)] leading-tight mt-0.5">
-                              3Y: {pe3Y.toFixed(1)}x &middot; 5Y: {pe5Y.toFixed(1)}x
-                           </p>
-                        )}
-                    </div>
-                 </div>
-                 
-                 <div className="space-y-3">
-                    {[
-                      { label: 'Promoters', value: data?.shareholding?.promoter, color: 'bg-[var(--bg-secondary)]' },
-                      { label: 'Institutional', value: (data?.shareholding?.fii || 0) + (data?.shareholding?.dii || 0), color: 'bg-slate-500' }
-                    ].map((holder, idx) => (
-                      <div key={idx} className="space-y-2">
-                         <div className="flex justify-between items-center text-caption">
-                            <span className="text-[var(--text-tertiary)] uppercase">{holder.label}</span>
-                            <span className="text-[var(--text-primary)]">{holder.value?.toFixed(1)}%</span>
-                         </div>
-                         <div className="w-full h-2 bg-[var(--bg-primary)] rounded-full overflow-hidden">
-                            <div className={`h-full ${holder.color} rounded-full transition-all duration-500`} style={{ width: `${holder.value || 0}%` }} />
-                         </div>
-                      </div>
-                    ))}
-                    <div className="pt-2 flex flex-col">
-                        <span className="text-caption text-[var(--text-tertiary)] uppercase">Smart Money Total</span>
-                        <span className="text-2xl font-bold text-[var(--text-primary)] tracking-tighter leading-none font-mono">{data?.shareholding?.smartMoneyTotal?.toFixed(2)}%</span>
-                    </div>
-                 </div>
-              </div>
-           </div>
-
-           <AiSuggestionPanel symbol={symbol || ''} />
-
-           <div className="bg-[var(--bg-primary)] rounded-2xl p-6 text-[var(--text-primary)] space-y-4 shadow-xl border border-[var(--border-primary)] backdrop-blur-sm">
-               <h3 className="text-caption italic">Research Hub</h3>
-              <div className="grid grid-cols-1 gap-3">
-                 <a href={`https://www.tradingview.com/symbols/NSE-${symbol}`} target="_blank" className="flex items-center justify-between p-4 bg-[var(--bg-primary)]/5 rounded-xl hover:bg-[var(--bg-primary)]/10 transition-all border border-white/10 group" rel="noreferrer">
-                    <span className="text-caption">Charts</span>
-                    <ArrowUpRight className="h-3 w-3 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
-                 </a>
-                 <a href={`https://www.screener.in/company/${symbol}/consolidated/`} target="_blank" className="flex items-center justify-between p-4 bg-[var(--bg-primary)]/5 rounded-xl hover:bg-[var(--bg-primary)]/10 transition-all border border-white/10 group" rel="noreferrer">
-                    <span className="text-caption">Screener</span>
-                    <ArrowUpRight className="h-3 w-3 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
-                 </a>
-              </div>
-           </div>
         </div>
 
         {/* Lock Overlay */}
         {!isProOrAbove && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--bg-primary)]/80 backdrop-blur-md p-8 rounded-2xl">
             <div className="bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-3xl p-10 max-w-md w-full shadow-2xl border border-[var(--border-primary)] text-center space-y-8 animate-in fade-in zoom-in-95 duration-200">
-               <div className="mx-auto w-16 h-16 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center text-blue-500 animate-pulse">
+               <div className="mx-auto w-16 h-16 bg-[#00d09c]/10 border border-[#00d09c]/20 rounded-full flex items-center justify-center text-[#00d09c] animate-pulse">
                   <Lock className="w-7 h-7" />
                </div>
                
                <div className="space-y-3">
                   <h3 className="text-xl font-bold uppercase tracking-tight text-[var(--text-primary)] italic">PRO LICENSE REQUIRED</h3>
                   <p className="text-xs text-[var(--text-tertiary)] font-medium leading-relaxed">
-                     Unlock deep fundamental analysis, institutional quality audits, valuation models, and active strategy indicators for <span className="text-blue-400 font-bold">{symbol}</span>.
+                     Unlock deep fundamental analysis, institutional quality audits, valuation models, and active strategy indicators for <span className="text-[#00d09c] font-bold">{symbol}</span>.
                   </p>
                </div>
 
                <div className="space-y-4 pt-2">
                   <button 
                     onClick={() => setShowUpgrade(true)}
-                    className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-blue-900/30 flex items-center justify-center gap-2"
+                    className="w-full py-5 bg-[#00d09c] hover:bg-[#00bda0] text-white rounded-xl font-bold uppercase tracking-wider text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-md shadow-[#00d09c]/20 flex items-center justify-center gap-2"
                   >
-                     <Sparkles className="w-4 h-4 text-blue-200" /> Upgrade to Pro Execution
+                     <Sparkles className="w-4 h-4 text-white" /> Upgrade to Pro Execution
                   </button>
                   
 <Link 
@@ -516,12 +577,12 @@ const StockFundamentalsPage: React.FC = () => {
                        placeholder="Enter voucher (e.g. ALPHA7)..."
                        value={voucherCode}
                        onChange={(e) => setVoucherCode(e.target.value)}
-                       className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] px-5 py-4 rounded-xl text-caption text-[var(--text-primary)] outline-none focus:border-blue-500 placeholder:text-slate-600"
+                       className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] px-5 py-4 rounded-xl text-caption text-[var(--text-primary)] outline-none focus:border-[#00d09c] placeholder:text-slate-600"
                      />
 <button
                       onClick={handleRedeemVoucher}
                       disabled={redeeming}
-                      className="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white disabled:opacity-50 rounded-xl text-caption transition-all shadow-lg shadow-blue-500/20"
+                      className="px-6 py-4 bg-[#00d09c] hover:bg-[#00bda0] text-white disabled:opacity-50 rounded-xl text-caption transition-all shadow-md shadow-[#00d09c]/15"
                     >
                       {redeeming ? 'Applying...' : 'Apply'}
                     </button>
@@ -537,7 +598,7 @@ const StockFundamentalsPage: React.FC = () => {
                         setVoucherCode('ALPHA7');
                         setVoucherError(null);
                       }}
-                      className="text-xs font-bold text-blue-400 hover:text-blue-300 uppercase tracking-wider block mx-auto underline transition-colors"
+                      className="text-xs font-bold text-[#00d09c] hover:text-[#00bda0] uppercase tracking-wider block mx-auto underline transition-colors"
                     >
                       Quick Apply: ALPHA7 (7-Day Free Trial)
                     </button>

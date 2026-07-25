@@ -287,7 +287,7 @@ const UserDashboard: React.FC = () => {
                           <div className="min-w-0">
                             <p className="text-sm font-bold text-[var(--text-primary)] tracking-tight">{trade.symbol}</p>
                             <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-0.5">
-                              {trade.status === 'OPEN' ? 'BUY' : 'BOOKED'} · {trade.quantity} shares · ₹{entryPrice?.toLocaleString()}
+                              {trade.status === 'OPEN' ? 'ENTRY' : 'BOOKED'} · {trade.quantity} shares · ₹{entryPrice?.toLocaleString()}
                             </p>
                           </div>
                         </div>

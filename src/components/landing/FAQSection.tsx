@@ -19,7 +19,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({ openFaq, setOpenFaq }) => {
           {[
             {
               q: "What is an Institutional Stock Audit?",
-              a: "An institutional stock audit is a quantitative scan that measures an asset against 100 mathematical data points. Unlike standard news bulletins, it reviews deep fundamental safety, debt leverage parameters, historical valuation percentiles, and institutional demand floors to assign a conviction score out of 100."
+              a: "An institutional stock audit is a quantitative scan that measures an asset against 100 mathematical data points. Unlike standard news bulletins, it reviews deep fundamental safety, debt leverage parameters, historical valuation percentiles, and institutional demand floors to assign an audit score out of 100."
             },
             {
               q: "How does the ABCD Tranche Laddering model protect capital?",

@@ -29,6 +29,9 @@ services:
       - /opt/marketbeacon-backend/dist/services/worker.js:/app/dist/services/worker.js:rw
       - /opt/marketbeacon-backend/dist/services/audit/strategyAudit.js:/app/dist/services/audit/strategyAudit.js:rw
       - /opt/marketbeacon-backend/dist/services/audit/basketAudit.js:/app/dist/services/audit/basketAudit.js:rw
+      - /opt/marketbeacon-backend/dist/db.js:/app/dist/db.js:rw
+      - /opt/marketbeacon-backend/dist/screener.js:/app/dist/screener.js:rw
+      - /opt/marketbeacon-backend/dist/services/growthFilter.js:/app/dist/services/growthFilter.js:rw
 
   n8n:
     container_name: mb-n8n
@@ -39,6 +42,8 @@ services:
       - N8N_EDITOR_BASE_URL=https://n8n.marketbeaconpro.com
       - N8N_PROTOCOL=https
       - N8N_API_KEY=${N8N_API_KEY}
+      - GENERIC_TIMEZONE=Asia/Kolkata
+      - TZ=Asia/Kolkata
     image: n8nio/n8n
     networks:
       - mb-net

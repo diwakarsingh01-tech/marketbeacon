@@ -1,6 +1,7 @@
 import { DEPLOY_VERIFICATION } from './verify_deploy.js';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
@@ -17,12 +18,15 @@ import {
   updateMarketSnapshot, 
   getDynamicBasket,
   initSnapshotCache,
-  getMarketSnapshot
+  getMarketSnapshot,
+  fetchScreenerData
 } from './screener.js';
+import { growthFilter } from './services/growthFilter.js';
 import { NIFTY_500 } from './universe.js';
 import { validateBatch9 } from './services/fundamentalAudit.js';
 import { runStrategyAnalysis } from './services/strategyService.js';
 import { precalculateAlpha40, getAlpha40Cache } from './services/worker.js';
+import { calculateABCDLevels } from './strategies/index.js';
 import { initDB, getDB } from './db.js';
 import { notifyAdmins } from './services/notificationService.js';
 import { runHealthCheck, runAndNotifyHealthCheck } from './services/healthCheck.js';
@@ -31,6 +35,32 @@ import { backtestAllStrategies, backtestStrategy } from './services/backtestEngi
 import { analyzeStock, chatWithAI } from './services/aiService.js';
 
 dotenv.config();
+
+// Helper to robustly format percentage metrics (e.g. ROE, ROCE)
+export const formatPercentage = (val: any): number => {
+  let num = parseFloat(String(val));
+  if (isNaN(num)) return 0;
+  // If it's a decimal fraction (like 0.112), scale to percentage (11.2)
+  if (Math.abs(num) > 0 && Math.abs(num) < 1) {
+    num = num * 100;
+  }
+  // If it's double-scaled (like 1120.0), scale down to percentage (11.2)
+  if (Math.abs(num) > 100) {
+    num = num / 100;
+  }
+  return Math.round(num * 100) / 100;
+};
+
+// Helper to robustly format debt-to-equity ratio
+export const formatRatio = (val: any): number => {
+  let num = parseFloat(String(val));
+  if (isNaN(num)) return 0;
+  // If it's in percentage terms (like 29.43% or 31.0%), scale down to ratio (0.29 or 0.31)
+  if (Math.abs(num) > 1.5) {
+    num = num / 100;
+  }
+  return Math.round(num * 100) / 100;
+};
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'ajaythomasjohn@gmail.com,diwakarsingh01.tech@gmail.com,diwakar.singh01@gmail.com').split(',').map(e => e.trim());
 
@@ -47,18 +77,24 @@ app.use(cors({
   origin: (origin, cb) => { if (!origin || allowedOrigins.includes(origin)) cb(null, true); else cb(new Error('Not allowed by CORS')); },
   credentials: true,
 }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(compression());
+
+const isProd = process.env.NODE_ENV === 'production';
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: isProd ? 60 : 10000,
   message: { error: 'Too many attempts. Try again in 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 const generalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 100,
+  max: isProd ? 100 : 100000,
   message: { error: 'Too many requests.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -92,12 +128,12 @@ export const STRATEGIES = [
   { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest (20%)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'alpha', isLocked: true },
   { id: 'SR_STRATEGY', name: 'Support and Resistance Strategy (S&R)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'alpha', isLocked: true },
   { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
-  { id: 'RHS_ABCD', name: 'Reverse Head and Shoulder + ABCD', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
+
   { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle + ABCD', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
-  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
-  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['Elite Basket'], isLive: true, tier: 'free', isLocked: true },
-  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['Elite Basket'], isLive: true, tier: 'free', isLocked: true },
-  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Elite Basket'], isLive: true, tier: 'free', isLocked: true }
+  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
+  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
+  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
+  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true }
 ];
 
 export const BASKETS: Record<string, string[]> = {
@@ -181,7 +217,7 @@ const authenticateToken = async (req: any, res: any, next: any) => {
   const token = getTokenFromRequest(req);
   if (!token) return res.status(401).json({ error: 'Access denied.' });
   try {
-    const decoded: any = jwt.verify(token, JWT_SECRET);
+    const decoded: any = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
     const db = getDB();
     const user = await db.get('SELECT * FROM users WHERE id = ?', [decoded.id]);
     if (!user) return res.status(403).json({ error: 'User not found.' });
@@ -227,9 +263,7 @@ const getSnapshotFromCloud = async (symbols: string[]) => {
 };
 
 app.get('/api/health', (req, res) => res.json({ 
-  status: 'active', 
-  node: 'Turbo-Local-Production', 
-  version: '18.0.8-PRO',
+  status: 'active',
   verify: 'Alpha data binding resolved — Supabase dependency removed',
   timestamp: new Date().toISOString()
 }));
@@ -250,13 +284,13 @@ app.get('/api/og/:symbol', async (req, res) => {
       isPass = audit.isPass || false;
       let maxUpside = 30;
       for (const strat of (STRATEGIES || [])) {
-        const sRes: any = runStrategyAnalysis(strat.id, snap, snap.quote.marketCap, 'Elite Basket');
+        const sRes: any = await runStrategyAnalysis(strat.id, snap, snap.quote.marketCap, 'Elite Basket');
         if (sRes?.isBuyZone && sRes?.target) {
           const lastQuote = snap.quotes?.[snap.quotes.length - 1];
           if (lastQuote) {
-            const entry = sRes.entryPrice || lastQuote.close;
-            if (entry && sRes.target) {
-              const potential = ((sRes.target / entry) - 1) * 100;
+            const currentPrice = lastQuote.close || sRes.entryPrice || 0;
+            if (currentPrice && sRes.target) {
+              const potential = ((sRes.target / currentPrice) - 1) * 100;
               if (potential > maxUpside) maxUpside = Math.round(potential);
             }
           }
@@ -316,6 +350,7 @@ app.get('/api/og/:symbol', async (req, res) => {
   <circle cx="1140" cy="583" r="4" fill="#06b6d4"/>
   <circle cx="1155" cy="583" r="4" fill="#10b981"/>
   <circle cx="1170" cy="583" r="4" fill="#f59e0b"/>
+  <text x="60" y="622" font-family="system-ui,sans-serif" font-size="10" font-weight="400" fill="#475569" letter-spacing="1">For educational purposes only · Not investment advice</text>
 </svg>`;
     res.send(svg);
   } catch (e: any) {
@@ -425,10 +460,10 @@ app.post('/api/auth/google', async (req, res) => {
       const result = await db.run('INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)', [payload.name, email, 'GOOGLE_AUTH', role, tier]);
       user = { id: result.lastID, email, role, tier };
     }
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     setAuthCookie(res, token);
     res.json({ token, user });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+  } catch (e: any) { res.status(500).json({ error: 'Authentication failed' }); }
 });
 
 // Dev-only login bypass (excluded from auth rate limiter by being on a different path)
@@ -444,7 +479,7 @@ app.all('/api/dev/login', async (req, res) => {
       const result = await db.run('INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)', [email.split('@')[0], email.toLowerCase(), 'DEV_BYPASS', isAdmin ? 'admin' : 'user', isAdmin ? 'alpha' : 'pro']);
       user = { id: result.lastID, email: email.toLowerCase(), role: isAdmin ? 'admin' : 'user', tier: isAdmin ? 'alpha' : 'pro' };
     }
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     setAuthCookie(res, token);
     // Browser GET: redirect with token in hash; API POST: return JSON
     if (req.method === 'GET') {
@@ -518,31 +553,32 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
 
       const audit = await validateBatch9(cleanSym, snap, basket as string);
       const strategyId = (selectedStrategyId as string) || 'SR_STRATEGY';
-      const strategyData: any = runStrategyAnalysis(strategyId, snap, snap.quote.marketCap, basket as string);
+      const strategyData: any = await runStrategyAnalysis(strategyId, snap, snap.quote.marketCap, basket as string);
       
-      // Compute ABCD levels fallback if they are not natively provided by the strategy
+      // Compute ABCD levels — use strategy's native levels or market-cap-weighted fallback
       const basePrice = strategyData?.entryPrice || snap.quotes[snap.quotes.length - 1].close;
-      const abcdLevels = strategyData?.abcd || {
-        a: { price: Math.round(basePrice), date: strategyData?.triggerDate || snap.quotes[snap.quotes.length - 1].date || new Date().toISOString().split('T')[0] },
-        b: { price: Math.round(basePrice * 0.90), date: '' },
-        c: { price: Math.round(basePrice * 0.81), date: '' },
-        d: { price: Math.round(basePrice * 0.73), date: '' }
-      };
+      const abcdLevels = strategyData?.abcd || calculateABCDLevels(basePrice, snap.quote?.marketCap);
+
+      // Detect if the strategy's fundamental gate suppressed this signal
+      const isGateRejection = strategyData?.isBuyZone === false && typeof strategyData?.reason === 'string' && strategyData.reason.includes('Fundamental Gate');
 
       // Strict Institutional Guard: 60+ Score Required
       const passThreshold = 60;
-      const finalPass = audit.score >= passThreshold && !audit.reason.includes('Hard Reject');
+      const auditPass = audit.score >= passThreshold && !audit.reason.includes('Hard Reject');
+
+      // isPass respects the strategy's fundamental gate: if gate rejected, fail
+      const finalPass = isGateRejection ? false : auditPass;
 
       // Bifurcation Logic Alignment
-      // Use the strategy's native isBuyZone (most strategies set this directly)
-      // and upgrade status: ENVELOPE_LONG/BOLLINGER etc don't set 'status' field
       const strategyIsBuyZone = strategyData?.isBuyZone === true;
       const strategyObservation = strategyData?.status === 'OBSERVATION';
       
-      // Reason: prefer fundamental audit reason when failing, strategy status when passing
-      const displayReason = strategyData?.status 
-        ? strategyData.status 
-        : (strategyIsBuyZone ? 'QUALIFIED' : 'Pattern Not Found - ' + audit.reason);
+      // Display reason: show fundamental gate reason when suppressed, strategy status when passing
+      const displayReason = isGateRejection
+        ? strategyData.reason
+        : (strategyData?.status
+          ? strategyData.status
+          : (strategyIsBuyZone ? 'QUALIFIED' : 'Pattern Not Found - ' + audit.reason));
 
       results.push({
         symbol: sym,
@@ -557,7 +593,7 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
         score: audit.score,
         abcd: abcdLevels,
         sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
-        peRatio: snap.quote?.pe || snap.screener?.peRatio,
+        peRatio: snap.screener?.peRatio || snap.quote?.pe,
         peMedians: snap.screener?.peMedians || {},
         auditSegments: {
           profitability: audit.profitabilityQuality,
@@ -584,15 +620,31 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
 
     const cache = await getAlpha40Cache();
     if (cache) {
-      return res.json({ 
-        stocks: cache.active, 
-        summary: { 
-          total: cache.active.length, 
-          large: cache.capStats.LARGE, 
-          mid: cache.capStats.MID, 
-          small: cache.capStats.SMALL, 
-          sectorStats: cache.sectorStats 
-        } 
+      return res.json({
+        stocks: cache.active,
+        summary: {
+          total: cache.active.length,
+          large: cache.capStats.LARGE,
+          mid: cache.capStats.MID,
+          small: cache.capStats.SMALL,
+          sectorStats: cache.sectorStats
+        },
+        updatedAt: cache.updatedAt || null
+      });
+    }
+    await precalculateAlpha40();
+    const freshCache = await getAlpha40Cache();
+    if (freshCache) {
+      return res.json({
+        stocks: freshCache.active,
+        summary: {
+          total: freshCache.active.length,
+          large: freshCache.capStats.LARGE,
+          mid: freshCache.capStats.MID,
+          small: freshCache.capStats.SMALL,
+          sectorStats: freshCache.sectorStats
+        },
+        updatedAt: freshCache.updatedAt || null
       });
     }
     res.status(503).json({ error: 'Terminal warming up...' });
@@ -694,14 +746,14 @@ app.get('/api/backtest/nifty-comparison', async (req, res) => {
     const niftyYears = niftyQuotes.length / 252;
     const niftyCagr = niftyYears > 0 ? (Math.pow(niftyEnd / niftyStart, 1 / niftyYears) - 1) * 100 : 0;
 
-    // Use INFY as representative for quick comparison
-    const symbols = ['INFY', 'TCS', 'RELIANCE', 'HDFCBANK', 'ICICIBANK'];
+    // Use all Elite Basket stocks for comprehensive comparison
+    const symbols = BASKETS['Elite Basket'];
     const batchSnapshot = await getSnapshotFromCloud(symbols);
 
     let totalTrades = 0, totalWins = 0, totalRoiSum = 0, totalDaysSum = 0;
     const strategyTotals: Record<string, { trades: number; wins: number; roiSum: number; daysSum: number }> = {};
 
-    const stratIds = ['BOLLINGER', 'ENVELOPE_LONG', 'ENVELOPE_SHORT'];
+    const stratIds = ['BOLLINGER', 'ENVELOPE_LONG', 'ENVELOPE_SHORT', 'SMA_BCD', '52W_HIGH_LOW', 'SR_STRATEGY', 'CUP_HANDLE_ABCD', 'SIXTY_SEVEN_FUNDA', 'TWENTY_RALLY_RETEST'];
     for (const sym of symbols) {
       const snap = batchSnapshot[sym];
       if (!snap || !snap.quotes || snap.quotes.length < 200) continue;
@@ -760,22 +812,42 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
   try {
     const { symbol } = req.params;
     const snapshot = await getSnapshotFromCloud([symbol]);
-    const snap = snapshot[symbol];
-    if (!snap) return res.status(404).json({ error: 'Asset not found' });
+    let snap = snapshot[symbol];
     
+    // Auto-Refresh Logic — same as stock-fundamentals endpoint
+    const isDataIncomplete = !snap || !snap.screener?.athSales || snap.screener?.athSales === 0
+      || (snap.screener?.peRatio === 0 && snap.screener?.roce === 0 && snap.screener?.returnOnEquity === 0);
+    const isStale = snap && (new Date().getTime() - new Date(snap.lastUpdated).getTime() > 24 * 60 * 60 * 1000);
+
+    if (isDataIncomplete || isStale) {
+      console.log(`🔄 [AUTO-REFRESH] Patching data for ${symbol}...`);
+      await updateMarketSnapshot([symbol]);
+      const freshSnapshot = await getSnapshotFromCloud([symbol]);
+      snap = freshSnapshot[symbol];
+    }
+    
+    if (!snap) return res.status(404).json({ error: 'Asset not found' });
+
+    // Debug: log what we received from cache
+    console.log(`[ANALYSIS-API] ${symbol} cache data: peRatio=${snap.screener?.peRatio}, roce=${snap.screener?.roce}, roe=${snap.screener?.returnOnEquity}, athSales=${snap.screener?.athSales}, lastUpdated=${snap.lastUpdated}`);
+
     const audit = await validateBatch9(symbol, snap, 'Elite Basket');
     
     let maxUpside = 30; // Default Institutional Target
-    const qualified = STRATEGIES.filter(s => {
-      const sRes: any = runStrategyAnalysis(s.id, snap, snap.quote.marketCap, 'Elite Basket');
+    const qualifiedResults: any[] = [];
+    for (const s of STRATEGIES) {
+      const sRes: any = await runStrategyAnalysis(s.id, snap, snap.quote.marketCap, 'Elite Basket');
       if (sRes?.isBuyZone && sRes?.target) {
         const lastQuote = snap.quotes[snap.quotes.length - 1];
-        const entry = sRes.entryPrice || lastQuote.close;
-        const potential = ((sRes.target / entry) - 1) * 100;
+        const currentPrice = lastQuote?.close || sRes.entryPrice || 0;
+        const potential = currentPrice > 0 ? ((sRes.target / currentPrice) - 1) * 100 : 0;
         if (potential > maxUpside) maxUpside = Math.round(potential);
+        qualifiedResults.push(s);
+      } else if (sRes?.isBuyZone) {
+        qualifiedResults.push(s);
       }
-      return sRes?.isBuyZone;
-    });
+    }
+    const qualified = qualifiedResults;
 
     const capCr = (snap.quote?.marketCap || 0) / 10000000;
     const basketType = capCr >= 20000 ? 'LARGE' : (capCr >= 5000 ? 'MID' : 'SMALL');
@@ -784,7 +856,7 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     const primaryStrat = qualified[0];
     let abcd = null;
     if (primaryStrat) {
-      const sRes: any = runStrategyAnalysis(primaryStrat.id, snap, snap.quote.marketCap, 'Elite Basket');
+      const sRes: any = await runStrategyAnalysis(primaryStrat.id, snap, snap.quote.marketCap, 'Elite Basket');
       abcd = sRes?.abcd;
     }
 
@@ -820,6 +892,11 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
       if (abcd.d && typeof abcd.d.price === 'number') abcd.d.price = Math.round(abcd.d.price);
     }
 
+    // Get lastUpdated from snapshot data; fallback to now since data was just fetched
+    const lastUpdated = snap.screener?.lastUpdated || snap.lastUpdated || new Date().toISOString();
+    // Compute data freshness
+    const isFresh = (Date.now() - new Date(lastUpdated).getTime()) < 48 * 60 * 60 * 1000;
+
     const response = { 
       symbol, 
       score: Math.round(audit.score), 
@@ -829,7 +906,23 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
       upside: maxUpside,
       basket: basketType,
       risk: audit.score >= 80 ? 'LOW' : (audit.score >= 70 ? 'MODERATE' : 'HIGH'),
-      abcd
+      abcd,
+      lastUpdated,
+      fresh: isFresh,
+      // Public fundamentals preview (key metrics only)
+      fundamentals: {
+        peRatio: snap.screener?.peRatio || snap.quote?.pe || 0,
+        debtToEquity: snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity ? snap.quote.debtToEquity / 100 : 0),
+        roce: snap.screener?.roce || 0,
+        returnOnEquity: snap.screener?.returnOnEquity || snap.quote?.roe || 0,
+        marketCap: snap.quote?.marketCap || 0,
+        athSales: snap.screener?.athSales || 0,
+        athNetProfit: snap.screener?.athNetProfit || 0,
+        netProfit: snap.screener?.currentNetProfit || snap.screener?.athNetProfit || 0,
+        pledgePct: snap.screener?.shareholding?.pledged || audit?.metrics?.pledged || 0,
+        promoterHolding: audit?.metrics?.promoter || 0,
+        peMedians: snap.screener?.peMedians || {},
+      }
     };
     res.json(response);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -866,11 +959,11 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       change: Math.round(change * 100) / 100,
       marketCap: snap.quote?.marketCap,
       industry: MANUAL_SECTOR_MAP[symbol as string] || snap.screener?.industry || 'General',
-      peRatio: snap.quote?.pe || snap.screener?.peRatio || 0,
+      peRatio: snap.screener?.peRatio || snap.quote?.pe || 0,
       peMedians: snap.screener?.peMedians || {},
-      returnOnEquity: Math.round((snap.screener?.returnOnEquity || snap.quote?.roe || 0) * 100) / 100,
-      roce: Math.round((snap.screener?.roce || 0) * 100) / 100,
-      netDebtToEquity: Math.round((snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity / 100) || 0) * 100) / 100,
+      returnOnEquity: formatPercentage(snap.screener?.returnOnEquity || snap.quote?.roe || 0),
+      roce: formatPercentage(snap.screener?.roce || 0),
+      netDebtToEquity: formatRatio(snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity / 100) || 0),
       athSales: snap.screener?.athSales,
       athNetProfit: snap.screener?.athNetProfit,
       currentSales: snap.screener?.currentSales,
@@ -879,6 +972,11 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       beta: snap.quote?.beta,
       shareholding: audit.metrics,
       strategies: snap.strategies || {},
+      dataAge: {
+        lastUpdated: snap.lastUpdated || null,
+        updatedAt: snap.lastUpdated || null,
+        fresh: snap.lastUpdated ? (new Date().getTime() - new Date(snap.lastUpdated).getTime() < 48 * 60 * 60 * 1000) : false
+      },
       audit: {
         score: audit.score,
         reason: audit.reason,
@@ -1017,8 +1115,8 @@ app.get('/api/market-indices', async (req, res) => {
             console.error(`❌ [Indices Fallback] Library fallback also failed for ${symbol}: ${err.message}. Serving updated static estimation.`);
             return {
               name: symbol === '^NSEI' ? 'NIFTY 50' : (symbol === '^NSEBANK' ? 'BANK NIFTY' : 'SENSEX'),
-              price: symbol === '^NSEI' ? 23366 : (symbol === '^NSEBANK' ? 54496 : 74243),
-              ath: symbol === '^NSEI' ? 26373 : (symbol === '^NSEBANK' ? 54496 : 74243),
+              price: symbol === '^NSEI' ? 24078 : (symbol === '^NSEBANK' ? 58200 : 77185),
+              ath: symbol === '^NSEI' ? 26373 : (symbol === '^NSEBANK' ? 58200 : 81500),
               change: 0
             };
           }
@@ -1028,6 +1126,73 @@ app.get('/api/market-indices', async (req, res) => {
     res.json({ status, results });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/index-history', async (req, res) => {
+  try {
+    const { symbol, range } = req.query;
+    if (!symbol) return res.status(400).json({ error: 'Symbol required' });
+
+    const queryRange = (range as string) || '1mo';
+
+    const yahooSymbol: Record<string, string> = {
+      'NIFTY 50': '^NSEI',
+      'BANK NIFTY': '^NSEBANK',
+      'SENSEX': '^BSESN'
+    };
+    const yahooSym = yahooSymbol[symbol as string] || '^NSEI';
+
+    const intervalMap: Record<string, string> = {
+      '1d': '5m',
+      '5d': '15m',
+      '1mo': '1d',
+      '3mo': '1d',
+      '1y': '1d'
+    };
+    const interval = intervalMap[queryRange] || '1d';
+
+    const period2 = new Date();
+    const period1 = new Date();
+    if (queryRange === '1d') period1.setDate(period1.getDate() - 2);
+    else if (queryRange === '5d') period1.setDate(period1.getDate() - 7);
+    else if (queryRange === '1mo') period1.setMonth(period1.getMonth() - 1);
+    else if (queryRange === '3mo') period1.setMonth(period1.getMonth() - 3);
+    else period1.setFullYear(period1.getFullYear() - 1);
+
+    const chart = await yahooFinance.chart(yahooSym, {
+      period1: period1.toISOString().split('T')[0],
+      period2: period2.toISOString().split('T')[0],
+      interval: interval as any
+    });
+
+    const history: any[] = (chart?.quotes || []).filter((q: any) => q.close).map((q: any) => {
+      const t = q.date;
+      if (queryRange === '1d' || queryRange === '5d') {
+        return {
+          time: Math.floor(new Date(t).getTime() / 1000),
+          open: Math.round(q.open * 100) / 100,
+          high: Math.round(q.high * 100) / 100,
+          low: Math.round(q.low * 100) / 100,
+          close: Math.round(q.close * 100) / 100,
+          volume: q.volume || 0
+        };
+      }
+      const dateStr = typeof t === 'string' ? t.split('T')[0] : new Date(t).toISOString().split('T')[0];
+      return {
+        time: dateStr,
+        open: Math.round(q.open * 100) / 100,
+        high: Math.round(q.high * 100) / 100,
+        low: Math.round(q.low * 100) / 100,
+        close: Math.round(q.close * 100) / 100,
+        volume: q.volume || 0
+      };
+    });
+
+    res.json({ symbol, history });
+  } catch (e: any) {
+    console.error('Failed to generate index history:', e);
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -1050,11 +1215,11 @@ app.post('/api/auth/register', async (req, res) => {
       [name, email.toLowerCase(), hashedPassword, role, tier, 1]
     );
 
-    const token = jwt.sign({ id: result.lastID, role }, JWT_SECRET);
+    const token = jwt.sign({ id: result.lastID, role }, JWT_SECRET, { expiresIn: '7d' });
     setAuthCookie(res, token);
     res.json({ token, user: { id: result.lastID, name, email: email.toLowerCase(), role, tier } });
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Registration failed' });
   }
 });
 
@@ -1081,13 +1246,13 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     setAuthCookie(res, token);
     console.log(`✅ [LOGIN-SUCCESS] User ${user.id} logged in successfully`);
     res.json({ token, user: { ...user, role: isAdmin ? 'admin' : user.role, tier: isAdmin ? 'alpha' : user.tier } });
   } catch (e: any) { 
     console.error(`🚨 [LOGIN-ERROR] error:`, e);
-    res.status(500).json({ error: e.message }); 
+    res.status(500).json({ error: 'Login failed' }); 
   }
 });
 
@@ -1122,13 +1287,13 @@ app.post('/api/auth/mobile-verify-otp', async (req, res) => {
       user = { id: result.lastID, name: `User ${mobile.slice(-4)}`, email: identifier, role, tier, is_active: 1 };
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     setAuthCookie(res, token);
     console.log(`✅ [AUTH] Mobile Login Success: ${mobile} (${Date.now() - start}ms)`);
     res.json({ token, user: { ...user, role: user.role, tier: user.tier } });
   } catch (e: any) {
     console.error(`❌ [AUTH ERROR] Mobile Verify Failed:`, e.message);
-    res.status(500).json({ error: `Auth Error: ${e.message}` });
+    res.status(500).json({ error: 'Authentication failed' });
   }
 });
 
@@ -1146,10 +1311,60 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// ── PIN Code Access ──
+
+app.post('/api/auth/set-pin', authenticateToken, async (req: any, res) => {
+  try {
+    const { pin } = req.body;
+    if (!pin || !/^\d{4}$/.test(pin)) {
+      return res.status(400).json({ error: 'PIN must be exactly 4 digits.' });
+    }
+    const db = getDB();
+    const pinHash = await bcrypt.hash(pin, 8);
+    await db.run('UPDATE users SET pin_hash = ? WHERE id = ?', [pinHash, req.user.id]);
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/auth/verify-pin', async (req: any, res) => {
+  try {
+    const { email, pin } = req.body;
+    if (!email || !pin || !/^\d{4}$/.test(pin)) {
+      return res.status(400).json({ error: 'Email and 4-digit PIN required.' });
+    }
+    const db = getDB();
+    const user = await db.get('SELECT * FROM users WHERE email = ?', [email.toLowerCase().trim()]);
+    if (!user || !user.pin_hash) {
+      return res.status(403).json({ error: 'Invalid email or PIN not set.' });
+    }
+    const isValid = await bcrypt.compare(pin, user.pin_hash);
+    if (!isValid) {
+      return res.status(403).json({ error: 'Invalid PIN.' });
+    }
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    res.cookie(COOKIE_NAME, token, { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000, path: '/' });
+    res.json({ success: true, token, user: { id: user.id, name: user.name, email: user.email, tier: user.tier || 'free', role: user.role || 'user' } });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/auth/pin-status', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const user = await db.get('SELECT pin_hash FROM users WHERE id = ?', [req.user.id]);
+    res.json({ hasPin: !!user?.pin_hash });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/user/profile', authenticateToken, async (req: any, res) => {
   try {
     const db = getDB();
-    const user = await db.get('SELECT id, name, email, mobile, tier, created_at, twofa_enabled FROM users WHERE id = ?', [req.user.id]);
+    const user = await db.get('SELECT id, name, email, COALESCE(mobile, \'\') as mobile, tier, created_at, twofa_enabled FROM users WHERE id = ?', [req.user.id]);
     
     const trades = await db.all('SELECT status, entry_price, quantity, exit_price FROM trades WHERE user_id = ?', [req.user.id]);
     
@@ -1698,7 +1913,7 @@ app.get('/api/stock-history', async (req, res) => {
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
     const db = getDB();
-    const users = await db.all('SELECT id, name, email, mobile, role, tier, subscription_start, subscription_expiry, is_active FROM users');
+    const users = await db.all('SELECT id, name, email, COALESCE(mobile, \'\') as mobile, role, tier, subscription_start, subscription_expiry, is_active FROM users');
     res.json(users);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -1751,7 +1966,7 @@ app.get('/api/admin/upgrade-requests', authenticateToken, requireAdmin, async (r
   try {
     const db = getDB();
     const requests = await db.all(`
-      SELECT ur.*, u.name, u.email, u.mobile 
+      SELECT ur.*, u.name, u.email, COALESCE(u.mobile, '') as mobile 
       FROM upgrade_requests ur 
       JOIN users u ON ur.user_id = u.id 
       ORDER BY ur.created_at DESC
@@ -1960,18 +2175,13 @@ app.get('/api/search/stock', async (req: any, res: any) => {
           }
         }
       }
-      let peMedians = stockSnap?.screener?.peMedians || {};
-      if (!peMedians.pe3Y && !peMedians.pe5Y) {
-        const pe = stockSnap?.quote?.pe || 0;
-        if (pe > 0) peMedians = { pe3Y: pe, pe5Y: pe };
-      }
       return {
         symbol: sym,
         baskets: basketMap[sym] || [],
         strategies,
         price: Math.round((stockSnap?.quote?.regularMarketPrice || 0) * 100) / 100,
         change: stockSnap?.quote?.regularMarketChangePercent || 0,
-        peMedians
+        peMedians: stockSnap?.screener?.peMedians || {}
       };
     });
 
@@ -2094,7 +2304,8 @@ app.get('/api/n8n/qualified-stocks', async (req, res) => {
         if (!snap) { const k = Object.keys(snapshot).find(k => k.replace('.NS', '') === cleanSym); if (k) snap = snapshot[k]; }
         if (!snap) continue;
         const audit = await validateBatch9(cleanSym, snap, basket);
-        const qualified = STRATEGIES.filter(s => { const r: any = runStrategyAnalysis(s.id, snap, snap.quote?.marketCap || 0, basket); return r?.isBuyZone; });
+        const qualified: any[] = [];
+        for (const s of STRATEGIES) { const r: any = await runStrategyAnalysis(s.id, snap, snap.quote?.marketCap || 0, basket); if (r?.isBuyZone) qualified.push(s); }
         if (!audit.isPass && qualified.length === 0) continue;
         results.push({
           symbol: cleanSym,
@@ -2105,7 +2316,10 @@ app.get('/api/n8n/qualified-stocks', async (req, res) => {
           change: Math.round((snap.quote?.regularMarketChangePercent || 0) * 100) / 100,
           sector: MANUAL_SECTOR_MAP[cleanSym] || snap.screener?.industry || 'General',
           marketCap: snap.quote?.marketCap,
-          peRatio: snap.quote?.pe || snap.screener?.peRatio || 0,
+          peRatio: Math.round((snap.screener?.peRatio || snap.quote?.pe || 0) * 100) / 100,
+          pe3Y: snap.screener?.peMedians?.pe3Y ? Math.round(snap.screener.peMedians.pe3Y * 100) / 100 : 0,
+          pe5Y: snap.screener?.peMedians?.pe5Y ? Math.round(snap.screener.peMedians.pe5Y * 100) / 100 : 0,
+          pe10Y: snap.screener?.peMedians?.pe10Y ? Math.round(snap.screener.peMedians.pe10Y * 100) / 100 : 0,
           profitabilityQuality: audit.profitabilityQuality,
           balanceSheetSafety: audit.balanceSheetSafety,
           growthQuality: audit.growthQuality
@@ -2128,15 +2342,16 @@ app.get('/api/n8n/stock-data/:symbol', async (req, res) => {
     if (!snap) return res.status(404).json({ error: 'Symbol not found' });
     const audit = await validateBatch9(cleanSym, snap, 'Elite Basket');
     const lastQuote = snap.quotes?.[snap.quotes.length - 1];
-    const qualified = STRATEGIES.filter(s => { const r: any = runStrategyAnalysis(s.id, snap, snap.quote?.marketCap || 0, 'Elite Basket'); return r?.isBuyZone; });
+    const qualified: any[] = [];
+    for (const s of STRATEGIES) { const r: any = await runStrategyAnalysis(s.id, snap, snap.quote?.marketCap || 0, 'Elite Basket'); if (r?.isBuyZone) qualified.push(s); }
     let maxUpside = 30;
     let abcd: any = null;
     if (qualified.length > 0) {
-      const sRes: any = runStrategyAnalysis(qualified[0].id, snap, snap.quote?.marketCap || 0, 'Elite Basket');
+      const sRes: any = await runStrategyAnalysis(qualified[0].id, snap, snap.quote?.marketCap || 0, 'Elite Basket');
       abcd = sRes?.abcd;
       if (sRes?.target) {
-        const entry = sRes.entryPrice || lastQuote?.close || 0;
-        if (entry > 0) maxUpside = Math.round(((sRes.target / entry) - 1) * 100);
+        const currentPrice = lastQuote?.close || sRes.entryPrice || 0;
+        if (currentPrice > 0) maxUpside = Math.round(((sRes.target / currentPrice) - 1) * 100);
       }
     }
     res.json({
@@ -2145,11 +2360,11 @@ app.get('/api/n8n/stock-data/:symbol', async (req, res) => {
       change: Math.round((snap.quote?.regularMarketChangePercent || 0) * 100) / 100,
       sector: MANUAL_SECTOR_MAP[cleanSym] || snap.screener?.industry || 'General',
       marketCap: snap.quote?.marketCap,
-      peRatio: snap.quote?.pe || snap.screener?.peRatio || 0,
+      peRatio: snap.screener?.peRatio || snap.quote?.pe || 0,
       peMedians: snap.screener?.peMedians || {},
-      returnOnEquity: Math.round((snap.screener?.returnOnEquity || 0) * 100) / 100,
-      roce: Math.round((snap.screener?.roce || 0) * 100) / 100,
-      debtToEquity: Math.round((snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity / 100) || 0) * 100) / 100,
+      returnOnEquity: formatPercentage(snap.screener?.returnOnEquity || snap.quote?.roe || 0),
+      roce: formatPercentage(snap.screener?.roce || 0),
+      debtToEquity: formatRatio(snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity / 100) || 0),
       athSales: snap.screener?.athSales,
       athNetProfit: snap.screener?.athNetProfit,
       currentSales: snap.screener?.currentSales || snap.screener?.sales,
@@ -2169,6 +2384,136 @@ app.get('/api/n8n/stock-data/:symbol', async (req, res) => {
     });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
+
+app.get('/api/n8n/stock-chart/:symbol', async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    const cleanSym = symbol.trim().toUpperCase();
+    const snapshot = await getSnapshotFromCloud([cleanSym]);
+    let snap = snapshot[cleanSym] || snapshot[`${cleanSym}.NS`];
+    if (!snap) {
+      const k = Object.keys(snapshot).find(k => k.replace('.NS', '') === cleanSym);
+      if (k) snap = snapshot[k];
+    }
+    if (!snap || !snap.quotes || snap.quotes.length === 0) {
+      return res.status(404).send('Symbol or quotes not found');
+    }
+
+    // Get last 30 daily quotes
+    const quotes = snap.quotes.slice(-30);
+    const labels = quotes.map((q: any) => {
+      const d = new Date(q.date);
+      return `${d.getDate()}-${d.toLocaleString('en-US', { month: 'short' })}`;
+    });
+    const prices = quotes.map((q: any) => Math.round(q.close * 100) / 100);
+
+    // Render QuickChart JS config
+    const chartConfig = {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: cleanSym,
+          data: prices,
+          borderColor: '#00d09c',
+          borderWidth: 3,
+          fill: true,
+          backgroundColor: 'rgba(0, 208, 156, 0.08)',
+          pointRadius: 0
+        }]
+      },
+      options: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: `${cleanSym} - Last 30 Days Price Corridor`,
+          fontColor: '#0f172a',
+          fontSize: 16
+        },
+        scales: {
+          xAxes: [{
+            gridLines: { display: false },
+            ticks: { fontColor: '#64748b' }
+          }],
+          yAxes: [{
+            gridLines: { color: '#f1f5f9' },
+            ticks: { fontColor: '#64748b' }
+          }]
+        }
+      }
+    };
+
+    const quickChartUrl = `https://quickchart.io/chart?w=800&h=400&bkg=white&c=${encodeURIComponent(JSON.stringify(chartConfig))}`;
+    res.redirect(quickChartUrl);
+  } catch (e: any) {
+    res.status(500).send(e.message);
+  }
+});
+
+app.post('/api/telegram/webhook', async (req, res) => {
+  try {
+    const update = req.body;
+    if (!update?.message?.text) { res.json({ ok: true }); return; }
+
+    const text = update.message.text.trim();
+    const chatId = update.message.chat?.id;
+    const username = update.message.from?.first_name || 'Trader';
+
+    const parts = text.split(/\s+/);
+    const command = parts[0].toLowerCase();
+    let symbol = parts[1]?.trim().toUpperCase().replace('.NS', '') || '';
+
+    if (!['/audit', '/momentum'].includes(command) || !symbol) {
+      await sendTelegramMessage(chatId, `🤖 *Usage:*\n\`/audit SYMBOL\` - Full institutional audit\n\`/momentum SYMBOL\` - Momentum check\n\nExample: \`/audit INFY\``);
+      res.json({ ok: true }); return;
+    }
+
+    const analysisUrl = `http://mb-backend:3001/api/public/analysis/${symbol}`;
+    const response = await axios.get(analysisUrl, { timeout: 10000 }).catch(() => ({ data: { error: 'Analysis unavailable' } }));
+
+    if (response.data?.error) {
+      await sendTelegramMessage(chatId, `❌ *Stock symbol not found.*\nCould not retrieve analysis for *${symbol}*. Please verify the NSE/BSE ticker name (e.g. INFY, RELIANCE, TCS).`);
+    } else {
+      const r = response.data;
+      const score = Math.round(r.score || 0);
+      const smartMoney = (r.smartMoney || 0).toFixed(1);
+      const upside = r.upside || 0;
+      const isPass = r.isPass ? '🟢 PASSED AUDIT' : '🔴 AUDIT FAILED';
+      const price = Math.round(r.quotes?.[r.quotes.length - 1]?.close || 0);
+      let level = 'HOLD';
+      if (score >= 85) level = 'Strong Buy / Max Confidence';
+      else if (score >= 70) level = 'Safe Accumulation';
+      else if (score >= 45) level = 'Hold / Monitor';
+      else level = 'High Risk / Take Profit';
+
+      let message = `🛡️ *MarketBeacon Pro: Institutional Audit*\n`;
+      message += `━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      message += `📊 *Asset*: *${symbol}*\n`;
+      message += `💰 *Current Price*: ₹${price}\n\n`;
+      message += `📈 *Audit Score*: *${score}/100* (${level})\n`;
+      message += `🎯 *Model Target*: +${upside}% (${isPass})\n`;
+      message += `💼 *Smart Money Ownership*: *${smartMoney}%*\n\n`;
+      message += `📌 *ABCD Strategy Tranches*: [Locked 🔒]\n`;
+      message += `🔑 *Upgrade / Unlock Detailed Entry Levels`;
+
+      await sendTelegramMessage(chatId, message);
+    }
+    res.json({ ok: true });
+  } catch (e: any) {
+    console.error('Telegram webhook error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+async function sendTelegramMessage(chatId: number | string, text: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return;
+  await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+    chat_id: chatId,
+    text,
+    parse_mode: 'Markdown'
+  }).catch(e => console.error('Telegram send failed:', e.message));
+}
 
 app.post('/api/n8n/blog-post', async (req, res) => {
   try {
@@ -2283,6 +2628,217 @@ app.get('/api/admin/blog', authenticateToken, requireAdmin, async (req: any, res
     const posts = await db.all('SELECT id, title, slug, tag, published, date, created_at FROM blog_posts ORDER BY created_at DESC');
     res.json(posts);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── Growth Lab (admin-only quarterly growth filtration) ─────────────────────
+// Flow: POST /analyze → async scrape Screener for each symbol → store partial
+// results in DB → GET /run/:id to poll progress → POST /run/:id/publish to
+// snapshot a published list under a quarter label. GET /picks lists them.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Helper: parse a free-text symbol input (textarea paste / CSV upload) into a
+// clean, deduped, uppercased symbol array. Accepts newline, comma, tab, space.
+const parseSymbolInput = (raw: string): string[] => {
+  if (!raw) return [];
+  return Array.from(new Set(
+    raw
+      .split(/[\s,\t\n;]+/)
+      .map(s => s.trim().toUpperCase().replace(/\.NS$|\.BS$|\.BE$/, ''))
+      .filter(s => /^[A-Z0-9&\-]{1,30}$/.test(s))
+  ));
+};
+
+// POST /api/admin/growth-lab/analyze  body: { symbols: "TCS, INFY\n POLYCAB" | [...], quarter?: "auto" }
+//   - kicks off an async run, returns { runId } immediately
+app.post('/api/admin/growth-lab/analyze', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const raw = req.body?.symbols;
+    const symbols = Array.isArray(raw) ? parseSymbolInput(raw.join('\n')) : parseSymbolInput(String(raw || ''));
+    if (symbols.length === 0) return res.status(400).json({ error: 'No valid symbols provided' });
+    if (symbols.length > 500) return res.status(400).json({ error: 'Max 500 symbols per run' });
+
+    // Quarter auto-detection: based on the latest quarter label in the first
+    // scraped result. Allows override via body.quarter (e.g. "Q1 FY27").
+    const quarter = (req.body?.quarter || 'auto').toString();
+
+    const db = getDB();
+    const result = await db.run(
+      `INSERT INTO growth_lab_runs (symbols_json, status, total, done, created_by, quarter)
+       VALUES (?, 'running', ?, 0, ?, ?)`,
+      [JSON.stringify(symbols), symbols.length, req.user.id, quarter]
+    );
+    const runId = result.lastID;
+
+    // Fire-and-forget in background so the request returns immediately. Use a
+    // tiny concurrency window (3) to balance throughput vs Screener rate limit.
+    (async () => {
+      const collected: any[] = [];
+      let done = 0;
+      let passCount = 0, watchCount = 0, rejectCount = 0;
+      const CONCURRENCY = 3;
+      let cursor = 0;
+      let firstQuarterLabel: string | null = null;
+
+      const worker = async () => {
+        while (true) {
+          const i = cursor++;
+          if (i >= symbols.length) return;
+          const symbol = symbols[i];
+          try {
+            const summary = await fetchScreenerData(symbol);
+            const metrics = growthFilter(symbol, summary as any);
+            if (!firstQuarterLabel && metrics.latestQuarter) firstQuarterLabel = metrics.latestQuarter;
+            if (metrics.bucket === 'PASS') passCount++;
+            else if (metrics.bucket === 'WATCH') watchCount++;
+            else rejectCount++;
+            collected.push(metrics);
+          } catch (e: any) {
+            collected.push({ symbol, bucket: 'REJECT', passScore: 0, hardRejectReason: 'Scrape failed: ' + e.message, quartersAnalyzed: 0, latestQuarter: null });
+            rejectCount++;
+          } finally {
+            done++;
+            // Persist progress every 5 symbols (or on the last one)
+            if (done % 5 === 0 || done === symbols.length) {
+              try { await db.run('UPDATE growth_lab_runs SET done = ?, pass_count = ?, watch_count = ?, reject_count = ? WHERE id = ?', [done, passCount, watchCount, rejectCount, runId]); } catch {}
+            }
+          }
+        }
+      };
+      await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
+
+      // Persist final results + close out the run
+      await db.run(
+        `UPDATE growth_lab_runs SET status = 'complete', done = ?, results_json = ?, pass_count = ?, watch_count = ?, reject_count = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [done, JSON.stringify(collected), passCount, watchCount, rejectCount, runId]
+      );
+    })().catch(async (e: any) => {
+      console.error('[Growth Lab] background run failed:', e.message);
+      try { await db.run('UPDATE growth_lab_runs SET status = ?, error_message = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?', ['failed', e.message, runId]); } catch {}
+    });
+
+    res.json({ runId, total: symbols.length });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/growth-lab/analyze/:runId  → returns status + partial results
+//   (fresh scrape when 'running'; full payload when 'complete')
+app.get('/api/admin/growth-lab/analyze/:runId', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const runId = parseInt(req.params.runId, 10);
+    const db = getDB();
+    const row = await db.get(`SELECT * FROM growth_lab_runs WHERE id = ?`, [runId]);
+    if (!row) return res.status(404).json({ error: 'Run not found' });
+    const results = row.results_json ? JSON.parse(row.results_json) : [];
+    res.json({
+      id: row.id,
+      status: row.status,
+      total: row.total,
+      done: row.done,
+      passCount: row.pass_count,
+      watchCount: row.watch_count,
+      rejectCount: row.reject_count,
+      quarter: row.quarter,
+      errorMessage: row.error_message,
+      createdAt: row.created_at,
+      completedAt: row.completed_at,
+      symbols: row.symbols_json ? JSON.parse(row.symbols_json) : [],
+      results,
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/growth-lab/runs  → history of past runs (light meta, no results payload)
+app.get('/api/admin/growth-lab/runs', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    const rows = await db.all(`SELECT id, status, total, done, pass_count, watch_count, reject_count, quarter, created_at, completed_at FROM growth_lab_runs ORDER BY id DESC LIMIT 200`);
+    res.json(rows);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/growth-lab/analyze/:runId/publish  body: { quarter: "Q1 FY27", label?: "Q1 FY27 — Apr–Jun 2026" }
+//   - snapshots the run as a published list. quarter must be unique.
+app.post('/api/admin/growth-lab/analyze/:runId/publish', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const runId = parseInt(req.params.runId, 10);
+    const quarter = (req.body?.quarter || '').toString().trim();
+    const label = (req.body?.label || quarter).toString().trim();
+    if (!quarter) return res.status(400).json({ error: 'quarter is required' });
+
+    const db = getDB();
+    const run = await db.get(`SELECT * FROM growth_lab_runs WHERE id = ?`, [runId]);
+    if (!run) return res.status(404).json({ error: 'Run not found' });
+    if (run.status !== 'complete') return res.status(400).json({ error: 'Run not complete yet' });
+
+    const existing = await db.get(`SELECT id FROM growth_picks WHERE quarter = ?`, [quarter]);
+    if (existing) return res.status(409).json({ error: `Quarter '${quarter}' already published` });
+
+    const row = await db.run(
+      `INSERT INTO growth_picks (quarter, label, results_json, pass_count, watch_count, reject_count, published_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [quarter, label, run.results_json, run.pass_count, run.watch_count, run.reject_count, req.user.id]
+    );
+    res.json({ publishedId: row.lastID, quarter: quarter, label: label, pass: run.pass_count, watch: run.watch_count, reject: run.reject_count });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/growth-lab/published  → all published quarterly picks
+app.get('/api/admin/growth-lab/published', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    const rows = await db.all(`SELECT id, quarter, label, pass_count, watch_count, reject_count, published_by, published_at FROM growth_picks ORDER BY published_at DESC`);
+    res.json(rows);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/growth-lab/published/:quarter  → full results for one published quarter
+app.get('/api/admin/growth-lab/published/:quarter', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    const row = await db.get(`SELECT * FROM growth_picks WHERE quarter = ?`, [req.params.quarter]);
+    if (!row) return res.status(404).json({ error: 'Quarter not found' });
+    res.json({
+      id: row.id,
+      quarter: row.quarter,
+      label: row.label,
+      passCount: row.pass_count,
+      watchCount: row.watch_count,
+      rejectCount: row.reject_count,
+      publishedBy: row.published_by,
+      publishedAt: row.published_at,
+      results: row.results_json ? JSON.parse(row.results_json) : [],
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/admin/growth-lab/published/:quarter  → un-publish a quarter (admin-only)
+app.delete('/api/admin/growth-lab/published/:quarter', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const db = getDB();
+    const r = await db.run(`DELETE FROM growth_picks WHERE quarter = ?`, [req.params.quarter]);
+    if (r.lastID === 0) return res.status(404).json({ error: 'Quarter not found' });
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Public Guide Content (free for all users) ──
+app.get('/api/guide', async (req, res) => {
+  try {
+    const guideSteps = [
+      { id: 'screener', title: 'Discover Stocks', menuPath: 'SCREENER – STOCK SCREENER', action: 'Filter by sector, market cap, price, volume', description: 'Use the Stock Screener to find stocks that match your thesis. Apply filters for sector, market capitalization, price range, and volume to build an initial watchlist.' },
+      { id: 'alpha-hub', title: 'Analyze with Institutional Signals', menuPath: 'ALPHA HUB – MAIN TERMINAL', action: 'Review signals, strategy feedback, and scores', description: 'Return to Alpha Hub to see institutional strategy signals and validation on your shortlisted names. Each stock gets a strategy score and signal type.' },
+      { id: 'charts', title: 'Technical Charting', menuPath: 'CHART TERMINAL – TECHNICAL CHARTING', action: 'Open chart, check trend and support/resistance', description: 'For any stock in your watchlist, open the Chart Terminal to view technical set-ups. Check trend direction, key support/resistance levels, and candlestick patterns.' },
+      { id: 'manager', title: 'Build Your Portfolio', menuPath: 'MANAGER – WEALTH TRACKING', action: 'Add stocks, allocate capital, set positions', description: 'Convert your shortlisted stocks into a structured portfolio. Add each stock, allocate capital per position, and track current value.' },
+      { id: 'journal', title: 'Document Every Trade', menuPath: 'JOURNAL – TRADE LEDGER', action: 'Record buy/sell, quantity, price, and reasoning', description: 'Go to the Trade Ledger to record every trade and decision. Note buy or sell, quantity, price, and your reasoning. This becomes your institutional-grade trade diary.' },
+      { id: 'course', title: 'Learn the Framework', menuPath: 'EDUCATION – VIDEO COURSE', action: 'Watch core modules on risk, allocation, and filtration', description: 'If new to institutional strategy, watch the core video modules that explain how the console thinks about risk, allocation, and filtration.' },
+      { id: 'ai', title: 'Use AI Strategy Assistance', menuPath: 'BEACONAI – STRATEGY AI', action: 'Ask specific questions like evaluate portfolio or suggest filters', description: 'When ready for AI support, open the Strategy AI assistant and ask specific questions like "help me evaluate this portfolio" or "suggest filters for swing trading mid-cap stocks."' },
+      { id: 'settings', title: 'Manage Subscription & Settings', menuPath: 'ACCOUNT – LICENSE DESK – SUBSCRIPTION', action: 'Access plans, profile, and tutorials', description: 'Under Account, use License Desk to manage your access and plans. Use Settings for profile updates. Visit Help for tutorials and platform guidance.' },
+    ];
+    res.json({ steps: guideSteps, updatedAt: new Date().toISOString() });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── Sitemap (dynamic, includes blog posts from DB) ──
@@ -2404,5 +2960,10 @@ const startServer = async () => {
     });
   } catch (e) { console.error(e); }
 };
+
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('Unhandled error:', err?.message || err);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
 startServer();

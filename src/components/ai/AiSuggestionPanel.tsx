@@ -75,7 +75,7 @@ const AiSuggestionPanel: React.FC<AiSuggestionPanelProps> = ({ symbol }) => {
               <div className="space-y-1">
                 <p className="text-xs font-bold text-white uppercase tracking-wider">Strategy Alignment Check</p>
                 <p className="text-[10px] text-slate-500 leading-relaxed max-w-[220px] mx-auto">
-                  Run the MarketBeacon Pro quantitative filter to check buy zones for {symbol}.
+                  Run the MarketBeacon Pro quantitative filter to check institutional setups for {symbol}.
                 </p>
               </div>
               <button

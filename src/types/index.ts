@@ -56,12 +56,14 @@ export interface StockSearchResult {
   peMedians: {
     pe3Y?: number;
     pe5Y?: number;
+    pe10Y?: number;
   };
 }
 
 export interface ABCDNode {
   price: number;
   label?: string;
+  date?: string;
 }
 
 export interface StrategyResult {
@@ -88,7 +90,7 @@ export interface FundamentalData {
   industry?: string;
   change?: number;
   peRatio?: number;
-  peMedians?: { pe3Y?: number; pe5Y?: number };
+  peMedians?: { pe3Y?: number; pe5Y?: number; pe10Y?: number };
   marketCap?: number;
   returnOnEquity?: number;
   fiftyTwoWeekHigh?: number;
@@ -96,6 +98,8 @@ export interface FundamentalData {
   athSales?: number;
   currentNetProfit?: number;
   athNetProfit?: number;
+  lastUpdated?: string;
+  dataAge?: { lastUpdated: string; updatedAt: string; fresh: boolean };
 }
 
 export interface HistoryQuote {
@@ -150,6 +154,8 @@ export interface TradeRecord {
   strategy?: string;
   status: 'OPEN' | 'CLOSED';
   notes?: string;
+  isPaper?: boolean;
+  paperId?: string;
 }
 
 export interface AlphaHubStock {

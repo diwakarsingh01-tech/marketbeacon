@@ -7,7 +7,6 @@ import {
   calculateSMAStacking,
   calculate52WeekStrategy,
   calculateSRStrategy,
-  calculateRHS,
   calculateCupHandle,
   calculateSixtySevenFunda,
   calculateTwentyRallyRetest
@@ -31,7 +30,6 @@ async function deepAudit() {
       { id: 'S4', fn: calculateSMAStacking },
       { id: 'S5', fn: calculate52WeekStrategy },
       { id: 'S6', fn: (q: any) => calculateSRStrategy(q, snap.screener) },
-      { id: 'S7', fn: calculateRHS },
       { id: 'S8', fn: calculateCupHandle },
       { id: 'S9', fn: (q: any) => calculateSixtySevenFunda(q, snap.screener) }
     ];

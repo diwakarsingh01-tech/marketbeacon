@@ -6,6 +6,7 @@ import {
   X, CheckCircle2, Smartphone, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 
 const API_URL = getApiUrl();
@@ -26,6 +27,7 @@ const ProfilePage: React.FC = () => {
   const { logout } = useAuth();
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const [dataDensity, setDataDensity] = useState(() => localStorage.getItem('mb_data_density') !== 'off');
   const [defaultObjective, setDefaultObjective] = useState(() => localStorage.getItem('mb_default_obj') || '25.0%');
@@ -48,6 +50,7 @@ const ProfilePage: React.FC = () => {
   const [twoFaLoading, setTwoFaLoading] = useState(false);
 
   const fetchProfile = useCallback(async () => {
+    setFetchError(null);
     try {
       const res = await fetch(`${API_URL}/api/user/profile`, {
         credentials: 'include'
@@ -57,9 +60,15 @@ const ProfilePage: React.FC = () => {
         window.location.href = '/login';
         return;
       }
-      if (res.ok && !data.error) setProfileData(data);
+      if (res.ok && !data.error) {
+        setProfileData(data);
+      } else {
+        setFetchError(data?.error || 'Failed to load profile data');
+        console.error('Profile fetch error response:', data);
+      }
     } catch (e) {
       console.error('Profile fetch error:', e);
+      setFetchError('Network error while fetching profile');
     } finally {
       setLoading(false);
     }
@@ -161,7 +170,13 @@ const ProfilePage: React.FC = () => {
        <ShieldCheck className="h-12 w-12 text-[var(--text-tertiary)]" />
        <h2 className="text-xl font-bold text-[var(--text-primary)] uppercase italic">Profile Unavailable</h2>
        <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Please try logging in again</p>
-       <button onClick={logout} className="px-8 py-3 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl text-caption border border-[var(--border-primary)]">Logout</button>
+       {fetchError && (
+         <p className="text-xs font-bold text-rose-400 uppercase tracking-wider max-w-md text-center">{fetchError}</p>
+       )}
+       <div className="flex space-x-3">
+         <button onClick={fetchProfile} className="px-8 py-3 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl text-caption border border-[var(--border-primary)]">Retry</button>
+         <button onClick={logout} className="px-8 py-3 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-xl text-caption border border-[var(--border-primary)]">Logout</button>
+       </div>
     </div>
   );
 
@@ -174,7 +189,8 @@ const ProfilePage: React.FC = () => {
   return (
     <>
       <SEO title="Profile" description="Manage your MarketBeacon Pro account, API keys, and preferences." url="/profile" noindex />
-      <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-8 lg:px-10 space-y-6 md:space-y-8 overflow-y-auto font-sans bg-[var(--bg-primary)]">
+      <div className="flex-1 flex flex-col min-h-0 py-6 md:py-8 px-4 md:px-8 lg:px-10 space-y-6 md:space-y-8 overflow-y-auto pb-24 md:pb-0 font-sans bg-[var(--bg-primary)]">
+      <Breadcrumbs items={[{ label: 'Profile', href: '#' }]} />
       
       <div className="flex flex-col md:flex-row items-center justify-between gap-8 border-b border-[var(--border-primary)] pb-10">
         <div className="flex flex-col sm:flex-row items-center gap-6 sm:space-x-8 text-center sm:text-left">

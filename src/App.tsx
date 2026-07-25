@@ -4,16 +4,20 @@ import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'sonner';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
+import { TourProvider } from './context/TourContext';
 import AuthGuard from './components/auth/AuthGuard';
 import AppLayout from './components/layout/AppLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import Skeleton from './components/ui/Skeleton';
+import { TourOverlay } from './components/tour/TourOverlay';
 
 // Home loads eagerly for fastest initial paint — all other pages are lazy
 import HomePage from './pages/Home';
 const LoginPage = lazy(() => import('./pages/Login'));
+const PinLoginPage = lazy(() => import('./pages/PinLogin'));
 const DashboardPage = lazy(() => import('./pages/Dashboard'));
 const AlphaHubPage = lazy(() => import('./pages/AlphaHub'));
+const GuidePage = lazy(() => import('./pages/Guide'));
 const PublicAnalysisPage = lazy(() => import('./pages/PublicAnalysis'));
 const StockFundamentalsPage = lazy(() => import('./pages/StockFundamentals'));
 const TradeJournalPage = lazy(() => import('./pages/TradeJournal'));
@@ -21,6 +25,7 @@ const ProfilePage = lazy(() => import('./pages/Profile'));
 const EducationPage = lazy(() => import('./pages/Education'));
 const PricingPage = lazy(() => import('./pages/Pricing'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const AdminGrowthLabPage = lazy(() => import('./pages/AdminGrowthLab'));
 const MembershipPage = lazy(() => import('./pages/Marketplace'));
 const ConnectivityHubPage = lazy(() => import('./pages/Connect'));
 const BlogPage = lazy(() => import('./pages/Blog'));
@@ -32,7 +37,6 @@ const AiAssistantPage = lazy(() => import('./pages/AiAssistant'));
 const NotFoundPage = lazy(() => import('./pages/NotFound'));
 const ChartsTerminalPage = lazy(() => import('./pages/ChartsTerminal'));
 const ScreenerVerifyPage = lazy(() => import('./pages/ScreenerVerify'));
-const UserDashboardPage = lazy(() => import('./pages/UserDashboard'));
 const PublicStockCheckPage = lazy(() => import('./pages/PublicStockCheck'));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfService'));
 const DisclaimerPage = lazy(() => import('./pages/Disclaimer'));
@@ -69,6 +73,7 @@ function AnimatedRoutes() {
         {/* Public Marketing Routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/pin-login" element={<PinLoginPage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/connect" element={<ConnectivityHubPage />} />
         <Route path="/check" element={<PublicStockCheckPage />} />
@@ -82,8 +87,6 @@ function AnimatedRoutes() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/marketplace" element={<Navigate to="/license-desk" replace />} />
-        <Route path="/charts" element={<ChartsTerminalPage />} />
-        <Route path="/ai-assistant" element={<AiAssistantPage />} />
 
         {/* Authenticated SaaS Platform */}
         <Route 
@@ -93,8 +96,11 @@ function AnimatedRoutes() {
             </AuthGuard>
           }
         >
+          <Route path="/charts" element={<ChartsTerminalPage />} />
+          <Route path="/ai-assistant" element={<AiAssistantPage />} />
           <Route path="/app" element={<AppHomePage />} />
           <Route path="/alpha-hub" element={<AlphaHubPage />} />
+          <Route path="/guide" element={<GuidePage />} />
           <Route path="/screener" element={<DashboardPage key="screener" defaultTab="open" />} />
           <Route path="/screener-verify" element={<ScreenerVerifyPage />} />
           <Route path="/market" element={<DashboardPage key="market" defaultTab="hold" />} />
@@ -104,11 +110,12 @@ function AnimatedRoutes() {
           <Route path="/stock/:symbol" element={<StockFundamentalsPage />} />
           <Route path="/education" element={<EducationPage />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/admin/growth-lab" element={<AdminGrowthLabPage />} />
           <Route path="/license-desk" element={<MembershipPage />} />
         </Route>
         
         {/* Redirects */}
-        <Route path="/dashboard" element={<UserDashboardPage />} />
+        <Route path="/dashboard" element={<Navigate to="/app" replace />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AnimatePresence>
@@ -122,11 +129,14 @@ function App() {
     <AuthProvider>
       <Toaster position="top-right" richColors closeButton expand={false} visibleToasts={5} duration={5000} toastOptions={{ style: { fontSize: '13px', fontWeight: 600 }, className: 'font-sans' }} />
       <Router>
+        <TourProvider>
         <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <AnimatedRoutes />
         </Suspense>
         </ErrorBoundary>
+        <TourOverlay />
+        </TourProvider>
       </Router>
     </AuthProvider>
     </ThemeProvider>

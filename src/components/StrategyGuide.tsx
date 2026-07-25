@@ -94,7 +94,7 @@ const STRATEGY_DETAILS: Record<string, {
       'Institutional ownership matrix remains > 75%.'
     ],
     entry: 'Research qualification at drawdown >= 66% with improving PAT.',
-    stopLoss: 'No stop-loss; requires high-conviction 100-point audit.',
+    stopLoss: 'No stop-loss; requires comprehensive 100-point audit.',
     target: 'Model Objective is a return to the previous All-Time High.',
     proTip: 'Look for companies with >15% ROE during the accumulation phase.'
   },
@@ -123,19 +123,6 @@ const STRATEGY_DETAILS: Record<string, {
     stopLoss: 'Risk baseline set at the handle support level.',
     target: 'Model Objective is the Cup Depth (+H) projection.',
     proTip: 'Cups deeper than 30% have higher win rates in Large Caps.'
-  },
-  'RHS_ABCD': {
-    title: 'Dynamic Reversal',
-    description: 'Geometric identification of trend exhaustion and structural reversal.',
-    setup: [
-      'Three distinct troughs: Left Shoulder, deeper Head, Right Shoulder.',
-      'Structural symmetry must be > 95% for model qualification.',
-      'Knoxville Divergence typically appears on the Head trough.'
-    ],
-    entry: 'Completion of a symmetrical inverted H&S formation.',
-    stopLoss: 'Risk baseline set at the right shoulder support low.',
-    target: 'Model Objective is the Neckline Height (+H) projection.',
-    proTip: 'Sloping necklines (upwards) increase the probability of reversal.'
   },
   'SR_STRATEGY': {
     title: 'Supply-Demand Core',

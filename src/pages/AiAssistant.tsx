@@ -7,7 +7,9 @@ import {
   Bot, Send, User, ArrowLeft
 } from 'lucide-react';
 import { getApiUrl, safeJsonParse } from '../lib/api-utils';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import SEO from '../components/SEO';
+import TierGate from '../components/gates/TierGate';
 
 const API_URL = getApiUrl();
 
@@ -25,6 +27,14 @@ const QUICK_ACTIONS = [
 ];
 
 const AiAssistantPage: React.FC = () => {
+  return (
+    <TierGate requiredTier="pro">
+      <AiAssistantContent />
+    </TierGate>
+  );
+};
+
+const AiAssistantContent: React.FC = () => {
   const navigate = useNavigate();
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -172,7 +182,7 @@ I analyze stocks using **MarketBeacon Pro's proprietary Multi-List Swing Trading
   };
 
   return (
-    <div className="flex-1 flex flex-col font-sans text-[var(--text-secondary)] bg-[var(--bg-primary)] h-full overflow-hidden">
+    <div className="flex-1 flex flex-col font-sans text-[var(--text-secondary)] bg-[var(--bg-primary)] h-full overflow-hidden pb-24 md:pb-0">
       <SEO title="BeaconAI Strategy Assistant" description="AI-powered stock analysis using MarketBeacon Pro swing trading methodology" />
 
       {/* Header */}
@@ -186,6 +196,8 @@ I analyze stocks using **MarketBeacon Pro's proprietary Multi-List Swing Trading
               <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
               <span className="hidden sm:inline">Dashboard</span>
             </button>
+            <div className="w-px h-6 bg-[var(--border-primary)]" />
+            <Breadcrumbs items={[{ label: 'Beacon AI', href: '#' }]} />
             <div className="w-px h-6 bg-[var(--border-primary)]" />
             <div className="p-2.5 bg-gradient-to-br from-emerald-600/20 to-blue-600/20 border border-emerald-500/20 rounded-xl">
               <Bot className="h-5 w-5 text-emerald-400" />
@@ -283,7 +295,7 @@ I analyze stocks using **MarketBeacon Pro's proprietary Multi-List Swing Trading
 
       {/* Quick Actions */}
       {showQuickActions && messages.length === 1 && (
-        <div className="max-w-4xl mx-auto px-6 pb-4">
+        <div className="max-w-4xl mx-auto px-6 pb-24 md:pb-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {QUICK_ACTIONS.map((action, i) => (
               <button
@@ -303,6 +315,7 @@ I analyze stocks using **MarketBeacon Pro's proprietary Multi-List Swing Trading
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex gap-3">
             <input
+              data-tour="ai-input"
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
