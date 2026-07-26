@@ -6,7 +6,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { fileURLToPath } from 'url';
 import { NIFTY_500 } from './universe.js';
-import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest, checkInstitutionalMandates } from './strategies/index.js';
+import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest, calculateReverseHeadShoulders, checkInstitutionalMandates } from './strategies/index.js';
 import { supabase } from './db.js';
 
 // BROAD_UNIVERSE: Nifty 500 + ~1500 additional mid/small-cap symbols for wider market scanning.
@@ -229,8 +229,8 @@ export async function fetchScreenerData(symbol: string) {
         });
       }
       const searchTerms = [rowName.toLowerCase()];
-      if (rowName.toLowerCase() === 'sales') searchTerms.push('revenue', 'sales');
-      if (rowName.toLowerCase() === 'net profit') searchTerms.push('net profit', 'profit after tax');
+      if (rowName.toLowerCase() === 'sales') searchTerms.push('revenue', 'sales', 'total income', 'interest income', 'revenue from operations');
+      if (rowName.toLowerCase() === 'net profit') searchTerms.push('net profit', 'profit after tax', 'net income', 'pat');
 
       const row = section.find(`tr`).filter(function() {
         const firstCol = $(this).find('td:first-child, th:first-child').text().trim().toLowerCase();
@@ -539,9 +539,12 @@ export async function fetchScreenerData(symbol: string) {
     // EV/EBITDA directly in top-ratios. If not we leave it null.)
     const ev = marketCap + ((borrowingsLatest - cashLatest) * 10000000); // borrowings stored in Cr; marketCap stored in raw ₹
 
+    // Try to get Debt/Equity from Screener's top-ratios first (correct for all sectors including banks)
+    const totalDebtToEquity = getRatio('Debt to Equity') || getRatio('Debt/Equity') || getRatio('D/E') || 0;
+    
     return {
       marketCap, peRatio, peMedians, dividendYield: getRatio('Dividend Yield'),
-      roce, returnOnEquity: roe, netDebtToEquity: debtToEquity, currentPrice, industry,
+      roce, returnOnEquity: roe, netDebtToEquity: debtToEquity, totalDebtToEquity, currentPrice, industry,
       smartMoneyTotal, shareholding, athSales, athNetProfit, currentSales, currentNetProfit,
       athEPS: eps.length > 0 ? Math.max(...eps) : 0, currentEPS, epsHistory: eps,
       // Quarterly results table (per quarter — Sales/OPM/NPM/PAT/EPS). Empty array
@@ -655,7 +658,8 @@ export async function updateMarketSnapshot(symbols: string[]) {
           'BOLLINGER': calculateBollingerBand(quotes), '52W_HIGH_LOW': calculate52WeekStrategy(quotes),
           'CUP_HANDLE_ABCD': calculateCupHandle(quotes),
           'SMA_BCD': calculateSMAStacking(quotes), 'SR_STRATEGY': calculateSRStrategy(quotes),
-          'SIXTY_SEVEN_FUNDA': calculateSixtySevenFunda(quotes, screenerData), 'TWENTY_RALLY_RETEST': calculateTwentyRallyRetest(quotes)
+          'SIXTY_SEVEN_FUNDA': calculateSixtySevenFunda(quotes, screenerData), 'TWENTY_RALLY_RETEST': calculateTwentyRallyRetest(quotes),
+          'REVERSE_HEAD_SHOULDERS': calculateReverseHeadShoulders(quotes)
         };
 
         // If audit fails, wipe strategy signals but keep data for "Monitor" or research
@@ -676,10 +680,29 @@ export async function updateMarketSnapshot(symbols: string[]) {
           calc10Y = calculatePEMedianFromHistory(quotes, epsHistory, 10);
         }
         if (screenerData?.peMedians) {
-          // Only fill in missing median values — don't overwrite scraped data
-          if ((!screenerData.peMedians.pe3Y || screenerData.peMedians.pe3Y === 0) && calc3Y > 0) screenerData.peMedians.pe3Y = calc3Y;
-          if ((!screenerData.peMedians.pe5Y || screenerData.peMedians.pe5Y === 0) && calc5Y > 0) screenerData.peMedians.pe5Y = calc5Y;
-          if ((!screenerData.peMedians.pe10Y || screenerData.peMedians.pe10Y === 0) && calc10Y > 0) screenerData.peMedians.pe10Y = calc10Y;
+          // FIX: Override scraped medians if they look suspicious (>150 for 3Y, >100 for 5Y)
+          // Indian stocks rarely have median PE > 100; such values indicate a scrape error.
+          const scraped3YSuspicious = screenerData.peMedians.pe3Y > 0 && screenerData.peMedians.pe3Y > 150;
+          const scraped5YSuspicious = screenerData.peMedians.pe5Y > 0 && screenerData.peMedians.pe5Y > 100;
+          
+          // Always prefer calculated medians when scraped ones are suspicious
+          if (scraped3YSuspicious && calc3Y > 0) {
+            console.log(`🔧 [SNAPSHOT] Overrode suspicious scraped pe3Y (${screenerData.peMedians.pe3Y} → ${calc3Y}) for ${baseSymbol}`);
+            screenerData.peMedians.pe3Y = calc3Y;
+          } else if ((!screenerData.peMedians.pe3Y || screenerData.peMedians.pe3Y === 0) && calc3Y > 0) {
+            screenerData.peMedians.pe3Y = calc3Y;
+          }
+          
+          if (scraped5YSuspicious && calc5Y > 0) {
+            console.log(`🔧 [SNAPSHOT] Overrode suspicious scraped pe5Y (${screenerData.peMedians.pe5Y} → ${calc5Y}) for ${baseSymbol}`);
+            screenerData.peMedians.pe5Y = calc5Y;
+          } else if ((!screenerData.peMedians.pe5Y || screenerData.peMedians.pe5Y === 0) && calc5Y > 0) {
+            screenerData.peMedians.pe5Y = calc5Y;
+          }
+          
+          if ((!screenerData.peMedians.pe10Y || screenerData.peMedians.pe10Y === 0) && calc10Y > 0) {
+            screenerData.peMedians.pe10Y = calc10Y;
+          }
         } else if (calc3Y > 0 || calc5Y > 0) {
           (screenerData as any) = { ...(screenerData || {}), peMedians: { pe3Y: calc3Y, pe5Y: calc5Y, pe10Y: calc10Y } };
         }
@@ -693,20 +716,43 @@ export async function updateMarketSnapshot(symbols: string[]) {
             fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh || Math.max(...quotes.slice(-252).map(q => q.high)),
             fiftyTwoWeekLow: quote.fiftyTwoWeekLow || Math.min(...quotes.slice(-252).map(q => q.low)),
             pe: screenerData?.peRatio || summary?.summaryDetail?.trailingPE || 0,
+            forwardPE: quote.forwardPE || summary?.summaryDetail?.forwardPE || summary?.financialData?.forwardPE || 0,
             roe: (() => {
               let r = summary?.financialData?.returnOnEquity ?? summary?.defaultKeyStatistics?.returnOnEquity ?? 0;
               if (Math.abs(r) > 0 && Math.abs(r) < 1) r *= 100;
               return r || screenerData?.returnOnEquity || 0;
             })(),
             debtToEquity: (() => {
-              let d = summary?.financialData?.debtToEquity ?? screenerData?.netDebtToEquity ?? 0;
-              if (d > 1.5) d /= 100;
-              return d;
+              // Prefer Screener.in total D/E (from top-ratios section) — most reliable across all sectors
+              if (screenerData?.totalDebtToEquity > 0) return screenerData.totalDebtToEquity;
+              
+              // Yahoo Finance: may return raw ratio (e.g. 3.65) or percentage (e.g. 365 = 3.65x)
+              let d = summary?.financialData?.debtToEquity ?? 0;
+              if (d > 0) {
+                // Yahoo percentage format: only divide by 100 when clearly percentage (> 20)
+                // Raw ratio < 10: keep as-is (normal D/E range)
+                // Percentage > 20: convert to ratio (e.g. 365 → 3.65)
+                if (d > 20) return d / 100;
+                return d;
+              }
+              // Fallback to net D/E from balance sheet (borrowings/equity - not ideal for banks)
+              return screenerData?.netDebtToEquity || 0;
             })(),
             shareholding: screenerData?.shareholding || null, beta: quote.beta
           },
           screener: screenerData, strategies, lastUpdated: new Date().toISOString()
         };
+        
+        // Add netDebtToEquity calculation from balance sheet data
+        if (screenerData?.balanceSheet?.latest) {
+          const bs = screenerData.balanceSheet.latest;
+          const borrowings = bs.borrowings || 0;
+          const cash = bs.cashAndBank || 0;
+          const equity = bs.equity || bs.shareCapital + bs.reserves || 0;
+          if (equity > 0) {
+            (finalData.quote as any).netDebtToEquity = (borrowings - cash) / equity;
+          }
+        }
         if (supabase) {
           await supabase.from('market_data').upsert({ symbol: baseSymbol, data: finalData, updated_at: new Date().toISOString() });
         }
@@ -714,6 +760,18 @@ export async function updateMarketSnapshot(symbols: string[]) {
       } catch (e: any) { console.error(`Snapshot failed for ${baseSymbol}: ${e.message}`); }
     }));
     await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+
+  // Calculate Beta after all symbols in this batch are processed
+  if (symbols.length === 1 || symbols.includes('^NSEI')) {
+    // For single symbol refresh, or if NSEI was just added, recalculate beta for this symbol
+    const refreshedSymbols = symbols.filter(s => s !== '^NSEI');
+    if (refreshedSymbols.length > 0) {
+      calculateBetaForSymbols(refreshedSymbols);
+    }
+  } else if (symbols.length > 1) {
+    // For full batch, calculate beta for all
+    calculateBetaForSymbols(Object.keys(snapshotCache).filter(s => s !== '^NSEI'));
   }
 
   // Persist snapshot to local file so data survives server restart
@@ -726,6 +784,47 @@ export async function updateMarketSnapshot(symbols: string[]) {
   }
 
   console.log(`💎 [SNAPSHOT] Success! Market data synced to Cloud.`);
+}
+
+export function calculateBetaForSymbols(symbols: string[]) {
+  try {
+    const nseData = snapshotCache['^NSEI'];
+    if (!nseData?.quotes?.length) return;
+    const period = Math.min(nseData.quotes.length, 504); // 2 years (~504 trading days)
+    const mReturns: number[] = [];
+    const mStart = Math.max(1, nseData.quotes.length - period + 1);
+    for (let i = mStart; i < nseData.quotes.length; i++) {
+      const p = nseData.quotes[i-1]?.close || nseData.quotes[i-1]?.adjclose;
+      const c = nseData.quotes[i]?.close || nseData.quotes[i]?.adjclose;
+      if (p > 0 && c > 0) mReturns.push((c - p) / p);
+    }
+    const avgM = mReturns.length > 0 ? mReturns.reduce((a, b) => a + b, 0) / mReturns.length : 0;
+    const varM = mReturns.length > 0 ? mReturns.reduce((a, b) => a + (b - avgM) ** 2, 0) / mReturns.length : 0;
+    if (varM <= 0) return;
+
+    for (const symbol of symbols) {
+      const data = snapshotCache[symbol];
+      if (!data?.quotes?.length) continue;
+      const sPeriod = Math.min(data.quotes.length, period);
+      const sStart = Math.max(1, data.quotes.length - sPeriod + 1);
+      const sReturns: number[] = [];
+      for (let i = sStart; i < data.quotes.length; i++) {
+        const p = data.quotes[i-1]?.close || data.quotes[i-1]?.adjclose;
+        const c = data.quotes[i]?.close || data.quotes[i]?.adjclose;
+        if (p > 0 && c > 0) sReturns.push((c - p) / p);
+      }
+      const n = Math.min(sReturns.length, mReturns.length);
+      if (n < 60) continue; // require at least 60 trading days (~3 months)
+      const sr = sReturns.slice(-n);
+      const mr = mReturns.slice(-n);
+      const avgS = sr.reduce((a, b) => a + b, 0) / n;
+      let cov = 0;
+      for (let i = 0; i < n; i++) cov += (sr[i] - avgS) * (mr[i] - avgM);
+      const beta = varM > 0 ? Math.round((cov / n / varM) * 100) / 100 : null;
+      if (beta !== null) data.quote.beta = beta;
+    }
+    console.log(`📊 [SNAPSHOT] Beta calculated for ${symbols.filter(s => snapshotCache[s]?.quote?.beta != null).length} symbols`);
+  } catch (e: any) { console.warn(`⚠️ [SNAPSHOT] Beta calculation failed: ${e.message}`); }
 }
 
 export function initScreenerCron() {

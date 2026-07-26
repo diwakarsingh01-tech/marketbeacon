@@ -728,6 +728,105 @@ export function calculateTwentyRallyRetest(quotes: Quote[]) {
 /**
  * UTILITY: ABCD Level Calculation (Institutional 10% Model)
  */
+/**
+ * Reverse Head & Shoulders (RHS) Pattern Recognition
+ * 
+ * Detects a bullish reversal pattern after a downtrend:
+ * - Left Shoulder (S1): Swing low
+ * - Head (H): Lower swing low (deeper than shoulders)
+ * - Right Shoulder (S2): Higher swing low (similar level to S1)
+ * - Neckline: Resistance level drawn across the highs between shoulders and head
+ * - Breakout: Price closes above the neckline
+ */
+export function calculateReverseHeadShoulders(quotes: Quote[]) {
+  if (!quotes || quotes.length < 350) return { isBuyZone: false };
+
+  const swingLookback = 3;
+  const currentIdx = quotes.length - 1;
+  const currentPrice = quotes[currentIdx].close;
+  const startIdx = Math.max(swingLookback, quotes.length - 1100);
+
+  // Find swing lows and swing highs
+  const swingLows: { price: number; idx: number; date: string }[] = [];
+  const swingHighs: { price: number; idx: number; date: string }[] = [];
+
+  for (let i = startIdx; i < quotes.length - swingLookback; i++) {
+    let isLow = true, isHigh = true;
+    for (let j = i - swingLookback; j <= i + swingLookback; j++) {
+      if (j === i) continue;
+      if (j >= 0 && j < quotes.length) {
+        if (quotes[j].low <= quotes[i].low) isLow = false;
+        if (quotes[j].high >= quotes[i].high) isHigh = false;
+      }
+    }
+    if (isLow) swingLows.push({ price: quotes[i].low, idx: i, date: String(quotes[i].date || '') });
+    if (isHigh) swingHighs.push({ price: quotes[i].high, idx: i, date: String(quotes[i].date || '') });
+  }
+
+  if (swingLows.length < 3 || swingHighs.length < 2) return { isBuyZone: false };
+
+  // Scan for RHS pattern by looking at last N low pivots
+  const searchRange = Math.min(swingLows.length, 30);
+  
+  for (let j = swingLows.length - 1; j >= 2; j--) {
+    const s2 = swingLows[j];       // Right shoulder (most recent)
+    const head = swingLows[j - 1]; // Head (in the middle, lowest)
+    const s1 = swingLows[j - 2];   // Left shoulder (oldest)
+
+    // Pattern width: at least 90 trading days from S1 to S2
+    const patternWidth = s2.idx - s1.idx;
+    if (patternWidth < 90) continue;
+
+    // Head must be lower than both shoulders
+    if (head.price >= s1.price || head.price >= s2.price) continue;
+
+    // Shoulders should be at similar level (within 7% of each other)
+    const shoulderDiffPct = Math.abs(s1.price - s2.price) / Math.max(s1.price, s2.price);
+    if (shoulderDiffPct > 0.07) continue;
+
+    // Find the neckline: swing highs between S1 and S2
+    const highsInPattern = swingHighs.filter(h => h.idx >= s1.idx && h.idx <= s2.idx);
+    
+    // Find two key highs: one before head (between S1 and head), one after (between head and S2)
+    const highsBeforeHead = highsInPattern.filter(h => h.idx > s1.idx && h.idx < head.idx);
+    const highsAfterHead = highsInPattern.filter(h => h.idx > head.idx && h.idx < s2.idx);
+    
+    if (highsBeforeHead.length === 0 || highsAfterHead.length === 0) continue;
+
+    const p1 = highsBeforeHead[highsBeforeHead.length - 1]; // Last high before head
+    const p2 = highsAfterHead[0]; // First high after head
+
+    // Neckline: the higher of the two pivot highs that form the neckline
+    const neckline = (p1.price + p2.price) / 2; // Average of two highs as neckline
+    
+    // Head depth from neckline (should be at least 25%)
+    const headDepthPct = (neckline - head.price) / neckline;
+    if (headDepthPct < 0.25) continue;
+
+    // Check for breakout: current price should be near or above neckline
+    const breakoutThreshold = currentPrice >= neckline * 0.98;
+    if (!breakoutThreshold) continue;
+
+    // Calculate target: neckline + (neckline - head.price)
+    const target = neckline + (neckline - head.price);
+    const upsidePct = ((target / currentPrice) - 1) * 100;
+
+    return {
+      isBuyZone: true,
+      entryPrice: Math.round(currentPrice),
+      target: Math.round(target),
+      neckline: Math.round(neckline),
+      stopLoss: Math.round(s2.price * 0.96), // Below right shoulder
+      headDepth: Math.round(headDepthPct * 100 * 10) / 10,
+      patternStart: s1.date,
+      patternEnd: s2.date,
+      upside: Math.round(upsidePct * 10) / 10
+    };
+  }
+
+  return { isBuyZone: false };
+}
+
 export function calculateABCDLevels(anchorPrice: number, marketCap: number = 0) {
   const gap = 0.10;
   return { 
