@@ -19,7 +19,8 @@ import {
   getDynamicBasket,
   initSnapshotCache,
   getMarketSnapshot,
-  fetchScreenerData
+  fetchScreenerData,
+  calculateBetaForSymbols
 } from './screener.js';
 import { growthFilter } from './services/growthFilter.js';
 import { NIFTY_500 } from './universe.js';
@@ -55,8 +56,9 @@ export const formatPercentage = (val: any): number => {
 export const formatRatio = (val: any): number => {
   let num = parseFloat(String(val));
   if (isNaN(num)) return 0;
-  // If it's in percentage terms (like 29.43% or 31.0%), scale down to ratio (0.29 or 0.31)
-  if (Math.abs(num) > 1.5) {
+  // Only divide by 100 when value is clearly a percentage (> 20), not a ratio
+  // D/E ratio of 3.5 should NOT become 0.035
+  if (Math.abs(num) > 20) {
     num = num / 100;
   }
   return Math.round(num * 100) / 100;
@@ -104,24 +106,162 @@ app.use('/api/', generalLimiter);
 
 // --- CONSTANTS ---
 export const MANUAL_SECTOR_MAP: Record<string, string> = {
-  // IT & Tech
-  'TCS': 'IT Services', 'INFY': 'IT Services', 'HCLTECH': 'IT Services', 'WIPRO': 'IT Services', 'LTTS': 'Engineering Tech', 'KPITTECH': 'Automotive Tech', 'CYIENT': 'IT Services', 'SONATSOFTW': 'IT Services', 'ZENSARTECH': 'IT Services', 'MPHASIS': 'IT Services', 'NEWGEN': 'Software', 'TANLA': 'CPaaS', 'OFSS': 'IT Services',
-  // Banking & Finance
-  'HDFCBANK': 'Banking', 'ICICIBANK': 'Banking', 'AXISBANK': 'Banking', 'KOTAKBANK': 'Banking', 'UCOBANK': 'Banking', 'CENTRALBK': 'Banking', 'BANDHANBNK': 'Banking', 'J&KBANK': 'Banking', 'KARURVYSYA': 'Banking', 'CUB': 'Banking', 'DCBBANK': 'Banking', 'SBIN': 'Banking', 'RBLBANK': 'Banking', 'UJJIVANSFB': 'Banking',
-  'BAJFINANCE': 'NBFC', 'BAJAJFINSV': 'NBFC', 'HDFCAMC': 'Asset Management', 'NAM-INDIA': 'Asset Management', 'CAMS': 'Financial Infrastructure', 'CDSL': 'Exchange/Depository', 'MCX': 'Exchange/Depository', 'MUTHOOTFIN': 'NBFC', 'CHOLAFIN': 'NBFC', 'POONAWALLA': 'NBFC', 'SHRIRAMFIN': 'NBFC', 'MOTILALOFS': 'Financial Services',
-  // FMCG & Consumer
-  'HINDUNILVR': 'FMCG', 'ITC': 'FMCG', 'COLPAL': 'FMCG', 'DABUR': 'FMCG', 'MARICO': 'FMCG', 'NESTLEIND': 'FMCG', 'TATACONSUM': 'FMCG', 'BRITANNIA': 'FMCG', 'VGUARD': 'Consumer Durables', 'HAVELS': 'Consumer Durables', 'HAVELLS': 'Consumer Durables', 'WHIRLPOOL': 'Consumer Durables', 'BATAINDIA': 'Footwear', 'RELAXO': 'Footwear', 'PAGEIND': 'Apparel', 'TITAN': 'Jewellery/Watches', 'GODREJCP': 'FMCG', 'TASTYBITE': 'Food Processing', 'TTKPRESTIG': 'Consumer Durables', 'SFL': 'Consumer Durables', 'SYMPHONY': 'Consumer Durables', 'VIPIND': 'Consumer Durables',
-  // Paints & Chemicals
-  'ASIANPAINT': 'Paints', 'BERGEPAINT': 'Paints', 'KANSAINER': 'Paints', 'AKZOINDIA': 'Paints', 'PIDILITIND': 'Adhesives', 'DEEPAKNTR': 'Chemicals', 'SRF': 'Chemicals', 'NAVINFLUOR': 'Chemicals', 'ATUL': 'Chemicals', 'FINEORG': 'Chemicals', 'VINATIORGA': 'Chemicals',
-  // Pharma & Healthcare
-  'SANOFI': 'Pharma', 'GLAXO': 'Pharma', 'PFIZER': 'Pharma', 'ABBOTINDIA': 'Pharma', 'APOLLOHOSP': 'Healthcare', 'MAXHEALTH': 'Healthcare', 'LALPATHLAB': 'Diagnostics', 'METROPOLIS': 'Diagnostics', 'SYNGENE': 'Contract Research', 'WOCKPHARMA': 'Pharma', 'NATCOPHARM': 'Pharma', 'JBCHEPHARM': 'Pharma', 'ERIS': 'Pharma', 'AJANTPHARM': 'Pharma', 'SUNPHARMA': 'Pharma', 'DRREDDY': 'Pharma', 'CIPLA': 'Pharma', 'CAPLIPOINT': 'Pharma', 'ASTRAZEN': 'Pharma', 'PGHL': 'Pharma', 'BAYERCROP': 'Agrochemicals',
-  // Auto & Engineering
-  'BAJAJ-AUTO': 'Automobile', 'EICHERMOT': 'Automobile', 'HEROMOTOCO': 'Automobile', 'TVSMOTOR': 'Automobile', 'MARUTI': 'Automobile', 'M&M': 'Automobile', 'ASHOKLEY': 'Automobile', 'POLYCAB': 'Electricals', 'KEI': 'Electricals', 'FINCABLES': 'Electricals', 'DIXON': 'Electronics Mfg', 'HONAUT': 'Automation', 'ABB': 'Industrial/Power', 'SIEMENS': 'Industrial/Power', 'CUMMINSIND': 'Industrial/Power', 'BOSCHLTD': 'Auto Ancillary', 'TMCV': 'Automobile',
-  // Infrastructure, Power, Steel & Cement
-  'ULTRACEMCO': 'Cement', 'AMBUJACEM': 'Cement', 'ACC': 'Cement', 'RAMCOCEM': 'Cement', 'JKCEMENT': 'Cement', 'L&T': 'EPC/Infra', 'LT': 'EPC/Infra', 'CONCOR': 'Logistics', 'WELCORP': 'Steel Pipes', 'TRITURBINE': 'Engineering', 'BHARTIARTL': 'Telecom', 'NTPC': 'Power', 'POWERGRID': 'Power', 'COALINDIA': 'Mining', 'ONGC': 'Oil & Gas', 'JSWSTEEL': 'Steel', 'TATASTEEL': 'Steel', 'ADANIPORTS': 'Infrastructure', 'ADANIENT': 'Conglomerate', 'RELIANCE': 'Energy/Conglomerate',
-  // Others
-  'IEX': 'Energy Exchange', 'NYKAA': 'E-commerce', 'ZOMATO': 'Food Delivery', 'ZEEL': 'Media', 'SUNTV': 'Media', 'SIS': 'Security Services', 'TEAMLEASE': 'Employment Services', 'RAJESHEXPO': 'Jewellery/Watches', 'CERA': 'Sanitaryware', 'AVANTIFEED': 'Aqua Feed', 'KAJARIACER': 'Ceramics', 'JCHAC': 'Consumer Durables', 'NIFTYBEES': 'Index ETF', 'BANKBEES': 'Banking ETF'
+  // --- Banking (30) ---
+  'HDFCBANK': 'Banking', 'ICICIBANK': 'Banking', 'SBIN': 'Banking', 'AXISBANK': 'Banking', 'KOTAKBANK': 'Banking', 'AUBANK': 'Banking', 'BANDHANBNK': 'Banking', 'CANBK': 'Banking', 'BANKBARODA': 'Banking', 'PNB': 'Banking', 'INDIANB': 'Banking', 'BANKINDIA': 'Banking', 'MAHABANK': 'Banking', 'UNIONBANK': 'Banking', 'IDBI': 'Banking', 'FEDERALBNK': 'Banking', 'INDUSINDBK': 'Banking', 'YESBANK': 'Banking', 'IDFCFIRSTB': 'Banking', 'RBLBANK': 'Banking', 'SOUTHBANK': 'Banking', 'UJJIVANSFB': 'Banking', 'KTKBANK': 'Banking', 'KARURVYSYA': 'Banking', 'CUB': 'Banking', 'DCBBANK': 'Banking', 'UCOBANK': 'Banking', 'CENTRALBK': 'Banking', 'J&KBANK': 'Banking', 'IOB': 'Banking',
+  // --- NBFC (7) ---
+  'BAJFINANCE': 'NBFC', 'BAJAJFINSV': 'NBFC', 'SHRIRAMFIN': 'NBFC', 'MUTHOOTFIN': 'NBFC', 'CHOLAFIN': 'NBFC', 'POONAWALLA': 'NBFC', 'LICHSGFIN': 'NBFC',
+  // --- Insurance (6) ---
+  'ICICIPRULI': 'Insurance', 'ICICIGI': 'Insurance', 'HDFCLIFE': 'Insurance', 'SBILIFE': 'Insurance', 'NIACL': 'Insurance', 'GICRE': 'Insurance',
+  // --- Asset Management (2) ---
+  'HDFCAMC': 'Asset Management', 'NAM-INDIA': 'Asset Management',
+  // --- Financial Services (7) ---
+  'MOTILALOFS': 'Financial Services', 'CRISIL': 'Financial Services', 'CARERATING': 'Financial Services', 'ICRA': 'Financial Services', 'ISEC': 'Financial Services', 'MFSL': 'Financial Services', 'TATAINVEST': 'Financial Services',
+  // --- Financial Infrastructure (2) ---
+  'CAMS': 'Financial Infrastructure', 'KFINTECH': 'Financial Infrastructure',
+  // --- Exchange/Depository (3) ---
+  'CDSL': 'Exchange/Depository', 'MCX': 'Exchange/Depository', 'BSE': 'Exchange/Depository',
+  // --- Banking ETF (1) ---
+  'BANKBEES': 'Banking ETF',
+  // --- Index ETF (1) ---
+  'NIFTYBEES': 'Index ETF',
+  // --- IT Services (21) ---
+  'TCS': 'IT Services', 'INFY': 'IT Services', 'HCLTECH': 'IT Services', 'WIPRO': 'IT Services', 'TECHM': 'IT Services', 'PERSISTENT': 'IT Services', 'MPHASIS': 'IT Services', 'COFORGE': 'IT Services', 'OFSS': 'IT Services', 'KPITTECH': 'IT Services', 'TATAELXSI': 'IT Services', 'ZENSARTECH': 'IT Services', 'SONATSOFTW': 'IT Services', 'ECLERX': 'IT Services', 'INTELLECT': 'IT Services', 'HAPPSTMNDS': 'IT Services', 'LATENTVIEW': 'IT Services', 'ZENTEC': 'IT Services', 'ROUTE': 'IT Services', 'REDINGTON': 'IT Services', 'CYIENT': 'IT Services',
+  // --- Engineering Tech (1) ---
+  'LTTS': 'Engineering Tech',
+  // --- Software (1) ---
+  'NEWGEN': 'Software',
+  // --- CPaaS (1) ---
+  'TANLA': 'CPaaS',
+  // --- Technology (2) ---
+  'JUSTDIAL': 'Technology', 'MAPMYINDIA': 'Technology',
+  // --- Pharma (33) ---
+  'SUNPHARMA': 'Pharma', 'DRREDDY': 'Pharma', 'CIPLA': 'Pharma', 'DIVISLAB': 'Pharma', 'TORNTPHARM': 'Pharma', 'LUPIN': 'Pharma', 'AUROPHARMA': 'Pharma', 'ALKEM': 'Pharma', 'GLENMARK': 'Pharma', 'LAURUSLABS': 'Pharma', 'BIOCON': 'Pharma', 'IPCALAB': 'Pharma', 'PIIND': 'Pharma', 'NATCOPHARM': 'Pharma', 'JBCHEPHARM': 'Pharma', 'AJANTPHARM': 'Pharma', 'ERIS': 'Pharma', 'WOCKPHARMA': 'Pharma', 'APLLTD': 'Pharma', 'GRANULES': 'Pharma', 'SPARC': 'Pharma', 'SHILPAMED': 'Pharma', 'DCAL': 'Pharma', 'ADVENZYMES': 'Pharma', 'THYROCARE': 'Pharma', 'AARTIDRUGS': 'Pharma', 'SANOFI': 'Pharma', 'GLAXO': 'Pharma', 'PFIZER': 'Pharma', 'ABBOTINDIA': 'Pharma', 'CAPLIPOINT': 'Pharma', 'ASTRAZEN': 'Pharma', 'PGHL': 'Pharma',
+  // --- Contract Research (1) ---
+  'SYNGENE': 'Contract Research',
+  // --- Diagnostics (2) ---
+  'LALPATHLAB': 'Diagnostics', 'METROPOLIS': 'Diagnostics',
+  // --- Healthcare (4) ---
+  'APOLLOHOSP': 'Healthcare', 'FORTIS': 'Healthcare', 'MAXHEALTH': 'Healthcare', 'ASTERDM': 'Healthcare',
+  // --- FMCG (13) ---
+  'HINDUNILVR': 'FMCG', 'ITC': 'FMCG', 'NESTLEIND': 'FMCG', 'BRITANNIA': 'FMCG', 'MARICO': 'FMCG', 'DABUR': 'FMCG', 'COLPAL': 'FMCG', 'GODREJCP': 'FMCG', 'TATACONSUM': 'FMCG', 'BALRAMCHIN': 'FMCG', 'KRBL': 'FMCG', 'GODFRYPHLP': 'FMCG', 'TASTYBITE': 'Food Processing',
+  // --- Consumer Durables (23) ---
+  'HAVELLS': 'Consumer Durables', 'VOLTAS': 'Consumer Durables', 'BLUESTARCO': 'Consumer Durables', 'CROMPTON': 'Consumer Durables', 'WHIRLPOOL': 'Consumer Durables', 'VGUARD': 'Consumer Durables', 'VIPIND': 'Consumer Durables', 'VSTIND': 'Consumer Durables', 'ORIENTELEC': 'Consumer Durables', 'BAJAJCON': 'Consumer Durables', 'IFBIND': 'Consumer Durables', 'NILKAMAL': 'Consumer Durables', 'DELTACORP': 'Consumer Durables', 'VENKEYS': 'Consumer Durables', 'JCHAC': 'Consumer Durables', 'TTKPRESTIG': 'Consumer Durables', 'SFL': 'Consumer Durables', 'SYMPHONY': 'Consumer Durables', 'GILLETTE': 'Consumer Durables', 'PGHH': 'Consumer Durables', 'JYOTHYLAB': 'Consumer Durables', 'RADICO': 'Consumer Durables', 'HAVELS': 'Consumer Durables',
+  // --- Apparel (1) ---
+  'PAGEIND': 'Apparel',
+  // --- Footwear (2) ---
+  'BATAINDIA': 'Footwear', 'RELAXO': 'Footwear',
+  // --- Jewellery/Watches (3) ---
+  'TITAN': 'Jewellery/Watches', 'RAJESHEXPO': 'Jewellery/Watches', 'PCJEWELLER': 'Jewellery/Watches',
+  // --- Beverages (2) ---
+  'UBL': 'Beverages', 'VBL': 'Beverages',
+  // --- Food Processing (3) ---
+  'HERITGFOOD': 'Food Processing', 'JUBLFOOD': 'Food Processing', 'PARAGMILK': 'Food Processing',
+  // --- Retail (3) ---
+  'DMART': 'Retail', 'TRENT': 'Retail', 'SHOPERSTOP': 'Retail',
+  // --- E-commerce (1) ---
+  'NYKAA': 'E-commerce',
+  // --- Food Delivery (1) ---
+  'ZOMATO': 'Food Delivery',
+  // --- Automobile (10) ---
+  'MARUTI': 'Automobile', 'M&M': 'Automobile', 'TATAMOTORS': 'Automobile', 'TMCV': 'Automobile', 'TVSMOTOR': 'Automobile', 'ESCORTS': 'Automobile', 'HEROMOTOCO': 'Automobile', 'EICHERMOT': 'Automobile', 'BAJAJ-AUTO': 'Automobile', 'ASHOKLEY': 'Automobile',
+  // --- Auto Ancillary (13) ---
+  'BOSCHLTD': 'Auto Ancillary', 'MRF': 'Auto Ancillary', 'BALKRISIND': 'Auto Ancillary', 'SCHAEFFLER': 'Auto Ancillary', 'SKFINDIA': 'Auto Ancillary', 'SUNDRMFAST': 'Auto Ancillary', 'TIMKEN': 'Auto Ancillary', 'ENDURANCE': 'Auto Ancillary', 'EXIDEIND': 'Auto Ancillary', 'JAMNAAUTO': 'Auto Ancillary', 'MOTHERSON': 'Auto Ancillary', 'BHARATFORG': 'Auto Ancillary', 'APOLLOTYRE': 'Auto Ancillary',
+  // --- Electricals (3) ---
+  'POLYCAB': 'Electricals', 'KEI': 'Electricals', 'FINCABLES': 'Electricals',
+  // --- Electronics Mfg (1) ---
+  'DIXON': 'Electronics Mfg',
+  // --- Automation (1) ---
+  'HONAUT': 'Automation',
+  // --- Industrial/Power (3) ---
+  'SIEMENS': 'Industrial/Power', 'ABB': 'Industrial/Power', 'CUMMINSIND': 'Industrial/Power',
+  // --- Industrial (2) ---
+  '3MINDIA': 'Industrial', 'TIMETECHNO': 'Industrial',
+  // --- Engineering (12) ---
+  'TIINDIA': 'Engineering', 'KAYNES': 'Engineering', 'ELGIEQUIP': 'Engineering', 'NESCO': 'Engineering', 'BIRLACORPN': 'Engineering', 'GREAVESCOT': 'Engineering', 'ENGINERSIN': 'Engineering', 'GRINDWELL': 'Engineering', 'PRAJIND': 'Engineering', 'THERMAX': 'Engineering', 'TRITURBINE': 'Engineering', 'WABAG': 'Engineering',
+  // --- Paints (4) ---
+  'ASIANPAINT': 'Paints', 'BERGEPAINT': 'Paints', 'KANSAINER': 'Paints', 'AKZOINDIA': 'Paints',
+  // --- Adhesives (1) ---
+  'PIDILITIND': 'Adhesives',
+  // --- Chemicals (15) ---
+  'DEEPAKNTR': 'Chemicals', 'SRF': 'Chemicals', 'NAVINFLUOR': 'Chemicals', 'ATUL': 'Chemicals', 'FINEORG': 'Chemicals', 'VINATIORGA': 'Chemicals', 'AARTIIND': 'Chemicals', 'SOLARINDS': 'Chemicals', 'DCMSHRIRAM': 'Chemicals', 'GRAPHITE': 'Chemicals', 'HEG': 'Chemicals', 'GUJALKALI': 'Chemicals', 'BBTC': 'Chemicals', 'GALAXYSURF': 'Chemicals', 'CARBORUNIV': 'Chemicals',
+  // --- Agrochemicals (4) ---
+  'BAYERCROP': 'Agrochemicals', 'UPL': 'Agrochemicals', 'RALLIS': 'Agrochemicals', 'SHARDACROP': 'Agrochemicals',
+  // --- Fertilizers (4) ---
+  'EIDPARRY': 'Fertilizers', 'COROMANDEL': 'Fertilizers', 'KSCL': 'Fertilizers', 'CHAMBLFERT': 'Fertilizers',
+  // --- Power (7) ---
+  'NTPC': 'Power', 'POWERGRID': 'Power', 'TATAPOWER': 'Power', 'TORNTPOWER': 'Power', 'ADANIPOWER': 'Power', 'NLCINDIA': 'Power', 'PTC': 'Power',
+  // --- Power/Industrial (1) ---
+  'BHEL': 'Power/Industrial',
+  // --- Renewable Energy (4) ---
+  'ADANIGREEN': 'Renewable Energy', 'INOXWIND': 'Renewable Energy', 'SUZLON': 'Renewable Energy', 'SWANENERGY': 'Renewable Energy',
+  // --- Energy Exchange (1) ---
+  'IEX': 'Energy Exchange',
+  // --- Energy/Conglomerate (1) ---
+  'RELIANCE': 'Energy/Conglomerate',
+  // --- Oil & Gas (14) ---
+  'ONGC': 'Oil & Gas', 'GAIL': 'Oil & Gas', 'IOC': 'Oil & Gas', 'BPCL': 'Oil & Gas', 'PETRONET': 'Oil & Gas', 'IGL': 'Oil & Gas', 'MGL': 'Oil & Gas', 'GSPL': 'Oil & Gas', 'GUJGASLTD': 'Oil & Gas', 'CASTROLIND': 'Oil & Gas', 'CHENNPETRO': 'Oil & Gas', 'BALMLAWRIE': 'Oil & Gas', 'GULFOILLUB': 'Oil & Gas', 'ATGL': 'Oil & Gas',
+  // --- Cement (10) ---
+  'ULTRACEMCO': 'Cement', 'AMBUJACEM': 'Cement', 'ACC': 'Cement', 'SHREECEM': 'Cement', 'RAMCOCEM': 'Cement', 'DALBHARAT': 'Cement', 'HEIDELBERG': 'Cement', 'ORIENTCEM': 'Cement', 'STARCEMENT': 'Cement', 'JKCEMENT': 'Cement',
+  // --- Steel (4) ---
+  'JSWSTEEL': 'Steel', 'TATASTEEL': 'Steel', 'JINDALSTEL': 'Steel', 'JSL': 'Steel',
+  // --- Steel Pipes (5) ---
+  'WELCORP': 'Steel Pipes', 'FINPIPE': 'Steel Pipes', 'JINDALSAW': 'Steel Pipes', 'MAHSEAMLES': 'Steel Pipes', 'RATNAMANI': 'Steel Pipes',
+  // --- Mining (9) ---
+  'COALINDIA': 'Mining', 'HINDZINC': 'Mining', 'VEDL': 'Mining', 'NATIONALUM': 'Mining', 'NMDC': 'Mining', 'HINDCOPPER': 'Mining', 'MOIL': 'Mining', 'GMDCLTD': 'Mining', 'MMTC': 'Mining',
+  // --- EPC/Infra (1) ---
+  'LT': 'EPC/Infra', 'L&T': 'EPC/Infra',
+  // --- Infrastructure (14) ---
+  'ADANIPORTS': 'Infrastructure', 'ADANITRANS': 'Infrastructure', 'RVNL': 'Infrastructure', 'IRCON': 'Infrastructure', 'NBCC': 'Infrastructure', 'NCC': 'Infrastructure', 'MTARTECH': 'Infrastructure', 'RITES': 'Infrastructure', 'KNRCON': 'Infrastructure', 'ASHOKA': 'Infrastructure', 'GPPL': 'Infrastructure', 'HSCL': 'Infrastructure', 'RELINFRA': 'Infrastructure', 'GAYAPROJ': 'Infrastructure',
+  // --- Conglomerate (2) ---
+  'ADANIENT': 'Conglomerate', 'BAJAJHLDNG': 'Conglomerate',
+  // --- Defence (7) ---
+  'HAL': 'Defence', 'BEL': 'Defence', 'MAZDOCK': 'Defence', 'COCHINSHIP': 'Defence', 'BDL': 'Defence', 'GRSE': 'Defence', 'BEML': 'Defence',
+  // --- Telecom (6) ---
+  'BHARTIARTL': 'Telecom', 'IDEA': 'Telecom', 'TATACOMM': 'Telecom', 'RAILTEL': 'Telecom', 'HFCL': 'Telecom', 'RPLL': 'Telecom',
+  // --- Media (6) ---
+  'ZEEL': 'Media', 'SUNTV': 'Media', 'HATHWAY': 'Media', 'JAGRAN': 'Media', 'DBCORP': 'Media', 'JAICORPLTD': 'Media',
+  // --- Real Estate (5) ---
+  'DLF': 'Real Estate', 'OBEROIRLTY': 'Real Estate', 'PHOENIXLTD': 'Real Estate', 'SOBHA': 'Real Estate', 'SUNTECK': 'Real Estate',
+  // --- Textiles (6) ---
+  'KPRMILL': 'Textiles', 'VTL': 'Textiles', 'TRIDENT': 'Textiles', 'LUXIND': 'Textiles', 'RUPA': 'Textiles', 'ARVIND': 'Textiles',
+  // --- Logistics (4) ---
+  'CONCOR': 'Logistics', 'GESHIP': 'Logistics', 'MAHLOG': 'Logistics', 'BLUEDART': 'Logistics',
+  // --- Hospitality (4) ---
+  'INDHOTEL': 'Hospitality', 'EIHOTEL': 'Hospitality', 'ITDC': 'Hospitality', 'THOMASCOOK': 'Hospitality',
+  // --- Security Services (1) ---
+  'SIS': 'Security Services',
+  // --- Employment Services (3) ---
+  'TEAMLEASE': 'Employment Services', 'NAUKRI': 'Employment Services', 'QUESS': 'Employment Services',
+  // --- Building Materials (2) ---
+  'CENTURYPLY': 'Building Materials', 'PRINCEPIPE': 'Building Materials',
+  // --- Pipes (2) ---
+  'ASTRAL': 'Pipes', 'SUPREMEIND': 'Pipes',
+  // --- Sanitaryware (1) ---
+  'CERA': 'Sanitaryware',
+  // --- Ceramics (1) ---
+  'KAJARIACER': 'Ceramics',
+  // --- Aqua Feed (1) ---
+  'AVANTIFEED': 'Aqua Feed',
+  // --- Industrial Gases (1) ---
+  'LINDEINDIA': 'Industrial Gases',
+  // --- Paper (1) ---
+  'JKPAPER': 'Paper',
+  // --- Additional stocks from snapshot (13) ---
+  'ANGELONE': 'Financial Services',
+  'AIAENG': 'Engineering',
+  'APLAPOLLO': 'Steel Pipes',
+  'GNFC': 'Fertilizers',
+  'BLISSGVS': 'Pharma',
+  'CGPOWER': 'Electricals',
+  'EMAMILTD': 'FMCG',
+  'FDC': 'Pharma',
+  'GHCL': 'Chemicals',
+  'GSFC': 'Fertilizers',
+  'MAHSCOOTER': 'Automobile',
+  'BASF': 'Chemicals',
+  '^NSEI': 'Index',
 };
+
 
 export const STRATEGIES = [
   { id: 'SIXTY_SEVEN_FUNDA', name: 'Institutional Reset (67%)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket', 'Fallen Value Basket'], isLive: true, tier: 'alpha', isLocked: true },
@@ -133,7 +273,8 @@ export const STRATEGIES = [
   { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
   { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
   { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
-  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true }
+  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
+  { id: 'REVERSE_HEAD_SHOULDERS', name: 'Reverse Head & Shoulders', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'alpha', isLocked: true }
 ];
 
 export const BASKETS: Record<string, string[]> = {
@@ -753,7 +894,7 @@ app.get('/api/backtest/nifty-comparison', async (req, res) => {
     let totalTrades = 0, totalWins = 0, totalRoiSum = 0, totalDaysSum = 0;
     const strategyTotals: Record<string, { trades: number; wins: number; roiSum: number; daysSum: number }> = {};
 
-    const stratIds = ['BOLLINGER', 'ENVELOPE_LONG', 'ENVELOPE_SHORT', 'SMA_BCD', '52W_HIGH_LOW', 'SR_STRATEGY', 'CUP_HANDLE_ABCD', 'SIXTY_SEVEN_FUNDA', 'TWENTY_RALLY_RETEST'];
+    const stratIds = ['BOLLINGER', 'ENVELOPE_LONG', 'ENVELOPE_SHORT', 'SMA_BCD', '52W_HIGH_LOW', 'SR_STRATEGY', 'CUP_HANDLE_ABCD', 'SIXTY_SEVEN_FUNDA', 'TWENTY_RALLY_RETEST', 'REVERSE_HEAD_SHOULDERS'];
     for (const sym of symbols) {
       const snap = batchSnapshot[sym];
       if (!snap || !snap.quotes || snap.quotes.length < 200) continue;
@@ -818,8 +959,10 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     const isDataIncomplete = !snap || !snap.screener?.athSales || snap.screener?.athSales === 0
       || (snap.screener?.peRatio === 0 && snap.screener?.roce === 0 && snap.screener?.returnOnEquity === 0);
     const isStale = snap && (new Date().getTime() - new Date(snap.lastUpdated).getTime() > 24 * 60 * 60 * 1000);
+    const missingPeMedians = snap && (!snap.screener?.peMedians?.pe3Y || !snap.screener?.peMedians?.pe5Y) 
+      && (snap.screener?.peRatio > 70);
 
-    if (isDataIncomplete || isStale) {
+    if (isDataIncomplete || isStale || missingPeMedians) {
       console.log(`🔄 [AUTO-REFRESH] Patching data for ${symbol}...`);
       await updateMarketSnapshot([symbol]);
       const freshSnapshot = await getSnapshotFromCloud([symbol]);
@@ -850,7 +993,9 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     const qualified = qualifiedResults;
 
     const capCr = (snap.quote?.marketCap || 0) / 10000000;
-    const basketType = capCr >= 20000 ? 'LARGE' : (capCr >= 5000 ? 'MID' : 'SMALL');
+    // Fixed thresholds per user's Excel formula:
+    // Large > ₹1,00,000 Cr | Mid > ₹33,000 Cr | Small > ₹15,000 Cr | Micro ≤ ₹15,000 Cr (included in Small)
+    const basketType = capCr > 100000 ? 'LARGE' : (capCr > 33000 ? 'MID' : 'SMALL');
 
     // Extract ABCD levels for the primary strategy
     const primaryStrat = qualified[0];
@@ -897,6 +1042,11 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     // Compute data freshness
     const isFresh = (Date.now() - new Date(lastUpdated).getTime()) < 48 * 60 * 60 * 1000;
 
+    // Use normalized PE when raw PE is inflated (>70) due to temporary EPS drop
+    const rawPe = snap.screener?.peRatio || snap.quote?.pe || 0;
+    const normPe = audit?.metrics?.normalizedPe || 0;
+    const displayPe = (rawPe > 70 && normPe > 0 && normPe < rawPe) ? normPe : rawPe;
+
     const response = { 
       symbol, 
       score: Math.round(audit.score), 
@@ -911,7 +1061,9 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
       fresh: isFresh,
       // Public fundamentals preview (key metrics only)
       fundamentals: {
-        peRatio: snap.screener?.peRatio || snap.quote?.pe || 0,
+        peRatio: displayPe,
+        peRatioRaw: rawPe,
+        normalizedPe: normPe,
         debtToEquity: snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity ? snap.quote.debtToEquity / 100 : 0),
         roce: snap.screener?.roce || 0,
         returnOnEquity: snap.screener?.returnOnEquity || snap.quote?.roe || 0,
@@ -938,12 +1090,21 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     // Auto-Refresh Logic for Missing or Stale Data
     const isDataIncomplete = !snap || !snap.screener?.athSales || snap.screener?.athSales === 0;
     const isStale = snap && (new Date().getTime() - new Date(snap.lastUpdated).getTime() > 24 * 60 * 60 * 1000);
+    const missingPeMedians = snap && (!snap.screener?.peMedians?.pe3Y || !snap.screener?.peMedians?.pe5Y) 
+      && (snap.screener?.peRatio > 70); // High PE without median data — needs refresh
 
-    if (isDataIncomplete || isStale) {
+    if (isDataIncomplete || isStale || missingPeMedians) {
       console.log(`🔄 [AUTO-REFRESH] Patching data for ${symbol}...`);
       await updateMarketSnapshot([symbol as string]);
       const freshSnapshot = await getSnapshotFromCloud([symbol as string]);
       snap = freshSnapshot[symbol as string];
+    }
+
+    // Ensure Beta is calculated for this symbol (in case auto-refresh didn't include NSEI)
+    if (snap && snap.quote?.beta === undefined && snap.quotes?.length) {
+      await calculateBetaForSymbols([symbol as string]);
+      const refreshed = await getSnapshotFromCloud([symbol as string]);
+      snap = refreshed[symbol as string] || snap;
     }
 
     if (!snap) return res.status(404).json({ error: 'Asset data unavailable' });
@@ -958,20 +1119,29 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       price: Math.round(lastPrice * 100) / 100,
       change: Math.round(change * 100) / 100,
       marketCap: snap.quote?.marketCap,
-      industry: MANUAL_SECTOR_MAP[symbol as string] || snap.screener?.industry || 'General',
-      peRatio: snap.screener?.peRatio || snap.quote?.pe || 0,
+      industry: MANUAL_SECTOR_MAP[(symbol as string).replace(/\.NS$/i, '')] || snap.screener?.industry || 'General',
+      // Use normalized PE when raw is inflated (>70) due to temporary EPS drop
+      peRatio: ((snap.screener?.peRatio || snap.quote?.pe || 0) > 70 && (audit?.metrics?.normalizedPe || 0) > 0)
+        ? (audit?.metrics?.normalizedPe || 0)
+        : (snap.screener?.peRatio || snap.quote?.pe || 0),
+      peRatioRaw: snap.screener?.peRatio || snap.quote?.pe || 0,
+      normalizedPe: audit?.metrics?.normalizedPe || 0,
+      forwardPe: snap.quote?.forwardPE || snap.screener?.forwardPE || 0,
       peMedians: snap.screener?.peMedians || {},
       returnOnEquity: formatPercentage(snap.screener?.returnOnEquity || snap.quote?.roe || 0),
       roce: formatPercentage(snap.screener?.roce || 0),
-      netDebtToEquity: formatRatio(snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity / 100) || 0),
+      debtToEquity: audit?.metrics?.debtToEquity || 0,
+      netDebtToEquity: snap.quote?.netDebtToEquity != null ? Number(snap.quote.netDebtToEquity.toFixed(2)) : formatRatio(audit?.metrics?.netDebtToEquity || 0),
+      totalDebtToEquity: formatRatio(snap.screener?.totalDebtToEquity || 0),
       athSales: snap.screener?.athSales,
       athNetProfit: snap.screener?.athNetProfit,
       currentSales: snap.screener?.currentSales,
       currentNetProfit: snap.screener?.currentNetProfit,
       fiftyTwoWeekHigh: snap.quote?.fiftyTwoWeekHigh,
-      beta: snap.quote?.beta,
+      beta: audit?.metrics?.beta != null ? Number(audit.metrics.beta.toFixed(2)) : (snap.quote?.beta != null ? Number(Number(snap.quote.beta).toFixed(2)) : null),
       shareholding: audit.metrics,
       strategies: snap.strategies || {},
+      ttmVsAth: audit.ttmVsAth || {},
       dataAge: {
         lastUpdated: snap.lastUpdated || null,
         updatedAt: snap.lastUpdated || null,
@@ -1364,7 +1534,13 @@ app.get('/api/auth/pin-status', authenticateToken, async (req: any, res) => {
 app.get('/api/user/profile', authenticateToken, async (req: any, res) => {
   try {
     const db = getDB();
-    const user = await db.get('SELECT id, name, email, COALESCE(mobile, \'\') as mobile, tier, created_at, twofa_enabled FROM users WHERE id = ?', [req.user.id]);
+    let user;
+    try {
+      user = await db.get('SELECT id, name, email, COALESCE(mobile, \'\') as mobile, tier, created_at, twofa_enabled FROM users WHERE id = ?', [req.user.id]);
+    } catch {
+      // Fallback if mobile column doesn't exist in database schema
+      user = await db.get('SELECT id, name, email, \'\' as mobile, tier, created_at, twofa_enabled FROM users WHERE id = ?', [req.user.id]);
+    }
     
     const trades = await db.all('SELECT status, entry_price, quantity, exit_price FROM trades WHERE user_id = ?', [req.user.id]);
     
@@ -1848,9 +2024,30 @@ app.get('/api/stock-prices', async (req, res) => {
     if (!symbolsQuery) return res.status(400).json({ error: 'Symbols required' });
     const symbols = symbolsQuery.split(',').map(s => s.trim().toUpperCase());
     const snapshot = await getSnapshotFromCloud(symbols);
-    const results = symbols.map(s => {
+    const results = await Promise.all(symbols.map(async s => {
+      const cleanSym = s.replace(/\.NS$/i, '');
       const snap = snapshot[s];
-      if (!snap) return { symbol: s, price: 0 };
+      
+      // Fallback: if snapshot has no data, fetch live price from Yahoo Finance
+      if (!snap || !snap.quotes?.length) {
+        try {
+          const yq = await yahooFinance.quote(s.includes('.') ? s : `${s}.NS`);
+          if (yq && yq.regularMarketPrice) {
+            return { 
+              symbol: s, 
+              price: Math.round(yq.regularMarketPrice * 100) / 100, 
+              ath: yq.fiftyTwoWeekHigh || 0, 
+              marketCap: yq.marketCap || 0, 
+              sector: MANUAL_SECTOR_MAP[cleanSym] || 'General',
+              change: yq.regularMarketChangePercent || 0
+            };
+          }
+        } catch (yfErr) {
+          // Silent fallback to 0
+        }
+        return { symbol: s, price: 0, ath: 0, marketCap: 0, sector: 'General', change: 0 };
+      }
+      
       const lastQuote = snap.quotes && snap.quotes.length > 0 ? snap.quotes[snap.quotes.length - 1] : null;
       const price = lastQuote?.close || snap.quote?.regularMarketPrice || 0;
       return { 
@@ -1858,10 +2055,10 @@ app.get('/api/stock-prices', async (req, res) => {
         price: Math.round(price * 100) / 100, 
         ath: snap.quotes ? Math.round(Math.max(...snap.quotes.map((q: any) => q.high || 0))) : snap.quote?.fiftyTwoWeekHigh || 0, 
         marketCap: snap.quote?.marketCap || 0, 
-        sector: MANUAL_SECTOR_MAP[s] || snap.screener?.industry || 'General',
+        sector: MANUAL_SECTOR_MAP[cleanSym] || snap.screener?.industry || 'General',
         change: snap.quote?.regularMarketChangePercent || 0
       };
-    });
+    }));
     res.json(results);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -1913,7 +2110,12 @@ app.get('/api/stock-history', async (req, res) => {
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
     const db = getDB();
-    const users = await db.all('SELECT id, name, email, COALESCE(mobile, \'\') as mobile, role, tier, subscription_start, subscription_expiry, is_active FROM users');
+    let users;
+    try {
+      users = await db.all('SELECT id, name, email, COALESCE(mobile, \'\') as mobile, role, tier, subscription_start, subscription_expiry, is_active FROM users');
+    } catch {
+      users = await db.all('SELECT id, name, email, \'\' as mobile, role, tier, subscription_start, subscription_expiry, is_active FROM users');
+    }
     res.json(users);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -1965,12 +2167,22 @@ app.post('/api/admin/refresh-alpha', authenticateToken, requireAdmin, async (req
 app.get('/api/admin/upgrade-requests', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
     const db = getDB();
-    const requests = await db.all(`
-      SELECT ur.*, u.name, u.email, COALESCE(u.mobile, '') as mobile 
-      FROM upgrade_requests ur 
-      JOIN users u ON ur.user_id = u.id 
-      ORDER BY ur.created_at DESC
-    `);
+    let requests;
+    try {
+      requests = await db.all(`
+        SELECT ur.*, u.name, u.email, COALESCE(u.mobile, '') as mobile 
+        FROM upgrade_requests ur 
+        JOIN users u ON ur.user_id = u.id 
+        ORDER BY ur.created_at DESC
+      `);
+    } catch {
+      requests = await db.all(`
+        SELECT ur.*, u.name, u.email, '' as mobile 
+        FROM upgrade_requests ur 
+        JOIN users u ON ur.user_id = u.id 
+        ORDER BY ur.created_at DESC
+      `);
+    }
     res.json(requests);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -2335,7 +2547,7 @@ app.get('/api/n8n/stock-data/:symbol', async (req, res) => {
   try {
     if (!verifyN8n(req, res)) return;
     const { symbol } = req.params;
-    const cleanSym = symbol.trim().toUpperCase();
+    const cleanSym = symbol.trim().toUpperCase().replace(/\.NS$/i, '');
     const snapshot = await getSnapshotFromCloud([cleanSym]);
     let snap = snapshot[cleanSym] || snapshot[`${cleanSym}.NS`];
     if (!snap) { const k = Object.keys(snapshot).find(k => k.replace('.NS', '') === cleanSym); if (k) snap = snapshot[k]; }
@@ -2948,8 +3160,44 @@ const startServer = async () => {
     // 7:00 PM IST - Daily system health check (after market close)
     cron.schedule('0 19 * * *', runAndNotifyHealthCheck);
 
-    setTimeout(() => precalculateAlpha40(true), 5000); // Warm cache on boot (silent seed)
-    // Growth basket priming moved to cron only (blocks event loop for 5+ min on 281 symbols)
+    // ── BOOT-TIME SNAPSHOT REFRESH ───────────────────────────────────────
+    // Refresh snapshot for all basket stocks on boot if cache is small (< 50 symbols).
+    // This ensures the Alpha-40 worker and stock-prices endpoint have full data ASAP.
+    const allBasketSymbols = Array.from(new Set([
+      '^NSEI',
+      ...(BASKETS['Elite Basket'] || []),
+      ...(BASKETS['Quality Basket'] || []),
+      ...(BASKETS['Growth Basket'] || []),
+      ...(BASKETS['Fallen Value Basket'] || [])
+    ]));
+    const currentSnapSize = Object.keys(getMarketSnapshot()).length;
+    if (currentSnapSize < 50) {
+      console.log(`🚀 [BOOT] Snapshot has ${currentSnapSize} symbols. Triggering refresh for ${allBasketSymbols.length} basket stocks...`);
+      updateMarketSnapshot(allBasketSymbols).then(() => {
+        console.log(`✅ [BOOT] Snapshot refreshed: ${Object.keys(getMarketSnapshot()).length} symbols.`);
+      }).catch((e: any) => {
+        console.error(`❌ [BOOT] Snapshot refresh failed: ${e.message}`);
+      });
+    } else {
+      console.log(`✅ [BOOT] Snapshot already has ${currentSnapSize} symbols. Skipping refresh.`);
+    }
+
+    // ── DEFERRED ALPHA-40 WARMUP ─────────────────────────────────────────
+    // Poll every 30s until snapshot has enough symbols, then warm up.
+    // This avoids running with incomplete data.
+    let warmupAttempts = 0;
+    const warmupInterval = setInterval(() => {
+      const snapSize = Object.keys(getMarketSnapshot()).length;
+      warmupAttempts++;
+      if (snapSize > 80 || warmupAttempts > 20) {
+        clearInterval(warmupInterval);
+        console.log(`👷 [BOOT] Running Alpha-40 warmup (snapshot=${snapSize}, attempts=${warmupAttempts})...`);
+        precalculateAlpha40(true);
+      } else {
+        console.log(`⏳ [BOOT] Waiting for snapshot data (${snapSize}/${80}+ symbols, attempt ${warmupAttempts}/20)...`);
+      }
+    }, 30000);
+    
     scheduleAuditCron(BASKETS);
     app.listen(PORT, '0.0.0.0', () => {
       console.log('----------------------------------------------------');
