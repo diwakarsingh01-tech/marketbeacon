@@ -257,36 +257,21 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
     score: 0, max: 21.7,  // Adjusted from 25 to fit 100-point scale
     checks: [
       { label: 'ROE Quality', value: `${roe}%`, pass: roe >= roeThreshold },
-      { label: 'ROCE Efficiency', value: `${roce}%`, pass: roce >= roceThreshold },
+      { label: 'ROCE Efficiency', value: `${roce}%`, pass: roce >= rokuThreshold },
       { label: 'TTM vs ATH Net Income', value: profitPass ? 'PASSED' : `GAP ${profitGapPct.toFixed(1)}%`, pass: profitPass }
     ]
   };
   if (roe >= roeThreshold) profScore += 10;
-  if (roce >= roceThreshold) profScore += 10;
+  if (roce >= rokuThreshold) profScore += 10;
   if (profitPass) profScore += 5;
   else if (profitGapPct >= -20) profScore += 2; // Near recovery gets partial score
-  profitabilityQuality.score = profScore;
+  profitabilityQuality.score = Number(profScore.toFixed(2));  // ✅ Round to exactly 2 decimals
 
   // ── D/E & Pledge Scoring ────────────────────────────────────────────────
   let safetyScore = 0;
-  
-  // Sector-specific D/E thresholds
-  let sectorHardRejectDE: number;
-  let scoringIdealDE: number;
-  
-  if (isBanking) {
-    sectorHardRejectDE = 8.0;  // Banks can have high D/E (deposits-based)
-    scoringIdealDE = 2.7;      // Adjusted from 3.0 to fit 100-point scale
-  } else if (isNBFC) {
-    sectorHardRejectDE = 5.0;  // NBFC: moderate leverage
-    scoringIdealDE = 2.0;      // Adjusted from 2.0 (keeping same)
-  } else if (isCapitalIntensive) {
-    sectorHardRejectDE = 0.6;  // Capital intensive: moderately relaxed
-    scoringIdealDE = 0.22;     // Adjusted from 0.25 to fit 100-point scale
-  } else {
-    sectorHardRejectDE = 0.5;  // General: strict (User rule: D/E > 0.5 = hard reject)
-    scoringIdealDE = 0.2;      // Adjusted from 0.2 (keeping same)
-  }
+
+  // Use the same sector-specific D/E thresholds from earlier
+  // sectorHardRejectDE and scoringIdealDE already declared and set above
   
   // D/E graduated scoring
   let deScore = 0;
@@ -333,6 +318,7 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   let growthScore = 0;
   const growthChecks: { label: string; value: string; pass: boolean | string }[] = [];
   
+  // Use the previously declared sector thresholds for growth calculations
   // Sales vs ATH with gap details (42% of total growth score = 9.42 points max)
   if (athSales > 0) {
     const salesLabel = `${formatCr(currentSales)} / ${formatCr(athSales)}`;
@@ -475,11 +461,13 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
       ...peMedianChecks
     ]
   };
+  // PE median score already calculated as part of efficiencyGovernance
+  // Additional efficiency scores
   if (smartMoneyTotal >= 65) instScore += 3.47; // 10% of 34.7
   if (smartMoneyTotal >= 70) instScore += 3.47; // additional 10%
   if (fiiTrend === 'UP' || diiTrend === 'UP') instScore += 6.97; // 20% of 34.7
   if (promTrend === 'DOWN') instScore -= 1.73; // 5% of 34.7
-  instScore += peMedianScore; // peMedianScore already calculated as part of its own max of 8 (now scaled to 2.78)
+  instScore += peMedianScore; // Now calculated separately to avoid double counting
   efficiencyGovernance.score = instScore;
 
   const totalScore = Math.min(100, Math.max(0, profScore + safetyScore + growthScore + instScore));
