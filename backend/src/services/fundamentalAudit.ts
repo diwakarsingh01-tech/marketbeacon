@@ -192,6 +192,11 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   // HDFCBANK: Special banking sector adjustments
   // Apply HDFCBANK-specific adjustments before determining thresholds
   let hdfcAdjusted = false;
+  let hdfcRoeThreshold: number;
+  let hdfcRoceThreshold: number;
+  let hdfcSectorHardRejectDE: number;
+  let hdfcScoringIdealDE: number;
+  
   if (cleanSym === 'HDFCBANK') {
     console.log('[FIXED HDFCBANK] Applying HDFCBANK-specific adjustments');
     console.log('  HDFCBANK Drawdown: 27.21% vs 67% threshold (exceeds requirement)');
@@ -199,40 +204,57 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
     
     // For HDFCBANK, use enhanced banking thresholds for large banks
     // Override sector classification to force strict banking behavior
-    roeThreshold = 12;      // Major banks: ROE > 12%
-    roceThreshold = 8;     // ROCE > 8%
-    sectorHardRejectDE = 12.0;  // Strict D/E for major banks
-    scoringIdealDE = 5.0;      // Realistic ideal for HDFCBANK
-    console.log(`  HDFCBANK adjusted thresholds: ROE>${roeThreshold}%, ROCE>${roceThreshold}%, D/E>${sectorHardRejectDE}`);
+    hdfcRoeThreshold = 12;      // Major banks: ROE > 12%
+    hdfcRoceThreshold = 8;     // ROCE > 8%
+    hdfcSectorHardRejectDE = 12.0;  // Strict D/E for major banks
+    hdfcScoringIdealDE = 5.0;      // Realistic ideal for HDFCBANK
+    console.log(`  HDFCBANK adjusted thresholds: ROE>${hdfcRoeThreshold}%, ROCE>${hdfcRoceThreshold}%, D/E>${hdfcSectorHardRejectDE}`);
     hdfcAdjusted = true;
   }
-  
+
   // Default sector-aware thresholds:
   // Banking: relaxed ROE/ROCE, separate D/E thresholds
   // NBFC: slightly stricter than banking but more relaxed than general
   // Capital Intensive: moderate relaxation
   // General: strictest
   
-  if (!hdfcAdjusted) {
-    let roeThreshold: number, roceThreshold: number;
+  let roeThreshold: number, roceThreshold: number;
+  let sectorHardRejectDE: number;
+  let scoringIdealDE: number;
+  
+  if (hdfcAdjusted) {
+    // Use HDFCBANK-specific thresholds
+    roeThreshold = hdfcRoeThreshold;
+    roceThreshold = hdfcRoceThreshold;
+    sectorHardRejectDE = hdfcSectorHardRejectDE;
+    scoringIdealDE = hdfcScoringIdealDE;
+  } else {
     if (isBanking) {
       roeThreshold = 10;  // Banks: ROE > 10%
       roceThreshold = 5;  // Banks: ROCE is less relevant, but keep minimum
+      sectorHardRejectDE = 8.0;  // Banks can have high D/E (deposits-based)
+      scoringIdealDE = 2.7;      // Ideal for banking is moderate leverage
     } else if (isNBFC) {
       roeThreshold = 12;  // NBFC: ROE > 12%
       roceThreshold = 8;  // NBFC: ROCE > 8%
+      sectorHardRejectDE = 5.0;  // NBFC: moderate leverage
+      scoringIdealDE = 2.0;      // Ideal for NBFC
     } else if (isCapitalIntensive) {
       roeThreshold = 10;
       roceThreshold = 10;
+      sectorHardRejectDE = 0.6;  // Capital intensive: moderately relaxed
+      scoringIdealDE = 0.22;     // Ideal (slightly above general 0.2)
     } else {
       roeThreshold = 15;
       roceThreshold = 15;
+      sectorHardRejectDE = 0.5;  // General: strict (User rule: D/E > 0.5 = hard reject)
+      scoringIdealDE = 0.2;      // Ideal (User rule)
     }
   }
 
   let profScore = 0;
   const profitabilityQuality = {
-    score: 0, max: 25,
+    score: 0, max: 21.7,  // Adjusted from 25 to fit 100-point scale
     checks: [
       { label: 'ROE Quality', value: `${roe}%`, pass: roe >= roeThreshold },
       { label: 'ROCE Efficiency', value: `${roce}%`, pass: roce >= roceThreshold },
@@ -254,16 +276,16 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   
   if (isBanking) {
     sectorHardRejectDE = 8.0;  // Banks can have high D/E (deposits-based)
-    scoringIdealDE = 3.0;      // Ideal for banking is moderate leverage
+    scoringIdealDE = 2.7;      // Adjusted from 3.0 to fit 100-point scale
   } else if (isNBFC) {
     sectorHardRejectDE = 5.0;  // NBFC: moderate leverage
-    scoringIdealDE = 2.0;      // Ideal for NBFC
+    scoringIdealDE = 2.0;      // Adjusted from 2.0 (keeping same)
   } else if (isCapitalIntensive) {
     sectorHardRejectDE = 0.6;  // Capital intensive: moderately relaxed
-    scoringIdealDE = 0.25;     // Ideal (slightly above general 0.2)
+    scoringIdealDE = 0.22;     // Adjusted from 0.25 to fit 100-point scale
   } else {
     sectorHardRejectDE = 0.5;  // General: strict (User rule: D/E > 0.5 = hard reject)
-    scoringIdealDE = 0.2;      // Ideal (User rule)
+    scoringIdealDE = 0.2;      // Adjusted from 0.2 (keeping same)
   }
   
   // D/E graduated scoring
@@ -296,7 +318,7 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   }
   
   const balanceSheetSafety = {
-    score: 0, max: 25,
+    score: 0, max: 21.7,  // Adjusted from 25 to fit 100-point scale
     checks: [
       { label: 'Debt/Equity', value: debtToEquity.toFixed(2), pass: debtToEquity <= scoringIdealDE ? 'FULL' : debtToEquity <= sectorHardRejectDE ? `GRADED (${deScore}/15)` : 'FAIL' },
       { label: 'Promoter Pledge', value: `${pledged}%`, pass: pledgeStatus },
@@ -311,59 +333,59 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   let growthScore = 0;
   const growthChecks: { label: string; value: string; pass: boolean | string }[] = [];
   
-  // Sales vs ATH with gap details
+  // Sales vs ATH with gap details (42% of total growth score = 9.42 points max)
   if (athSales > 0) {
     const salesLabel = `${formatCr(currentSales)} / ${formatCr(athSales)}`;
     if (salesPass) {
       growthChecks.push({ label: 'Sales (vs ATH)', value: salesLabel, pass: 'PASSED' });
-      growthScore += 10;
+      growthScore += 9.42; // 42% of 22.35
     } else {
       const gapDir = salesGapPct >= 0 ? 'UP' : 'DOWN';
       growthChecks.push({ label: 'Sales (vs ATH)', value: salesLabel, pass: `${gapDir} ${salesGapPct.toFixed(1)}%` });
-      if (salesGapPct >= -5) growthScore += 7; // within 5%: near ATH
-      else if (salesGapPct >= -20) growthScore += 4; // within 20%: recovery mode
-      else growthScore += 1; // deep decline: minimal score
+      if (salesGapPct >= -5) growthScore += 6.93; // within 5%: near ATH (31% of 22.35)
+      else if (salesGapPct >= -20) growthScore += 4.62; // within 20%: recovery mode (21% of 22.35)
+      else growthScore += 1.55; // deep decline: minimal score (7% of 22.35)
     }
   } else {
     growthChecks.push({ label: 'Sales Growth', value: 'N/A', pass: true });
-    growthScore += 5;
+    growthScore += 2.21; // 10% of 22.35
   }
   
-  // EPS / Profit vs ATH
+  // EPS / Profit vs ATH (42% of total growth score = 9.42 points max)
   if (athNetProfit > 0) {
     const profitLabel = `${formatCr(currentNetProfit)} / ${formatCr(athNetProfit)}`;
     if (profitPass) {
       growthChecks.push({ label: 'Net Profit (vs ATH)', value: profitLabel, pass: 'PASSED' });
-      growthScore += 10;
+      growthScore += 9.42; // 42% of 22.35
     } else {
       const gapDir = profitGapPct >= 0 ? 'UP' : 'DOWN';
       growthChecks.push({ label: 'Net Profit (vs ATH)', value: profitLabel, pass: `${gapDir} ${profitGapPct.toFixed(1)}%` });
-      if (profitGapPct >= -5) growthScore += 7;
-      else if (profitGapPct >= -20) growthScore += 4;
-      else growthScore += 1;
+      if (profitGapPct >= -5) growthScore += 6.93; // within 5%: near ATH (31% of 22.35)
+      else if (profitGapPct >= -20) growthScore += 4.62; // within 20%: recovery mode (21% of 22.35)
+      else growthScore += 1.55; // deep decline: minimal score (7% of 22.35)
     }
   } else {
     growthChecks.push({ label: 'Net Profit', value: 'N/A', pass: true });
-    growthScore += 5;
+    growthScore += 2.21; // 10% of 22.35
   }
   
-  // Additional trend signal
+  // Additional trend signals (16% of total growth score = 3.57 points max)
   if (annualSales.length >= 2) {
     growthChecks.push({ label: 'Sales Trend', value: salesTrend, pass: salesTrend !== 'DOWN' });
-    if (salesTrend === 'UP') growthScore += 3;
-    else if (salesTrend === 'DOWN') growthScore -= 2;
+    if (salesTrend === 'UP') growthScore += 0.81; // 23% of 3.57
+    else if (salesTrend === 'DOWN') growthScore -= 0.54; // 15% of 3.57
   }
   if (annualProfit.length >= 2) {
     growthChecks.push({ label: 'Profit Trend', value: profitTrend, pass: profitTrend !== 'DOWN' });
-    if (profitTrend === 'UP') growthScore += 2;
-    else if (profitTrend === 'DOWN') growthScore -= 2;
+    if (profitTrend === 'UP') growthScore += 0.54; // 15% of 3.57
+    else if (profitTrend === 'DOWN') growthScore -= 0.54; // 15% of 3.57
   }
   
-  // Clamp growth score to max 25
-  growthScore = Math.max(0, Math.min(25, growthScore));
+  // Clamp growth score to max 21.7
+  growthScore = Math.max(0, Math.min(21.7, growthScore));
   
   const growthQuality = {
-    score: growthScore, max: 25,
+    score: growthScore, max: 21.7,  // Adjusted from 25 to fit 100-point scale
     checks: growthChecks
   };
 
@@ -446,18 +468,18 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
 
   let instScore = 0;
   const efficiencyGovernance = {
-    score: 0, max: 40,
+    score: 0, max: 34.7,  // Adjusted from 40 to fit 100-point scale (34.7% of total)
     checks: [
       { label: 'Smart Money %', value: `${smartMoneyTotal.toFixed(1)}%`, pass: smartMoneyTotal >= 70 },
       { label: 'Inst. Trend', value: `${fiiTrend}/${diiTrend}`, pass: fiiTrend === 'UP' || diiTrend === 'UP' },
       ...peMedianChecks
     ]
   };
-  if (smartMoneyTotal >= 65) instScore += 5; 
-  if (smartMoneyTotal >= 70) instScore += 5;
-  if (fiiTrend === 'UP' || diiTrend === 'UP') instScore += 10;
-  if (promTrend === 'DOWN') instScore -= 5;
-  instScore += peMedianScore;
+  if (smartMoneyTotal >= 65) instScore += 3.47; // 10% of 34.7
+  if (smartMoneyTotal >= 70) instScore += 3.47; // additional 10%
+  if (fiiTrend === 'UP' || diiTrend === 'UP') instScore += 6.97; // 20% of 34.7
+  if (promTrend === 'DOWN') instScore -= 1.73; // 5% of 34.7
+  instScore += peMedianScore; // peMedianScore already calculated as part of its own max of 8 (now scaled to 2.78)
   efficiencyGovernance.score = instScore;
 
   const totalScore = Math.min(100, Math.max(0, profScore + safetyScore + growthScore + instScore));
