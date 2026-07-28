@@ -1,5 +1,5 @@
 import React from 'react';
-import { DocPage, DocCallout, DocCodeBlock, DocTable, DocTabs } from '../../components/docs/DocPage';
+import { DocPage, DocCallout, DocTable, DocTabs } from '../../components/docs/DocPage';
 
 export const StrategiesPage: React.FC = () => {
   const toc = [
@@ -57,10 +57,10 @@ export const StrategiesPage: React.FC = () => {
                     headers={['Step', 'Rule', 'Detail']}
                     rows={[
                       ['1. Trigger', 'Lower band touch', 'Band width narrow (squeeze) confirms energy building'],
-                      ['2. Qualification', 'Audit ≥60, Elite/Quality', 'Smart Money {'>'}50%, D/E passes'],
+                      ['2. Qualification', 'Audit ≥60, Elite/Quality', 'Smart Money >50%, D/E passes'],
                       ['3. Entry', 'ABCD from A=lower band', 'Standard 10% gaps'],
                       ['4. Target', 'Upper band', 'Typical 8–15% move. Book 50% at upper, trail rest.'],
-                      ['5. Stop', 'Close {'>'}1% below lower band', 'If walks band for 3+ sessions → exit.'],
+                      ['5. Stop', 'Close >1% below lower band', 'If walks band for 3+ sessions → exit.'],
                     ]}
                   />
                 </div>
@@ -77,7 +77,7 @@ export const StrategiesPage: React.FC = () => {
                     headers={['Step', 'Rule', 'Detail']}
                     rows={[
                       ['1. Trigger', 'Weekly lower envelope touch', 'High institutional participation preferred'],
-                      ['2. Qualification', 'Elite/Quality, Audit ≥60', 'Smart Money {'>'}50%'],
+                      ['2. Qualification', 'Elite/Quality, Audit ≥60', 'Smart Money >50%'],
                       ['3. Entry', 'ABCD from A=envelope', 'Standard 10% gaps'],
                       ['4. Target', 'Upper envelope', '20–25% typical. Book 50% at upper.'],
                       ['5. Stop', 'Close 3% below envelope', 'If weak quarterly results → exit immediately.'],
@@ -119,12 +119,12 @@ export const StrategiesPage: React.FC = () => {
               content: (
                 <div className="space-y-4">
                   <DocCallout type="warning" title="Unique: Start at B, Not A">
-                    Bearish SMA stack (20{'<'}50{'<'}200). A is signal, entry at B (SMA 50). Max pessimism = opportunity.
+                    Bearish SMA stack ({'20<50<200'}). A is signal, entry at B (SMA 50). Max pessimism = opportunity.
                   </DocCallout>
                   <DocTable
                     headers={['Step', 'Rule', 'Detail']}
                     rows={[
-                      ['1. Trigger', 'Price {'<'} SMA20 {'<'} SMA50 {'<'} SMA200', 'Price at 200 DMA + stabilization'],
+                      ['1. Trigger', 'Price < SMA20 < SMA50 < SMA200', 'Price at 200 DMA + stabilization'],
                       ['2. Qualification', 'Audit ≥60, Elite/Quality', 'Green weekly close above 20 DMA'],
                       ['3. Entry', 'BCD from B=SMA50', 'Equal weight B/C/D. Skip A entirely.'],
                       ['4. Target', 'Reclaim SMA 20 (A level)', '15–30% from D. Book 50% at SMA 20.'],
@@ -189,7 +189,7 @@ export const StrategiesPage: React.FC = () => {
                   <DocCallout type="warning" title="Levels Flip">
                     Broken support becomes resistance. If you ignored stop and price bounces to old support → that's your EXIT, not re-entry.
                   </DocCallout>
-<DocTable
+                  <DocTable
                     headers={['Step', 'Rule', 'Detail']}
                     rows={[
                       ['1. Trigger', '2nd/3rd retest of support', '\u22652 prior clean bounces. No >2% breaks.'],
@@ -212,11 +212,11 @@ export const StrategiesPage: React.FC = () => {
                   <DocTable
                     headers={['Step', 'Rule', 'Detail']}
                     rows={[
-                      ['1. Trigger', 'Down {'>='}67% from ATH', 'Sales/profit TTM near ATH (±5%).'],
+                      ['1. Trigger', 'Down >=67% from ATH', 'Sales/profit TTM near ATH (±5%).'],
                       ['2. Qualification', 'Audit ≥60, D/E pass, pledge ≤5%', 'No governance issues. Growth/Fallen Value basket.'],
                       ['3. Entry', 'ABCD from A=current', 'Standard 10% gaps. 25% each tranche.'],
                       ['4. Target', '+67% in 1yr → +100% no timeline', 'Book 50% at 67%. Trail rest to ATH recovery.'],
-                      ['5. Stop', 'Fundamental deterioration', 'Sales ↓{'>'}20%, profit→loss, debt spike = exit.'],
+                      ['5. Stop', 'Fundamental deterioration', 'Sales ↓>20%, profit→loss, debt spike = exit.'],
                     ]}
                   />
                 </div>

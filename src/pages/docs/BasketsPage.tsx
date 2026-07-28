@@ -1,5 +1,5 @@
 import React from 'react';
-import { DocPage, DocCallout, DocCodeBlock, DocTable, DocTabs } from '../../components/docs/DocPage';
+import { DocPage, DocCallout, DocCodeBlock, DocTable, DocStep } from '../../components/docs/DocPage';
 
 export const BasketsPage: React.FC = () => {
   const toc = [
