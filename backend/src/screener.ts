@@ -6,7 +6,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { fileURLToPath } from 'url';
 import { NIFTY_500 } from './universe.js';
-import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest, calculateRHS as calculateReverseHeadShoulders, checkInstitutionalMandates } from './strategies/index.js';
+import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest, calculateRHS, checkInstitutionalMandates } from './strategies/index.js';
 import { supabase } from './db.js';
 
 // BROAD_UNIVERSE: Nifty 500 + ~1500 additional mid/small-cap symbols for wider market scanning.
@@ -654,7 +654,7 @@ export async function updateMarketSnapshot(symbols: string[]) {
           'CUP_HANDLE_ABCD': calculateCupHandle(quotes),
           'SMA_BCD': calculateSMAStacking(quotes), 'SR_STRATEGY': calculateSRStrategy(quotes),
           'SIXTY_SEVEN_FUNDA': calculateSixtySevenFunda(quotes, screenerData), 'TWENTY_RALLY_RETEST': calculateTwentyRallyRetest(quotes),
-          'REVERSE_HEAD_SHOULDERS': calculateReverseHeadShoulders(quotes)
+          'RHS_ABCD': calculateRHS(quotes)
         };
 
         // If audit fails, wipe strategy signals but keep data for "Monitor" or research

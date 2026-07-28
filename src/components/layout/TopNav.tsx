@@ -156,7 +156,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
     return new Date(ts).toLocaleDateString();
   };
 
-  return (
+  return (<>
     <nav className="h-20 bg-[var(--bg-primary)]/70 backdrop-blur-xl border-b border-[var(--border-primary)] flex items-center justify-between px-4 md:px-10 sticky top-0 z-[100] shadow-lg shadow-black/20 transition-all duration-300 relative">
       {/* Gradient top-edge */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent pointer-events-none" />
@@ -470,7 +470,9 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
         </div>
       </div>
 
-      {/* Mobile Search Overlay */}
+    </nav>
+
+      {/* Mobile Search Overlay — rendered outside <nav> so backdrop-filter doesn't trap position:fixed */}
       {showMobileSearch && (
         <div className="fixed inset-0 bg-[var(--bg-primary)]/95 backdrop-blur-md z-[120] flex flex-col p-4 pt-safe animate-in fade-in duration-200" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
           <div className="flex items-center gap-3 shrink-0">
@@ -549,7 +551,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
           )}
         </div>
       )}
-    </nav>
+    </>
   );
 };
 

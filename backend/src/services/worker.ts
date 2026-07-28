@@ -40,15 +40,16 @@ try {
 }
 
 const STRATEGY_BASKET_MAP: Record<string, string[]> = {
-  'ENVELOPE_LONG': ['Elite Basket', 'Quality Basket'], 
-  'ENVELOPE_SHORT': ['Elite Basket', 'Quality Basket'], 
-  'BOLLINGER': ['Elite Basket', 'Quality Basket'],
-  '52W_HIGH_LOW': ['Elite Basket', 'Quality Basket'],
-  'SMA_BCD': ['Elite Basket', 'Quality Basket'],
-  'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket'],
-  'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+  'ENVELOPE_LONG': ['Elite Basket'], 
+  'ENVELOPE_SHORT': ['Elite Basket'], 
+  'BOLLINGER': ['Elite Basket'],
+  '52W_HIGH_LOW': ['Elite Basket'],
+  'SMA_BCD': ['Quality Basket', 'Elite Basket'],
+  'CUP_HANDLE_ABCD': ['Quality Basket', 'Elite Basket'],
+  'RHS_ABCD': ['Quality Basket', 'Elite Basket'],
+  'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
   'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-  'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
+  'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket']
 };
 
 export async function precalculateAlpha40(isBootWarmup = false) {
