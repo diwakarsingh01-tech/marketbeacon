@@ -15,10 +15,10 @@ export const runStrategyAnalysis = async (stratId: string, snap: any, marketCap:
         'SMA_BCD': ['Elite Basket', 'Quality Basket'],
 
         'CUP_HANDLE_ABCD': ['Quality Basket', 'Elite Basket'],
-        'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
-        'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
+        'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+        'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
         'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-        'REVERSE_HEAD_SHOULDERS': ['Elite Basket', 'Quality Basket', 'Growth Basket']
+        'REVERSE_HEAD_SHOULDERS': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
     };
 
     const allowed = authorizedBaskets[stratId] || [];

@@ -2,18 +2,9 @@
 set -e
 KEY=~/.ssh/marketbeacon
 HOST=diwakar@165.99.223.76
+PORT=2222
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 VERSION=$(node -p "require('./package.json').version")
-SLACK_WEBHOOK="${SLACK_WEBHOOK:-}"
-
-notify() {
-  local level="$1" msg="$2"
-  echo "[$level] $msg"
-  if [ -n "$SLACK_WEBHOOK" ]; then
-    curl -s -X POST "$SLACK_WEBHOOK" -H 'Content-type: application/json' \
-      -d "{\"text\":\"[$level] MarketBeacon Deploy ($VERSION): $msg\"}" 2>/dev/null || true
-  fi
-}
 
 cleanup() {
   rm -f /tmp/mb-be-"$TIMESTAMP".tar.gz /tmp/mb-fe-"$TIMESTAMP".tar.gz
@@ -27,23 +18,27 @@ if [ ! -d "backend" ]; then echo "backend/ not found"; exit 1; fi
 if [ ! -f "$KEY" ]; then echo "SSH key $KEY not found"; exit 1; fi
 
 echo "=== Building backend ==="
-(cd backend && npm run build) || { notify "FAIL" "Backend build failed"; exit 1; }
+(cd backend && npm run build) || { echo "Backend build failed"; exit 1; }
 
 echo "=== Building frontend + prerender ==="
-npm run build:prerender || { notify "FAIL" "Frontend build failed"; exit 1; }
+npm run build:prerender || { echo "Frontend build failed"; exit 1; }
 
 echo "=== Packaging ==="
+# Include market_snapshot.json in backend package for fresh installations
 tar czf /tmp/mb-be-"$TIMESTAMP".tar.gz -C backend/dist .
+if [ -f backend/market_snapshot.json ]; then
+  echo "Including market_snapshot.json separately (not in tar)"
+fi
 tar czf /tmp/mb-fe-"$TIMESTAMP".tar.gz -C dist .
 
 echo "=== Uploading to staging ==="
-ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
+ssh -i "$KEY" -o StrictHostKeyChecking=no -p "$PORT" "$HOST" "
   mkdir -p /tmp/mb-deploy-${TIMESTAMP}
   sudo mkdir -p /opt/marketbeacon-backend/backups /var/www/marketbeacon/frontend/backups
 "
-scp -i "$KEY" -o StrictHostKeyChecking=no /tmp/mb-be-"$TIMESTAMP".tar.gz /tmp/mb-fe-"$TIMESTAMP".tar.gz "$HOST:/tmp/mb-deploy-${TIMESTAMP}/"
+scp -i "$KEY" -o StrictHostKeyChecking=no -P "$PORT" /tmp/mb-be-"$TIMESTAMP".tar.gz /tmp/mb-fe-"$TIMESTAMP".tar.gz "$HOST:/tmp/mb-deploy-${TIMESTAMP}/"
 
-ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
+ssh -i "$KEY" -o StrictHostKeyChecking=no -p "$PORT" "$HOST" "
   set -e
   echo '=== Rolling backup ==='
   if [ -d /opt/marketbeacon-backend/current ]; then
@@ -69,6 +64,7 @@ ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
   sudo mv /var/www/marketbeacon/frontend/staging /var/www/marketbeacon/frontend/current
   rm -rf /tmp/mb-deploy-${TIMESTAMP}
   echo 'Staging ready, restarting services...'
+
   # Sync frontend current -> dist (nginx serves from dist)
   echo '=== Syncing frontend current -> dist ==='
   sudo rm -rf /var/www/marketbeacon/frontend/dist
@@ -77,23 +73,25 @@ ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
 
   # Sync backend current -> dist (Docker container mounts from dist)
   echo '=== Syncing backend current -> dist ==='
-  # Preserve cache files that are mounted separately by Docker
+  # Preserve the market_snapshot.json file if it exists (it's mounted separately by Docker)
   if [ -f /opt/marketbeacon-backend/market_snapshot.json ]; then
     sudo cp /opt/marketbeacon-backend/market_snapshot.json /tmp/mb-snapshot-backup.json
   fi
-  if [ -f /opt/marketbeacon-backend/alpha_40_results.json ]; then
-    sudo cp /opt/marketbeacon-backend/alpha_40_results.json /tmp/mb-alpha40-backup.json
+  # Also copy the database file to dist so Docker container has it
+  if [ -f /opt/marketbeacon-backend/current/marketbeacon.db ]; then
+    sudo cp /opt/marketbeacon-backend/current/marketbeacon.db /tmp/mb-db-backup.db
   fi
   sudo rm -rf /opt/marketbeacon-backend/dist
   sudo cp -a /opt/marketbeacon-backend/current /opt/marketbeacon-backend/dist
-  # Restore cached files after dist sync
+  # Restore snapshot file after dist sync
   if [ -f /tmp/mb-snapshot-backup.json ]; then
     sudo mv /tmp/mb-snapshot-backup.json /opt/marketbeacon-backend/market_snapshot.json
     echo 'Market snapshot file preserved'
   fi
-  if [ -f /tmp/mb-alpha40-backup.json ]; then
-    sudo mv /tmp/mb-alpha40-backup.json /opt/marketbeacon-backend/alpha_40_results.json
-    echo 'Alpha-40 results file preserved'
+  # Restore database file after dist sync
+  if [ -f /tmp/mb-db-backup.db ]; then
+    sudo mv /tmp/mb-db-backup.db /opt/marketbeacon-backend/dist/marketbeacon.db
+    echo 'Market database file preserved'
   fi
 
   echo '=== Restarting backend service ==='
@@ -103,11 +101,12 @@ ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
 "
 
 echo "=== Post-deploy health check ==="
-sleep 5
-HEALTH_HTTP=$(ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/health")
+sleep 10
+HEALTH_HTTP=$(ssh -i "$KEY" -o StrictHostKeyChecking=no -p "$PORT" "$HOST" "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/health")
 if [ "$HEALTH_HTTP" != "200" ]; then
-  notify "FAIL" "Backend health check returned $HEALTH_HTTP, initiating rollback..."
-  ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
+  echo "FAIL: Backend health check returned $HEALTH_HTTP"
+  echo "Initiating rollback..."
+  ssh -i "$KEY" -o StrictHostKeyChecking=no -p "$PORT" "$HOST" "
     echo '=== Rolling back ==='
     if [ -d /opt/marketbeacon-backend/previous ]; then
       sudo rm -rf /opt/marketbeacon-backend/current
@@ -127,12 +126,8 @@ fi
 
 echo "=== Post-deploy health check ==="
 sleep 3
-HEALTH=$(curl -s -o /dev/null -w '%{http_code}' https://marketbeaconpro.com/)
-if [ "$HEALTH" != "200" ]; then
-  notify "WARN" "Site returned $HEALTH after deploy"
-else
-  notify "OK" "Deploy v$VERSION ($TIMESTAMP) successful"
-fi
+HEALTH=$(curl -s -o /dev/null -w '%{http_code}' https://marketbeaconpro.com/ 2>/dev/null || echo "000")
+echo "Site returned HTTP $HEALTH"
 
 echo "=== Done ==="
 echo "Version: $VERSION"

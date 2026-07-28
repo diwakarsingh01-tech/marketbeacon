@@ -85,11 +85,16 @@ export interface FundamentalData {
   price: number;
   roce: number;
   netDebtToEquity: number;
+  debtToEquity?: number;
+  totalDebtToEquity?: number;
+  forwardPe?: number;
+  beta?: number;
   strategies: Record<string, StrategyResult>;
-  audit?: { score: number; universe?: string };
+  audit?: { score: number; universe?: string; isPass?: boolean; reason?: string };
   industry?: string;
   change?: number;
   peRatio?: number;
+  normalizedPe?: number;
   peMedians?: { pe3Y?: number; pe5Y?: number; pe10Y?: number };
   marketCap?: number;
   returnOnEquity?: number;
@@ -98,6 +103,13 @@ export interface FundamentalData {
   athSales?: number;
   currentNetProfit?: number;
   athNetProfit?: number;
+  pledgePct?: number;
+  promoterHolding?: number;
+  sector?: { raw: string; isBanking?: boolean; isNBFC?: boolean; isFinance?: boolean };
+  ttmVsAth?: {
+    sales: { current: number; ath: number; gapPct: number; phase: string; trend: string };
+    netProfit: { current: number; ath: number; gapPct: number; phase: string; trend: string };
+  };
   lastUpdated?: string;
   dataAge?: { lastUpdated: string; updatedAt: string; fresh: boolean };
 }
@@ -125,6 +137,8 @@ export interface AllStockItem {
   currentPrice?: number;
   basketSource?: string;
   score?: number;
+  auditScore?: number;
+  smartMoney?: number;
   strategy?: string;
   entryTime?: string;
   ath?: number;

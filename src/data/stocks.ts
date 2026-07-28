@@ -7,7 +7,8 @@ export const STRATEGIES = [
   { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
   { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
   { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
-  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true }
+  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
+  { id: 'REVERSE_HEAD_SHOULDERS', name: 'Reverse Head & Shoulders (RHS)', baskets: ['Quality Basket', 'Elite Basket', 'Growth Basket'], isLive: true, tier: 'pro', isLocked: true }
 ];
 
 export const BASKETS: Record<string, string[]> = {

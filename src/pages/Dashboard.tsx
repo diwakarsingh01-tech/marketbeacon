@@ -483,8 +483,6 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     { icon: GraduationCap, label: 'Education', path: '/education', desc: 'Learn institutional methods', bg: 'bg-rose-500/10', border: 'border-rose-500/20', iconCls: 'text-rose-400' },
   ];
 
-  const niftyObj = indices.find(idx => idx.name === 'NIFTY 50');
-
   const handleMasterExport = () => {
     if (!data?.allStocks?.length) return;
     const headers = ['Symbol', 'Observation', 'Strategy', 'Sector', 'Market Cap', 'Level A (Base)', 'CMP', 'ATH', 'Model Objective', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
@@ -603,15 +601,17 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
               tierColor === 'blue' ? 'bg-blue-50 border-blue-200 text-blue-600' :
               'bg-emerald-50 border-emerald-200 text-[#00d09c]'
             }`}>{tierLabel} Tier</span>
-            {niftyObj && (
-              <span className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--bg-tertiary)] border border-[var(--border-primary)] px-2 py-0.5 rounded-full">
-                <span className={`w-1.5 h-1.5 rounded-full ${niftyObj.change >= 0 ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500 animate-pulse'}`} />
-                NIFTY {niftyObj.price.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                <span className={niftyObj.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}>
-                  {niftyObj.change >= 0 ? '+' : ''}{niftyObj.change.toFixed(2)}%
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {indices.filter(idx => idx.price).map((idx) => (
+                <span key={idx.name} className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--bg-tertiary)] border border-[var(--border-primary)] px-2 py-0.5 rounded-full">
+                  <span className={`w-1.5 h-1.5 rounded-full ${idx.change >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                  {idx.name.replace('NIFTY 50', 'NIFTY').replace('BANK NIFTY', 'BANKNIFTY')} {idx.price.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                  <span className={idx.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}>
+                    {idx.change >= 0 ? '+' : ''}{idx.change.toFixed(2)}%
+                  </span>
                 </span>
-              </span>
-            )}
+              ))}
+            </div>
           </div>
           
           {/* Title row */}
@@ -664,7 +664,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           )}
 
           {!isPortfolioRoute && (
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full">
+            <div data-tour="screener-filters" className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full">
               <div className="flex flex-col space-y-1">
                 <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.2em] pl-1.5">Universe</span>
                 <div className="relative">
@@ -920,6 +920,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       {/* ── Main Table Section ── */}
       <AnimatePresence mode="wait">
          <motion.section 
+           data-tour="portfolio-table"
            key={activeTab + activeBasket}
            initial={{ opacity: 0, x: 20 }}
            animate={{ opacity: 1, x: 0 }}

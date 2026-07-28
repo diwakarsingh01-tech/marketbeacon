@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import SideNav from './SideNav';
 import TopNav from './TopNav';
 import FeedbackModal from '../ui/FeedbackModal';
@@ -15,11 +15,30 @@ import {
 } from 'lucide-react';
 
 const AppLayout: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(min-width: 768px)').matches && localStorage.getItem('mb_sidebar_collapsed') === 'true';
+  });
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState(() => {
     return localStorage.getItem('mb_sebi_banner_dismissed') === 'true';
   });
+
+  // Keep sidebar open on desktop, close on mobile when route changes
+  useEffect(() => {
+    if (window.innerWidth < 768) setIsSidebarOpen(false);
+  }, [location.pathname]);
+
+  // Re-open sidebar when resizing to desktop, close when resizing to mobile
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSidebarOpen(window.innerWidth >= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleDismissBanner = () => {
     setIsBannerDismissed(true);
@@ -37,20 +56,37 @@ const AppLayout: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-[var(--bg-primary)] overflow-hidden relative">
-      {/* Mobile Sidebar Backdrop */}
+      {/* Mobile Sidebar Backdrop — light overlay so sidebar content stays readable */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-slate-950/20 backdrop-blur-sm z-[105] animate-in fade-in duration-300"
+          className="fixed inset-0 bg-slate-950/20 z-[105] animate-in fade-in duration-200 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Fixed Sidebar - Responsive drawer on mobile */}
-      <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <SideNav 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => {
+          const newVal = !isSidebarCollapsed;
+          setIsSidebarCollapsed(newVal);
+          localStorage.setItem('mb_sidebar_collapsed', String(newVal));
+        }}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 relative">
-        <TopNav onMenuClick={() => setIsSidebarOpen(true)} />
+        <TopNav 
+          onMenuClick={() => setIsSidebarOpen(true)} 
+          onToggleSidebarCollapse={() => {
+            const newVal = !isSidebarCollapsed;
+            setIsSidebarCollapsed(newVal);
+            localStorage.setItem('mb_sidebar_collapsed', String(newVal));
+          }}
+          isSidebarCollapsed={isSidebarCollapsed}
+        />
         
         {/* Sticky SEBI Compliance Banner */}
         {!isBannerDismissed && (

@@ -176,7 +176,7 @@ const BlogArticlePage: React.FC = () => {
             to="/login"
             className="px-5 py-2.5 bg-[#00d09c] hover:bg-[#00bda0] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#00d09c]/15"
           >
-            Launch Terminal
+            Sign In
           </Link>
         </div>
       </nav>
@@ -276,7 +276,7 @@ const BlogArticlePage: React.FC = () => {
           to="/login"
           className="inline-flex items-center gap-2 px-10 py-4 bg-[#00d09c] hover:bg-[#00bda0] text-white rounded-2xl font-bold uppercase tracking-wider text-xs hover:scale-105 transition-all shadow-md shadow-[#00d09c]/20"
         >
-          Launch Terminal Free <ArrowRight className="w-4 h-4" />
+          Sign In <ArrowRight className="w-4 h-4" />
         </Link>
       </section>
       <SiteFooter />

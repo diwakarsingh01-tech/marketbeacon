@@ -11,7 +11,7 @@ const CTABanner: React.FC = () => {
              <p className="text-slate-500 font-medium text-lg mb-10 max-w-xl">Join 31,402 traders who upgraded their strategy with MarketBeacon Pro. Free to start.</p>
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <Link to="/login" className="px-12 py-5 bg-[#00d09c] hover:bg-[#00bda0] text-white rounded-2xl font-bold uppercase tracking-wider text-base hover:scale-105 transition-all shadow-md shadow-[#00d09c]/15">
-                   Launch Terminal Free
+                   Sign In
                 </Link>
                 <a
                   href={waLink('Hi Admin, I want to know more about MarketBeacon Pro.')}

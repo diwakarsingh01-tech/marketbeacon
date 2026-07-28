@@ -254,15 +254,15 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
 
   let profScore = 0;
   const profitabilityQuality = {
-    score: 0, max: 21.7,  // Adjusted from 25 to fit 100-point scale
+    score: 0, max: 25,  // Out of 25 — all 4 segments sum to 100
     checks: [
       { label: 'ROE Quality', value: `${roe}%`, pass: roe >= roeThreshold },
-      { label: 'ROCE Efficiency', value: `${roce}%`, pass: roce >= rokuThreshold },
+      { label: 'ROCE Efficiency', value: `${roce}%`, pass: roce >= roceThreshold },
       { label: 'TTM vs ATH Net Income', value: profitPass ? 'PASSED' : `GAP ${profitGapPct.toFixed(1)}%`, pass: profitPass }
     ]
   };
   if (roe >= roeThreshold) profScore += 10;
-  if (roce >= rokuThreshold) profScore += 10;
+  if (roce >= roceThreshold) profScore += 10;
   if (profitPass) profScore += 5;
   else if (profitGapPct >= -20) profScore += 2; // Near recovery gets partial score
   profitabilityQuality.score = Number(profScore.toFixed(2));  // ✅ Round to exactly 2 decimals
@@ -303,7 +303,7 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   }
   
   const balanceSheetSafety = {
-    score: 0, max: 21.7,  // Adjusted from 25 to fit 100-point scale
+    score: 0, max: 25,  // Out of 25
     checks: [
       { label: 'Debt/Equity', value: debtToEquity.toFixed(2), pass: debtToEquity <= scoringIdealDE ? 'FULL' : debtToEquity <= sectorHardRejectDE ? `GRADED (${deScore}/15)` : 'FAIL' },
       { label: 'Promoter Pledge', value: `${pledged}%`, pass: pledgeStatus },
@@ -367,11 +367,11 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
     else if (profitTrend === 'DOWN') growthScore -= 0.54; // 15% of 3.57
   }
   
-  // Clamp growth score to max 21.7
-  growthScore = Math.max(0, Math.min(21.7, growthScore));
+  // Clamp growth score to max 25 (safe: Number.isFinite prevents NaN propagation)
+  growthScore = Number.isFinite(growthScore) ? Math.round(Math.max(0, Math.min(25, growthScore)) * 100) / 100 : 0;
   
   const growthQuality = {
-    score: growthScore, max: 21.7,  // Adjusted from 25 to fit 100-point scale
+    score: growthScore, max: 25,  // Out of 25
     checks: growthChecks
   };
 
@@ -416,7 +416,7 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   const peForRejectCheck = normalizedPe > 0 ? normalizedPe : pe;
   
   if (peDataIssue || (pe3Y <= 0 && pe5Y <= 0)) {
-    if (peForRejectCheck > 70) {
+    if (peForRejectCheck > 80) {
       peHardReject = true;
       if (peDataIssue) {
         peMedianScore = 0;
@@ -432,13 +432,19 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   } else {
     if (pe3Y > 0) {
       const under3Y = pe <= pe3Y;
-      peMedianChecks.push({ label: 'PE vs 3Y Median', value: `${pe.toFixed(1)} / ${pe3Y.toFixed(1)}`, pass: under3Y ? 'PASSED' : 'OVER' });
-      if (under3Y) { peMedianScore += 8; } else { peHardReject = true; }
+      const within10Pct3Y = pe <= pe3Y * 1.10;
+      peMedianChecks.push({ label: 'PE vs 3Y Median', value: `${pe.toFixed(1)} / ${pe3Y.toFixed(1)}`, pass: under3Y ? 'PASSED' : within10Pct3Y ? 'NEAR' : 'OVER' });
+      if (under3Y) { peMedianScore += 8; }
+      else if (within10Pct3Y) { peMedianScore += 4; } // partial score near median
+      else { peHardReject = true; }
     }
     if (pe5Y > 0) {
       const under5Y = pe <= pe5Y;
-      peMedianChecks.push({ label: 'PE vs 5Y Median', value: `${pe.toFixed(1)} / ${pe5Y.toFixed(1)}`, pass: under5Y ? 'PASSED' : 'OVER' });
-      if (under5Y) { peMedianScore += 7; } else { peHardReject = true; }
+      const within10Pct5Y = pe <= pe5Y * 1.10;
+      peMedianChecks.push({ label: 'PE vs 5Y Median', value: `${pe.toFixed(1)} / ${pe5Y.toFixed(1)}`, pass: under5Y ? 'PASSED' : within10Pct5Y ? 'NEAR' : 'OVER' });
+      if (under5Y) { peMedianScore += 7; }
+      else if (within10Pct5Y) { peMedianScore += 3.5; } // partial score near median
+      else { peHardReject = true; }
     }
   }
 
@@ -454,28 +460,33 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
 
   let instScore = 0;
   const efficiencyGovernance = {
-    score: 0, max: 34.7,  // Adjusted from 40 to fit 100-point scale (34.7% of total)
+    score: 0, max: 25,  // Out of 25
     checks: [
-      { label: 'Smart Money %', value: `${smartMoneyTotal.toFixed(1)}%`, pass: smartMoneyTotal >= 70 },
+      { label: 'Smart Money %', value: `${smartMoneyTotal.toFixed(1)}%`, pass: smartMoneyTotal >= 65 },
       { label: 'Inst. Trend', value: `${fiiTrend}/${diiTrend}`, pass: fiiTrend === 'UP' || diiTrend === 'UP' },
       ...peMedianChecks
     ]
   };
   // PE median score already calculated as part of efficiencyGovernance
   // Additional efficiency scores
-  if (smartMoneyTotal >= 65) instScore += 3.47; // 10% of 34.7
-  if (smartMoneyTotal >= 70) instScore += 3.47; // additional 10%
+  if (smartMoneyTotal >= 55) instScore += 3.47; // 10% of 34.7
+  if (smartMoneyTotal >= 65) instScore += 3.47; // additional 10%
   if (fiiTrend === 'UP' || diiTrend === 'UP') instScore += 6.97; // 20% of 34.7
   if (promTrend === 'DOWN') instScore -= 1.73; // 5% of 34.7
   instScore += peMedianScore; // Now calculated separately to avoid double counting
-  efficiencyGovernance.score = instScore;
+  efficiencyGovernance.score = Math.round(Math.min(25, instScore) * 100) / 100;
 
-  const totalScore = Math.min(100, Math.max(0, profScore + safetyScore + growthScore + instScore));
+  // Safe numeric: prevent NaN/Infinity from corrupting scores
+  const safe = (v: number, fallback = 0) => Number.isFinite(v) ? Math.max(0, v) : fallback;
+
+  const totalScore = Math.round(Math.min(100, Math.max(0,
+    safe(profScore) + safe(safetyScore) + safe(growthScore) + safe(instScore)
+  )) * 100) / 100;
 
   const isHardReject = !isETF && (
     (debtToEquity > sectorHardRejectDE) || 
     (pledged >= 5) || 
-    (smartMoneyTotal < 30.0) ||
+    (smartMoneyTotal < 20.0) ||
     peHardReject
   );
 

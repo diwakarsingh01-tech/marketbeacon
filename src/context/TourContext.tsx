@@ -138,6 +138,8 @@ export const INVESTMENT_TOUR_STEPS: TourStepConfig[] = [
 interface TourContextType {
   isActive: boolean;
   currentStep: number;
+  currentSubStep: number;
+  setCurrentSubStep: (step: number) => void;
   totalSteps: number;
   startTour: (fromStep?: number) => void;
   stopTour: () => void;
@@ -158,6 +160,7 @@ export const useTour = () => {
 export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [currentSubStep, setCurrentSubStep] = useState(0);
   const [navigating, setNavigating] = useState(false);
   const navigate = useNavigate();
 
@@ -191,6 +194,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setNavigating(true);
         navigate(step.route);
       }
+      setCurrentSubStep(0);
       return next;
     });
   }, [navigate, totalSteps]);
@@ -203,6 +207,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setNavigating(true);
         navigate(step.route);
       }
+      setCurrentSubStep(0);
       return back;
     });
   }, [navigate]);
@@ -210,6 +215,7 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const goToStep = useCallback((step: number) => {
     if (step < 0 || step >= totalSteps) return;
     setCurrentStep(step);
+    setCurrentSubStep(0);
     setIsActive(true);
     const config = INVESTMENT_TOUR_STEPS[step];
     if (config?.route) {
@@ -229,6 +235,8 @@ export const TourProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <TourContext.Provider value={{
       isActive,
       currentStep,
+      currentSubStep,
+      setCurrentSubStep,
       totalSteps,
       startTour,
       stopTour,

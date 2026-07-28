@@ -139,7 +139,7 @@ const AboutPage: React.FC = () => {
           <h2 className="text-lg font-bold text-slate-900 mb-3">Ready to trade like institutions?</h2>
           <p className="text-sm text-slate-500 mb-6">Join 31,402+ traders using ABCD Tranche logic and institutional audit scores.</p>
           <Link to="/login" className="inline-block px-10 py-4 bg-[#00d09c] hover:bg-[#00bda0] text-white rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-md shadow-[#00d09c]/15">
-            Launch Terminal Free
+            Sign In
           </Link>
         </div>
 

@@ -9,7 +9,7 @@ const SiteFooter: React.FC = () => {
 
   const links = {
     Platform: [
-      { label: 'Launch Terminal', to: '/login' },
+      { label: 'Sign In', to: '/login' },
       { label: 'Live Screener', to: '/login' },
       { label: 'Alpha Hub', to: '/login' },
       { label: 'License Desk', to: '/license-desk' },
