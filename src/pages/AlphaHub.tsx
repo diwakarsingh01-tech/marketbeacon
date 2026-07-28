@@ -10,13 +10,10 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  IndianRupee,
-  Target,
   Info,
   TrendingUp,
   BarChart3,
-  ArrowUpRight,
-  Filter
+  ArrowUpRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -25,8 +22,7 @@ import type { AlphaHubStock, AlphaHubData, BacktestData, BasketConfig } from '..
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import SEO from '../components/SEO';
 
 const API_URL = getApiUrl();
@@ -88,7 +84,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   if (active && payload && payload.length) {
     return (
       <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] p-4 rounded-2xl shadow-2xl space-y-3">
-        <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest border-b border-[var(--border-primary)] pb-2">{label}</p>
+        <p className="text-[var(--text-muted)] text-caption border-b border-[var(--border-primary)] pb-2">{label}</p>
         {payload.map((entry: TooltipEntry, index: number) => {
           const initial = entry.payload.initialCapital || 1;
           const roi = (((entry.value / initial) - 1) * 100).toFixed(1);
@@ -96,11 +92,11 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
             <div key={index} className="flex flex-col">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: entry.color }}></div>
-                <span className="text-[var(--text-primary)] text-[10px] font-bold uppercase tracking-wider">{entry.name}</span>
+                <span className="text-[var(--text-primary)] text-caption">{entry.name}</span>
               </div>
               <div className="flex items-end justify-between gap-6 pl-4">
-                <span className="text-[var(--text-primary)] text-sm font-mono font-black">₹{entry.value.toLocaleString('en-IN')}</span>
-                <span className={`text-[10px] font-black px-2 py-0.5 rounded ${Number(roi) >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                <span className="text-[var(--text-primary)] text-sm font-mono font-bold">₹{entry.value.toLocaleString('en-IN')}</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded ${Number(roi) >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
                   {Number(roi) >= 0 ? '+' : ''}{roi}%
                 </span>
               </div>
@@ -167,7 +163,6 @@ const buildBaskets = (stocks: AlphaHubStock[], totalCapital: number): BasketConf
 // --- Main Page ---
 
 const AlphaHubPage: React.FC = () => {
-  const { theme } = useTheme();
   const { user } = useAuth();
   const [data, setData] = useState<AlphaHubData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -178,7 +173,6 @@ const AlphaHubPage: React.FC = () => {
   const [redeeming, setRedeeming] = useState(false);
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [expandedBasket, setExpandedBasket] = useState<string | null>(null);
   const [showBookProfitInfo, setShowBookProfitInfo] = useState(false);
   const [filterBasket, setFilterBasket] = useState<string>('all');
   const [expandedStock, setExpandedStock] = useState<string | null>(null);
@@ -194,7 +188,6 @@ const AlphaHubPage: React.FC = () => {
   // Filter stocks: only include grades A/B/C/D — exclude NONE-grade stocks
   const validGrades = ['A', 'B', 'C', 'D'];
   const qualifiedStocks = (data?.stocks || []).filter(s => s.tranche && validGrades.includes(s.tranche.toUpperCase()));
-  const excludedStockCount = (data?.stocks || []).length - qualifiedStocks.length;
 
   // Build baskets from qualified stocks only
   const baskets = buildBaskets(qualifiedStocks, totalCapital);
@@ -221,9 +214,8 @@ const AlphaHubPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('mb_token');
       const res = await fetch(`${API_URL}/api/backtest/alpha-40`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const d = await safeJsonParse(res);
       if (res.ok && !d.error) {
@@ -235,8 +227,6 @@ const AlphaHubPage: React.FC = () => {
           return;
         }
         if (res.status === 401 || res.status === 403 || d.error === 'Invalid token.' || d.error === 'Access denied.') {
-          localStorage.removeItem('mb_token');
-          localStorage.removeItem('mb_user');
           window.location.href = '/login';
           return;
         }
@@ -251,9 +241,8 @@ const AlphaHubPage: React.FC = () => {
 
   const fetchBacktestComparison = async () => {
     try {
-      const token = localStorage.getItem('mb_token');
       const res = await fetch(`${API_URL}/api/backtest/nifty-comparison`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const d = await safeJsonParse(res);
       if (res.ok && !d.error) setBacktestComparison(d);
@@ -269,14 +258,13 @@ const AlphaHubPage: React.FC = () => {
     if (!voucherCode.trim()) return;
     setRedeeming(true);
     setVoucherError(null);
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ code: voucherCode.trim().toUpperCase() })
       });
       const d = await safeJsonParse(res);
@@ -334,8 +322,8 @@ const AlphaHubPage: React.FC = () => {
           <Shield className="h-10 w-10 text-blue-500" />
         </div>
         <div className="space-y-3">
-          <h2 className="text-sm font-black uppercase tracking-[0.5em] text-slate-900">Loading your portfolio</h2>
-          <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest italic">Just a moment</p>
+          <h2 className="text-sm font-bold uppercase tracking-[0.5em] text-slate-900">Loading your portfolio</h2>
+          <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider italic">Just a moment</p>
         </div>
       </div>
     );
@@ -346,10 +334,10 @@ const AlphaHubPage: React.FC = () => {
     return (
       <div className="p-10 text-center space-y-6 flex flex-col items-center justify-center min-h-screen bg-[var(--bg-primary)]">
         <div className="p-8 rounded-3xl border-2 border-red-100 max-w-xl shadow-sm">
-          <h2 className="text-red-600 font-black uppercase tracking-widest text-xs mb-2 italic">Something went wrong</h2>
-          <p className="text-red-500 text-[10px] font-bold leading-relaxed">{error}</p>
+          <h2 className="text-red-600 font-bold uppercase tracking-wider text-xs mb-2 italic">Something went wrong</h2>
+          <p className="text-red-500 text-xs font-bold leading-relaxed">{error}</p>
         </div>
-        <button onClick={fetchAlphaHub} className="px-12 py-3 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-xl font-black uppercase tracking-widest text-[10px] active:scale-95 transition-all shadow-xl">
+        <button onClick={fetchAlphaHub} className="px-12 py-3 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-xl font-bold uppercase tracking-wider text-xs active:scale-95 transition-all shadow-xl">
           Try again
         </button>
       </div>
@@ -369,18 +357,18 @@ const AlphaHubPage: React.FC = () => {
           </div>
           <div className="space-y-3 max-w-xl">
             <h2 className="text-4xl font-black tracking-tighter uppercase italic leading-none">Unlock Ready-to-Invest Portfolios</h2>
-            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest leading-relaxed">
+            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-relaxed">
               The Alpha Desk is a premium feature with pre-built strategy baskets and model portfolios.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
             <button
               onClick={() => setShowUpgradeModal(true)}
-              className="px-10 py-5 bg-blue-600 text-[var(--text-primary)] rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-blue-700 transition-all active:scale-95 w-full sm:w-auto"
+              className="px-10 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-[var(--text-primary)] rounded-[2rem] text-xs font-bold uppercase tracking-[0.2em] shadow-lg shadow-blue-500/20 hover:scale-105 transition-all active:scale-95 w-full sm:w-auto"
             >
               Unlock Alpha Access
             </button>
-            <Link to="/screener" className="px-8 py-5 bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] text-[var(--text-muted)] rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] hover:text-slate-900 transition-all w-full sm:w-auto text-center">
+            <Link to="/screener" className="px-8 py-5 bg-[var(--bg-primary)] border-2 border-[var(--border-primary)] text-[var(--text-muted)] rounded-[2rem] text-xs font-bold uppercase tracking-[0.2em] hover:text-[var(--text-primary)] transition-all w-full sm:w-auto text-center">
               Browse Screener
             </Link>
           </div>
@@ -388,12 +376,12 @@ const AlphaHubPage: React.FC = () => {
           {/* Voucher */}
           <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-3xl p-6 shadow-sm w-full space-y-4 text-center">
             <div className="text-left space-y-1">
-              <h4 className="text-[10px] font-black uppercase text-slate-900 tracking-wider">Have a trial voucher?</h4>
-              <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest">Enter code below to unlock Alpha access instantly</p>
+              <h4 className="text-xs font-bold uppercase text-[var(--text-primary)] tracking-wider">Have a trial voucher?</h4>
+              <p className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-wider">Enter code below to unlock Alpha access instantly</p>
             </div>
             <button
               onClick={() => { setVoucherCode('ALPHA7'); setVoucherError(null); }}
-              className="w-full py-2.5 bg-[var(--bg-secondary)] border border-indigo-100 text-indigo-600 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all active:scale-95"
+              className="w-full py-2.5 bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] rounded-2xl text-caption hover:bg-[var(--bg-tertiary)] transition-all active:scale-95"
             >
               Use Code: ALPHA7 (7 Days Free)
             </button>
@@ -403,18 +391,18 @@ const AlphaHubPage: React.FC = () => {
                 placeholder="VOUCHER CODE"
                 value={voucherCode}
                 onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherError(null); }}
-                className="bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none flex-1 focus:border-blue-600 transition-all placeholder:text-[var(--text-secondary)]"
+                className="bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-4 py-3 text-caption outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none flex-1 focus:border-blue-600 transition-all placeholder:text-[var(--text-secondary)]"
               />
               <button
                 onClick={handleRedeemVoucher}
                 disabled={redeeming || !voucherCode.trim()}
-                className="px-6 py-3 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all disabled:opacity-50"
+                className="px-6 py-3 bg-blue-600 text-[var(--text-primary)] rounded-2xl text-caption hover:bg-blue-500 transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20"
               >
                 {redeeming ? '...' : 'Apply'}
               </button>
             </div>
             {voucherError && (
-              <p className="text-[9px] font-black uppercase tracking-widest text-rose-600 text-left pl-1">{voucherError}</p>
+              <p className="text-caption text-rose-500 text-left pl-1">{voucherError}</p>
             )}
           </div>
         </div>
@@ -443,14 +431,14 @@ const AlphaHubPage: React.FC = () => {
               <Shield className="h-5 w-5 text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-sm font-black uppercase tracking-tight italic leading-none text-[var(--text-primary)]">Alpha Desk</h1>
-              <p className="text-[7px] font-bold text-[var(--text-tertiary)] uppercase tracking-[0.25em] mt-0.5">Rules-based allocation engine</p>
+              <h1 className="text-sm font-bold uppercase tracking-tight italic leading-none text-[var(--text-primary)]">Alpha Desk</h1>
+              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-[0.25em] mt-0.5">Rules-based allocation engine</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={handleExportAlpha}
-              className="hidden md:flex items-center gap-2 bg-[var(--bg-tertiary)] text-[var(--text-primary)] px-5 py-2.5 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-[var(--bg-tertiary)] border border-[var(--border-primary)] transition-all active:scale-95 shadow-sm"
+              className="hidden md:flex items-center gap-2 bg-[var(--bg-tertiary)] text-[var(--text-primary)] px-5 py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs hover:bg-[var(--bg-tertiary)] border border-[var(--border-primary)] transition-all active:scale-95 shadow-sm"
             >
               <Download className="h-3.5 w-3.5" />
               Export
@@ -471,7 +459,7 @@ const AlphaHubPage: React.FC = () => {
           ].map((s, i) => (
             <React.Fragment key={s.step}>
               <div className="flex flex-col items-center gap-1.5">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[9px] font-black transition-all duration-500 ${
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all duration-500 ${
                   currentStep >= s.step
                     ? 'bg-blue-600 text-[var(--text-primary)] shadow-md'
                     : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)]'
@@ -482,7 +470,7 @@ const AlphaHubPage: React.FC = () => {
                     s.step
                   )}
                 </div>
-                <span className={`text-[7px] font-black uppercase tracking-widest ${
+                <span className={`text-caption ${
                   currentStep >= s.step ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
                 }`}>
                   {s.label}
@@ -502,47 +490,47 @@ const AlphaHubPage: React.FC = () => {
 
             {/* HERO STATS STRIP */}
             <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border border-blue-500/10 rounded-2xl p-5 text-center space-y-3 shadow-xl">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-[7px] font-black text-blue-400 uppercase tracking-widest">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-xs font-bold text-blue-400 uppercase tracking-wider">
                 <Sparkles className="h-2.5 w-2.5" />
                 Live Stats Strip
               </div>
               <div className="grid grid-cols-3 gap-2 py-2 border-y border-[var(--border-primary)]/80">
                 <div className="text-center">
-                  <div className="text-sm font-black text-[var(--text-primary)] font-mono">40+</div>
-                  <div className="text-[6.5px] font-bold text-[var(--text-muted)] uppercase tracking-widest">STOCKS</div>
+                  <div className="text-sm font-bold text-[var(--text-primary)] font-mono">40+</div>
+                  <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">STOCKS</div>
                 </div>
                 <div className="text-center border-x border-[var(--border-primary)]/80">
-                  <div className="text-sm font-black text-[var(--text-primary)] font-mono">{backtestYears}Y</div>
-                  <div className="text-[6.5px] font-bold text-[var(--text-muted)] uppercase tracking-widest">DATA</div>
+                  <div className="text-sm font-bold text-[var(--text-primary)] font-mono">{backtestYears}Y</div>
+                  <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">DATA</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-black text-emerald-400 font-mono">{alphaCagrPct}%</div>
-                  <div className="text-[6.5px] font-bold text-[var(--text-muted)] uppercase tracking-widest">CAGR</div>
+                  <div className="text-sm font-bold text-emerald-400 font-mono">{alphaCagrPct}%</div>
+                  <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">CAGR</div>
                 </div>
               </div>
-              <p className="text-[9px] font-medium text-[var(--text-tertiary)] leading-normal">
+              <p className="text-xs font-medium text-[var(--text-tertiary)] leading-normal">
                 Strategy-weighted allocation engine. Enter amount to dynamically compile qualified securities.
               </p>
             </div>
 
             {/* INVESTMENT CALCULATOR */}
-            <div id="calculator-section" className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-3xl p-6 shadow-xl space-y-6">
+            <div id="calculator-section" className="card p-6 space-y-6">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded text-[7px] font-black uppercase tracking-widest">Step 1</span>
-                  <h2 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">Investment amount</h2>
+                  <span className="px-2 py-0.5 bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded text-caption">Step 1</span>
+                  <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">Investment amount</h2>
                 </div>
-                <p className="text-[10px] font-medium text-[var(--text-tertiary)]">Choose mode and inputs to calculate quantities.</p>
+                <p className="text-xs font-medium text-[var(--text-tertiary)]">Choose mode and inputs to calculate quantities.</p>
               </div>
 
               {/* INPUTS */}
               <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
                   <div className="space-y-2">
-                    <label className="block text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                       Deploy amount today
                     </label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[var(--text-tertiary)] font-mono">₹</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--text-tertiary)] font-mono">₹</span>
                       <input
                         type="text"
                         value={lumpSumAmount ? lumpSumAmount.toLocaleString('en-IN') : ''}
@@ -551,11 +539,11 @@ const AlphaHubPage: React.FC = () => {
                           if (!isNaN(Number(raw)) && raw !== '') setLumpSumAmount(Number(raw));
                           else if (raw === '') setLumpSumAmount(0);
                         }}
-                        className="w-full bg-[var(--bg-primary)]/60 border-2 border-[var(--border-primary)] rounded-xl px-4 py-3.5 pl-8 text-sm font-black text-[var(--text-primary)] font-mono outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600 transition-all"
+                        className="w-full bg-[var(--bg-primary)]/60 border-2 border-[var(--border-primary)] rounded-xl px-4 py-3.5 pl-8 text-sm font-bold text-[var(--text-primary)] font-mono outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:border-blue-600 transition-all"
                         placeholder="5,00,000"
                       />
                     </div>
-                    <p className="text-[7.5px] font-medium text-[var(--text-muted)]">Min: ₹50,000 • Max: ₹25,00,000</p>
+                    <p className="text-xs font-medium text-[var(--text-muted)]">Min: ₹50,000 • Max: ₹25,00,000</p>
                   </div>
 
                   {/* Quick presets */}
@@ -564,7 +552,7 @@ const AlphaHubPage: React.FC = () => {
                       <button
                         key={amt}
                         onClick={() => setLumpSumAmount(amt)}
-                        className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all border ${
+                        className={`px-3 py-1.5 rounded-lg text-caption transition-all border ${
                           lumpSumAmount === amt
                             ? 'bg-blue-600 text-[var(--text-primary)] border-blue-600 shadow-lg'
                             : 'bg-[var(--bg-tertiary)]/40 text-[var(--text-tertiary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
@@ -578,10 +566,10 @@ const AlphaHubPage: React.FC = () => {
 
               {/* Summary Strip */}
               <div className="bg-[var(--bg-primary)]/30 border border-[var(--border-primary)] rounded-xl p-4 flex items-center justify-between gap-3">
-                <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">One-time Investment</span>
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">One-time Investment</span>
                 <div className="text-right">
-                  <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest block">Deployed Capital</span>
-                  <span className="text-sm font-black text-[var(--text-primary)] font-mono">₹{totalCapital.toLocaleString('en-IN')}</span>
+                  <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">Deployed Capital</span>
+                  <span className="text-sm font-bold text-[var(--text-primary)] font-mono">₹{totalCapital.toLocaleString('en-IN')}</span>
                 </div>
               </div>
 
@@ -589,14 +577,14 @@ const AlphaHubPage: React.FC = () => {
               {totalCapital >= 50000 && baskets.length > 0 && (
                 <button
                   onClick={scrollToPortfolio}
-                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg shadow-blue-500/10 flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-caption transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
                 >
                   <BarChart3 className="h-4 w-4" />
                   Build My Portfolio →
                 </button>
               )}
               {totalCapital < 50000 && (
-                <p className="text-[8px] font-black text-[var(--text-muted)] text-center uppercase tracking-widest bg-[var(--bg-primary)]/30 py-2.5 rounded-xl border border-[var(--border-primary)]/50">
+                <p className="text-xs font-bold text-[var(--text-muted)] text-center uppercase tracking-wider bg-[var(--bg-primary)]/30 py-2.5 rounded-xl border border-[var(--border-primary)]/50">
                   Minimum investment: ₹50,000
                 </p>
               )}
@@ -613,13 +601,13 @@ const AlphaHubPage: React.FC = () => {
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded text-[7px] font-black uppercase tracking-widest border border-[var(--border-primary)]">Step 2</span>
-                    <h2 className="text-base font-black text-[var(--text-primary)] uppercase tracking-tight">Qualified Stock Allocation</h2>
-                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 rounded text-[7px] font-black uppercase tracking-widest">
+                    <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded text-caption border border-[var(--border-primary)]">Step 2</span>
+                    <h2 className="text-base font-bold text-[var(--text-primary)] uppercase tracking-tight">Qualified Stock Allocation</h2>
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 rounded text-caption">
                       {qualifiedStocks.length} stocks
                     </span>
                   </div>
-                  <p className="text-[10px] font-medium text-[var(--text-tertiary)]">
+                  <p className="text-xs font-medium text-[var(--text-tertiary)]">
                     Rules-based allocation details for your active strategy portfolio. Only grades A–D included.
                   </p>
                 </div>
@@ -629,7 +617,7 @@ const AlphaHubPage: React.FC = () => {
               <div className="flex flex-wrap gap-1.5">
                 <button
                   onClick={() => setFilterBasket('all')}
-                  className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border transition-all ${
+                  className={`px-3 py-1.5 rounded-lg text-caption border transition-all ${
                     filterBasket === 'all'
                       ? 'bg-blue-600 text-[var(--text-primary)] border-blue-600 shadow-md'
                       : 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
@@ -641,7 +629,7 @@ const AlphaHubPage: React.FC = () => {
                   <button
                     key={b.id}
                     onClick={() => setFilterBasket(b.id)}
-                    className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-caption border transition-all ${
                       filterBasket === b.id
                         ? 'bg-blue-600 text-[var(--text-primary)] border-blue-600 shadow-md'
                         : 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
@@ -657,7 +645,7 @@ const AlphaHubPage: React.FC = () => {
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-[var(--bg-primary)]/40 border-b border-[var(--border-primary)] text-[8px] font-black uppercase tracking-widest text-[var(--text-tertiary)]">
+                      <tr className="bg-[var(--bg-primary)]/40 border-b border-[var(--border-primary)] text-caption text-[var(--text-tertiary)]">
                         <th className="px-3 py-3.5 w-[15%]">Stock</th>
                         <th className="px-3 py-3.5 w-[12%]">Sector</th>
                         <th className="px-3 py-3.5 w-[12%] text-right">Base Price</th>
@@ -670,7 +658,7 @@ const AlphaHubPage: React.FC = () => {
                         <th className="px-3 py-3.5 w-[6%] text-center">View</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[var(--border-primary)] font-mono text-[11px] text-[var(--text-secondary)]">
+                    <tbody className="divide-y divide-[var(--border-primary)] font-mono text-xs text-[var(--text-secondary)]">
                       {qualifiedStocks
                         .filter(s => filterBasket === 'all' || baskets.find(b => b.id === filterBasket)?.stocks.includes(s))
                         .map((stock: AlphaHubStock) => {
@@ -678,7 +666,7 @@ const AlphaHubPage: React.FC = () => {
                           const price = stock.currentPrice || stock.entryPrice || 1;
                           const amount = qty * price;
                           const weightPct = ((amount / totalPortfolioAmount) * 100);
-                          const isDown = stock.currentPrice < stock.entryPrice;
+                          const isDown = (stock.currentPrice || 0) < (stock.entryPrice || 0);
                           const targetPct = stock.target && stock.entryPrice
                             ? (((stock.target - stock.entryPrice) / stock.entryPrice) * 100).toFixed(1)
                             : '—';
@@ -688,19 +676,19 @@ const AlphaHubPage: React.FC = () => {
                             <tr key={stock.symbol} className="hover:bg-[var(--bg-tertiary)]/30 transition-all group border-b border-[var(--border-primary)]">
                               <td className="px-3 py-3">
                                 <div className="flex flex-col font-sans">
-                                  <span className="text-xs font-black text-[var(--text-primary)] uppercase group-hover:text-blue-400 transition-colors">{stock.symbol}</span>
-                                  <span className="text-[7px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{stock.basketSource || stock.capType}</span>
+                                  <span className="text-xs font-bold text-[var(--text-primary)] uppercase group-hover:text-blue-400 transition-colors">{stock.symbol}</span>
+                                  <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{stock.basketSource || stock.capType}</span>
                                 </div>
                               </td>
-                              <td className="px-3 py-3 text-[9px] font-bold text-[var(--text-tertiary)]">{stock.sector}</td>
-                              <td className="px-3 py-3 text-right font-black text-[var(--text-secondary)]">₹{stock.entryPrice?.toLocaleString()}</td>
+                              <td className="px-3 py-3 text-xs font-bold text-[var(--text-tertiary)]">{stock.sector}</td>
+                              <td className="px-3 py-3 text-right font-bold text-[var(--text-secondary)]">₹{stock.entryPrice?.toLocaleString()}</td>
                               <td className="px-3 py-3 text-right">
-                                <span className="font-black text-emerald-400">₹{stock.target?.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
-                                <span className="text-[7px] text-emerald-500 ml-1">({targetPct}%)</span>
+                                <span className="font-bold text-emerald-400">₹{stock.target?.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+                                <span className="text-xs text-emerald-500 ml-1">({targetPct}%)</span>
                               </td>
                               <td className="px-3 py-3 text-center">
                                 {validGrade !== 'NONE' ? (
-                                  <span className={`px-2 py-0.5 rounded text-[9px] font-black font-mono border ${
+                                  <span className={`px-2 py-0.5 rounded text-xs font-bold font-mono border ${
                                     grade === 'A' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                                     grade === 'B' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                                     grade === 'C' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
@@ -709,19 +697,19 @@ const AlphaHubPage: React.FC = () => {
                                     {grade}
                                   </span>
                                 ) : (
-                                  <span className="px-2 py-0.5 rounded text-[9px] font-black font-mono bg-[var(--bg-tertiary)] text-[var(--text-muted)] border border-[var(--border-secondary)]">
+                                  <span className="px-2 py-0.5 rounded text-xs font-bold font-mono bg-[var(--bg-tertiary)] text-[var(--text-muted)] border border-[var(--border-secondary)]">
                                     —
                                   </span>
                                 )}
                               </td>
                               <td className="px-3 py-3 text-right">
-                                <span className={`font-black ${isDown ? 'text-amber-500' : 'text-[var(--text-primary)]'}`}>
+                                <span className={`font-bold ${isDown ? 'text-amber-500' : 'text-[var(--text-primary)]'}`}>
                                   ₹{stock.currentPrice?.toLocaleString()}
                                 </span>
                               </td>
-                              <td className="px-3 py-3 text-right text-blue-400 font-black bg-blue-500/5 text-xs">{qty}</td>
-                              <td className="px-3 py-3 text-right font-black bg-blue-500/5 text-[var(--text-primary)]">₹{Math.round(amount).toLocaleString()}</td>
-                              <td className="px-3 py-3 text-right text-[10px] font-bold text-[var(--text-tertiary)]">{weightPct.toFixed(1)}%</td>
+                              <td className="px-3 py-3 text-right text-blue-400 font-bold bg-blue-500/5 text-xs">{qty}</td>
+                              <td className="px-3 py-3 text-right font-bold bg-blue-500/5 text-[var(--text-primary)]">₹{Math.round(amount).toLocaleString()}</td>
+                              <td className="px-3 py-3 text-right text-xs font-bold text-[var(--text-tertiary)]">{weightPct.toFixed(1)}%</td>
                               <td className="px-3 py-3 text-center">
                                 <Link to={`/stock/${stock.symbol}`} className="p-1.5 bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-all inline-flex items-center rounded-lg shadow-sm border border-[var(--border-primary)]">
                                   <ArrowUpRight className="h-3.5 w-3.5" />
@@ -744,7 +732,7 @@ const AlphaHubPage: React.FC = () => {
                     const price = stock.currentPrice || stock.entryPrice || 1;
                     const amount = qty * price;
                     const weightPct = ((amount / totalPortfolioAmount) * 100);
-                    const isDown = stock.currentPrice < stock.entryPrice;
+                    const isDown = (stock.currentPrice || 0) < (stock.entryPrice || 0);
                     const isExpanded = expandedStock === stock.symbol;
                     const targetPct = stock.target && stock.entryPrice
                       ? (((stock.target - stock.entryPrice) / stock.entryPrice) * 100).toFixed(1)
@@ -752,16 +740,16 @@ const AlphaHubPage: React.FC = () => {
                     const grade = stock.tranche?.toUpperCase();
                     const validGrade = grade && ['A', 'B', 'C', 'D'].includes(grade) ? grade : 'NONE';
                     return (
-                      <div key={stock.symbol} className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl overflow-hidden shadow-sm">
+                      <div key={stock.symbol} className="card rounded-xl overflow-hidden">
                         <button
                           onClick={() => setExpandedStock(isExpanded ? null : stock.symbol)}
                           className="w-full text-left p-4 space-y-2.5 active:bg-[var(--bg-tertiary)] transition-colors"
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="text-sm font-black text-[var(--text-primary)] font-mono uppercase leading-none">{stock.symbol}</span>
+                              <span className="text-sm font-bold text-[var(--text-primary)] font-mono uppercase leading-none">{stock.symbol}</span>
                               {validGrade !== 'NONE' ? (
-                                <span className={`px-1.5 py-0.5 rounded text-[7px] font-black border ${
+                                <span className={`px-1.5 py-0.5 rounded text-xs font-bold border ${
                                   grade === 'A' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                                   grade === 'B' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                                   grade === 'C' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
@@ -770,48 +758,48 @@ const AlphaHubPage: React.FC = () => {
                                   {grade}
                                 </span>
                               ) : (
-                                <span className="px-1.5 py-0.5 rounded text-[7px] font-black bg-[var(--bg-tertiary)] text-[var(--text-muted)] border border-[var(--border-secondary)]">—</span>
+                                <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-[var(--bg-tertiary)] text-[var(--text-muted)] border border-[var(--border-secondary)]">—</span>
                               )}
                             </div>
                             <div className="text-right shrink-0 ml-2 flex items-center gap-2">
-                              <span className="text-sm font-black text-blue-400 font-mono">{qty} qty</span>
+                              <span className="text-sm font-bold text-blue-400 font-mono">{qty} qty</span>
                               <ChevronDown className={`h-3.5 w-3.5 text-[var(--text-muted)] transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between text-[9px]">
+                          <div className="flex items-center justify-between text-xs">
                             <span className="text-[var(--text-tertiary)] font-medium">{stock.sector}</span>
-                            <span className={`font-black font-mono ${isDown ? 'text-amber-500' : 'text-emerald-400'}`}>
+                            <span className={`font-bold font-mono ${isDown ? 'text-amber-500' : 'text-emerald-400'}`}>
                               ₹{stock.currentPrice?.toLocaleString()}
                             </span>
                           </div>
 
-                          <div className="flex items-center justify-between text-[9px]">
-                            <span className="text-[var(--text-tertiary)] font-medium">Amount: <span className="font-black text-[var(--text-primary)]">₹{Math.round(amount).toLocaleString()}</span></span>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-[var(--text-tertiary)] font-medium">Amount: <span className="font-bold text-[var(--text-primary)]">₹{Math.round(amount).toLocaleString()}</span></span>
                             <span className="text-[var(--text-muted)] font-mono">{weightPct.toFixed(1)}% of portfolio</span>
                           </div>
 
                           {isExpanded && (
                             <div className="pt-3 border-t border-[var(--border-primary)] space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                              <div className="grid grid-cols-2 gap-2 text-[9px] font-medium text-[var(--text-tertiary)]">
+                              <div className="grid grid-cols-2 gap-2 text-xs font-medium text-[var(--text-tertiary)]">
                                 <div>
                                   <span className="text-[7.5px] text-[var(--text-muted)] block mb-0.5 uppercase font-bold">Base price</span>
-                                  <span className="text-[var(--text-secondary)] font-black">₹{stock.entryPrice?.toLocaleString()}</span>
+                                  <span className="text-[var(--text-secondary)] font-bold">₹{stock.entryPrice?.toLocaleString()}</span>
                                 </div>
                                 <div className="text-right">
                                   <span className="text-[7.5px] text-[var(--text-muted)] block mb-0.5 uppercase font-bold">Target</span>
-                                  <span className="text-emerald-400 font-black">₹{stock.target?.toLocaleString(undefined, { maximumFractionDigits: 1 })} ({targetPct}%)</span>
+                                  <span className="text-emerald-400 font-bold">₹{stock.target?.toLocaleString(undefined, { maximumFractionDigits: 1 })} ({targetPct}%)</span>
                                 </div>
                                 <div>
                                   <span className="text-[7.5px] text-[var(--text-muted)] block mb-0.5 uppercase font-bold">Strategy</span>
-                                  <span className="text-[var(--text-secondary)] font-black text-[8px]">{stock.strategy}</span>
+                                  <span className="text-[var(--text-secondary)] font-bold text-xs">{stock.strategy}</span>
                                 </div>
                                 <div className="text-right">
                                   <span className="text-[7.5px] text-[var(--text-muted)] block mb-0.5 uppercase font-bold">ROI</span>
-                                  <span className="text-emerald-400 font-black">+{Number(stock.roi || 0).toFixed(1)}%</span>
+                                  <span className="text-emerald-400 font-bold">+{Number(stock.roi || 0).toFixed(1)}%</span>
                                 </div>
                               </div>
-                              <Link to={`/stock/${stock.symbol}`} className="flex items-center justify-center gap-1 py-2 bg-[var(--bg-tertiary)] rounded-xl text-[8px] font-black text-[var(--text-tertiary)] uppercase tracking-widest hover:bg-[var(--bg-primary)] transition-colors">
+                              <Link to={`/stock/${stock.symbol}`} className="flex items-center justify-center gap-1 py-2 bg-[var(--bg-tertiary)] rounded-xl text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider hover:bg-[var(--bg-primary)] transition-colors">
                                 View full analysis <ArrowUpRight className="h-3 w-3" />
                               </Link>
                             </div>
@@ -823,7 +811,7 @@ const AlphaHubPage: React.FC = () => {
               </div>
 
               {/* Table footer */}
-              <div className="bg-[var(--bg-primary)]/20 border border-[var(--border-primary)] rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+              <div className="bg-[var(--bg-primary)]/20 border border-[var(--border-primary)] rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                 <span>Rules-based allocation • 40-stock target portfolio • 50:30:20 cap mix</span>
                 <span className="text-blue-400">Strategy-weighted quantities</span>
               </div>
@@ -833,7 +821,7 @@ const AlphaHubPage: React.FC = () => {
             <div className="flex justify-center pt-2">
               <button
                 onClick={scrollToPerformance}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-[var(--bg-tertiary)] transition-all border border-[var(--border-primary)]"
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-2xl text-caption hover:bg-[var(--bg-tertiary)] transition-all border border-[var(--border-primary)]"
               >
                 <BarChart3 className="h-4 w-4" />
                 View Performance History →
@@ -846,25 +834,25 @@ const AlphaHubPage: React.FC = () => {
             <div id="backtest-performance" className="scroll-mt-48 space-y-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded text-[7px] font-black uppercase tracking-widest">Step 3</span>
-                  <h2 className="text-base font-black text-[var(--text-primary)] uppercase tracking-tight">Backtest Performance History</h2>
-                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-[7px] font-black uppercase tracking-widest">
+                  <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded text-caption">Step 3</span>
+                  <h2 className="text-base font-bold text-[var(--text-primary)] uppercase tracking-tight">Backtest Performance History</h2>
+                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-caption">
                     {perfYears}Y data
                   </span>
                 </div>
-                <p className="text-[10px] font-medium text-[var(--text-tertiary)]">
+                <p className="text-xs font-medium text-[var(--text-tertiary)]">
                   Historical simulation of actual strategy rules (entry/exit cycles) across your allocation.
                 </p>
               </div>
 
               {/* Time window selector */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest mr-1">Window:</span>
+                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mr-1">Window:</span>
                 {[3, 5, 10, 20].map(y => (
                   <button
                     key={y}
                     onClick={() => setPerfYears(y)}
-                    className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
+                    className={`px-4 py-2 rounded-xl text-caption transition-all border ${
                       perfYears === y
                         ? 'bg-blue-600 text-[var(--text-primary)] border-blue-600 shadow-md shadow-blue-500/10'
                         : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border-[var(--border-primary)] hover:border-[var(--border-secondary)]'
@@ -876,36 +864,36 @@ const AlphaHubPage: React.FC = () => {
               </div>
 
               {/* Performance Metrics Card */}
-              <div className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-[2rem] p-6 md:p-8 text-[var(--text-secondary)] shadow-2xl relative overflow-hidden">
+              <div className="card p-6 md:p-8 text-[var(--text-secondary)] relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full pointer-events-none" />
 
                 <div className="relative z-10 space-y-6">
                   {/* Backtest Metrics Grid (Redesigned) */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[var(--bg-primary)]/40 border border-[var(--border-primary)]/80 rounded-2xl p-5">
                     <div className="text-center p-1">
-                      <div className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Total Deployed</div>
-                      <div className="text-base font-black text-[var(--text-primary)] font-mono">₹{totalCapital.toLocaleString('en-IN')}</div>
+                      <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Total Deployed</div>
+                      <div className="text-base font-bold text-[var(--text-primary)] font-mono">₹{totalCapital.toLocaleString('en-IN')}</div>
                     </div>
                     <div className="text-center p-1 border-l border-[var(--border-primary)]/50">
-                      <div className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Projected Return</div>
-                      <div className="text-base font-black text-emerald-400 font-mono">
+                      <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Projected Return</div>
+                      <div className="text-base font-bold text-emerald-400 font-mono">
                         +₹{Math.round(totalCapital * Math.pow(1 + alphaCagr, perfYears) - totalCapital).toLocaleString('en-IN')}
                       </div>
                     </div>
                     <div className="text-center p-1 border-l border-[var(--border-primary)]/50">
-                      <div className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Projected Value</div>
-                      <div className="text-base font-black text-blue-400 font-mono">
+                      <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">Projected Value</div>
+                      <div className="text-base font-bold text-blue-400 font-mono">
                         ₹{Math.round(totalCapital * Math.pow(1 + alphaCagr, perfYears)).toLocaleString('en-IN')}
                       </div>
                     </div>
                     <div className="text-center p-1 border-l border-[var(--border-primary)]/50">
-                      <div className="text-[7.5px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">CAGR (Backtest)</div>
-                      <div className="text-base font-black text-emerald-400 font-mono">{alphaCagrPct}%</div>
+                      <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1">CAGR (Backtest)</div>
+                      <div className="text-base font-bold text-emerald-400 font-mono">{alphaCagrPct}%</div>
                     </div>
                   </div>
 
                   {/* Trade activity summary */}
-                  <div className="flex flex-wrap gap-4 text-[9px] font-medium text-[var(--text-tertiary)] justify-center md:justify-start">
+                  <div className="flex flex-wrap gap-4 text-xs font-medium text-[var(--text-tertiary)] justify-center md:justify-start">
                     <span className="flex items-center gap-1.5 px-3 py-1 bg-[var(--bg-primary)]/40 rounded-full border border-[var(--border-primary)]">
                       <TrendingUp className="h-3 w-3 text-emerald-400" />
                       {totalTrades} total trades
@@ -964,21 +952,21 @@ const AlphaHubPage: React.FC = () => {
                   <div className="border-t border-[var(--border-primary)] pt-4">
                     <button
                       onClick={() => setShowBookProfitInfo(!showBookProfitInfo)}
-                      className="flex items-center gap-2 text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest hover:text-[var(--text-primary)] transition-colors"
+                      className="flex items-center gap-2 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors"
                     >
                       <Info className="h-3.5 w-3.5" />
                       How "booked profit" is calculated
                       <ChevronDown className={`h-3 w-3 transition-transform ${showBookProfitInfo ? 'rotate-180' : ''}`} />
                     </button>
                     {showBookProfitInfo && (
-                      <div className="mt-3 text-[10px] text-[var(--text-tertiary)] leading-relaxed max-w-2xl animate-in fade-in slide-in-from-top-1 duration-205 space-y-2">
+                      <div className="mt-3 text-xs text-[var(--text-tertiary)] leading-relaxed max-w-2xl animate-in fade-in slide-in-from-top-1 duration-205 space-y-2">
                         <p>
                           Booked profit represents gains that have been <strong className="text-[var(--text-primary)]">realised</strong> by closing positions as per the strategy's exit rules. This is different from "unrealised" or "paper" gains that still depend on current market prices.
                         </p>
                         <p>
                           In this backtest, the model assumes the strategy exits a position when its target is met or a stop condition triggers, books the profit, and reallocates the capital into the next qualified opportunity. The booked profit figure is the sum of all such realised gains over the selected period.
                         </p>
-                        <p className="text-[9px] text-slate-550">
+                        <p className="text-xs text-slate-550">
                           Note: This is a historical simulation using rules-based logic. Actual trade execution depends on market liquidity, slippage, brokerage, and timing.
                         </p>
                       </div>
@@ -987,15 +975,15 @@ const AlphaHubPage: React.FC = () => {
 
                   {/* Performance table (Tightened) */}
                   <div className="border-t border-[var(--border-primary)] pt-4 overflow-x-auto">
-                    <table className="w-full text-left text-[9px] md:text-[10px] font-mono min-w-[500px]">
+                    <table className="w-full text-left text-xs md:text-xs font-mono min-w-[500px]">
                       <thead>
                         <tr className="text-[var(--text-muted)] border-b border-[var(--border-primary)]">
-                          <th className="pb-2 font-black uppercase tracking-widest">Year</th>
-                          <th className="pb-2 font-black uppercase tracking-widest text-right">Capital invested</th>
-                          <th className="pb-2 font-black uppercase tracking-widest text-right">Entries</th>
-                          <th className="pb-2 font-black uppercase tracking-widest text-right">Exits</th>
-                          <th className="pb-2 font-black uppercase tracking-widest text-right">Booked profit</th>
-                          <th className="pb-2 font-black uppercase tracking-widest text-right">Portfolio value</th>
+                          <th className="pb-2 font-bold uppercase tracking-wider">Year</th>
+                          <th className="pb-2 font-bold uppercase tracking-wider text-right">Capital invested</th>
+                          <th className="pb-2 font-bold uppercase tracking-wider text-right">Entries</th>
+                          <th className="pb-2 font-bold uppercase tracking-wider text-right">Exits</th>
+                          <th className="pb-2 font-bold uppercase tracking-wider text-right">Booked profit</th>
+                          <th className="pb-2 font-bold uppercase tracking-wider text-right">Portfolio value</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[var(--border-primary)]">
@@ -1005,14 +993,14 @@ const AlphaHubPage: React.FC = () => {
                           const bookedProfit = portfolioValue - invested;
                           return (
                             <tr key={i} className="border-b border-[var(--border-primary)] hover:bg-[var(--bg-tertiary)]/40 transition-colors">
-                              <td className="py-2.5 text-[var(--text-primary)] font-black">{row.year}</td>
+                              <td className="py-2.5 text-[var(--text-primary)] font-bold">{row.year}</td>
                               <td className="py-2.5 text-right text-[var(--text-secondary)]">₹{invested.toLocaleString('en-IN')}</td>
                               <td className="py-2.5 text-right text-[var(--text-tertiary)]">{row.entries}</td>
                               <td className="py-2.5 text-right text-[var(--text-tertiary)]">{row.exits}</td>
-                              <td className={`py-2.5 text-right font-black ${bookedProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              <td className={`py-2.5 text-right font-bold ${bookedProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                                 {bookedProfit >= 0 ? '+' : ''}₹{bookedProfit.toLocaleString('en-IN')}
                               </td>
-                              <td className="py-2.5 text-right text-[var(--text-primary)] font-black">₹{portfolioValue.toLocaleString('en-IN')}</td>
+                              <td className="py-2.5 text-right text-[var(--text-primary)] font-bold">₹{portfolioValue.toLocaleString('en-IN')}</td>
                             </tr>
                           );
                         })}
@@ -1022,7 +1010,7 @@ const AlphaHubPage: React.FC = () => {
 
                   {/* Disclaimer */}
                   <div className="border-t border-[var(--border-primary)] pt-4">
-                    <p className="text-[8px] md:text-[9px] text-slate-550 font-medium leading-relaxed">
+                    <p className="text-xs md:text-sm text-slate-550 font-medium leading-relaxed">
                       ⚠ Past performance is not indicative of future results. This is a historical simulation for educational purposes only and does not constitute investment advice or a recommendation to buy or sell any security. Entry/exit counts are simulated based on average strategy activity and may not reflect actual market cycles. Actual returns may differ significantly.
                     </p>
                   </div>
@@ -1038,14 +1026,14 @@ const AlphaHubPage: React.FC = () => {
               >
                 <div className="flex items-center gap-3">
                   <ShieldCheck className="h-5 w-5 text-blue-400 shrink-0" />
-                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest italic">Important Disclaimers</span>
+                  <span className="text-xs md:text-caption italic">Important Disclaimers</span>
                 </div>
                 {showDisclaimer ? <ChevronUp className="h-4 w-4 text-[var(--text-muted)] shrink-0" /> : <ChevronDown className="h-4 w-4 text-[var(--text-muted)] shrink-0" />}
               </button>
 
               {showDisclaimer && (
                 <div className="px-5 md:px-6 pb-6 md:pb-8 space-y-4 border-t border-[var(--border-primary)] pt-4 animate-in slide-in-from-top-2 duration-300">
-                  <div className="space-y-3 text-[9px] md:text-[10px] font-medium text-[var(--text-tertiary)] leading-relaxed">
+                  <div className="space-y-3 text-xs md:text-xs font-medium text-[var(--text-tertiary)] leading-relaxed">
                     <p>
                       1. <strong>Education only.</strong> All strategy baskets, model portfolios, and historical simulations on this page are provided for educational and research purposes only. They do not constitute investment advice or a recommendation to buy, sell, or hold any security.
                     </p>
@@ -1067,7 +1055,7 @@ const AlphaHubPage: React.FC = () => {
             </div>
 
             {/* System Status Footer */}
-            <div className="flex flex-wrap items-center justify-between gap-4 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest border-t border-[var(--border-primary)] pt-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider border-t border-[var(--border-primary)] pt-6">
               <div className="flex items-center gap-2">
                 <Activity className="h-3 w-3 text-emerald-400" />
                 Alpha Desk sync: <span className="text-emerald-400">Optimal</span>

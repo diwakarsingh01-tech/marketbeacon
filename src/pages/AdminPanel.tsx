@@ -54,19 +54,16 @@ const AdminPanel: React.FC = () => {
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
-    const token = localStorage.getItem('mb_token');
     try {
       const [uRes, rRes, vRes, fRes, wRes] = await Promise.all([
-        fetch(`${API_URL}/api/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/admin/upgrade-requests`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/admin/vouchers`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/admin/feedback`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/admin/waitlist?status=pending`, { headers: { 'Authorization': `Bearer ${token}` } })
+        fetch(`${API_URL}/api/admin/users`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/admin/upgrade-requests`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/admin/vouchers`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/admin/feedback`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/admin/waitlist?status=pending`, { credentials: 'include' })
       ]);
 
       if (uRes.status === 401 || uRes.status === 403 || rRes.status === 401 || rRes.status === 403 || vRes.status === 401 || vRes.status === 403 || fRes.status === 401 || fRes.status === 403 || wRes.status === 401) {
-        localStorage.removeItem('mb_token');
-        localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
       }
@@ -92,11 +89,10 @@ const AdminPanel: React.FC = () => {
 
   const handleApprove = async (requestId: number) => {
     if (!window.confirm("Approve this payment and upgrade user?")) return;
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/upgrade-requests/${requestId}/approve`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) {
@@ -110,11 +106,10 @@ const AdminPanel: React.FC = () => {
 
   const handleDeleteItem = async (type: 'feedback' | 'vouchers' | 'upgrade-requests', id: number) => {
     if (!window.confirm(`Are you sure you want to delete this ${type.replace('-requests', '')}? This action is permanent.`)) return;
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/${type}/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         await fetchData();
@@ -127,14 +122,13 @@ const AdminPanel: React.FC = () => {
   const handleSendReply = async () => {
     if (!selectedFeedback || !replyText.trim()) return;
     setIsSubmittingReply(true);
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/feedback/${selectedFeedback.id}/reply`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ reply: replyText })
       });
       if (res.ok) {
@@ -149,14 +143,13 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleUpdateUser = async (userId: number, data: Record<string, unknown>) => {
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(data)
       });
       const result = await safeJsonParse(res);
@@ -172,11 +165,10 @@ const AdminPanel: React.FC = () => {
 
   const handleDeleteUser = async (userId: number) => {
     if (!window.confirm("DANGER: Permanently delete user and all data?")) return;
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) fetchData();
@@ -184,10 +176,9 @@ const AdminPanel: React.FC = () => {
   };
 
   const fetchWaitlist = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/waitlist?status=pending`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await safeJsonParse(res);
@@ -198,14 +189,13 @@ const AdminPanel: React.FC = () => {
 
   const handleApproveWaitlist = async (entryId: number) => {
     if (!window.confirm('Approve this user and generate a unique voucher code?')) return;
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/waitlist/${entryId}/approve`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ duration_days: 7 })
       });
       const data = await safeJsonParse(res);
@@ -220,11 +210,10 @@ const AdminPanel: React.FC = () => {
 
   const handleRejectWaitlist = async (entryId: number) => {
     if (!window.confirm('Reject this waitlist entry?')) return;
-    const token = localStorage.getItem('mb_token');
     try {
       const res = await fetch(`${API_URL}/api/admin/waitlist/${entryId}/reject`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         toast('Entry rejected');
@@ -256,7 +245,7 @@ const AdminPanel: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-screen space-y-4">
         <ShieldCheck className="h-12 w-12 text-red-500" />
-        <h2 className="text-xl font-black uppercase tracking-widest">Unauthorized Access</h2>
+        <h2 className="text-xl font-black uppercase tracking-wider">Unauthorized Access</h2>
       </div>
     );
   }
@@ -268,7 +257,7 @@ const AdminPanel: React.FC = () => {
         <div className="space-y-1">
           <div className="flex items-center space-x-2 text-blue-600">
              <ShieldCheck className="h-4 w-4" />
-             <span className="text-[10px] font-black uppercase tracking-widest leading-none">Security Level: Admin</span>
+             <span className="text-caption leading-none">Security Level: Admin</span>
           </div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Command Center</h1>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.3em]">Institutional Membership Control</p>
@@ -282,16 +271,16 @@ const AdminPanel: React.FC = () => {
                 placeholder="Search Database..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-3 text-[11px] font-black uppercase tracking-widest focus:bg-white transition-all w-full md:w-64 shadow-inner"
+                className="bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-3 text-caption focus:bg-white transition-all w-full md:w-64 shadow-inner"
               />
            </div>
 <button onClick={() => { setTempPassword(crypto.randomUUID().slice(0, 12)); setIsAddUserModalOpen(true); }} className="p-3 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center space-x-2 text-slate-500 flex-1 md:flex-initial">
                <UserPlus className="h-4 w-4" />
-               <span className="text-[10px] font-black uppercase tracking-widest">Member</span>
+               <span className="text-caption">Member</span>
            </button>
            <button onClick={() => setIsAddVoucherModalOpen(true)} className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-lg flex items-center justify-center space-x-2 flex-1 md:flex-initial">
               <Gift className="h-4 w-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Voucher</span>
+              <span className="text-caption">Voucher</span>
            </button>
            <button onClick={fetchData} className="p-3 bg-white border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all shadow-sm text-slate-500 flex items-center justify-center">
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -304,63 +293,63 @@ const AdminPanel: React.FC = () => {
          <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-100 w-full max-w-full overflow-x-auto no-scrollbar">
             <button 
               onClick={() => setActiveTab('pending')}
-              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'pending' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+              className={`px-8 py-3 rounded-xl text-caption transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'pending' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
             >
               <Clock className="h-4 w-4" />
               <span>Pending ({requests.filter(r => r.status === 'pending').length})</span>
             </button>
             <button 
               onClick={() => setActiveTab('approved')}
-              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'approved' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}
+              className={`px-8 py-3 rounded-xl text-caption transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'approved' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}
             >
               <CheckCircle2 className="h-4 w-4" />
               <span>History ({requests.filter(r => r.status === 'approved').length})</span>
             </button>
             <button 
               onClick={() => setActiveTab('users')}
-              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'users' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
+              className={`px-8 py-3 rounded-xl text-caption transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'users' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
             >
               <Users className="h-4 w-4" />
               <span>User Directory ({users.length})</span>
             </button>
             <button 
               onClick={() => setActiveTab('vouchers')}
-              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'vouchers' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+              className={`px-8 py-3 rounded-xl text-caption transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'vouchers' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
             >
               <Gift className="h-4 w-4" />
               <span>Vouchers ({vouchers.length})</span>
             </button>
             <button 
               onClick={() => setActiveTab('feedback')}
-              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'feedback' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+              className={`px-8 py-3 rounded-xl text-caption transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'feedback' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
             >
               <MessageSquare className="h-4 w-4" />
               <span>Feedback ({feedbacks.length})</span>
             </button>
             <button 
               onClick={() => setActiveTab('blog')}
-              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'blog' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+              className={`px-8 py-3 rounded-xl text-caption transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'blog' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
             >
               <FileText className="h-4 w-4" />
               <span>Blog</span>
             </button>
             <button 
               onClick={() => { setActiveTab('waitlist'); fetchWaitlist(); }}
-              className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'waitlist' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-500'}`}
+              className={`px-8 py-3 rounded-xl text-caption transition-all flex items-center space-x-2 whitespace-nowrap ${activeTab === 'waitlist' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-500'}`}
             >
               <UserPlus className="h-4 w-4" />
               <span>Waitlist ({waitlist.length})</span>
             </button>
          </div>
          
-         <div className="flex items-center space-x-6 text-[10px] font-black uppercase tracking-widest text-slate-500">
+         <div className="flex items-center space-x-6 text-caption text-slate-500">
             <div className="flex items-center space-x-2">
                <div className="h-2 w-2 rounded-full bg-emerald-500" />
-               <span>{users.filter(u => getDaysRemaining(u.subscription_expiry) !== null && getDaysRemaining(u.subscription_expiry)! > 0).length} Active</span>
+               <span>{users.filter(u => getDaysRemaining(u.subscription_expiry || '') !== null && getDaysRemaining(u.subscription_expiry || '')! > 0).length} Active</span>
             </div>
             <div className="flex items-center space-x-2">
                <div className="h-2 w-2 rounded-full bg-red-500" />
-               <span>{users.filter(u => getDaysRemaining(u.subscription_expiry) === 0).length} Expired</span>
+               <span>{users.filter(u => getDaysRemaining(u.subscription_expiry || '') === 0).length} Expired</span>
             </div>
          </div>
       </div>
@@ -371,45 +360,45 @@ const AdminPanel: React.FC = () => {
           <table className="w-full text-left">
              <thead>
                <tr className="border-b border-slate-50 bg-slate-50/30">
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-wider">
                     {activeTab === 'users' ? 'Member Profile' : activeTab === 'vouchers' ? 'Voucher Code' : activeTab === 'feedback' ? 'Member Profile' : 'Approval Request'}
                   </th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">
+                  <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
                     {activeTab === 'feedback' ? 'Rating' : 'Status'}
                   </th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">
+                  <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
                     {activeTab === 'feedback' ? 'Type' : 'Plan Tier'}
                   </th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-wider">
                     {activeTab === 'users' ? 'Membership Validity' : activeTab === 'vouchers' ? 'Usage Matrix' : activeTab === 'feedback' ? 'Commentary & Context' : 'Transaction ID'}
                   </th>
-                  <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
+                  <th className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                </tr>
              </thead>
              <tbody className="divide-y divide-slate-50">
                {activeTab === 'vouchers' ? (
                  (vouchers || []).map(v => (
                    <tr key={v.id} className="group hover:bg-slate-50/50 transition-colors">
-                     <td className="px-8 py-6 font-mono font-black text-slate-900 text-xs select-all">{v.code}</td>
+                     <td className="px-8 py-6 font-mono font-bold text-slate-900 text-xs select-all">{v.code}</td>
                      <td className="px-8 py-6">
                         <div className="flex justify-center">
-                          <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${v.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+                          <span className={`px-2 py-1 rounded text-caption uppercase ${v.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
                              {v.is_active ? 'Live' : 'Disabled'}
                           </span>
                         </div>
                      </td>
                      <td className="px-8 py-6">
                         <div className="flex flex-col items-center">
-                           <span className="text-[10px] font-black text-slate-900 uppercase">{v.tier}</span>
-                           <span className="text-[8px] font-bold text-slate-500 uppercase">{v.duration_days} Days Access</span>
+                           <span className="text-xs font-bold text-slate-900 uppercase">{v.tier}</span>
+                           <span className="text-caption text-slate-500 uppercase">{v.duration_days} Days Access</span>
                         </div>
                      </td>
                      <td className="px-8 py-6">
                         <div className="flex flex-col">
                            <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-600" style={{ width: `${(v.current_uses / v.max_uses) * 100}%` }} />
+                              <div className="h-full bg-blue-600" style={{ width: `${((v.current_uses || 0) / (v.max_uses || 1)) * 100}%` }} />
                            </div>
-                           <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase">{v.current_uses} / {v.max_uses} Redemptions</span>
+                           <span className="text-caption text-slate-500 mt-1 uppercase">{v.current_uses} / {v.max_uses} Redemptions</span>
                         </div>
                      </td>
                      <td className="px-8 py-6 text-right">
@@ -425,23 +414,23 @@ const AdminPanel: React.FC = () => {
                  ))
                ) : activeTab === 'users' ? (
                  filteredUsers.map(u => {
-                   const days = getDaysRemaining(u.subscription_expiry);
+                   const days = getDaysRemaining(u.subscription_expiry || '');
                    return (
                     <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors">
                       <td className="px-8 py-6">
                          <div className="flex items-center space-x-4">
-                            <div className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs uppercase italic">
+                            <div className="h-10 w-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs uppercase italic">
                                {u.name?.substring(0,2)}
                             </div>
                             <div className="flex flex-col">
-                               <span className="text-[13px] font-black text-slate-900 leading-none">{u.name}</span>
-                               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mt-1">{u.email || u.mobile || 'No Contact'}</span>
+                               <span className="text-[13px] font-bold text-slate-900 leading-none">{u.name}</span>
+                               <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter mt-1">{u.email || u.mobile || 'No Contact'}</span>
                             </div>
                          </div>
                       </td>
                       <td className="px-8 py-6">
                          <div className="flex justify-center">
-                            <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.1em] ${u.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                            <span className={`px-3 py-1 rounded-full text-caption uppercase tracking-[0.1em] ${u.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                                {u.is_active ? 'Active' : 'Deactivated'}
                             </span>
                          </div>
@@ -450,7 +439,7 @@ const AdminPanel: React.FC = () => {
                          <div className="flex justify-center">
                             <div className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border ${u.tier === 'alpha' ? 'bg-slate-900 text-white border-slate-900 shadow-lg' : u.tier === 'pro' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
                                {u.tier === 'alpha' ? <ShieldCheck className="h-3 w-3" /> : u.tier === 'pro' ? <Zap className="h-3 w-3" /> : null}
-                               <span className="text-[9px] font-black uppercase">{u.tier}</span>
+                               <span className="text-caption uppercase">{u.tier}</span>
                             </div>
                          </div>
                       </td>
@@ -458,10 +447,10 @@ const AdminPanel: React.FC = () => {
                          <div className="flex flex-col space-y-1">
                             <div className="flex items-center space-x-2 text-slate-700">
                                <Calendar className="h-3.5 w-3.5 text-slate-300" />
-                               <span className="text-[11px] font-bold font-mono">{u.subscription_expiry ? new Date(u.subscription_expiry).toLocaleDateString() : 'Unlimited'}</span>
+                               <span className="text-caption font-mono">{u.subscription_expiry ? new Date(u.subscription_expiry).toLocaleDateString() : 'Unlimited'}</span>
                             </div>
                             {days !== null && (
-                               <span className={`text-[8px] font-black uppercase ${days <= 3 ? 'text-red-500 animate-pulse' : 'text-slate-500'}`}>
+                               <span className={`text-caption uppercase ${days <= 3 ? 'text-red-500 animate-pulse' : 'text-slate-500'}`}>
                                   {days === 0 ? 'Expired' : `${days} Days Remaining`}
                                </span>
                             )}
@@ -492,8 +481,8 @@ const AdminPanel: React.FC = () => {
                     <tr key={f.id} className="group hover:bg-slate-50/50 transition-colors">
                       <td className="px-8 py-6">
                         <div className="flex flex-col">
-                           <span className="text-[13px] font-black text-slate-900 leading-none">{f.user_name || 'System User'}</span>
-                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mt-1">{f.user_email}</span>
+                           <span className="text-[13px] font-bold text-slate-900 leading-none">{f.user_name || 'System User'}</span>
+                           <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter mt-1">{f.user_email}</span>
                         </div>
                       </td>
                       <td className="px-8 py-6">
@@ -501,14 +490,14 @@ const AdminPanel: React.FC = () => {
                            {[1, 2, 3, 4, 5].map(star => (
                              <Star 
                                key={star} 
-                               className={`h-3 w-3 ${star <= f.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} 
+                               className={`h-3 w-3 ${star <= (f.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} 
                              />
                            ))}
                         </div>
                       </td>
                       <td className="px-8 py-6">
                         <div className="flex justify-center">
-                           <span className={`px-2.5 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100`}>
+                           <span className={`px-2.5 py-0.5 rounded-full text-[8.5px] font-bold uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-100`}>
                              {f.disposition}
                            </span>
                         </div>
@@ -521,19 +510,19 @@ const AdminPanel: React.FC = () => {
                                href={f.url} 
                                target="_blank" 
                                rel="noreferrer" 
-                               className="text-[9px] font-black text-blue-500 hover:underline truncate"
+                               className="text-caption text-blue-500 hover:underline truncate"
                              >
                                {f.url}
                              </a>
                            )}
-                           <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">
-                             {new Date(f.timestamp).toLocaleString()}
+                           <span className="text-caption text-slate-500 uppercase tracking-wider">
+                             {new Date(f.timestamp || '').toLocaleString()}
                            </span>
                            {f.reply_text && (
                              <div className="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
-                                <span className="text-[7.5px] font-black text-emerald-600 uppercase block mb-1">Admin Resolution:</span>
-                                <p className="text-[11px] font-medium text-slate-700 leading-tight italic">"{f.reply_text}"</p>
-                                <span className="text-[7px] text-slate-400 mt-1 block uppercase">{new Date(f.replied_at).toLocaleString()}</span>
+                                <span className="text-[7.5px] font-bold text-emerald-600 uppercase block mb-1">Admin Resolution:</span>
+                                <p className="text-caption font-medium text-slate-700 leading-tight italic">"{f.reply_text}"</p>
+                                <span className="text-xs text-slate-400 mt-1 block uppercase">{new Date(f.replied_at || '').toLocaleString()}</span>
                              </div>
                            )}
                         </div>
@@ -565,13 +554,13 @@ const AdminPanel: React.FC = () => {
                   <tr key={req.id} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-6">
                       <div className="flex flex-col">
-                         <span className="text-[13px] font-black text-slate-900 leading-none">{req.name}</span>
-                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mt-1">{req.email || req.mobile}</span>
+                         <span className="text-[13px] font-bold text-slate-900 leading-none">{req.name}</span>
+                         <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter mt-1">{req.email || req.mobile}</span>
                       </div>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex justify-center">
-                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                         <span className={`px-3 py-1 rounded-full text-caption ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
                             {req.status}
                          </span>
                       </div>
@@ -580,9 +569,9 @@ const AdminPanel: React.FC = () => {
                       <div className="flex flex-col items-center space-y-1">
                          <div className="flex items-center space-x-2 text-blue-600">
                             <Zap className="h-3 w-3" />
-                            <span className="text-[11px] font-black uppercase">{req.requested_tier}</span>
+                            <span className="text-caption uppercase">{req.requested_tier}</span>
                          </div>
-                         <span className="text-[8px] font-black uppercase text-slate-500">{req.billing_cycle}</span>
+                         <span className="text-caption uppercase text-slate-500">{req.billing_cycle}</span>
                       </div>
                     </td>
                     <td className="px-8 py-6">
@@ -596,7 +585,7 @@ const AdminPanel: React.FC = () => {
                         {req.status === 'pending' && (
                           <button 
                             onClick={() => handleApprove(req.id)}
-                            className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md active:scale-95"
+                            className="px-6 py-2 bg-slate-900 text-white rounded-xl text-caption hover:bg-blue-600 transition-all shadow-md active:scale-95"
                           >
                             Approve Upgrade
                           </button>
@@ -625,52 +614,52 @@ const AdminPanel: React.FC = () => {
                  <div className="flex justify-between items-start">
                     <div>
                        <span className="text-[7.5px] text-slate-500 block mb-0.5 uppercase font-bold">Voucher Code</span>
-                       <span className="text-sm font-black text-slate-900 font-mono uppercase select-all">{v.code}</span>
+                       <span className="text-sm font-bold text-slate-900 font-mono uppercase select-all">{v.code}</span>
                     </div>
                     <div className="text-right">
-                       <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${v.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+                       <span className={`px-2 py-0.5 rounded text-caption uppercase ${v.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
                           {v.is_active ? 'Live' : 'Disabled'}
                        </span>
                     </div>
                  </div>
-                 <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+                 <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-caption text-slate-500 uppercase tracking-wider font-mono">
                     <div>
                        <span className="text-[7.5px] text-slate-500 block mb-0.5">Tier Plan</span>
-                       <span className="text-slate-800 font-black">{v.tier}</span>
+                       <span className="text-slate-800 font-bold">{v.tier}</span>
                     </div>
                     <div className="text-right">
                        <span className="text-[7.5px] text-slate-500 block mb-0.5">Duration</span>
-                       <span className="text-slate-800 font-black">{v.duration_days} Days Access</span>
+                       <span className="text-slate-800 font-bold">{v.duration_days} Days Access</span>
                     </div>
                  </div>
                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                     <div>
                        <span className="text-[7.5px] text-slate-500 block mb-0.5">Redemptions</span>
-                       <span className="text-[9.5px] font-black text-slate-900 font-mono">{v.current_uses} / {v.max_uses}</span>
+                       <span className="text-[9.5px] font-bold text-slate-900 font-mono">{v.current_uses} / {v.max_uses}</span>
                     </div>
                     <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden shrink-0 ml-4">
-                       <div className="h-full bg-blue-600" style={{ width: `${(v.current_uses / v.max_uses) * 100}%` }} />
+                       <div className="h-full bg-blue-600" style={{ width: `${((v.current_uses || 0) / (v.max_uses || 1)) * 100}%` }} />
                     </div>
                  </div>
               </div>
             ))
           ) : activeTab === 'users' ? (
             filteredUsers.map(u => {
-              const days = getDaysRemaining(u.subscription_expiry);
+              const days = getDaysRemaining(u.subscription_expiry || '');
               return (
                 <div key={u.id} className="p-5 space-y-3.5 hover:bg-slate-50/40 transition-colors">
                    <div className="flex justify-between items-start">
                       <div className="flex items-center space-x-3">
-                         <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs uppercase italic shrink-0">
+                         <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs uppercase italic shrink-0">
                             {u.name?.substring(0,2)}
                          </div>
                          <div>
-                            <span className="text-xs font-black text-slate-900 leading-none block">{u.name}</span>
-                            <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter mt-1 block">{u.email || u.mobile || 'No Contact'}</span>
+                            <span className="text-xs font-bold text-slate-900 leading-none block">{u.name}</span>
+                            <span className="text-caption text-slate-500 uppercase tracking-tighter mt-1 block">{u.email || u.mobile || 'No Contact'}</span>
                          </div>
                       </div>
                       <div className="text-right">
-                         <span className={`px-2 py-0.5 rounded-full text-[7.5px] font-black uppercase tracking-[0.1em] ${u.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                         <span className={`px-2 py-0.5 rounded-full text-[7.5px] font-bold uppercase tracking-[0.1em] ${u.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                             {u.is_active ? 'Active' : 'Deactivated'}
                          </span>
                       </div>
@@ -678,13 +667,13 @@ const AdminPanel: React.FC = () => {
                    <div className="flex justify-between items-center pt-3 border-t border-slate-100">
                       <div>
                          <span className="text-[7.5px] text-slate-500 block mb-0.5">Tier Plan</span>
-                         <span className="text-slate-800 font-black text-[9.5px] uppercase">{u.tier}</span>
+                         <span className="text-slate-800 font-bold text-[9.5px] uppercase">{u.tier}</span>
                       </div>
                       <div className="text-right">
                          <span className="text-[7.5px] text-slate-500 block mb-0.5">Validity</span>
-                         <span className="text-[9.5px] font-black font-mono text-slate-900 block leading-tight">{u.subscription_expiry ? new Date(u.subscription_expiry).toLocaleDateString() : 'Unlimited'}</span>
+                         <span className="text-[9.5px] font-bold font-mono text-slate-900 block leading-tight">{u.subscription_expiry ? new Date(u.subscription_expiry).toLocaleDateString() : 'Unlimited'}</span>
                          {days !== null && (
-                            <span className={`text-[7px] font-black uppercase mt-0.5 block ${days === 0 ? 'text-red-500 animate-pulse' : 'text-slate-500'}`}>
+                            <span className={`text-caption uppercase mt-0.5 block ${days === 0 ? 'text-red-500 animate-pulse' : 'text-slate-500'}`}>
                                {days === 0 ? 'Expired' : `${days} Days Left`}
                             </span>
                          )}
@@ -693,7 +682,7 @@ const AdminPanel: React.FC = () => {
                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                       <button 
                         onClick={() => { setSelectedUser(u); setIsManageModalOpen(true); }}
-                        className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 text-slate-600 text-[8px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-950 hover:text-white transition-all shadow-sm flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 text-slate-600 text-caption rounded-xl hover:bg-slate-950 hover:text-white transition-all shadow-sm flex items-center gap-1.5"
                       >
                          <Settings2 className="h-3 w-3" />
                          <span>Edit Access</span>
@@ -713,14 +702,14 @@ const AdminPanel: React.FC = () => {
               <div key={f.id} className="p-5 space-y-3 hover:bg-slate-50/40 transition-colors">
                  <div className="flex justify-between items-start">
                     <div>
-                       <span className="text-xs font-black text-slate-900 block leading-none">{f.user_name || 'System User'}</span>
-                       <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter mt-1 block">{f.user_email}</span>
+                       <span className="text-xs font-bold text-slate-900 block leading-none">{f.user_name || 'System User'}</span>
+                       <span className="text-caption text-slate-500 uppercase tracking-tighter mt-1 block">{f.user_email}</span>
                     </div>
                     <div className="flex items-center space-x-0.5">
                        {[1, 2, 3, 4, 5].map(star => (
                          <Star 
                            key={star} 
-                           className={`h-3 w-3 ${star <= f.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} 
+                           className={`h-3 w-3 ${star <= (f.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} 
                          />
                        ))}
                     </div>
@@ -728,7 +717,7 @@ const AdminPanel: React.FC = () => {
                  <div className="pt-3 border-t border-slate-100 space-y-2">
                     <div className="flex items-center justify-between">
                        <span className="text-[7.5px] text-slate-500 uppercase font-bold">Feedback Type</span>
-                       <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-100">
+                       <span className="px-2 py-0.5 rounded-full text-caption bg-blue-50 text-blue-600 border border-blue-100">
                           {f.disposition}
                        </span>
                     </div>
@@ -739,13 +728,13 @@ const AdminPanel: React.FC = () => {
                     {f.url && (
                        <div>
                           <span className="text-[7.5px] text-slate-500 block mb-0.5 uppercase font-bold">Source URL</span>
-                          <a href={f.url} target="_blank" rel="noreferrer" className="text-[9px] font-black text-blue-500 hover:underline truncate block">
+                          <a href={f.url} target="_blank" rel="noreferrer" className="text-caption text-blue-500 hover:underline truncate block">
                              {f.url}
                           </a>
                        </div>
                     )}
                     <div className="text-[7.5px] font-bold text-slate-500 uppercase tracking-wider pt-1">
-                       {new Date(f.timestamp).toLocaleString()}
+                       {new Date(f.timestamp || '').toLocaleString()}
                     </div>
                  </div>
               </div>
@@ -755,30 +744,30 @@ const AdminPanel: React.FC = () => {
               <div key={req.id} className="p-5 space-y-3.5 hover:bg-slate-50/40 transition-colors">
                  <div className="flex justify-between items-start">
                     <div>
-                       <span className="text-xs font-black text-slate-900 block leading-none">{req.name}</span>
-                       <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter mt-1 block">{req.email || req.mobile}</span>
+                       <span className="text-xs font-bold text-slate-900 block leading-none">{req.name}</span>
+                       <span className="text-caption text-slate-500 uppercase tracking-tighter mt-1 block">{req.email || req.mobile}</span>
                     </div>
                     <div className="text-right">
-                       <span className={`px-2.5 py-1 rounded-full text-[8.5px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                       <span className={`px-2.5 py-1 rounded-full text-[8.5px] font-bold uppercase tracking-wider ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
                           {req.status}
                        </span>
                     </div>
                  </div>
-                 <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-[9px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+                 <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 text-caption text-slate-500 uppercase tracking-wider font-mono">
                     <div>
                        <span className="text-[7.5px] text-slate-500 block mb-0.5">Requested Tier</span>
-                       <span className="text-blue-600 font-black">{req.requested_tier} ({req.billing_cycle})</span>
+                       <span className="text-blue-600 font-bold">{req.requested_tier} ({req.billing_cycle})</span>
                     </div>
                     <div className="text-right">
                        <span className="text-[7.5px] text-slate-500 block mb-0.5">Transaction ID</span>
-                       <span className="text-slate-800 font-black text-[8.5px] truncate block select-all">{req.transaction_id}</span>
+                       <span className="text-slate-800 font-bold text-[8.5px] truncate block select-all">{req.transaction_id}</span>
                     </div>
                  </div>
                  {req.status === 'pending' && (
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
                        <button 
                          onClick={() => handleApprove(req.id)}
-                         className="px-6 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md active:scale-95 w-full"
+                         className="px-6 py-2 bg-slate-900 text-white rounded-xl text-caption hover:bg-blue-600 transition-all shadow-md active:scale-95 w-full"
                        >
                          Approve Upgrade
                        </button>
@@ -801,7 +790,7 @@ const AdminPanel: React.FC = () => {
       {activeTab === 'waitlist' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
               Waitlist <span className="text-purple-600">({waitlist.length} pending)</span>
             </h3>
             <button
@@ -814,25 +803,25 @@ const AdminPanel: React.FC = () => {
           {waitlist.length === 0 ? (
             <div className="text-center py-16 text-slate-400">
               <UserPlus className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p className="text-xs font-bold uppercase tracking-widest">No pending waitlist entries</p>
+              <p className="text-caption">No pending waitlist entries</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3">
               {waitlist.map((entry: WaitlistEntry) => (
                 <div key={entry.id} className="bg-white border border-slate-100 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                   <div className="flex flex-col space-y-1">
-                    <span className="text-sm font-black text-slate-900">{entry.name}</span>
-                    <div className="flex items-center space-x-3 text-[10px] font-bold text-slate-500">
+                    <span className="text-sm font-bold text-slate-900">{entry.name}</span>
+                    <div className="flex items-center space-x-3 text-xs font-bold text-slate-500">
                       <span>{entry.email}</span>
                       {entry.phone && <span>• {entry.phone}</span>}
                       <span>• {entry.tier_requested}</span>
-                      <span>• {new Date(entry.created_at).toLocaleDateString()}</span>
+                      <span>• {new Date(entry.created_at || '').toLocaleDateString()}</span>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => handleApproveWaitlist(entry.id)}
-                      className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-sm flex items-center space-x-1.5"
+                      className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl text-caption shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-emerald-600 transition-all flex items-center space-x-1.5"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       <span>Approve & Generate Code</span>
@@ -859,7 +848,7 @@ const AdminPanel: React.FC = () => {
               <div className="flex justify-between items-start">
                  <div className="space-y-1">
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Modify Access</h2>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Editing profile for {selectedUser.name}</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Editing profile for {selectedUser.name}</p>
                  </div>
                  <button onClick={() => setIsManageModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all text-slate-300">
                     <XCircle className="h-6 w-6" />
@@ -878,16 +867,16 @@ const AdminPanel: React.FC = () => {
               }}>
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Plan Tier</label>
-                       <select name="tier" defaultValue={selectedUser.tier} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all">
+                       <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1">Plan Tier</label>
+                       <select name="tier" defaultValue={selectedUser.tier} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold uppercase outline-none focus:bg-white transition-all">
                           <option value="free">Free</option>
                           <option value="pro">Pro (₹99)</option>
                           <option value="alpha">Alpha (₹199)</option>
                        </select>
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Account Status</label>
-                       <select name="active" defaultValue={String(!!selectedUser.is_active)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all">
+                       <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1">Account Status</label>
+                       <select name="active" defaultValue={String(!!selectedUser.is_active)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold uppercase outline-none focus:bg-white transition-all">
                           <option value="true">Active (Verified)</option>
                           <option value="false">Suspended / Deactivated</option>
                        </select>
@@ -896,21 +885,21 @@ const AdminPanel: React.FC = () => {
 
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1 text-blue-600">Start Date</label>
-                       <input type="date" name="start" defaultValue={selectedUser.subscription_start?.split('T')[0]} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none focus:bg-white transition-all" />
+                       <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1 text-blue-600">Start Date</label>
+                       <input type="date" name="start" defaultValue={selectedUser.subscription_start?.split('T')[0]} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:bg-white transition-all" />
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1 text-rose-600">Expiry Date</label>
-                       <input type="date" name="expiry" defaultValue={selectedUser.subscription_expiry?.split('T')[0]} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none focus:bg-white transition-all" />
+                       <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1 text-rose-600">Expiry Date</label>
+                       <input type="date" name="expiry" defaultValue={selectedUser.subscription_expiry?.split('T')[0]} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:bg-white transition-all" />
                     </div>
                  </div>
 
                  <div className="bg-amber-50 rounded-2xl p-4 flex items-start space-x-3 border border-amber-100">
                     <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                    <p className="text-[9px] font-bold text-amber-700 leading-relaxed uppercase">Manual overrides bypass payment verification. Ensure date consistency to avoid user access issues.</p>
+                    <p className="text-caption text-amber-700 leading-relaxed uppercase">Manual overrides bypass payment verification. Ensure date consistency to avoid user access issues.</p>
                  </div>
 
-                 <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95">Commit Changes</button>
+                 <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-3xl text-caption hover:bg-blue-600 transition-all shadow-xl active:scale-95">Commit Changes</button>
               </form>
            </div>
         </div>
@@ -923,7 +912,7 @@ const AdminPanel: React.FC = () => {
               <div className="flex justify-between items-start">
                  <div className="space-y-1">
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Onboard Member</h2>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Manual Database Injection</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Manual Database Injection</p>
                  </div>
                  <button onClick={() => setIsAddUserModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all text-slate-300">
                     <XCircle className="h-6 w-6" />
@@ -937,6 +926,7 @@ const AdminPanel: React.FC = () => {
                     const res = await fetch(`${API_URL}/api/auth/register`, {
                        method: 'POST',
                        headers: { 'Content-Type': 'application/json' },
+                       credentials: 'include',
                        body: JSON.stringify({
                           name: fd.get('name'),
                           email: fd.get('email'),
@@ -953,29 +943,29 @@ const AdminPanel: React.FC = () => {
               }}>
                  <div className="space-y-4">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Full Name</label>
-                       <input type="text" name="name" required placeholder="Institutional Identity" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none focus:bg-white transition-all shadow-inner" />
+                       <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1">Full Name</label>
+                       <input type="text" name="name" required placeholder="Institutional Identity" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:bg-white transition-all shadow-inner" />
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Email or Mobile</label>
-                       <input type="text" name="email" required placeholder="contact@marketbeacon.com" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none focus:bg-white transition-all shadow-inner" />
+                       <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1">Email or Mobile</label>
+                       <input type="text" name="email" required placeholder="contact@marketbeacon.com" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:bg-white transition-all shadow-inner" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Initial Role</label>
-                          <select name="role" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all">
+                          <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1">Initial Role</label>
+                          <select name="role" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold uppercase outline-none focus:bg-white transition-all">
                              <option value="user">Retail User</option>
                              <option value="admin">System Admin</option>
                           </select>
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1 text-slate-500">Temp Password</label>
-                           <input type="text" name="password" placeholder="Auto-generated" className="w-full bg-slate-100 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none cursor-not-allowed" disabled value={tempPassword} />
+                          <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1 text-slate-500">Temp Password</label>
+                           <input type="text" name="password" placeholder="Auto-generated" className="w-full bg-slate-100 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold outline-none cursor-not-allowed" disabled value={tempPassword} />
                        </div>
                     </div>
                  </div>
 
-                 <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-xl active:scale-95 flex items-center justify-center space-x-2">
+                 <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-3xl text-caption hover:bg-slate-900 transition-all shadow-xl active:scale-95 flex items-center justify-center space-x-2">
                     <span>Onboard Now</span>
                     <ArrowRight className="h-4 w-4" />
                  </button>
@@ -991,7 +981,7 @@ const AdminPanel: React.FC = () => {
               <div className="flex justify-between items-start">
                  <div className="space-y-1">
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Create Voucher</h2>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Trial Pass Generation</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Trial Pass Generation</p>
                  </div>
                  <button onClick={() => setIsAddVoucherModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-full transition-all text-slate-300">
                     <XCircle className="h-6 w-6" />
@@ -1001,11 +991,11 @@ const AdminPanel: React.FC = () => {
               <form className="space-y-6" onSubmit={async (e) => {
                  e.preventDefault();
                  const fd = new FormData(e.currentTarget);
-                 const token = localStorage.getItem('mb_token');
                  try {
                     const res = await fetch(`${API_URL}/api/admin/vouchers`, {
                        method: 'POST',
-                       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                       headers: { 'Content-Type': 'application/json' },
+                       credentials: 'include',
                        body: JSON.stringify({
                           code: fd.get('code'),
                           tier: fd.get('tier'),
@@ -1022,20 +1012,20 @@ const AdminPanel: React.FC = () => {
               }}>
                  <div className="space-y-4">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Voucher Code</label>
-                       <input type="text" name="code" required placeholder="e.g. ALPHA7DAY" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all shadow-inner" />
+                       <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1">Voucher Code</label>
+                       <input type="text" name="code" required placeholder="e.g. ALPHA7DAY" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold uppercase outline-none focus:bg-white transition-all shadow-inner" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Reward Tier</label>
-                          <select name="tier" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all">
+                          <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1">Reward Tier</label>
+                          <select name="tier" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold uppercase outline-none focus:bg-white transition-all">
                              <option value="alpha">Alpha Access</option>
                              <option value="pro">Pro Access</option>
                           </select>
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Duration</label>
-                          <select name="days" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black uppercase outline-none focus:bg-white transition-all">
+                          <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1">Duration</label>
+                          <select name="days" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold uppercase outline-none focus:bg-white transition-all">
                              <option value="7">7 Days (Standard)</option>
                              <option value="3">3 Days (Quick)</option>
                              <option value="30">30 Days (VIP)</option>
@@ -1043,12 +1033,12 @@ const AdminPanel: React.FC = () => {
                        </div>
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Max Redemptions</label>
-                       <input type="number" name="uses" defaultValue="100" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black outline-none focus:bg-white transition-all shadow-inner" />
+                       <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1">Max Redemptions</label>
+                       <input type="number" name="uses" defaultValue="100" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:bg-white transition-all shadow-inner" />
                     </div>
                  </div>
 
-                 <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95 flex items-center justify-center space-x-2">
+                 <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-3xl text-caption hover:bg-blue-600 transition-all shadow-xl active:scale-95 flex items-center justify-center space-x-2">
                     <span>Generate Voucher</span>
                     <ArrowRight className="h-4 w-4" />
                  </button>
@@ -1067,8 +1057,8 @@ const AdminPanel: React.FC = () => {
                        <MessageSquare className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                       <h3 className="text-lg font-black text-slate-900 leading-none italic uppercase tracking-tighter">Feedback Resolution</h3>
-                       <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Replying to {selectedFeedback.user_name}</p>
+                       <h3 className="text-lg font-bold text-slate-900 leading-none italic uppercase tracking-tighter">Feedback Resolution</h3>
+                       <p className="text-caption text-slate-500 uppercase tracking-wider mt-1">Replying to {selectedFeedback.user_name}</p>
                     </div>
                  </div>
                  <button onClick={() => setIsReplyModalOpen(false)} className="p-2.5 hover:bg-slate-100 rounded-xl transition-all">
@@ -1078,12 +1068,12 @@ const AdminPanel: React.FC = () => {
 
               <div className="p-8 space-y-6">
                  <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-                    <span className="text-[8px] font-black text-blue-600 uppercase block mb-1.5 tracking-widest">Original Report:</span>
+                    <span className="text-caption text-blue-600 uppercase block mb-1.5 tracking-wider">Original Report:</span>
                     <p className="text-xs text-slate-700 font-medium leading-relaxed italic">"{selectedFeedback.comment}"</p>
                  </div>
 
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Admin Resolution Statement</label>
+                    <label className="text-xs font-bold text-slate-900 uppercase tracking-wider ml-1">Admin Resolution Statement</label>
                     <textarea 
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
@@ -1095,7 +1085,7 @@ const AdminPanel: React.FC = () => {
                  <button 
                    onClick={handleSendReply}
                    disabled={isSubmittingReply || !replyText.trim()}
-                   className="w-full py-5 bg-slate-900 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95 disabled:bg-slate-200 flex items-center justify-center space-x-2"
+                   className="w-full py-5 bg-slate-900 text-white rounded-3xl text-caption hover:bg-blue-600 transition-all shadow-xl active:scale-95 disabled:bg-slate-200 flex items-center justify-center space-x-2"
                  >
                     {isSubmittingReply ? (
                       <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

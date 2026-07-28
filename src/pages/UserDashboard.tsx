@@ -1,65 +1,90 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, TrendingUp, Wallet, BarChart3, Activity,
   Zap, BookOpen, Store, ArrowRight, ChevronRight,
-  ShieldCheck, AlertTriangle, Clock, Target, RefreshCw,
-  IndianRupee, Sparkles
+  ShieldCheck, RefreshCw, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import SEO from '../components/SEO';
+import type { TradeRecord } from '../types';
 
 const API_URL = getApiUrl();
 
-interface Trade {
-  id: number;
-  symbol: string;
-  action: 'BUY' | 'SELL';
-  qty: number;
-  entryPrice: number;
-  currentPrice?: number;
-  pnl?: number;
-  status: 'open' | 'closed';
-  createdAt: string;
-  strategy?: string;
-}
-
 const UserDashboard: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [trades, setTrades] = useState<Trade[]>([]);
+  const [trades, setTrades] = useState<TradeRecord[]>([]);
+  const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
+  const fetchStockPrices = useCallback(async (symbols: string[]) => {
+    if (symbols.length === 0) return;
+    try {
+      const res = await fetch(`${API_URL}/api/stock-prices?symbols=${symbols.join(',')}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const pMap: Record<string, number> = {};
+        data.forEach(s => { pMap[s.symbol] = s.price; });
+        setStockPrices(pMap);
+      }
+    } catch (e) {
+      console.error('Fetch prices error:', e);
+    }
+  }, []);
+
   const fetchTrades = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) { setLoading(false); return; }
     try {
       const res = await fetch(`${API_URL}/api/trades`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       const d = await safeJsonParse(res);
-      if (res.ok && !d?.error) setTrades(d || []);
+      if (res.ok && !d?.error) {
+        const tradesList: TradeRecord[] = d || [];
+        setTrades(tradesList);
+        const symbols = Array.from(new Set(tradesList.map(t => t.symbol)));
+        fetchStockPrices(symbols);
+      }
     } catch (e) {
       console.error('Fetch trades error:', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchStockPrices]);
 
   useEffect(() => { fetchTrades(); }, [fetchTrades]);
 
-  const openTrades = trades.filter(t => t.status === 'open');
-  const totalInvested = trades.reduce((sum, t) => sum + (t.entryPrice * t.qty), 0);
-  const currentValue = trades.reduce((sum, t) => sum + ((t.currentPrice || t.entryPrice) * t.qty), 0);
+  const openTrades = trades.filter(t => t.status === 'OPEN');
+  
+  const totalInvested = trades.reduce((sum, t) => {
+    const qty = Number(t.quantity) || 0;
+    const price = Number(t.entry_price) || 0;
+    return sum + (price * qty);
+  }, 0);
+
+  const currentValue = trades.reduce((sum, t) => {
+    const qty = Number(t.quantity) || 0;
+    const entryPrice = Number(t.entry_price) || 0;
+    const exitPrice = Number(t.exit_price) || 0;
+    
+    if (t.status === 'CLOSED') {
+      return sum + (exitPrice * qty);
+    } else {
+      const livePrice = stockPrices[t.symbol] || entryPrice;
+      return sum + (livePrice * qty);
+    }
+  }, 0);
+
   const pnl = currentValue - totalInvested;
   const pnlPercent = totalInvested > 0 ? ((pnl / totalInvested) * 100).toFixed(1) : '0.0';
-  const recentTrades = [...trades].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const recentTrades = [...trades]
+    .sort((a, b) => new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime())
+    .slice(0, 5);
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] font-sans">
@@ -76,7 +101,7 @@ const UserDashboard: React.FC = () => {
             <div>
               <div className="inline-flex items-center space-x-2 px-3 py-1.5 bg-blue-950/50 backdrop-blur-sm rounded-full border border-blue-900 mb-4 w-fit">
                 <ShieldCheck className="h-3 w-3 text-blue-400" />
-                <span className="text-[7px] md:text-[10px] font-black text-blue-400 uppercase tracking-widest">
+                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
                   {user?.tier === 'alpha' ? 'Alpha Execution Plan' : user?.tier === 'pro' ? 'Pro Execution Plan' : 'Free Plan'}
                   {user?.daysRemaining !== null && user?.daysRemaining !== undefined && ` · ${user.daysRemaining} days remaining`}
                 </span>
@@ -92,7 +117,7 @@ const UserDashboard: React.FC = () => {
               {user?.tier === 'free' && (
                 <button 
                   onClick={() => setShowUpgrade(true)} 
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-blue-900/30 flex items-center gap-2"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-caption hover:scale-105 transition-all shadow-xl shadow-blue-900/30 flex items-center gap-2"
                 >
                   <Sparkles className="w-3.5 h-3.5" /> Upgrade Plan
                 </button>
@@ -113,7 +138,7 @@ const UserDashboard: React.FC = () => {
               { title: 'Open Positions', value: openTrades.length.toString(), icon: Activity, color: 'emerald', link: '/portfolio' },
               { 
                 title: 'Portfolio Value', 
-                value: `₹${(totalInvested / 100000).toFixed(1)}L`, 
+                value: `₹${(currentValue / 100000).toFixed(1)}L`, 
                 subtitle: totalInvested > 0 ? `${openTrades.length} active` : 'No capital deployed',
                 icon: Wallet, 
                 color: 'amber', 
@@ -122,7 +147,7 @@ const UserDashboard: React.FC = () => {
               { 
                 title: 'P&L', 
                 value: `${pnl >= 0 ? '+' : ''}${pnlPercent}%`, 
-                subtitle: `₹${Math.abs(pnl).toLocaleString('en-IN')}`,
+                subtitle: `₹${Math.round(Math.abs(pnl)).toLocaleString('en-IN')}`,
                 icon: TrendingUp, 
                 color: pnl >= 0 ? 'emerald' : 'rose', 
                 link: '/trades' 
@@ -149,10 +174,10 @@ const UserDashboard: React.FC = () => {
                       </div>
                       <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-blue-400 transition-colors" />
                     </div>
-                    <p className="text-2xl md:text-3xl font-black text-[var(--text-primary)] tracking-tight">{item.value}</p>
-                    <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1.5">{item.title}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-[var(--text-primary)] tracking-tight">{item.value}</p>
+                    <p className="text-caption text-[var(--text-muted)] uppercase tracking-wider mt-1.5">{item.title}</p>
                     {'subtitle' in item && item.subtitle && (
-                      <p className="text-[9px] text-[var(--text-tertiary)] mt-1">{item.subtitle}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-1">{item.subtitle}</p>
                     )}
                   </Link>
                 </motion.div>
@@ -171,8 +196,8 @@ const UserDashboard: React.FC = () => {
             {/* Quick Access */}
             <div className="md:col-span-1">
               <div className="mb-4">
-                <h2 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Quick Access</h2>
-                <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest mt-1">Tools & Resources</p>
+                <h2 className="text-xs font-black text-blue-400 uppercase tracking-[0.3em]">Quick Access</h2>
+                <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">Tools & Resources</p>
               </div>
               <div className="space-y-2">
                 {[
@@ -191,8 +216,8 @@ const UserDashboard: React.FC = () => {
                       <item.icon className={`w-4 h-4 ${item.color}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black text-[var(--text-primary)] tracking-tight">{item.label}</p>
-                      <p className="text-[8px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5">{item.desc}</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] tracking-tight">{item.label}</p>
+                      <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-0.5">{item.desc}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-blue-400 transition-colors" />
                   </Link>
@@ -204,11 +229,11 @@ const UserDashboard: React.FC = () => {
             <div className="md:col-span-2">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Recent Activity</h2>
-                  <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest mt-1">Your latest trades</p>
+                  <h2 className="text-xs font-black text-blue-400 uppercase tracking-[0.3em]">Recent Activity</h2>
+                  <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">Your latest trades</p>
                 </div>
                 {trades.length > 0 && (
-                  <Link to="/trades" className="text-[9px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-widest transition-colors flex items-center gap-1">
+                  <Link to="/trades" className="text-caption text-blue-400 hover:text-blue-300 uppercase tracking-wider transition-colors flex items-center gap-1">
                     View All <ArrowRight className="w-3 h-3" />
                   </Link>
                 )}
@@ -226,48 +251,57 @@ const UserDashboard: React.FC = () => {
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600/20 to-blue-600/5 border border-blue-500/20 flex items-center justify-center mx-auto mb-5">
                     <Activity className="w-7 h-7 text-blue-400" />
                   </div>
-                  <h3 className="text-lg font-black text-[var(--text-primary)] mb-2 tracking-tight">No Trades Yet</h3>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 tracking-tight">No Trades Yet</h3>
                   <p className="text-sm text-[var(--text-muted)] mb-8 max-w-md mx-auto">Start your analysis journey — scan stocks, build your portfolio, and track your performance.</p>
                   <div className="flex flex-wrap justify-center gap-3">
-                    <Link to="/alpha-hub" className="px-6 py-3 bg-blue-600 text-[var(--text-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:scale-105 transition-all">
+                    <Link to="/alpha-hub" className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-caption hover:from-blue-500 hover:to-indigo-500 hover:scale-105 transition-all shadow-lg shadow-blue-500/20">
                       Go to Alpha Hub
                     </Link>
-                    <Link to="/screener" className="px-6 py-3 bg-[var(--bg-tertiary)]/50 text-[var(--text-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest border border-[var(--border-primary)] hover:border-blue-500/50 hover:bg-[var(--bg-tertiary)] transition-all">
+                    <Link to="/screener" className="px-6 py-3 bg-[var(--bg-tertiary)]/50 text-[var(--text-primary)] rounded-xl text-caption border border-[var(--border-primary)] hover:border-blue-500/50 hover:bg-[var(--bg-tertiary)] transition-all">
                       Open Screener
                     </Link>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {recentTrades.map((trade, i) => (
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      key={trade.id}
-                      className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--border-primary)] hover:border-blue-500/40 transition-all group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`p-2.5 rounded-xl ${trade.action === 'BUY' ? 'bg-gradient-to-br from-emerald-600/20 to-emerald-600/5 border border-emerald-500/20' : 'bg-gradient-to-br from-rose-600/20 to-rose-600/5 border border-rose-500/20'}`}>
-                          <TrendingUp className={`w-3.5 h-3.5 ${trade.action === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`} />
+                  {recentTrades.map((trade, i) => {
+                    const isClosed = trade.status === 'CLOSED';
+                    const entryPrice = Number(trade.entry_price) || 0;
+                    const exitPrice = Number(trade.exit_price) || 0;
+                    const livePrice = stockPrices[trade.symbol] || entryPrice;
+                    const currentPrice = isClosed ? exitPrice : livePrice;
+                    const tradePnL = (currentPrice - entryPrice) * (trade.quantity || 0);
+
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        key={trade.id}
+                        className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--border-primary)] hover:border-blue-500/40 transition-all group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`p-2.5 rounded-xl ${trade.status === 'OPEN' ? 'bg-gradient-to-br from-emerald-600/20 to-emerald-600/5 border border-emerald-500/20' : 'bg-gradient-to-br from-rose-600/20 to-rose-600/5 border border-rose-500/20'}`}>
+                            <TrendingUp className={`w-3.5 h-3.5 ${trade.status === 'OPEN' ? 'text-emerald-400' : 'text-rose-400'}`} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-[var(--text-primary)] tracking-tight">{trade.symbol}</p>
+                            <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-0.5">
+                              {trade.status === 'OPEN' ? 'BUY' : 'BOOKED'} · {trade.quantity} shares · ₹{entryPrice?.toLocaleString()}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-black text-[var(--text-primary)] tracking-tight">{trade.symbol}</p>
-                          <p className="text-[8px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5">
-                            {trade.action} · {trade.qty} shares · ₹{trade.entryPrice?.toLocaleString()}
+                        <div className="text-right shrink-0 ml-3">
+                          <p className={`text-sm font-bold tracking-tight ${tradePnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {tradePnL >= 0 ? '+' : ''}{Math.round(tradePnL).toLocaleString()}
+                          </p>
+                          <p className={`text-caption mt-0.5 ${trade.status === 'OPEN' ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>
+                            {trade.status.toLowerCase()}
                           </p>
                         </div>
-                      </div>
-                      <div className="text-right shrink-0 ml-3">
-                        <p className={`text-sm font-black tracking-tight ${trade.pnl && trade.pnl >= 0 ? 'text-emerald-400' : trade.pnl && trade.pnl < 0 ? 'text-rose-400' : 'text-[var(--text-muted)]'}`}>
-                          {trade.pnl ? `${trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(0)}` : '—'}
-                        </p>
-                        <p className={`text-[8px] font-black uppercase tracking-widest mt-0.5 ${trade.status === 'open' ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>
-                          {trade.status}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -286,13 +320,13 @@ const UserDashboard: React.FC = () => {
                   <ShieldCheck className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-black text-[var(--text-primary)] tracking-tight">You're on the Free Plan</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)] tracking-tight">You're on the Free Plan</p>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">Upgrade to Pro for unlimited scans, alerts, and detailed analysis.</p>
                 </div>
               </div>
               <button 
                 onClick={() => setShowUpgrade(true)} 
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-blue-900/30 whitespace-nowrap relative z-10"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--text-primary)] rounded-xl text-caption hover:scale-105 transition-all shadow-lg shadow-blue-900/30 whitespace-nowrap relative z-10"
               >
                 View Plans
               </button>

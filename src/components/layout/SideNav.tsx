@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Settings,
   HelpCircle,
-  LineChart
+  LineChart,
+  Bot
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -52,6 +53,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
       title: 'System Access',
       items: [
         { icon: ShieldCheck, label: 'Education', path: '/education', desc: 'SOP Guides' },
+        { icon: Bot, label: 'BeaconAI', path: '/ai-assistant', desc: 'Strategy AI', tag: 'NEW' },
       ]
     }
   ];
@@ -79,7 +81,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
         {sections.map((section, idx) => (
           <div key={idx} className="space-y-2">
             <div className="px-5 flex items-center justify-between mb-2">
-               <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.25em]">{section.title}</h3>
+               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[0.25em]">{section.title}</h3>
             </div>
             
             <div className="space-y-1">
@@ -106,9 +108,9 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
                       </div>
                       <div className="flex flex-col flex-1">
                         <div className="flex items-center justify-between">
-                           <span className="text-[11px] font-black uppercase tracking-widest leading-none">{item.label}</span>
+                           <span className="text-caption leading-none">{item.label}</span>
                            {item.tag && (
-                             <span className="bg-blue-500 text-[7px] font-black text-white px-1.5 py-0.5 rounded uppercase leading-none tracking-widest shadow-lg shadow-blue-600/20">
+                             <span className="bg-blue-500 text-caption text-white px-1.5 py-0.5 rounded uppercase leading-none tracking-wider shadow-lg shadow-blue-600/20">
                                 {item.tag}
                              </span>
                            )}
@@ -141,8 +143,8 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
                  <Terminal className="h-4 w-4" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[11px] font-black uppercase tracking-widest">Admin Control</span>
-                <span className="text-[8px] font-bold uppercase tracking-tighter text-slate-500">Command Center</span>
+                <span className="text-caption">Admin Control</span>
+                <span className="text-xs font-bold uppercase tracking-tighter text-slate-500">Command Center</span>
               </div>
             </NavLink>
           </div>
@@ -161,16 +163,16 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
               </Link>
            </div>
            <div className="flex flex-col items-end">
-              <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Link Protocol</span>
+              <span className="text-caption text-slate-600 uppercase tracking-wider">Link Protocol</span>
               <div className="flex items-center gap-1.5">
                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                 <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Live Node</span>
+                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Live Node</span>
               </div>
            </div>
         </div>
         
         <div className="text-center">
-           <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em]">MB-PRO v18.0.8 SECURE</p>
+           <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.3em]">MB-PRO v18.0.8 SECURE</p>
         </div>
       </div>
     </aside>

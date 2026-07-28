@@ -67,14 +67,14 @@ const BrandLogo: React.FC<LogoProps> = ({
       {!hideText && (
         <div className="flex flex-col leading-none select-none">
           <div className={`flex items-center gap-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            <span className="text-[17px] font-black tracking-tighter uppercase italic leading-none">
+            <span className="text-[17px] font-bold tracking-tighter uppercase italic leading-none">
                Market<span className="text-blue-500">Beacon</span>
             </span>
-            <span className="px-2 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[8px] font-black rounded-lg italic tracking-widest leading-none shadow-lg shadow-blue-500/20">
+            <span className="px-2 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold rounded-lg italic tracking-wider leading-none shadow-lg shadow-blue-500/20">
                PRO
             </span>
           </div>
-          <span className={`text-[6.5px] font-black uppercase tracking-[0.45em] mt-1.5 ml-0.5 ${isDark ? 'text-blue-400' : 'text-slate-400'}`}>
+          <span className={`text-caption uppercase tracking-[0.45em] mt-1.5 ml-0.5 ${isDark ? 'text-blue-400' : 'text-slate-400'}`}>
              Institutional Node
           </span>
         </div>

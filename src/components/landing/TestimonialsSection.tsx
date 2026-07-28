@@ -7,7 +7,7 @@ const TestimonialsSection: React.FC = () => {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full mb-6">
             <span className="text-amber-400 text-sm">★★★★★</span>
-            <span className="text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">4.9 / 5 from 1,280 traders</span>
+            <span className="text-caption text-amber-400 uppercase tracking-[0.3em]">4.9 / 5 from 1,280 traders</span>
           </div>
           <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-[var(--text-primary)] mb-4">
             Traders Who Switched to <span className="text-blue-400">Institutional Logic</span>
@@ -72,22 +72,22 @@ const TestimonialsSection: React.FC = () => {
               statColor: 'text-emerald-400',
             },
           ].map((t, i) => (
-            <div key={i} className="bg-[var(--bg-secondary)]/50 border border-[var(--border-primary)] rounded-[2rem] p-7 flex flex-col gap-5 hover:border-[var(--border-secondary)] transition-all">
+            <div key={i} className="card p-7 flex flex-col gap-5 hover:border-[var(--border-secondary)] transition-all">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-[var(--bg-tertiary)] border-2 border-[var(--border-secondary)] overflow-hidden shrink-0">
                     <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${t.avatar}`} alt={t.name} loading="lazy" />
                   </div>
                   <div>
-                    <p className="text-[11px] font-black text-[var(--text-primary)]">{t.name}</p>
-                    <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t.role}</p>
+                    <p className="text-xs font-bold text-[var(--text-primary)]">{t.name}</p>
+                    <p className="text-caption text-[var(--text-muted)] uppercase tracking-wider">{t.role}</p>
                   </div>
                 </div>
                 <div className="text-amber-400 text-xs tracking-tight">{'★'.repeat(t.stars)}</div>
               </div>
               <p className="text-[var(--text-secondary)] text-sm leading-relaxed flex-1 italic">{t.text}</p>
               <div className="pt-3 border-t border-[var(--border-primary)]">
-                <span className={`text-[9px] font-black uppercase tracking-widest ${t.statColor}`}>{t.stat}</span>
+                <span className={`text-caption ${t.statColor}`}>{t.stat}</span>
               </div>
             </div>
           ))}

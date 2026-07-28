@@ -31,39 +31,12 @@ import { backtestAllStrategies, backtestStrategy } from './services/backtestEngi
 
 dotenv.config();
 
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'ajaythomasjohn@gmail.com,diwakarsingh01.tech@gmail.com').split(',').map(e => e.trim());
+const ADMIN_EMAILS = ['ajaythomasjohn@gmail.com', 'admin@marketbeacon.com', 'diwakarsingh01.tech@gmail.com', 'diwakar.singh01@gmail.com'];
 
 const app = express();
-app.use(express.json({ limit: '1mb' }));
-const allowedOrigins = [
-  'https://marketbeaconpro.com',
-  'https://www.marketbeaconpro.com',
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:4173',
-];
-app.use(cors({
-  origin: (origin, cb) => { if (!origin || allowedOrigins.includes(origin)) cb(null, true); else cb(new Error('Not allowed by CORS')); },
-  credentials: true,
-}));
+app.use(express.json({ limit: '10mb' }));
+app.use(cors());
 app.use(compression());
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { error: 'Too many attempts. Try again in 15 minutes.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-const generalLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 100,
-  message: { error: 'Too many requests.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/auth/', authLimiter);
-app.use('/api/', generalLimiter);
 
 // --- CONSTANTS ---
 export const MANUAL_SECTOR_MAP: Record<string, string> = {
@@ -138,7 +111,7 @@ export const BASKETS: Record<string, string[]> = {
   ]
 };
 
-const JWT_SECRET = process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET must be set in .env'); })();
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
@@ -200,144 +173,6 @@ app.get('/api/health', (req, res) => res.json({
   timestamp: new Date().toISOString()
 }));
 
-app.get('/api/og/:symbol', async (req, res) => {
-  try {
-    const { symbol } = req.params;
-    const s = symbol.toUpperCase();
-    const snapshot = await getSnapshotFromCloud([s]);
-    const snap = snapshot[s];
-    let score = 50, smartMoney = 50, upside = 20, isPass = false, name = s;
-
-    if (snap) {
-      name = snap.quote?.longName || snap.quote?.shortName || s;
-      const audit = await validateBatch9(s, snap, 'Elite Basket');
-      score = Math.round(audit.score || 50);
-      smartMoney = Math.round(audit.smartMoneyTotal || 50);
-      isPass = audit.isPass || false;
-      let maxUpside = 30;
-      for (const strat of (STRATEGIES || [])) {
-        const sRes: any = runStrategyAnalysis(strat.id, snap, snap.quote.marketCap, 'Elite Basket');
-        if (sRes?.isBuyZone && sRes?.target) {
-          const lastQuote = snap.quotes?.[snap.quotes.length - 1];
-          if (lastQuote) {
-            const entry = sRes.entryPrice || lastQuote.close;
-            if (entry && sRes.target) {
-              const potential = ((sRes.target / entry) - 1) * 100;
-              if (potential > maxUpside) maxUpside = Math.round(potential);
-            }
-          }
-        }
-      }
-      upside = maxUpside;
-    }
-
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
-
-    const barColor = score >= 80 ? '#10b981' : (score >= 65 ? '#f59e0b' : '#ef4444');
-    const gaugePercent = Math.min(score, 100);
-    const gaugeArc = (gaugePercent / 100) * 283;
-
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#020617"/>
-      <stop offset="100%" stop-color="#0f172a"/>
-    </linearGradient>
-    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3"/>
-      <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.05"/>
-      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
-    </linearGradient>
-    <filter id="neon">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)" rx="16"/>
-  <rect x="0" y="0" width="1200" height="4" fill="#06b6d4" opacity="0.8"/>
-  <rect x="40" y="570" width="1120" height="1" fill="#1e293b"/>
-  <rect x="0" y="0" width="200" height="630" fill="url(#glow)" opacity="0.5"/>
-  <text x="60" y="80" font-family="system-ui,sans-serif" font-size="28" font-weight="800" fill="white" letter-spacing="2">MARKETBEACON</text>
-  <text x="60" y="110" font-family="system-ui,sans-serif" font-size="14" font-weight="500" fill="#64748b" letter-spacing="3">INSTITUTIONAL ANALYSIS</text>
-  <text x="60" y="180" font-family="system-ui,sans-serif" font-size="72" font-weight="900" fill="white" letter-spacing="1">${s}</text>
-  <text x="60" y="210" font-family="system-ui,sans-serif" font-size="20" font-weight="400" fill="#94a3b8">${name.length > 40 ? name.slice(0, 40) + '...' : name}</text>
-  <line x1="60" y1="235" x2="260" y2="235" stroke="#334155" stroke-width="1"/>
-  <text x="60" y="270" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#64748b" letter-spacing="2">AUDIT SCORE</text>
-  <text x="60" y="340" font-family="system-ui,sans-serif" font-size="96" font-weight="900" fill="${barColor}" filter="url(#neon)">${score}</text>
-  <text x="60" y="370" font-family="system-ui,sans-serif" font-size="18" font-weight="600" fill="${barColor}">/ 100</text>
-  <text x="140" y="340" font-family="system-ui,sans-serif" font-size="20" font-weight="500" fill="#64748b">${isPass ? '✓ PASS' : '— REVIEW'}</text>
-  <line x1="60" y1="410" x2="260" y2="410" stroke="#334155" stroke-width="1"/>
-  <text x="60" y="445" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#64748b" letter-spacing="2">SMART MONEY</text>
-  <text x="60" y="485" font-family="system-ui,sans-serif" font-size="40" font-weight="800" fill="${smartMoney >= 65 ? '#10b981' : '#f59e0b'}">${smartMoney}%</text>
-  <line x1="60" y1="530" x2="260" y2="530" stroke="#334155" stroke-width="1"/>
-  <text x="60" y="565" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#64748b" letter-spacing="2">MODEL PROJECTION</text>
-  <text x="60" y="605" font-family="system-ui,sans-serif" font-size="40" font-weight="800" fill="#06b6d4">+${upside}%</text>
-  <circle cx="1000" cy="315" r="140" fill="none" stroke="#1e293b" stroke-width="12"/>
-  <circle cx="1000" cy="315" r="140" fill="none" stroke="${barColor}" stroke-width="12" stroke-dasharray="${gaugeArc}" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 1000 315)" opacity="0.9"/>
-  <text x="1000" y="295" font-family="system-ui,sans-serif" font-size="16" font-weight="600" fill="#64748b" text-anchor="middle">CONFIDENCE</text>
-  <text x="1000" y="335" font-family="system-ui,sans-serif" font-size="48" font-weight="900" fill="white" text-anchor="middle">${score}%</text>
-  <rect x="880" y="560" width="240" height="36" rx="18" fill="none" stroke="#334155" stroke-width="1"/>
-  <text x="1000" y="583" font-family="system-ui,sans-serif" font-size="13" font-weight="500" fill="#64748b" text-anchor="middle">marketbeaconpro.com/analysis/${s}</text>
-  <circle cx="1140" cy="583" r="4" fill="#06b6d4"/>
-  <circle cx="1155" cy="583" r="4" fill="#10b981"/>
-  <circle cx="1170" cy="583" r="4" fill="#f59e0b"/>
-</svg>`;
-    res.send(svg);
-  } catch (e: any) {
-    const fallbackSymbol = (req.params.symbol || '').toUpperCase();
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.status(200).send(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">' +
-      '<rect width="1200" height="630" fill="#020617" rx="16"/>' +
-      '<text x="60" y="315" font-family="system-ui,sans-serif" font-size="72" font-weight="900" fill="white">' + fallbackSymbol + '</text>' +
-      '<text x="60" y="375" font-family="system-ui,sans-serif" font-size="24" font-weight="500" fill="#64748b">MarketBeacon Pro Institutional Analysis</text>' +
-      '<text x="60" y="580" font-family="system-ui,sans-serif" font-size="16" font-weight="500" fill="#334155">marketbeaconpro.com</text>' +
-      '</svg>'
-    );
-  }
-});
-
-// ── Blog OG Image ──
-app.get('/api/og/blog/:slug', async (req, res) => {
-  try {
-    const db = getDB();
-    const post = await db.get('SELECT title, tag FROM blog_posts WHERE slug = ? AND published = 1', [req.params.slug]);
-    const title = post?.title || req.params.slug;
-    const tag = post?.tag || 'Article';
-    const tagColors: Record<string, string> = { Strategy: '#3b82f6', Education: '#10b981', Institutional: '#f59e0b', 'Deep Dive': '#a855f7', Analysis: '#06b6d4' };
-    const tagColor = tagColors[tag] || '#64748b';
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
-    const lines: string[] = [];
-    const words = title.split(' ');
-    let line = '';
-    for (const w of words) {
-      if ((line + ' ' + w).length > 35) { lines.push(line); line = w; }
-      else line = line ? line + ' ' + w : w;
-    }
-    if (line) lines.push(line);
-    const lineY = lines.map((_, i) => 270 + i * 55);
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <defs>
-    <linearGradient id="bgb" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#020617"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bgb)" rx="16"/>
-  <rect x="0" y="0" width="1200" height="4" fill="${tagColor}" opacity="0.8"/>
-  <text x="60" y="100" font-family="system-ui,sans-serif" font-size="28" font-weight="800" fill="white" letter-spacing="2">MARKETBEACON</text>
-  <text x="60" y="130" font-family="system-ui,sans-serif" font-size="14" font-weight="500" fill="#64748b" letter-spacing="3">${tag.toUpperCase()} · BLOG</text>
-  <rect x="60" y="170" width="${tagColor === '#64748b' ? 0 : 80}" height="28" rx="14" fill="${tagColor}" opacity="0.15"/>
-  <text x="60" y="190" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${tagColor}" letter-spacing="1">${tag.toUpperCase()}</text>
-  ${lines.map((l, i) => `<text x="60" y="${lineY[i]}" font-family="system-ui,sans-serif" font-size="${lines.length > 3 ? 36 : 44}" font-weight="900" fill="white" letter-spacing="-0.5">${l.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`).join('\n  ')}
-  <text x="60" y="580" font-family="system-ui,sans-serif" font-size="16" font-weight="500" fill="#334155">marketbeaconpro.com/blog/${req.params.slug}</text>
-</svg>`;
-    res.send(svg);
-  } catch (e: any) {
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.status(200).send('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="#020617" rx="16"/><text x="60" y="315" font-family="system-ui,sans-serif" font-size="48" font-weight="900" fill="white">MarketBeacon Blog</text><text x="60" y="375" font-family="system-ui,sans-serif" font-size="20" font-weight="500" fill="#64748b">Educational Research for Indian Traders</text><text x="60" y="580" font-family="system-ui,sans-serif" font-size="16" font-weight="500" fill="#334155">marketbeaconpro.com</text></svg>');
-  }
-});
-
 app.post('/api/leads', async (req, res) => {
   try {
     const { email, segment } = req.body;
@@ -384,8 +219,7 @@ app.post('/api/auth/google', async (req, res) => {
     const email = payload.email!.toLowerCase();
     const db = getDB();
     let user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
-    const isAdmin = ADMIN_EMAILS.includes(email);
-    const role = isAdmin ? 'admin' : 'user';
+    const role = ['diwakarsingh01.tech@gmail.com', 'admin@marketbeacon.com'].includes(email) ? 'admin' : 'user';
     const tier = role === 'admin' ? 'alpha' : 'free';
     if (!user) {
       const result = await db.run('INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)', [payload.name, email, 'GOOGLE_AUTH', role, tier]);
@@ -1083,42 +917,18 @@ app.get('/api/user/profile', authenticateToken, async (req: any, res) => {
     const db = getDB();
     const user = await db.get('SELECT id, name, email, mobile, tier, created_at, twofa_enabled FROM users WHERE id = ?', [req.user.id]);
     
+    // Calculate Trading Stats
     const trades = await db.all('SELECT status, entry_price, quantity, exit_price FROM trades WHERE user_id = ?', [req.user.id]);
-    
-    const closed = trades.filter(t => t.status === 'CLOSED' && t.exit_price);
-    const winning = closed.filter(t => (t.exit_price - t.entry_price) * t.quantity > 0);
     
     const stats = {
       totalTrades: trades.length,
       openTrades: trades.filter(t => t.status === 'OPEN').length,
-      closedTrades: closed.length,
-      winningTrades: winning.length,
-      winRate: closed.length > 0 ? Number(((winning.length / closed.length) * 100).toFixed(1)) : 0,
-      totalRealizedPnL: closed.reduce((sum, t) => sum + (t.exit_price - t.entry_price) * t.quantity, 0)
+      totalRealizedPnL: trades
+        .filter(t => t.status === 'CLOSED' && t.exit_price)
+        .reduce((sum, t) => sum + (t.exit_price - t.entry_price) * t.quantity, 0)
     };
 
     res.json({ ...user, stats });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
-});
-
-// ── Change password ────────────────────────────────────────────────────────────
-app.post('/api/user/password', authenticateToken, async (req: any, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Current and new password required' });
-    if (newPassword.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
-
-    const db = getDB();
-    const user = await db.get('SELECT password FROM users WHERE id = ?', [req.user.id]);
-    if (!user || user.password === 'GOOGLE_AUTH') return res.status(400).json({ error: 'Cannot change password for OAuth accounts' });
-
-    const bcrypt = require('bcryptjs');
-    const isValid = await bcrypt.compare(currentPassword, user.password);
-    if (!isValid) return res.status(401).json({ error: 'Current password is incorrect' });
-
-    const hashed = await bcrypt.hash(newPassword, 12);
-    await db.run('UPDATE users SET password = ? WHERE id = ?', [hashed, req.user.id]);
-    res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1167,23 +977,6 @@ app.post('/api/user/2fa/disable', authenticateToken, async (req: any, res) => {
     const db = getDB();
     await db.run('UPDATE users SET twofa_secret = NULL, twofa_enabled = 0 WHERE id = ?', [req.user.id]);
     res.json({ success: true });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
-});
-
-// ── User dashboard stats ─────────────────────────────────────────────────────
-app.get('/api/user/stats', authenticateToken, async (req: any, res) => {
-  try {
-    const db = getDB();
-    const trades = await db.all('SELECT entry_price, quantity, status FROM trades WHERE user_id = ?', [req.user.id]);
-    const watchlist = await db.all('SELECT COUNT(*) as count FROM watchlists WHERE user_id = ?', [req.user.id]);
-    const openTrades = trades.filter(t => t.status === 'OPEN');
-    const portfolioValue = openTrades.reduce((sum, t) => sum + (t.entry_price * t.quantity), 0);
-    res.json({
-      portfolioValue: `₹${portfolioValue.toLocaleString('en-IN')}`,
-      activeSignals: openTrades.length,
-      watchlistCount: watchlist[0]?.count || 0,
-      auditScore: 0,
-    });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1374,46 +1167,6 @@ app.post('/api/trades', authenticateToken, async (req: any, res) => {
     );
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
-});
-
-// ── Bulk trade import ─────────────────────────────────────────────────────────
-app.post('/api/trades/batch', authenticateToken, async (req: any, res) => {
-  try {
-    const { trades } = req.body;
-    if (!Array.isArray(trades) || trades.length === 0) {
-      return res.status(400).json({ error: 'No trades provided.' });
-    }
-    const db = getDB();
-    let imported = 0;
-    for (const t of trades) {
-      const symbol = String(t.symbol || '').toUpperCase().trim();
-      if (!symbol) continue;
-      await db.run(
-        `INSERT INTO trades (user_id, symbol, entry_date, entry_price, quantity, strategy, target_price, stop_loss, notes, level, status, exit_date, exit_price)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          req.user.id,
-          symbol,
-          t.entry_date || new Date().toISOString().split('T')[0],
-          parseFloat(t.entry_price) || 0,
-          parseInt(t.quantity) || 0,
-          t.strategy || 'CSV Import',
-          parseFloat(t.target_price) || null,
-          parseFloat(t.stop_loss) || null,
-          t.notes || null,
-          t.level || 'A',
-          t.status || 'OPEN',
-          t.exit_date || null,
-          t.exit_price ? parseFloat(t.exit_price) : null,
-        ]
-      );
-      imported++;
-    }
-    res.json({ success: true, imported });
-  } catch (e: any) {
-    console.error('🔥 [Trade Batch Import Error]:', e.message);
-    res.status(500).json({ error: e.message });
-  }
 });
 
 app.patch('/api/trades/:id', authenticateToken, async (req: any, res) => {
@@ -2078,8 +1831,6 @@ app.post('/api/n8n/blog-post', async (req, res) => {
     const db = getDB();
     const { title, slug, meta_description, content, tag, tag_color, read_time, date, key_takeaways, related_slug, related_title } = req.body;
     if (!title || !slug) return res.status(400).json({ error: 'title and slug required' });
-    const existing = await db.get('SELECT id FROM blog_posts WHERE slug = ?', [slug]);
-    if (existing) return res.json({ id: existing.id, slug, existed: true });
     const result = await db.run(
       `INSERT INTO blog_posts (title, slug, meta_description, content, tag, tag_color, read_time, date, key_takeaways, related_slug, related_title, published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [title, slug, meta_description || '', JSON.stringify(content || []), tag || 'Analysis', tag_color || 'text-blue-400 bg-blue-400/10 border-blue-400/20', read_time || '3 min read', date || new Date().toISOString().split('T')[0], JSON.stringify(key_takeaways || []), related_slug || null, related_title || null]
@@ -2178,7 +1929,7 @@ app.get('/api/sitemap.xml', async (req, res) => {
       path: `/blog/${p.slug}`,
       priority: '0.85',
       freq: 'weekly',
-      lastmod: (p.created_at || '').replace(' ', 'T').split('T')[0] || today,
+      lastmod: p.created_at?.split('T')[0] || today,
     }));
 
     const seen = new Set<string>();
@@ -2189,16 +1940,14 @@ app.get('/api/sitemap.xml', async (req, res) => {
 
     const allUrls = [...staticPages, ...blogUrls, ...stockUrls];
 
-     const escXml = (s: string) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
-
     res.header('Content-Type', 'application/xml');
     res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${allUrls.map(u => `  <url>
-    <loc>https://marketbeaconpro.com${escXml(u.path)}</loc>
-    <lastmod>${escXml((u as any).lastmod || today)}</lastmod>
-    <changefreq>${escXml(u.freq)}</changefreq>
-    <priority>${escXml(u.priority)}</priority>
+    <loc>https://marketbeaconpro.com${u.path}</loc>
+    <lastmod>${(u as any).lastmod || today}</lastmod>
+    <changefreq>${u.freq}</changefreq>
+    <priority>${u.priority}</priority>
   </url>`).join('\n')}
 </urlset>`);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -2255,19 +2004,10 @@ const startServer = async () => {
   const PORT = Number(process.env.PORT) || 3001;
   try {
     const db = await initDB();
-    await initSnapshotCache();
     initScreenerCron();
-    await seedBlogPosts(db);
 
-    // 8:30 PM IST - Daily Alpha-40 institutional recalculation
-    cron.schedule('30 20 * * *', precalculateAlpha40);
-
-    // 7:00 PM IST - Daily system health check (after market close)
-    cron.schedule('0 19 * * *', runAndNotifyHealthCheck);
-
-    setTimeout(precalculateAlpha40, 5000); // Warm cache on boot
-    // Growth basket priming moved to cron only (blocks event loop for 5+ min on 281 symbols)
-    scheduleAuditCron(BASKETS);
+    // Start accepting connections FIRST, before loading the 364MB snapshot file,
+    // so the server can respond to auth/health requests without blocking.
     app.listen(PORT, '0.0.0.0', () => {
       console.log('----------------------------------------------------');
       console.log('🚀 MARKETBEACON PRO: PHASE 1 LAUNCH ACTIVE');
@@ -2275,6 +2015,25 @@ const startServer = async () => {
       console.log('🛡️  Institutional Safe-Guard: Standard Mode');
       console.log('----------------------------------------------------');
     });
+
+    // Background: load snapshot cache (337MB JSON parse is CPU-heavy).
+    // Delay by 2s so auth/health endpoints get priority during cold start.
+    setTimeout(() => {
+      initSnapshotCache().catch((e: any) => console.error('Snapshot cache init failed:', e.message));
+    }, 2000);
+
+    // Background: seed blog posts (DB write, not latency-critical)
+    seedBlogPosts(db).catch((e: any) => console.error('Blog seed failed:', e.message));
+
+    // 8:30 PM IST - Daily Alpha-40 institutional recalculation
+    cron.schedule('30 20 * * *', async () => { await precalculateAlpha40(); });
+
+    // 7:00 PM IST - Daily system health check (after market close)
+    cron.schedule('0 19 * * *', runAndNotifyHealthCheck);
+
+    setTimeout(precalculateAlpha40, 5000); // Warm cache on boot
+    // Growth basket priming moved to cron only (blocks event loop for 5+ min on 281 symbols)
+    scheduleAuditCron(BASKETS);
   } catch (e) { console.error(e); }
 };
 

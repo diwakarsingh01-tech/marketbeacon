@@ -30,45 +30,32 @@ const API_URL = getApiUrl();
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('mb_token'));
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('mb_user');
-    localStorage.removeItem('mb_token');
+    fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
   }, []);
 
   const refreshAuth = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
     try {
       const response = await fetch(`${API_URL}/api/auth/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
       });
-      
       const data = await safeJsonParse(response);
       if (response.ok && !data.error) {
-        const verifiedUser = data.user || data;
-        setUser(verifiedUser);
-        localStorage.setItem('mb_user', JSON.stringify(verifiedUser));
+        setUser(data.user || data);
       } else {
-        logout();
+        setUser(null);
       }
     } catch (e) {
       console.error('Auth refresh failed:', e);
-      const savedUser = localStorage.getItem('mb_user');
-      if (savedUser) setUser(JSON.parse(savedUser));
     } finally {
       setLoading(false);
     }
-  }, [logout]);
+  }, []);
 
   useEffect(() => {
     refreshAuth();
@@ -78,44 +65,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, password: pass })
     });
-    
+
     const data = await safeJsonParse(response);
     if (!response.ok || data.error) {
       throw new Error(data.error || 'Login failed');
     }
 
-    const { token: t, user: userData } = data;
-    setUser(userData);
-    setToken(t);
-    localStorage.setItem('mb_user', JSON.stringify(userData));
-    localStorage.setItem('mb_token', t);
+    setUser(data.user);
+    setToken(data.token);
   };
 
   const googleLogin = async (credential: string) => {
     const response = await fetch(`${API_URL}/api/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ token: credential })
     });
-    
+
     const data = await safeJsonParse(response);
     if (!response.ok || data.error) {
       throw new Error(data.error || 'Google Login failed');
     }
 
-    const { token: t, user: userData } = data;
-    setUser(userData);
-    setToken(t);
-    localStorage.setItem('mb_user', JSON.stringify(userData));
-    localStorage.setItem('mb_token', t);
+    setUser(data.user);
+    setToken(data.token);
   };
 
   const sendMobileOtp = async (mobile: string) => {
     const res = await fetch(`${API_URL}/api/auth/mobile-send-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ mobile })
     });
     const data = await safeJsonParse(res);
@@ -128,25 +112,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await fetch(`${API_URL}/api/auth/mobile-verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ mobile, otp })
     });
-    
+
     const data = await safeJsonParse(res);
     if (!res.ok || data.error) {
       throw new Error(data.error || 'OTP verification failed');
     }
-    
-    const { token: t, user: userData } = data;
-    setUser(userData);
-    setToken(t);
-    localStorage.setItem('mb_user', JSON.stringify(userData));
-    localStorage.setItem('mb_token', t);
+
+    setUser(data.user);
+    setToken(data.token);
   };
 
   const register = async (email: string, pass: string, name: string) => {
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ name, email, password: pass })
     });
 
@@ -155,11 +138,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(data.error || 'Registration failed');
     }
 
-    const { token: t, user: userData } = data;
-    setUser(userData);
-    setToken(t);
-    localStorage.setItem('mb_user', JSON.stringify(userData));
-    localStorage.setItem('mb_token', t);
+    setUser(data.user);
+    setToken(data.token);
   };
 
   return (

@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'sonner';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
@@ -28,10 +28,12 @@ const BlogArticlePage = lazy(() => import('./pages/BlogArticle'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicy'));
 const MethodologyPage = lazy(() => import('./pages/Methodology'));
 const AppHomePage = lazy(() => import('./pages/AppHome'));
+const AiAssistantPage = lazy(() => import('./pages/AiAssistant'));
 const NotFoundPage = lazy(() => import('./pages/NotFound'));
 const ChartsTerminalPage = lazy(() => import('./pages/ChartsTerminal'));
 const ScreenerVerifyPage = lazy(() => import('./pages/ScreenerVerify'));
 const UserDashboardPage = lazy(() => import('./pages/UserDashboard'));
+const PublicStockCheckPage = lazy(() => import('./pages/PublicStockCheck'));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfService'));
 const DisclaimerPage = lazy(() => import('./pages/Disclaimer'));
 const AboutPage = lazy(() => import('./pages/About'));
@@ -69,11 +71,11 @@ function AnimatedRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/connect" element={<ConnectivityHubPage />} />
+        <Route path="/check" element={<PublicStockCheckPage />} />
         <Route path="/analysis/:symbol" element={<PublicAnalysisPage />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:slug" element={<BlogArticlePage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-        <Route path="/terms" element={<PrivacyPolicyPage />} />
         <Route path="/methodology" element={<MethodologyPage />} />
         <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/disclaimer" element={<DisclaimerPage />} />
@@ -81,6 +83,7 @@ function AnimatedRoutes() {
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/marketplace" element={<Navigate to="/license-desk" replace />} />
         <Route path="/charts" element={<ChartsTerminalPage />} />
+        <Route path="/ai-assistant" element={<AiAssistantPage />} />
 
         {/* Authenticated SaaS Platform */}
         <Route 

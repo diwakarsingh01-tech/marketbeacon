@@ -35,7 +35,7 @@ export function ConfidenceGauge({ score, size = 'md', label = 'CONFIDENCE SCORE'
         </defs>
         <text x="50" y="45" textAnchor="middle" className="text-lg font-black fill-current">{score}%</text>
       </svg>
-      {label && <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-2">{label}</span>}
+      {label && <span className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mt-2">{label}</span>}
     </div>
   );
 }

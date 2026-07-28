@@ -110,23 +110,24 @@ const BlogPage: React.FC = () => {
           <BrandLogo variant="dark" size={28} />
         </Link>
         <div className="flex items-center gap-4">
-          <Link to="/" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors hidden md:block">
+          <Link to="/" className="text-xs font-bold text-slate-500 hover:text-white uppercase tracking-wider transition-colors hidden md:block">
             ← Back to Home
           </Link>
           <Link
             to="/login"
-            className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-colors"
+            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-caption transition-colors shadow-lg shadow-blue-500/20"
           >
             Launch Terminal
           </Link>
         </div>
       </nav>
 
+      <main>
       {/* Hero */}
       <header className="py-20 px-6 md:px-10 max-w-[1100px] mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-6">
           <BookOpen className="h-3.5 w-3.5 text-blue-400" />
-          <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.3em]">Knowledge Base</span>
+          <span className="text-xs font-bold text-blue-400 uppercase tracking-[0.3em]">Knowledge Base</span>
         </div>
         <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-white mb-6 leading-none">
           Institutional <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">Insights.</span>
@@ -145,10 +146,10 @@ const BlogPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <div className="space-y-5">
               <div className="flex items-center gap-3">
-                <span className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${articles[0].tagColor}`}>
+                <span className={`px-3 py-1 rounded-full border text-caption ${articles[0].tagColor}`}>
                   {articles[0].tag}
                 </span>
-                {articles[0].highlight && <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] font-black text-amber-400 uppercase tracking-widest">
+                {articles[0].highlight && <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-bold text-amber-400 uppercase tracking-wider">
                   ⭐ {articles[0].highlight}
                 </span>}
               </div>
@@ -156,16 +157,16 @@ const BlogPage: React.FC = () => {
                 {articles[0].title}
               </h2>
               <p className="text-slate-500 text-sm leading-relaxed">{articles[0].excerpt}</p>
-              <div className="flex items-center gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" />{articles[0].readTime}</span>
                 <span>{articles[0].date}</span>
               </div>
-              <div className="flex items-center gap-2 text-blue-400 text-[11px] font-black uppercase tracking-widest group-hover:gap-3 transition-all">
+              <div className="flex items-center gap-2 text-blue-400 text-caption group-hover:gap-3 transition-all">
                 Read Article <ArrowRight className="w-4 h-4" />
               </div>
             </div>
             <div className="bg-slate-900/50 border border-slate-800 rounded-[2rem] p-8 space-y-4">
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">ABCD Tranche Preview</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.3em]">ABCD Tranche Preview</p>
               {[
                 { stage: 'A', pct: '25%', label: 'Base Price Floor', color: 'bg-blue-500' },
                 { stage: 'B', pct: '50%', label: 'Pullback Accumulation', color: 'bg-blue-600' },
@@ -173,7 +174,7 @@ const BlogPage: React.FC = () => {
                 { stage: 'D', pct: '100%', label: 'Breakout / Target', color: 'bg-emerald-500' },
               ].map(({ stage, pct, label, color }) => (
                 <div key={stage} className="space-y-1">
-                  <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                  <div className="flex justify-between text-caption">
                     <span className="text-slate-300">Stage {stage} — {label}</span>
                     <span className="text-slate-500">{pct}</span>
                   </div>
@@ -199,20 +200,20 @@ const BlogPage: React.FC = () => {
                 className="group bg-slate-900/50 border border-slate-800 rounded-[2rem] p-7 flex flex-col hover:border-slate-600 transition-all hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between mb-5">
-                  <span className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${article.tagColor}`}>
+                  <span className={`px-3 py-1 rounded-full border text-caption ${article.tagColor}`}>
                     {article.tag}
                   </span>
                   <Icon className={`w-4 h-4 ${article.iconColor}`} />
                 </div>
-                <h2 className="text-base font-black text-white tracking-tight mb-3 leading-snug flex-1 group-hover:text-blue-300 transition-colors">
+                <h2 className="text-base font-bold text-white tracking-tight mb-3 leading-snug flex-1 group-hover:text-blue-300 transition-colors">
                   {article.title}
                 </h2>
-                <p className="text-[11px] text-slate-500 leading-relaxed mb-5 line-clamp-3">{article.excerpt}</p>
+                <p className="text-xs text-slate-500 leading-relaxed mb-5 line-clamp-3">{article.excerpt}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                     <Clock className="w-3 h-3" />{article.readTime}
                   </span>
-                  <span className="flex items-center gap-1 text-[9px] font-black text-blue-400 uppercase tracking-widest group-hover:gap-2 transition-all">
+                  <span className="flex items-center gap-1 text-xs font-bold text-blue-400 uppercase tracking-wider group-hover:gap-2 transition-all">
                     Read <ChevronRight className="w-3 h-3" />
                   </span>
                 </div>
@@ -224,15 +225,16 @@ const BlogPage: React.FC = () => {
 
       {/* CTA Strip */}
       <section className="border-t border-slate-800 py-16 px-6 text-center bg-slate-900/30">
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4">Ready to Apply This?</p>
-        <h3 className="text-2xl md:text-4xl font-black text-white tracking-tighter mb-6">Start Using the System. Free.</h3>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.4em] mb-4">Ready to Apply This?</p>
+        <h3 className="text-2xl md:text-4xl font-bold text-white tracking-tighter mb-6">Start Using the System. Free.</h3>
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-blue-500 hover:scale-105 transition-all shadow-xl shadow-blue-900/30"
+          className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-bold uppercase tracking-wider text-sm hover:scale-105 transition-all shadow-xl shadow-blue-900/30 shadow-lg shadow-blue-500/20"
         >
           Launch Terminal <ArrowRight className="w-4 h-4" />
         </Link>
       </section>
+      </main>
       <SiteFooter />
     </div>
   );

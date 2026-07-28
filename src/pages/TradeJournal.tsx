@@ -18,8 +18,9 @@ import {
   Share2
 } from 'lucide-react';
 import Papa from 'papaparse';
-import { BASKETS, STRATEGIES } from '../data/stocks';
+import { STRATEGIES } from '../data/stocks';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { authFetch } from '../lib/authFetch';
 import { toast } from 'sonner';
 import type { TradeRecord, StockPriceResult } from '../types';
 
@@ -72,20 +73,11 @@ const TradeJournalPage: React.FC = () => {
   }, []);
 
   const fetchTrades = useCallback(async () => {
-    const token = localStorage.getItem('mb_token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/trades`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await authFetch('/api/trades');
       const data = await safeJsonParse(res);
       if (res.status === 401 || res.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
-        localStorage.removeItem('mb_token');
-        localStorage.removeItem('mb_user');
         window.location.href = '/login';
         return;
       }
@@ -114,16 +106,7 @@ const TradeJournalPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [trades, fetchLivePrices]);
 
-  const stats = useMemo(() => {
-    const openTrades = trades.filter(t => t.status === 'OPEN');
-    const closedTrades = trades.filter(t => t.status === 'CLOSED');
-    const totalRealized = closedTrades.reduce((acc, t) => acc + ( ((t.exit_price || 0) - (t.entry_price || 0)) * (t.quantity || 0) ), 0);
-    const totalUnrealized = openTrades.reduce((acc, t) => {
-      const cmp = livePrices[t.symbol] || t.entry_price;
-      return acc + ( (cmp - t.entry_price) * t.quantity );
-    }, 0);
-    return { totalRealized, totalUnrealized };
-  }, [trades, livePrices]);
+  // stats was declared but unused, removed to satisfy TS6133
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -157,8 +140,8 @@ const TradeJournalPage: React.FC = () => {
     });
     if (sortConfig) {
       tradeData.sort((a, b) => {
-        const valA = a[sortConfig.key];
-        const valB = b[sortConfig.key];
+        const valA = (a as any)[sortConfig.key];
+        const valB = (b as any)[sortConfig.key];
         if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
         if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
@@ -181,11 +164,9 @@ const TradeJournalPage: React.FC = () => {
 
   const handleBulkDelete = async () => {
     if (!window.confirm(`Delete ${selectedIds.length} records?`)) return;
-    const token = localStorage.getItem('mb_token');
     try {
-      const res = await fetch(`${API_URL}/api/trades/batch-delete`, {
+      const res = await authFetch('/api/trades/batch-delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ ids: selectedIds })
       });
       if (res.ok) { setSelectedIds([]); fetchTrades(); }
@@ -241,7 +222,7 @@ const TradeJournalPage: React.FC = () => {
     const isClosed = trade.status === 'CLOSED';
     const text = isClosed 
       ? `✅ *Trade Booked: ${trade.symbol}*
-📈 Yield: ${trade.pnlPer.toFixed(2)}% (+₹${Math.abs(trade.pnl).toLocaleString()})
+📈 Yield: ${(trade.pnlPer || 0).toFixed(2)}% (+₹${Math.abs(trade.pnl || 0).toLocaleString()})
 ⚡️ Strategy: ${trade.strategy}
 📅 Duration: ${trade.days} Days
 
@@ -249,7 +230,7 @@ const TradeJournalPage: React.FC = () => {
       : `🔥 *Research Tracking: ${trade.symbol}*
 ⚡️ Strategy: ${trade.strategy}
 🎯 Objective: ₹${trade.target_price || '-'}
-📊 Live ROI: ${trade.pnlPer.toFixed(2)}%
+📊 Live ROI: ${(trade.pnlPer || 0).toFixed(2)}%
 
 #MarketBeacon #LiveResearch #TradingTerminal`;
 
@@ -266,7 +247,6 @@ const TradeJournalPage: React.FC = () => {
       header: false,
       skipEmptyLines: 'greedy',
       complete: async (results) => {
-        const token = localStorage.getItem('mb_token');
         try {
           const rawRows = results.data as string[][];
           const headerIdx = rawRows.findIndex(r => r.some(c => ['stock', 'symbol', 'instrument'].includes(String(c).toLowerCase().trim())));
@@ -324,9 +304,8 @@ const TradeJournalPage: React.FC = () => {
             return; 
           }
 
-          const res = await fetch(`${API_URL}/api/trades/batch`, {
+          const res = await authFetch('/api/trades/batch', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ trades: tradesToImport })
           });
 
@@ -350,7 +329,6 @@ const TradeJournalPage: React.FC = () => {
   const handleAddTrade = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTrade.symbol) return;
-    const token = localStorage.getItem('mb_token');
     const entryPrice = parseFloat(newTrade.entry_price);
     const payload = { 
       ...newTrade, 
@@ -360,7 +338,7 @@ const TradeJournalPage: React.FC = () => {
       stop_loss: newTrade.stop_loss ? parseFloat(newTrade.stop_loss) : null
     };
     try {
-      const res = await fetch(`${API_URL}/api/trades`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
+      const res = await authFetch('/api/trades', { method: 'POST', body: JSON.stringify(payload) });
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) { 
         setShowAddModal(false); 
@@ -373,11 +351,10 @@ const TradeJournalPage: React.FC = () => {
 
   const handleConfirmClose = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('mb_token');
+    if (!showCloseModal || !showCloseModal.id) return;
     try {
-      const res = await fetch(`${API_URL}/api/trades/${showCloseModal.id}/close`, {
+      const res = await authFetch(`/api/trades/${showCloseModal.id}/close`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ exit_price: parseFloat(closeTradeData.exit_price), exit_date: new Date().toISOString().split('T')[0], quantity_to_close: parseInt(closeTradeData.quantity_to_close), notes: closeTradeData.notes })
       });
       const data = await safeJsonParse(res);
@@ -396,18 +373,18 @@ const TradeJournalPage: React.FC = () => {
     <div className="flex-1 flex flex-col min-h-0 py-6 px-4 md:px-8 lg:px-10 space-y-6 overflow-hidden font-sans bg-[#f8fafc]">
       <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[var(--border-primary)] pb-6 gap-6 shrink-0">
         <div className="space-y-1">
-          <div className="flex items-center space-x-2 px-3 py-1 bg-blue-500/10 w-fit rounded-lg border border-blue-500/20 mb-3"><BookOpen className="h-3 w-3 text-blue-400" /><span className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none">Journal</span></div>
+          <div className="flex items-center space-x-2 px-3 py-1 bg-blue-500/10 w-fit rounded-lg border border-blue-500/20 mb-3"><BookOpen className="h-3 w-3 text-blue-400" /><span className="text-xs font-bold text-blue-400 uppercase tracking-wider leading-none">Journal</span></div>
           <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tighter italic uppercase leading-none">Trade Ledger</h1>
-          <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Institutional Order Execution Audit</p>
+          <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1">Institutional Order Execution Audit</p>
         </div>
         <div className="flex items-center space-x-3">
            <div className="flex items-center space-x-2 ml-4">
-              <button onClick={() => handleDownloadTemplate('OPEN')} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-blue-500/10 hover:text-blue-400 transition-all flex items-center space-x-2" title="Download Template for Open Trades"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Tpl (Open)</span></button>
-              <button onClick={() => handleDownloadTemplate('CLOSED')} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-indigo-500/10 hover:text-indigo-400 transition-all flex items-center space-x-2" title="Download Template for Closed History"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Tpl (Closed)</span></button>
-              <button onClick={handleExportTrades} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-emerald-500/10 hover:text-emerald-400 transition-all flex items-center space-x-2" title="Export Your Trades"><Download className="h-4 w-4" /><span className="text-[10px] font-black uppercase tracking-widest">Export</span></button>
+              <button onClick={() => handleDownloadTemplate('OPEN')} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-blue-500/10 hover:text-blue-400 transition-all flex items-center space-x-2" title="Download Template for Open Trades"><Download className="h-4 w-4" /><span className="text-caption">Tpl (Open)</span></button>
+              <button onClick={() => handleDownloadTemplate('CLOSED')} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-indigo-500/10 hover:text-indigo-400 transition-all flex items-center space-x-2" title="Download Template for Closed History"><Download className="h-4 w-4" /><span className="text-caption">Tpl (Closed)</span></button>
+              <button onClick={handleExportTrades} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-emerald-500/10 hover:text-emerald-400 transition-all flex items-center space-x-2" title="Export Your Trades"><Download className="h-4 w-4" /><span className="text-caption">Export</span></button>
               <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleCSVUpload} />
-              <button onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-[var(--bg-secondary)] flex items-center space-x-2"><Upload className={`h-4 w-4 ${isImporting ? 'animate-bounce' : ''}`} /><span className="text-[10px] font-black uppercase tracking-widest">Import</span></button>
-              <button onClick={() => setShowAddModal(true)} className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg flex items-center space-x-2"><Plus className="h-4 w-4" /><span>Record</span></button>
+              <button onClick={() => fileInputRef.current?.click()} disabled={isImporting} className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-muted)] rounded-2xl shadow-sm hover:bg-[var(--bg-secondary)] flex items-center space-x-2"><Upload className={`h-4 w-4 ${isImporting ? 'animate-bounce' : ''}`} /><span className="text-caption">Import</span></button>
+              <button onClick={() => setShowAddModal(true)} className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-caption shadow-lg shadow-blue-500/20 flex items-center space-x-2 hover:from-blue-500 hover:to-indigo-500"><Plus className="h-4 w-4" /><span>Record</span></button>
            </div>
         </div>
       </div>
@@ -417,66 +394,66 @@ const TradeJournalPage: React.FC = () => {
          <div className="bg-[var(--bg-secondary)] rounded-3xl p-6 border border-[var(--border-primary)] shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-2xl -mr-8 -mt-8" />
             <div className="flex items-center justify-between mb-3">
-               <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Total Exposure</span>
+               <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none">Total Exposure</span>
                <Wallet className="h-3.5 w-3.5 text-blue-400" />
             </div>
-            <h3 className="text-2xl font-black text-[var(--text-primary)]">₹{summaryStats.totalBuyValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
-            <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Capital in Play</p>
+            <h3 className="text-2xl font-bold text-[var(--text-primary)]">₹{summaryStats.totalBuyValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+            <p className="text-caption text-[var(--text-muted)] uppercase tracking-wider mt-1">Capital in Play</p>
          </div>
 
          <div className="bg-[var(--bg-secondary)] rounded-3xl p-6 border border-[var(--border-primary)] shadow-sm group hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-3">
-               <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">
+               <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none">
                   {activeSegment === 'OPEN' ? 'Running Yield (Live)' : 'Net Segment Yield'}
                </span>
                <TrendingUp className={`h-3.5 w-3.5 ${summaryStats.totalPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`} />
             </div>
             <div className="flex items-end space-x-2">
-               <h3 className={`text-2xl font-black ${summaryStats.totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-600'}`}>
+               <h3 className={`text-2xl font-bold ${summaryStats.totalPnl >= 0 ? 'text-emerald-400' : 'text-rose-600'}`}>
                   {summaryStats.totalPnl >= 0 ? '+' : '-'}{summaryStats.totalPnlPer.toFixed(2)}%
                </h3>
-               <span className={`text-[10px] font-black uppercase mb-1 ${summaryStats.totalPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+               <span className={`text-xs font-bold uppercase mb-1 ${summaryStats.totalPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                   {summaryStats.totalPnl >= 0 ? '+' : '-'}₹{Math.abs(summaryStats.totalPnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                </span>
             </div>
-            <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">
+            <p className="text-caption text-[var(--text-muted)] uppercase tracking-wider mt-1">
                {summaryStats.totalPnl >= 0 ? 'Net Gain' : 'Net Loss'}: ₹{Math.abs(summaryStats.totalPnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </p>
          </div>
 
          <div className="bg-[var(--bg-secondary)] rounded-3xl p-6 border border-[var(--border-primary)] shadow-sm group hover:shadow-md transition-all">
             <div className="flex items-center justify-between mb-3">
-               <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Avg. Velocity</span>
+               <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none">Avg. Velocity</span>
                <Clock className="h-3.5 w-3.5 text-indigo-500" />
             </div>
-            <h3 className="text-2xl font-black text-[var(--text-primary)]">{summaryStats.avgDays.toFixed(1)} Days</h3>
-            <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Holding Duration</p>
+            <h3 className="text-2xl font-bold text-[var(--text-primary)]">{summaryStats.avgDays.toFixed(1)} Days</h3>
+            <p className="text-caption text-[var(--text-muted)] uppercase tracking-wider mt-1">Holding Duration</p>
          </div>
 
          <div className="bg-[var(--bg-tertiary)] rounded-3xl p-6 text-[var(--text-primary)] shadow-xl shadow-[var(--border-primary)] group hover:scale-[1.02] transition-all">
             <div className="flex items-center justify-between mb-3">
-               <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Annual Projection</span>
+               <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider leading-none">Annual Projection</span>
                <Activity className="h-3.5 w-3.5 text-blue-400" />
             </div>
-            <h3 className="text-2xl font-black text-white">{summaryStats.avgAnnualGain.toFixed(0)}%</h3>
-            <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mt-1">12-Strategy Alpha</p>
+            <h3 className="text-2xl font-bold text-white">{summaryStats.avgAnnualGain.toFixed(0)}%</h3>
+            <p className="text-caption text-blue-400 uppercase tracking-wider mt-1">12-Strategy Alpha</p>
          </div>
       </div>
 
       <div className="flex items-center justify-between shrink-0">
          <div className="flex items-center space-x-4">
-            <button onClick={() => { setActiveSegment('OPEN'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSegment === 'OPEN' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>Open Positions</button>
-            <button onClick={() => { setActiveSegment('CLOSED'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSegment === 'CLOSED' ? 'bg-blue-600 text-white shadow-xl' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>Closed History</button>
+            <button onClick={() => { setActiveSegment('OPEN'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-caption transition-all ${activeSegment === 'OPEN' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>Open Positions</button>
+            <button onClick={() => { setActiveSegment('CLOSED'); setSelectedIds([]); }} className={`px-8 py-3 rounded-2xl text-caption transition-all ${activeSegment === 'CLOSED' ? 'bg-blue-600 text-white shadow-xl' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>Closed History</button>
          </div>
-         {selectedIds.length > 0 && <button onClick={handleBulkDelete} className="flex items-center space-x-2 px-6 py-3 bg-rose-500/10 text-rose-400 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-rose-500/20 hover:bg-rose-600 hover:text-white transition-all"><Trash2 className="h-3 w-3" /><span>Delete ({selectedIds.length})</span></button>}
+         {selectedIds.length > 0 && <button onClick={handleBulkDelete} className="flex items-center space-x-2 px-6 py-3 bg-rose-500/10 text-rose-400 rounded-2xl text-caption border border-rose-500/20 hover:bg-rose-600 hover:text-white transition-all"><Trash2 className="h-3 w-3" /><span>Delete ({selectedIds.length})</span></button>}
       </div>
 
       <div className="hidden md:flex flex-1 flex flex-col min-h-0 bg-[var(--bg-secondary)] rounded-[2.5rem] border border-[var(--border-primary)] shadow-xl overflow-hidden relative">
          <div className="flex-1 overflow-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
                <thead>
-                  <tr className="bg-[var(--bg-secondary)] text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest border-b border-[var(--border-primary)] sticky top-0 z-10">
-                     <th className="px-6 py-4 w-10"><button onClick={() => { if (selectedIds.length === processedTrades.length) setSelectedIds([]); else setSelectedIds(processedTrades.map(t => t.id)); }} className="text-[var(--text-tertiary)]">{selectedIds.length === processedTrades.length && processedTrades.length > 0 ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></th>
+                  <tr className="bg-[var(--bg-secondary)] text-caption text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-primary)] sticky top-0 z-10">
+                     <th className="px-6 py-4 w-10"><button onClick={() => { if (selectedIds.length === processedTrades.length) setSelectedIds([]); else setSelectedIds(processedTrades.map(t => t.id!).filter(Boolean)); }} className="text-[var(--text-tertiary)]">{selectedIds.length === processedTrades.length && processedTrades.length > 0 ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></th>
                      <th className="px-4 py-4 cursor-pointer" onClick={() => handleSort('symbol')}>Instrument {SortIcon('symbol')}</th>
                      {activeSegment === 'OPEN' ? (
                        <>
@@ -505,29 +482,29 @@ const TradeJournalPage: React.FC = () => {
                      <th className="px-6 py-4 text-center">Action</th>
                   </tr>
                </thead>
-               <tbody className="divide-y divide-[var(--border-primary)] text-[10px] font-black">
+               <tbody className="divide-y divide-[var(--border-primary)] text-xs font-bold">
                   {processedTrades.map((t) => (
-                      <tr key={t.id} className={`hover:bg-[var(--bg-secondary)] transition-colors group ${selectedIds.includes(t.id) ? 'bg-blue-500/10' : ''}`}>
-                         <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])} className={selectedIds.includes(t.id) ? 'text-blue-400' : 'text-[var(--text-tertiary)]'}>{selectedIds.includes(t.id) ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></td>
+                      <tr key={t.id} className={`hover:bg-[var(--bg-secondary)] transition-colors group ${selectedIds.includes(t.id!) ? 'bg-blue-500/10' : ''}`}>
+                         <td className="px-6 py-3"><button onClick={() => setSelectedIds(prev => prev.includes(t.id!) ? prev.filter(x => x !== t.id!) : [...prev, t.id!])} className={selectedIds.includes(t.id!) ? 'text-blue-400' : 'text-[var(--text-tertiary)]'}>{selectedIds.includes(t.id!) ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}</button></td>
                          <td className="px-4 py-3">
                             <div className="flex flex-col uppercase tracking-tighter relative group/item">
                                <div className="flex items-center space-x-2">
-                                  <span className="text-[var(--text-primary)] font-black">{t.symbol}</span>
+                                  <span className="text-[var(--text-primary)] font-bold">{t.symbol}</span>
                                   <button onClick={() => handleShareTrade(t)} className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-[var(--bg-tertiary)] rounded text-[var(--text-tertiary)]" title="Share Trade"><Share2 className="h-2.5 w-2.5" /></button>
                                </div>
-                               <span className="text-[7px] text-[var(--text-tertiary)]">{t.strategy}</span>
+                               <span className="text-xs text-[var(--text-tertiary)]">{t.strategy}</span>
                             </div>
                          </td>
                          {activeSegment === 'OPEN' ? (
                            <>
                              <td className="px-4 py-3 text-[var(--text-muted)] font-bold">{t.entry_date}</td>
                              <td className="px-4 py-3 text-center text-[var(--text-primary)]">{t.quantity}</td>
-                             <td className="px-4 py-3 text-center"><span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${t.level === 'A' ? 'bg-blue-600 text-white' : t.level === 'B' ? 'bg-amber-600 text-white' : t.level === 'C' ? 'bg-indigo-600 text-white' : 'bg-[var(--bg-primary)] text-[var(--text-primary)] border-[var(--border-primary)]'}`}>{t.level}</span></td>
+                             <td className="px-4 py-3 text-center"><span className={`px-2 py-0.5 rounded-lg text-caption border ${t.level === 'A' ? 'bg-blue-600 text-white' : t.level === 'B' ? 'bg-amber-600 text-white' : t.level === 'C' ? 'bg-indigo-600 text-white' : 'bg-[var(--bg-primary)] text-[var(--text-primary)] border-[var(--border-primary)]'}`}>{t.level}</span></td>
                              <td className="px-4 py-3 text-right text-[var(--text-secondary)]">₹{t.entry_price.toLocaleString()}</td>
-                             <td className="px-4 py-3 text-right font-black text-blue-400">₹{t.cmp.toLocaleString()}</td>
+                             <td className="px-4 py-3 text-right font-bold text-blue-400">₹{t.cmp.toLocaleString()}</td>
                              <td className={`${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} px-4 py-3 text-right`}>₹{Math.abs(t.pnl).toLocaleString()}</td>
                              <td className={`${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} px-4 py-3 text-right`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
-                             <td className="px-4 py-3 text-right"><div className="flex flex-col items-end"><span className="text-[var(--text-muted)]">₹{t.targetVal.toLocaleString()}</span><span className={`${t.gap > 0 ? 'text-orange-400' : 'text-emerald-400'} text-[8px]`}>{t.gap > 0 ? `${t.gap.toFixed(1)}% Gap` : 'OBJ REACHED'}</span></div></td>
+                             <td className="px-4 py-3 text-right"><div className="flex flex-col items-end"><span className="text-[var(--text-muted)]">₹{t.targetVal.toLocaleString()}</span><span className={`${t.gap > 0 ? 'text-orange-400' : 'text-emerald-400'} text-xs`}>{t.gap > 0 ? `${t.gap.toFixed(1)}% Gap` : 'OBJ REACHED'}</span></div></td>
                            </>
                          ) : (
                            <>
@@ -536,13 +513,13 @@ const TradeJournalPage: React.FC = () => {
                              <td className="px-4 py-3 text-right text-[var(--text-secondary)]">₹{t.entry_price.toLocaleString()}</td>
                              <td className="px-4 py-3 text-right text-[var(--text-muted)] font-bold">{t.exit_date}</td>
                              <td className="px-4 py-3 text-right text-[var(--text-primary)]">₹{t.exit_price?.toLocaleString() || '-'}</td>
-                             <td className={`${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} px-4 py-3 text-right font-black`}>₹{Math.abs(t.pnl).toLocaleString()}</td>
+                             <td className={`${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} px-4 py-3 text-right font-bold`}>₹{Math.abs(t.pnl).toLocaleString()}</td>
                              <td className="px-4 py-3 text-center text-[var(--text-muted)]">{t.days}</td>
                              <td className={`${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} px-4 py-3 text-right`}>{t.pnl >= 0 ? '+' : ''}{t.pnlPer.toFixed(2)}%</td>
                              <td className={`${t.annualGain >= 0 ? 'text-blue-400' : 'text-rose-400'} px-4 py-3 text-right`}>{t.annualGain >= 0 ? '+' : ''}{t.annualGain.toFixed(0)}%</td>
                            </>
                          )}
-                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Re-open?')) { fetch(`${API_URL}/api/trades/${t.id}/reopen`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => { if(window.confirm('Delete?')) { fetch(`${API_URL}/api/trades/${t.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} className="p-1 bg-[var(--bg-secondary)] text-[var(--text-tertiary)] rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
+                         <td className="px-6 py-3 text-center"><div className="flex items-center justify-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">{activeSegment === 'OPEN' ? <button onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} className="p-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-600 hover:text-white transition-all"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button onClick={() => { if(window.confirm('Re-open?')) { authFetch(`/api/trades/${t.id}/reopen`, { method: 'PATCH' }).then(res => { if (res.ok) fetchTrades(); }); } }} className="p-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-600 hover:text-white transition-all"><RotateCcw className="h-3.5 w-3.5" /></button>} <button onClick={() => { if(window.confirm('Delete?')) { authFetch(`/api/trades/${t.id}`, { method: 'DELETE' }).then(res => { if (res.ok) fetchTrades(); }); } }} className="p-1 bg-[var(--bg-secondary)] text-[var(--text-tertiary)] rounded hover:bg-red-600 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button></div></td>
                       </tr>
                   ))}
                </tbody>
@@ -563,9 +540,9 @@ const TradeJournalPage: React.FC = () => {
                  <div className="flex justify-between items-start">
                     <div className="flex flex-col">
                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-black text-[var(--text-primary)] tracking-tight font-mono uppercase">{t.symbol}</span>
+                          <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight font-mono uppercase">{t.symbol}</span>
                           {activeSegment === 'OPEN' && (
-                             <span className={`px-1.5 py-0.5 rounded-[0.25rem] text-[6.5px] font-black border tracking-wider leading-none ${
+                             <span className={`px-1.5 py-0.5 rounded-[0.25rem] text-[6.5px] font-bold border tracking-wider leading-none ${
                                 t.level === 'A' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                                 t.level === 'B' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
                                 t.level === 'C' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
@@ -575,56 +552,56 @@ const TradeJournalPage: React.FC = () => {
                              </span>
                           )}
                        </div>
-                       <span className="text-[7.5px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">{t.strategy}</span>
+                       <span className="text-[7.5px] font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1">{t.strategy}</span>
                     </div>
                     
                     <div className="text-right flex flex-col items-end">
-                       <span className={`text-sm font-black font-mono ${isGain ? 'text-emerald-400' : 'text-rose-400'}`}>
+                       <span className={`text-sm font-bold font-mono ${isGain ? 'text-emerald-400' : 'text-rose-400'}`}>
                           ₹{Math.abs(t.pnl).toLocaleString()}
                        </span>
-                       <span className={`text-[8.5px] font-black font-mono mt-0.5 ${isGain ? 'text-emerald-400' : 'text-rose-400'}`}>
+                       <span className={`text-[8.5px] font-bold font-mono mt-0.5 ${isGain ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {isGain ? '+' : ''}{t.pnlPer.toFixed(2)}%
                        </span>
                     </div>
                  </div>
 
                  {/* Metrics Grid */}
-                 <div className="grid grid-cols-2 gap-2 bg-[var(--bg-secondary)]/50 p-3 rounded-[0.75rem] border border-[var(--border-primary)]/50 text-[10px] font-semibold text-[var(--text-secondary)]">
+                 <div className="grid grid-cols-2 gap-2 bg-[var(--bg-secondary)]/50 p-3 rounded-[0.75rem] border border-[var(--border-primary)]/50 text-xs font-semibold text-[var(--text-secondary)]">
                     {activeSegment === 'OPEN' ? (
                        <>
                           <div className="flex justify-between">
-                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Qty:</span>
+                             <span className="text-[var(--text-muted)] uppercase text-caption tracking-wider">Qty:</span>
                              <span className="font-bold font-mono text-[var(--text-primary)]">{t.quantity}</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Avg Price:</span>
+                             <span className="text-[var(--text-muted)] uppercase text-caption tracking-wider">Avg Price:</span>
                              <span className="font-bold font-mono text-[var(--text-primary)]">₹{t.entry_price.toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">CMP:</span>
+                             <span className="text-[var(--text-muted)] uppercase text-caption tracking-wider">CMP:</span>
                              <span className="font-bold font-mono text-blue-400">₹{t.cmp.toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Objective:</span>
+                             <span className="text-[var(--text-muted)] uppercase text-caption tracking-wider">Objective:</span>
                              <span className="font-bold font-mono text-[var(--text-primary)]">₹{t.targetVal.toLocaleString()}</span>
                           </div>
                        </>
                     ) : (
                        <>
                           <div className="flex justify-between">
-                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Qty:</span>
+                             <span className="text-[var(--text-muted)] uppercase text-caption tracking-wider">Qty:</span>
                              <span className="font-bold font-mono text-[var(--text-primary)]">{t.quantity}</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Hold Days:</span>
+                             <span className="text-[var(--text-muted)] uppercase text-caption tracking-wider">Hold Days:</span>
                              <span className="font-bold font-mono text-[var(--text-primary)]">{t.days} Days</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Open Price:</span>
+                             <span className="text-[var(--text-muted)] uppercase text-caption tracking-wider">Open Price:</span>
                              <span className="font-bold font-mono text-[var(--text-primary)]">₹{t.entry_price.toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between">
-                             <span className="text-[var(--text-muted)] uppercase text-[8px] font-bold tracking-wider">Close Price:</span>
+                             <span className="text-[var(--text-muted)] uppercase text-caption tracking-wider">Close Price:</span>
                              <span className="font-bold font-mono text-[var(--text-primary)]">₹{t.exit_price?.toLocaleString() || '-'}</span>
                           </div>
                        </>
@@ -632,7 +609,7 @@ const TradeJournalPage: React.FC = () => {
                  </div>
 
                  {/* Date & Actions row */}
-                 <div className="flex items-center justify-between text-[9px] text-[var(--text-muted)] pt-1">
+                 <div className="flex items-center justify-between text-xs text-[var(--text-muted)] pt-1">
                     <div>
                        {activeSegment === 'OPEN' ? (
                           <span>Opened: <strong className="text-[var(--text-secondary)]">{t.entry_date}</strong></span>
@@ -652,24 +629,24 @@ const TradeJournalPage: React.FC = () => {
                        {activeSegment === 'OPEN' ? (
                           <button 
                              onClick={() => { setCloseTradeData({ exit_price: String(t.cmp), quantity_to_close: String(t.quantity), notes: 'Target Hit' }); setShowCloseModal(t); }} 
-                             className="px-2.5 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-[8.5px] font-black uppercase tracking-wider flex items-center gap-1 hover:bg-emerald-600 hover:text-white"
+                             className="px-2.5 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-[8.5px] font-bold uppercase tracking-wider flex items-center gap-1 hover:bg-emerald-600 hover:text-white"
                           >
                              <CheckCircle2 className="h-3 w-3" /> Close
                           </button>
                        ) : (
                           <button 
-                             onClick={() => { if(window.confirm('Re-open?')) { fetch(`${API_URL}/api/trades/${t.id}/reopen`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} 
-                             className="p-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-600 hover:text-white"
-                          >
-                             <RotateCcw className="h-3.5 w-3.5" />
+                             onClick={() => { if(window.confirm('Re-open?')) { authFetch(`/api/trades/${t.id}/reopen`, { method: 'PATCH' }).then(res => { if (res.ok) fetchTrades(); }); } }}
+                              className="p-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-600 hover:text-white"
+                           >
+                              <RotateCcw className="h-3.5 w-3.5" />
                           </button>
                        )}
 
                        <button 
-                          onClick={() => { if(window.confirm('Delete?')) { fetch(`${API_URL}/api/trades/${t.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` } }).then(res => res.ok && fetchTrades()); } }} 
+                          onClick={() => { if(window.confirm('Delete?')) { authFetch(`/api/trades/${t.id}`, { method: 'DELETE' }).then(res => { if (res.ok) fetchTrades(); }); } }}
                           className="p-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-lg hover:bg-rose-600 hover:text-white"
-                       >
-                          <Trash2 className="h-3.5 w-3.5" />
+                        >
+                           <Trash2 className="h-3.5 w-3.5" />
                        </button>
                     </div>
                  </div>
@@ -683,8 +660,8 @@ const TradeJournalPage: React.FC = () => {
           <div className="bg-[var(--bg-secondary)] w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
              <div className="p-8 border-b border-[var(--border-primary)] flex items-center justify-between bg-[var(--bg-secondary)]/30">
                 <div className="space-y-1">
-                   <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tighter italic">New Research Note</h3>
-                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Add Stock to Ledger</p>
+                   <h3 className="text-xl font-bold text-[var(--text-primary)] uppercase tracking-tighter italic">New Research Note</h3>
+                   <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Add Stock to Ledger</p>
                 </div>
                 <button onClick={() => setShowAddModal(false)} className="p-2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] rounded-full transition-all"><X className="h-6 w-6" /></button>
              </div>
@@ -692,7 +669,7 @@ const TradeJournalPage: React.FC = () => {
              <form onSubmit={handleAddTrade} className="p-8 space-y-6 text-left max-h-[70vh] overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-6">
                    <div className="col-span-2 relative">
-                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Instrument Symbol</label>
+                      <label className="text-caption text-[var(--text-muted)] uppercase tracking-wider ml-1 mb-2 block">Instrument Symbol</label>
                       <input 
                         type="text" 
                         required 
@@ -703,12 +680,12 @@ const TradeJournalPage: React.FC = () => {
                           setSymbolSearch(val); 
                           setNewTrade(prev => ({...prev, symbol: val})); 
                         }} 
-                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-bold focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
                    
                    <div>
-<label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Open Price</label>
+<label className="text-caption text-[var(--text-muted)] uppercase tracking-wider ml-1 mb-2 block">Open Price</label>
                        <input 
                          type="number" 
                          step="0.05" 
@@ -716,52 +693,52 @@ const TradeJournalPage: React.FC = () => {
                          placeholder="0.00"
                         value={newTrade.entry_price} 
                         onChange={(e) => setNewTrade({...newTrade, entry_price: e.target.value})} 
-                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-bold focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
                    
                    <div>
-                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Quantity</label>
+                      <label className="text-caption text-[var(--text-muted)] uppercase tracking-wider ml-1 mb-2 block">Quantity</label>
                       <input 
                         type="number" 
                         required 
                         placeholder="0"
                         value={newTrade.quantity} 
                         onChange={(e) => setNewTrade({...newTrade, quantity: e.target.value})} 
-                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-bold focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
 
                    <div>
-                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Objective Price (Optional)</label>
+                      <label className="text-caption text-[var(--text-muted)] uppercase tracking-wider ml-1 mb-2 block">Objective Price (Optional)</label>
                       <input 
                         type="number" 
                         step="0.05" 
                         placeholder="Defaults to Open * 1.25"
                         value={newTrade.target_price} 
                         onChange={(e) => setNewTrade({...newTrade, target_price: e.target.value})} 
-                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-bold focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
 
                    <div>
-                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Risk Guard (Optional)</label>
+                      <label className="text-caption text-[var(--text-muted)] uppercase tracking-wider ml-1 mb-2 block">Risk Guard (Optional)</label>
                       <input 
                         type="number" 
                         step="0.05" 
                         placeholder="Risk Guard level"
                         value={newTrade.stop_loss} 
                         onChange={(e) => setNewTrade({...newTrade, stop_loss: e.target.value})} 
-                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-bold focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
 
                    <div>
-                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Open Level</label>
+                      <label className="text-caption text-[var(--text-muted)] uppercase tracking-wider ml-1 mb-2 block">Open Level</label>
                       <select 
                         value={newTrade.level} 
                         onChange={(e) => setNewTrade({...newTrade, level: e.target.value})} 
-                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black appearance-none focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner"
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-bold appearance-none focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner"
                       >
                          <option value="A">Level A (Primary)</option>
                          <option value="B">Level B (Secondary)</option>
@@ -771,40 +748,40 @@ const TradeJournalPage: React.FC = () => {
                    </div>
 
                    <div>
-                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Open Date</label>
+                      <label className="text-caption text-[var(--text-muted)] uppercase tracking-wider ml-1 mb-2 block">Open Date</label>
                       <input 
                         type="date" 
                         required
                         value={newTrade.entry_date} 
                         onChange={(e) => setNewTrade({...newTrade, entry_date: e.target.value})} 
-                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-bold focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" 
                       />
                    </div>
                    
                    <div className="col-span-2">
-                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Matrix Strategy</label>
+                      <label className="text-caption text-[var(--text-muted)] uppercase tracking-wider ml-1 mb-2 block">Matrix Strategy</label>
                       <select 
                         value={newTrade.strategy} 
                         onChange={(e) => setNewTrade({...newTrade, strategy: e.target.value})} 
-                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black appearance-none focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner"
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-bold appearance-none focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner"
                       >
                          {STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                       </select>
                    </div>
 
                    <div className="col-span-2">
-                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 mb-2 block">Transaction Notes</label>
+                      <label className="text-caption text-[var(--text-muted)] uppercase tracking-wider ml-1 mb-2 block">Transaction Notes</label>
                       <textarea 
                         placeholder="Log strategy details, logic parameters, or observations..."
                         value={newTrade.notes} 
                         onChange={(e) => setNewTrade({...newTrade, notes: e.target.value})} 
                         rows={3}
-                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner font-sans resize-none" 
+                        className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-bold focus:border-blue-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner font-sans resize-none" 
                       />
                    </div>
                 </div>
                 
-                <button type="submit" className="w-full py-5 bg-blue-600 text-white rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 hover:bg-blue-700 mt-4">
+                <button type="submit" className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-[2rem] text-xs font-bold uppercase tracking-[0.2em] shadow-2xl shadow-blue-500/20 transition-all active:scale-95 hover:from-blue-500 hover:to-indigo-500 mt-4">
                    Commit to Ledger
                 </button>
              </form>
@@ -815,19 +792,19 @@ const TradeJournalPage: React.FC = () => {
       {showCloseModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[var(--bg-primary)]/60 backdrop-blur-md animate-in fade-in duration-300">
            <div className="bg-[var(--bg-secondary)] w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300">
-              <h3 className="text-xl font-black text-[var(--text-primary)] uppercase italic mb-6">Realize Research: {showCloseModal.symbol}</h3>
+              <h3 className="text-xl font-bold text-[var(--text-primary)] uppercase italic mb-6">Realize Research: {showCloseModal.symbol}</h3>
               <form onSubmit={handleConfirmClose} className="space-y-6 text-left">
                  <div>
-                    <label className="text-[9px] font-black text-[var(--text-muted)] uppercase ml-1 mb-2 block">Close Level</label>
-                    <input type="number" step="0.05" required value={closeTradeData.exit_price} onChange={(e) => setCloseTradeData({...closeTradeData, exit_price: e.target.value})} className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-emerald-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
+                    <label className="text-caption text-[var(--text-muted)] uppercase ml-1 mb-2 block">Close Level</label>
+                    <input type="number" step="0.05" required value={closeTradeData.exit_price} onChange={(e) => setCloseTradeData({...closeTradeData, exit_price: e.target.value})} className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-bold focus:border-emerald-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
                  </div>
                  <div>
-                    <label className="text-[9px] font-black text-[var(--text-muted)] uppercase ml-1 mb-2 block">Quantity to Close</label>
-                    <input type="number" required value={closeTradeData.quantity_to_close} onChange={(e) => setCloseTradeData({...closeTradeData, quantity_to_close: e.target.value})} className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-black focus:border-emerald-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
+                    <label className="text-caption text-[var(--text-muted)] uppercase ml-1 mb-2 block">Quantity to Close</label>
+                    <input type="number" required value={closeTradeData.quantity_to_close} onChange={(e) => setCloseTradeData({...closeTradeData, quantity_to_close: e.target.value})} className="w-full bg-[var(--bg-secondary)] border-2 border-[var(--border-primary)] rounded-2xl px-6 py-4 text-sm font-bold focus:border-emerald-600 focus:bg-[var(--bg-secondary)] transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:outline-none shadow-inner" />
                  </div>
                  <div className="flex space-x-3 mt-8">
-                    <button type="button" onClick={() => setShowCloseModal(null)} className="flex-1 py-4 bg-[var(--bg-tertiary)] text-[var(--text-muted)] rounded-2xl text-[10px] font-black uppercase hover:bg-slate-200 transition-all">Cancel</button>
-                    <button type="submit" className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95">Verify & Close</button>
+                    <button type="button" onClick={() => setShowCloseModal(null)} className="flex-1 py-4 bg-[var(--bg-tertiary)] text-[var(--text-muted)] rounded-2xl text-xs font-bold uppercase hover:bg-slate-200 transition-all">Cancel</button>
+                    <button type="submit" className="flex-[2] py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-2xl text-xs font-bold uppercase shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-emerald-600 transition-all active:scale-95">Verify & Close</button>
                  </div>
               </form>
            </div>
@@ -837,7 +814,7 @@ const TradeJournalPage: React.FC = () => {
       {isImporting && (
         <div className="fixed inset-0 z-[300] bg-[var(--bg-primary)]/95 backdrop-blur-xl flex items-center justify-center flex-col space-y-4">
            <div className="w-12 h-12 border-4 border-[var(--border-primary)] border-t-blue-500 rounded-full animate-spin" />
-           <p className="text-[var(--text-primary)] text-[10px] font-black uppercase tracking-[0.4em] animate-pulse">Auditing Spreadsheet Integrity...</p>
+           <p className="text-[var(--text-primary)] text-xs font-bold uppercase tracking-[0.4em] animate-pulse">Auditing Spreadsheet Integrity...</p>
         </div>
       )}
     </div>

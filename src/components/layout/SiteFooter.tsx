@@ -48,11 +48,11 @@ const SiteFooter: React.FC = () => {
             <div className="flex flex-wrap gap-2">
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full">
                 <ShieldCheck className="w-3 h-3 text-amber-400" />
-                <span className="text-[8px] font-black text-amber-400 uppercase tracking-widest">Not Investment Advice</span>
+                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Not Investment Advice</span>
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full">
                 <TrendingUp className="w-3 h-3 text-blue-400" />
-                <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest">30K+ Traders</span>
+                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">30K+ Traders</span>
               </div>
             </div>
             {/* Social */}
@@ -69,7 +69,7 @@ const SiteFooter: React.FC = () => {
                 </svg>
               </a>
               <a
-                href="https://t.me/asktoceo"
+                href="https://t.me/+bANpkxNzTvdmYmI9"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Telegram MarketBeacon Pro"
@@ -85,7 +85,7 @@ const SiteFooter: React.FC = () => {
           {/* Link cols */}
           {Object.entries(links).map(([group, items]) => (
             <div key={group}>
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.35em] mb-5">{group}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.35em] mb-5">{group}</p>
               <ul className="space-y-3">
                 {items.map((item) => (
                   <li key={item.label}>
@@ -104,10 +104,10 @@ const SiteFooter: React.FC = () => {
 
         {/* Divider */}
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest text-center md:text-left">
+          <p className="text-xs text-slate-600 font-bold uppercase tracking-wider text-center md:text-left">
             © {year} MarketBeacon Technologies · All Rights Reserved · India
           </p>
-          <p className="text-[8px] text-slate-700 font-bold uppercase tracking-widest text-center max-w-md leading-relaxed">
+          <p className="text-xs text-slate-700 font-bold uppercase tracking-wider text-center max-w-md leading-relaxed">
             Disclaimer: MarketBeacon Pro is NOT a SEBI-registered Investment Adviser or Research Analyst. All scores, signals & data are mathematical models for educational purposes only. Not investment advice. Consult a SEBI-registered advisor before investing.
           </p>
         </div>

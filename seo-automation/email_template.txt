@@ -1,0 +1,14 @@
+Hi {name},
+
+I hope this email finds you well. I noticed that {prospect_domain} covers {topic} in your {industry} blog posts.
+
+MarketBeaconPro is a {company_size} digital marketing agency helping businesses like {client_example} achieve {results_metric}. 
+
+I was wondering if you'd be open to featuring our recent case study on your site, where we helped {client_example} increase {metric_value} by {percentage_increase}% in {timeframe}.
+
+Would you be interested in a quick 15-minute call this week to discuss potential collaboration?
+
+Best regards,
+{your_name}
+{your_title}
+MarketBeaconPro

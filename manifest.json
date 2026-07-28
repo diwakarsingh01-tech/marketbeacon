@@ -1,0 +1,19 @@
+{
+  "name": "MarketBeacon Pro Terminal",
+  "short_name": "MarketBeacon",
+  "description": "Institutional Fintech Terminal for Advanced Strategy Execution",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "categories": ["finance", "business"]
+}
