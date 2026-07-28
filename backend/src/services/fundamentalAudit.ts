@@ -127,6 +127,11 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   const dii = safeParse(sh.dii) || 0;
   const promoter = safeParse(sh.promoter) || 0;
   const smartMoneyTotal = promoter + fii + dii;
+  
+  // Detect missing shareholding data (all three sources are null/undefined)
+  const shareholdingDataMissing = (sh.promoter == null || sh.promoter === '') && 
+                                   (sh.fii == null || sh.fii === '') && 
+                                   (sh.dii == null || sh.dii === '');
   const beta = quote.beta != null ? safeParse(quote.beta) : null; // Beta from snapshot (calculated from price history vs NIFTY50)
 
   // --- INSTITUTIONAL HARDENING: TTM VS ATH ---
@@ -486,7 +491,7 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   const isHardReject = !isETF && (
     (debtToEquity > sectorHardRejectDE) || 
     (pledged >= 5) || 
-    (smartMoneyTotal < 20.0) ||
+    (!shareholdingDataMissing && smartMoneyTotal < 20.0) ||
     peHardReject
   );
 

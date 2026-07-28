@@ -8,15 +8,18 @@ export const runStrategyAnalysis = async (stratId: string, snap: any, marketCap:
 
     // 🛡️ INSTITUTIONAL BASKET AUTHORIZATION
     // Must stay in sync with STRATEGIES array in index.ts
+    // 🛡️ INSTITUTIONAL BASKET AUTHORIZATION
+    // Free-tier strategies apply broadly; pro/alpha strategies graduate by basket quality.
+    // Must stay in sync with STRATEGIES array in index.ts and frontend src/data/stocks.ts
     const authorizedBaskets: Record<string, string[]> = {
-        'ENVELOPE_LONG': ['Elite Basket'],
-        'ENVELOPE_SHORT': ['Elite Basket'],
-        'BOLLINGER': ['Elite Basket'],
-        '52W_HIGH_LOW': ['Elite Basket'],
-        'SMA_BCD': ['Quality Basket', 'Elite Basket'],
+        'ENVELOPE_LONG': ['Growth Basket', 'Quality Basket', 'Elite Basket'],
+        'ENVELOPE_SHORT': ['Growth Basket', 'Quality Basket', 'Elite Basket'],
+        'BOLLINGER': ['Growth Basket', 'Quality Basket', 'Elite Basket'],
+        '52W_HIGH_LOW': ['Quality Basket', 'Elite Basket'],
+        'SMA_BCD': ['Growth Basket', 'Quality Basket', 'Elite Basket'],
 
-        'CUP_HANDLE_ABCD': ['Quality Basket', 'Elite Basket'],
-        'RHS_ABCD': ['Quality Basket', 'Elite Basket'],
+        'CUP_HANDLE_ABCD': ['Growth Basket', 'Quality Basket', 'Elite Basket'],
+        'RHS_ABCD': ['Growth Basket', 'Quality Basket', 'Elite Basket'],
         'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
         'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
         'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']

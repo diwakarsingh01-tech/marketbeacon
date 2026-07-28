@@ -2,13 +2,13 @@ export const STRATEGIES = [
   { id: 'SIXTY_SEVEN_FUNDA', name: 'Institutional Reset (67%)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket', 'Fallen Value Basket'], isLive: true, tier: 'alpha', isLocked: true },
   { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest (20%)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'alpha', isLocked: true },
   { id: 'SR_STRATEGY', name: 'Support and Resistance Strategy (S&R)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'alpha', isLocked: true },
-  { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['Elite Basket', 'Quality Basket'], isLive: true, tier: 'pro', isLocked: true },
-  { id: 'RHS_ABCD', name: 'Reverse Head and Shoulder + ABCD', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
-  { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle + ABCD', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
-  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
-  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['Elite Basket'], isLive: true, tier: 'free', isLocked: true },
-  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['Elite Basket'], isLive: true, tier: 'free', isLocked: true },
-  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Elite Basket'], isLive: true, tier: 'free', isLocked: true }
+  { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
+  { id: 'RHS_ABCD', name: 'Reverse Head and Shoulder + ABCD', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
+  { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle + ABCD', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
+  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
+  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
+  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
+  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true }
 ];
 
 export const BASKETS: Record<string, string[]> = {
