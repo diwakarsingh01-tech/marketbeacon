@@ -915,7 +915,7 @@ app.get('/api/auth/me', authenticateToken, (req: any, res) => {
 app.get('/api/user/profile', authenticateToken, async (req: any, res) => {
   try {
     const db = getDB();
-    const user = await db.get('SELECT id, name, email, mobile, tier, created_at FROM users WHERE id = ?', [req.user.id]);
+    const user = await db.get('SELECT id, name, email, mobile, tier, created_at, twofa_enabled FROM users WHERE id = ?', [req.user.id]);
     
     // Calculate Trading Stats
     const trades = await db.all('SELECT status, entry_price, quantity, exit_price FROM trades WHERE user_id = ?', [req.user.id]);
@@ -929,6 +929,54 @@ app.get('/api/user/profile', authenticateToken, async (req: any, res) => {
     };
 
     res.json({ ...user, stats });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── 2FA Setup ──────────────────────────────────────────────────────────────────
+app.post('/api/user/2fa/setup', authenticateToken, async (req: any, res) => {
+  try {
+    const { authenticator } = require('otplib');
+    const QRCode = require('qrcode');
+
+    const db = getDB();
+    const user = await db.get('SELECT email, twofa_secret, twofa_enabled FROM users WHERE id = ?', [req.user.id]);
+    if (user?.['twofa_enabled']) return res.status(400).json({ error: '2FA is already enabled. Disable it first to re-setup.' });
+
+    const secret = authenticator.generateSecret();
+    const otpauth = authenticator.keyuri(user.email, 'MarketBeacon Pro', secret);
+
+    await db.run('UPDATE users SET twofa_secret = ?, twofa_enabled = 0 WHERE id = ?', [secret, req.user.id]);
+
+    const qrDataUrl = await QRCode.toDataURL(otpauth);
+    res.json({ secret, qrDataUrl, otpauth });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── 2FA Verify & Enable ────────────────────────────────────────────────────────
+app.post('/api/user/2fa/verify', authenticateToken, async (req: any, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Verification token required' });
+
+    const { authenticator } = require('otplib');
+    const db = getDB();
+    const user = await db.get('SELECT twofa_secret FROM users WHERE id = ?', [req.user.id]);
+    if (!user?.['twofa_secret']) return res.status(400).json({ error: 'No 2FA secret found. Run setup first.' });
+
+    const isValid = authenticator.verify({ token, secret: user['twofa_secret'] });
+    if (!isValid) return res.status(401).json({ error: 'Invalid token' });
+
+    await db.run('UPDATE users SET twofa_enabled = 1 WHERE id = ?', [req.user.id]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── 2FA Disable ─────────────────────────────────────────────────────────────────
+app.post('/api/user/2fa/disable', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    await db.run('UPDATE users SET twofa_secret = NULL, twofa_enabled = 0 WHERE id = ?', [req.user.id]);
+    res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
