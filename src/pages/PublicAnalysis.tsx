@@ -179,7 +179,7 @@ const PublicAnalysisPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="inline-flex items-center space-x-2 px-3 py-1 bg-cyan-500/10 rounded-full border border-cyan-500/20">
                   <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full shadow-[0_0_8px_#22d3ee]" />
-                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">{data.basket} Node Audit</span>
+                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">{data.basketName || data.basket} Node Audit</span>
                 </div>
               </div>
               

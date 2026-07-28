@@ -531,6 +531,14 @@ app.get('/api/backtest/nifty-comparison', async (req, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// Helper: find which basket a symbol belongs to
+function getBasketForSymbol(sym: string): string {
+  for (const [basketName, symbols] of Object.entries(BASKETS)) {
+    if (symbols.includes(sym)) return basketName;
+  }
+  return 'Elite Basket'; // fallback
+}
+
 app.get('/api/public/analysis/:symbol', async (req, res) => {
   try {
     const { symbol } = req.params;
@@ -538,11 +546,14 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     const snap = snapshot[symbol];
     if (!snap) return res.status(404).json({ error: 'Asset not found' });
     
-    const audit = await validateBatch9(symbol, snap, 'Elite Basket');
+    // Determine the stock's actual basket (Elite / Quality / Growth / Fallen Value)
+    const stockBasket = getBasketForSymbol(symbol);
+    
+    const audit = await validateBatch9(symbol, snap, stockBasket);
     
     let maxUpside = 30; // Default Institutional Target
     const qualified = STRATEGIES.filter(s => {
-      const sRes: any = runStrategyAnalysis(s.id, snap, snap.quote.marketCap, 'Elite Basket');
+      const sRes: any = runStrategyAnalysis(s.id, snap, snap.quote.marketCap, stockBasket);
       if (sRes?.isBuyZone && sRes?.target) {
         const lastQuote = snap.quotes[snap.quotes.length - 1];
         const entry = sRes.entryPrice || lastQuote.close;
@@ -559,7 +570,7 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     const primaryStrat = qualified[0];
     let abcd = null;
     if (primaryStrat) {
-      const sRes: any = runStrategyAnalysis(primaryStrat.id, snap, snap.quote.marketCap, 'Elite Basket');
+      const sRes: any = runStrategyAnalysis(primaryStrat.id, snap, snap.quote.marketCap, stockBasket);
       abcd = sRes?.abcd;
     }
 
@@ -603,6 +614,7 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
       smartMoney: r2(audit.smartMoneyTotal || 0),
       upside: maxUpside,
       basket: basketType,
+      basketName: stockBasket,
       risk: audit.score >= 80 ? 'LOW' : (audit.score >= 70 ? 'MODERATE' : 'HIGH'),
       abcd
     };
