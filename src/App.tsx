@@ -7,6 +7,7 @@ import { AuthProvider } from './context/AuthContext';
 import { TourProvider } from './context/TourContext';
 import AuthGuard from './components/auth/AuthGuard';
 import AppLayout from './components/layout/AppLayout';
+import PublicLayout from './components/layout/PublicLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import Skeleton from './components/ui/Skeleton';
 import { TourOverlay } from './components/tour/TourOverlay';
@@ -43,6 +44,10 @@ const DisclaimerPage = lazy(() => import('./pages/Disclaimer'));
 const AboutPage = lazy(() => import('./pages/About'));
 const ContactPage = lazy(() => import('./pages/Contact'));
 
+// Docs pages (lazy loaded)
+const DocLayout = lazy(() => import('./components/docs/DocLayout').then(m => ({ default: m.DocLayout })));
+const IntroPage = lazy(() => import('./pages/docs/IntroPage').then(m => ({ default: m.IntroPage })));
+
 import { ThemeProvider } from './context/ThemeContext';
 
 // Institutional Loading Skeleton
@@ -70,23 +75,33 @@ function AnimatedRoutes() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        {/* Public Marketing Routes */}
+        {/* Standalone Landing & Login (no PublicLayout wrapper) */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/pin-login" element={<PinLoginPage />} />
-        <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/connect" element={<ConnectivityHubPage />} />
-        <Route path="/check" element={<PublicStockCheckPage />} />
-        <Route path="/analysis/:symbol" element={<PublicAnalysisPage />} />
-        <Route path="/blog" element={<BlogPage />} />
-        <Route path="/blog/:slug" element={<BlogArticlePage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-        <Route path="/methodology" element={<MethodologyPage />} />
-        <Route path="/terms" element={<TermsOfServicePage />} />
-        <Route path="/disclaimer" element={<DisclaimerPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/marketplace" element={<Navigate to="/license-desk" replace />} />
+
+        {/* Public Marketing Routes with Public Layout */}
+        <Route element={<PublicLayout />}>
+          <Route path="/pin-login" element={<PinLoginPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/connect" element={<ConnectivityHubPage />} />
+          <Route path="/check" element={<PublicStockCheckPage />} />
+          <Route path="/analysis/:symbol" element={<PublicAnalysisPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogArticlePage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/methodology" element={<MethodologyPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
+          <Route path="/disclaimer" element={<DisclaimerPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/guide" element={<GuidePage />} />
+          <Route path="/marketplace" element={<Navigate to="/license-desk" replace />} />
+        </Route>
+
+        {/* Documentation Routes (Public) */}
+        <Route element={<DocLayout />}>
+          <Route path="/docs/*" element={<IntroPage />} />
+        </Route>
 
         {/* Authenticated SaaS Platform */}
         <Route 
@@ -96,11 +111,10 @@ function AnimatedRoutes() {
             </AuthGuard>
           }
         >
-          <Route path="/charts" element={<ChartsTerminalPage />} />
+<Route path="/charts" element={<ChartsTerminalPage />} />
           <Route path="/ai-assistant" element={<AiAssistantPage />} />
           <Route path="/app" element={<AppHomePage />} />
           <Route path="/alpha-hub" element={<AlphaHubPage />} />
-          <Route path="/guide" element={<GuidePage />} />
           <Route path="/screener" element={<DashboardPage key="screener" defaultTab="open" />} />
           <Route path="/screener-verify" element={<ScreenerVerifyPage />} />
           <Route path="/market" element={<DashboardPage key="market" defaultTab="hold" />} />

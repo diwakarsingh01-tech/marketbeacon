@@ -43,12 +43,12 @@ const STRATEGY_BASKET_MAP: Record<string, string[]> = {
   'ENVELOPE_LONG': ['Elite Basket', 'Quality Basket'], 
   'ENVELOPE_SHORT': ['Elite Basket', 'Quality Basket'], 
   'BOLLINGER': ['Elite Basket', 'Quality Basket'],
-  'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket'],
-  'SMA_BCD': ['Elite Basket', 'Quality Basket'], 
   '52W_HIGH_LOW': ['Elite Basket', 'Quality Basket'],
-  'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
+  'SMA_BCD': ['Elite Basket', 'Quality Basket'],
+  'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket'],
+  'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
   'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-  'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket']
+  'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
 };
 
 export async function precalculateAlpha40(isBootWarmup = false) {
@@ -57,6 +57,9 @@ export async function precalculateAlpha40(isBootWarmup = false) {
     const snapshot = getMarketSnapshot();
     const dynamicWealth = await getDynamicBasket();
     const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : [];
+
+    // Market cap classification per user's Excel formula:
+    // Large > ₹1,00,000 Cr | Mid > ₹33,000 Cr | Small/Micro ≤ ₹33,000 Cr
 
     const processBasket = async (basketName: string, symbols: string[]) => {
       const active: any[] = [];
@@ -73,9 +76,8 @@ export async function precalculateAlpha40(isBootWarmup = false) {
           const audit = await validateBatch9(sym, snap, basketName);
           if (!audit || !audit?.isPass) continue;
 
-          const marketCap = snap.quote.marketCap || 1;
-          const capCr = marketCap / 10000000;
-          const capType = capCr >= 20000 ? 'LARGE' : (capCr >= 5000 ? 'MID' : 'SMALL');
+          const mcapCr = (snap.quote?.marketCap || 1) / 10000000;
+          const capType = mcapCr > 100000 ? 'LARGE' : (mcapCr > 33000 ? 'MID' : 'SMALL');
           const last = snap.quotes[snap.quotes.length - 1];
 
           // 1. Closed simulation (historical data)
@@ -115,7 +117,7 @@ export async function precalculateAlpha40(isBootWarmup = false) {
           for (const stratId of Object.keys(STRATEGY_BASKET_MAP)) {
             if (!STRATEGY_BASKET_MAP[stratId]?.includes(basketName)) continue;
             
-            const sd: any = await runStrategyAnalysis(stratId, snap, marketCap, basketName);
+            const sd: any = await runStrategyAnalysis(stratId, snap, mcapCr * 10000000, basketName);
             if (!sd || !sd?.isBuyZone) continue;
 
             const entry = sd?.entryPrice || last?.close;

@@ -108,6 +108,7 @@ const ScreenerVerify: React.FC = () => {
   const [loadingList, setLoadingList] = useState<boolean>(false);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [viewFilter, setViewFilter] = useState<string>('ALL');
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -289,17 +290,17 @@ const ScreenerVerify: React.FC = () => {
         });
       }
 
-      // 2. Target Line (Blue)
-      if (activeStrat.target) {
+      {/* 2. Target Line (Blue) - REMOVED for SEBI compliance */}
+      {/* if (activeStrat.target) {
         mainSeries.createPriceLine({
           price: Number(activeStrat.target),
           color: '#3b82f6',
           lineWidth: 2,
           lineStyle: 2,
           axisLabelVisible: true,
-          title: `TARGET: ₹${activeStrat.target}`,
+          title: `Model Ref: ₹${activeStrat.target}`,
         });
-      }
+      } */}
 
       // 3. Stop Loss Line (Red - calculated 4% below entry or bottom)
       const entryVal = Number(activeStrat.entryPrice || 0);
@@ -499,7 +500,7 @@ const ScreenerVerify: React.FC = () => {
           style={{ left: `${entryPct}%`, transform: 'translateX(-50%)' }}
         >
           <div className="h-4 w-1.5 bg-emerald-500" />
-          <span className="text-caption text-emerald-400 mt-1">ENTRY (₹{Math.round(entry)})</span>
+          <span className="text-caption text-emerald-400 mt-1">Setup (₹{Math.round(entry)})</span>
         </div>
 
         <div 
@@ -507,7 +508,7 @@ const ScreenerVerify: React.FC = () => {
           style={{ left: `${targetPct}%`, transform: 'translateX(-50%)' }}
         >
           <div className="h-4 w-1.5 bg-blue-500" />
-          <span className="text-caption text-blue-400 mt-1">TARGET (₹{Math.round(target)})</span>
+          <span className="text-caption text-blue-400 mt-1">Model Ref (₹{Math.round(target)})</span>
         </div>
 
         {/* Pin */}
@@ -528,9 +529,14 @@ const ScreenerVerify: React.FC = () => {
     return `https://www.tradingview.com/chart/?symbol=NSE:${symbol}&interval=60`;
   };
 
-  const filteredStocks = allStocks.filter(
-    s => s.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredStocks = allStocks.filter(s => {
+    const matchesSearch = s.symbol.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+    if (viewFilter === 'SETUP') return s.isBuyZone && s.isPass;
+    if (viewFilter === 'REJECTED') return s.isBuyZone && !s.isPass;
+    if (viewFilter === 'HOLD') return !s.isBuyZone;
+    return true; // ALL
+  });
 
   return (
     <div className="min-h-screen flex flex-col font-sans transition-colors duration-200 bg-[var(--bg-primary)] text-[var(--text-primary)]">
@@ -613,6 +619,28 @@ const ScreenerVerify: React.FC = () => {
               />
             </div>
 
+            {/* View filter toggles */}
+            <div className="flex gap-1 mb-3 overflow-x-auto">
+              {[
+                { key: 'ALL', label: 'All', color: 'text-blue-400 border-blue-500/30' },
+                { key: 'SETUP', label: 'Setup Zone', color: 'text-emerald-400 border-emerald-500/30' },
+                { key: 'REJECTED', label: 'Funda Reject', color: 'text-amber-400 border-amber-500/30' },
+                { key: 'HOLD', label: 'Hold', color: 'text-slate-400 border-slate-500/30' },
+              ].map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setViewFilter(f.key)}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap ${
+                    viewFilter === f.key
+                      ? `${f.color} bg-current/10 border`
+                      : 'text-[var(--text-tertiary)] hover:text-[var(--text-muted)]'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
             {loadingList ? (
               <div className="py-12 text-center text-[var(--text-muted)] space-y-2">
                 <RefreshCw className="h-5 w-5 animate-spin mx-auto text-blue-500" />
@@ -645,9 +673,13 @@ const ScreenerVerify: React.FC = () => {
                       >
                         <BarChart3 className="h-3 w-3" />
                       </Link>
-                      {item.isBuyZone ? (
+                      {item.isBuyZone && item.isPass ? (
                         <span className="px-2 py-0.5 rounded-full text-caption bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                           SETUP ZONE
+                        </span>
+                      ) : item.isBuyZone && !item.isPass ? (
+                        <span className="px-2 py-0.5 rounded-full text-caption bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                          FUNDA {item.score}/100
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded-full text-caption bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)]">
@@ -791,28 +823,11 @@ const ScreenerVerify: React.FC = () => {
             ) : (
               <div className="space-y-3.5">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[var(--text-tertiary)] font-medium">Safe Entry Target:</span>
+                  <span className="text-[var(--text-tertiary)] font-medium">Setup Level:</span>
                   <span className="font-extrabold text-emerald-400">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</span>
-                </div>
-                
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[var(--text-tertiary)] font-medium">Profit Booking Target:</span>
-                  <span className="font-extrabold text-blue-400">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</span>
                 </div>
 
                 <div className="flex justify-between items-center text-xs border-t border-[var(--border-primary)]/60 pt-3">
-                  <span className="text-[var(--text-tertiary)] font-medium">Current Stock Price:</span>
-                  <span className="font-extrabold">₹ {Number(fundamentals.price).toLocaleString('en-IN')}</span>
-                </div>
-
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[var(--text-tertiary)] font-medium">Risk/Reward Ratio:</span>
-                  <span className="font-extrabold text-blue-400">
-                    1 : {((Number(activeStrategy.target || 0) - Number(activeStrategy.entryPrice || 0)) / Math.max(1, (Number(activeStrategy.entryPrice || 0) * 0.05))).toFixed(1)}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center text-xs">
                   <span className="text-[var(--text-tertiary)] font-medium flex items-center gap-1">Fund. Audit Score: <InfoTooltip entry={FUNDA_INFO_MAP.auditScore} size="sm" /></span>
                   <span className={`font-extrabold ${(fundamentals.audit?.score || 0) >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
                     {fundamentals.audit?.score || 0} / 100

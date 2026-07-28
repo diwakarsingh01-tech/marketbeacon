@@ -90,9 +90,10 @@ const quickLinks: QuickLink[] = [
 interface BuyZoneCard {
   symbol: string;
   entryPrice: number;
-  target: number;
   currentPrice: number;
   score: number;
+  auditScore: number;
+  smartMoney: number;
   strategy: string;
 }
 
@@ -182,30 +183,30 @@ const AppHome: React.FC = () => {
       .catch(() => {});
   }, [watchlist, trades]);
 
-  // Fetch active setup zones
+  // Fetch active setup zones — runs once on mount (cache on backend makes repeats instant)
   useEffect(() => {
     setLoadingZones(true);
-    Promise.all([
-      authFetch('/api/backtest/audit?basket=ALL').then(r => r.json()),
-    ])
-      .then(([data]) => {
+    authFetch('/api/backtest/audit?basket=ALL')
+      .then(r => r.json())
+      .then((data) => {
         const results = data.allStocks || [];
         const setupZoneStocks = results
-          .filter((s: AllStockItem) => s.isBuyZone && s.entryPrice && s.target)
+          .filter((s: AllStockItem) => s.isBuyZone && s.entryPrice)
           .sort((a: AllStockItem, b: AllStockItem) => (b.score || 0) - (a.score || 0))
           .map((s: AllStockItem) => ({
             symbol: s.symbol,
             entryPrice: s.entryPrice || 0,
-            target: s.target || 0,
-            currentPrice: stockPrices[s.symbol] || s.currentPrice || 0,
+            currentPrice: s.currentPrice || 0,
             score: s.score || 0,
+            auditScore: s.auditScore || 0,
+            smartMoney: s.smartMoney || 0,
             strategy: s.strategy || 'Institutional',
           }));
         setBuyZones(setupZoneStocks);
       })
       .catch(() => {})
       .finally(() => setLoadingZones(false));
-  }, [stockPrices]);
+  }, []);
 
   const ALL_SYMBOLS = useMemo(() => {
     const s = new Set<string>();
@@ -417,7 +418,6 @@ const AppHome: React.FC = () => {
             ) : buyZones.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
                 {buyZones.map((zone, i) => {
-                  const gainPct = ((zone.target - zone.entryPrice) / zone.entryPrice) * 100;
                   return (
                     <motion.button
                       key={zone.symbol}
@@ -431,7 +431,7 @@ const AppHome: React.FC = () => {
                     >
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm sm:text-base font-black text-[var(--text-primary)] group-hover:text-[var(--signal-buy)] transition-colors truncate">{zone.symbol}</span>
-                        <span className="text-xs text-[var(--signal-buy)] bg-[var(--signal-buy)]/10 border border-[var(--signal-buy)]/20 px-2 py-0.5 rounded-full flex-shrink-0">SETUP</span>
+                        <span className="text-xs text-[var(--signal-buy)] bg-[var(--signal-buy)]/10 border border-[var(--signal-buy)]/20 px-2 py-0.5 rounded-full flex-shrink-0">ACTIVE</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3">
                         <div className="bg-[var(--bg-tertiary)] rounded-xl p-3">
@@ -439,16 +439,16 @@ const AppHome: React.FC = () => {
                           <div className="text-sm sm:text-base font-bold text-[var(--text-primary)] tabular-nums truncate">₹{zone.entryPrice.toLocaleString('en-IN')}</div>
                         </div>
                         <div className="bg-[var(--bg-tertiary)] rounded-xl p-3">
-                          <div className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Projection</div>
-                          <div className="text-sm sm:text-base font-bold text-[var(--signal-buy)] tabular-nums truncate">₹{zone.target.toLocaleString('en-IN')}</div>
+                          <div className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Audit Score</div>
+                          <div className="text-sm sm:text-base font-bold text-emerald-400 tabular-nums truncate">{zone.auditScore || 0}/100</div>
                         </div>
                       </div>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] sm:text-[10px] text-[var(--text-muted)]">Upside</span>
-                          <span className="text-sm sm:text-base font-extrabold text-[var(--signal-buy)]">+{gainPct.toFixed(1)}%</span>
+                          <span className="text-[9px] sm:text-[10px] text-[var(--text-muted)]">Smart Money</span>
+                          <span className="text-sm sm:text-base font-extrabold text-emerald-400">{zone.smartMoney?.toFixed(1)}%</span>
                         </div>
-                        <span className="text-xs font-semibold text-[var(--signal-buy)] bg-[var(--signal-buy)]/10 px-2 py-0.5 rounded-full flex-shrink-0">INSTITUTIONAL</span>
+                        <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full flex-shrink-0">INSTITUTIONAL</span>
                       </div>
                       <div className="relative mt-auto pt-3 border-t border-[var(--border-primary)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[9px] sm:text-[10px] text-[var(--text-muted)] font-medium">
                         <span className="flex items-center gap-1 truncate max-w-[160px]">

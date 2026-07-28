@@ -306,16 +306,18 @@ const AlphaHubPage: React.FC = () => {
            window.location.href = '/login';
            return;
          }
-         if ((res.status === 503 || res.status === 502 || res.status === 504) && retryCount < 1) {
-           await new Promise(r => setTimeout(r, 3000));
+         if ((res.status === 503 || res.status === 502 || res.status === 504) && retryCount < 8) {
+           const delay = Math.min(3000 * Math.pow(1.5, retryCount), 15000);
+           await new Promise(r => setTimeout(r, delay));
            fetchAlphaHub(retryCount + 1);
            return;
          }
          setError(d.error || 'Failed to sync Alpha Terminal');
        }
      } catch (e) {
-       if (retryCount < 1) {
-         await new Promise(r => setTimeout(r, 3000));
+       if (retryCount < 3) {
+         const delay = Math.min(3000 * Math.pow(1.5, retryCount), 10000);
+         await new Promise(r => setTimeout(r, delay));
          fetchAlphaHub(retryCount + 1);
          return;
        }

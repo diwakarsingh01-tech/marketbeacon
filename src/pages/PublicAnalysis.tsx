@@ -110,7 +110,7 @@ const PublicAnalysisPage: React.FC = () => {
 
   const score = data.score.toFixed(0);
   const smartMoney = data.smartMoney.toFixed(1);
-  const desc = `Get the institutional 100-point audit for ${symbol}. Audit Score: ${score}, Smart Money: ${smartMoney}%, Model Projection: +${data.upside}%. Verified logic by MarketBeacon Pro.`;
+  const desc = `Get the institutional 100-point audit for ${symbol}. Audit Score: ${score}, Smart Money: ${smartMoney}%. Verified logic by MarketBeacon Pro.`;
 
   const handleShare = () => {
     if (navigator.share) {
@@ -154,7 +154,7 @@ const PublicAnalysisPage: React.FC = () => {
       {/* Navigation */}
       <nav className="border-b border-slate-100 bg-white/95 backdrop-blur-md shrink-0 z-50 px-6 py-4 shadow-sm">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between">
-          <span className="text-lg font-black text-slate-900 italic tracking-tighter">MarketBeacon <span className="text-[#00d09c]">Pro</span></span>
+          <Link to="/" className="text-lg font-black text-slate-900 italic tracking-tighter hover:text-[#00d09c] transition-colors">MarketBeacon <span className="text-[#00d09c]">Pro</span></Link>
           <button 
             onClick={handleShare}
             className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 hover:text-[#00d09c] hover:border-[#00d09c]/30 transition-all"
@@ -165,7 +165,8 @@ const PublicAnalysisPage: React.FC = () => {
       </nav>
 
       {/* Main Layout */}
-      <main className="relative z-10 max-w-[1440px] w-full mx-auto px-6 py-6 lg:h-[calc(100vh-80px)] flex flex-col justify-between overflow-hidden flex-1">
+      <main className="relative z-10 max-w-[1440px] w-full mx-auto px-6 py-6 flex flex-col flex-1">
+
         <div className="mb-4 shrink-0">
           <Breadcrumbs items={[
             { label: 'Home', href: '/' },
@@ -174,10 +175,10 @@ const PublicAnalysisPage: React.FC = () => {
         </div>
 
         {/* Two Column Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch flex-1 overflow-hidden min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1 min-h-0">
           
           {/* Left Column: Hero & AI Panel (45%) */}
-          <div className="lg:col-span-5 flex flex-col justify-start space-y-6 overflow-y-auto pr-2 min-h-0 h-full">
+          <div className="lg:col-span-5 flex flex-col space-y-6">
             {/* Hero Section */}
             <div className="space-y-4 shrink-0">
               <div className="flex items-center justify-between">
@@ -214,10 +215,6 @@ const PublicAnalysisPage: React.FC = () => {
                   <div className="text-3xl font-black text-slate-800 italic tracking-tighter mt-1">{data.smartMoney?.toFixed(1)}%</div>
                 </div>
 
-                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">Upside <InfoTooltip entry={FUNDA_INFO_MAP.athPrice} size="sm" /></span>
-                  <div className="text-3xl font-black text-amber-500 italic tracking-tighter mt-1">+{data.upside}%</div>
-                </div>
               </div>
 
               <DataFreshnessBadge lastUpdated={data?.lastUpdated} size="sm" className="mt-1" />
@@ -230,8 +227,8 @@ const PublicAnalysisPage: React.FC = () => {
           </div>
 
           {/* Right Column: Strategy Nodes, Related Assets (55%) */}
-          <div className="lg:col-span-7 relative bg-slate-50 border border-slate-100 rounded-[2.5rem] overflow-hidden flex flex-col h-full min-h-0">
-            <div className={`flex-1 overflow-y-auto p-8 space-y-8 transition-all duration-300 min-h-0 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
+          <div className="lg:col-span-7 relative bg-slate-50 border border-slate-100 rounded-[2.5rem] flex flex-col">
+            <div className={`p-8 space-y-8 ${!isProOrAbove ? 'filter blur-[8px] pointer-events-none select-none opacity-40' : ''}`}>
               
               {/* STRATEGY NODES */}
               <section className="space-y-4">

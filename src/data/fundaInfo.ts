@@ -132,6 +132,12 @@ export const FUNDA_INFO_MAP: Record<string, FundaInfoEntry> = {
     why: 'Critical for the 67% strategy — we need stocks that have fallen ≥67% from ATH. Also indicates potential resistance level.',
     how: 'ATH = Maximum closing price over the entire available trading history of the stock.'
   },
+  modelProjection: {
+    label: 'Model Projection',
+    what: 'A quantitative estimate based on the institutional audit framework, ABCD tranche laddering, and strategy-level target calculations.',
+    why: 'This is an educational reference only, not a price target or investment recommendation. It shows what the model framework projects based on historical patterns and institutional rules.',
+    how: 'Projection = Current Price + Strategy-Level Upside %. Calculated from the active strategy\'s ABCD tranche levels and the highest qualifying strategy target. Not a guarantee of future performance.'
+  },
   pegRatio: {
     label: 'PEG Ratio (PE / Growth)',
     what: 'Price-to-Earnings ratio divided by the earnings growth rate. Combines valuation with growth.',
@@ -143,5 +149,35 @@ export const FUNDA_INFO_MAP: Record<string, FundaInfoEntry> = {
     what: 'Enterprise Value divided by Earnings Before Interest, Tax, Depreciation & Amortization.',
     why: 'A preferred valuation metric for comparing companies with different debt levels. Lower EV/EBITDA often indicates better value. Particularly useful for capital-intensive sectors.',
     how: 'EV = Market Cap + Total Debt - Cash & Equivalents. EBITDA = Operating Profit + Depreciation + Amortization. Sourced from latest annual financial data.'
+  },
+  forwardPe: {
+    label: 'Forward PE Ratio',
+    what: 'Price-to-Earnings ratio based on expected future earnings (next 12 months) rather than trailing earnings.',
+    why: 'Forward PE shows if the stock is cheap relative to projected earnings growth. Forward PE < Trailing PE suggests earnings are expected to grow, making valuation more attractive.',
+    how: 'Forward PE = Current Price / Expected EPS (next 12 months). Expected EPS is based on analyst consensus estimates. When forward PE is lower than trailing PE, it indicates earnings recovery expectation.'
+  },
+  netDebtToEquity: {
+    label: 'Net Debt to Equity',
+    what: '(Total Debt - Cash & Cash Equivalents) / Shareholders\' Equity. Shows true leverage after accounting for cash reserves.',
+    why: 'A company with high debt but also high cash may actually have low net debt. Net D/E < Total D/E is positive (cash sufficient). Negative Net D/E means net cash position — very strong balance sheet.',
+    how: 'Net D/E = (Total Borrowings - Cash & Bank Balance) / Shareholders\' Equity. Uses latest annual balance sheet data. For banks, total debt includes deposits.'
+  },
+  currentSalesTTM: {
+    label: 'Current Sales (TTM)',
+    what: 'Trailing 12-month total revenue/sales, summed from the last 4 quarterly reports.',
+    why: 'TTM Sales vs ATH Sales shows if business revenue is near its peak. Sales within 5% of ATH = PASS. Gap >20% = DECLINE phase — investigate why revenue fell.',
+    how: 'TTM Sales = Sum of latest 4 quarterly revenue figures. Compared to Historical ATH Sales to determine growth phase: ATH, NEAR_ATH (within 20%), RECOVERY, or DECLINE.'
+  },
+  currentProfitTTM: {
+    label: 'Current Net Profit (TTM)',
+    what: 'Trailing 12-month net profit, summed from the last 4 quarterly reports.',
+    why: 'TTM Profit vs ATH Profit shows earnings health. Profit near ATH confirms business fundamentals are intact despite stock price movements.',
+    how: 'TTM Net Profit = Sum of latest 4 quarterly net profit figures. Compared to Historical ATH Net Profit to assess earnings trajectory and phase direction.'
+  },
+  totalDebtToEquity: {
+    label: 'Total Debt to Equity',
+    what: 'Standard debt-to-equity ratio including all interest-bearing debt (borrowings, deposits for banks, debentures, etc.) divided by shareholders\' equity.',
+    why: 'Unlike Net D/E, Total D/E does NOT subtract cash. This gives a fuller picture of actual leverage. Banking/NBFC sectors naturally have higher total D/E (3-8x) due to deposits-based business model.',
+    how: 'Total D/E = Total Debt / Shareholders\' Equity. For banks: includes deposits. For non-finance: includes all borrowings. Sourced from Screener.in top-ratios section.'
   }
 };

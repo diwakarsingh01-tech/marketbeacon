@@ -114,7 +114,9 @@ const StockFundamentalsPage: React.FC = () => {
     { id: 'valuation', label: 'Valuation', data: audit?.efficiencyGovernance, icon: <Target className="h-3 w-3 mr-1" /> }
   ];
 
-  const peRatio = Number(data?.peRatio || 0);
+  const peRatio = Number(data?.normalizedPe || data?.peRatio || 0);
+  const rawPeRatio = Number(data?.peRatio || 0);
+  const isPEAdjusted = rawPeRatio > 0 && peRatio > 0 && Math.abs(rawPeRatio - peRatio) > 5;
   const pe3Y = Number(data?.peMedians?.pe3Y || 0);
   const pe5Y = Number(data?.peMedians?.pe5Y || 0);
   const pe10Y = Number(data?.peMedians?.pe10Y || 0);
@@ -225,7 +227,7 @@ const StockFundamentalsPage: React.FC = () => {
              <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-28 transition-all duration-200 hover:border-[#00d09c]/30">
                 <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1">Debt-To-Equity <InfoTooltip entry={FUNDA_INFO_MAP.debtToEquity} /></span>
                 <div>
-                  <p className={`text-lg font-bold leading-tight font-mono ${Number(data?.netDebtToEquity) > 0.2 ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{Number(data?.netDebtToEquity).toFixed(2)}</p>
+                  <p className={`text-lg font-bold leading-tight font-mono ${data?.netDebtToEquity != null && Number(data.netDebtToEquity) > 0.2 ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{data?.netDebtToEquity != null ? Number(data.netDebtToEquity).toFixed(2) : '-'}</p>
                   <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} className="mt-1" />
                 </div>
              </div>
@@ -336,7 +338,7 @@ const StockFundamentalsPage: React.FC = () => {
                       <h3 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center">
                         {segment.icon} {segment.label} <InfoTooltip entry={FUNDA_INFO_MAP[segment.id === 'valuation' ? 'valuationScore' : segment.id === 'profit' ? 'profitabilityQuality' : segment.id === 'safety' ? 'balanceSheetSafety' : 'growthQuality']} size="sm" className="ml-1" />
                       </h3>
-                      <span className="text-caption text-[var(--text-primary)]">{segment.data.score}/{segment.data.max}</span>
+                      <span className="text-caption text-[var(--text-primary)]">{parseFloat(Number(segment.data.score).toFixed(2))}/{segment.data.max}</span>
                     </div>
                     <div className="space-y-2">
                        {(segment.data.checks || []).map((check: any, idx: number) => (
@@ -359,10 +361,14 @@ const StockFundamentalsPage: React.FC = () => {
 
           <section className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl shadow-xl p-6 grid grid-cols-2 md:grid-cols-4 gap-6 backdrop-blur-sm">
              {[
-               { label: 'ATH Sales', value: data?.athSales ? `₹${Number(data.athSales).toLocaleString()} Cr.` : '-', infoKey: 'salesAth' as const },
-               { label: 'ATH Profit', value: data?.athNetProfit ? `₹${Number(data.athNetProfit).toLocaleString()} Cr.` : '-', infoKey: 'profitAth' as const },
+               { label: 'ATH Sales', value: data?.athSales ? `₹${Number(data.athSales).toLocaleString()} Cr` : '-', infoKey: 'salesAth' as const },
+               { label: 'ATH Profit', value: data?.athNetProfit ? `₹${Number(data.athNetProfit).toLocaleString()} Cr` : '-', infoKey: 'profitAth' as const },
+               { label: 'Current Sales', value: data?.currentSales ? `₹${Number(data.currentSales).toLocaleString()} Cr` : '-', infoKey: 'currentSalesTTM' as const },
+               { label: 'Current Profit', value: data?.currentNetProfit ? `₹${Number(data.currentNetProfit).toLocaleString()} Cr` : '-', infoKey: 'currentProfitTTM' as const },
                { label: '52W High', value: `₹${Number(data?.fiftyTwoWeekHigh || 0).toLocaleString()}`, infoKey: 'fiftyTwoWeekHigh' as const },
-               { label: 'Beta', value: Number(data?.beta)?.toFixed(2), infoKey: 'beta' as const }
+               { label: 'Beta', value: data?.beta != null ? Number(data.beta).toFixed(2) : '-', infoKey: 'beta' as const },
+               { label: 'Forward PE', value: data?.forwardPe ? data.forwardPe.toFixed(1) : '-', infoKey: 'forwardPe' as const },
+               { label: 'Net D/E', value: data?.netDebtToEquity ? data.netDebtToEquity.toFixed(2) : '-', infoKey: 'netDebtToEquity' as const }
              ].map((item, i) => (
                <div key={i} className="space-y-1">
                   <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1">{item.label} <InfoTooltip entry={FUNDA_INFO_MAP[item.infoKey]} /></span>
@@ -385,7 +391,7 @@ const StockFundamentalsPage: React.FC = () => {
                  <div className="grid grid-cols-2 gap-4">
                     <div className={`p-4 rounded-xl border ${isPEOvervalued ? 'bg-red-500/10 border-red-500/30' : 'bg-[var(--bg-primary)] border-[var(--border-primary)]'} transition-all duration-200 hover:scale-[1.02]`}>
                        <p className={`text-caption uppercase flex items-center gap-1 ${isPEOvervalued ? 'text-red-500' : 'text-[var(--text-tertiary)]'}`}>Current PE <InfoTooltip entry={FUNDA_INFO_MAP.peRatio} size="sm" /></p>
-                       <p className={`text-lg font-bold leading-none font-mono ${isPEOvervalued ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{peRatio.toFixed(1)}</p>
+                       <p className={`text-lg font-bold leading-none font-mono ${isPEOvervalued ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{peRatio.toFixed(1)}{isPEAdjusted ? <span className="text-[10px] text-amber-400 ml-1 font-normal">adj</span> : ''}</p>
                        <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} className="mt-1" />
                     </div>
                     <div className="bg-[var(--bg-primary)] p-4 rounded-xl border border-[var(--border-primary)] text-center transition-all duration-200 hover:scale-[1.02]">
@@ -493,12 +499,12 @@ const StockFundamentalsPage: React.FC = () => {
                         <table className="w-full text-xs font-mono">
                           <thead>
                             <tr className="bg-[var(--bg-primary)]/60 text-[var(--text-muted)] uppercase tracking-wider">
-                              <th className="p-2 text-left">Setup Level</th>
+                              <th className="p-2 text-left">Date</th>
                               <th className="p-2 text-left">Price</th>
                               <th className="p-2 text-left">Exit</th>
                               <th className="p-2 text-left">Price</th>
-                              <th className="p-2 text-left">Projection</th>
-                              <th className="p-2 text-left">Hit?</th>
+                              <th className="p-2 text-left">Model Level</th>
+                              <th className="p-2 text-left">Met?</th>
                               <th className="p-2 text-right">ROI</th>
                               <th className="p-2 text-right">Days</th>
                             </tr>

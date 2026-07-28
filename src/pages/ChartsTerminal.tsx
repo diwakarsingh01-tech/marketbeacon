@@ -357,28 +357,28 @@ const ChartsTerminalContent: React.FC = () => {
             lineWidth: 2,
             lineStyle: 2, // dashed
             axisLabelVisible: true,
-            title: `ENTRY (Tranche ${strat.tranche || ''}): ₹${strat.entryPrice}`,
+            title: `Tranche ${strat.tranche || 'A'}: ₹${strat.entryPrice}`,
           });
         }
         
-        // 2. Target Price Line
-        if (strat.target) {
+        // 2. Target Price Line - REMOVED for SEBI compliance
+        {/* if (strat.target) {
           mainSeries.createPriceLine({
             price: Number(strat.target),
             color: '#3b82f6', // blue
             lineWidth: 2,
             lineStyle: 2, // dashed
             axisLabelVisible: true,
-            title: `TARGET: ₹${strat.target}`,
+            title: `Model Ref: ₹${strat.target}`,
           });
-        }
+        } */}
 
         // 4. ABCD Points (Tranches)
         if (strat.abcd) {
           Object.entries(strat.abcd).forEach(([key, val]: [string, ABCDNode]) => {
             if (val && val.price) {
               const p = Number(val.price);
-              if (p !== Number(strat.entryPrice) && p !== Number(strat.target)) {
+              if (p !== Number(strat.entryPrice)) {
                 mainSeries.createPriceLine({
                   price: p,
                   color: isDark ? '#475569' : '#94a3b8', // slate/gray
@@ -677,8 +677,9 @@ const ChartsTerminalContent: React.FC = () => {
   // Format Large Currency in Crores
   const formatCr = (val: unknown) => {
     const n = Number(val);
-    if (isNaN(n) || n === 0) return '—';
-    return `₹ ${(n / 10000000).toLocaleString('en-IN', { maximumFractionDigits: 2 })} Cr.`;
+    if (isNaN(n) || n === 0 || n === null || n === undefined) return '—';
+    // Values from API are already in Cr (e.g. 727 = ₹727 Cr)
+    return `₹ ${n.toLocaleString('en-IN', { maximumFractionDigits: 1 })} Cr`;
   };
 
   const formatPct = (val: unknown) => {
@@ -732,10 +733,7 @@ const ChartsTerminalContent: React.FC = () => {
         <i data-lucide="activity" class="h-6 w-6"></i>
       </div>
       <div>
-        <h1 class="text-lg font-black tracking-tight uppercase italic text-[var(--text-primary)] flex items-center gap-1.5">
-          MarketBeacon <span class="text-blue-500">Terminal</span>
-        </h1>
-        <p class="text-caption text-[var(--text-tertiary)] uppercase tracking-wider">Offline / Standalone Portable Instance</p>
+        <p class="text-caption text-[var(--text-tertiary)] uppercase tracking-wider">Standalone Portable Instance</p>
       </div>
     </div>
     
@@ -832,7 +830,6 @@ const ChartsTerminalContent: React.FC = () => {
           <div class="relative pt-4 pb-2">
             <div class="h-1.5 w-full bg-[var(--bg-tertiary)] rounded-full relative">
               <div id="conf-accumulation-bar" class="absolute h-full bg-emerald-500/30 rounded-full" style="left: 0%; right: 100%;"></div>
-              <div id="conf-target-bar" class="absolute h-full bg-blue-500/20 rounded-full" style="left: 0%; right: 100%;"></div>
             </div>
             
             <!-- Pins -->
@@ -844,8 +841,7 @@ const ChartsTerminalContent: React.FC = () => {
           
           <div class="flex justify-between text-caption text-[var(--text-muted)] uppercase tracking-wider">
             <span id="conf-floor-lbl">FLOOR: ₹0</span>
-            <span id="conf-entry-lbl">ENTRY: ₹0</span>
-            <span id="conf-target-lbl">TARGET: ₹0</span>
+            <span id="conf-entry-lbl">Setup Lvl: ₹0</span>
           </div>
         </div>
       </div>
@@ -943,19 +939,22 @@ const ChartsTerminalContent: React.FC = () => {
           lineWidth: 2,
           lineStyle: 2,
           axisLabelVisible: true,
-          title: 'ENTRY (Tranche ' + (activeStrat.tranche || '') + '): ₹' + activeStrat.entryPrice
+          title: 'Tranche ' + (activeStrat.tranche || 'A') + ': ₹' + activeStrat.entryPrice
         });
       }
-      if (activeStrat.target) {
+      
+      // Target Price Line - REMOVED for SEBI compliance
+      {/* if (activeStrat.target) {
         series.createPriceLine({
           price: Number(activeStrat.target),
           color: '#3b82f6',
           lineWidth: 2,
           lineStyle: 2,
           axisLabelVisible: true,
-          title: 'TARGET: ₹' + activeStrat.target
+          title: 'Model Ref: ₹' + activeStrat.target
         });
-      }
+      } */}
+      
       if (activeStrat.abcd) {
         Object.entries(activeStrat.abcd).forEach(([key, val]) => {
           if (val && val.price) {
@@ -1093,15 +1092,12 @@ const ChartsTerminalContent: React.FC = () => {
       
       document.getElementById('conf-accumulation-bar').style.left = bottomPct + '%';
       document.getElementById('conf-accumulation-bar').style.right = (100 - entryPct) + '%';
-      document.getElementById('conf-target-bar').style.left = entryPct + '%';
-      document.getElementById('conf-target-bar').style.right = (100 - targetPct) + '%';
       
       document.getElementById('conf-price-pin').style.left = currentPct + '%';
       document.getElementById('conf-price-val').textContent = '₹' + Math.round(price);
       
       document.getElementById('conf-floor-lbl').textContent = 'FLOOR: ₹' + Math.round(bottom);
-      document.getElementById('conf-entry-lbl').textContent = 'ENTRY: ₹' + Math.round(entry);
-      document.getElementById('conf-target-lbl').textContent = 'TARGET: ₹' + Math.round(target);
+      document.getElementById('conf-entry-lbl').textContent = 'Setup Lvl: ₹' + Math.round(entry);
     }
 
     const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
@@ -1256,17 +1252,16 @@ const ChartsTerminalContent: React.FC = () => {
     if (!activeStrategy) return '';
     const displayName = STRATEGY_NAMES[activeStrategyId || ''] || activeStrategyId;
     const entry = Math.round(Number(activeStrategy.entryPrice || 0));
-    const target = Math.round(Number(activeStrategy.target || 0));
     
     switch (activeStrategyId) {
       case 'BOLLINGER':
-        return `${symbol} crossed below its lower Bollinger Band at ₹${entry}, triggering a momentum exhaust rebound setup. 1H RSI is oversold. Accumulation setup range is active up to ₹${entry} with target objectives set at ₹${target}.`;
+        return `${symbol} crossed below its lower Bollinger Band at ₹${entry}, triggering a momentum exhaust rebound setup. 1H RSI is oversold. Accumulation setup range is active up to ₹${entry}.`;
       case 'ENVELOPE_LONG':
-        return `${symbol} is trading within the extreme lower bounds of its 200 EMA envelope channel. Long-term accumulation is active in the optimal green corridor under ₹${entry} with key target objectives placed at ₹${target}.`;
+        return `${symbol} is trading within the extreme lower bounds of its 200 EMA envelope channel. Long-term accumulation is active in the optimal green corridor under ₹${entry}.`;
       case '52W_HIGH_LOW':
-        return `${symbol} has entered a key consolidation range near its 52-week parameters. A technical breakout trigger is set at ₹${entry} with a target of ₹${target}.`;
+        return `${symbol} has entered a key consolidation range near its 52-week parameters. A technical breakout trigger is set at ₹${entry}.`;
       default:
-        return `${symbol} has matched all technical qualifiers for the ${displayName} strategy. A technical entry zone is currently active at ₹${entry} with a projected target range of +${(((target - entry) / Math.max(1, entry)) * 100).toFixed(1)}% targeting ₹${target}.`;
+        return `${symbol} has matched all technical qualifiers for the ${displayName} strategy. A technical entry zone is currently active at ₹${entry}.`;
     }
   };
 
@@ -1889,15 +1884,15 @@ const ChartsTerminalContent: React.FC = () => {
                   </div>
                   <div className="space-y-2 pt-2 border-t border-[var(--border-primary)]/40">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-[var(--text-tertiary)] font-bold">Safe Entry:</span>
+                      <span className="text-[var(--text-tertiary)] font-bold">Setup Level:</span>
                       <span className="font-extrabold text-emerald-400">₹ {Number(activeStrategy.entryPrice || 0).toLocaleString('en-IN')}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-[var(--text-tertiary)] font-bold">Target Price:</span>
+                      <span className="text-[var(--text-tertiary)] font-bold">Model Ref:</span>
                       <span className="font-extrabold text-blue-400">₹ {Number(activeStrategy.target || 0).toLocaleString('en-IN')}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs border-t border-[var(--border-primary)]/40 pt-2">
-                      <span className="text-[var(--text-tertiary)] font-bold">Potential Gain:</span>
+                      <span className="text-[var(--text-tertiary)] font-bold">Est. Range:</span>
                       <span className="font-extrabold text-emerald-400">
                         +{(((Number(activeStrategy.target || 0) - Number(activeStrategy.entryPrice || 0)) / Math.max(1, Number(activeStrategy.entryPrice || 1))) * 100).toFixed(1)}%
                       </span>

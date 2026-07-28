@@ -50,9 +50,10 @@ OUTPUT FORMAT (respond in JSON only):
 }`;
 
 function getMarketCapCategory(marketCap: number): string {
-  if (marketCap >= 20000e7) return 'Large Cap';
-  if (marketCap >= 5000e7) return 'Mid Cap';
-  return 'Small Cap';
+  if (marketCap >= 100000e7) return 'Large Cap';
+  if (marketCap >= 33000e7) return 'Mid Cap';
+  if (marketCap >= 15000e7) return 'Small Cap';
+  return 'Micro Cap';
 }
 
 function getDropThresholds(mcapCategory: string): { minDrop: number; maxDrop: number; abcdGaps: number } {

@@ -380,13 +380,13 @@ const HomePage: React.FC = () => {
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">31,402 Active Traders</span>
            </div>
-           <Link to="/login" className="px-6 py-2.5 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-xl text-caption shadow-lg hover:scale-105 transition-all">Launch Terminal</Link>
+           <Link to="/login" className="px-6 py-2.5 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded-xl text-caption shadow-lg hover:scale-105 transition-all">Sign In</Link>
         </div>
         {/* Mobile nav */}
         <div className="flex md:hidden items-center gap-3">
           <Link to="/check" className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors">Scanner</Link>
           <Link to="/blog" className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] uppercase tracking-wider transition-colors">Blog</Link>
-          <Link to="/login" className="px-4 py-2 bg-[#00d09c] text-white rounded-xl text-caption">Login</Link>
+          <Link to="/login" className="px-4 py-2 bg-[#00d09c] text-white rounded-xl text-caption">Sign In</Link>
         </div>
       </nav>
 
@@ -942,7 +942,7 @@ const HomePage: React.FC = () => {
       {/* Mobile Sticky CTA */}
       <div className="fixed bottom-0 w-full p-3 md:hidden bg-white/95 border-t border-slate-200 z-50 flex gap-2">
         <Link to="/login" className="flex-1 flex items-center justify-center py-3.5 bg-[#00d09c] text-white rounded-xl font-bold uppercase tracking-wider text-xs shadow-lg shadow-[#00d09c]/20">
-           Start Free
+           Sign In
         </Link>
         <a
           href={waLink('Hi Admin, I want to know more about MarketBeacon Pro.')}

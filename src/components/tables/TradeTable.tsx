@@ -457,19 +457,19 @@ const TradeTable: React.FC<TradeTableProps> = ({
           
           {/* Compact Pill Tabs with brand green */}
           {setActiveTab && visibleTabs.length > 0 && (
-            <div className="grid grid-cols-3 gap-1 bg-[var(--bg-tertiary)] p-1 rounded-xl border border-[var(--border-primary)] w-full overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1 bg-[var(--bg-tertiary)] p-1 rounded-xl border border-[var(--border-primary)] w-full overflow-x-auto no-scrollbar">
                {visibleTabs.map(tab => (
                  <button
                    key={tab.id}
                    onClick={() => setActiveTab(tab.id as string)}
-                   className={`px-2 py-1.5 rounded-lg text-[9px] md:text-xs font-extrabold uppercase tracking-wider transition-all w-full flex items-center justify-center leading-tight ${
+                   className={`px-2.5 py-1.5 rounded-lg text-[9px] md:text-xs font-extrabold uppercase tracking-wider transition-all whitespace-nowrap flex items-center leading-tight shrink-0 ${
                      activeTab === tab.id 
                         ? 'bg-white text-[#00d09c] shadow-md border border-[#00d09c]/30 font-black' 
                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/50'
                    }`}
                  >
                    <span>{tab.label}</span>
-                   <span className={`ml-1.5 px-2 py-0.5 rounded-lg text-[10px] font-bold ${
+                   <span className={`ml-1.5 px-2 py-0.5 rounded-lg text-[10px] font-bold hidden sm:inline-flex ${
                      activeTab === tab.id 
                        ? 'bg-[#00d09c]/10 text-[#00d09c]' 
                        : 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]'

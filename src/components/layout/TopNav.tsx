@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Activity, LogOut, User, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X } from 'lucide-react';
+import { Activity, LogOut, User, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BASKETS } from '../../data/stocks';
 import BrandLogo from '../brand/BrandLogo';
@@ -20,9 +20,11 @@ const ALL_STOCKS = Array.from(new Set(Object.values(BASKETS).flat())).sort();
 
 interface TopNavProps {
   onMenuClick?: () => void;
+  onToggleSidebarCollapse?: () => void;
+  isSidebarCollapsed?: boolean;
 }
 
-const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
+const TopNav: React.FC<TopNavProps> = ({ onMenuClick, onToggleSidebarCollapse, isSidebarCollapsed }) => {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -140,17 +142,28 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
       {/* Gradient top-edge */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent pointer-events-none" />
 
-      {/* Left: Menu & Brand Logo */}
-      <div className="flex items-center space-x-4 shrink-0">
-        <button
-          onClick={onMenuClick}
-          aria-label="Open menu"
-          className="p-2.5 -ml-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-xl transition-all"
-        >
-          <Menu className="h-6 w-6" />
-        </button>
+       {/* Left: Menu & Brand Logo */}
+       <div className="flex items-center space-x-4 shrink-0">
+         <button
+           onClick={onMenuClick}
+           aria-label="Open menu"
+           className="p-2.5 -ml-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-xl transition-all md:hidden"
+         >
+           <Menu className="h-6 w-6" />
+         </button>
 
-        {/* Brand Logo (Always Visible) */}
+         {onToggleSidebarCollapse && (
+           <button
+             onClick={onToggleSidebarCollapse}
+             aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+             className="hidden md:inline-flex p-2.5 -ml-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded-xl transition-all"
+             title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+           >
+             {isSidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+           </button>
+         )}
+
+         {/* Brand Logo (Always Visible) */}
         <div className="flex items-center">
           <Link to="/app" className="transition-all hover:opacity-90 active:scale-95 flex items-center gap-2">
             <BrandLogo variant="light" size={28} hideText={false} />
@@ -436,7 +449,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
       {/* Mobile Search Overlay */}
       {showMobileSearch && (
-        <div className="absolute inset-0 bg-[var(--bg-primary)]/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
+        <div className="fixed inset-0 bg-[var(--bg-primary)]/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
           <div className="flex items-center gap-3">
             <form onSubmit={handleSearch} className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

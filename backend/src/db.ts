@@ -2,6 +2,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createClient as createLibsqlClient } from '@libsql/client';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 // --- Environment Hardening ---
@@ -28,9 +29,22 @@ export async function initDB() {
   const tursoToken = (process.env.TURSO_AUTH_TOKEN || '').replace(/\s/g, '');
 
   if (!tursoUrl || !tursoToken) {
-    console.log('🏠 No Turso credentials found. Using local SQLite (marketbeacon.db)...');
+    console.log('🏠 No Turso credentials found. Using local SQLite...');
+    // DB path resolution: try __dirname first (dist/), then CWD, then parent of CWD
+    const possiblePaths = [
+      path.resolve(__dirname, 'marketbeacon.db'),         // <dist>/
+      path.resolve(process.cwd(), 'marketbeacon.db'),      // <cwd>/
+      path.resolve(process.cwd(), '..', 'marketbeacon.db'), // <cwd>/../ (deploy structure)
+    ];
+    let dbPath = 'file:marketbeacon.db'; // fallback
+    for (const p of possiblePaths) {
+      try {
+        if (fs.existsSync(p)) { dbPath = `file:${p}`; break; }
+      } catch {}
+    }
+    console.log(`📁 DB path: ${dbPath}`);
     tursoClient = createLibsqlClient({
-      url: 'file:marketbeacon.db',
+      url: dbPath,
     });
   } else {
     console.log('☁️ Connecting to Turso Cloud Database...');
@@ -130,19 +144,31 @@ export async function initDB() {
     }
   }
 
-  // ── Robust column existence check for `mobile` ──────────────────────────
-  // Some older databases may not have the mobile column. The ALTER TABLE
+  // ── Robust column existence check for `mobile` and `subscription_start` ──
+  // Some older databases may not have these columns. The ALTER TABLE
   // above silently fails if the column exists, but if the table was created
   // by an even older version without the column, we need to add it.
   try {
     const cols = await tursoClient.execute('PRAGMA table_info(users)');
-    const hasMobile = cols.rows.some((r: any) => r[1] === 'mobile');
-    if (!hasMobile) {
-      await tursoClient.execute('ALTER TABLE users ADD COLUMN mobile TEXT');
-      console.log('🔧 Added missing `mobile` column to users table');
+    const columnNames = cols.rows.map((r: any) => r[1] as string);
+    if (!columnNames.includes('mobile')) {
+      try {
+        await tursoClient.execute('ALTER TABLE users ADD COLUMN mobile TEXT');
+        console.log('🔧 Added missing `mobile` column to users table');
+      } catch (alterErr: any) {
+        // Try without UNIQUE constraint if first attempt failed
+        if (alterErr.message?.includes('UNIQUE')) {
+          await tursoClient.execute('ALTER TABLE users ADD COLUMN mobile TEXT');
+          console.log('🔧 Added missing `mobile` column (without UNIQUE) to users table');
+        }
+      }
+    }
+    if (!columnNames.includes('subscription_start')) {
+      await tursoClient.execute('ALTER TABLE users ADD COLUMN subscription_start DATETIME');
+      console.log('🔧 Added missing `subscription_start` column to users table');
     }
   } catch (e: any) {
-    console.warn('⚠️ Could not verify/add mobile column:', e.message);
+    console.warn('⚠️ Could not verify/add columns:', e.message);
   }
 
   await tursoClient.execute(`

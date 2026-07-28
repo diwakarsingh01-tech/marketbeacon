@@ -747,7 +747,7 @@ const EducationPage: React.FC = () => {
               className="grid grid-cols-1 lg:grid-cols-12 gap-8"
             >
               {/* Sidebar — Modules & Lessons */}
-              <div className="lg:col-span-4 space-y-2">
+              <div className="lg:col-span-4 space-y-2" data-tour="edu-modules">
                 {courseModules.map(mod => {
                   const isActiveMod = activeModule === mod.id;
                   const isExpanded = expandedModules[mod.id] ?? (mod.id === 'foundation');

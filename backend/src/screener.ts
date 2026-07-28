@@ -34,8 +34,9 @@ export async function initSnapshotCache() {
     if (fs.existsSync(p)) {
       console.log(`💾 Found market_snapshot.json at: ${p}`);
       try {
-        const fileContent = fs.readFileSync(p, 'utf8');
-        snapshotCache = JSON.parse(fileContent);
+        const fileContent = await fs.promises.readFile(p, 'utf8');
+        await new Promise(r => setImmediate(r));
+	        snapshotCache = JSON.parse(fileContent);
         console.log(`✅ Snapshot cache restored from local file (${Object.keys(snapshotCache).length} symbols)`);
         loaded = true;
       } catch (parseErr: any) {
@@ -47,6 +48,10 @@ export async function initSnapshotCache() {
   if (loaded && snapshotCache) {
     let patched = 0;
     for (const [sym, data] of Object.entries(snapshotCache)) {
+      // Yield event loop every 100 entries so auth requests aren't starved
+      if (patched > 0 && patched % 100 === 0) {
+        await new Promise(r => setImmediate(r));
+      }
       const screener = (data as any)?.screener;
       const quotes = (data as any)?.quotes;
       if (screener && quotes && quotes.length > 0 && screener.epsHistory?.length >= 2) {
@@ -102,17 +107,13 @@ function calculatePEMedianFromHistory(quotes: any[], epsHistory: number[], years
   if (!quotes || quotes.length === 0 || !epsHistory || epsHistory.length < 2) return 0;
 
   // 1. Group daily quotes by Indian financial year (Apr–Mar → FY-ending year).
-  //    A quote on 2024-01-15 belongs to FY 2024 (ending Mar 2024).
-  //    A quote on 2024-04-01 belongs to FY 2025 (ending Mar 2025).
   const fyGroups: Record<number, number[]> = {};
   for (const q of quotes) {
     if (!q.close || !q.date) continue;
     const d = new Date(q.date);
     if (isNaN(d.getTime())) continue;
     let fyEnd = d.getFullYear();
-    // Jan–Mar belongs to the *previous* FY (e.g. Jan 2024 → FY ending Mar 2024)
-    if (d.getMonth() < 3) fyEnd = d.getFullYear(); // Already correct: 2024-01 → FY ending 2024
-    // Apr–Dec belongs to the *current* FY (e.g. Apr 2024 → FY ending 2025)
+    if (d.getMonth() < 3) fyEnd = d.getFullYear();
     else fyEnd = d.getFullYear() + 1;
     if (!fyGroups[fyEnd]) fyGroups[fyEnd] = [];
     fyGroups[fyEnd].push(q.close);
@@ -130,13 +131,8 @@ function calculatePEMedianFromHistory(quotes: any[], epsHistory: number[], years
   if (fyAverages.length === 0) return 0;
 
   // 3. Match each FY average with the corresponding EPS from epsHistory.
-  //    epsHistory is stored oldest → newest. The most recent FY in our quotes
-  //    maps to the *last* element of epsHistory. We work backwards.
   const yearlyPEs: number[] = [];
   const numEps = epsHistory.length;
-
-  // We take the most recent `numEps` FYs from the quotes and match them 1:1
-  // with epsHistory (oldest eps → oldest of those FYs, newest eps → newest FY).
   const recentFys = fyAverages.slice(-numEps);
 
   for (let i = 0; i < recentFys.length; i++) {
@@ -144,7 +140,6 @@ function calculatePEMedianFromHistory(quotes: any[], epsHistory: number[], years
     if (!eps || eps <= 0) continue;
     const avgPrice = recentFys[i].avgPrice;
     const pe = avgPrice / eps;
-    // Sanity check: reject nonsensical PE values
     if (pe > 0 && pe < 500) {
       yearlyPEs.push(pe);
     }
@@ -152,13 +147,12 @@ function calculatePEMedianFromHistory(quotes: any[], epsHistory: number[], years
 
   if (yearlyPEs.length < 2) return 0;
 
-  // 4. Return median
+  // 4. Return median rounded to 2 decimal places
   yearlyPEs.sort((a, b) => a - b);
   const mid = Math.floor(yearlyPEs.length / 2);
   const median = yearlyPEs.length % 2 !== 0
     ? yearlyPEs[mid]
     : (yearlyPEs[mid - 1] + yearlyPEs[mid]) / 2;
-
   return Math.round(median * 100) / 100;
 }
 
@@ -428,8 +422,9 @@ export async function fetchScreenerData(symbol: string) {
           const raw = (valEl.length > 0 ? valEl.first().text() : $(el).text().replace(/[^0-9.]/g, '')).trim().replace(/,/g, '');
           const val = parseFloat(raw);
           if (!isNaN(val) && val > 0) {
-            if (text.includes('3 year') || text.includes('3 yr') || text.includes('3y') || text.includes('3years') || text.includes('3 yrs')) peMedians.pe3Y = val;
-            if (text.includes('5 year') || text.includes('5 yr') || text.includes('5y') || text.includes('5years') || text.includes('5 yrs')) peMedians.pe5Y = val;
+            const rounded = Math.round(val * 100) / 100; // Round to 2 decimal places
+            if (text.includes('3 year') || text.includes('3 yr') || text.includes('3y') || text.includes('3years') || text.includes('3 yrs')) peMedians.pe3Y = rounded;
+            if (text.includes('5 year') || text.includes('5 yr') || text.includes('5y') || text.includes('5years') || text.includes('5 yrs')) peMedians.pe5Y = rounded;
           }
         }
       });

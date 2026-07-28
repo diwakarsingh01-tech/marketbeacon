@@ -19,8 +19,7 @@ import {
   getDynamicBasket,
   initSnapshotCache,
   getMarketSnapshot,
-  fetchScreenerData,
-  calculateBetaForSymbols
+  fetchScreenerData
 } from './screener.js';
 import { growthFilter } from './services/growthFilter.js';
 import { NIFTY_500 } from './universe.js';
@@ -315,44 +314,6 @@ export const BASKETS: Record<string, string[]> = {
     "BANDHANBNK", "VENKEYS", "ZEEL", "DELTACORP", "IEX", "NEWGEN", "MAPMYINDIA", "JUSTDIAL", "SKFINDIA"
   ]
 };
-
-// ── Audit Result Cache ──────────────────────────────────────────────────────
-// Caches full audit results per (basket, strategyId) with 60s TTL
-// so repeated fetches (page navigation, active-setups polling) are instant.
-const auditCache = new Map<string, { result: any; timestamp: number }>();
-const AUDIT_CACHE_TTL = 60_000; // 60 seconds
-
-// Guard to prevent concurrent Alpha-40 precalculations
-let alpha40Calculating = false;
-
-// Process stocks in parallel batches with concurrency control.
-// Even though validateBatch9 is CPU-bound, batching + setImmediate yields
-// the event loop between chunks so other HTTP requests can interleave.
-async function processAuditBatch(
-  items: string[],
-  fn: (item: string, index: number) => Promise<any>,
-  concurrency: number = 20
-): Promise<any[]> {
-  const results = new Array(items.length);
-  let cursor = 0;
-
-  async function worker() {
-    while (cursor < items.length) {
-      const i = cursor++;
-      results[i] = await fn(items[i], i);
-      // After every chunk of concurrency items, yield to event loop
-      if (i > 0 && i % (concurrency * 2) === 0) {
-        await new Promise(resolve => setImmediate(resolve));
-      }
-    }
-  }
-
-  const workers = Array(Math.min(concurrency, items.length))
-    .fill(null)
-    .map(() => worker());
-  await Promise.allSettled(workers);
-  return results;
-}
 
 const JWT_SECRET = process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET must be set in .env'); })();
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -700,50 +661,66 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
     // Deduplicate and filter out index symbols
     const uniqueSymbols = Array.from(new Set(symbols)).filter(s => s && s !== '^NSEI');
 
-    // ── Cache check ──────────────────────────────────────────────────────
-    const effectiveStrategy = (selectedStrategyId as string) || 'SR_STRATEGY';
-    const cacheKey = `${basket}:${effectiveStrategy}`;
-    const cached = auditCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < AUDIT_CACHE_TTL) {
-      console.log(`[AUDIT CACHE] HIT ${cacheKey} (${cached.result.allStocks.length} stocks)`);
-      return res.json(cached.result);
-    }
-    console.log(`[AUDIT CACHE] MISS ${cacheKey} — computing ${uniqueSymbols.length} symbols...`);
-
     const snapshot = await getSnapshotFromCloud(uniqueSymbols);
-    const snapshotKeys = Object.keys(snapshot);
-
-    // ── Process stocks in parallel batches ──────────────────────────────
-    const results = await processAuditBatch(uniqueSymbols, async (sym) => {
+    const results = [];
+    for (const sym of uniqueSymbols) {
       const cleanSym = sym.trim().toUpperCase();
       let snap = snapshot[cleanSym] || snapshot[`${cleanSym}.NS`];
       
+      // Multi-layer lookup fallback
       if (!snap) {
-        const key = snapshotKeys.find(k => k.replace('.NS', '') === cleanSym);
-        if (key) snap = snapshot[key];
+         const keys = Object.keys(snapshot);
+         const key = keys.find(k => k.replace('.NS', '') === cleanSym);
+         if (key) snap = snapshot[key];
       }
 
-      if (!snap) return null; // Skip stocks without snapshot data
+      if (!snap) {
+         // Return placeholder node for symbols not yet in cache (Avoids 0 Nodes display)
+         results.push({
+            symbol: cleanSym,
+            entryPrice: 0,
+            target: 0,
+            currentPrice: 0,
+            isBuyZone: false,
+            isPass: false,
+            score: 0,
+            reason: 'Audit Pending: Node Warming Up',
+            sector: MANUAL_SECTOR_MAP[cleanSym] || 'General',
+            auditSegments: { profitability: { score: 0 }, safety: { score: 0 }, growth: { score: 0 }, efficiency: { score: 0 } }
+         });
+         continue;
+      }
 
-      const audit = await validateBatch9(cleanSym, snap, basket);
-      const strategyData: any = await runStrategyAnalysis(effectiveStrategy, snap, snap.quote.marketCap, basket);
+      const audit = await validateBatch9(cleanSym, snap, basket as string);
+      const strategyId = (selectedStrategyId as string) || 'SR_STRATEGY';
+      const strategyData: any = await runStrategyAnalysis(strategyId, snap, snap.quote.marketCap, basket as string);
       
+      // Compute ABCD levels — use strategy's native levels or market-cap-weighted fallback
       const basePrice = strategyData?.entryPrice || snap.quotes[snap.quotes.length - 1].close;
       const abcdLevels = strategyData?.abcd || calculateABCDLevels(basePrice, snap.quote?.marketCap);
 
+      // Detect if the strategy's fundamental gate suppressed this signal
       const isGateRejection = strategyData?.isBuyZone === false && typeof strategyData?.reason === 'string' && strategyData.reason.includes('Fundamental Gate');
+
+      // Strict Institutional Guard: 60+ Score Required
       const passThreshold = 60;
       const auditPass = audit.score >= passThreshold && !audit.reason.includes('Hard Reject');
+
+      // isPass respects the strategy's fundamental gate: if gate rejected, fail
       const finalPass = isGateRejection ? false : auditPass;
+
+      // Bifurcation Logic Alignment
       const strategyIsBuyZone = strategyData?.isBuyZone === true;
       const strategyObservation = strategyData?.status === 'OBSERVATION';
+      
+      // Display reason: show fundamental gate reason when suppressed, strategy status when passing
       const displayReason = isGateRejection
         ? strategyData.reason
         : (strategyData?.status
           ? strategyData.status
           : (strategyIsBuyZone ? 'QUALIFIED' : 'Pattern Not Found - ' + audit.reason));
 
-      return {
+      results.push({
         symbol: sym,
         entryTime: strategyData?.triggerDate || snap.quotes[snap.quotes.length-1].date,
         entryPrice: strategyData?.entryPrice || 0,
@@ -754,8 +731,6 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
         reason: displayReason,
         isPass: finalPass,
         score: audit.score,
-        auditScore: audit.score,
-        smartMoney: audit.smartMoneyTotal,
         abcd: abcdLevels,
         sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
         peRatio: snap.screener?.peRatio || snap.quote?.pe,
@@ -766,24 +741,9 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
           growth: audit.growthQuality,
           efficiency: audit.efficiencyGovernance
         }
-      };
-    });
-
-    // Filter out nulls (stocks without snapshot data)
-    const filtered = results.filter(r => r !== null);
-    const responsePayload = { allStocks: filtered };
-
-    // ── Store in cache ───────────────────────────────────────────────────
-    auditCache.set(cacheKey, { result: responsePayload, timestamp: Date.now() });
-    console.log(`[AUDIT CACHE] STORED ${cacheKey} (${filtered.length} stocks)`);
-
-    // ── Evict stale cache entries ────────────────────────────────────────
-    const now = Date.now();
-    for (const [k, v] of auditCache.entries()) {
-      if (now - v.timestamp > AUDIT_CACHE_TTL * 2) auditCache.delete(k);
+      });
     }
-
-    res.json(responsePayload);
+    res.json({ allStocks: results });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -812,21 +772,20 @@ app.get('/api/backtest/alpha-40', authenticateToken, async (req: any, res) => {
         updatedAt: cache.updatedAt || null
       });
     }
-
-    // Cache miss — fire precalculation in background (if not already running)
-    // and return 503 immediately. The frontend retries with backoff until cache is ready.
-    // This avoids blocking the HTTP request for 5-10+ minutes.
-    if (!alpha40Calculating) {
-      alpha40Calculating = true;
-      console.log('[ALPHA-40] Cache miss — kicking off background precalculation...');
-      precalculateAlpha40().catch((e: any) => {
-        console.error('[ALPHA-40] Background precalculation failed:', e.message);
-      }).finally(() => {
-        alpha40Calculating = false;
-        console.log('[ALPHA-40] Precalculation finished, guard released.');
+    await precalculateAlpha40();
+    const freshCache = await getAlpha40Cache();
+    if (freshCache) {
+      return res.json({
+        stocks: freshCache.active,
+        summary: {
+          total: freshCache.active.length,
+          large: freshCache.capStats.LARGE,
+          mid: freshCache.capStats.MID,
+          small: freshCache.capStats.SMALL,
+          sectorStats: freshCache.sectorStats
+        },
+        updatedAt: freshCache.updatedAt || null
       });
-    } else {
-      console.log('[ALPHA-40] Precalculation already running — skipping duplicate.');
     }
     res.status(503).json({ error: 'Terminal warming up...' });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -1033,9 +992,25 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     const qualified = qualifiedResults;
 
     const capCr = (snap.quote?.marketCap || 0) / 10000000;
-    // Fixed thresholds per user's Excel formula:
-    // Large > ₹1,00,000 Cr | Mid > ₹33,000 Cr | Small > ₹15,000 Cr | Micro ≤ ₹15,000 Cr (included in Small)
-    const basketType = capCr > 100000 ? 'LARGE' : (capCr > 33000 ? 'MID' : 'SMALL');
+    // Use snapshot cache for SEBI percentile-based cap classification
+    const allSnap = getMarketSnapshot();
+    let capType = capCr >= 20000 ? 'LARGE' : (capCr >= 5000 ? 'MID' : 'SMALL'); // fallback thresholds
+    if (allSnap && Object.keys(allSnap).length > 50) {
+      const allCaps: number[] = Object.values(allSnap)
+        .map((s: any) => (s?.quote?.marketCap || 0) / 10000000)
+        .filter((v: number) => v > 0)
+        .sort((a: number, b: number) => b - a);
+      const total = allCaps.length;
+      const largeThreshold = Math.min(100, Math.ceil(total * 0.15));
+      const midThreshold = Math.min(250, largeThreshold + Math.ceil(total * 0.22));
+      const rank = allCaps.indexOf(capCr);
+      if (rank >= 0) {
+        if (rank < largeThreshold) capType = 'LARGE';
+        else if (rank < midThreshold) capType = 'MID';
+        else capType = 'SMALL';
+      }
+    }
+    const basketType = capType;
 
     // Extract ABCD levels for the primary strategy
     const primaryStrat = qualified[0];
@@ -1082,38 +1057,34 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     // Compute data freshness
     const isFresh = (Date.now() - new Date(lastUpdated).getTime()) < 48 * 60 * 60 * 1000;
 
-    // Use normalized PE when raw PE is inflated (>70) due to temporary EPS drop
-    const rawPe = snap.screener?.peRatio || snap.quote?.pe || 0;
-    const normPe = audit?.metrics?.normalizedPe || 0;
-    const displayPe = (rawPe > 70 && normPe > 0 && normPe < rawPe) ? normPe : rawPe;
+	    // Use normalized PE when raw PE is inflated (>70) due to temporary EPS drop
+	    const rawPe = snap.screener?.peRatio || snap.quote?.pe || 0;
+	    const normPe = audit?.metrics?.normalizedPe || 0;
+	    const displayPe = (rawPe > 70 && normPe > 0 && normPe < rawPe) ? normPe : rawPe;
 
     const response = { 
-      symbol, 
-      score: Math.round(audit.score), 
-      isPass: audit.isPass, 
-      strategies: qualified,
-      smartMoney: r2(audit.smartMoneyTotal || 0),
-      upside: maxUpside,
-      basket: basketType,
-      risk: audit.score >= 80 ? 'LOW' : (audit.score >= 70 ? 'MODERATE' : 'HIGH'),
-      abcd,
-      lastUpdated,
-      fresh: isFresh,
-      // Public fundamentals preview (key metrics only)
       fundamentals: {
+        peRatio: displayPe,
         peRatio: displayPe,
         peRatioRaw: rawPe,
         normalizedPe: normPe,
-        debtToEquity: snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity ? snap.quote.debtToEquity / 100 : 0),
+        forwardPe: snap.screener?.forwardPE || 0,
+        debtToEquity: audit?.metrics?.debtToEquity || snap.screener?.totalDebtToEquity || snap.screener?.netDebtToEquity || (snap.quote?.debtToEquity || 0),
+        netDebtToEquity: audit?.metrics?.netDebtToEquity || 0,
         roce: snap.screener?.roce || 0,
         returnOnEquity: snap.screener?.returnOnEquity || snap.quote?.roe || 0,
         marketCap: snap.quote?.marketCap || 0,
         athSales: snap.screener?.athSales || 0,
         athNetProfit: snap.screener?.athNetProfit || 0,
+        currentSales: snap.screener?.currentSales || 0,
+        currentNetProfit: snap.screener?.currentNetProfit || 0,
         netProfit: snap.screener?.currentNetProfit || snap.screener?.athNetProfit || 0,
-        pledgePct: snap.screener?.shareholding?.pledged || audit?.metrics?.pledged || 0,
+        pledgePct: audit?.metrics?.pledged || snap.screener?.shareholding?.pledged || 0,
         promoterHolding: audit?.metrics?.promoter || 0,
+        beta: audit?.metrics?.beta || snap.quote?.beta || 0,
         peMedians: snap.screener?.peMedians || {},
+        sector: audit?.metrics?.sector || {},
+        deThresholds: audit?.metrics?.deThresholds || {},
       }
     };
     res.json(response);
@@ -1140,13 +1111,6 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       snap = freshSnapshot[symbol as string];
     }
 
-    // Ensure Beta is calculated for this symbol (in case auto-refresh didn't include NSEI)
-    if (snap && snap.quote?.beta === undefined && snap.quotes?.length) {
-      await calculateBetaForSymbols([symbol as string]);
-      const refreshed = await getSnapshotFromCloud([symbol as string]);
-      snap = refreshed[symbol as string] || snap;
-    }
-
     if (!snap) return res.status(404).json({ error: 'Asset data unavailable' });
 
     const audit = await validateBatch9(symbol as string, snap, 'Elite Basket');
@@ -1160,25 +1124,21 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       change: Math.round(change * 100) / 100,
       marketCap: snap.quote?.marketCap,
       industry: MANUAL_SECTOR_MAP[(symbol as string).replace(/\.NS$/i, '')] || snap.screener?.industry || 'General',
-      // Use normalized PE when raw is inflated (>70) due to temporary EPS drop
-      peRatio: ((snap.screener?.peRatio || snap.quote?.pe || 0) > 70 && (audit?.metrics?.normalizedPe || 0) > 0)
-        ? (audit?.metrics?.normalizedPe || 0)
-        : (snap.screener?.peRatio || snap.quote?.pe || 0),
-      peRatioRaw: snap.screener?.peRatio || snap.quote?.pe || 0,
+      peRatio: snap.screener?.peRatio || snap.quote?.pe || 0,
       normalizedPe: audit?.metrics?.normalizedPe || 0,
-      forwardPe: snap.quote?.forwardPE || snap.screener?.forwardPE || 0,
+      forwardPe: snap.screener?.forwardPE || 0,
       peMedians: snap.screener?.peMedians || {},
       returnOnEquity: formatPercentage(snap.screener?.returnOnEquity || snap.quote?.roe || 0),
       roce: formatPercentage(snap.screener?.roce || 0),
       debtToEquity: audit?.metrics?.debtToEquity || 0,
-      netDebtToEquity: snap.quote?.netDebtToEquity != null ? Number(snap.quote.netDebtToEquity.toFixed(2)) : formatRatio(audit?.metrics?.netDebtToEquity || 0),
+      netDebtToEquity: formatRatio(audit?.metrics?.netDebtToEquity || 0),
       totalDebtToEquity: formatRatio(snap.screener?.totalDebtToEquity || 0),
       athSales: snap.screener?.athSales,
       athNetProfit: snap.screener?.athNetProfit,
       currentSales: snap.screener?.currentSales,
       currentNetProfit: snap.screener?.currentNetProfit,
       fiftyTwoWeekHigh: snap.quote?.fiftyTwoWeekHigh,
-      beta: audit?.metrics?.beta != null ? Number(audit.metrics.beta.toFixed(2)) : (snap.quote?.beta != null ? Number(Number(snap.quote.beta).toFixed(2)) : null),
+      beta: audit?.metrics?.beta || snap.quote?.beta || 0,
       shareholding: audit.metrics,
       strategies: snap.strategies || {},
       ttmVsAth: audit.ttmVsAth || {},
@@ -2197,16 +2157,10 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: 
 
 app.post('/api/admin/refresh-alpha', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
-    if (alpha40Calculating) {
-      return res.json({ status: 'already_running', message: 'Alpha-40 calculation is already in progress.' });
-    }
-    alpha40Calculating = true;
     res.json({ status: 'calculating...' });
     await precalculateAlpha40();
   } catch (e: any) {
     console.error('❌ [Admin] Refresh Alpha-40 failed:', e.message);
-  } finally {
-    alpha40Calculating = false;
   }
 });
 
@@ -3196,74 +3150,60 @@ const startServer = async () => {
   const PORT = Number(process.env.PORT) || 3001;
   try {
     const db = await initDB();
+    await initSnapshotCache();
     initScreenerCron();
+    await seedBlogPosts(db);
 
-    // ── START LISTENING IMMEDIATELY ───────────────────────────────────────
-    // Start accepting connections before loading the 364MB snapshot file,
-    // so health checks and basic API requests don't block or timeout.
+    // 8:30 PM IST - Daily Alpha-40 institutional recalculation
+    cron.schedule('30 20 * * *', () => precalculateAlpha40());
+
+    // 7:00 PM IST - Daily system health check (after market close)
+    cron.schedule('0 19 * * *', runAndNotifyHealthCheck);
+
+    // ── BOOT-TIME SNAPSHOT REFRESH ───────────────────────────────────────
+    // Refresh snapshot for all basket stocks on boot if cache is small (< 50 symbols).
+    // This ensures the Alpha-40 worker and stock-prices endpoint have full data ASAP.
+    const allBasketSymbols = Array.from(new Set([
+      ...(BASKETS['Elite Basket'] || []),
+      ...(BASKETS['Quality Basket'] || []),
+      ...(BASKETS['Growth Basket'] || []),
+      ...(BASKETS['Fallen Value Basket'] || [])
+    ]));
+    const currentSnapSize = Object.keys(getMarketSnapshot()).length;
+    if (currentSnapSize < 50) {
+      console.log(`🚀 [BOOT] Snapshot has ${currentSnapSize} symbols. Triggering refresh for ${allBasketSymbols.length} basket stocks...`);
+      updateMarketSnapshot(allBasketSymbols).then(() => {
+        console.log(`✅ [BOOT] Snapshot refreshed: ${Object.keys(getMarketSnapshot()).length} symbols.`);
+      }).catch((e: any) => {
+        console.error(`❌ [BOOT] Snapshot refresh failed: ${e.message}`);
+      });
+    } else {
+      console.log(`✅ [BOOT] Snapshot already has ${currentSnapSize} symbols. Skipping refresh.`);
+    }
+
+    // ── DEFERRED ALPHA-40 WARMUP ─────────────────────────────────────────
+    // Poll every 30s until snapshot has enough symbols, then warm up.
+    // This avoids running with incomplete data.
+    let warmupAttempts = 0;
+    const warmupInterval = setInterval(() => {
+      const snapSize = Object.keys(getMarketSnapshot()).length;
+      warmupAttempts++;
+      if (snapSize > 80 || warmupAttempts > 20) {
+        clearInterval(warmupInterval);
+        console.log(`👷 [BOOT] Running Alpha-40 warmup (snapshot=${snapSize}, attempts=${warmupAttempts})...`);
+        precalculateAlpha40(true);
+      } else {
+        console.log(`⏳ [BOOT] Waiting for snapshot data (${snapSize}/${80}+ symbols, attempt ${warmupAttempts}/20)...`);
+      }
+    }, 30000);
+    
+    scheduleAuditCron(BASKETS);
     app.listen(PORT, '0.0.0.0', () => {
       console.log('----------------------------------------------------');
       console.log('🚀 MARKETBEACON PRO: PHASE 1 LAUNCH ACTIVE');
       console.log(`🌐 Terminal Node Cloud Active on Port ${PORT}`);
       console.log('🛡️  Institutional Safe-Guard: Standard Mode');
       console.log('----------------------------------------------------');
-    });
-
-    // Defer non-critical startup: seed blog posts + load snapshot
-    seedBlogPosts(db).catch((e: any) => console.error('Blog seed failed:', e.message));
-
-    // 8:30 PM IST - Daily Alpha-40 institutional recalculation
-    cron.schedule('30 20 * * *', () => {
-      if (!alpha40Calculating) {
-        alpha40Calculating = true;
-        precalculateAlpha40().finally(() => { alpha40Calculating = false; });
-      }
-    });
-
-    // 7:00 PM IST - Daily system health check (after market close)
-    cron.schedule('0 19 * * *', runAndNotifyHealthCheck);
-
-    scheduleAuditCron(BASKETS);
-
-    // ── DEFERRED SNAPSHOT LOAD ────────────────────────────────────────────
-    // Load the 364MB snapshot in the background so it doesn't block boot.
-    // Once loaded, kick off boot-time refresh and Alpha-40 warmup.
-    initSnapshotCache().then(() => {
-      const allBasketSymbols = Array.from(new Set([
-        '^NSEI',
-        ...(BASKETS['Elite Basket'] || []),
-        ...(BASKETS['Quality Basket'] || []),
-        ...(BASKETS['Growth Basket'] || []),
-        ...(BASKETS['Fallen Value Basket'] || [])
-      ]));
-      const currentSnapSize = Object.keys(getMarketSnapshot()).length;
-      if (currentSnapSize < 50) {
-        console.log(`🚀 [BOOT] Snapshot has ${currentSnapSize} symbols. Triggering refresh for ${allBasketSymbols.length} basket stocks...`);
-        updateMarketSnapshot(allBasketSymbols).then(() => {
-          console.log(`✅ [BOOT] Snapshot refreshed: ${Object.keys(getMarketSnapshot()).length} symbols.`);
-        }).catch((e: any) => {
-          console.error(`❌ [BOOT] Snapshot refresh failed: ${e.message}`);
-        });
-      } else {
-        console.log(`✅ [BOOT] Snapshot already has ${currentSnapSize} symbols. Skipping refresh.`);
-      }
-
-      // ── DEFERRED ALPHA-40 WARMUP ─────────────────────────────────────────
-      let warmupAttempts = 0;
-      const warmupInterval = setInterval(() => {
-        const snapSize = Object.keys(getMarketSnapshot()).length;
-        warmupAttempts++;
-        if (snapSize > 80 || warmupAttempts > 20) {
-          clearInterval(warmupInterval);
-          console.log(`👷 [BOOT] Running Alpha-40 warmup (snapshot=${snapSize}, attempts=${warmupAttempts})...`);
-          alpha40Calculating = true;
-          precalculateAlpha40(true).finally(() => { alpha40Calculating = false; });
-        } else {
-          console.log(`⏳ [BOOT] Waiting for snapshot data (${snapSize}/${80}+ symbols, attempt ${warmupAttempts}/20)...`);
-        }
-      }, 30000);
-    }).catch((e: any) => {
-      console.error(`❌ [BOOT] Snapshot load failed: ${e.message}`);
     });
   } catch (e) { console.error(e); }
 };
