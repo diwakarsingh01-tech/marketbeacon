@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import type { RefObject } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -69,6 +69,19 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   setShowUpgrade,
   setSuggestions,
 }) => {
+  const searchAnchorRef = useRef<HTMLDivElement | null>(null);
+  const [dropTop, setDropTop] = useState(150);
+
+  useEffect(() => {
+    if (suggestions.length > 0) {
+      const el = document.getElementById('search-anchor');
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        setDropTop(rect.bottom + 12);
+      }
+    }
+  }, [suggestions.length, searchQuery]);
+
   return (
     <>
       {/* Hero Section */}
@@ -185,14 +198,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({
           </AnimatePresence>
 
           {/* Institutional Suggestions Dropdown */}
-          <AnimatePresence>
             {suggestions.length > 0 && (
-              <motion.div 
+              <div 
                 ref={suggestionsRef}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 5 }}
-                className="absolute top-full left-0 w-full mt-3 bg-[#0f172a] border border-white/10 rounded-3xl overflow-hidden z-[999] shadow-2xl"
+                className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-[42rem] bg-[#0f172a] border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+                style={{ zIndex: 9999, top: dropTop }}
               >
                 {suggestions.map((item, idx) => (
                   <button
@@ -226,9 +236,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                     <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider italic group-hover:text-blue-400">Institutional Node</span>
                   </button>
                 ))}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
 
         <div className="max-w-3xl mx-auto -mt-4 mb-8 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
