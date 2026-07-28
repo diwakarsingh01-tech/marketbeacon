@@ -2,9 +2,9 @@ import { getMarketSnapshot, getDynamicBasket } from '../screener.js';
 import { validateBatch9 } from './fundamentalAudit.js';
 import { runStrategyAnalysis } from './strategyService.js';
 import { STRATEGIES, BASKETS, MANUAL_SECTOR_MAP } from '../index.js';
-import { supabase } from '../db.js';
+import { supabase, getDB } from '../db.js';
 import { notifyAllUsers } from './notificationService.js';
-import { sendSignalNotification } from './telegramNotifier.js';
+import { sendSignalNotification, sendDailyStatusDigest } from './telegramNotifier.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -40,20 +40,26 @@ try {
 }
 
 const STRATEGY_BASKET_MAP: Record<string, string[]> = {
-  'ENVELOPE_LONG': ['Elite Basket'], 'ENVELOPE_SHORT': ['Elite Basket'], 'BOLLINGER': ['Elite Basket'],
-  'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket'], 'RHS_ABCD': ['Elite Basket', 'Quality Basket'],
-  'SMA_BCD': ['Elite Basket', 'Quality Basket'], '52W_HIGH_LOW': ['Elite Basket'],
-  'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
-  'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
-  'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket']
+  'ENVELOPE_LONG': ['Elite Basket', 'Quality Basket'], 
+  'ENVELOPE_SHORT': ['Elite Basket', 'Quality Basket'], 
+  'BOLLINGER': ['Elite Basket', 'Quality Basket'],
+  '52W_HIGH_LOW': ['Elite Basket', 'Quality Basket'],
+  'SMA_BCD': ['Elite Basket', 'Quality Basket'],
+  'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket'],
+  'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+  'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+  'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
 };
 
-export async function precalculateAlpha40() {
-  console.log('👷 [WORKER] Pre-calculating Alpha-40 Snapshots (Cloud Mode)...');
+export async function precalculateAlpha40(isBootWarmup = false) {
+  console.log(`👷 [WORKER] Pre-calculating Alpha-40 Snapshots (Cloud Mode, isBootWarmup=${isBootWarmup})...`);
   try {
     const snapshot = getMarketSnapshot();
     const dynamicWealth = await getDynamicBasket();
     const currentWealth = (Array.isArray(dynamicWealth) && dynamicWealth.length > 0) ? dynamicWealth : [];
+
+    // Market cap classification per user's Excel formula:
+    // Large > ₹1,00,000 Cr | Mid > ₹33,000 Cr | Small/Micro ≤ ₹33,000 Cr
 
     const processBasket = async (basketName: string, symbols: string[]) => {
       const active: any[] = [];
@@ -70,9 +76,8 @@ export async function precalculateAlpha40() {
           const audit = await validateBatch9(sym, snap, basketName);
           if (!audit || !audit?.isPass) continue;
 
-          const marketCap = snap.quote.marketCap || 1;
-          const capCr = marketCap / 10000000;
-          const capType = capCr >= 45000 ? 'LARGE' : (capCr >= 15000 ? 'MID' : 'SMALL');
+          const mcapCr = (snap.quote?.marketCap || 1) / 10000000;
+          const capType = mcapCr > 100000 ? 'LARGE' : (mcapCr > 33000 ? 'MID' : 'SMALL');
           const last = snap.quotes[snap.quotes.length - 1];
 
           // 1. Closed simulation (historical data)
@@ -112,7 +117,7 @@ export async function precalculateAlpha40() {
           for (const stratId of Object.keys(STRATEGY_BASKET_MAP)) {
             if (!STRATEGY_BASKET_MAP[stratId]?.includes(basketName)) continue;
             
-            const sd: any = runStrategyAnalysis(stratId, snap, marketCap, basketName);
+            const sd: any = await runStrategyAnalysis(stratId, snap, mcapCr * 10000000, basketName);
             if (!sd || !sd?.isBuyZone) continue;
 
             const entry = sd?.entryPrice || last?.close;
@@ -129,18 +134,31 @@ export async function precalculateAlpha40() {
             const sectorName = (MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General').trim();
             const isFinance = ['Banking', 'Finance', 'Banking ETF', 'NBFC', 'Financial Services', 'Asset Management', 'Exchange/Depository', 'Financial Infrastructure'].includes(sectorName)
               || sectorName.toLowerCase().includes('finance') || sectorName.toLowerCase().includes('nbfc');
-            const isCapIntensive = ['EPC/Infra', 'Automobile', 'Infrastructure', 'Power', 'Steel', 'Telecom', 'Cement', 'Metal', 'Engineering', 'Industrial/Power', 'Utilities'].includes(sectorName)
-              || ['LT', 'BHARTIARTL', 'M&M', 'ADANIPORTS', 'ADANIENT', 'JSWSTEEL', 'TATASTEEL', 'NTPC', 'POWERGRID', 'TMCV'].includes(sym)
-              || sectorName.toLowerCase().includes('infra') || sectorName.toLowerCase().includes('steel') || sectorName.toLowerCase().includes('telecom') || sectorName.toLowerCase().includes('auto');
-            const debtLimit = isFinance ? 8.0 : (isCapIntensive ? 2.0 : 1.0);
+            const isCapIntensive = ['EPC/Infra', 'Automobile', 'Infrastructure', 'Power', 'Steel', 'Telecom', 'Cement', 'Metal', 'Engineering', 'Industrial/Power', 'Utilities',
+              'Oil & Gas', 'Energy/Conglomerate', 'Oil, Gas & Consumable Fuels', 'Petrochemicals',
+              'Pharma', 'Pharmaceuticals', 'Chemicals', 'Mining', 'Logistics',
+              'Textiles', 'Media', 'Entertainment', 'Electricals', 'Electronics Mfg',
+              'Healthcare', 'Hospitality', 'Food Processing'
+            ].includes(sectorName)
+              || ['LT', 'BHARTIARTL', 'M&M', 'ADANIPORTS', 'ADANIENT', 'JSWSTEEL', 'TATASTEEL', 'NTPC', 'POWERGRID', 'TMCV',
+                  'RELIANCE', 'ONGC', 'BPCL', 'IOC', 'GAIL', 'SUNPHARMA', 'DRREDDY', 'CIPLA', 'DIVISLAB',
+                  'APOLLOHOSP', 'LALPATHLAB', 'HINDALCO', 'HINDZINC', 'NATIONALUM', 'NMDC',
+                  'JSWENERGY', 'TORNTPOWER', 'ADANIGREEN', 'SUZLON', 'SIEMENS', 'ABB'
+              ].includes(sym)
+              || sectorName.toLowerCase().includes('infra') || sectorName.toLowerCase().includes('steel') || sectorName.toLowerCase().includes('telecom') || sectorName.toLowerCase().includes('auto')
+              || sectorName.toLowerCase().includes('oil') || sectorName.toLowerCase().includes('gas') || sectorName.toLowerCase().includes('energy')
+              || sectorName.toLowerCase().includes('pharma') || sectorName.toLowerCase().includes('chemical')
+              || sectorName.toLowerCase().includes('mining') || sectorName.toLowerCase().includes('logistic')
+              || sectorName.toLowerCase().includes('textile') || sectorName.toLowerCase().includes('media')
+              || sectorName.toLowerCase().includes('electrical') || sectorName.toLowerCase().includes('healthcare');
+            const debtLimit = isFinance ? 7.0 : (isCapIntensive ? 1.5 : 0.5);
             if (de > debtLimit) continue;
 
             let entryTime = sd?.triggerDate;
             if (!entryTime && snap.quotes.length > 0) {
               entryTime = new Date(snap.quotes[0].date).toISOString().split('T')[0];
             }
-
-            validSignals.push({ 
+             validSignals.push({ 
               symbol: sym, 
               stockName: sym,
               strategy: STRATEGIES.find(s=>s.id===stratId)?.name || stratId, 
@@ -152,21 +170,52 @@ export async function precalculateAlpha40() {
               entryPrice: entry, 
               entryTime,
               target, 
-              roi: ((target / entry) - 1) * 100, 
+              roi: last.close > 0 ? ((target / last.close) - 1) * 100 : 0, 
               score: audit.score, 
               smartMoney: audit.smartMoneyTotal 
             });
 
             // 📢 UNIVERSAL AUTOMATED NOTIFICATION: ALL BASKETS & STRATEGIES
             if (sd?.status === 'QUALIFIED') {
-               const stratName = STRATEGIES.find(s => s.id === stratId)?.name || stratId;
-               const title = `🚨 ${basketName}: ${sym}`;
-               const message = `${sym} has triggered for ${stratName} (Tranche ${sd.tranche || 'A'}). Objective: ${Math.round(target)}.`;
-               notifyAllUsers(title, message, 'audit');
-               // Send detailed signal to Telegram DM
-               sendSignalNotification(sym, stratName, basketName, entry, target, sd?.tranche || 'A').catch(() => {});
-            }
-          }
+                const stratName = STRATEGIES.find(s => s.id === stratId)?.name || stratId;
+                const trancheName = sd.tranche || 'A';
+                
+                if (isBootWarmup) {
+                   // Silently seed into notified signals database so we don't spam on boot/restarts
+                   try {
+                     const db = getDB();
+                     await db.run(
+                       'INSERT OR IGNORE INTO telegram_notified_signals (symbol, strategy, tranche) VALUES (?, ?, ?)',
+                       [sym, stratName, trancheName]
+                     );
+                   } catch (dbErr) {
+                     console.error('Failed to silently seed notified signal on boot:', dbErr);
+                   }
+                } else {
+                    // Prevent duplicate telegram/in-app alert spamming via DB-first locking (atomic unique check)
+                    let insertSuccess = false;
+                    try {
+                      const db = getDB();
+                      await db.run(
+                        'INSERT INTO telegram_notified_signals (symbol, strategy, tranche) VALUES (?, ?, ?)',
+                        [sym, stratName, trancheName]
+                      );
+                      insertSuccess = true;
+                    } catch (dbErr: any) {
+                      // Already exists or DB error. Skip sending notification.
+                      console.log(`ℹ️ [WORKER] Signal already notified/locked: ${sym} (${stratName})`);
+                    }
+
+                    if (insertSuccess) {
+                       const title = `🚨 ${basketName}: ${sym}`;
+                       const message = `${sym} has triggered for ${stratName} (Tranche ${trancheName}). Objective: ${Math.round(target)}.`;
+                       notifyAllUsers(title, message, 'audit');
+                       // Send detailed signal to Telegram DM / Channel
+                        sendSignalNotification(sym, stratName, basketName, entry, target, trancheName, audit.score, sd?.abcd).catch(() => {});
+                    }
+                }
+             }
+           }
 
           if (validSignals.length > 0) {
             // Logic: Highest ROI strategy wins for this stock
@@ -184,17 +233,31 @@ export async function precalculateAlpha40() {
     const bc = await processBasket('Elite Basket', BASKETS['Elite Basket']);
     const hb = await processBasket('Quality Basket', BASKETS['Quality Basket']);
     const wb = await processBasket('Growth Basket', currentWealth);
+    const fvb = await processBasket('Fallen Value Basket', BASKETS['Fallen Value Basket']);
+
+    // ── TECHNICAL SCAN: Process ALL snapshot-cache stocks not in any basket ──
+    // This ensures any stock that was ever scanned gets strategy signals computed.
+    const basketSymbols = new Set([
+      ...(BASKETS['Elite Basket'] || []),
+      ...(BASKETS['Quality Basket'] || []),
+      ...(BASKETS['Fallen Value Basket'] || []),
+      ...currentWealth
+    ]);
+    const remainingSymbols = Object.keys(snapshot).filter(sym => !basketSymbols.has(sym));
+    console.log(`🔬 [WORKER] Technical Scan: Processing ${remainingSymbols.length} additional snapshot-cache stocks...`);
+    const techScan = await processBasket('Technical Scan', remainingSymbols);
+    console.log(`✅ [WORKER] Technical Scan complete: ${techScan.active.length} qualified, ${techScan.closed.length} closed simulations.`);
 
     // DEDUPLICATE: Ensure a symbol only appears once across all baskets
     const dedupeMap = new Map<string, any>();
-    [...(bc.active || []), ...(hb.active || []), ...(wb.active || [])].forEach(s => {
+    [...(bc.active || []), ...(hb.active || []), ...(wb.active || []), ...(fvb.active || []), ...(techScan.active || [])].forEach(s => {
       if (!dedupeMap.has(s.symbol) || s.score > dedupeMap.get(s.symbol).score) {
         dedupeMap.set(s.symbol, s);
       }
     });
 
     const allActive = Array.from(dedupeMap.values());
-    const allClosed = [...(bc.closed || []), ...(hb.closed || []), ...(wb.closed || [])];
+    const allClosed = [...(bc.closed || []), ...(hb.closed || []), ...(wb.closed || []), ...(fvb.closed || []), ...(techScan.closed || [])];
 
     // --- INSTITUTIONAL ALLOCATION ENGINE ---
     const selectWithRules = (candidates: any[], targetCount: number, existingSectors: Record<string, number>) => {
@@ -260,6 +323,21 @@ export async function precalculateAlpha40() {
     }
 
     console.log(`✅ [WORKER] Alpha-40 Cloud Cache Updated. Mix: ${finalLarge.length}L / ${finalMid.length}M / ${finalSmall.length}S`);
+
+    if (!isBootWarmup) {
+      const byBasket: Record<string, any> = {};
+      const processBasketDigest = (name: string, active: any[], source: string) => {
+        const count = active.filter((a: any) => a.basketSource === source).length;
+        if (!byBasket[name]) byBasket[name] = { qualified: 0, observation: 0, rejected: 0, anomalies: 0 };
+        byBasket[name].qualified = count;
+      };
+      processBasketDigest('Elite Basket', allActive, 'Elite Basket');
+      processBasketDigest('Quality Basket', allActive, 'Quality Basket');
+      processBasketDigest('Growth Basket', allActive, 'Growth Basket');
+      processBasketDigest('Fallen Value Basket', allActive, 'Fallen Value Basket');
+      const totalQual = allActive.length;
+      sendDailyStatusDigest(byBasket, totalQual, 0, 0, 0).catch(() => {});
+    }
   } catch (e: any) {
     console.error('❌ [WORKER] Alpha-40 Pre-calculation Failed:', e.message);
   }

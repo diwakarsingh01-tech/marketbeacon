@@ -472,7 +472,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
       {/* Mobile Search Overlay */}
       {showMobileSearch && (
-        <div className="absolute inset-0 bg-[var(--bg-primary)]/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
+        <div className="fixed inset-0 bg-[var(--bg-primary)]/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
           <div className="flex items-center gap-3">
             <form onSubmit={handleSearch} className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

@@ -1956,9 +1956,23 @@ const startServer = async () => {
   const PORT = Number(process.env.PORT) || 3001;
   try {
     const db = await initDB();
-    await initSnapshotCache();
     initScreenerCron();
-    await seedBlogPosts(db);
+
+    // Start accepting connections FIRST, before loading the 364MB snapshot file,
+    // so the server can respond to auth/health requests without blocking.
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log('----------------------------------------------------');
+      console.log('🚀 MARKETBEACON PRO: PHASE 1 LAUNCH ACTIVE');
+      console.log(`🌐 Terminal Node Cloud Active on Port ${PORT}`);
+      console.log('🛡️  Institutional Safe-Guard: Standard Mode');
+      console.log('----------------------------------------------------');
+    });
+
+    // Background: load snapshot cache (337MB JSON parse is CPU-heavy)
+    initSnapshotCache().catch((e: any) => console.error('Snapshot cache init failed:', e.message));
+
+    // Background: seed blog posts (DB write, not latency-critical)
+    seedBlogPosts(db).catch((e: any) => console.error('Blog seed failed:', e.message));
 
     // 8:30 PM IST - Daily Alpha-40 institutional recalculation
     cron.schedule('30 20 * * *', precalculateAlpha40);
@@ -1969,13 +1983,6 @@ const startServer = async () => {
     setTimeout(precalculateAlpha40, 5000); // Warm cache on boot
     // Growth basket priming moved to cron only (blocks event loop for 5+ min on 281 symbols)
     scheduleAuditCron(BASKETS);
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log('----------------------------------------------------');
-      console.log('🚀 MARKETBEACON PRO: PHASE 1 LAUNCH ACTIVE');
-      console.log(`🌐 Terminal Node Cloud Active on Port ${PORT}`);
-      console.log('🛡️  Institutional Safe-Guard: Standard Mode');
-      console.log('----------------------------------------------------');
-    });
   } catch (e) { console.error(e); }
 };
 

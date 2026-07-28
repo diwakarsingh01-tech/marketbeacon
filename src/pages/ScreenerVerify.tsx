@@ -109,6 +109,7 @@ const ScreenerVerify: React.FC = () => {
   const [loadingList, setLoadingList] = useState<boolean>(false);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [viewFilter, setViewFilter] = useState<string>('ALL');
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -529,9 +530,14 @@ const ScreenerVerify: React.FC = () => {
     return `https://www.tradingview.com/chart/?symbol=NSE:${symbol}&interval=60`;
   };
 
-  const filteredStocks = allStocks.filter(
-    s => s.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredStocks = allStocks.filter(s => {
+    const matchesSearch = s.symbol.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+    if (viewFilter === 'SETUP') return s.isBuyZone && s.isPass;
+    if (viewFilter === 'REJECTED') return s.isBuyZone && !s.isPass;
+    if (viewFilter === 'HOLD') return !s.isBuyZone;
+    return true;
+  });
 
   return (
     <div className="min-h-screen flex flex-col font-sans transition-colors duration-200 bg-[var(--bg-primary)] text-[var(--text-primary)]">
@@ -611,6 +617,28 @@ const ScreenerVerify: React.FC = () => {
               />
             </div>
 
+            {/* View filter toggles */}
+            <div className="flex gap-1 mb-3 overflow-x-auto">
+              {[
+                { key: 'ALL', label: 'All', color: 'text-blue-400 border-blue-500/30' },
+                { key: 'SETUP', label: 'Setup Zone', color: 'text-emerald-400 border-emerald-500/30' },
+                { key: 'REJECTED', label: 'Funda Reject', color: 'text-amber-400 border-amber-500/30' },
+                { key: 'HOLD', label: 'Hold', color: 'text-slate-400 border-slate-500/30' },
+              ].map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setViewFilter(f.key)}
+                  className={`px-2 py-0.5 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap ${
+                    viewFilter === f.key
+                      ? `${f.color} bg-current/10 border`
+                      : 'text-[var(--text-tertiary)] hover:text-[var(--text-muted)]'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
             {loadingList ? (
               <div className="py-12 text-center text-[var(--text-muted)] space-y-2">
                 <RefreshCw className="h-5 w-5 animate-spin mx-auto text-blue-500" />
@@ -634,9 +662,13 @@ const ScreenerVerify: React.FC = () => {
                         {item.reason}
                       </span>
                     </div>
-                    {item.isBuyZone ? (
+                    {item.isBuyZone && item.isPass ? (
                       <span className="px-2 py-0.5 rounded-full text-caption bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                        BUY ZONE
+                        SETUP ZONE
+                      </span>
+                    ) : item.isBuyZone && !item.isPass ? (
+                      <span className="px-2 py-0.5 rounded-full text-caption bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                        FUNDA {item.score}/100
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 rounded-full text-caption bg-[var(--bg-tertiary)] border border-[var(--border-secondary)] text-[var(--text-muted)]">
