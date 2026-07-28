@@ -71,15 +71,28 @@ const HeroSection: React.FC<HeroSectionProps> = ({
 }) => {
   const searchAnchorRef = useRef<HTMLDivElement | null>(null);
   const [dropTop, setDropTop] = useState(150);
+  const [dropWidth, setDropWidth] = useState(0);
+  const [dropLeft, setDropLeft] = useState(0);
 
+  // Track scroll/resize to keep fixed dropdown aligned with search bar
   useEffect(() => {
-    if (suggestions.length > 0) {
+    if (suggestions.length === 0) return;
+    const updatePosition = () => {
       const el = document.getElementById('search-anchor');
       if (el) {
         const rect = el.getBoundingClientRect();
         setDropTop(rect.bottom + 12);
+        setDropWidth(rect.width);
+        setDropLeft(rect.left);
       }
-    }
+    };
+    updatePosition();
+    window.addEventListener('scroll', updatePosition, { passive: true });
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      window.removeEventListener('scroll', updatePosition);
+      window.removeEventListener('resize', updatePosition);
+    };
   }, [suggestions.length, searchQuery]);
 
   return (
@@ -197,47 +210,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             )}
           </AnimatePresence>
 
-          {/* Institutional Suggestions Dropdown */}
-            {suggestions.length > 0 && (
-              <div 
-                ref={suggestionsRef}
-                className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-[42rem] bg-[#0f172a] border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
-                style={{ zIndex: 9999, top: dropTop }}
-              >
-                {suggestions.map((item, idx) => (
-                  <button
-                    key={item.symbol}
-                    ref={el => { itemRefs.current[idx] = el; }}
-                    onMouseEnter={() => setSelectedIndex(idx)}
-                    onClick={() => handleSearch(undefined, item.symbol)}
-                    className={`w-full px-6 py-4 flex items-center justify-between transition-colors border-b border-white/5 last:border-none group ${idx === selectedIndex ? 'bg-blue-600/20' : 'hover:bg-[var(--bg-primary)]/5'}`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-3">
-                        <Zap className="w-4 h-4 text-blue-500 group-hover:animate-pulse" />
-                        <span className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">{item.symbol}</span>
-                      </div>
-                      
-                      <div className="hidden sm:flex items-center gap-2">
-                        {(item.strategies || []).length > 0 ? (
-                          (item.strategies || []).slice(0, 2).map((s: any, idx: number) => (
-                            <span key={idx} className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-xs font-bold text-blue-400 uppercase tracking-wider italic">
-                              {s.name}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider italic">Monitoring Node</span>
-                        )}
-                        {(item.strategies || []).length > 2 && (
-                          <span className="text-xs font-semibold text-[var(--text-muted)] uppercase">+{(item.strategies || []).length - 2}</span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider italic group-hover:text-blue-400">Institutional Node</span>
-                  </button>
-                ))}
-              </div>
-            )}
         </div>
 
         <div className="max-w-3xl mx-auto -mt-4 mb-8 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
@@ -605,6 +577,48 @@ const HeroSection: React.FC<HeroSectionProps> = ({
           <p className="text-xs font-bold text-[var(--text-muted)]">Trusted by <span className="text-[var(--text-primary)] font-bold">31,402</span> traders</p>
         </div>
         </header>
+
+      {/* Institutional Suggestions Dropdown — rendered outside header to avoid stacking-context clipping on mobile */}
+      {suggestions.length > 0 && (
+        <div 
+          ref={suggestionsRef}
+          className="fixed z-[2147483647] rounded-3xl shadow-2xl border border-white/10 bg-[#0f172a] overflow-y-auto max-h-[60vh]"
+          style={{ top: dropTop, left: dropLeft, width: dropWidth > 0 ? dropWidth : 'calc(100% - 3rem)' }}
+        >
+          {suggestions.map((item, idx) => (
+            <button
+              key={item.symbol}
+              ref={el => { itemRefs.current[idx] = el; }}
+              onMouseEnter={() => setSelectedIndex(idx)}
+              onClick={() => handleSearch(undefined, item.symbol)}
+              className={`w-full px-6 py-4 flex items-center justify-between transition-colors border-b border-white/5 last:border-none group ${idx === selectedIndex ? 'bg-blue-600/20' : 'hover:bg-[var(--bg-primary)]/5'}`}
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <Zap className="w-4 h-4 text-blue-500 group-hover:animate-pulse" />
+                  <span className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">{item.symbol}</span>
+                </div>
+                
+                <div className="hidden sm:flex items-center gap-2">
+                  {(item.strategies || []).length > 0 ? (
+                    (item.strategies || []).slice(0, 2).map((s: any, idx: number) => (
+                      <span key={idx} className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-xs font-bold text-blue-400 uppercase tracking-wider italic">
+                        {s.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs font-bold text-slate-600 uppercase tracking-wider italic">Monitoring Node</span>
+                  )}
+                  {(item.strategies || []).length > 2 && (
+                    <span className="text-xs font-semibold text-[var(--text-muted)] uppercase">+{(item.strategies || []).length - 2}</span>
+                  )}
+                </div>
+              </div>
+              <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider italic group-hover:text-blue-400">Institutional Node</span>
+            </button>
+          ))}
+        </div>
+      )}
     </>
   );
 };
