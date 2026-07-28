@@ -1,5 +1,5 @@
 import React from 'react';
-import { DocPage, DocCallout, DocCodeBlock, DocTable, DocStep, DocTabs } from '../../components/docs/DocPage';
+import { DocPage, DocCallout, DocCodeBlock, DocTable } from '../../components/docs/DocPage';
 
 export const RiskManagementPage: React.FC = () => {
   const toc = [
@@ -103,13 +103,13 @@ D = ₹1.25L at ₹72.9 → 1,714 shares
           headers={['Strategy', 'Invalidation Point', 'Action']}
           rows={[
             ['ABCD (General)', 'Price drops below D and keeps falling', 'Do not add E tranche. Close position.'],
-            ['Bollinger', 'Close {'>'}1% below lower band for 3+ sessions', 'Exit — trend stronger than statistical pull.'],
+            ['Bollinger', 'Close >1% below lower band for 3+ sessions', 'Exit — trend stronger than statistical pull.'],
             ['Envelope Long', 'Close 3% below lower envelope', 'Exit — institutional buyers gone.'],
             ['SMA+BCD', 'Close 3% below 200 DMA (D-level)', 'Bearish trend accelerating — exit.'],
             ['52W High/Low', 'New 52W low every month for 3+ months', 'Structural downtrend — exit.'],
-            ['S&R', 'Close {'>'}3% below support zone', 'Support broken → becomes resistance. Exit.'],
-            ['67% Reset', 'Fundamental deterioration (sales ↓{'>'}20%, loss)', 'Exit regardless of price.'],
-            ['20% Velocity', 'Close {'>'}8% below Rally Start Low', 'Retest failed — exit fully.'],
+            ['S&R', 'Close >3% below support zone', 'Support broken → becomes resistance. Exit.'],
+            ['67% Reset', 'Fundamental deterioration (sales ↓>20%, loss)', 'Exit regardless of price.'],
+            ['20% Velocity', 'Close >8% below Rally Start Low', 'Retest failed — exit fully.'],
           ]}
         />
         <DocCallout type="danger" title="Never Add a 5th Tranche">

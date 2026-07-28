@@ -1,5 +1,5 @@
 import React from 'react';
-import { DocPage, DocCallout, DocCodeBlock, DocTable, DocStep, DocTabs } from '../../components/docs/DocPage';
+import { DocPage, DocCallout, DocCodeBlock, DocTable } from '../../components/docs/DocPage';
 
 export const CoreSelectionRulesPage: React.FC = () => {
   const toc = [

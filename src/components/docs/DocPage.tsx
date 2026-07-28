@@ -2,14 +2,16 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ChevronLeft, ChevronRight, 
-  Copy, Check, ExternalLink, Github, BookOpen
+  Copy, Check, ExternalLink,
+  BookOpen, FileCode
 } from 'lucide-react';
 
 interface DocPageProps {
   title: string;
   description: string;
   slug: string;
-  content: React.ReactNode;
+  content?: React.ReactNode;
+  children?: React.ReactNode;
   toc?: { id: string; title: string; level: number }[];
   prevPage?: { title: string; href: string };
   nextPage?: { title: string; href: string };
@@ -22,12 +24,14 @@ export const DocPage: React.FC<DocPageProps> = ({
   description,
   slug,
   content,
+  children,
   toc = [],
   prevPage,
   nextPage,
   lastUpdated,
   editUrl,
 }) => {
+  const mainContent = content || children;
   return (
     <article className="prose prose-invert max-w-none lg:prose-lg xl:prose-xl">
       {/* Page Header */}
@@ -96,7 +100,7 @@ export const DocPage: React.FC<DocPageProps> = ({
       {/* Main Content */}
       <div className="lg:pr-8">
         <div className="prose-content">
-          {content}
+          {mainContent}
         </div>
       </div>
 
@@ -174,7 +178,7 @@ export const DocPage: React.FC<DocPageProps> = ({
                   rel="noopener noreferrer"
                   className="group flex items-center gap-2 px-4 py-2.5 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl hover:border-[var(--accent-amber)]/50 hover:text-[var(--accent-amber)] transition-all font-semibold"
                 >
-                  <Github className="h-4 w-4" />
+                  <FileCode className="h-4 w-4" />
                   Edit on GitHub
                 </a>
               )}

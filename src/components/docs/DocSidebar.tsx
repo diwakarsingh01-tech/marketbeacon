@@ -3,22 +3,18 @@ import { Link, useLocation, NavLink } from 'react-router-dom';
 import {
   ChevronDown,
   Search,
+  BookOpen,
   Zap,
   Settings,
   LayoutDashboard,
   HelpCircle,
   X,
-  Sun,
-  Moon,
   GitBranch,
   BarChart3,
   Users,
   Key,
-  Globe,
   Code2,
-  Layers,
   FileText,
-  Video,
   ExternalLink,
 } from 'lucide-react';
 

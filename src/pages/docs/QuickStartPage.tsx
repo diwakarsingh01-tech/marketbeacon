@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { DocPage, DocCallout, DocCodeBlock, DocTable, DocStep, DocTabs } from '../../components/docs/DocPage';
+import { DocPage, DocCallout, DocTable, DocStep, DocTabs } from '../../components/docs/DocPage';
 
 export const QuickStartPage: React.FC = () => {
   const toc = [
