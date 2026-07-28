@@ -20,7 +20,7 @@ interface UpgradeModalProps {
   userEmail?: string;
 }
 
-import { safeJsonParse, getApiUrl } from '../../lib/api-utils';
+import { safeJsonParse, getApiUrl, getAuthHeaders } from '../../lib/api-utils';
 import { waLink } from '../../lib/constants';
 import { Confetti } from '../ui/Confetti';
 import { toast } from 'sonner';
@@ -54,9 +54,9 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
       const response = await fetch(`${API_URL}/api/user/redeem-voucher`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
-        credentials: 'include',
         body: JSON.stringify({ code: code.trim().toUpperCase() })
       });
       
@@ -129,9 +129,9 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, requiredTi
       const response = await fetch(`${API_URL}/api/user/upgrade-request`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
-        credentials: 'include',
         body: JSON.stringify({
           requested_tier: selectedTier,
           billing_cycle: billingCycle,

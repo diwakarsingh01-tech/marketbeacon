@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import {
   Bot, Send, User, ArrowLeft
 } from 'lucide-react';
-import { getApiUrl, safeJsonParse } from '../lib/api-utils';
+import { getApiUrl, safeJsonParse, getAuthHeaders } from '../lib/api-utils';
 import SEO from '../components/SEO';
 
 const API_URL = getApiUrl();
@@ -81,8 +81,7 @@ I analyze stocks using **MarketBeacon Pro's proprietary Multi-List Swing Trading
         if (symbol) {
           const res = await fetch(`${API_URL}/api/ai/analyze-stock`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
             body: JSON.stringify({ symbol })
           });
           const data = await safeJsonParse(res);
@@ -99,8 +98,7 @@ I analyze stocks using **MarketBeacon Pro's proprietary Multi-List Swing Trading
         } else {
           const res = await fetch(`${API_URL}/api/ai/chat`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
             body: JSON.stringify({
               message: msg,
               history: messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))
@@ -115,8 +113,7 @@ I analyze stocks using **MarketBeacon Pro's proprietary Multi-List Swing Trading
       } else {
         const res = await fetch(`${API_URL}/api/ai/chat`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify({
             message: msg,
             history: messages.slice(0, -1).map(m => ({ role: m.role, content: m.content }))

@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { 
   Target, ShieldCheck, TrendingUp, ChevronRight, Activity, ArrowUpRight, Lock, Sparkles, ChevronDown, ChevronUp
 } from 'lucide-react';
-import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { safeJsonParse, getApiUrl, getAuthHeaders } from '../lib/api-utils';
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
@@ -37,9 +37,9 @@ const StockFundamentalsPage: React.FC = () => {
       const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
-        credentials: 'include',
         body: JSON.stringify({ code: voucherCode.trim().toUpperCase() })
       });
       const result = await safeJsonParse(res);

@@ -10,7 +10,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
-import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { safeJsonParse, getApiUrl, getAuthHeaders } from '../lib/api-utils';
 import { waLink } from '../lib/constants';
 
 const API_URL = getApiUrl();
@@ -111,8 +111,7 @@ const MembershipPage: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ code: voucherCode.trim().toUpperCase() })
       });
       const data = await safeJsonParse(res);

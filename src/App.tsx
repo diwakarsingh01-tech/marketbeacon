@@ -29,6 +29,7 @@ const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicy'));
 const MethodologyPage = lazy(() => import('./pages/Methodology'));
 const AppHomePage = lazy(() => import('./pages/AppHome'));
 const AiAssistantPage = lazy(() => import('./pages/AiAssistant'));
+const DocsPage = lazy(() => import('./pages/DocsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFound'));
 const ChartsTerminalPage = lazy(() => import('./pages/ChartsTerminal'));
 const ScreenerVerifyPage = lazy(() => import('./pages/ScreenerVerify'));
@@ -84,6 +85,7 @@ function AnimatedRoutes() {
         <Route path="/marketplace" element={<Navigate to="/license-desk" replace />} />
         <Route path="/charts" element={<ChartsTerminalPage />} />
         <Route path="/ai-assistant" element={<AiAssistantPage />} />
+        <Route path="/docs/*" element={<DocsPage />} />
 
         {/* Authenticated SaaS Platform */}
         <Route 

@@ -9,10 +9,13 @@ export async function authFetch(path: string, options: RequestInit = {}): Promis
   if (options.body && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
+  const token = localStorage.getItem('mb_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers,
-    credentials: 'include',
   });
   if (res.status === 401) {
     window.location.href = '/login';

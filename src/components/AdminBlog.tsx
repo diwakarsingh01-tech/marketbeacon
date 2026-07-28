@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getApiUrl } from '../lib/api-utils';
+import { getApiUrl, getAuthHeaders } from '../lib/api-utils';
 import { toast } from 'sonner';
 import { FileText, Plus, Trash2, Eye, EyeOff, Edit3, X } from 'lucide-react';
 
@@ -13,12 +13,12 @@ export default function AdminBlog() {
   const [editor, setEditor] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 'Content-Type': 'application/json', ...getAuthHeaders() };
 
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/admin/blog`, { credentials: 'include' });
+      const res = await fetch(`${API_URL}/api/admin/blog`, {});
       if (res.ok) setPosts(await res.json());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -41,8 +41,8 @@ export default function AdminBlog() {
     try {
       const body = { ...editor, key_takeaways: (editor.key_takeaways || []).filter((t: string) => t.trim()) };
       const res = editor.id
-        ? await fetch(`${API_URL}/api/admin/blog/${editor.id}`, { method: 'PUT', headers, credentials: 'include', body: JSON.stringify(body) })
-        : await fetch(`${API_URL}/api/admin/blog`, { method: 'POST', headers, credentials: 'include', body: JSON.stringify(body) });
+        ? await fetch(`${API_URL}/api/admin/blog/${editor.id}`, { method: 'PUT', headers, body: JSON.stringify(body) })
+        : await fetch(`${API_URL}/api/admin/blog`, { method: 'POST', headers, body: JSON.stringify(body) });
       if (res.ok) { toast(editor.id ? 'Updated' : 'Created'); setEditor(null); fetchPosts(); }
       else toast('Failed to save');
     } catch (e: any) { toast(e.message); }
@@ -52,7 +52,7 @@ export default function AdminBlog() {
   const remove = async (id: number) => {
     if (!window.confirm('Delete this post?')) return;
     try {
-      await fetch(`${API_URL}/api/admin/blog/${id}`, { method: 'DELETE', credentials: 'include' });
+      await fetch(`${API_URL}/api/admin/blog/${id}`, { method: 'DELETE' });
       fetchPosts();
     } catch (e: any) { toast(e.message); }
   };
@@ -60,7 +60,7 @@ export default function AdminBlog() {
   const togglePublish = async (post: any) => {
     try {
       await fetch(`${API_URL}/api/admin/blog/${post.id}`, {
-        method: 'PUT', headers, credentials: 'include',
+        method: 'PUT', headers,
         body: JSON.stringify({ ...post, published: post.published ? 0 : 1 })
       });
       fetchPosts();

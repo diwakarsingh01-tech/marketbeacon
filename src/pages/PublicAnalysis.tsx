@@ -50,9 +50,9 @@ const PublicAnalysisPage: React.FC = () => {
       const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('mb_token')}`
         },
-        credentials: 'include',
         body: JSON.stringify({ code: voucherCode.trim().toUpperCase() })
       });
       const result = await safeJsonParse(res);
@@ -229,14 +229,49 @@ const PublicAnalysisPage: React.FC = () => {
                 <div className="space-y-3">
                   {data.strategies?.length > 0 ? (
                     data.strategies.map((strat: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between p-5 bg-cyan-600/5 border border-cyan-500/20 rounded-2xl shadow-lg">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-cyan-500/10 rounded-xl flex items-center justify-center text-cyan-400">
-                            <Zap className="w-5 h-5" />
+                      <div key={i} className="p-5 bg-cyan-600/5 border border-cyan-500/20 rounded-2xl shadow-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-cyan-500/10 rounded-xl flex items-center justify-center text-cyan-400">
+                              <Zap className="w-5 h-5" />
+                            </div>
+                            <span className="text-md font-black text-white uppercase tracking-tighter italic">{strat.name}</span>
                           </div>
-                          <span className="text-md font-black text-white uppercase tracking-tighter italic">{strat.name}</span>
+                          <span className="px-4 py-1 bg-emerald-500 text-[#020617] text-[10px] font-bold rounded-lg italic tracking-wider">ACTIVE FLOOR</span>
                         </div>
-                        <span className="px-4 py-1 bg-emerald-500 text-[#020617] text-[10px] font-bold rounded-lg italic tracking-wider">ACTIVE FLOOR</span>
+                        {/* Strategy Details */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-cyan-500/10">
+                          {strat.entryPrice && (
+                            <div className="text-center">
+                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider block">Entry</span>
+                              <span className="text-sm font-black text-emerald-400 italic">₹{Math.round(strat.entryPrice).toLocaleString('en-IN')}</span>
+                            </div>
+                          )}
+                          {strat.target && (
+                            <div className="text-center">
+                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider block">Target</span>
+                              <span className="text-sm font-black text-blue-400 italic">₹{Math.round(strat.target).toLocaleString('en-IN')}</span>
+                            </div>
+                          )}
+                          {strat.abcd?.a?.price && (
+                            <div className="text-center">
+                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider block">Tranche A</span>
+                              <span className="text-sm font-black text-slate-300 italic">₹{Math.round(strat.abcd.a.price).toLocaleString('en-IN')}</span>
+                            </div>
+                          )}
+                          {strat.abcd?.d?.price && (
+                            <div className="text-center">
+                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider block">Tranche D</span>
+                              <span className="text-sm font-black text-slate-300 italic">₹{Math.round(strat.abcd.d.price).toLocaleString('en-IN')}</span>
+                            </div>
+                          )}
+                          {strat.reason && (
+                            <div className="col-span-full">
+                              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider block">Reason</span>
+                              <span className="text-[10px] text-slate-400">{strat.reason}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))
                   ) : (

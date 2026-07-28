@@ -24,7 +24,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { safeJsonParse, getApiUrl, getAuthHeaders } from '../lib/api-utils';
 import { toast } from 'sonner';
 import type { AdminUser, Feedback, Voucher, WaitlistEntry, UpgradeRequest } from '../types';
 
@@ -56,11 +56,11 @@ const AdminPanel: React.FC = () => {
     setIsLoading(true);
     try {
       const [uRes, rRes, vRes, fRes, wRes] = await Promise.all([
-        fetch(`${API_URL}/api/admin/users`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/admin/upgrade-requests`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/admin/vouchers`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/admin/feedback`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/admin/waitlist?status=pending`, { credentials: 'include' })
+        fetch(`${API_URL}/api/admin/users`, { headers: { ...getAuthHeaders() } }),
+        fetch(`${API_URL}/api/admin/upgrade-requests`, { headers: { ...getAuthHeaders() } }),
+        fetch(`${API_URL}/api/admin/vouchers`, { headers: { ...getAuthHeaders() } }),
+        fetch(`${API_URL}/api/admin/feedback`, { headers: { ...getAuthHeaders() } }),
+        fetch(`${API_URL}/api/admin/waitlist?status=pending`, { headers: { ...getAuthHeaders() } })
       ]);
 
       if (uRes.status === 401 || uRes.status === 403 || rRes.status === 401 || rRes.status === 403 || vRes.status === 401 || vRes.status === 403 || fRes.status === 401 || fRes.status === 403 || wRes.status === 401) {
@@ -92,7 +92,7 @@ const AdminPanel: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/upgrade-requests/${requestId}/approve`, {
         method: 'POST',
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) {
@@ -109,7 +109,7 @@ const AdminPanel: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/${type}/${id}`, {
         method: 'DELETE',
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       if (res.ok) {
         await fetchData();
@@ -126,9 +126,9 @@ const AdminPanel: React.FC = () => {
       const res = await fetch(`${API_URL}/api/admin/feedback/${selectedFeedback.id}/reply`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
-        credentials: 'include',
         body: JSON.stringify({ reply: replyText })
       });
       if (res.ok) {
@@ -147,9 +147,9 @@ const AdminPanel: React.FC = () => {
       const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
-        credentials: 'include',
         body: JSON.stringify(data)
       });
       const result = await safeJsonParse(res);
@@ -168,7 +168,7 @@ const AdminPanel: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
         method: 'DELETE',
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) fetchData();
@@ -178,7 +178,7 @@ const AdminPanel: React.FC = () => {
   const fetchWaitlist = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/waitlist?status=pending`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       if (res.ok) {
         const data = await safeJsonParse(res);
@@ -193,9 +193,9 @@ const AdminPanel: React.FC = () => {
       const res = await fetch(`${API_URL}/api/admin/waitlist/${entryId}/approve`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
-        credentials: 'include',
         body: JSON.stringify({ duration_days: 7 })
       });
       const data = await safeJsonParse(res);
@@ -213,7 +213,7 @@ const AdminPanel: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/waitlist/${entryId}/reject`, {
         method: 'POST',
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       if (res.ok) {
         toast('Entry rejected');
@@ -925,8 +925,7 @@ const AdminPanel: React.FC = () => {
                  try {
                     const res = await fetch(`${API_URL}/api/auth/register`, {
                        method: 'POST',
-                       headers: { 'Content-Type': 'application/json' },
-                       credentials: 'include',
+                       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                        body: JSON.stringify({
                           name: fd.get('name'),
                           email: fd.get('email'),
@@ -994,8 +993,7 @@ const AdminPanel: React.FC = () => {
                  try {
                     const res = await fetch(`${API_URL}/api/admin/vouchers`, {
                        method: 'POST',
-                       headers: { 'Content-Type': 'application/json' },
-                       credentials: 'include',
+                       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                        body: JSON.stringify({
                           code: fd.get('code'),
                           tier: fd.get('tier'),

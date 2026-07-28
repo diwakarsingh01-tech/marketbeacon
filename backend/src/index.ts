@@ -563,6 +563,24 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
       return sRes?.isBuyZone;
     });
 
+    // Build detailed strategies array with entry/target/abcd data (aligned with stock-fundamentals)
+    const detailedStrategies = qualified.map(s => {
+      const sRes: any = runStrategyAnalysis(s.id, snap, snap.quote.marketCap, stockBasket);
+      return {
+        id: s.id,
+        name: s.name,
+        tier: s.tier,
+        isBuyZone: !!sRes?.isBuyZone,
+        entryPrice: sRes?.entryPrice || null,
+        target: sRes?.target || null,
+        abcd: sRes?.abcd || null,
+        tranche: sRes?.tranche || null,
+        triggerDate: sRes?.triggerDate || null,
+        reason: sRes?.reason || null,
+        basketAuthorized: stockBasket
+      };
+    });
+
     const capCr = (snap.quote?.marketCap || 0) / 10000000;
     const basketType = capCr >= 20000 ? 'LARGE' : (capCr >= 5000 ? 'MID' : 'SMALL');
 
@@ -610,7 +628,7 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
       symbol, 
       score: Math.round(audit.score), 
       isPass: audit.isPass, 
-      strategies: qualified,
+      strategies: detailedStrategies,
       smartMoney: r2(audit.smartMoneyTotal || 0),
       upside: maxUpside,
       basket: basketType,

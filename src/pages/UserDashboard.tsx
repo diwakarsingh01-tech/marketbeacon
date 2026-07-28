@@ -7,7 +7,7 @@ import {
   ShieldCheck, RefreshCw, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { safeJsonParse, getApiUrl, getAuthHeaders } from '../lib/api-utils';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import SEO from '../components/SEO';
 import type { TradeRecord } from '../types';
@@ -41,7 +41,7 @@ const UserDashboard: React.FC = () => {
   const fetchTrades = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/trades`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const d = await safeJsonParse(res);
       if (res.ok && !d?.error) {

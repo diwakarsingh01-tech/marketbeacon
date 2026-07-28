@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Bot, Sparkles, Loader2, AlertTriangle, CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getApiUrl, safeJsonParse } from '../../lib/api-utils';
+import { getApiUrl, safeJsonParse, getAuthHeaders } from '../../lib/api-utils';
 
 const API_URL = getApiUrl();
 
@@ -21,8 +21,7 @@ const AiSuggestionPublicPanel: React.FC<Props> = ({ symbol }) => {
     try {
       const res = await fetch(`${API_URL}/api/ai/analyze-stock`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ symbol })
       });
       const data = await safeJsonParse(res);

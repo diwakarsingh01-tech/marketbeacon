@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { safeJsonParse, getApiUrl, getAuthHeaders } from '../lib/api-utils';
 import type { AlphaHubStock, AlphaHubData, BacktestData, BasketConfig } from '../types';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import { Confetti } from '../components/ui/Confetti';
@@ -215,7 +215,7 @@ const AlphaHubPage: React.FC = () => {
     setError(null);
     try {
       const res = await fetch(`${API_URL}/api/backtest/alpha-40`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const d = await safeJsonParse(res);
       if (res.ok && !d.error) {
@@ -242,7 +242,7 @@ const AlphaHubPage: React.FC = () => {
   const fetchBacktestComparison = async () => {
     try {
       const res = await fetch(`${API_URL}/api/backtest/nifty-comparison`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const d = await safeJsonParse(res);
       if (res.ok && !d.error) setBacktestComparison(d);
@@ -262,9 +262,9 @@ const AlphaHubPage: React.FC = () => {
       const res = await fetch(`${API_URL}/api/user/redeem-voucher`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
-        credentials: 'include',
         body: JSON.stringify({ code: voucherCode.trim().toUpperCase() })
       });
       const d = await safeJsonParse(res);

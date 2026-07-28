@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getApiUrl } from '../../lib/api-utils';
+import { getApiUrl, getAuthHeaders } from '../../lib/api-utils';
 import { 
   Star, 
   X, 
@@ -46,9 +46,9 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
       const response = await fetch(`${API_URL}/api/feedback`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
-        credentials: 'include',
         body: JSON.stringify({
           rating,
           disposition,

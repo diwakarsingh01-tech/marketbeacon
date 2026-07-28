@@ -500,9 +500,9 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
             </button>
           </div>
 
-          {/* Suggestions List in mobile view */}
+          {/* Suggestions List in mobile view — explicit max-h via dvh to prevent clipping behind search bar */}
           {suggestions.length > 0 && (
-            <div className="flex-1 min-h-0 mt-3 bg-[var(--bg-primary)] border border-[var(--border-primary)]/85 rounded-2xl shadow-2xl overflow-y-auto p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex-1 min-h-0 mt-3 bg-[var(--bg-primary)] border border-[var(--border-primary)]/85 rounded-2xl shadow-2xl overflow-y-auto p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200" style={{ maxHeight: 'calc(100dvh - 140px)' }}>
               <div className="p-2.5 border-b border-[var(--border-primary)] bg-[var(--bg-tertiary)]/50 flex justify-between items-center rounded-t-xl sticky top-0 z-10">
                   <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Match Suggestions</span>
               </div>

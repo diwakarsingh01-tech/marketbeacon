@@ -124,8 +124,7 @@ const LoginPage: React.FC = () => {
           try {
             const res = await fetch(`${API_URL}/api/user/profile`, {
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('mb_token')}` },
               body: JSON.stringify({ name: userName })
             });
             if (res.ok) { await refreshAuth(); navigate(from, { replace: true }); }

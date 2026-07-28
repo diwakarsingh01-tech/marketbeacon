@@ -21,7 +21,7 @@ import { useAuth } from '../context/AuthContext';
 import UpgradeModal from '../components/modals/UpgradeModal';
 import BrokerHub from '../components/modals/BrokerHub';
 
-import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { safeJsonParse, getApiUrl, getAuthHeaders } from '../lib/api-utils';
 import { toast } from 'sonner';
 import SEO from '../components/SEO';
 import type { AllStockItem, AuditData, WatchlistItem, TradeRecord, StockPriceResult } from '../types';
@@ -169,7 +169,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const fetchTrades = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/trades`, { credentials: 'include' });
+      const res = await fetch(`${API_URL}/api/trades`, { headers: { ...getAuthHeaders() } });
       const d = await safeJsonParse(res);
       if (res.status === 401 || res.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
         window.location.href = '/login';
@@ -181,7 +181,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   const fetchWatchlist = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/watchlist`, { credentials: 'include' });
+      const response = await fetch(`${API_URL}/api/watchlist`, { headers: { ...getAuthHeaders() } });
       const d = await safeJsonParse(response);
       if (response.status === 401 || response.status === 403 || d?.error === 'Invalid token.' || d?.error === 'Access denied.') {
         window.location.href = '/login';
@@ -196,8 +196,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     try {
       const response = await fetch(`${API_URL}/api/watchlist${isAdding ? '' : `/${symbol}`}`, {
         method: isAdding ? 'POST' : 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: isAdding ? JSON.stringify({ symbol }) : undefined
       });
       if (response.ok) fetchWatchlist();
@@ -208,8 +207,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     try {
       const response = await fetch(`${API_URL}/api/watchlist/${symbol}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ quantity, buy_price })
       });
       if (response.ok) fetchWatchlist();
@@ -222,9 +220,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
       const response = await fetch(`${API_URL}/api/watchlist/bulk`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
-        credentials: 'include',
         body: JSON.stringify({ holdings, mode })
       });
       const resData = await safeJsonParse(response);
@@ -248,7 +246,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     try {
       const response = await fetch(`${API_URL}/api/watchlist`, {
         method: 'DELETE',
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       if (response.ok) {
         toast("All old details removed successfully.");
@@ -267,15 +265,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     try {
       const response = await fetch(`${API_URL}/api/watchlist`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ symbol: symbol.toUpperCase().trim() })
       });
       if (response.ok) {
         await fetch(`${API_URL}/api/watchlist/${symbol.toUpperCase().trim()}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify({ quantity, buy_price: buyPrice })
         });
         fetchWatchlist();
@@ -323,7 +319,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     setError(null);
     try {
       const response = await fetch(`${API_URL}/api/backtest/audit?basket=${encodeURIComponent(activeBasket)}&strategy=${encodeURIComponent(strategyId)}`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const d = await safeJsonParse(response);
       

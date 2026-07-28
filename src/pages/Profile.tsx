@@ -6,7 +6,7 @@ import {
   X, CheckCircle2, Smartphone, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { safeJsonParse, getApiUrl } from '../lib/api-utils';
+import { safeJsonParse, getApiUrl, getAuthHeaders } from '../lib/api-utils';
 
 const API_URL = getApiUrl();
 
@@ -50,7 +50,7 @@ const ProfilePage: React.FC = () => {
   const fetchProfile = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/user/profile`, {
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const data = await safeJsonParse(res);
       if (res.status === 401 || res.status === 403 || data?.error === 'Invalid token.' || data?.error === 'Access denied.') {
@@ -83,8 +83,7 @@ const ProfilePage: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/user/password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ currentPassword: pwCurrent, newPassword: pwNew })
       });
       const data = await safeJsonParse(res);
@@ -102,7 +101,7 @@ const ProfilePage: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/user/2fa/setup`, {
         method: 'POST',
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const data = await safeJsonParse(res);
       if (!res.ok || data.error) { setTwoFaError(data.error || 'Setup failed'); return; }
@@ -120,8 +119,7 @@ const ProfilePage: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/user/2fa/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ token: twoFaToken })
       });
       const data = await safeJsonParse(res);
@@ -139,7 +137,7 @@ const ProfilePage: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/api/user/2fa/disable`, {
         method: 'POST',
-        credentials: 'include'
+        headers: { ...getAuthHeaders() }
       });
       const data = await safeJsonParse(res);
       if (!res.ok || data.error) { setTwoFaError(data.error || 'Disable failed'); return; }

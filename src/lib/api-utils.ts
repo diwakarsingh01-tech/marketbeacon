@@ -3,6 +3,14 @@
  * Bulletproof API URL resolution for Local and Production environments.
  */
 
+/**
+ * Get auth headers with Bearer token from localStorage
+ */
+export function getAuthHeaders(): Record<string, string> {
+  const token = localStorage.getItem('mb_token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
 export async function safeJsonParse(response: Response) {
   const text = await response.text();
   try {
