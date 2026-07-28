@@ -642,10 +642,34 @@ app.get('/api/stock-fundamentals', async (req, res) => {
 
     if (!snap) return res.status(404).json({ error: 'Asset data unavailable' });
 
-    const audit = await validateBatch9(symbol as string, snap, 'Elite Basket');
+    // Determine the stock's actual basket
+    const stockBasket = getBasketForSymbol(symbol as string);
+    const mcapCr = (snap.quote?.marketCap || 1) / 10000000;
+
+    const audit = await validateBatch9(symbol as string, snap, stockBasket);
     const lastQuote = snap.quotes[snap.quotes.length - 1];
     const lastPrice = lastQuote?.close || 0;
     const change = snap.quote?.regularMarketChangePercent || 0;
+
+    // Run strategy analysis for this stock with its correct basket
+    const computedStrategies: Record<string, any> = {};
+    for (const strat of STRATEGIES) {
+      try {
+        const sRes: any = runStrategyAnalysis(strat.id, snap, mcapCr * 10000000, stockBasket);
+        computedStrategies[strat.id] = {
+          entryPrice: sRes?.entryPrice,
+          target: sRes?.target,
+          isBuyZone: !!sRes?.isBuyZone,
+          tranche: sRes?.tranche || null,
+          abcd: sRes?.abcd || null,
+          entryTime: sRes?.triggerDate || null,
+          reason: sRes?.reason || null,
+          basketAuthorized: stockBasket
+        };
+      } catch {
+        computedStrategies[strat.id] = { isBuyZone: false, reason: 'Error' };
+      }
+    }
     
     res.json({
       symbol,
@@ -665,7 +689,8 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       fiftyTwoWeekHigh: snap.quote?.fiftyTwoWeekHigh,
       beta: snap.quote?.beta,
       shareholding: audit.metrics,
-      strategies: snap.strategies || {},
+      strategies: computedStrategies,
+      basketName: stockBasket,
       audit: {
         score: audit.score,
         reason: audit.reason,
