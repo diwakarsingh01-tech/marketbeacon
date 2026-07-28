@@ -1014,12 +1014,22 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     // Debug: log what we received from cache
     console.log(`[ANALYSIS-API] ${symbol} cache data: peRatio=${snap.screener?.peRatio}, roce=${snap.screener?.roce}, roe=${snap.screener?.returnOnEquity}, athSales=${snap.screener?.athSales}, lastUpdated=${snap.lastUpdated}`);
 
-    const audit = await validateBatch9(symbol, snap, 'Elite Basket');
+    // Determine correct basket for this symbol
+    let symbolBasket = 'Elite Basket';
+    for (const [basketName, symbols] of Object.entries(BASKETS)) {
+      if (symbols.includes(symbol)) {
+        symbolBasket = basketName;
+        break;
+      }
+    }
+    console.log(`[ANALYSIS-API] ${symbol} belongs to basket: ${symbolBasket}`);
+
+    const audit = await validateBatch9(symbol, snap, symbolBasket);
     
     let maxUpside = 30; // Default Institutional Target
     const qualifiedResults: any[] = [];
     for (const s of STRATEGIES) {
-      const sRes: any = await runStrategyAnalysis(s.id, snap, snap.quote.marketCap, 'Elite Basket');
+      const sRes: any = await runStrategyAnalysis(s.id, snap, snap.quote.marketCap, symbolBasket);
       if (sRes?.isBuyZone && sRes?.target) {
         const lastQuote = snap.quotes[snap.quotes.length - 1];
         const currentPrice = lastQuote?.close || sRes.entryPrice || 0;
@@ -1041,7 +1051,7 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     const primaryStrat = qualified[0];
     let abcd = null;
     if (primaryStrat) {
-      const sRes: any = await runStrategyAnalysis(primaryStrat.id, snap, snap.quote.marketCap, 'Elite Basket');
+      const sRes: any = await runStrategyAnalysis(primaryStrat.id, snap, snap.quote.marketCap, symbolBasket);
       abcd = sRes?.abcd;
     }
 
