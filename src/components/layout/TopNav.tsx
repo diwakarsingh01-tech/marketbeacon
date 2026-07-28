@@ -472,8 +472,8 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
       {/* Mobile Search Overlay */}
       {showMobileSearch && (
-        <div className="fixed inset-0 bg-[var(--bg-primary)]/95 backdrop-blur-md z-[120] flex flex-col p-4 animate-in fade-in slide-in-from-top duration-300" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
-          <div className="flex items-center gap-3">
+        <div className="fixed inset-0 bg-[var(--bg-primary)]/95 backdrop-blur-md z-[120] flex flex-col p-4 pt-safe animate-in fade-in duration-200" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && setShowMobileSearch(false)}>
+          <div className="flex items-center gap-3 shrink-0">
             <form onSubmit={handleSearch} className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
@@ -500,8 +500,8 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
 
           {/* Suggestions List in mobile view */}
           {suggestions.length > 0 && (
-            <div className="mt-3 bg-[var(--bg-primary)] border border-[var(--border-primary)]/85 rounded-2xl shadow-2xl overflow-y-auto max-h-[70vh] p-1.5 space-y-0.5 z-[130] animate-in fade-in slide-in-from-top-1 duration-200">
-              <div className="p-2.5 border-b border-[var(--border-primary)] bg-[var(--bg-tertiary)]/50 flex justify-between items-center rounded-t-xl">
+            <div className="flex-1 min-h-0 mt-3 bg-[var(--bg-primary)] border border-[var(--border-primary)]/85 rounded-2xl shadow-2xl overflow-y-auto p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="p-2.5 border-b border-[var(--border-primary)] bg-[var(--bg-tertiary)]/50 flex justify-between items-center rounded-t-xl sticky top-0 z-10">
                   <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Match Suggestions</span>
               </div>
               {suggestions.map((stock) => (
@@ -538,6 +538,13 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick }) => {
                   </div>
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* Empty state when query is 1 char or less */}
+          {suggestions.length === 0 && searchQuery.length >= 2 && (
+            <div className="flex-1 flex items-center justify-center text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+              No stocks match "{searchQuery}"
             </div>
           )}
         </div>

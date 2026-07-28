@@ -1,5 +1,5 @@
 import { validateBatch9 } from '../services/fundamentalAudit.js';
-import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateSRStrategy, calculateCupHandle, calculateSixtySevenFunda, calculateTwentyRallyRetest, calculateReverseHeadShoulders } from '../strategies/index.js';
+import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateSRStrategy, calculateCupHandle, calculateSixtySevenFunda, calculateTwentyRallyRetest, calculateRHS as calculateReverseHeadShoulders } from '../strategies/index.js';
 
 export const runStrategyAnalysis = async (stratId: string, snap: any, marketCap: number, basketName: string = 'ALL') => {
     const isElite = basketName === 'Elite Basket';

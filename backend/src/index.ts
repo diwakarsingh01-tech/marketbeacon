@@ -1968,14 +1968,17 @@ const startServer = async () => {
       console.log('----------------------------------------------------');
     });
 
-    // Background: load snapshot cache (337MB JSON parse is CPU-heavy)
-    initSnapshotCache().catch((e: any) => console.error('Snapshot cache init failed:', e.message));
+    // Background: load snapshot cache (337MB JSON parse is CPU-heavy).
+    // Delay by 2s so auth/health endpoints get priority during cold start.
+    setTimeout(() => {
+      initSnapshotCache().catch((e: any) => console.error('Snapshot cache init failed:', e.message));
+    }, 2000);
 
     // Background: seed blog posts (DB write, not latency-critical)
     seedBlogPosts(db).catch((e: any) => console.error('Blog seed failed:', e.message));
 
     // 8:30 PM IST - Daily Alpha-40 institutional recalculation
-    cron.schedule('30 20 * * *', precalculateAlpha40);
+    cron.schedule('30 20 * * *', async () => { await precalculateAlpha40(); });
 
     // 7:00 PM IST - Daily system health check (after market close)
     cron.schedule('0 19 * * *', runAndNotifyHealthCheck);

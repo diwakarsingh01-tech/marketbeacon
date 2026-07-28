@@ -92,3 +92,18 @@ export async function sendDailyAuditSummary(summaryText: string): Promise<boolea
   const message = `${header}\n\n${summaryText}`;
   return sendTelegramMessage(message, 'both');
 }
+
+export async function sendDailyStatusDigest(
+  byBasket: Record<string, { qualified: number; observation: number; rejected: number; anomalies: number }>,
+  totalQualified: number,
+  totalObservation: number,
+  totalRejected: number,
+  totalAnomalies: number
+): Promise<boolean> {
+  const lines: string[] = [`📊 *Daily Alpha-40 Digest*`, ``, `**Qualified Signals:** ${totalQualified}`];
+  for (const [name, counts] of Object.entries(byBasket)) {
+    lines.push(`  • ${name}: ${counts.qualified} qualified, ${counts.observation} observing, ${counts.rejected} rejected`);
+  }
+  lines.push(``, `🔗 https://marketbeaconpro.com`);
+  return sendTelegramMessage(lines.join('\n'), 'both');
+}

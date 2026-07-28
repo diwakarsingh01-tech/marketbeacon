@@ -6,7 +6,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { fileURLToPath } from 'url';
 import { NIFTY_500 } from './universe.js';
-import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest, calculateReverseHeadShoulders, checkInstitutionalMandates } from './strategies/index.js';
+import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateCupHandle, calculateSRStrategy, calculateSixtySevenFunda, calculateTwentyRallyRetest, calculateRHS as calculateReverseHeadShoulders, checkInstitutionalMandates } from './strategies/index.js';
 import { supabase } from './db.js';
 
 // BROAD_UNIVERSE: Nifty 500 + ~1500 additional mid/small-cap symbols for wider market scanning.

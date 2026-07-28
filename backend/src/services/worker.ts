@@ -211,7 +211,7 @@ export async function precalculateAlpha40(isBootWarmup = false) {
                        const message = `${sym} has triggered for ${stratName} (Tranche ${trancheName}). Objective: ${Math.round(target)}.`;
                        notifyAllUsers(title, message, 'audit');
                        // Send detailed signal to Telegram DM / Channel
-                        sendSignalNotification(sym, stratName, basketName, entry, target, trancheName, audit.score, sd?.abcd).catch(() => {});
+                        sendSignalNotification(sym, stratName, basketName, entry, target, trancheName).catch(() => {});
                     }
                 }
              }
