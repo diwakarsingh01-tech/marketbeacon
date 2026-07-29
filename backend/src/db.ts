@@ -245,6 +245,22 @@ export async function initDB() {
     )
   `);
 
+  // ── Smart Money: Quarterly Shareholding History ──────────────────────────
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS shareholding_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      symbol TEXT NOT NULL,
+      quarter TEXT NOT NULL,
+      promoter_pct REAL DEFAULT 0,
+      fii_pct REAL DEFAULT 0,
+      dii_pct REAL DEFAULT 0,
+      public_pct REAL DEFAULT 0,
+      pledge_pct REAL DEFAULT 0,
+      recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(symbol, quarter)
+    )
+  `);
+
   db = {
     get: async (sql: string, params: any[] = []) => {
       const result = await tursoClient!.execute({ sql, args: params });

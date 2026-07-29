@@ -13,7 +13,8 @@ import {
   Settings,
   HelpCircle,
   LineChart,
-  Bot
+  Bot,
+  TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -39,6 +40,7 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose }) => {
         { icon: Zap, label: 'Alpha Hub', path: '/alpha-hub', desc: 'Main Terminal', tag: 'USP' },
         { icon: Zap, label: 'Screener', path: '/screener', desc: 'Real-time Matrix' },
         { icon: LineChart, label: 'Charts Terminal', path: '/charts', desc: 'Technical Charting' },
+        { icon: TrendingUp, label: 'Smart Money', path: '/smart-money', desc: 'FII/DII Tracking' },
       ]
     },
     {

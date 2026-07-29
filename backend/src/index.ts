@@ -28,6 +28,8 @@ import { notifyAdmins } from './services/notificationService.js';
 import { runHealthCheck, runAndNotifyHealthCheck } from './services/healthCheck.js';
 import { scheduleAuditCron } from './cron/auditScheduler.js';
 import { backtestAllStrategies, backtestStrategy } from './services/backtestEngine.js';
+import { captureShareholdingSnapshot, backfillFromTrends } from './services/smartMoneyService.js';
+import smartMoneyRouter from './routes/smartMoney.js';
 
 dotenv.config();
 
@@ -164,6 +166,9 @@ const getSnapshotFromCloud = async (symbols: string[]) => {
   });
   return result;
 };
+
+// ── Smart Money routes ──
+app.use('/api/smart-money', smartMoneyRouter);
 
 app.get('/api/health', (req, res) => res.json({ 
   status: 'active', 
@@ -2074,7 +2079,14 @@ const startServer = async () => {
     // Background: load snapshot cache (337MB JSON parse is CPU-heavy).
     // Delay by 2s so auth/health endpoints get priority during cold start.
     setTimeout(() => {
-      initSnapshotCache().catch((e: any) => console.error('Snapshot cache init failed:', e.message));
+      initSnapshotCache().then(() => {
+        // ── DEFERRED SMART MONEY BACKFILL ──────────────────────────────
+        backfillFromTrends().then(count => {
+          if (count > 0) console.log(`📊 Smart Money: Backfilled ${count} historical records`);
+        }).catch((e: any) => {
+          console.error(`Smart Money backfill error: ${e.message}`);
+        });
+      }).catch((e: any) => console.error('Snapshot cache init failed:', e.message));
     }, 2000);
 
     // Background: seed blog posts (DB write, not latency-critical)
@@ -2085,6 +2097,11 @@ const startServer = async () => {
 
     // 7:00 PM IST - Daily system health check (after market close)
     cron.schedule('0 19 * * *', runAndNotifyHealthCheck);
+
+    // 7:30 PM IST — Daily shareholding snapshot capture (after market close)
+    cron.schedule('30 19 * * *', () => {
+      captureShareholdingSnapshot().catch(e => console.error('Smart Money capture failed:', e.message));
+    });
 
     setTimeout(precalculateAlpha40, 5000); // Warm cache on boot
     // Growth basket priming moved to cron only (blocks event loop for 5+ min on 281 symbols)

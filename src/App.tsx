@@ -39,6 +39,7 @@ const TermsOfServicePage = lazy(() => import('./pages/TermsOfService'));
 const DisclaimerPage = lazy(() => import('./pages/Disclaimer'));
 const AboutPage = lazy(() => import('./pages/About'));
 const ContactPage = lazy(() => import('./pages/Contact'));
+const SmartMoneyPage = lazy(() => import('./pages/SmartMoney'));
 
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -102,6 +103,7 @@ function AnimatedRoutes() {
           <Route path="/market" element={<DashboardPage key="market" defaultTab="hold" />} />
           <Route path="/portfolio" element={<DashboardPage key="portfolio" defaultTab="portfolio" />} />
           <Route path="/trades" element={<TradeJournalPage />} />
+          <Route path="/smart-money" element={<SmartMoneyPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/stock/:symbol" element={<StockFundamentalsPage />} />
           <Route path="/education" element={<EducationPage />} />
