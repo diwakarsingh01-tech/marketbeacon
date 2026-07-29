@@ -352,6 +352,30 @@ const ChartsTerminalContent: React.FC = () => {
       if (strat && typeof strat === 'object') {
         const isDark = true;
         
+        // Auto-scale price scale so Target and Entry lines are 100% visible on chart
+        const targetVal = strat.target ? Number(strat.target) : null;
+        const entryVal = strat.entryPrice ? Number(strat.entryPrice) : null;
+        if (targetVal || entryVal) {
+          mainSeries.applyOptions({
+            autoscaleInfoProvider: (original: any) => {
+              const res = original();
+              if (res && res.priceRange) {
+                let min = res.priceRange.minValue;
+                let max = res.priceRange.maxValue;
+                if (entryVal && entryVal > 0) min = Math.min(min, entryVal * 0.96);
+                if (targetVal && targetVal > 0) max = Math.max(max, targetVal * 1.04);
+                return {
+                  priceRange: {
+                    minValue: min,
+                    maxValue: max,
+                  },
+                };
+              }
+              return res;
+            },
+          });
+        }
+
         // 1. Entry Price Line
         if (strat.entryPrice) {
           mainSeries.createPriceLine({
@@ -364,17 +388,17 @@ const ChartsTerminalContent: React.FC = () => {
           });
         }
         
-        // 2. Target Price Line - REMOVED for SEBI compliance
-        {/* if (strat.target) {
+        // 2. Target Price Line (Model Ref)
+        if (strat.target) {
           mainSeries.createPriceLine({
             price: Number(strat.target),
             color: '#3b82f6', // blue
             lineWidth: 2,
             lineStyle: 2, // dashed
             axisLabelVisible: true,
-            title: `Model Ref: ₹${strat.target}`,
+            title: `Target / Model Ref: ₹${strat.target}`,
           });
-        } */}
+        }
 
         // 4. ABCD Points (Tranches)
         if (strat.abcd) {
@@ -935,6 +959,30 @@ const ChartsTerminalContent: React.FC = () => {
 
     function drawStrategyLines(series) {
       if (!activeStrat) return;
+
+      const targetVal = activeStrat.target ? Number(activeStrat.target) : null;
+      const entryVal = activeStrat.entryPrice ? Number(activeStrat.entryPrice) : null;
+      if (targetVal || entryVal) {
+        series.applyOptions({
+          autoscaleInfoProvider: (original) => {
+            const res = original();
+            if (res && res.priceRange) {
+              let min = res.priceRange.minValue;
+              let max = res.priceRange.maxValue;
+              if (entryVal && entryVal > 0) min = Math.min(min, entryVal * 0.96);
+              if (targetVal && targetVal > 0) max = Math.max(max, targetVal * 1.04);
+              return {
+                priceRange: {
+                  minValue: min,
+                  maxValue: max,
+                },
+              };
+            }
+            return res;
+          }
+        });
+      }
+
       if (activeStrat.entryPrice) {
         series.createPriceLine({
           price: Number(activeStrat.entryPrice),
@@ -946,17 +994,17 @@ const ChartsTerminalContent: React.FC = () => {
         });
       }
       
-      // Target Price Line - REMOVED for SEBI compliance
-      {/* if (activeStrat.target) {
+      // Target Price Line (Model Ref)
+      if (activeStrat.target) {
         series.createPriceLine({
           price: Number(activeStrat.target),
           color: '#3b82f6',
           lineWidth: 2,
           lineStyle: 2,
           axisLabelVisible: true,
-          title: 'Model Ref: ₹' + activeStrat.target
+          title: 'Target / Model Ref: ₹' + activeStrat.target
         });
-      } */}
+      }
       
       if (activeStrat.abcd) {
         Object.entries(activeStrat.abcd).forEach(([key, val]) => {
