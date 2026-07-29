@@ -154,7 +154,8 @@ const AdminPanel: React.FC = () => {
   const fetchAuditData = async () => {
     setIsAuditLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/admin/audit/latest`, { credentials: 'include' });
+      const headers = getAuthHeaders();
+      const res = await fetch(`${API_URL}/api/admin/audit/latest`, { credentials: 'include', headers });
       if (res.ok) setAuditData(await safeJsonParse(res));
     } catch (e) { toast.error("Audit fetch failed"); }
     finally { setIsAuditLoading(false); }
@@ -163,7 +164,8 @@ const AdminPanel: React.FC = () => {
   const runAudit = async () => {
     setIsAuditLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/admin/audit/run`, { method: 'POST', credentials: 'include' });
+      const headers = getAuthHeaders();
+      const res = await fetch(`${API_URL}/api/admin/audit/run`, { method: 'POST', credentials: 'include', headers });
       if (res.ok) { setAuditData(await safeJsonParse(res)); toast.success("Audit run complete"); }
     } catch (e) { toast.error("Audit run failed"); }
     finally { setIsAuditLoading(false); }
@@ -1122,21 +1124,48 @@ const AdminPanel: React.FC = () => {
           </div>
 
           {auditData ? (
-            <div className="space-y-4 font-mono text-xs">
+            <div className="space-y-6 font-mono text-xs">
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                   <span className="text-slate-500 font-sans font-bold uppercase text-[10px]">Total Checks</span>
-                  <p className="text-xl font-bold text-slate-900 mt-1">{auditData.total_checks || 0}</p>
+                  <p className="text-xl font-bold text-slate-900 mt-1">
+                    {auditData.summary?.total ?? auditData.total_checks ?? auditData.total ?? 0}
+                  </p>
                 </div>
                 <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200">
                   <span className="text-emerald-700 font-sans font-bold uppercase text-[10px]">Passed</span>
-                  <p className="text-xl font-bold text-emerald-700 mt-1">{auditData.passed || 0}</p>
+                  <p className="text-xl font-bold text-emerald-700 mt-1">
+                    {auditData.summary?.passed ?? auditData.passed ?? 0}
+                  </p>
                 </div>
                 <div className="bg-rose-50 p-4 rounded-xl border border-rose-200">
                   <span className="text-rose-700 font-sans font-bold uppercase text-[10px]">Issues Found</span>
-                  <p className="text-xl font-bold text-rose-700 mt-1">{auditData.failed || 0}</p>
+                  <p className="text-xl font-bold text-rose-700 mt-1">
+                    {auditData.summary?.failed ?? auditData.failed ?? auditData.checks?.length ?? 0}
+                  </p>
                 </div>
               </div>
+
+              {Array.isArray(auditData.checks) && auditData.checks.length > 0 && (
+                <div className="mt-4 space-y-2.5 max-h-96 overflow-y-auto pr-2">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Audit Check Results</div>
+                  {auditData.checks.map((check: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-4">
+                      <div className="space-y-0.5 min-w-0">
+                        <span className="font-bold text-slate-800 text-xs block truncate">{check.name || check.id}</span>
+                        <p className="text-[11px] text-slate-500 font-sans">{check.message || check.details || check.description}</p>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase shrink-0 ${
+                        check.status === 'pass' ? 'bg-emerald-100 text-emerald-700' :
+                        check.status === 'fixed' ? 'bg-blue-100 text-blue-700' :
+                        'bg-rose-100 text-rose-700'
+                      }`}>
+                        {check.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-slate-400 text-xs">Click "Run System Audit" to initiate comprehensive system check.</p>

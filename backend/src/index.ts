@@ -2645,23 +2645,17 @@ app.get('/api/admin/audit/latest', authenticateToken, requireAdmin, async (req: 
     const reportPath = path.resolve(process.cwd(), 'audit_reports', `${today}.json`);
     if (fs.existsSync(reportPath)) {
       const report = JSON.parse(fs.readFileSync(reportPath, 'utf-8'));
-      return res.json({
-        date: report.date,
-        status: report.status,
-        summary: report.summary,
-        changes: report.changes,
-        checks: report.checks.filter((c: any) => c.status !== 'pass'),
-        reportUrl: `/admin/audit/${today}`
-      });
+      return res.json(report);
     }
-    res.json({ message: 'No audit run today yet. Run /api/admin/audit/run to trigger.' });
+    const report = await runAuditEngine(BASKETS);
+    res.json(report);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/admin/audit/run', authenticateToken, requireAdmin, async (req: any, res: any) => {
+app.all('/api/admin/audit/run', authenticateToken, requireAdmin, async (req: any, res: any) => {
   try {
     const report = await runAuditEngine(BASKETS);
-    res.json({ status: report.status, date: report.date, summary: report.summary });
+    res.json(report);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
