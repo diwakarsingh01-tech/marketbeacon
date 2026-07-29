@@ -725,23 +725,38 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
 
       if (!snap) return null; // Skip stocks without snapshot data
 
-      const audit = await validateBatch9(cleanSym, snap, basket);
       const strategyData: any = await runStrategyAnalysis(effectiveStrategy, snap, snap.quote.marketCap, basket);
+      const strategyIsBuyZone = strategyData?.isBuyZone === true;
+      const strategyObservation = strategyData?.status === 'OBSERVATION';
+
+      let audit = { 
+        score: 0, 
+        reason: 'Pattern Not Found', 
+        isPass: false, 
+        smartMoneyTotal: 0,
+        profitabilityQuality: 0,
+        balanceSheetSafety: 0,
+        growthQuality: 0,
+        efficiencyGovernance: 0
+      };
       
+      if (strategyIsBuyZone || strategyObservation) {
+        const res = await validateBatch9(cleanSym, snap, basket);
+        if (res) audit = res as any;
+      }
+
       const basePrice = strategyData?.entryPrice || snap.quotes[snap.quotes.length - 1].close;
       const abcdLevels = strategyData?.abcd || calculateABCDLevels(basePrice, snap.quote?.marketCap);
 
       const isGateRejection = strategyData?.isBuyZone === false && typeof strategyData?.reason === 'string' && strategyData.reason.includes('Fundamental Gate');
       const passThreshold = 60;
       const auditPass = audit.score >= passThreshold && !audit.reason.includes('Hard Reject');
-      const finalPass = isGateRejection ? false : auditPass;
-      const strategyIsBuyZone = strategyData?.isBuyZone === true;
-      const strategyObservation = strategyData?.status === 'OBSERVATION';
+      const finalPass = isGateRejection ? false : (auditPass && (strategyIsBuyZone || strategyObservation));
       const displayReason = isGateRejection
         ? strategyData.reason
         : (strategyData?.status
           ? strategyData.status
-          : (strategyIsBuyZone ? 'QUALIFIED' : 'Pattern Not Found - ' + audit.reason));
+          : (strategyIsBuyZone ? 'QUALIFIED' : 'Pattern Not Found'));
 
       return {
         symbol: sym,
@@ -843,13 +858,50 @@ app.get('/api/backtest/history', async (req, res) => {
     if (!snap || !snap.quotes || snap.quotes.length < 200) {
       return res.status(404).json({ error: 'Insufficient historical data for this symbol' });
     }
+    let symbolBasket = 'Elite Basket';
+    const cleanSymSearch = sym.trim().toUpperCase().replace(/\.NS$/i, '');
+    for (const [basketName, symbols] of Object.entries(BASKETS)) {
+      const cleanSymbols = symbols.map(s => s.trim().toUpperCase());
+      if (cleanSymbols.includes(cleanSymSearch)) {
+        symbolBasket = basketName;
+        break;
+      }
+    }
+
+    const authorizedBaskets: Record<string, string[]> = {
+      'ENVELOPE_LONG': ['Elite Basket', 'Quality Basket'],
+      'ENVELOPE_SHORT': ['Elite Basket', 'Quality Basket'],
+      'BOLLINGER': ['Elite Basket', 'Quality Basket'],
+      '52W_HIGH_LOW': ['Elite Basket', 'Quality Basket'],
+      'SMA_BCD': ['Elite Basket', 'Quality Basket'],
+      'CUP_HANDLE_ABCD': ['Quality Basket', 'Elite Basket'],
+      'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+      'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+      'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+      'RHS_ABCD': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+      'REVERSE_HEAD_SHOULDERS': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
+    };
+
     const results = backtestAllStrategies(snap.quotes, snap.screener);
+    const filteredResults: Record<string, any> = {};
+
+    for (const [key, val] of Object.entries(results)) {
+      const allowed = authorizedBaskets[key] || [];
+      if (allowed.includes(symbolBasket)) {
+        filteredResults[key] = val;
+      }
+    }
+
     if (strategy) {
-      const stratResults = results[strategy as string];
+      const allowed = authorizedBaskets[strategy as string] || [];
+      if (!allowed.includes(symbolBasket)) {
+        return res.status(403).json({ error: 'Strategy not authorized for this stock\'s basket' });
+      }
+      const stratResults = filteredResults[strategy as string];
       if (!stratResults) return res.status(404).json({ error: 'Strategy not found' });
       return res.json(stratResults);
     }
-    res.json(results);
+    res.json(filteredResults);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -867,7 +919,25 @@ app.get('/api/backtest/basket-summary', async (req, res) => {
       if (!snap || !snap.quotes || snap.quotes.length < 200) continue;
       const results = backtestAllStrategies(snap.quotes, snap.screener, true);
       let bestWinRate = 0, bestAvgRoi = 0, bestStrategy = '', totalTradesAll = 0, winsAll = 0;
+      
+      const authorizedBaskets: Record<string, string[]> = {
+        'ENVELOPE_LONG': ['Elite Basket', 'Quality Basket'],
+        'ENVELOPE_SHORT': ['Elite Basket', 'Quality Basket'],
+        'BOLLINGER': ['Elite Basket', 'Quality Basket'],
+        '52W_HIGH_LOW': ['Elite Basket', 'Quality Basket'],
+        'SMA_BCD': ['Elite Basket', 'Quality Basket'],
+        'CUP_HANDLE_ABCD': ['Quality Basket', 'Elite Basket'],
+        'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+        'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+        'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+        'RHS_ABCD': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+        'REVERSE_HEAD_SHOULDERS': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
+      };
+
       for (const [sid, r] of Object.entries(results)) {
+        const allowed = authorizedBaskets[sid] || [];
+        if (!allowed.includes(basket as string)) continue;
+
         if (r.totalTrades > 0) {
           totalTradesAll += r.totalTrades;
           winsAll += r.wins;
@@ -1159,10 +1229,45 @@ app.get('/api/stock-fundamentals', async (req, res) => {
 
     if (!snap) return res.status(404).json({ error: 'Asset data unavailable' });
 
-    const audit = await validateBatch9(symbol as string, snap, 'Elite Basket');
+    let symbolBasket = 'Elite Basket';
+    const cleanSymSearch = (symbol as string).trim().toUpperCase().replace(/\.NS$/i, '');
+    for (const [basketName, symbols] of Object.entries(BASKETS)) {
+      const cleanSymbols = symbols.map(s => s.trim().toUpperCase());
+      if (cleanSymbols.includes(cleanSymSearch)) {
+        symbolBasket = basketName;
+        break;
+      }
+    }
+
+    const audit = await validateBatch9(symbol as string, snap, symbolBasket);
     const lastQuote = snap.quotes[snap.quotes.length - 1];
     const lastPrice = lastQuote?.close || 0;
     const change = snap.quote?.regularMarketChangePercent || 0;
+
+    // Filter strategies based on basket authorization
+    const filteredStrategies: Record<string, any> = {};
+    if (snap.strategies) {
+      const authorizedBaskets: Record<string, string[]> = {
+        'ENVELOPE_LONG': ['Elite Basket', 'Quality Basket'],
+        'ENVELOPE_SHORT': ['Elite Basket', 'Quality Basket'],
+        'BOLLINGER': ['Elite Basket', 'Quality Basket'],
+        '52W_HIGH_LOW': ['Elite Basket', 'Quality Basket'],
+        'SMA_BCD': ['Elite Basket', 'Quality Basket'],
+        'CUP_HANDLE_ABCD': ['Quality Basket', 'Elite Basket'],
+        'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+        'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+        'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+        'RHS_ABCD': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+        'REVERSE_HEAD_SHOULDERS': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
+      };
+
+      for (const [key, val] of Object.entries(snap.strategies)) {
+        const allowed = authorizedBaskets[key] || [];
+        if (allowed.includes(symbolBasket)) {
+          filteredStrategies[key] = val;
+        }
+      }
+    }
     
     res.json({
       symbol,
@@ -1190,7 +1295,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       fiftyTwoWeekHigh: snap.quote?.fiftyTwoWeekHigh,
       beta: audit?.metrics?.beta != null ? Number(audit.metrics.beta.toFixed(2)) : (snap.quote?.beta != null ? Number(Number(snap.quote.beta).toFixed(2)) : null),
       shareholding: audit.metrics,
-      strategies: snap.strategies || {},
+      strategies: filteredStrategies,
       ttmVsAth: audit.ttmVsAth || {},
       dataAge: {
         lastUpdated: snap.lastUpdated || null,
@@ -2162,11 +2267,21 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, async (req: any, re
     const db = getDB();
     let users;
     try {
-      users = await db.all('SELECT id, name, email, COALESCE(mobile, \'\') as mobile, role, tier, subscription_start, subscription_expiry, is_active FROM users');
+      users = await db.all(`
+        SELECT id, name, email, COALESCE(mobile, '') as mobile, role, tier, 
+               subscription_start, subscription_expiry, COALESCE(is_active, 1) as is_active, created_at 
+        FROM users 
+        ORDER BY id DESC
+      `);
     } catch {
-      users = await db.all('SELECT id, name, email, \'\' as mobile, role, tier, subscription_start, subscription_expiry, is_active FROM users');
+      users = await db.all(`
+        SELECT id, name, email, '' as mobile, role, tier, 
+               subscription_start, subscription_expiry, COALESCE(is_active, 1) as is_active 
+        FROM users 
+        ORDER BY id DESC
+      `);
     }
-    res.json(users);
+    res.json(users || []);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2226,20 +2341,19 @@ app.get('/api/admin/upgrade-requests', authenticateToken, requireAdmin, async (r
     let requests;
     try {
       requests = await db.all(`
-        SELECT ur.*, u.name, u.email, COALESCE(u.mobile, '') as mobile 
+        SELECT ur.*, COALESCE(u.name, 'Unknown Member') as name, COALESCE(u.email, '') as email, COALESCE(u.mobile, '') as mobile 
         FROM upgrade_requests ur 
-        JOIN users u ON ur.user_id = u.id 
-        ORDER BY ur.created_at DESC
+        LEFT JOIN users u ON ur.user_id = u.id 
+        ORDER BY ur.id DESC
       `);
     } catch {
       requests = await db.all(`
-        SELECT ur.*, u.name, u.email, '' as mobile 
+        SELECT ur.*, 'Unknown Member' as name, '' as email, '' as mobile 
         FROM upgrade_requests ur 
-        JOIN users u ON ur.user_id = u.id 
-        ORDER BY ur.created_at DESC
+        ORDER BY ur.id DESC
       `);
     }
-    res.json(requests);
+    res.json(requests || []);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2272,8 +2386,18 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
 app.get('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
     const db = getDB();
-    const vouchers = await db.all('SELECT * FROM vouchers ORDER BY created_at DESC');
-    res.json(vouchers);
+    let vouchers;
+    try {
+      vouchers = await db.all(`
+        SELECT v.*, 
+          (SELECT COUNT(*) FROM voucher_redemptions vr WHERE vr.voucher_id = v.id) as redemption_count
+        FROM vouchers v 
+        ORDER BY v.id DESC
+      `);
+    } catch {
+      vouchers = await db.all('SELECT * FROM vouchers ORDER BY id DESC');
+    }
+    res.json(vouchers || []);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2288,7 +2412,7 @@ app.post('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any
 
     await db.run(
       'INSERT INTO vouchers (code, tier, duration_days, max_uses, current_uses, is_active) VALUES (?, ?, ?, ?, 0, 1)',
-      [code.toUpperCase(), tier, Number(duration_days), Number(max_uses || 100)]
+      [code.toUpperCase(), tier.toLowerCase(), Number(duration_days), Number(max_uses || 100)]
     );
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -2318,12 +2442,12 @@ app.get('/api/admin/feedback', authenticateToken, requireAdmin, async (req: any,
   try {
     const db = getDB();
     const feedbacks = await db.all(`
-      SELECT f.*, u.name as user_name, u.email as user_email 
+      SELECT f.*, COALESCE(u.name, 'System User') as user_name, COALESCE(u.email, 'No Email') as user_email 
       FROM feedback f 
-      JOIN users u ON f.user_id = u.id 
+      LEFT JOIN users u ON f.user_id = u.id 
       ORDER BY f.id DESC
     `);
-    res.json(feedbacks);
+    res.json(feedbacks || []);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -2802,7 +2926,7 @@ app.post('/api/n8n/blog-post', async (req, res) => {
 // ── AI Assistant Routes ──
 app.post('/api/ai/analyze-stock', async (req, res) => {
   try {
-    const { symbol } = req.body;
+    const { symbol, basket, strategies } = req.body;
     if (!symbol) return res.status(400).json({ error: 'Symbol required' });
     const cleanSym = symbol.trim().toUpperCase();
     const snapshot = await getSnapshotFromCloud([cleanSym]);
@@ -2813,8 +2937,26 @@ app.post('/api/ai/analyze-stock', async (req, res) => {
     }
     if (!snap) return res.status(404).json({ error: 'Symbol not found' });
 
+    // 1. Resolve basket dynamically if not explicitly provided
+    let activeBasket = basket;
+    if (!activeBasket) {
+      for (const [basketName, symbols] of Object.entries(BASKETS)) {
+        if (symbols.includes(cleanSym)) {
+          activeBasket = basketName;
+          break;
+        }
+      }
+    }
+    if (!activeBasket) activeBasket = 'Elite Basket'; // fallback
+
+    // 2. Resolve strategy list (restricted to the active basket)
+    let activeStrategies = strategies;
+    if (!activeStrategies || !Array.isArray(activeStrategies) || activeStrategies.length === 0) {
+      activeStrategies = STRATEGIES.filter(s => s.baskets.includes(activeBasket));
+    }
+
     const marketCap = snap.quote?.marketCap || 0;
-    const result = await analyzeStock(cleanSym, snap, marketCap, snap.quotes || [], MANUAL_SECTOR_MAP, STRATEGIES);
+    const result = await analyzeStock(cleanSym, snap, marketCap, snap.quotes || [], MANUAL_SECTOR_MAP, activeStrategies, activeBasket);
     res.json(result);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });

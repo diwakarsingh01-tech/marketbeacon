@@ -433,7 +433,7 @@ const StockFundamentalsPage: React.FC = () => {
               </div>
            </div>
 
-           <AiSuggestionPanel symbol={symbol || ''} />
+           <AiSuggestionPanel symbol={symbol || ''} basket={containingBaskets[0]} />
 
            <div className="bg-[var(--bg-primary)] rounded-2xl p-6 text-[var(--text-primary)] space-y-4 shadow-xl border border-[var(--border-primary)] backdrop-blur-sm">
                <h3 className="text-caption italic">Research Hub</h3>
@@ -477,7 +477,10 @@ const StockFundamentalsPage: React.FC = () => {
               )}
               {backtestLoading && <div className="p-4 text-center text-xs text-[var(--text-muted)]">Computing 20-year backtest...</div>}
               {backtestLoaded && !backtestLoading && backtestData ? (
-                Object.entries(backtestData).sort((a: [string, any], b: [string, any]) => b[1].totalTrades - a[1].totalTrades).map(([sid, r]: [string, any]) => (
+                Object.entries(backtestData)
+                  .filter(([sid]) => applicableStrategies.some(as => as.id === sid || (as.id === 'RHS_ABCD' && sid === 'REVERSE_HEAD_SHOULDERS') || (as.id === 'REVERSE_HEAD_SHOULDERS' && sid === 'RHS_ABCD')))
+                  .sort((a: [string, any], b: [string, any]) => b[1].totalTrades - a[1].totalTrades)
+                  .map(([sid, r]: [string, any]) => (
                   <div key={sid} className="bg-[var(--bg-primary)]/40 border border-[var(--border-primary)] rounded-xl overflow-hidden">
                     <button
                       onClick={() => setExpandedStrategy(expandedStrategy === sid ? null : sid)}

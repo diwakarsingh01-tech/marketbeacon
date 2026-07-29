@@ -2,21 +2,16 @@ import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import BrandLogo from '../brand/BrandLogo';
 import { 
-  Zap, 
-  Briefcase, 
-  BookOpen,
   Store,
   ShieldCheck,
-  Terminal,
-  LayoutGrid,
   ChevronRight,
   ChevronLeft,
-  Settings,
   HelpCircle,
-  LineChart,
-  Bot,
+  User,
+  Terminal,
   FlaskConical,
-  Search
+  Settings,
+  Bot
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { APP_VERSION_DISPLAY } from '../../lib/version';
@@ -26,45 +21,41 @@ interface SideNavProps {
   onClose: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  mobileOnly?: boolean;
 }
 
-const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose, isCollapsed = false, onToggleCollapse }) => {
+const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose, isCollapsed = false, onToggleCollapse, mobileOnly = false }) => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const sections = [
+  const sections: {
+    title: string;
+    items: {
+      icon: React.ComponentType<any>;
+      label: string;
+      path: string;
+      desc: string;
+      tag?: string;
+    }[];
+  }[] = [
     {
-      title: 'Overview',
+      title: 'Support & Help',
       items: [
-        { icon: LayoutGrid, label: 'Launchpad', path: '/app', desc: 'Command Center', tag: 'HOME' },
+        { icon: HelpCircle, label: 'Help Guide', path: '/guide', desc: 'Documentation' },
+        { icon: ShieldCheck, label: 'Video Course', path: '/education', desc: 'Institutional Course' }
       ]
     },
     {
-      title: 'Investment Core',
+      title: 'Preferences',
       items: [
-        { icon: Zap, label: 'Alpha Hub', path: '/alpha-hub', desc: 'Main Terminal', tag: 'USP' },
-        { icon: Search, label: 'Screener', path: '/screener', desc: 'Stock Screener' },
-        { icon: LineChart, label: 'Chart Terminal', path: '/charts', desc: 'Technical Charting' },
+        { icon: User, label: 'Profile Desk', path: '/profile', desc: 'Account Settings' },
+        { icon: Store, label: 'License Desk', path: '/license-desk', desc: 'Subscription' },
       ]
     },
     {
-      title: 'Portfolio Desk',
+      title: 'Experimental',
       items: [
-        { icon: Briefcase, label: 'Manager', path: '/portfolio', desc: 'Wealth Tracking' },
-        { icon: BookOpen, label: 'Journal', path: '/trades', desc: 'Trade Ledger' },
-      ]
-    },
-    {
-      title: 'Learning & AI',
-      items: [
-        { icon: ShieldCheck, label: 'Institutional Course', path: '/education', desc: 'Video Course' },
-        { icon: Bot, label: 'BeaconAI', path: '/ai-assistant', desc: 'Strategy AI', tag: 'NEW' },
-      ]
-    },
-    {
-      title: 'Account',
-      items: [
-        {icon: Store, label: 'License Desk', path: '/license-desk', desc: 'Subscription' },
+        { icon: Bot, label: 'Beacon AI', path: '/ai-assistant', desc: 'Under Development', tag: 'Beta' },
       ]
     }
   ];
@@ -74,8 +65,10 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose, isCollapsed = false,
       fixed inset-y-0 left-0 z-[110] w-[85vw] max-w-sm bg-[var(--bg-secondary)] flex flex-col shrink-0 border-r border-[var(--border-primary)] shadow-2xl 
       transform transition-all duration-500 ease-in-out h-screen overscroll-contain
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      md:relative md:inset-auto md:z-0 md:translate-x-0 md:transform-none md:shadow-xl md:h-full md:rounded-r-xl md:transition-all md:duration-300 md:ease-in-out
-      ${isCollapsed ? 'md:w-16' : 'md:w-64'}
+      ${mobileOnly 
+        ? 'md:hidden' 
+        : `md:relative md:inset-auto md:z-0 md:translate-x-0 md:transform-none md:shadow-xl md:h-full md:rounded-r-xl md:transition-all md:duration-300 md:ease-in-out ${isCollapsed ? 'md:w-16' : 'md:w-64'}`
+      }
     `} tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       
       {/* Brand Identity */}

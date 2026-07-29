@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { safeJsonParse, getApiUrl } from '../lib/api-utils';
 import type { HistoryQuote, FundamentalData, ABCDNode } from '../types';
-import { BASKETS } from '../data/stocks';
+import { BASKETS, STRATEGIES } from '../data/stocks';
 import { InfoTooltip } from '../components/ui/InfoTooltip';
 import DataFreshnessBadge from '../components/ui/DataFreshnessBadge';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
@@ -164,13 +164,16 @@ const ChartsTerminalContent: React.FC = () => {
         // Auto-select first active setup strategy
         if (fundData.strategies) {
           const buyZoneStrat = Object.keys(fundData.strategies).find(
-            k => fundData.strategies[k].isBuyZone
+            k => fundData.strategies[k].isBuyZone && 
+                 (STRATEGIES.find(s => s.id === k || (s.id === 'RHS_ABCD' && k === 'REVERSE_HEAD_SHOULDERS') || (s.id === 'REVERSE_HEAD_SHOULDERS' && k === 'RHS_ABCD'))?.baskets.includes(selectedBasket) ?? true)
           );
           if (buyZoneStrat) {
             setActiveStrategyId(buyZoneStrat);
           } else {
-            // Fallback to first available strategy
-            const firstStrat = Object.keys(fundData.strategies)[0];
+            // Fallback to first available strategy that is authorized for selectedBasket
+            const firstStrat = Object.keys(fundData.strategies).find(
+              k => STRATEGIES.find(s => s.id === k || (s.id === 'RHS_ABCD' && k === 'REVERSE_HEAD_SHOULDERS') || (s.id === 'REVERSE_HEAD_SHOULDERS' && k === 'RHS_ABCD'))?.baskets.includes(selectedBasket) ?? true
+            );
             setActiveStrategyId(firstStrat || null);
           }
         }
@@ -1268,14 +1271,17 @@ const ChartsTerminalContent: React.FC = () => {
   const getActiveBuyStrategyName = (): string => {
     if (!fundamentals || !fundamentals.strategies) return '';
     
-    // Find if the currently active strategy is in buy zone first
-    if (activeStrategyId && fundamentals.strategies[activeStrategyId]?.isBuyZone) {
+    const isAuthorized = (stratId: string) => {
+      const config = STRATEGIES.find(s => s.id === stratId || (s.id === 'RHS_ABCD' && stratId === 'REVERSE_HEAD_SHOULDERS') || (s.id === 'REVERSE_HEAD_SHOULDERS' && stratId === 'RHS_ABCD'));
+      return config?.baskets.includes(selectedBasket) ?? true;
+    };
+
+    if (activeStrategyId && fundamentals.strategies[activeStrategyId]?.isBuyZone && isAuthorized(activeStrategyId)) {
       return STRATEGY_NAMES[activeStrategyId] || activeStrategyId;
     }
     
-    // Otherwise, find any strategy that has isBuyZone === true
     const buyStratId = Object.keys(fundamentals.strategies).find(
-      key => fundamentals.strategies[key]?.isBuyZone
+      key => fundamentals.strategies[key]?.isBuyZone && isAuthorized(key)
     );
     
     if (buyStratId) {
@@ -1686,7 +1692,12 @@ const ChartsTerminalContent: React.FC = () => {
                   <div className="py-4 text-center text-xs text-[var(--text-muted)]">No active strategies.</div>
                 ) : (
                   <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-                    {Object.entries(fundamentals.strategies).map(([key, value]: [string, any]) => {
+                    {Object.entries(fundamentals.strategies)
+                      .filter(([key]) => {
+                        const config = STRATEGIES.find(s => s.id === key || (s.id === 'RHS_ABCD' && key === 'REVERSE_HEAD_SHOULDERS') || (s.id === 'REVERSE_HEAD_SHOULDERS' && key === 'RHS_ABCD'));
+                        return config?.baskets.includes(selectedBasket) ?? true;
+                      })
+                      .map(([key, value]: [string, any]) => {
                       const hasZone = value && typeof value === 'object';
                       const isBuy = hasZone && value.isBuyZone;
                       const displayName = STRATEGY_NAMES[key] || key;

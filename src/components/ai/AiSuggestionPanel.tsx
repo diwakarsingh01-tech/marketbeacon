@@ -8,9 +8,10 @@ const API_URL = getApiUrl();
 
 interface AiSuggestionPanelProps {
   symbol: string;
+  basket?: string;
 }
 
-const AiSuggestionPanel: React.FC<AiSuggestionPanelProps> = ({ symbol }) => {
+const AiSuggestionPanel: React.FC<AiSuggestionPanelProps> = ({ symbol, basket }) => {
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -24,7 +25,7 @@ const AiSuggestionPanel: React.FC<AiSuggestionPanelProps> = ({ symbol }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ symbol })
+        body: JSON.stringify({ symbol, basket })
       });
       const data = await safeJsonParse(res);
       if (data?.error) {

@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
-    <meta name="theme-color" content="#0f172a" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#020617" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -33,13 +33,14 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" /></noscript>
     
-    <script defer>
+    <script>
       (function() {
         if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(r) { for(let reg of r) reg.unregister(); });
-        }
-        if ('caches' in window) {
-          caches.keys().then(function(n) { for (let name of n) caches.delete(name); });
+          window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js')
+              .then(function(reg) { console.log('Service Worker registered:', reg); })
+              .catch(function(err) { console.error('Service Worker registration failed:', err); });
+          });
         }
         localStorage.removeItem('mb_api_override');
       })();

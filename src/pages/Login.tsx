@@ -316,7 +316,7 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setError(null);
     setShowWakingMessage(false);
-    const wakeTimer = setTimeout(() => setShowWakingMessage(true), 3000);
+    const wakeTimer = setTimeout(() => setShowWakingMessage(true), 6000);
     try {
      if (window.google?.accounts?.id) {
         window.google.accounts.id.prompt?.();
@@ -361,9 +361,8 @@ const LoginPage: React.FC = () => {
           <p className="text-xs font-bold text-[#00d09c] uppercase tracking-[0.4em]">Authenticating</p>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Syncing with Institutional Hub...</p>
           {showWakingMessage && (
-            <p className="text-xs font-bold text-amber-500 uppercase tracking-wider pt-4">
-              🚀 Server is waking up...<br />
-              <span className="text-xs text-slate-600 font-bold">This may take 30s (Render Free Tier)</span>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pt-4">
+              Please choose an account in the Google pop-up prompt if it is open...
             </p>
           )}
         </div>

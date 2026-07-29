@@ -11,6 +11,17 @@ function canSend(key: string, cooldownMs: number = 5000): boolean {
   return true;
 }
 
+// Daily dedup: track which daily digests have been sent per date
+const dailySentKeys = new Set<string>();
+
+function canSendDaily(key: string): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  const dedupKey = `${today}:${key}`;
+  if (dailySentKeys.has(dedupKey)) return false;
+  dailySentKeys.add(dedupKey);
+  return true;
+}
+
 export async function sendTelegramMessage(
   message: string,
   target: 'dm' | 'channel' | 'both' = 'dm',
@@ -200,15 +211,29 @@ export async function sendSystemHealthNotification(
 }
 
 export async function sendDailyStatusDigest(
-  byBasket: Record<string, { qualified: number; observation: number; rejected: number; anomalies: number }>,
+  byBasket: Record<string, {
+    qualified: number; observation: number; rejected: number; anomalies: number;
+    qualifiedStocks?: string[]; observationStocks?: string[]; rejectedStocks?: string[]; anomaliesStocks?: string[];
+  }>,
   totalQualified: number,
   totalObservation: number,
   totalRejected: number,
   totalAnomalies: number
 ): Promise<boolean> {
+  // Daily dedup: only one digest per calendar day
+  if (!canSendDaily('daily_status_digest')) {
+    console.log('⚠️ [TELEGRAM] Daily digest already sent today. Skipping duplicate.');
+    return false;
+  }
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+
   const lines = [
     `📊 *Daily Market Digest*`,
-    `📅 ${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`,
+    `📅 ${dateStr}`,
+    `⏰ Generated on: ${timeStr} IST`,
     ``,
     `*Overall Status*`,
     `🟢 Qualified: ${totalQualified}`,
@@ -220,7 +245,20 @@ export async function sendDailyStatusDigest(
 
   for (const [basket, stats] of Object.entries(byBasket)) {
     lines.push(`*${basket}*`);
-    lines.push(`   Qualified: ${stats.qualified} | Observation: ${stats.observation} | Rejected: ${stats.rejected}${stats.anomalies > 0 ? ` | ⚠️ Anomalies: ${stats.anomalies}` : ''}`);
+    lines.push(`   ✅ Qualified: ${stats.qualified} | 👀 Observation: ${stats.observation} | ❌ Rejected: ${stats.rejected}${stats.anomalies > 0 ? ` | ⚠️ Anomalies: ${stats.anomalies}` : ''}`);
+
+    if (stats.qualifiedStocks && stats.qualifiedStocks.length > 0) {
+      const stocks = stats.qualifiedStocks.slice(0, 15).join(', ');
+      lines.push(`   🟢 *Qualified:* ${stocks}${stats.qualifiedStocks.length > 15 ? ` +${stats.qualifiedStocks.length - 15} more` : ''}`);
+    }
+    if (stats.observationStocks && stats.observationStocks.length > 0) {
+      const stocks = stats.observationStocks.slice(0, 10).join(', ');
+      lines.push(`   🟡 *Observation:* ${stocks}${stats.observationStocks.length > 10 ? ` +${stats.observationStocks.length - 10} more` : ''}`);
+    }
+    if (stats.rejectedStocks && stats.rejectedStocks.length > 0) {
+      const stocks = stats.rejectedStocks.slice(0, 10).join(', ');
+      lines.push(`   🔴 *Rejected:* ${stocks}${stats.rejectedStocks.length > 10 ? ` +${stats.rejectedStocks.length - 10} more` : ''}`);
+    }
   }
 
   lines.push(``);

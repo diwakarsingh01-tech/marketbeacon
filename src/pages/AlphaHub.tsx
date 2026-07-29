@@ -240,8 +240,12 @@ const buildBaskets = (stocks: AlphaHubStock[], totalCapital: number): BasketConf
 
 const AlphaHubPage: React.FC = () => {
   const { user } = useAuth();
-  const [data, setData] = useState<AlphaHubData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const initialCache = (() => {
+    const saved = sessionStorage.getItem('alphahub_data');
+    return saved ? JSON.parse(saved) : null;
+  })();
+  const [data, setData] = useState<AlphaHubData | null>(initialCache);
+  const [loading, setLoading] = useState(!initialCache);
   const [error, setError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -250,14 +254,32 @@ const AlphaHubPage: React.FC = () => {
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [showBookProfitInfo, setShowBookProfitInfo] = useState(false);
-  const [filterBasket, setFilterBasket] = useState<string>('all');
+  const [filterBasket, setFilterBasket] = useState<string>(() => {
+    return sessionStorage.getItem('alphahub_filter') || 'all';
+  });
   const [expandedStock, setExpandedStock] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
-  const [backtestComparison, setBacktestComparison] = useState<BacktestData | null>(null);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(() => {
+    const saved = sessionStorage.getItem('alphahub_step');
+    return (saved ? parseInt(saved) : 1) as 1 | 2 | 3;
+  });
+  const [backtestComparison, setBacktestComparison] = useState<BacktestData | null>(() => {
+    const saved = sessionStorage.getItem('alphahub_backtest');
+    return saved ? JSON.parse(saved) : null;
+  });
 
-  // Investment calculator state
-  const [lumpSumAmount, setLumpSumAmount] = useState(500000);
+  // Investment calculator state — persisted across navigations
+  const [lumpSumAmount, setLumpSumAmount] = useState(() => {
+    const saved = sessionStorage.getItem('alphahub_amount');
+    return saved ? parseInt(saved) : 500000;
+  });
   const [perfYears, setPerfYears] = useState(5);
+
+  // Persist state to sessionStorage whenever values change
+  useEffect(() => { sessionStorage.setItem('alphahub_step', String(currentStep)); }, [currentStep]);
+  useEffect(() => { sessionStorage.setItem('alphahub_amount', String(lumpSumAmount)); }, [lumpSumAmount]);
+  useEffect(() => { sessionStorage.setItem('alphahub_filter', filterBasket); }, [filterBasket]);
+  useEffect(() => { if (data) sessionStorage.setItem('alphahub_data', JSON.stringify(data)); }, [data]);
+  useEffect(() => { if (backtestComparison) sessionStorage.setItem('alphahub_backtest', JSON.stringify(backtestComparison)); }, [backtestComparison]);
 
   const totalCapital = lumpSumAmount;
 
@@ -538,39 +560,46 @@ const AlphaHubPage: React.FC = () => {
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full pb-32 space-y-6">
 
-        {/* STICKY STEP INDICATOR BAR */}
-        <div className="sticky top-[73px] z-40 bg-[var(--bg-primary)]/95 backdrop-blur-md border border-[var(--border-primary)] py-3.5 px-6 shadow-2xl w-full rounded-2xl flex items-center justify-center gap-0 max-w-xl mx-auto">
-          {[
-            { step: 1, label: 'Amount' },
-            { step: 2, label: 'Stocks' },
-            { step: 3, label: 'Performance' }
-          ].map((s, i) => (
-            <React.Fragment key={s.step}>
-              <div className="flex flex-col items-center gap-1.5">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                  currentStep >= s.step
-                    ? 'bg-blue-600 text-[var(--text-primary)] shadow-md'
-                    : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)]'
-                }`}>
-                  {currentStep > s.step ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  ) : (
-                    s.step
+        {/* COMPACT STEP BREADCRUMB */}
+        <div className="sticky top-[73px] z-40 bg-[var(--bg-primary)]/95 backdrop-blur-md w-full pb-1">
+          <div className="max-w-xl mx-auto">
+            <div className="flex items-center bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-full px-2 py-1 gap-0">
+              {[
+                { step: 1, label: 'Amount' },
+                { step: 2, label: 'Stocks' },
+                { step: 3, label: 'Performance' }
+              ].map((s, i) => (
+                <React.Fragment key={s.step}>
+                  <button
+                    onClick={() => {
+                      if (s.step <= currentStep) setCurrentStep(s.step as 1 | 2 | 3);
+                    }}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider transition-all ${
+                      currentStep === s.step
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : currentStep > s.step
+                        ? 'text-emerald-500 hover:text-emerald-400 cursor-pointer'
+                        : 'text-[var(--text-muted)] cursor-default'
+                    }`}
+                  >
+                    {currentStep > s.step ? (
+                      <CheckCircle2 className="h-2 w-2 shrink-0" />
+                    ) : (
+                      <span className={`w-2.5 h-2.5 rounded-full text-[6px] flex items-center justify-center font-black shrink-0 ${
+                        currentStep === s.step ? 'bg-white/20' : 'bg-[var(--bg-tertiary)]'
+                      }`}>{s.step}</span>
+                    )}
+                    {s.label}
+                  </button>
+                  {i < 2 && (
+                    <ChevronDown className={`h-2 w-2 -rotate-90 shrink-0 ${
+                      currentStep > s.step ? 'text-emerald-500' : 'text-[var(--text-muted)]'
+                    }`} />
                   )}
-                </div>
-                <span className={`text-caption ${
-                  currentStep >= s.step ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
-                }`}>
-                  {s.label}
-                </span>
-              </div>
-              {i < 2 && (
-                <div className={`flex-1 h-px mx-2 md:mx-4 transition-all duration-500 ${
-                  currentStep > s.step ? 'bg-emerald-400' : 'bg-[var(--bg-tertiary)]'
-                }`} />
-              )}
-            </React.Fragment>
-          ))}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* STEP 1: INVESTMENT AMOUNT */}

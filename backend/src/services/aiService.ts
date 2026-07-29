@@ -72,7 +72,8 @@ function isBankOrNBFC(symbol: string, sector: string): boolean {
 
 export async function analyzeStock(
   symbol: string, snap: any, marketCap: number, quotes: any[],
-  sectorMap: Record<string, string>, strategies: { id: string; name: string }[]
+  sectorMap: Record<string, string>, strategies: { id: string; name: string }[],
+  basket: string = 'Elite Basket'
 ): Promise<any> {
   const mcapCategory = getMarketCapCategory(marketCap);
   const thresholds = getDropThresholds(mcapCategory);
@@ -86,7 +87,7 @@ export async function analyzeStock(
   const dropFromHigh = high52 > 0 ? ((high52 - price) / high52 * 100) : 0;
 
   const screener = snap?.screener || {};
-  const audit = await validateBatch9(symbol, snap, 'Elite Basket');
+  const audit = await validateBatch9(symbol, snap, basket);
 
   const quoteSh = snap?.quote?.shareholding || {};
   const scrSh = snap?.screener?.shareholding || {};
@@ -106,7 +107,7 @@ export async function analyzeStock(
   const strategiesRun: Record<string, any> = {};
   for (const s of strategies) {
     try {
-      const result = await runStrategyAnalysis(s.id, snap, marketCap, 'Elite Basket');
+      const result = await runStrategyAnalysis(s.id, snap, marketCap, basket);
       if (result) strategiesRun[s.id] = result;
     } catch {}
   }

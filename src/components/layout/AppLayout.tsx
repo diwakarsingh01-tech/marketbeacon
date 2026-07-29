@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import SideNav from './SideNav';
 import TopNav from './TopNav';
 import FeedbackModal from '../ui/FeedbackModal';
@@ -11,17 +11,25 @@ import {
   Briefcase, 
   BookOpen, 
   Search,
-  LineChart
+  LineChart,
+  X,
+  HelpCircle,
+  Store,
+  User,
+  Bot,
+  Menu
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(min-width: 768px)').matches && localStorage.getItem('mb_sidebar_collapsed') === 'true';
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('mb_sidebar_collapsed') !== 'false';
   });
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState(() => {
     return localStorage.getItem('mb_sebi_banner_dismissed') === 'true';
   });
@@ -45,14 +53,7 @@ const AppLayout: React.FC = () => {
     localStorage.setItem('mb_sebi_banner_dismissed', 'true');
   };
 
-  const mobileNavItems = [
-    { icon: LayoutGrid, label: 'Home', path: '/app' },
-    { icon: Zap, label: 'Alpha Hub', path: '/alpha-hub' },
-    { icon: Search, label: 'Screener', path: '/screener' },
-    { icon: LineChart, label: 'Charts', path: '/charts' },
-    { icon: Briefcase, label: 'Portfolio', path: '/portfolio' },
-    { icon: BookOpen, label: 'Journal', path: '/trades' },
-  ];
+
 
   return (
     <div className="flex h-screen bg-[var(--bg-primary)] overflow-hidden relative">
@@ -76,7 +77,7 @@ const AppLayout: React.FC = () => {
         }}
       />
 
-      {/* Main Content Area */}
+      {/* Main Content Area - auto-adjusts via flex when sidebar is relative on desktop */}
       <div className="flex-1 flex flex-col min-w-0 relative">
         <TopNav 
           onMenuClick={() => setIsSidebarOpen(true)} 
@@ -113,21 +114,148 @@ const AppLayout: React.FC = () => {
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[var(--bg-primary)]/95 backdrop-blur-md border-t border-[var(--border-primary)] z-[100] px-4 py-2.5 flex items-center justify-around shadow-2xl">
-        {mobileNavItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => `
-              flex flex-col items-center justify-center flex-1 py-1 transition-all duration-300
-              ${isActive ? 'text-[var(--border-accent)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}
-            `}
-          >
-            <item.icon className="h-5 w-5 mb-1" />
-            <span className="text-caption leading-none">{item.label}</span>
-          </NavLink>
-        ))}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[var(--bg-primary)]/80 backdrop-blur-md border-t border-[var(--border-primary)] z-[100] px-4 flex items-center justify-around shadow-2xl">
+        <NavLink
+          to="/app"
+          className={({ isActive }) => `
+            flex flex-col items-center justify-center flex-1 py-1 transition-all duration-300
+            ${isActive ? 'text-[var(--border-accent)]' : 'text-[var(--text-muted)]'}
+          `}
+        >
+          <LayoutGrid className="h-5 w-5 mb-0.5" />
+          <span className="text-[12px] font-bold leading-none">Home</span>
+        </NavLink>
+
+        <NavLink
+          to="/screener"
+          className={({ isActive }) => `
+            flex flex-col items-center justify-center flex-1 py-1 transition-all duration-300
+            ${isActive ? 'text-[var(--border-accent)]' : 'text-[var(--text-muted)]'}
+          `}
+        >
+          <Search className="h-5 w-5 mb-0.5" />
+          <span className="text-[12px] font-bold leading-none">Screener</span>
+        </NavLink>
+
+        <NavLink
+          to="/alpha-hub"
+          className={({ isActive }) => `
+            flex flex-col items-center justify-center flex-1 py-1 transition-all duration-300
+            ${isActive ? 'text-[var(--border-accent)]' : 'text-[var(--text-muted)]'}
+          `}
+        >
+          <Zap className="h-5 w-5 mb-0.5" />
+          <span className="text-[12px] font-bold leading-none">Alpha Hub</span>
+        </NavLink>
+
+        <NavLink
+          to="/portfolio"
+          className={({ isActive }) => `
+            flex flex-col items-center justify-center flex-1 py-1 transition-all duration-300
+            ${isActive ? 'text-[var(--border-accent)]' : 'text-[var(--text-muted)]'}
+          `}
+        >
+          <Briefcase className="h-5 w-5 mb-0.5" />
+          <span className="text-[12px] font-bold leading-none">Portfolio</span>
+        </NavLink>
+
+        <button
+          onClick={() => setIsMobileMoreOpen(true)}
+          className="flex flex-col items-center justify-center flex-1 py-1 transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+        >
+          <Menu className="h-5 w-5 mb-0.5" />
+          <span className="text-[12px] font-bold leading-none">More</span>
+        </button>
       </div>
+
+      {/* Mobile "More" Slide-up Drawer */}
+      <AnimatePresence>
+        {isMobileMoreOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMoreOpen(false)}
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[150] md:hidden"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+              className="fixed bottom-0 left-0 right-0 bg-[#0b0f19] border-t border-slate-800 rounded-t-[2rem] z-[160] p-6 pb-8 md:hidden shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <span className="text-sm font-black text-white uppercase tracking-wider">Quick Navigation</span>
+                <button
+                  onClick={() => setIsMobileMoreOpen(false)}
+                  className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <Link
+                  to="/charts"
+                  onClick={() => setIsMobileMoreOpen(false)}
+                  className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-emerald-500/30 transition-all text-center"
+                >
+                  <LineChart className="h-6 w-6 text-emerald-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-200">Charts</span>
+                </Link>
+
+                <Link
+                  to="/trades"
+                  onClick={() => setIsMobileMoreOpen(false)}
+                  className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-amber-500/30 transition-all text-center"
+                >
+                  <BookOpen className="h-6 w-6 text-amber-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-200">Journal</span>
+                </Link>
+
+                <Link
+                  to="/guide"
+                  onClick={() => setIsMobileMoreOpen(false)}
+                  className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-purple-500/30 transition-all text-center"
+                >
+                  <HelpCircle className="h-6 w-6 text-purple-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-200">Help Guide</span>
+                </Link>
+
+                <Link
+                  to="/profile"
+                  onClick={() => setIsMobileMoreOpen(false)}
+                  className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-cyan-500/30 transition-all text-center"
+                >
+                  <User className="h-6 w-6 text-cyan-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-200">Profile</span>
+                </Link>
+
+                <Link
+                  to="/license-desk"
+                  onClick={() => setIsMobileMoreOpen(false)}
+                  className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-indigo-500/30 transition-all text-center"
+                >
+                  <Store className="h-6 w-6 text-indigo-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-200">License</span>
+                </Link>
+
+                <Link
+                  to="/ai-assistant"
+                  onClick={() => setIsMobileMoreOpen(false)}
+                  className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-slate-600 transition-all text-center relative"
+                >
+                  <Bot className="h-6 w-6 text-slate-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-400">Beacon AI</span>
+                  <span className="absolute top-2 right-2 text-[7px] bg-slate-700 text-slate-400 px-1 rounded font-bold uppercase tracking-wide">Beta</span>
+                </Link>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Global Feedback Trigger (Safe-Guard Style) */}
       <button

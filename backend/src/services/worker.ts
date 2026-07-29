@@ -64,6 +64,7 @@ export async function precalculateAlpha40(isBootWarmup = false) {
     const processBasket = async (basketName: string, symbols: string[]) => {
       const active: any[] = [];
       const closed: any[] = [];
+      const tracked = { qualified: [] as string[], observation: [] as string[], rejected: [] as string[], anomalies: [] as string[] };
       
       for (const sym of symbols) {
         try {
@@ -71,44 +72,56 @@ export async function precalculateAlpha40(isBootWarmup = false) {
           await new Promise(r => setImmediate(r));
 
           const snap = snapshot[sym];
-          if (!snap || !snap.quotes?.length) continue;
+          if (!snap || !snap.quotes?.length) {
+            tracked.rejected.push(sym);
+            continue;
+          }
           
-          const audit = await validateBatch9(sym, snap, basketName);
-          if (!audit || !audit?.isPass) continue;
-
           const mcapCr = (snap.quote?.marketCap || 1) / 10000000;
           const capType = mcapCr > 100000 ? 'LARGE' : (mcapCr > 33000 ? 'MID' : 'SMALL');
           const last = snap.quotes[snap.quotes.length - 1];
 
+          let audit: any = null;
+
           // 1. Closed simulation (historical data)
-          let peak = 0;
-          let inDrawdown = false;
-          let simEntry = 0;
-          let simEntryDate = '';
-          
-          for (let i = 0; i < snap.quotes.length - 10; i++) {
-            const q = snap.quotes[i];
-            if (q.high > peak) peak = q.high;
-            if (!inDrawdown && q.close <= peak * 0.75) {
-              inDrawdown = true;
-              simEntry = q.close;
-              simEntryDate = new Date(q.date).toISOString();
+          const runAuditIfNeeded = async () => {
+            if (!audit) {
+              audit = await validateBatch9(sym, snap, basketName);
             }
-            if (inDrawdown && q.high >= simEntry * 1.30) {
-              const exitDate = new Date(q.date);
-              const days = Math.round((exitDate.getTime() - new Date(simEntryDate).getTime()) / (1000*3600*24));
-              if (days > 10 && days < 500) {
-                closed.push({
-                  symbol: sym,
-                  entryTime: simEntryDate,
-                  exitDate: exitDate.toISOString(),
-                  days,
-                  roi: ((q.high / simEntry) - 1) * 100,
-                  score: audit.score
-                });
+            return audit;
+          };
+
+          const checkAudit = await runAuditIfNeeded();
+          if (checkAudit && checkAudit.isPass) {
+            let peak = 0;
+            let inDrawdown = false;
+            let simEntry = 0;
+            let simEntryDate = '';
+            
+            for (let i = 0; i < snap.quotes.length - 10; i++) {
+              const q = snap.quotes[i];
+              if (q.high > peak) peak = q.high;
+              if (!inDrawdown && q.close <= peak * 0.75) {
+                inDrawdown = true;
+                simEntry = q.close;
+                simEntryDate = new Date(q.date).toISOString();
               }
-              inDrawdown = false;
-              peak = q.high;
+              if (inDrawdown && q.high >= simEntry * 1.30) {
+                const exitDate = new Date(q.date);
+                const days = Math.round((exitDate.getTime() - new Date(simEntryDate).getTime()) / (1000*3600*24));
+                if (days > 10 && days < 500) {
+                  closed.push({
+                    symbol: sym,
+                    entryTime: simEntryDate,
+                    exitDate: exitDate.toISOString(),
+                    days,
+                    roi: ((q.high / simEntry) - 1) * 100,
+                    score: checkAudit.score
+                  });
+                }
+                inDrawdown = false;
+                peak = q.high;
+              }
             }
           }
 
@@ -225,9 +238,22 @@ export async function precalculateAlpha40(isBootWarmup = false) {
                signalCount: validSignals.length // Track how many strategies triggered
             });
           }
+
+          // Track classification for digest
+          const auditPass = audit?.isPass === true;
+          const hasSignal = validSignals.length > 0;
+          if (auditPass && hasSignal) {
+            tracked.qualified.push(sym);
+          } else if (auditPass && !hasSignal) {
+            tracked.observation.push(sym);
+          } else if (!auditPass && hasSignal) {
+            tracked.anomalies.push(sym);
+          } else {
+            tracked.rejected.push(sym);
+          }
         } catch (e) { }
       }
-      return { active, closed };
+      return { active, closed, tracked };
     };
 
     const bc = await processBasket('Elite Basket', BASKETS['Elite Basket']);
@@ -326,17 +352,29 @@ export async function precalculateAlpha40(isBootWarmup = false) {
 
     if (!isBootWarmup) {
       const byBasket: Record<string, any> = {};
-      const processBasketDigest = (name: string, active: any[], source: string) => {
-        const count = active.filter((a: any) => a.basketSource === source).length;
-        if (!byBasket[name]) byBasket[name] = { qualified: 0, observation: 0, rejected: 0, anomalies: 0 };
-        byBasket[name].qualified = count;
+      let totalQual = 0, totalObs = 0, totalRej = 0, totalAnom = 0;
+      const addBasketDigest = (name: string, result: { active: any[]; tracked: { qualified: string[]; observation: string[]; rejected: string[]; anomalies: string[] } }) => {
+        const t = result.tracked;
+        byBasket[name] = {
+          qualified: t.qualified.length,
+          observation: t.observation.length,
+          rejected: t.rejected.length,
+          anomalies: t.anomalies.length,
+          qualifiedStocks: t.qualified,
+          observationStocks: t.observation,
+          rejectedStocks: t.rejected,
+          anomaliesStocks: t.anomalies
+        };
+        totalQual += t.qualified.length;
+        totalObs += t.observation.length;
+        totalRej += t.rejected.length;
+        totalAnom += t.anomalies.length;
       };
-      processBasketDigest('Elite Basket', allActive, 'Elite Basket');
-      processBasketDigest('Quality Basket', allActive, 'Quality Basket');
-      processBasketDigest('Growth Basket', allActive, 'Growth Basket');
-      processBasketDigest('Fallen Value Basket', allActive, 'Fallen Value Basket');
-      const totalQual = allActive.length;
-      sendDailyStatusDigest(byBasket, totalQual, 0, 0, 0).catch(() => {});
+      addBasketDigest('Elite Basket', bc);
+      addBasketDigest('Quality Basket', hb);
+      addBasketDigest('Growth Basket', wb);
+      addBasketDigest('Fallen Value Basket', fvb);
+      sendDailyStatusDigest(byBasket, totalQual, totalObs, totalRej, totalAnom).catch(() => {});
     }
   } catch (e: any) {
     console.error('❌ [WORKER] Alpha-40 Pre-calculation Failed:', e.message);

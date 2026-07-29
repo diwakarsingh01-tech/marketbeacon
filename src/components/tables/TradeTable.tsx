@@ -875,7 +875,9 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                  </div>
                                )}
                                 <div className="flex items-center justify-end gap-2 font-sans">
-                                  {trade.isPass !== false ? (
+                                  {trade.strategy ? (
+                                    <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-[9px] font-bold uppercase tracking-wide max-w-[120px] truncate">{trade.strategy}</span>
+                                  ) : trade.isPass !== false ? (
                                     <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-bold tracking-wide shrink-0">
                                       <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
                                       PASS
@@ -891,13 +893,22 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                     </div>
                                   )}
                                   <div className="flex flex-col items-end min-w-[32px]">
-                                    <span className="text-xs font-bold text-[var(--text-primary)] leading-none">{trade.score || 0}</span>
+                                    <span className={`text-xs font-bold leading-none ${
+                                      (trade.score || 0) >= 70 ? 'text-emerald-400' :
+                                      (trade.score || 0) >= 50 ? 'text-amber-400' :
+                                      'text-rose-400'
+                                    }`}>{trade.score || 0}</span>
                                     <span className="text-xs text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider mt-0.5">Audit</span>
                                   </div>
                                 </div>
-                                <Link to={`/stock/${trade.symbol}`} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all shrink-0">
-                                   <InfoIcon className="h-3.5 w-3.5" />
-                                </Link>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <Link to={`/stock/${trade.symbol}`} className="p-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all shrink-0" title="Detailed Fundamentals">
+                                     <InfoIcon className="h-3.5 w-3.5" />
+                                  </Link>
+                                  <Link to={`/analysis/${trade.symbol}`} className="px-2 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[9px] font-bold hover:bg-emerald-500 hover:text-white transition-all shrink-0 whitespace-nowrap">
+                                    Fund Check
+                                  </Link>
+                                </div>
                             </div>
                           </td>
                         )}
@@ -1010,16 +1021,23 @@ const TradeTable: React.FC<TradeTableProps> = ({
                               </div>
                            </div>
 
-                           {/* Audit / Score row */}
+                           {/* Audit / Score row - traffic light colors */}
                            <div className="flex items-center justify-between bg-[var(--bg-secondary)] px-3 py-2.5 rounded-[0.75rem] border border-[var(--border-primary)] shadow-sm text-xs">
                               <div className="flex items-center space-x-1.5">
-                                 {trade.isPass !== false ? (
+                                 {/* Strategy name pill */}
+                                 {trade.strategy ? (
+                                   <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-[7.5px] font-bold max-w-[100px] truncate">{trade.strategy}</span>
+                                 ) : trade.isPass !== false ? (
                                     <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-[7.5px] font-bold">PASS</span>
-                                 ) : (
+                                  ) : (
                                      <span className="px-1.5 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded text-[7.5px] font-bold">REJECT</span>
-                                )}
-                                 <span className="font-extrabold text-[var(--text-secondary)]">Audit Score:</span>
-                                 <span className="font-bold text-[var(--text-primary)]">{trade.score || 0}</span>
+                                  )}
+                                  <span className="font-extrabold text-[var(--text-secondary)]">Audit:</span>
+                                 <span className={`font-bold ${
+                                   (trade.score || 0) >= 70 ? 'text-emerald-400' :
+                                   (trade.score || 0) >= 50 ? 'text-amber-400' :
+                                   'text-rose-400'
+                                 }`}>{trade.score || 0}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                  <Link to={`/stock/${trade.symbol}`} className="p-2.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-all shrink-0">
@@ -1152,13 +1170,19 @@ const TradeTable: React.FC<TradeTableProps> = ({
                          {/* Audit / Score row */}
                           <div className="flex items-center justify-between bg-[var(--bg-secondary)] px-3 py-2.5 rounded-[0.75rem] border border-[var(--border-primary)] shadow-sm text-xs">
                              <div className="flex items-center space-x-1.5">
-                                {trade.isPass !== false ? (
+                                {trade.strategy ? (
+                                   <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-[7.5px] font-bold max-w-[100px] truncate">{trade.strategy}</span>
+                                 ) : trade.isPass !== false ? (
                                    <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-[7.5px] font-bold">PASS</span>
                                  ) : (
                                     <span className="px-1.5 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded text-[7.5px] font-bold">REJECT</span>
                                  )}
-                                 <span className="font-extrabold text-[var(--text-secondary)]">Audit Score:</span>
-                                <span className="font-bold text-[var(--text-primary)]">{trade.score || 0}</span>
+                                 <span className="font-extrabold text-[var(--text-secondary)]">Audit:</span>
+                                <span className={`font-bold ${
+                                  (trade.score || 0) >= 70 ? 'text-emerald-400' :
+                                  (trade.score || 0) >= 50 ? 'text-amber-400' :
+                                  'text-rose-400'
+                                }`}>{trade.score || 0}</span>
                              </div>
                              <div className="flex items-center gap-2">
                                 {(trade.peRatio || 0) > 0 && (
@@ -1207,6 +1231,14 @@ const TradeTable: React.FC<TradeTableProps> = ({
                              >
                                 <InfoIcon className="h-3.5 w-3.5" />
                                 Audit details
+                             </Link>
+
+                             <Link
+                                to={`/analysis/${trade.symbol}`}
+                                className="flex-1 py-2.5 bg-emerald-500/10 text-emerald-500 text-caption rounded-xl shadow-sm border border-emerald-500/20 flex items-center justify-center gap-1 hover:bg-emerald-500 hover:text-white transition-all"
+                                title="Detailed Fundamental Analysis"
+                             >
+                                Fund Check
                              </Link>
 
                              <Link

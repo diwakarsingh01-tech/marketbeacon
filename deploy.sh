@@ -69,7 +69,7 @@ ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
   sudo mv /var/www/marketbeacon/frontend/staging /var/www/marketbeacon/frontend/current
   rm -rf /tmp/mb-deploy-${TIMESTAMP}
   echo 'Staging ready, restarting services...'
-  # Sync frontend current -> dist (nginx serves from dist)
+  # Sync frontend current -> dist (nginx serves from /var/www/marketbeacon/frontend/dist)
   echo '=== Syncing frontend current -> dist ==='
   sudo rm -rf /var/www/marketbeacon/frontend/dist
   sudo cp -a /var/www/marketbeacon/frontend/current /var/www/marketbeacon/frontend/dist
@@ -115,8 +115,10 @@ if [ "$HEALTH_HTTP" != "200" ]; then
       echo 'Backend rolled back'
     fi
     if [ -d /var/www/marketbeacon/frontend/previous ]; then
-      sudo rm -rf /var/www/marketbeacon/frontend/dist
-      sudo mv /var/www/marketbeacon/frontend/previous /var/www/marketbeacon/frontend/dist
+      sudo rm -rf /var/www/marketbeacon/dist
+      sudo mkdir -p /var/www/marketbeacon/dist
+      sudo cp -a /var/www/marketbeacon/frontend/previous/* /var/www/marketbeacon/dist/
+      sudo chown -R www-data:www-data /var/www/marketbeacon/dist
       echo 'Frontend rolled back'
     fi
     pm2 restart marketbeacon-backend

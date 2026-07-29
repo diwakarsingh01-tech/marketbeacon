@@ -151,19 +151,6 @@ const PublicAnalysisPage: React.FC = () => {
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-50/60 blur-[150px] rounded-full" />
       </div>
 
-      {/* Navigation */}
-      <nav className="border-b border-slate-100 bg-white/95 backdrop-blur-md shrink-0 z-50 px-6 py-4 shadow-sm">
-        <div className="max-w-[1440px] mx-auto flex items-center justify-between">
-          <Link to="/" className="text-lg font-black text-slate-900 italic tracking-tighter hover:text-[#00d09c] transition-colors">MarketBeacon <span className="text-[#00d09c]">Pro</span></Link>
-          <button 
-            onClick={handleShare}
-            className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 hover:text-[#00d09c] hover:border-[#00d09c]/30 transition-all"
-          >
-            <Share2 className="w-5 h-5" />
-          </button>
-        </div>
-      </nav>
-
       {/* Main Layout */}
       <main className="relative z-10 max-w-[1440px] w-full mx-auto px-6 py-6 flex flex-col flex-1">
 
@@ -191,18 +178,36 @@ const PublicAnalysisPage: React.FC = () => {
               <div className="flex items-baseline gap-4 flex-wrap">
                  <h1 className="text-5xl lg:text-6xl font-black text-slate-900 italic tracking-tighter leading-none">{data.symbol}</h1>
                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Verified Institutional Deep-Node Analysis</p>
-                 <Link
-                   to={`/charts?symbol=${data.symbol}&return=/analysis/${data.symbol}`}
-                   className="ml-auto px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all flex items-center gap-1.5"
-                   title="Open in Charts Terminal"
-                 >
-                   <BarChart3 className="h-3 w-3" />
-                   Terminal
-                 </Link>
+                 <div className="ml-auto flex items-center gap-2">
+                   <Link
+                     to={`/stock/${data.symbol}`}
+                     className="px-4 py-2 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-xl text-xs font-bold hover:bg-[#00d09c] hover:text-white transition-all flex items-center gap-1.5"
+                     title="View Detailed Fundamentals"
+                   >
+                     <ArrowUpRight className="h-3 w-3" />
+                     Detailed Fundamentals
+                   </Link>
+                   <Link
+                     to={`/charts?symbol=${data.symbol}&return=/analysis/${data.symbol}`}
+                     className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all flex items-center gap-1.5"
+                     title="Open in Charts Terminal"
+                   >
+                     <BarChart3 className="h-3 w-3" />
+                     Terminal
+                   </Link>
+                   <button 
+                     onClick={handleShare}
+                     className="p-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 hover:text-[#00d09c] hover:border-[#00d09c]/30 transition-all flex items-center justify-center"
+                     title="Share analysis"
+                   >
+                     <Share2 className="w-4 h-4" />
+                   </button>
+                 </div>
                </div>
 
-              {/* 3 Stats Grid */}
-              <div className="grid grid-cols-3 gap-3">
+              {/* Stats Grid — 5 metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {/* Audit Score */}
                 <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">Audit Score <InfoTooltip entry={FUNDA_INFO_MAP.auditScore} size="sm" /></span>
                   <div className={`text-3xl font-black italic tracking-tighter mt-1 ${data.score >= 70 ? 'text-[#00d09c]' : 'text-rose-500'}`}>
@@ -210,11 +215,40 @@ const PublicAnalysisPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Smart Money / Holding */}
                 <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">Holding <InfoTooltip entry={FUNDA_INFO_MAP.smartMoney} size="sm" /></span>
                   <div className="text-3xl font-black text-slate-800 italic tracking-tighter mt-1">{data.smartMoney?.toFixed(1)}%</div>
                 </div>
 
+                {/* Entry Level */}
+                {data?.abcd?.d?.price > 0 && (
+                  <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                    <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider">Entry Level</span>
+                    <div className="text-2xl font-black text-emerald-700 italic tracking-tighter mt-1">₹{Number(data.abcd.d.price).toLocaleString('en-IN')}</div>
+                    <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-wider">Base / Support Zone</span>
+                  </div>
+                )}
+
+                {/* Target Price */}
+                {data?.abcd?.d?.price > 0 && data?.upside > 0 && (
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl">
+                    <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider">Target Price</span>
+                    <div className="text-2xl font-black text-blue-700 italic tracking-tighter mt-1">
+                      ₹{Math.round(data.abcd.d.price * (1 + data.upside / 100)).toLocaleString('en-IN')}
+                    </div>
+                    <span className="text-[8px] font-bold text-blue-500 uppercase tracking-wider">Projection</span>
+                  </div>
+                )}
+
+                {/* Expected Return */}
+                {data?.upside > 0 && (
+                  <div className="p-4 bg-[#00d09c]/5 border border-[#00d09c]/20 rounded-2xl">
+                    <span className="text-[9px] font-bold text-[#00d09c] uppercase tracking-wider">Expected Return</span>
+                    <div className="text-2xl font-black text-[#00d09c] italic tracking-tighter mt-1">+{data.upside}%</div>
+                    <span className="text-[8px] font-bold text-[#00d09c]/70 uppercase tracking-wider">Institutional Target</span>
+                  </div>
+                )}
               </div>
 
               <DataFreshnessBadge lastUpdated={data?.lastUpdated} size="sm" className="mt-1" />
@@ -222,7 +256,7 @@ const PublicAnalysisPage: React.FC = () => {
 
             {/* AI Panel */}
             <div className="flex-1 min-h-0">
-              <AiSuggestionPublicPanel symbol={symbol || ''} />
+              <AiSuggestionPublicPanel symbol={symbol || ''} basket={data.basket} />
             </div>
           </div>
 
@@ -309,11 +343,12 @@ const PublicAnalysisPage: React.FC = () => {
                   ))}
                 </div>
                 {data?.fundamentals && (
-                  <div className="bg-[#00d09c]/5 border border-[#00d09c]/20 rounded-2xl p-3 text-center">
-                    <span className="text-[10px] font-bold text-[#00d09c] uppercase tracking-wider">
-                      Fundamentals Check Summary
-                    </span>
-                  </div>
+                  <Link
+                    to={`/stock/${data.symbol}`}
+                    className="block w-full py-4 bg-gradient-to-r from-[#00d09c] to-emerald-600 hover:from-[#00bda0] hover:to-emerald-500 text-white text-center rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-[#00d09c]/10 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-1"
+                  >
+                    View Detailed Fundamentals <ArrowUpRight className="h-4 w-4" />
+                  </Link>
                 )}
               </section>
 

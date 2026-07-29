@@ -352,6 +352,68 @@ const AppHome: React.FC = () => {
           </Link>
         </div>
 
+        {/* ── Guided Workflow Banner ── */}
+        <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-secondary)]/60 px-4 py-3">
+          {/* Header row */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="relative flex h-1.5 w-1.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)]">Investment Workflow</span>
+          </div>
+
+          {/* Steps row */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 sm:gap-0">
+
+            {/* Step 1 — Screen */}
+            <Link to="/screener" className="group flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg sm:rounded-l-lg sm:rounded-r-none bg-[var(--bg-tertiary)] hover:bg-emerald-500/5 border border-[var(--border-primary)] hover:border-emerald-500/30 transition-all duration-200">
+              <div className="w-6 h-6 shrink-0 flex items-center justify-center rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-black group-hover:scale-110 transition-transform">1</div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-bold text-[var(--text-primary)] group-hover:text-emerald-400 transition-colors leading-tight">Screen Stocks</span>
+                <span className="text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-wide mt-0.5 leading-none">Quantitative Filters</span>
+              </div>
+              <Search className="h-3 w-3 text-[var(--text-muted)] group-hover:text-emerald-500 ml-auto shrink-0 transition-colors" />
+            </Link>
+
+            <ChevronRight className="hidden sm:block h-3.5 w-3.5 text-[var(--text-muted)] shrink-0 mx-1" />
+
+            {/* Step 2 — Alpha Hub */}
+            <Link to="/alpha-hub" className="group flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg sm:rounded-none bg-[var(--bg-tertiary)] hover:bg-cyan-500/5 border border-[var(--border-primary)] hover:border-cyan-500/30 transition-all duration-200">
+              <div className="w-6 h-6 shrink-0 flex items-center justify-center rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-500 text-[10px] font-black group-hover:scale-110 transition-transform">2</div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-bold text-[var(--text-primary)] group-hover:text-cyan-400 transition-colors leading-tight">Alpha Hub</span>
+                <span className="text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-wide mt-0.5 leading-none">Strategy Patterns</span>
+              </div>
+              <Zap className="h-3 w-3 text-[var(--text-muted)] group-hover:text-cyan-500 ml-auto shrink-0 transition-colors" />
+            </Link>
+
+            <ChevronRight className="hidden sm:block h-3.5 w-3.5 text-[var(--text-muted)] shrink-0 mx-1" />
+
+            {/* Step 3 — Chart */}
+            <Link to="/charts" className="group flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg sm:rounded-none bg-[var(--bg-tertiary)] hover:bg-blue-500/5 border border-[var(--border-primary)] hover:border-blue-500/30 transition-all duration-200">
+              <div className="w-6 h-6 shrink-0 flex items-center justify-center rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-black group-hover:scale-110 transition-transform">3</div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-bold text-[var(--text-primary)] group-hover:text-blue-400 transition-colors leading-tight">Technical Setup</span>
+                <span className="text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-wide mt-0.5 leading-none">Chart Terminal</span>
+              </div>
+              <BarChart3 className="h-3 w-3 text-[var(--text-muted)] group-hover:text-blue-500 ml-auto shrink-0 transition-colors" />
+            </Link>
+
+            <ChevronRight className="hidden sm:block h-3.5 w-3.5 text-[var(--text-muted)] shrink-0 mx-1" />
+
+            {/* Step 4 — Track */}
+            <Link to="/portfolio" className="group flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg sm:rounded-r-lg sm:rounded-l-none bg-[var(--bg-tertiary)] hover:bg-purple-500/5 border border-[var(--border-primary)] hover:border-purple-500/30 transition-all duration-200">
+              <div className="w-6 h-6 shrink-0 flex items-center justify-center rounded-md bg-purple-500/10 border border-purple-500/20 text-purple-500 text-[10px] font-black group-hover:scale-110 transition-transform">4</div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-bold text-[var(--text-primary)] group-hover:text-purple-400 transition-colors leading-tight">Track & Manage</span>
+                <span className="text-[8px] text-[var(--text-muted)] font-bold uppercase tracking-wide mt-0.5 leading-none">Portfolio & P&L</span>
+              </div>
+              <Briefcase className="h-3 w-3 text-[var(--text-muted)] group-hover:text-purple-500 ml-auto shrink-0 transition-colors" />
+            </Link>
+          </div>
+        </div>
+
         {/* ── Stats Grid ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
@@ -417,7 +479,9 @@ const AppHome: React.FC = () => {
               </div>
             ) : buyZones.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
-                {buyZones.map((zone, i) => {
+                  {buyZones.map((zone, i) => {
+                  const score = zone.auditScore || zone.score || 0;
+                  const scoreColor = score >= 70 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-red-400';
                   return (
                     <motion.button
                       key={zone.symbol}
@@ -431,7 +495,7 @@ const AppHome: React.FC = () => {
                     >
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm sm:text-base font-black text-[var(--text-primary)] group-hover:text-[var(--signal-buy)] transition-colors truncate">{zone.symbol}</span>
-                        <span className="text-xs text-[var(--signal-buy)] bg-[var(--signal-buy)]/10 border border-[var(--signal-buy)]/20 px-2 py-0.5 rounded-full flex-shrink-0">ACTIVE</span>
+                        <span className="text-[9px] sm:text-[10px] text-[var(--signal-buy)] bg-[var(--signal-buy)]/10 border border-[var(--signal-buy)]/20 px-2 py-0.5 rounded-full flex-shrink-0 font-bold uppercase tracking-wider">ACTIVE</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3">
                         <div className="bg-[var(--bg-tertiary)] rounded-xl p-3">
@@ -440,7 +504,7 @@ const AppHome: React.FC = () => {
                         </div>
                         <div className="bg-[var(--bg-tertiary)] rounded-xl p-3">
                           <div className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Audit Score</div>
-                          <div className="text-sm sm:text-base font-bold text-emerald-400 tabular-nums truncate">{zone.auditScore || 0}/100</div>
+                          <div className={`text-sm sm:text-base font-bold tabular-nums truncate ${scoreColor}`}>{score}/100</div>
                         </div>
                       </div>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
@@ -448,13 +512,17 @@ const AppHome: React.FC = () => {
                           <span className="text-[9px] sm:text-[10px] text-[var(--text-muted)]">Smart Money</span>
                           <span className="text-sm sm:text-base font-extrabold text-emerald-400">{zone.smartMoney?.toFixed(1)}%</span>
                         </div>
-                        <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full flex-shrink-0">INSTITUTIONAL</span>
+                        <span className="text-[9px] sm:text-[10px] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full flex-shrink-0 uppercase tracking-wider">{zone.strategy}</span>
                       </div>
                       <div className="relative mt-auto pt-3 border-t border-[var(--border-primary)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[9px] sm:text-[10px] text-[var(--text-muted)] font-medium">
-                        <span className="flex items-center gap-1 truncate max-w-[160px]">
-                          <CheckCircle2 className="w-3 h-3 text-[var(--signal-buy)] flex-shrink-0" />
-                          <span className="truncate max-w-[160px]">{zone.strategy}</span>
-                        </span>
+                        <Link
+                          to={`/analysis/${zone.symbol}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1 text-[var(--accent-blue)] hover:text-blue-400 transition-colors"
+                        >
+                          <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+                          <span>Detailed Fundamental Check</span>
+                        </Link>
                         <Link
                           to={`/charts?symbol=${zone.symbol}&return=/`}
                           onClick={(e) => e.stopPropagation()}

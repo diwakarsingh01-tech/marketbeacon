@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Activity, LogOut, User, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X, ChevronLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Activity, LogOut, User, Menu, Search, Bell, Command, ChevronRight, Zap, TrendingUp, ShieldCheck, X, ChevronLeft, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BASKETS } from '../../data/stocks';
 import BrandLogo from '../brand/BrandLogo';
@@ -28,7 +28,9 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick, onToggleSidebarCollapse, i
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const navRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -68,8 +70,19 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick, onToggleSidebarCollapse, i
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
-    return () => debounceRef.current && clearTimeout(debounceRef.current);
+    return () => clearTimeout(debounceRef.current);
   }, []);
+
+  useEffect(() => {
+    if (!openDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [openDropdown]);
 
   const onSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -163,8 +176,13 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick, onToggleSidebarCollapse, i
            </button>
          )}
 
-         {/* Brand Logo (Always Visible) */}
-        <div className="flex items-center">
+         {/* Brand Logo: hidden on desktop when sidebar expanded (sidebar shows own logo), always visible on mobile */}
+        <div className="flex md:hidden items-center transition-opacity duration-300">
+          <Link to="/app" className="transition-all hover:opacity-90 active:scale-95 flex items-center gap-2">
+            <BrandLogo variant="light" size={28} hideText={false} />
+          </Link>
+        </div>
+        <div className={`hidden md:flex items-center transition-opacity duration-300 ${isSidebarCollapsed ? 'opacity-100' : 'opacity-0 pointer-events-none w-0 overflow-hidden'}`}>
           <Link to="/app" className="transition-all hover:opacity-90 active:scale-95 flex items-center gap-2">
             <BrandLogo variant="light" size={28} hideText={false} />
           </Link>
@@ -172,7 +190,7 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick, onToggleSidebarCollapse, i
       </div>
 
       {/* Center: Smart Search Dropdown (Desktop Only) */}
-      <div className="hidden lg:flex flex-1 max-w-xl mx-8 relative">
+      <div className="hidden lg:flex flex-1 max-w-xl mx-4 xl:mx-6 relative">
         <form onSubmit={handleSearch} className="w-full relative group">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center space-x-2 pointer-events-none">
             <Search className="h-4 w-4 text-slate-400 group-focus-within:text-blue-400 transition-colors" />
@@ -239,13 +257,81 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick, onToggleSidebarCollapse, i
       {/* Right: Actions & User */}
       <div className="flex items-center space-x-3 md:space-x-6 shrink-0">
         {/* Desktop Navigation Links */}
-        <div className="hidden lg:flex items-center space-x-6">
-          <NavLink to="/app" className={({ isActive }) => `text-xs font-bold uppercase tracking-wider transition-colors hover:text-[var(--text-primary)] ${isActive ? 'text-[var(--border-accent)] font-extrabold border-b-2 border-[var(--border-accent)] pb-1' : 'text-[var(--text-muted)]'}`}>Dashboard</NavLink>
-          <NavLink to="/alpha-hub" className={({ isActive }) => `text-xs font-bold uppercase tracking-wider transition-colors hover:text-[var(--text-primary)] ${isActive ? 'text-[var(--border-accent)] font-extrabold border-b-2 border-[var(--border-accent)] pb-1' : 'text-[var(--text-muted)]'}`}>Alpha Hub</NavLink>
-          <NavLink to="/screener" className={({ isActive }) => `text-xs font-bold uppercase tracking-wider transition-colors hover:text-[var(--text-primary)] ${isActive ? 'text-[var(--border-accent)] font-extrabold border-b-2 border-[var(--border-accent)] pb-1' : 'text-[var(--text-muted)]'}`}>Screener</NavLink>
-          <NavLink to="/portfolio" className={({ isActive }) => `text-xs font-bold uppercase tracking-wider transition-colors hover:text-[var(--text-primary)] ${isActive ? 'text-[var(--border-accent)] font-extrabold border-b-2 border-[var(--border-accent)] pb-1' : 'text-[var(--text-muted)]'}`}>Portfolio</NavLink>
-          <NavLink to="/ai-assistant" className={({ isActive }) => `text-xs font-bold uppercase tracking-wider transition-colors hover:text-[var(--text-primary)] ${isActive ? 'text-[var(--border-accent)] font-extrabold border-b-2 border-[var(--border-accent)] pb-1' : 'text-[var(--text-muted)]'}`}>BeaconAI</NavLink>
-          <NavLink to="/guide" className={({ isActive }) => `text-xs font-bold uppercase tracking-wider transition-colors hover:text-[var(--text-primary)] ${isActive ? 'text-[var(--border-accent)] font-extrabold border-b-2 border-[var(--border-accent)] pb-1' : 'text-[var(--text-muted)]'}`}>Help</NavLink>
+        <div ref={navRef} className="hidden xl:flex items-center space-x-1">
+          {/* Dashboard */}
+          <div className="relative py-1.5">
+            <Link to="/app" className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-tertiary)]">
+              <span>Dashboard</span>
+            </Link>
+          </div>
+
+          {/* Alpha Hub — Primary USP */}
+          <div className="relative py-1.5">
+            <Link
+              to="/alpha-hub"
+              className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors px-3 py-1.5 rounded-lg border border-emerald-500/25 hover:border-emerald-500/50 hover:bg-emerald-500/5"
+            >
+              <Zap className="h-3 w-3" />
+              <span>Alpha Hub</span>
+            </Link>
+          </div>
+
+          {/* Screener */}
+          <div className="relative py-1.5">
+            <Link to="/screener" className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-tertiary)]">
+              <span>Screener</span>
+            </Link>
+          </div>
+
+          {/* Analyze dropdown — click to open, click outside to close */}
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'analyze' ? null : 'analyze'); }}
+              className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer bg-transparent border-none outline-none px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-tertiary)]"
+            >
+              <span>Analyze</span>
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${openDropdown === 'analyze' ? 'rotate-180' : ''}`} />
+            </button>
+            {openDropdown === 'analyze' && (
+              <div className="absolute top-full left-0 pt-1 z-[120]">
+                <div className="w-48 bg-slate-950/95 backdrop-blur-xl border border-slate-800 rounded-2xl p-2 shadow-2xl">
+                  <Link to="/analysis/RELIANCE" className="flex flex-col p-2.5 rounded-xl hover:bg-slate-900 transition-colors text-left" onClick={() => setOpenDropdown(null)}>
+                    <span className="text-xs font-bold text-white leading-none">Intellect Node</span>
+                    <span className="text-[9px] text-slate-500 font-bold uppercase mt-1 leading-none">Deep-node analysis</span>
+                  </Link>
+                  <Link to="/charts" className="flex flex-col p-2.5 rounded-xl hover:bg-slate-900 transition-colors mt-1 text-left" onClick={() => setOpenDropdown(null)}>
+                    <span className="text-xs font-bold text-white leading-none">Chart Terminal</span>
+                    <span className="text-[9px] text-slate-500 font-bold uppercase mt-1 leading-none">Multi-charting</span>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Track dropdown — click to open, click outside to close */}
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'track' ? null : 'track'); }}
+              className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer bg-transparent border-none outline-none px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-tertiary)]"
+            >
+              <span>Track</span>
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${openDropdown === 'track' ? 'rotate-180' : ''}`} />
+            </button>
+            {openDropdown === 'track' && (
+              <div className="absolute top-full right-0 pt-1 z-[120]">
+                <div className="w-48 bg-slate-950/95 backdrop-blur-xl border border-slate-800 rounded-2xl p-2 shadow-2xl">
+                  <Link to="/portfolio" className="flex flex-col p-2.5 rounded-xl hover:bg-slate-900 transition-colors text-left" onClick={() => setOpenDropdown(null)}>
+                    <span className="text-xs font-bold text-white leading-none">Portfolio Manager</span>
+                    <span className="text-[9px] text-slate-500 font-bold uppercase mt-1 leading-none">Wealth tracking</span>
+                  </Link>
+                  <Link to="/trades" className="flex flex-col p-2.5 rounded-xl hover:bg-slate-900 transition-colors mt-1 text-left" onClick={() => setOpenDropdown(null)}>
+                    <span className="text-xs font-bold text-white leading-none">Trade Journal</span>
+                    <span className="text-[9px] text-slate-500 font-bold uppercase mt-1 leading-none">Performance logs</span>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Vertical divider */}
@@ -461,6 +547,50 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick, onToggleSidebarCollapse, i
                 value={searchQuery}
                 onChange={onSearchChange}
               />
+              
+              {/* Suggestions List in mobile view */}
+              {suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--bg-primary)] border border-[var(--border-primary)]/85 rounded-2xl shadow-2xl overflow-y-auto max-h-[60vh] p-1.5 space-y-0.5 z-[130] animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="p-2.5 border-b border-[var(--border-primary)] bg-[var(--bg-tertiary)]/50 flex justify-between items-center rounded-t-xl">
+                      <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Match Suggestions</span>
+                  </div>
+                  {suggestions.map((stock) => (
+                    <button
+                      key={stock.symbol}
+                      type="button"
+                      onClick={() => {
+                        selectStock(stock.symbol);
+                        setShowMobileSearch(false);
+                      }}
+                      className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-[var(--bg-tertiary)] rounded-xl transition-all text-left group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-primary)] shrink-0">
+                           <Zap className="h-3.5 w-3.5 text-blue-600" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-bold text-[var(--text-primary)] tracking-tighter leading-none">{stock.symbol}</span>
+                           <span className="flex flex-wrap gap-1 mt-1">
+                             {stock.baskets?.map((b: string) => (
+                                <span key={b} className={`text-xs font-bold px-1.5 py-0.5 rounded-sm border ${basketColors[b] || 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-secondary)]'}`}>
+                                 {b.replace(' Basket', '')}
+                               </span>
+                             ))}
+                           </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {stock.strategies?.slice(0, 1).map((s) => (
+                          <span key={s.id} className="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-sm">
+                            {s.id.slice(0, 8)}
+                          </span>
+                        ))}
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </form>
             <button
               onClick={() => {
@@ -474,49 +604,6 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick, onToggleSidebarCollapse, i
               <X className="h-5 w-5" />
             </button>
           </div>
-
-          {/* Suggestions List in mobile view */}
-          {suggestions.length > 0 && (
-            <div className="mt-3 bg-[var(--bg-primary)] border border-[var(--border-primary)]/85 rounded-2xl shadow-2xl overflow-y-auto max-h-[70vh] p-1.5 space-y-0.5 z-[130] animate-in fade-in slide-in-from-top-1 duration-200">
-              <div className="p-2.5 border-b border-[var(--border-primary)] bg-[var(--bg-tertiary)]/50 flex justify-between items-center rounded-t-xl">
-                  <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Match Suggestions</span>
-              </div>
-              {suggestions.map((stock) => (
-                <button
-                  key={stock.symbol}
-                  onClick={() => {
-                    selectStock(stock.symbol);
-                    setShowMobileSearch(false);
-                  }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-[var(--bg-tertiary)] rounded-xl transition-all text-left group"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-primary)] shrink-0">
-                       <Zap className="h-3.5 w-3.5 text-blue-600" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-bold text-[var(--text-primary)] tracking-tighter leading-none">{stock.symbol}</span>
-                       <span className="flex flex-wrap gap-1 mt-1">
-                         {stock.baskets?.map((b: string) => (
-                            <span key={b} className={`text-xs font-bold px-1 py-0.5 rounded-sm border ${basketColors[b] || 'bg-[var(--bg-secondary)] text-[var(--text-tertiary)] border-[var(--border-secondary)]'}`}>
-                             {b.replace(' Basket', '')}
-                           </span>
-                         ))}
-                       </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {stock.strategies?.slice(0, 1).map((s) => (
-                      <span key={s.id} className="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-sm">
-                        {s.id.slice(0, 8)}
-                      </span>
-                    ))}
-                    <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       )}
     </nav>

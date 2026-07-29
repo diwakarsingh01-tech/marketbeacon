@@ -37,7 +37,7 @@ const PublicLayout: React.FC = () => {
       <TopNav onMenuClick={() => setIsSidebarOpen(true)} />
 
       {/* Mobile Sidebar Drawer */}
-      <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <SideNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} mobileOnly={true} />
 
       {/* Main Content */}
       <main className="flex-1 w-full pb-20 md:pb-0">

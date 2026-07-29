@@ -232,7 +232,7 @@ const GuidePage: React.FC = () => {
       <div className="min-h-screen bg-[#020617] text-[var(--text-primary)]">
 
         {/* ── Top Bar ── */}
-        <div className="border-b border-[var(--border-primary)] bg-[#0a0f1e]/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="border-b border-[var(--border-primary)] bg-[#0a0f1e]/80 backdrop-blur-sm sticky top-20 z-50">
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -315,7 +315,7 @@ const GuidePage: React.FC = () => {
               ref={tocRef}
               className="hidden lg:block w-64 xl:w-72 shrink-0"
             >
-              <nav className="sticky top-20 space-y-4">
+              <nav className="sticky top-36 space-y-4">
                 <div className="flex items-center gap-3 px-3 py-2">
                   <div className="relative w-10 h-10">
                     <svg className="w-10 h-10 -rotate-90" viewBox="0 0 40 40">
