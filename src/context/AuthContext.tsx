@@ -30,12 +30,13 @@ const API_URL = getApiUrl();
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('mb_token'));
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
+    localStorage.removeItem('mb_token');
     localStorage.removeItem('mb_has_pin');
     localStorage.removeItem('mb_pin_email');
     fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
@@ -44,8 +45,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshAuth = useCallback(async () => {
     try {
+      const storedToken = localStorage.getItem('mb_token');
+      const headers: Record<string, string> = storedToken ? { 'Authorization': `Bearer ${storedToken}` } : {};
       const response = await fetch(`${API_URL}/api/auth/me`, {
         credentials: 'include',
+        headers
       });
       const data = await safeJsonParse(response);
       if (response.ok && !data.error) {
@@ -77,8 +81,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(data.error || 'Login failed');
     }
 
+    if (data.token) {
+      localStorage.setItem('mb_token', data.token);
+      setToken(data.token);
+    }
     setUser(data.user);
-    setToken(data.token);
   };
 
   const googleLogin = async (credential: string) => {
@@ -94,8 +101,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(data.error || 'Google Login failed');
     }
 
+    if (data.token) {
+      localStorage.setItem('mb_token', data.token);
+      setToken(data.token);
+    }
     setUser(data.user);
-    setToken(data.token);
   };
 
   const sendMobileOtp = async (mobile: string) => {

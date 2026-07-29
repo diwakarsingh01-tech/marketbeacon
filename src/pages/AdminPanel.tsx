@@ -75,15 +75,21 @@ const AdminPanel: React.FC = () => {
     setPage(1);
   }, [activeTab, approvalSubTab, userFilter]);
 
+  const getAuthHeaders = (): Record<string, string> => {
+    const t = localStorage.getItem('mb_token');
+    return t ? { 'Authorization': `Bearer ${t}` } : {};
+  };
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
+      const headers = getAuthHeaders();
       const results = await Promise.allSettled([
-        fetch(`${API_URL}/api/admin/users`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/admin/upgrade-requests`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/admin/vouchers`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/admin/feedback`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/admin/waitlist`, { credentials: 'include' })
+        fetch(`${API_URL}/api/admin/users`, { credentials: 'include', headers }),
+        fetch(`${API_URL}/api/admin/upgrade-requests`, { credentials: 'include', headers }),
+        fetch(`${API_URL}/api/admin/vouchers`, { credentials: 'include', headers }),
+        fetch(`${API_URL}/api/admin/feedback`, { credentials: 'include', headers }),
+        fetch(`${API_URL}/api/admin/waitlist`, { credentials: 'include', headers })
       ]);
 
       const [uRes, rRes, vRes, fRes, wRes] = results.map(r => r.status === 'fulfilled' ? r.value : null);
