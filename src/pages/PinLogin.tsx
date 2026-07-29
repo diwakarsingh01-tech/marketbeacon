@@ -52,10 +52,13 @@ const PinLogin: React.FC = () => {
       });
       const data = await safeJsonParse(res);
       if (res.ok && !data.error) {
+        if (data.token) {
+          localStorage.setItem('mb_token', data.token);
+        }
         localStorage.setItem('mb_pin_email', email.trim());
         localStorage.setItem('mb_has_pin', 'true');
         await refreshAuth();
-        navigate('/dashboard');
+        navigate('/app');
       } else {
         setError(data.error || 'Invalid PIN');
         setPin(['', '', '', '']);
