@@ -1129,19 +1129,19 @@ const AdminPanel: React.FC = () => {
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                   <span className="text-slate-500 font-sans font-bold uppercase text-[10px]">Total Checks</span>
                   <p className="text-xl font-bold text-slate-900 mt-1">
-                    {auditData.summary?.total ?? auditData.total_checks ?? auditData.total ?? 0}
+                    {auditData.summary?.totalChecks ?? auditData.summary?.total ?? auditData.total_checks ?? 0}
                   </p>
                 </div>
                 <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200">
-                  <span className="text-emerald-700 font-sans font-bold uppercase text-[10px]">Passed</span>
+                  <span className="text-emerald-700 font-sans font-bold uppercase text-[10px]">Passed / Fixed</span>
                   <p className="text-xl font-bold text-emerald-700 mt-1">
-                    {auditData.summary?.passed ?? auditData.passed ?? 0}
+                    {(auditData.summary?.passedChecks ?? auditData.summary?.passed ?? 0) + (auditData.summary?.autoFixed ?? 0)}
                   </p>
                 </div>
                 <div className="bg-rose-50 p-4 rounded-xl border border-rose-200">
                   <span className="text-rose-700 font-sans font-bold uppercase text-[10px]">Issues Found</span>
                   <p className="text-xl font-bold text-rose-700 mt-1">
-                    {auditData.summary?.failed ?? auditData.failed ?? auditData.checks?.length ?? 0}
+                    {auditData.summary?.failedChecks ?? auditData.summary?.failed ?? 0}
                   </p>
                 </div>
               </div>

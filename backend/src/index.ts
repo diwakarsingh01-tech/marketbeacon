@@ -2648,7 +2648,7 @@ app.get('/api/admin/audit/latest', authenticateToken, requireAdmin, async (req: 
       return res.json(report);
     }
     const report = await runAuditEngine(BASKETS);
-    res.json(report);
+    return res.json(report);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
