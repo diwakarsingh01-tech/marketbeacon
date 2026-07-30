@@ -312,9 +312,7 @@ const AlphaHubPage: React.FC = () => {
      setLoading(true);
      setError(null);
      try {
-       const res = await fetch(`${API_URL}/api/backtest/alpha-40`, {
-         credentials: 'include'
-       });
+       const res = await authFetch('/api/backtest/alpha-40');
        const d = await safeJsonParse(res);
        if (res.ok && !d.error) {
          setData(d);

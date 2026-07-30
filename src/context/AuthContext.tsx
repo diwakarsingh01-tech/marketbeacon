@@ -134,8 +134,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(data.error || 'OTP verification failed');
     }
 
+    if (data.token) {
+      localStorage.setItem('mb_token', data.token);
+      setToken(data.token);
+    }
     setUser(data.user);
-    setToken(data.token);
   };
 
   const register = async (email: string, pass: string, name: string) => {
@@ -151,8 +154,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(data.error || 'Registration failed');
     }
 
+    if (data.token) {
+      localStorage.setItem('mb_token', data.token);
+      setToken(data.token);
+    }
     setUser(data.user);
-    setToken(data.token);
   };
 
   return (
