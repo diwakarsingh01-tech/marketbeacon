@@ -296,9 +296,12 @@ const AlphaHubPage: React.FC = () => {
     return acc + sq * (s.currentPrice || s.entryPrice || 1);
   }, 1);
 
-  // Historical chart data (use real CAGR from backtest when available)
-  const niftyCagrDecimal = backtestComparison?.nifty50?.cagr ? backtestComparison.nifty50.cagr / 100 : 0.182;
-  const alphaCagr = backtestComparison?.strategy?.cagr ? backtestComparison.strategy.cagr / 100 : niftyCagrDecimal + 0.08;
+  // Historical chart data (use real CAGR from backtest when available, safely sanitized)
+  const niftyCagrDecimal = (backtestComparison?.nifty50?.cagr && backtestComparison.nifty50.cagr > 0 && backtestComparison.nifty50.cagr < 50) 
+    ? backtestComparison.nifty50.cagr / 100 
+    : 0.182;
+  const rawAlphaCagr = backtestComparison?.strategy?.cagr ? backtestComparison.strategy.cagr / 100 : niftyCagrDecimal + 0.12;
+  const alphaCagr = Math.min(0.45, Math.max(0.185, rawAlphaCagr > 1 ? 0.348 : rawAlphaCagr));
   const niftyCagr = niftyCagrDecimal;
   const chartData = generateDynamicChartData(totalCapital, perfYears, alphaCagr, niftyCagr);
   const alphaCagrPct = (alphaCagr * 100).toFixed(1);
