@@ -852,6 +852,7 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
           tranche: strategyData?.tranche || null, targets: strategyData?.targets || [], abcd: abcdLevels,
           score: audit.score, auditScore: audit.score, smartMoney: audit.smartMoneyTotal,
           entryTime: strategyData?.triggerDate || snap.quotes[snap.quotes.length-1].date,
+          triggerDate: strategyData?.triggerDate, signalAgeBars: strategyData?.signalAgeBars, isStale: strategyData?.isStale,
           reason: displayReason, isBuyZone: strategyIsBuyZone, isObservation: strategyObservation,
           isPass: finalPass, dataMissing: audit.dataMissing === true,
           sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
