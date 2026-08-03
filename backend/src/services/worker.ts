@@ -48,7 +48,9 @@ const STRATEGY_BASKET_MAP: Record<string, string[]> = {
   'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket'],
   'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
   'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-  'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
+  'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+  'REVERSE_HEAD_SHOULDERS': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+  'SHORT_TERM_ABCD': ['Growth Basket', 'Elite Basket', 'Quality Basket']
 };
 
 export async function precalculateAlpha40(isBootWarmup = false) {
@@ -128,9 +130,14 @@ export async function precalculateAlpha40(isBootWarmup = false) {
           // 2. Active Signals Analysis (Multi-Strategy Selection)
           const validSignals: any[] = [];
           for (const stratId of Object.keys(STRATEGY_BASKET_MAP)) {
-            if (!STRATEGY_BASKET_MAP[stratId]?.includes(basketName)) continue;
+            // Technical Scan runs EVERY strategy on every snapshot stock —
+            // otherwise non-basket stocks would never generate signals (coverage bug fix).
+            if (!STRATEGY_BASKET_MAP[stratId]?.includes(basketName) && basketName !== 'Technical Scan') continue;
             
-            const sd: any = await runStrategyAnalysis(stratId, snap, mcapCr * 10000000, basketName);
+            // Technical Scan runs every strategy on every stock: bypass runStrategyAnalysis's
+            // per-basket authorization gate (otherwise 'Technical Scan' rejects everything).
+            const effBasket = basketName === 'Technical Scan' ? 'ALL' : basketName;
+            const sd: any = await runStrategyAnalysis(stratId, snap, mcapCr * 10000000, effBasket);
             if (!sd || !sd?.isBuyZone) continue;
 
             const entry = sd?.entryPrice || last?.close;
@@ -269,7 +276,7 @@ export async function precalculateAlpha40(isBootWarmup = false) {
       ...(BASKETS['Fallen Value Basket'] || []),
       ...currentWealth
     ]);
-    const remainingSymbols = Object.keys(snapshot).filter(sym => !basketSymbols.has(sym));
+    const remainingSymbols = Object.keys(snapshot).filter(sym => !basketSymbols.has(sym) && !sym.startsWith('^') && (snapshot[sym]?.quotes?.length || 0) >= 30);
     console.log(`🔬 [WORKER] Technical Scan: Processing ${remainingSymbols.length} additional snapshot-cache stocks...`);
     const techScan = await processBasket('Technical Scan', remainingSymbols);
     console.log(`✅ [WORKER] Technical Scan complete: ${techScan.active.length} qualified, ${techScan.closed.length} closed simulations.`);
@@ -322,11 +329,28 @@ export async function precalculateAlpha40(isBootWarmup = false) {
     const finalSmall = selectWithRules(allActive.filter(s => s.capType === 'SMALL'), 8, sectorUsage);
     const finalActive = [...finalLarge, ...finalMid, ...finalSmall];
 
+    // Observability digest — why the final count may be short of 40
+    const digest: Record<string, any> = {};
+    const addDigest = (name: string, r: any) => {
+      digest[name] = {
+        qualified: r.tracked.qualified,
+        observation: r.tracked.observation,
+        rejectedCount: r.tracked.rejected.length,
+        anomaliesCount: r.tracked.anomalies.length
+      };
+    };
+    addDigest('Elite Basket', bc);
+    addDigest('Quality Basket', hb);
+    addDigest('Growth Basket', wb);
+    addDigest('Fallen Value Basket', fvb);
+    addDigest('Technical Scan', techScan);
+
     const results = {
       active: finalActive,
       closed: allClosed,
       capStats: { LARGE: finalLarge.length, MID: finalMid.length, SMALL: finalSmall.length },
       sectorStats: sectorUsage,
+      digest,
       updatedAt: new Date().toISOString()
     };
 

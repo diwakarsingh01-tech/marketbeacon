@@ -6,7 +6,7 @@ import {
   Search, ArrowRight, Activity, BarChart3, Star,
   Wallet, TrendingDown,
   PieChart, Sparkles, ChevronRight,
-  CheckCircle2, Info
+  Info
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl, safeJsonParse } from '../lib/api-utils';
@@ -85,6 +85,7 @@ const quickLinks: QuickLink[] = [
   { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Verify & log trades', bg: 'bg-[var(--accent-purple)]/10', border: 'border-[var(--accent-purple)]/20', iconCls: 'text-[var(--accent-purple)]' },
   { icon: LayoutGrid, label: 'Screener Matrix', path: '/screener', desc: 'Real-time stock matrix', bg: 'bg-[var(--signal-sell)]/10', border: 'border-[var(--signal-sell)]/20', iconCls: 'text-[var(--signal-sell)]' },
   { icon: BarChart3, label: 'Charts Terminal', path: '/charts', desc: 'Advanced charting suite', bg: 'bg-[var(--signal-buy)]/10', border: 'border-[var(--signal-buy)]/20', iconCls: 'text-[var(--signal-buy)]' },
+  { icon: TrendingUp, label: 'Short Term Investing', path: '/short-term', desc: 'ABCD buy B→C→D · targets D→C→B→A', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', iconCls: 'text-cyan-400' },
 ];
 
 interface BuyZoneCard {
@@ -95,6 +96,7 @@ interface BuyZoneCard {
   auditScore: number;
   smartMoney: number;
   strategy: string;
+  entryTime: string | null;
 }
 
 const AppHome: React.FC = () => {
@@ -112,6 +114,23 @@ const AppHome: React.FC = () => {
   // Active setup zones
   const [buyZones, setBuyZones] = useState<BuyZoneCard[]>([]);
   const [loadingZones, setLoadingZones] = useState(true);
+  const [dateRange, setDateRange] = useState<'today' | '7d' | 'all'>('today');
+
+  // Filter buyZones by date range
+  const filteredBuyZones = useMemo(() => {
+    if (dateRange === 'all') return buyZones;
+    const now = new Date();
+    const cutoff = new Date();
+    if (dateRange === 'today') {
+      cutoff.setHours(0, 0, 0, 0);
+    } else {
+      cutoff.setDate(now.getDate() - 7);
+    }
+    return buyZones.filter((z) => {
+      if (!z.entryTime) return false;
+      return new Date(z.entryTime) >= cutoff;
+    });
+  }, [buyZones, dateRange]);
 
    // Day P&L tracking
    const [dayPnL, setDayPnL] = useState<number>(0);
@@ -192,7 +211,13 @@ const AppHome: React.FC = () => {
         const results = data.allStocks || [];
         const setupZoneStocks = results
           .filter((s: AllStockItem) => s.isBuyZone && s.entryPrice)
-          .sort((a: AllStockItem, b: AllStockItem) => (b.score || 0) - (a.score || 0))
+          // Sort by most recent trigger first (entryTime), then by score
+          .sort((a: AllStockItem, b: AllStockItem) => {
+            const timeA = a.entryTime ? new Date(a.entryTime).getTime() : 0;
+            const timeB = b.entryTime ? new Date(b.entryTime).getTime() : 0;
+            if (timeB !== timeA) return timeB - timeA;
+            return (b.score || 0) - (a.score || 0);
+          })
           .map((s: AllStockItem) => ({
             symbol: s.symbol,
             entryPrice: s.entryPrice || 0,
@@ -201,6 +226,7 @@ const AppHome: React.FC = () => {
             auditScore: s.auditScore || 0,
             smartMoney: s.smartMoney || 0,
             strategy: s.strategy || 'Institutional',
+            entryTime: s.entryTime || null,
           }));
         setBuyZones(setupZoneStocks);
       })
@@ -462,10 +488,29 @@ const AppHome: React.FC = () => {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-caption text-[var(--text-primary)] flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-[var(--signal-buy)]" /> Active Setups
+                <span className="text-[10px] text-[var(--text-muted)] font-normal ml-1">({filteredBuyZones.length})</span>
               </h2>
-              <Link to="/alpha-hub" className="text-caption text-[var(--signal-buy)] hover:opacity-80 transition-all flex items-center gap-1">
-                View All <ChevronRight className="w-3 h-3" />
-              </Link>
+              <div className="flex items-center gap-2">
+                {/* Date range toggle */}
+                <div className="flex bg-[var(--bg-tertiary)] rounded-lg p-0.5">
+                  {(['today', '7d', 'all'] as const).map((range) => (
+                    <button
+                      key={range}
+                      onClick={() => setDateRange(range)}
+                      className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all ${
+                        dateRange === range
+                          ? 'bg-[var(--signal-buy)] text-white'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      {range === 'today' ? 'Today' : range === '7d' ? '7D' : 'All'}
+                    </button>
+                  ))}
+                </div>
+                <Link to="/alpha-hub" className="text-caption text-[var(--signal-buy)] hover:opacity-80 transition-all flex items-center gap-1">
+                  View All <ChevronRight className="w-3 h-3" />
+                </Link>
+              </div>
             </div>
             {loadingZones ? (
               <div className="grid grid-cols-2 gap-3">
@@ -477,64 +522,66 @@ const AppHome: React.FC = () => {
                   </div>
                 ))}
               </div>
-            ) : buyZones.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
-                  {buyZones.map((zone, i) => {
-                  const score = zone.auditScore || zone.score || 0;
-                  const scoreColor = score >= 70 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-red-400';
-                  return (
-                    <motion.button
-                      key={zone.symbol}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.06 }}
-                      whileHover={{ y: -3 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => navigate(`/analysis/${zone.symbol}`)}
-                      className="card p-4 sm:p-5 text-left group cursor-pointer relative overflow-hidden min-h-[220px] flex flex-col"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm sm:text-base font-black text-[var(--text-primary)] group-hover:text-[var(--signal-buy)] transition-colors truncate">{zone.symbol}</span>
-                        <span className="text-[9px] sm:text-[10px] text-[var(--signal-buy)] bg-[var(--signal-buy)]/10 border border-[var(--signal-buy)]/20 px-2 py-0.5 rounded-full flex-shrink-0 font-bold uppercase tracking-wider">ACTIVE</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3">
-                        <div className="bg-[var(--bg-tertiary)] rounded-xl p-3">
-                          <div className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Setup Level</div>
-                          <div className="text-sm sm:text-base font-bold text-[var(--text-primary)] tabular-nums truncate">₹{zone.entryPrice.toLocaleString('en-IN')}</div>
-                        </div>
-                        <div className="bg-[var(--bg-tertiary)] rounded-xl p-3">
-                          <div className="text-[9px] sm:text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-1">Audit Score</div>
-                          <div className={`text-sm sm:text-base font-bold tabular-nums truncate ${scoreColor}`}>{score}/100</div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] sm:text-[10px] text-[var(--text-muted)]">Smart Money</span>
-                          <span className="text-sm sm:text-base font-extrabold text-emerald-400">{zone.smartMoney?.toFixed(1)}%</span>
-                        </div>
-                        <span className="text-[9px] sm:text-[10px] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full flex-shrink-0 uppercase tracking-wider">{zone.strategy}</span>
-                      </div>
-                      <div className="relative mt-auto pt-3 border-t border-[var(--border-primary)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[9px] sm:text-[10px] text-[var(--text-muted)] font-medium">
-                        <Link
-                          to={`/analysis/${zone.symbol}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1 text-[var(--accent-blue)] hover:text-blue-400 transition-colors"
-                        >
-                          <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
-                          <span>Detailed Fundamental Check</span>
-                        </Link>
-                        <Link
-                          to={`/charts?symbol=${zone.symbol}&return=/`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="ml-auto p-1.5 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--accent-blue)] transition-all flex-shrink-0"
-                          title="Open in Charts Terminal"
-                        >
-                          <BarChart3 className="w-3.5 h-3.5" />
-                        </Link>
-                      </div>
-                    </motion.button>
-                  );
-                })}
+            ) : filteredBuyZones.length > 0 ? (
+              <div className="space-y-4">
+                {/* Group by strategy */}
+                {Object.entries(
+                  filteredBuyZones.reduce((acc, zone) => {
+                    const strat = zone.strategy || 'Other';
+                    if (!acc[strat]) acc[strat] = [];
+                    acc[strat].push(zone);
+                    return acc;
+                  }, {} as Record<string, typeof filteredBuyZones>)
+                ).map(([strategy, zones]) => (
+                  <div key={strategy}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-full uppercase tracking-wider">{strategy}</span>
+                      <span className="text-[10px] text-[var(--text-muted)]">{zones.length} stock{zones.length > 1 ? 's' : ''}</span>
+                      <div className="flex-1 h-px bg-[var(--border-primary)]" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {zones.map((zone, i) => {
+                        const score = zone.auditScore || zone.score || 0;
+                        const scoreColor = score >= 70 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-red-400';
+                        return (
+                          <motion.button
+                            key={zone.symbol}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.03 }}
+                            whileHover={{ y: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => navigate(`/analysis/${zone.symbol}`)}
+                            className="card p-3 text-left group cursor-pointer flex items-center gap-3 hover:border-[var(--signal-buy)]/30 transition-all"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-black text-[var(--text-primary)] group-hover:text-[var(--signal-buy)] transition-colors truncate">{zone.symbol}</span>
+                                <span className="text-[9px] text-[var(--signal-buy)] bg-[var(--signal-buy)]/10 px-1.5 py-0.5 rounded font-bold">ACTIVE</span>
+                              </div>
+                              <div className="flex items-center gap-3 text-[10px]">
+                                <span className="text-[var(--text-muted)]">₹{zone.entryPrice.toLocaleString('en-IN')}</span>
+                                <span className={`font-bold ${scoreColor}`}>{score}</span>
+                                <span className="text-emerald-400">{zone.smartMoney?.toFixed(0)}%</span>
+                                {zone.entryTime && (
+                                  <span className="text-[var(--text-muted)]">{new Date(zone.entryTime).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
+                                )}
+                              </div>
+                            </div>
+                            <Link
+                              to={`/charts?symbol=${zone.symbol}&return=/`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--accent-blue)] transition-all flex-shrink-0"
+                              title="Open in Charts Terminal"
+                            >
+                              <BarChart3 className="w-3.5 h-3.5" />
+                            </Link>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="card p-6 text-center">

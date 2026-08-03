@@ -11,7 +11,9 @@ import {
   Terminal,
   FlaskConical,
   Settings,
-  Bot
+  Bot,
+  TrendingUp,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { APP_VERSION_DISPLAY } from '../../lib/version';
@@ -38,6 +40,13 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose, isCollapsed = false,
       tag?: string;
     }[];
   }[] = [
+    {
+      title: 'Trading Segments',
+      items: [
+        { icon: TrendingUp, label: 'Short Term Investing', path: '/short-term', desc: 'ABCD · Buy B→C→D · Targets D→C→B→A' },
+        { icon: Zap, label: 'Alpha Hub', path: '/alpha-hub', desc: 'Active institutional setups' },
+      ]
+    },
     {
       title: 'Support & Help',
       items: [

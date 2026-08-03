@@ -17,6 +17,7 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
       - TELEGRAM_CHANNEL=${TELEGRAM_CHANNEL}
+      - N8N_API_KEY=${N8N_API_KEY}
       - NODE_ENV=production
     networks:
       - mb-net
@@ -42,6 +43,9 @@ services:
       - N8N_EDITOR_BASE_URL=https://n8n.marketbeaconpro.com
       - N8N_PROTOCOL=https
       - N8N_API_KEY=${N8N_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - MB_API_URL=http://mb-backend:3001
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
       - GENERIC_TIMEZONE=Asia/Kolkata
       - TZ=Asia/Kolkata
     image: n8nio/n8n

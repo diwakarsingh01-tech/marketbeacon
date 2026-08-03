@@ -265,14 +265,14 @@ const TopNav: React.FC<TopNavProps> = ({ onMenuClick, onToggleSidebarCollapse, i
             </Link>
           </div>
 
-          {/* Alpha Hub — Primary USP */}
+          {/* Short Term Investing */}
           <div className="relative py-1.5">
             <Link
-              to="/alpha-hub"
-              className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors px-3 py-1.5 rounded-lg border border-emerald-500/25 hover:border-emerald-500/50 hover:bg-emerald-500/5"
+              to="/short-term"
+              className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-cyan-400 hover:text-cyan-300 transition-colors px-3 py-1.5 rounded-lg border border-cyan-500/25 hover:border-cyan-500/50 hover:bg-cyan-500/5"
             >
-              <Zap className="h-3 w-3" />
-              <span>Alpha Hub</span>
+              <TrendingUp className="h-3 w-3" />
+              <span>Short Term</span>
             </Link>
           </div>
 

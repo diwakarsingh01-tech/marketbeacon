@@ -17,7 +17,8 @@ import {
   Store,
   User,
   Bot,
-  Menu
+  Menu,
+  TrendingUp
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -204,6 +205,15 @@ const AppLayout: React.FC = () => {
                 >
                   <LineChart className="h-6 w-6 text-emerald-400 mb-2" />
                   <span className="text-xs font-bold text-slate-200">Charts</span>
+                </Link>
+
+                <Link
+                  to="/short-term"
+                  onClick={() => setIsMobileMoreOpen(false)}
+                  className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-cyan-500/30 transition-all text-center"
+                >
+                  <TrendingUp className="h-6 w-6 text-cyan-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-200">Short Term</span>
                 </Link>
 
                 <Link

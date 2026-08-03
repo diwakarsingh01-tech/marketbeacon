@@ -86,7 +86,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     return currentStrategy.baskets[0];
   });
   
-  const lockedStrategies = STRATEGIES.filter(s => s.isLocked && s.baskets.includes(activeBasket));
+  // Show every live strategy in the dropdown regardless of active basket.
+  // Tier access is gated on select (canAccess + upgrade modal); basket compatibility
+  // is auto-resolved by the effect below (resets basket to the strategy's first basket).
+  const lockedStrategies = STRATEGIES.filter(s => s.isLive);
 
   const [activeTab, setActiveTab] = useState<'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral'>(() => {
     const paramTab = searchParams.get('tab') as any;
@@ -376,9 +379,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     // If basket filtering results in 0 nodes but backend sent data, show backend data as fallback
     const finalDisplayData = basketData.length > 0 ? basketData : data.allStocks;
 
+    // Use status field for accurate categorization — match openCount logic exactly
     const open = finalDisplayData.filter((r: AllStockItem) => r && r.isBuyZone && r.isPass);
-    const rejected = finalDisplayData.filter((r: AllStockItem) => r && !r.isPass && r.reason !== 'Audit Pending: Node Warming Up' && r.reason !== 'QUALIFIED' && r.reason !== 'OBSERVATION');
-    const neutral = finalDisplayData.filter((r: AllStockItem) => r && ( r.isObservation || (!r.isBuyZone && r.isPass) || r.reason === 'Audit Pending: Node Warming Up' ));
+    const rejected = finalDisplayData.filter((r: AllStockItem) => r && ((r as any).status === 'REJECTED' || (r as any).status === 'NO_DATA' || (!r.isPass && r.reason !== 'No Strategy Signal')));
+    const neutral = finalDisplayData.filter((r: AllStockItem) => r && ((r as any).status === 'NO_SIGNAL' || r.isObservation || (!r.isBuyZone && r.isPass)));
     const watchlist = finalDisplayData; // Full institutional basket
 
     if (activeTab === 'hold') return watchlist; 
@@ -448,21 +452,23 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
     }).length;
   }, [data, activeBasket]);
 
+  // Must match getTradesForTab('neutral') filter exactly
   const neutralCount = useMemo(() => {
     const basket = (BASKETS[activeBasket] || []).map(s => s.trim().toUpperCase());
     return (data?.allStocks || []).filter((r: AllStockItem) => {
       const sym = (r.symbol || '').trim().toUpperCase();
       const inBasket = basket.includes(sym) || basket.includes(sym.replace('.NS', '')) || basket.some(b => b.replace('.NS', '') === sym);
-      return inBasket && ( (r.isBuyZone === false && r.isPass) || r.reason === 'Audit Pending: Node Warming Up' );
+      return inBasket && ((r as any).status === 'NO_SIGNAL' || r.isObservation || (!r.isBuyZone && r.isPass));
     }).length;
   }, [data, activeBasket]);
 
+  // Must match getTradesForTab('rejected') filter exactly
   const rejectedCount = useMemo(() => {
     const basket = (BASKETS[activeBasket] || []).map(s => s.trim().toUpperCase());
     return (data?.allStocks || []).filter((r: AllStockItem) => {
       const sym = (r.symbol || '').trim().toUpperCase();
       const inBasket = basket.includes(sym) || basket.includes(sym.replace('.NS', '')) || basket.some(b => b.replace('.NS', '') === sym);
-      return inBasket && r.isPass === false;
+      return inBasket && ((r as any).status === 'REJECTED' || (r as any).status === 'NO_DATA' || (!r.isPass && r.reason !== 'No Strategy Signal'));
     }).length;
   }, [data, activeBasket]);
 
@@ -477,6 +483,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   // Quick action links
   const quickLinks = [
     { icon: Zap, label: 'Alpha Hub', path: '/alpha-hub', desc: 'Active institutional setups', bg: 'bg-purple-500/10', border: 'border-purple-500/20', iconCls: 'text-purple-400' },
+    { icon: TrendingUp, label: 'Short Term Investing', path: '/short-term', desc: 'ABCD buy B→C→D · targets D→C→B→A', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', iconCls: 'text-cyan-400' },
     { icon: BarChart3, label: 'Charts Terminal', path: '/charts', desc: 'Advanced charting suite', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', iconCls: 'text-[#00d09c]' },
     { icon: Briefcase, label: 'Wealth Desk', path: '/portfolio', desc: 'Track holdings & P&L', bg: 'bg-amber-500/10', border: 'border-amber-500/20', iconCls: 'text-amber-400' },
     { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Verify & log trades', bg: 'bg-blue-400/10', border: 'border-blue-400/20', iconCls: 'text-blue-400' },
@@ -805,28 +812,32 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
           className="grid grid-cols-2 md:grid-cols-4 gap-3"
         >
           <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
-            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Audit Pass Rate</span>
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Qualified</span>
             <span className="text-xl md:text-2xl font-bold text-emerald-500 tabular-nums font-mono">
-              {data ? `${((data.allStocks.filter((s: AllStockItem) => s.isPass).length / Math.max(data.allStocks.length, 1)) * 100).toFixed(1)}%` : '—'}
+              {openCount}
             </span>
-            <span className="text-[10px] text-[var(--text-muted)]">Institutional filter pass</span>
+            <span className="text-[10px] text-[var(--text-muted)]">Audit pass + buy zone</span>
           </div>
           <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
-            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Avg Audit Score</span>
-            <span className="text-xl md:text-2xl font-bold text-blue-500 tabular-nums font-mono">
-              {data ? `${(data.allStocks.reduce((a: number, s: AllStockItem) => a + (s.score || 0), 0) / Math.max(data.allStocks.length, 1)).toFixed(0)}` : '—'}
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Rejected</span>
+            <span className="text-xl md:text-2xl font-bold text-amber-500 tabular-nums font-mono">
+              {rejectedCount}
             </span>
-            <span className="text-[10px] text-[var(--text-muted)]">Mean institutional score</span>
+            <span className="text-[10px] text-[var(--text-muted)]">Failed audit / gate</span>
           </div>
           <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
-            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Rejection Rate</span>
-            <span className="text-xl md:text-2xl font-bold text-amber-500 tabular-nums font-mono">{data ? `${((rejectedCount / Math.max(data.allStocks?.length || 1, 1)) * 100).toFixed(0)}%` : '70%+'}</span>
-            <span className="text-[10px] text-[var(--text-muted)]">Quality filter</span>
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">No Signal</span>
+            <span className="text-xl md:text-2xl font-bold text-[var(--text-muted)] tabular-nums font-mono">
+              {neutralCount}
+            </span>
+            <span className="text-[10px] text-[var(--text-muted)]">No strategy pattern</span>
           </div>
           <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl p-4 flex flex-col gap-1.5 hover:border-[var(--border-secondary)] transition-all">
-            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">{isScreenerRoute ? 'Active Setups' : 'In Universe'}</span>
-            <span className="text-xl md:text-2xl font-bold text-purple-500 tabular-nums font-mono">{isScreenerRoute ? openCount : watchlistCount}</span>
-            <span className="text-[10px] text-[var(--text-muted)]">{isScreenerRoute ? 'Active signals today' : 'Qualified stocks'}</span>
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Universe</span>
+            <span className="text-xl md:text-2xl font-bold text-purple-500 tabular-nums font-mono">
+              {watchlistCount}
+            </span>
+            <span className="text-[10px] text-[var(--text-muted)]">Total basket stocks</span>
           </div>
         </motion.div>
       )}

@@ -137,11 +137,19 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
   const athSales = safeParse(scr.athSales);
   const athNetProfit = safeParse(scr.athNetProfit);
   const athEPS = safeParse(scr.athEPS);
+  const epsHistory = Array.isArray(scr.epsHistory) ? scr.epsHistory : [];
 
-  // Intelligent Leeway (±5% tolerance)
-  const salesPass = athSales > 0 ? (currentSales >= (athSales * 0.95)) : true;
-  const profitPass = athNetProfit > 0 ? (currentNetProfit >= (athNetProfit * 0.95)) : true;
-  const epsPass = athEPS > 0 ? (currentEPS >= (athEPS * 0.95)) : true;
+  // FAIL-CLOSED GATE (2026-08-02): Missing fundamental data must NOT silently pass.
+  // Previously `athSales > 0 ? check : true` treated missing data as PASS, which let
+  // stocks with an incomplete screener scrape (e.g. RELAXO: athSales=0, athNetProfit=0,
+  // epsHistory=[]) generate false signals (RELAXO was the only SIXTY_SEVEN signal today).
+  // ETFs legitimately have no sales/profit — excluded from this rule (same as hard-reject).
+  const fundamentalDataMissing = !isETF && (athSales <= 0 || athNetProfit <= 0);
+
+  // Intelligent Leeway (±5% tolerance) — fail-closed when data is absent
+  const salesPass = athSales > 0 ? (currentSales >= (athSales * 0.95)) : isETF;
+  const profitPass = athNetProfit > 0 ? (currentNetProfit >= (athNetProfit * 0.95)) : isETF;
+  const epsPass = athEPS > 0 ? (currentEPS >= (athEPS * 0.95)) : isETF;
 
   // ── TTM vs ATH Gap Analysis ──────────────────────────────────────────────
   // Calculate how far current TTM is from ATH (for scoring weightage adjustment)
@@ -487,7 +495,8 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
     (debtToEquity > sectorHardRejectDE) || 
     (pledged >= 5) || 
     (smartMoneyTotal < 20.0) ||
-    peHardReject
+    peHardReject ||
+    fundamentalDataMissing
   );
 
   const passThreshold = 60;
@@ -498,7 +507,10 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
     score: totalScore,
     smartMoneyTotal,
     beta,
-    reason: isHardReject ? 'Failed Hard Reject Criteria' : (totalScore < passThreshold ? 'Low Institutional Score' : 'Institutional Pass'),
+    fundamentalDataMissing,
+    reason: isHardReject
+      ? (fundamentalDataMissing ? 'Hard Reject — Fundamental Data Missing (screener incomplete)' : 'Failed Hard Reject Criteria')
+      : (totalScore < passThreshold ? 'Low Institutional Score' : 'Institutional Pass'),
     profitabilityQuality,
     balanceSheetSafety,
     growthQuality,

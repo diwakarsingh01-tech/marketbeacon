@@ -83,37 +83,54 @@ export async function runStrategyChecks(): Promise<AuditCheck[]> {
     autoFixable: false, autoFixed: false
   });
 
-  // SL-6: Envelope Long — gap ~32.5% (14% bands)
+  // SL-6: Envelope Long — gap per tranche (A ≈ 32.5% envelope bands, B/C/D ≈ 11.1% walk-down steps)
   const envLongSignals = signals.filter((s: any) => s.strategy === 'Envelope Long');
   const envLongBad = envLongSignals.filter((s: any) => {
     const gap = ((s.target / s.entryPrice) - 1) * 100;
-    return gap < 30 || gap > 35;
+    // A: lower→upper band of the SMA envelope (14% bands → 32.6%).
+    // B/C/D: 10% walk-down steps → target is previous tranche → 11.1% gap.
+    const expected = s.tranche === 'A' ? 32.5 : 11.1;
+    return Math.abs(gap - expected) > 3;
   });
   checks.push({
-    id: 'SL-6', category: 'strategy', name: 'Envelope Long gap ~32.5% (±2.5%)', severity: 'high',
+    id: 'SL-6', category: 'strategy', name: 'Envelope Long gap per tranche (A ~32.5%, B/C/D ~11.1%)', severity: 'high',
     status: envLongBad.length === 0 ? 'pass' : 'fail',
     details: envLongBad.length === 0 ? `${envLongSignals.length} Envelope Long OK` : `${envLongBad.map((s: any) => `${s.symbol}: ${((s.target/s.entryPrice)-1)*100}%`).join(', ')} off range`,
     autoFixable: false, autoFixed: false
   });
 
-  // SL-7: 52W High/Low — entry near 52W low, target near 52W high
+  // SL-7: 52W High/Low — entry/target must sit on the walk-down ladder derived from the 52W range
   const w52Signals = signals.filter((s: any) => s.strategy?.includes('52 week'));
   const w52Bad = w52Signals.filter((s: any) => {
     const snap = snapshot[s.symbol];
     if (!snap?.quotes?.length) return false;
-    const prices = snap.quotes.map((q: any) => q.close);
-    const lookback = Math.min(251, prices.length - 1);
-    const recent = prices.slice(-lookback);
-    const low52 = Math.min(...recent);
-    const high52 = Math.max(...recent);
-    const entryOk = s.entryPrice >= low52 * 0.95;
-    const targetOk = s.target <= high52 * 1.05;
+    // The 52W strategy computes its range from candle LOWS/HIGHS (not closes).
+    // Signals may trigger days earlier, so the range can extend afterwards — use
+    // drift-tolerant bounds instead of exact ladder matching.
+    const lows = snap.quotes.map((q: any) => q.low);
+    const highs = snap.quotes.map((q: any) => q.high);
+    const lookback = Math.min(251, lows.length - 1);
+    const low52 = Math.min(...lows.slice(-lookback));
+    const high52 = Math.max(...highs.slice(-lookback));
+    const tr = s.tranche || 'A';
+    if (tr === 'A') {
+      // A: entry ≈ 52W low, target ≈ 52W high. Allow range extension drift.
+      const entryOk = s.entryPrice >= low52 * 0.75 && s.entryPrice <= high52 * 1.10;
+      const targetOk = s.target >= s.entryPrice && s.target <= high52 * 1.20;
+      return !entryOk || !targetOk;
+    }
+    // B/C/D: 10% walk-down steps below the low, target = previous tranche price.
+    const step = { B: 0.9, C: 0.81, D: 0.729 }[tr] ?? 1;
+    const expEntry = low52 * step;
+    const expTarget = (low52 * step) / 0.9;
+    const entryOk = s.entryPrice >= expEntry * 0.85 && s.entryPrice <= expEntry * 1.15;
+    const targetOk = s.target >= expTarget * 0.85 && s.target <= expTarget * 1.15;
     return !entryOk || !targetOk;
   });
   checks.push({
-    id: 'SL-7', category: 'strategy', name: '52W High/Low entry within 52W range', severity: 'high',
+    id: 'SL-7', category: 'strategy', name: '52W signals within 52W range (drift-tolerant)', severity: 'high',
     status: w52Bad.length === 0 ? 'pass' : 'fail',
-    details: w52Bad.length === 0 ? `${w52Signals.length} 52W signals OK` : `${w52Bad.map((s: any) => s.symbol).join(', ')} outside 52W range`,
+    details: w52Bad.length === 0 ? `${w52Signals.length} 52W signals OK` : `${w52Bad.map((s: any) => s.symbol).join(', ')} outside 52W ladder`,
     autoFixable: false, autoFixed: false
   });
 

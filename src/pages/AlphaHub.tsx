@@ -395,11 +395,15 @@ const AlphaHubPage: React.FC = () => {
   const handleExportAlpha = () => {
     if (!qualifiedStocks?.length) return;
     const headers = ['Symbol', 'Sector', 'Cap', 'Basket', 'Strategy', 'Audit Score', 'Base Price', 'ROI%', 'Qty', 'Invest Amt'];
-    const rows = qualifiedStocks.map((s: AlphaHubStock) => [
-      s.symbol, s.sector, s.capType, s.basketSource, s.strategy, s.score,
-      s.entryPrice, Number(s.roi)?.toFixed(2),
-      1, s.entryPrice
-    ]);
+    const rows = qualifiedStocks.map((s: AlphaHubStock) => {
+      const qty = calculateQuantity(s, totalCapital);
+      const investAmt = Math.round(qty * (s.entryPrice || s.currentPrice || 1));
+      return [
+        s.symbol, s.sector, s.capType, s.basketSource, s.strategy, s.score,
+        s.entryPrice, Number(s.roi)?.toFixed(2),
+        qty, investAmt
+      ];
+    });
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.body.appendChild(document.createElement('a'));
@@ -919,7 +923,7 @@ const AlphaHubPage: React.FC = () => {
                                 </div>
                                 <div className="text-right">
                                   <span className="text-[7.5px] text-[var(--text-muted)] block mb-0.5 uppercase font-bold">ROI</span>
-                                  <span className="text-emerald-400 font-bold">+{Number(stock.roi || 0).toFixed(1)}%</span>
+                                  <span className={`font-bold ${(stock.roi ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{(stock.roi ?? 0) >= 0 ? '+' : ''}{Number(stock.roi ?? 0).toFixed(1)}%</span>
                                 </div>
                               </div>
                               <Link to={`/stock/${stock.symbol}`} className="flex items-center justify-center gap-1 py-2 bg-[var(--bg-tertiary)] rounded-xl text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider hover:bg-[var(--bg-primary)] transition-colors">
@@ -935,8 +939,8 @@ const AlphaHubPage: React.FC = () => {
 
               {/* Table footer */}
               <div className="bg-[var(--bg-primary)]/20 border border-[var(--border-primary)] rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                <span>Rules-based allocation • 40-stock target portfolio • 50:30:20 cap mix</span>
-                <span className="text-blue-400">Strategy-weighted quantities</span>
+                <span>Rules-based allocation • {data?.summary?.total ?? qualifiedStocks.length}-stock portfolio • {qualifiedStocks.filter(s => s.capType === 'LARGE').length}L : {qualifiedStocks.filter(s => s.capType === 'MID').length}M : {qualifiedStocks.filter(s => s.capType === 'SMALL').length}S</span>
+                <span className="text-blue-400">Cap-weighted quantities</span>
               </div>
             </div>
 
@@ -964,7 +968,7 @@ const AlphaHubPage: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs font-medium text-[var(--text-tertiary)]">
-                  Historical simulation of actual strategy rules (entry/exit cycles) across your allocation.
+                  Modeled projection based on backtested average strategy CAGR. Entry/exit counts are simulated averages, not actual trades.
                 </p>
               </div>
 
@@ -1181,11 +1185,11 @@ const AlphaHubPage: React.FC = () => {
              <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider border-t border-[var(--border-primary)] pt-6">
                <div className="flex items-center gap-2">
                  <Activity className="h-3 w-3 text-emerald-400" />
-                 Alpha Desk sync: <span className="text-emerald-400">Optimal</span>
+                 Alpha Desk sync: <span className="text-emerald-400">{data?.updatedAt ? new Date(data.updatedAt).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Pending'}</span>
                </div>
                <div className="flex items-center gap-2">
                  <Database className="h-3 w-3" />
-                 20-year historical data active
+                 {backtestYears}Y backtest data active
                </div>
                <div className="flex items-center gap-2">
                  <Lock className="h-3 w-3" />

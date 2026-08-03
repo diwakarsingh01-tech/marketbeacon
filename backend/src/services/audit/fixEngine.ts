@@ -1,5 +1,6 @@
 import { AuditCheck } from './types.js';
 import { precalculateAlpha40 } from '../worker.js';
+import { recomputeStoredStrategies } from './snapshotDataQuality.js';
 
 interface FixResult {
   checkId: string;
@@ -65,6 +66,21 @@ export async function attemptAutoFix(check: AuditCheck): Promise<FixResult> {
         await precalculateAlpha40();
         result.fixed = true;
       } catch {}
+      break;
+
+    case 'SDQ-6':
+      // Fail-open signals stored with missing fundamentals — recompute stored
+      // strategies from the snapshot's own data (fail-closed gate + mandate wipe),
+      // persist the file and update the live cache. No network needed.
+      console.log(`🔧 [AUDIT] Auto-fix: recomputing stored strategies (SDQ-6 fail-open signals)...`);
+      try {
+        const res = await recomputeStoredStrategies();
+        result.fixed = true;
+        result.after = { ...check, status: 'fixed', fixedDetails: `${res.total} symbols recomputed, ${res.changed} changed` };
+        console.log(`✅ [AUDIT] Stored strategies recomputed: ${res.total} symbols, ${res.changed} changed.`);
+      } catch (e: any) {
+        console.error(`❌ [AUDIT] SDQ-6 auto-fix failed: ${e.message}`);
+      }
       break;
 
     default:

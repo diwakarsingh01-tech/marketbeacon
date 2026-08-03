@@ -372,15 +372,52 @@ export async function initDB() {
 
   console.log('✅ SQLite/Turso Integration Active!');
 
-  // Seed the ALPHA7 voucher code
+  // ── Admin Audit Log table ──────────────────────────────────────────────
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS admin_audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      admin_id INTEGER NOT NULL,
+      admin_email TEXT NOT NULL,
+      action TEXT NOT NULL,
+      target_user_id INTEGER,
+      target_email TEXT,
+      old_value TEXT,
+      new_value TEXT,
+      ip_address TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (admin_id) REFERENCES users(id)
+    )
+  `).catch(() => {});
+
+  // ── Payment transactions table ────────────────────────────────────────
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS payment_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      amount REAL,
+      currency TEXT DEFAULT 'INR',
+      payment_method TEXT,
+      transaction_ref TEXT,
+      status TEXT DEFAULT 'pending',
+      verified INTEGER DEFAULT 0,
+      verified_by INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `).catch(() => {});
+
+  // Seed the ALPHA7 voucher code — reduced to 500 max uses (was 10000)
   try {
     const existing = await db.get('SELECT id FROM vouchers WHERE code = ?', ['ALPHA7']);
     if (!existing) {
       await db.run(
         'INSERT INTO vouchers (code, tier, duration_days, max_uses, current_uses, is_active) VALUES (?, ?, ?, ?, 0, 1)',
-        ['ALPHA7', 'alpha', 7, 10000]
+        ['ALPHA7', 'alpha', 7, 500]
       );
-      console.log('🎁 Seeded ALPHA7 voucher (7-day trial of all features, 10000 uses).');
+      console.log('🎁 Seeded ALPHA7 voucher (7-day trial, max 500 uses).');
+    } else {
+      // Clamp existing ALPHA7 max_uses from 10000 to 500
+      await db.run('UPDATE vouchers SET max_uses = MIN(max_uses, 500) WHERE code = ? AND max_uses > 500', ['ALPHA7']);
     }
   } catch (e: any) {
     console.error('Failed to seed ALPHA7 voucher:', e.message);

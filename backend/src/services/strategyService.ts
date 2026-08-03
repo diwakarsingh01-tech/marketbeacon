@@ -1,7 +1,7 @@
 import { validateBatch9 } from '../services/fundamentalAudit.js';
-import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateSRStrategy, calculateCupHandle, calculateSixtySevenFunda, calculateTwentyRallyRetest, calculateReverseHeadShoulders } from '../strategies/index.js';
+import { calculateEnvelope, processShortEnvelope, calculateBollingerBand, calculateSMAStacking, calculate52WeekStrategy, calculateSRStrategy, calculateCupHandle, calculateSixtySevenFunda, calculateTwentyRallyRetest, calculateReverseHeadShoulders, calculateShortTermABCD } from '../strategies/index.js';
 
-export const runStrategyAnalysis = async (stratId: string, snap: any, marketCap: number, basketName: string = 'ALL') => {
+export const runStrategyAnalysis = async (stratId: string, snap: any, marketCap: number, basketName: string = 'ALL', precomputedAudit?: any) => {
     const isElite = basketName === 'Elite Basket';
     const isQuality = basketName === 'Quality Basket';
     const isGrowth = basketName === 'Growth Basket';
@@ -18,7 +18,8 @@ export const runStrategyAnalysis = async (stratId: string, snap: any, marketCap:
         'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
         'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
         'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-        'REVERSE_HEAD_SHOULDERS': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
+        'REVERSE_HEAD_SHOULDERS': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
+        'SHORT_TERM_ABCD': ['Growth Basket', 'Elite Basket', 'Quality Basket']
     };
 
     const allowed = authorizedBaskets[stratId] || [];
@@ -39,6 +40,7 @@ export const runStrategyAnalysis = async (stratId: string, snap: any, marketCap:
         case 'TWENTY_RALLY_RETEST': result = calculateTwentyRallyRetest(snap.quotes); break;
         case 'SIXTY_SEVEN_FUNDA': result = calculateSixtySevenFunda(snap.quotes, snap.screener); break;
         case 'REVERSE_HEAD_SHOULDERS': result = calculateReverseHeadShoulders(snap.quotes); break;
+        case 'SHORT_TERM_ABCD': result = calculateShortTermABCD(snap.quotes); break;
         default: return null;
     }
 
@@ -46,7 +48,8 @@ export const runStrategyAnalysis = async (stratId: string, snap: any, marketCap:
       const sym = snap.sym || snap.symbol || '';
       if (sym) {
         try {
-          const audit = await validateBatch9(sym, snap, basketName);
+          // Reuse a precomputed audit when the caller already ran one (avoids double CPU cost)
+          const audit = precomputedAudit || await validateBatch9(sym, snap, basketName);
           if (!audit.isPass) {
             return { isBuyZone: false, reason: `Fundamental Gate: ${audit.reason} (Score: ${audit.score})` };
           }

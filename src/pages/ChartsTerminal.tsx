@@ -52,7 +52,8 @@ const STRATEGY_NAMES: Record<string, string> = {
   'SMA_BCD': 'SMA + BCD',
   'SR_STRATEGY': 'Support & Resistance (S&R)',
   'SIXTY_SEVEN_FUNDA': 'Institutional Reset (67%)',
-  'TWENTY_RALLY_RETEST': 'Velocity Retest (20%)'
+  'TWENTY_RALLY_RETEST': 'Velocity Retest (20%)',
+  'SHORT_TERM_ABCD': 'Short Term Investing (ABCD)'
 };
 
 import { useTheme } from '../context/ThemeContext';
@@ -163,17 +164,17 @@ const ChartsTerminalContent: React.FC = () => {
         setFundamentals(fundData);
         // Auto-select first active setup strategy
         if (fundData.strategies) {
+          // Auto-select the live buy-zone strategy regardless of basket: the backend now
+          // evaluates every strategy through the fundamental gate (basket = 'ALL'), so basket
+          // membership is a display/priority concern, never a signal blocker.
           const buyZoneStrat = Object.keys(fundData.strategies).find(
-            k => fundData.strategies[k].isBuyZone && 
-                 (STRATEGIES.find(s => s.id === k || (s.id === 'RHS_ABCD' && k === 'REVERSE_HEAD_SHOULDERS') || (s.id === 'REVERSE_HEAD_SHOULDERS' && k === 'RHS_ABCD'))?.baskets.includes(selectedBasket) ?? true)
+            k => fundData.strategies[k].isBuyZone
           );
           if (buyZoneStrat) {
             setActiveStrategyId(buyZoneStrat);
           } else {
-            // Fallback to first available strategy that is authorized for selectedBasket
-            const firstStrat = Object.keys(fundData.strategies).find(
-              k => STRATEGIES.find(s => s.id === k || (s.id === 'RHS_ABCD' && k === 'REVERSE_HEAD_SHOULDERS') || (s.id === 'REVERSE_HEAD_SHOULDERS' && k === 'RHS_ABCD'))?.baskets.includes(selectedBasket) ?? true
-            );
+            // Fallback to the first strategy that produced a signal for this stock
+            const firstStrat = Object.keys(fundData.strategies).find(k => fundData.strategies[k]);
             setActiveStrategyId(firstStrat || null);
           }
         }
@@ -1321,7 +1322,9 @@ const ChartsTerminalContent: React.FC = () => {
     
     const isAuthorized = (stratId: string) => {
       const config = STRATEGIES.find(s => s.id === stratId || (s.id === 'RHS_ABCD' && stratId === 'REVERSE_HEAD_SHOULDERS') || (s.id === 'REVERSE_HEAD_SHOULDERS' && stratId === 'RHS_ABCD'));
-      return config?.baskets.includes(selectedBasket) ?? true;
+      // A live buy-zone signal is always authorized — basket membership only tags/prioritizes
+      // strategies, it never hides a valid signal (backend runs all strategies, basket = 'ALL').
+      return (config?.baskets.includes(selectedBasket) ?? true) || fundamentals?.strategies?.[stratId]?.isBuyZone;
     };
 
     if (activeStrategyId && fundamentals.strategies[activeStrategyId]?.isBuyZone && isAuthorized(activeStrategyId)) {
@@ -1743,7 +1746,9 @@ const ChartsTerminalContent: React.FC = () => {
                     {Object.entries(fundamentals.strategies)
                       .filter(([key]) => {
                         const config = STRATEGIES.find(s => s.id === key || (s.id === 'RHS_ABCD' && key === 'REVERSE_HEAD_SHOULDERS') || (s.id === 'REVERSE_HEAD_SHOULDERS' && key === 'RHS_ABCD'));
-                        return config?.baskets.includes(selectedBasket) ?? true;
+                        // Show strategies in the selected basket, plus any live buy-zone signal —
+                        // buy-zone signals are basket-independent after the backend sync fix.
+                        return (config?.baskets.includes(selectedBasket) ?? true) || fundamentals?.strategies?.[key]?.isBuyZone;
                       })
                       .map(([key, value]: [string, any]) => {
                       const hasZone = value && typeof value === 'object';
@@ -1956,6 +1961,19 @@ const ChartsTerminalContent: React.FC = () => {
                         +{(((Number(activeStrategy.target || 0) - Number(activeStrategy.entryPrice || 0)) / Math.max(1, Number(activeStrategy.entryPrice || 1))) * 100).toFixed(1)}%
                       </span>
                     </div>
+                    {activeStrategy.targets && activeStrategy.targets.length > 0 && (
+                      <div className="border-t border-[var(--border-primary)]/40 pt-2 space-y-1.5">
+                        <span className="text-[var(--text-tertiary)] font-bold text-xs">Short-Term Targets Ladder (D→C→B→A):</span>
+                        {activeStrategy.targets.map((t: any, i: number) => (
+                          <div key={i} className="flex justify-between items-center text-xs">
+                            <span className="text-[var(--text-secondary)] font-mono">T{i + 1} · Level {t.level}</span>
+                            <span className="font-extrabold text-emerald-400">
+                              ₹ {Number(t.price || 0).toLocaleString('en-IN')} <span className="text-emerald-500/80">+{t.gainPct}%</span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

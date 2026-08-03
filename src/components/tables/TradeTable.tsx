@@ -177,7 +177,7 @@ const EmptyState = ({ activeTab, searchTerm, onClearSearch, onAddPosition, onCon
             No institutional assets in the current basket match the selected criteria.
           </p>
           <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider italic">
-            Check other filters or matrices for active setups.
+            Strict strategy filters — 0 open signals today is normal. Check Neutral tab or switch Universe/Strategy for live setups.
           </p>
         </>
       )}

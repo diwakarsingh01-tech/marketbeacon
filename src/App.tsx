@@ -18,6 +18,7 @@ const LoginPage = lazy(() => import('./pages/Login'));
 const PinLoginPage = lazy(() => import('./pages/PinLogin'));
 const DashboardPage = lazy(() => import('./pages/Dashboard'));
 const AlphaHubPage = lazy(() => import('./pages/AlphaHub'));
+const ShortTermInvestingPage = lazy(() => import('./pages/ShortTermInvesting'));
 const GuidePage = lazy(() => import('./pages/Guide'));
 const PublicAnalysisPage = lazy(() => import('./pages/PublicAnalysis'));
 const StockFundamentalsPage = lazy(() => import('./pages/StockFundamentals'));
@@ -115,6 +116,7 @@ function AnimatedRoutes() {
           <Route path="/ai-assistant" element={<AiAssistantPage />} />
           <Route path="/app" element={<AppHomePage />} />
           <Route path="/alpha-hub" element={<AlphaHubPage />} />
+          <Route path="/short-term" element={<ShortTermInvestingPage />} />
           <Route path="/screener" element={<DashboardPage key="screener" defaultTab="open" />} />
           <Route path="/screener-verify" element={<ScreenerVerifyPage />} />
           <Route path="/market" element={<DashboardPage key="market" defaultTab="hold" />} />

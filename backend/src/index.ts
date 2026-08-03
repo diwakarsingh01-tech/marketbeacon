@@ -274,7 +274,8 @@ export const STRATEGIES = [
   { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
   { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
   { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
-  { id: 'REVERSE_HEAD_SHOULDERS', name: 'Reverse Head & Shoulders', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'alpha', isLocked: true }
+  { id: 'REVERSE_HEAD_SHOULDERS', name: 'Reverse Head & Shoulders', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'alpha', isLocked: true },
+  { id: 'SHORT_TERM_ABCD', name: 'Short Term Investing (ABCD)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true }
 ];
 
 export const BASKETS: Record<string, string[]> = {
@@ -320,7 +321,18 @@ export const BASKETS: Record<string, string[]> = {
 // Caches full audit results per (basket, strategyId) with 60s TTL
 // so repeated fetches (page navigation, active-setups polling) are instant.
 const auditCache = new Map<string, { result: any; timestamp: number }>();
-const AUDIT_CACHE_TTL = 60_000; // 60 seconds
+
+// Dynamic cache TTL: 5min during market hours (9:15 AM - 3:30 PM IST), 30min after hours
+const getAuditCacheTTL = (): number => {
+  const now = new Date();
+  const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const hours = ist.getHours();
+  const mins = ist.getMinutes();
+  const totalMins = hours * 60 + mins;
+  const marketOpen = 9 * 60 + 15;  // 9:15 AM
+  const marketClose = 15 * 60 + 30; // 3:30 PM
+  return (totalMins >= marketOpen && totalMins <= marketClose) ? 300_000 : 1800_000;
+};
 
 // Guard to prevent concurrent Alpha-40 precalculations
 let alpha40Calculating = false;
@@ -632,8 +644,8 @@ app.post('/api/auth/google', async (req, res) => {
       const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
       payload = ticket.getPayload();
     } catch (err: any) {
-      console.warn('⚠️ verifyIdToken failed, using decoded JWT:', err.message);
-      payload = jwt.decode(credential);
+      console.error('🚨 [SECURITY] Google verifyIdToken FAILED — rejecting login:', err.message);
+      return res.status(401).json({ error: 'Invalid Google token. Authentication rejected.' });
     }
     if (!payload || !payload.email) throw new Error('Invalid Token');
     const email = payload.email.toLowerCase();
@@ -656,10 +668,16 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// Dev-only login bypass (excluded from auth rate limiter by being on a different path)
+// Dev-only login bypass — double-guarded: must have NODE_ENV !== 'production' AND valid DEV_SECRET
 app.all('/api/dev/login', async (req, res) => {
   try {
     if (process.env.NODE_ENV === 'production') return res.status(403).json({ error: 'Not available in production' });
+    const devSecret = req.body?.secret || (req.query?.secret as string);
+    const expectedSecret = process.env.DEV_LOGIN_SECRET || 'DEV_SECRET_MUST_BE_SET';
+    if (!devSecret || devSecret !== expectedSecret) {
+      console.warn('🚨 [SECURITY] Dev login attempted without valid secret');
+      return res.status(403).json({ error: 'Invalid dev secret' });
+    }
     const email = req.body?.email || (req.query?.email as string);
     if (!email) return res.status(400).json({ error: 'Email required' });
     const db = getDB();
@@ -699,10 +717,25 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
       });
     }
 
+    // If basket=ALL and no specific strategy, run ALL live strategies authorized for user's tier
+    const isAllBasket = basket === 'ALL' && !selectedStrategyId;
+    let strategyIds: string[];
+    
+    if (isAllBasket) {
+      // Get all live strategies user has access to
+      const accessibleStrategies = STRATEGIES.filter(s => 
+        s.isLive && tierWeights[userTier] >= tierWeights[s.tier]
+      );
+      strategyIds = accessibleStrategies.map(s => s.id);
+    } else {
+      // Single strategy mode
+      strategyIds = selectedStrategyId ? [selectedStrategyId as string] : ['SR_STRATEGY'];
+    }
+
     // If a strategy has configured baskets, use the union of all its baskets' symbols;
     // otherwise fall back to the requested basket or all symbols.
     let symbols: string[];
-    if (strategy?.baskets?.length) {
+    if (!isAllBasket && strategy?.baskets?.length) {
       symbols = Array.from(new Set(strategy.baskets.flatMap(b => BASKETS[b] || [])));
     } else {
       symbols = BASKETS[basket] || Array.from(new Set(Object.values(BASKETS).flat()));
@@ -712,11 +745,11 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
     const uniqueSymbols = Array.from(new Set(symbols)).filter(s => s && s !== '^NSEI');
 
     // ── Cache check ──────────────────────────────────────────────────────
-    const effectiveStrategy = (selectedStrategyId as string) || 'SR_STRATEGY';
-    const cacheKey = `${basket}:${effectiveStrategy}`;
+    const cacheTTL = getAuditCacheTTL();
+    const cacheKey = isAllBasket ? `ALL:${strategyIds.sort().join(',')}` : `${basket}:${strategyIds[0]}`;
     const cached = auditCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < AUDIT_CACHE_TTL) {
-      console.log(`[AUDIT CACHE] HIT ${cacheKey} (${cached.result.allStocks.length} stocks)`);
+    if (cached && (Date.now() - cached.timestamp) < cacheTTL) {
+      console.log(`[AUDIT CACHE] HIT ${cacheKey} (${cached.result.allStocks.length} stocks, TTL ${cacheTTL / 1000}s)`);
       return res.json(cached.result);
     }
     console.log(`[AUDIT CACHE] MISS ${cacheKey} — computing ${uniqueSymbols.length} symbols...`);
@@ -725,6 +758,7 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
     const snapshotKeys = Object.keys(snapshot);
 
     // ── Process stocks in parallel batches ──────────────────────────────
+    // For ALL basket: run all strategies per stock, keep best (highest ROI) buy-zone signal
     const results = await processAuditBatch(uniqueSymbols, async (sym) => {
       const cleanSym = sym.trim().toUpperCase();
       let snap = snapshot[cleanSym] || snapshot[`${cleanSym}.NS`];
@@ -734,79 +768,162 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
         if (key) snap = snapshot[key];
       }
 
-      if (!snap) return null; // Skip stocks without snapshot data
+      // Return a "NO DATA" stub for stocks without snapshot
+      if (!snap) {
+        return {
+          symbol: sym,
+          strategy: null, strategyId: null,
+          entryPrice: 0, target: 0, currentPrice: 0,
+          tranche: null, targets: [], abcd: null,
+          score: 0, auditScore: 0, smartMoney: 0,
+          entryTime: null, reason: 'NO DATA: Snapshot unavailable',
+          isBuyZone: false, isObservation: false, isPass: false,
+          dataMissing: true, status: 'NO_DATA',
+          sector: MANUAL_SECTOR_MAP[sym] || 'General',
+          peRatio: 0, peMedians: {},
+          auditSegments: { profitability: 0, safety: 0, growth: 0, efficiency: 0 }
+        };
+      }
 
-      const strategyData: any = await runStrategyAnalysis(effectiveStrategy, snap, snap.quote.marketCap, basket);
-      const strategyIsBuyZone = strategyData?.isBuyZone === true;
-      const strategyObservation = strategyData?.status === 'OBSERVATION';
+      // Run all strategies in PARALLEL for speed — each only reads snap.quotes (no mutation)
+      const strategyPromises = strategyIds.map(async (stratId) => {
+        const stratConfig = STRATEGIES.find(s => s.id === stratId);
+        if (!stratConfig || !stratConfig.isLive) return null;
+        
+        const strategyData: any = await runStrategyAnalysis(stratId, snap, snap.quote.marketCap, basket);
+        const strategyIsBuyZone = strategyData?.isBuyZone === true;
+        const strategyObservation = strategyData?.status === 'OBSERVATION';
 
+        if (!strategyIsBuyZone && !strategyObservation) return null;
+        return { stratId, stratConfig, strategyData, strategyIsBuyZone, strategyObservation };
+      });
+
+      const strategyResults = (await Promise.all(strategyPromises)).filter(Boolean);
+      if (strategyResults.length === 0) {
+        // No strategy triggered — still return the stock so screener shows full basket
+        return {
+          symbol: sym,
+          strategy: null, strategyId: null,
+          entryPrice: 0, target: 0,
+          currentPrice: snap.quotes[snap.quotes.length - 1].close,
+          tranche: null, targets: [], abcd: null,
+          score: 0, auditScore: 0, smartMoney: 0,
+          entryTime: null, reason: 'No Strategy Signal',
+          isBuyZone: false, isObservation: false, isPass: false,
+          dataMissing: false, status: 'NO_SIGNAL',
+          sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
+          peRatio: snap.screener?.peRatio || snap.quote?.pe,
+          peMedians: snap.screener?.peMedians || {},
+          auditSegments: { profitability: 0, safety: 0, growth: 0, efficiency: 0 }
+        };
+      }
+
+      // Run audit ONCE per stock (not per strategy) — major CPU savings
       let audit = { 
-        score: 0, 
-        reason: 'Pattern Not Found', 
-        isPass: false, 
-        smartMoneyTotal: 0,
-        profitabilityQuality: 0,
-        balanceSheetSafety: 0,
-        growthQuality: 0,
-        efficiencyGovernance: 0
+        score: 0, reason: 'Pattern Not Found', isPass: false, dataMissing: false,
+        smartMoneyTotal: 0, profitabilityQuality: 0, balanceSheetSafety: 0,
+        growthQuality: 0, efficiencyGovernance: 0
       };
-      
-      if (strategyIsBuyZone || strategyObservation) {
+      const anyBuyZone = strategyResults.some(r => r!.strategyIsBuyZone);
+      const anyObservation = strategyResults.some(r => r!.strategyObservation);
+      if (anyBuyZone || anyObservation) {
         const res = await validateBatch9(cleanSym, snap, basket);
         if (res) audit = res as any;
       }
 
-      const basePrice = strategyData?.entryPrice || snap.quotes[snap.quotes.length - 1].close;
-      const abcdLevels = strategyData?.abcd || calculateABCDLevels(basePrice, snap.quote?.marketCap);
+      // Build signals from all triggered strategies using the shared audit
+      const allSignals: any[] = strategyResults.map(({ stratId, stratConfig, strategyData, strategyIsBuyZone, strategyObservation }) => {
+        const basePrice = strategyData?.entryPrice || snap.quotes[snap.quotes.length - 1].close;
+        const abcdLevels = strategyData?.abcd || calculateABCDLevels(basePrice, snap.quote?.marketCap);
+        const isGateRejection = strategyData?.isBuyZone === false && typeof strategyData?.reason === 'string' && strategyData.reason.includes('Fundamental Gate');
+        const passThreshold = 60;
+        const auditPass = audit.score >= passThreshold && !audit.reason.includes('Hard Reject') && !audit.dataMissing;
+        const finalPass = isGateRejection ? false : (auditPass && (strategyIsBuyZone || strategyObservation));
+        const displayReason = audit.dataMissing
+          ? 'REJECTED: Fundamental data missing (screener incomplete)'
+          : isGateRejection
+            ? strategyData.reason
+            : (strategyData?.status ? strategyData.status : (strategyIsBuyZone ? 'QUALIFIED' : 'Pattern Not Found'));
 
-      const isGateRejection = strategyData?.isBuyZone === false && typeof strategyData?.reason === 'string' && strategyData.reason.includes('Fundamental Gate');
-      const passThreshold = 60;
-      const auditPass = audit.score >= passThreshold && !audit.reason.includes('Hard Reject');
-      const finalPass = isGateRejection ? false : (auditPass && (strategyIsBuyZone || strategyObservation));
-      const displayReason = isGateRejection
-        ? strategyData.reason
-        : (strategyData?.status
-          ? strategyData.status
-          : (strategyIsBuyZone ? 'QUALIFIED' : 'Pattern Not Found'));
+        return {
+          strategy: stratConfig.name, strategyId: stratId,
+          entryPrice: strategyData?.entryPrice || 0, target: strategyData?.target || 0,
+          currentPrice: snap.quotes[snap.quotes.length - 1].close,
+          tranche: strategyData?.tranche || null, targets: strategyData?.targets || [], abcd: abcdLevels,
+          score: audit.score, auditScore: audit.score, smartMoney: audit.smartMoneyTotal,
+          entryTime: strategyData?.triggerDate || snap.quotes[snap.quotes.length-1].date,
+          reason: displayReason, isBuyZone: strategyIsBuyZone, isObservation: strategyObservation,
+          isPass: finalPass, dataMissing: audit.dataMissing === true,
+          sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
+          peRatio: snap.screener?.peRatio || snap.quote?.pe, peMedians: snap.screener?.peMedians || {},
+          auditSegments: { profitability: audit.profitabilityQuality, safety: audit.balanceSheetSafety, growth: audit.growthQuality, efficiency: audit.efficiencyGovernance }
+        };
+      });
 
+      // If at least one strategy triggered — return best signal (pass or fail)
+      if (allSignals.length > 0) {
+        const bestSignal = allSignals.sort((a, b) => {
+          const roiA = a.currentPrice > 0 && a.entryPrice > 0 ? ((a.target / a.entryPrice) - 1) * 100 : 0;
+          const roiB = b.currentPrice > 0 && b.entryPrice > 0 ? ((b.target / b.entryPrice) - 1) * 100 : 0;
+          return roiB - roiA;
+        })[0];
+        return { symbol: sym, status: (bestSignal.isPass && bestSignal.isBuyZone) ? 'QUALIFIED' : (bestSignal.isPass ? 'OBSERVATION' : 'REJECTED'), ...bestSignal };
+      }
+
+      // No strategy triggered — still return the stock so screener shows full basket
       return {
         symbol: sym,
-        entryTime: strategyData?.triggerDate || snap.quotes[snap.quotes.length-1].date,
-        entryPrice: strategyData?.entryPrice || 0,
-        target: strategyData?.target || 0,
+        strategy: null, strategyId: null,
+        entryPrice: 0, target: 0,
         currentPrice: snap.quotes[snap.quotes.length - 1].close,
-        isBuyZone: strategyIsBuyZone,
-        isObservation: strategyObservation,
-        reason: displayReason,
-        isPass: finalPass,
-        score: audit.score,
-        auditScore: audit.score,
-        smartMoney: audit.smartMoneyTotal,
-        abcd: abcdLevels,
+        tranche: null, targets: [], abcd: null,
+        score: 0, auditScore: 0, smartMoney: 0,
+        entryTime: null, reason: 'No Strategy Signal',
+        isBuyZone: false, isObservation: false, isPass: false,
+        dataMissing: false, status: 'NO_SIGNAL',
         sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
         peRatio: snap.screener?.peRatio || snap.quote?.pe,
         peMedians: snap.screener?.peMedians || {},
-        auditSegments: {
-          profitability: audit.profitabilityQuality,
-          safety: audit.balanceSheetSafety,
-          growth: audit.growthQuality,
-          efficiency: audit.efficiencyGovernance
-        }
+        auditSegments: { profitability: 0, safety: 0, growth: 0, efficiency: 0 }
       };
     });
 
     // Filter out nulls (stocks without snapshot data)
     const filtered = results.filter(r => r !== null);
-    const responsePayload = { allStocks: filtered };
+    
+    // Status breakdown for dashboard metrics
+    const statusCounts = {
+      total: filtered.length,
+      qualified: filtered.filter((s: any) => s.status === 'QUALIFIED').length,
+      rejected: filtered.filter((s: any) => s.status === 'REJECTED').length,
+      observation: filtered.filter((s: any) => s.status === 'OBSERVATION').length,
+      noSignal: filtered.filter((s: any) => s.status === 'NO_SIGNAL').length,
+      noData: filtered.filter((s: any) => s.status === 'NO_DATA').length,
+    };
+    
+    const responsePayload = { allStocks: filtered, totalUniverse: uniqueSymbols.length, statusCounts };
 
-    // ── Store in cache ───────────────────────────────────────────────────
+    // ── Store in cache (both ALL and specific basket) ────────────────────
     auditCache.set(cacheKey, { result: responsePayload, timestamp: Date.now() });
-    console.log(`[AUDIT CACHE] STORED ${cacheKey} (${filtered.length} stocks)`);
+    console.log(`[AUDIT CACHE] STORED ${cacheKey} (${filtered.length} stocks, TTL ${cacheTTL / 1000}s)`);
+
+    // ── Admin alert: flag if >20% of basket has missing data ─────────────
+    const noDataPct = statusCounts.total > 0 ? (statusCounts.noData / statusCounts.total) * 100 : 0;
+    if (noDataPct > 20 && basket !== 'ALL') {
+      console.log(`[DATA ALERT] ${basket}: ${statusCounts.noData}/${statusCounts.total} stocks (${noDataPct.toFixed(0)}%) have missing snapshot data`);
+      try {
+        await notifyAdmins(
+          `Data Alert: ${basket} — ${statusCounts.noData} stocks missing data`,
+          `${statusCounts.noData} of ${statusCounts.total} stocks (${noDataPct.toFixed(0)}%) in ${basket} have no snapshot data. Run screener to refresh.`,
+          'system'
+        );
+      } catch {}
+    }
 
     // ── Evict stale cache entries ────────────────────────────────────────
     const now = Date.now();
     for (const [k, v] of auditCache.entries()) {
-      if (now - v.timestamp > AUDIT_CACHE_TTL * 2) auditCache.delete(k);
+      if (now - v.timestamp > cacheTTL * 2) auditCache.delete(k);
     }
 
     res.json(responsePayload);
@@ -1183,8 +1300,10 @@ app.get('/api/public/analysis/:symbol', async (req, res) => {
     const normPe = audit?.metrics?.normalizedPe || 0;
     const displayPe = (rawPe > 70 && normPe > 0 && normPe < rawPe) ? normPe : rawPe;
 
+    const currentMarketPrice = snap.quotes?.[snap.quotes.length - 1]?.close || 0;
     const response = { 
       symbol, 
+      price: Math.round(currentMarketPrice * 100) / 100,
       score: Math.round(audit.score), 
       isPass: audit.isPass, 
       strategies: qualified,
@@ -1260,29 +1379,18 @@ app.get('/api/stock-fundamentals', async (req, res) => {
     const lastPrice = lastQuote?.close || 0;
     const change = snap.quote?.regularMarketChangePercent || 0;
 
-    // Filter strategies based on basket authorization
-    const filteredStrategies: Record<string, any> = {};
-    if (snap.strategies) {
-      const authorizedBaskets: Record<string, string[]> = {
-        'ENVELOPE_LONG': ['Elite Basket', 'Quality Basket'],
-        'ENVELOPE_SHORT': ['Elite Basket', 'Quality Basket'],
-        'BOLLINGER': ['Elite Basket', 'Quality Basket'],
-        '52W_HIGH_LOW': ['Elite Basket', 'Quality Basket'],
-        'SMA_BCD': ['Elite Basket', 'Quality Basket'],
-        'CUP_HANDLE_ABCD': ['Quality Basket', 'Elite Basket'],
-        'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-        'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-        'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-        'RHS_ABCD': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-        'REVERSE_HEAD_SHOULDERS': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
-      };
-
-      for (const [key, val] of Object.entries(snap.strategies)) {
-        const allowed = authorizedBaskets[key] || [];
-        if (allowed.includes(symbolBasket)) {
-          filteredStrategies[key] = val;
-        }
-      }
+    // Single source of truth: run the SAME live strategy engine as Alpha Terminal & Matrix
+    // (runStrategyAnalysis with basket authorization + validateBatch9 fundamental gate).
+    // Stored snap.strategies are gated by a different audit (checkInstitutionalMandates) and can
+    // go stale — using them here caused chart / alpha / matrix signals to disagree.
+    //
+    // Basket: 'ALL' — chart terminal should evaluate every strategy through the fundamental gate
+    // only (like Alpha's Technical Scan). Strategy eligibility (Growth / Elite / Alpha tier) is
+    // decided in the frontend from the strategy config, not by server-side basket authorization,
+    // so the chart never shows an empty signal set for a valid stock.
+    const liveStrategies: Record<string, any> = {};
+    for (const sid of STRATEGIES.map(s => s.id)) {
+      liveStrategies[sid] = await runStrategyAnalysis(sid as any, snap, snap.quote?.marketCap || 0, 'ALL', audit);
     }
     
     res.json({
@@ -1311,7 +1419,7 @@ app.get('/api/stock-fundamentals', async (req, res) => {
       fiftyTwoWeekHigh: snap.quote?.fiftyTwoWeekHigh,
       beta: audit?.metrics?.beta != null ? Number(audit.metrics.beta.toFixed(2)) : (snap.quote?.beta != null ? Number(Number(snap.quote.beta).toFixed(2)) : null),
       shareholding: audit.metrics,
-      strategies: filteredStrategies,
+      strategies: liveStrategies,
       ttmVsAth: audit.ttmVsAth || {},
       dataAge: {
         lastUpdated: snap.lastUpdated || null,
@@ -1601,37 +1709,15 @@ app.post('/api/auth/mobile-send-otp', async (req, res) => {
   try {
     const { mobile } = req.body;
     if (!mobile) return res.status(400).json({ error: 'Mobile number is required' });
-    console.log(`📡 [AUTH] Mobile OTP requested for: ${mobile}`);
-    res.json({ success: true, message: 'OTP flow initialized' });
+    console.warn(`⚠️ [AUTH] Mobile OTP requested for: ${mobile} — DISABLED: No SMS provider configured`);
+    res.status(501).json({ error: 'Mobile authentication is currently disabled. Please use Google or email login.' });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/auth/mobile-verify-otp', async (req, res) => {
-  const start = Date.now();
   try {
-    const { mobile, otp } = req.body;
-    if (!mobile || !otp) return res.status(400).json({ error: 'Mobile and OTP are required' });
-
-    const db = getDB();
-    const identifier = `${mobile}@marketbeacon.com`;
-    let user = await db.get('SELECT * FROM users WHERE email = ?', [identifier]);
-
-    const role = 'user';
-    const tier = 'free';
-
-    if (!user) {
-      console.log(`🆕 [AUTH] Creating new mobile user: ${mobile}`);
-      const result = await db.run(
-        'INSERT INTO users (name, email, password, role, tier, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-        [`User ${mobile.slice(-4)}`, identifier, 'MOBILE_AUTH', role, tier, 1]
-      );
-      user = { id: result.lastID, name: `User ${mobile.slice(-4)}`, email: identifier, role, tier, is_active: 1 };
-    }
-
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    setAuthCookie(res, token);
-    console.log(`✅ [AUTH] Mobile Login Success: ${mobile} (${Date.now() - start}ms)`);
-    res.json({ token, user: { ...user, role: user.role, tier: user.tier } });
+    console.warn('🚨 [SECURITY] Mobile OTP verify attempted — DISABLED: No SMS provider configured');
+    res.status(501).json({ error: 'Mobile authentication is currently disabled. Please use Google or email login.' });
   } catch (e: any) {
     console.error(`❌ [AUTH ERROR] Mobile Verify Failed:`, e.message);
     res.status(500).json({ error: 'Authentication failed' });
@@ -1826,10 +1912,17 @@ app.post('/api/user/redeem-voucher', authenticateToken, async (req: any, res) =>
     if (!code) return res.status(400).json({ error: 'Voucher code is required' });
 
     const db = getDB();
+    const VALID_TIERS = ['free', 'pro', 'alpha'];
     
     // 1. Validate Voucher
     const voucher = await db.get('SELECT * FROM vouchers WHERE code = ? AND is_active = 1', [code.toUpperCase()]);
     if (!voucher) return res.status(404).json({ error: 'Invalid or expired voucher code' });
+
+    // Validate voucher tier
+    if (!VALID_TIERS.includes(voucher.tier)) {
+      console.error(`🚨 [SECURITY] Voucher ${code} has invalid tier: ${voucher.tier}`);
+      return res.status(500).json({ error: 'Voucher configuration error' });
+    }
 
     if (voucher.current_uses >= voucher.max_uses) {
       return res.status(400).json({ error: 'Voucher usage limit reached' });
@@ -1846,10 +1939,10 @@ app.post('/api/user/redeem-voucher', authenticateToken, async (req: any, res) =>
     await db.batch([
       { sql: 'UPDATE vouchers SET current_uses = current_uses + 1 WHERE id = ?', args: [voucher.id] },
       { sql: 'INSERT INTO voucher_redemptions (voucher_id, user_id) VALUES (?, ?)', args: [voucher.id, req.user.id] },
-      { sql: 'UPDATE users SET tier = ?, subscription_expiry = ?, is_active = 1 WHERE id = ?', args: [voucher.tier, expiry.toISOString(), req.user.id] }
+      { sql: 'UPDATE users SET tier = ?, subscription_expiry = ?, subscription_start = ?, is_active = 1 WHERE id = ?', args: [voucher.tier, expiry.toISOString(), new Date().toISOString(), req.user.id] }
     ]);
 
-    console.log(`🎁 [VOUCHER] User ${req.user.email} redeemed ${code} (Tier: ${voucher.tier})`);
+    console.log(`🎁 [VOUCHER] User ${req.user.email} redeemed ${code} (Tier: ${voucher.tier}, Expires: ${expiry.toISOString()})`);
     res.json({ success: true, tier: voucher.tier, expiry: expiry.toISOString() });
 
   } catch (e: any) {
@@ -2309,16 +2402,42 @@ app.patch('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: a
     const { name, email, mobile, role, tier, subscription_start, subscription_expiry, is_active } = req.body;
     const db = getDB();
     
+    // ── Tier Validation ─────────────────────────────────────────────────
+    const VALID_TIERS = ['free', 'pro', 'alpha'];
+    const VALID_ROLES = ['user', 'admin'];
+    if (tier !== undefined && !VALID_TIERS.includes(tier)) {
+      return res.status(400).json({ error: `Invalid tier "${tier}". Must be one of: ${VALID_TIERS.join(', ')}` });
+    }
+    if (role !== undefined && !VALID_ROLES.includes(role)) {
+      return res.status(400).json({ error: `Invalid role "${role}". Must be one of: ${VALID_ROLES.join(', ')}` });
+    }
+    // Prevent non-admin users from being downgraded from admin
+    if (role === 'user') {
+      const targetUser = await db.get('SELECT role FROM users WHERE id = ?', [req.params.id]);
+      if (targetUser?.role === 'admin') {
+        return res.status(403).json({ error: 'Cannot downgrade an admin user to regular user.' });
+      }
+    }
+    // Prevent self-demotion
+    if (String(req.params.id) === String(req.user.id) && (role === 'user' || tier === 'free')) {
+      return res.status(403).json({ error: 'Admin cannot demote themselves.' });
+    }
+    
+    // ── Build update query ──────────────────────────────────────────────
     const updates: string[] = [];
     const params: any[] = [];
+    const changes: Record<string, { old: any; new: any }> = {};
+    
+    // Fetch current state for audit
+    const currentUser = await db.get('SELECT * FROM users WHERE id = ?', [req.params.id]);
     
     if (name !== undefined) { updates.push('name = ?'); params.push(name); }
     if (email !== undefined) { updates.push('email = ?'); params.push(email ? email.toLowerCase() : null); }
     if (mobile !== undefined) { updates.push('mobile = ?'); params.push(mobile); }
-    if (role !== undefined) { updates.push('role = ?'); params.push(role); }
-    if (tier !== undefined) { updates.push('tier = ?'); params.push(tier); }
-    if (subscription_start !== undefined) { updates.push('subscription_start = ?'); params.push(subscription_start || null); }
-    if (subscription_expiry !== undefined) { updates.push('subscription_expiry = ?'); params.push(subscription_expiry || null); }
+    if (role !== undefined) { updates.push('role = ?'); params.push(role); changes.role = { old: currentUser?.role, new: role }; }
+    if (tier !== undefined) { updates.push('tier = ?'); params.push(tier); changes.tier = { old: currentUser?.tier, new: tier }; }
+    if (subscription_start !== undefined) { updates.push('subscription_start = ?'); params.push(subscription_start || null); changes.subscription_start = { old: currentUser?.subscription_start, new: subscription_start }; }
+    if (subscription_expiry !== undefined) { updates.push('subscription_expiry = ?'); params.push(subscription_expiry || null); changes.subscription_expiry = { old: currentUser?.subscription_expiry, new: subscription_expiry }; }
     if (is_active !== undefined) { updates.push('is_active = ?'); params.push(Number(is_active)); }
     
     if (updates.length === 0) {
@@ -2327,6 +2446,27 @@ app.patch('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: a
     
     params.push(req.params.id);
     await db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+    
+    // ── Audit Log ───────────────────────────────────────────────────────
+    try {
+      await db.run(
+        'INSERT INTO admin_audit_log (admin_id, admin_email, action, target_user_id, target_email, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          req.user.id,
+          req.user.email,
+          'UPDATE_USER',
+          req.params.id,
+          currentUser?.email || email || '',
+          JSON.stringify(changes),
+          JSON.stringify({ tier, role, subscription_expiry, subscription_start }),
+          req.ip || req.connection?.remoteAddress || 'unknown'
+        ]
+      );
+      console.log(`📝 [AUDIT] Admin ${req.user.email} updated user ${currentUser?.email}: ${JSON.stringify(changes)}`);
+    } catch (auditErr: any) {
+      console.error('⚠️ Audit log write failed:', auditErr.message);
+    }
+    
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -2334,8 +2474,31 @@ app.patch('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: a
 app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
     const db = getDB();
+    const user = await db.get('SELECT email FROM users WHERE id = ?', [req.params.id]);
     await db.run('DELETE FROM users WHERE id = ?', [req.params.id]);
+    // Audit
+    try {
+      await db.run(
+        'INSERT INTO admin_audit_log (admin_id, admin_email, action, target_user_id, target_email, ip_address) VALUES (?, ?, ?, ?, ?, ?)',
+        [req.user.id, req.user.email, 'DELETE_USER', req.params.id, user?.email || '', req.ip || 'unknown']
+      );
+    } catch {}
     res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Admin Audit Log Viewer ──────────────────────────────────────────────
+app.get('/api/admin/audit-log', authenticateToken, requireAdmin, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const limit = Math.min(Number(req.query.limit) || 100, 500);
+    const logs = await db.all(
+      `SELECT a.*, u.name as admin_name FROM admin_audit_log a 
+       LEFT JOIN users u ON a.admin_id = u.id 
+       ORDER BY a.created_at DESC LIMIT ?`,
+      [limit]
+    );
+    res.json(logs || []);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2379,10 +2542,16 @@ app.get('/api/admin/upgrade-requests', authenticateToken, requireAdmin, async (r
 app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
     const db = getDB();
+    const VALID_TIERS = ['free', 'pro', 'alpha'];
     const requestId = req.params.id;
     const request = await db.get('SELECT * FROM upgrade_requests WHERE id = ?', [requestId]);
     if (!request) return res.status(404).json({ error: 'Request not found' });
     if (request.status !== 'pending') return res.status(400).json({ error: 'Request already processed' });
+
+    // Validate requested tier
+    if (!VALID_TIERS.includes(request.requested_tier)) {
+      return res.status(400).json({ error: `Invalid requested tier: ${request.requested_tier}` });
+    }
 
     const user = await db.get('SELECT * FROM users WHERE id = ?', [request.user_id]);
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -2397,6 +2566,23 @@ app.post('/api/admin/upgrade-requests/:id/approve', authenticateToken, requireAd
 
     await db.run('UPDATE users SET tier = ?, subscription_start = ?, subscription_expiry = ? WHERE id = ?', [request.requested_tier, startStr, expiryStr, request.user_id]);
     await db.run('UPDATE upgrade_requests SET status = "approved" WHERE id = ?', [requestId]);
+
+    // Audit log
+    try {
+      await db.run(
+        'INSERT INTO admin_audit_log (admin_id, admin_email, action, target_user_id, target_email, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          req.user.id, req.user.email, 'APPROVE_UPGRADE',
+          request.user_id, user.email || '',
+          JSON.stringify({ tier: user.tier, expiry: user.subscription_expiry }),
+          JSON.stringify({ tier: request.requested_tier, expiry: expiryStr, billing_cycle: request.billing_cycle, transaction_id: request.transaction_id }),
+          req.ip || req.connection?.remoteAddress || 'unknown'
+        ]
+      );
+      console.log(`📝 [AUDIT] Admin ${req.user.email} approved upgrade for ${user.email}: ${request.requested_tier} (${request.billing_cycle})`);
+    } catch (auditErr: any) {
+      console.error('⚠️ Audit log write failed:', auditErr.message);
+    }
 
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
@@ -2423,17 +2609,36 @@ app.get('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any,
 app.post('/api/admin/vouchers', authenticateToken, requireAdmin, async (req: any, res) => {
   try {
     const { code, tier, duration_days, max_uses } = req.body;
+    const VALID_TIERS = ['free', 'pro', 'alpha'];
     if (!code || !tier || !duration_days) return res.status(400).json({ error: 'Missing code, tier, or duration_days' });
+    if (!VALID_TIERS.includes(tier.toLowerCase())) {
+      return res.status(400).json({ error: `Invalid tier "${tier}". Must be one of: ${VALID_TIERS.join(', ')}` });
+    }
+    if (Number(duration_days) < 1 || Number(duration_days) > 365) {
+      return res.status(400).json({ error: 'Duration must be between 1 and 365 days' });
+    }
     const db = getDB();
 
     const existing = await db.get('SELECT id FROM vouchers WHERE code = ?', [code.toUpperCase()]);
     if (existing) return res.status(400).json({ error: 'Voucher code already exists' });
 
+    // Cap max_uses to prevent runaway vouchers
+    const cappedMaxUses = Math.min(Number(max_uses || 100), 500);
+
     await db.run(
       'INSERT INTO vouchers (code, tier, duration_days, max_uses, current_uses, is_active) VALUES (?, ?, ?, ?, 0, 1)',
-      [code.toUpperCase(), tier.toLowerCase(), Number(duration_days), Number(max_uses || 100)]
+      [code.toUpperCase(), tier.toLowerCase(), Number(duration_days), cappedMaxUses]
     );
-    res.json({ success: true });
+
+    // Audit
+    try {
+      await db.run(
+        'INSERT INTO admin_audit_log (admin_id, admin_email, action, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?)',
+        [req.user.id, req.user.email, 'CREATE_VOUCHER', null, JSON.stringify({ code: code.toUpperCase(), tier: tier.toLowerCase(), duration_days, max_uses: cappedMaxUses }), req.ip || 'unknown']
+      );
+    } catch {}
+
+    res.json({ success: true, max_uses: cappedMaxUses });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2664,6 +2869,23 @@ app.all('/api/admin/audit/run', authenticateToken, requireAdmin, async (req: any
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// On-demand snapshot data-quality check (admin) — same checks the nightly
+// audit runs as SDQ-1..SDQ-6, for manual triage any time.
+app.get('/api/admin/data-quality', authenticateToken, requireAdmin, async (req: any, res: any) => {
+  try {
+    const { runSnapshotDataQualityChecks } = await import('./services/audit/snapshotDataQuality.js');
+    const checks = await runSnapshotDataQualityChecks(BASKETS);
+    const failed = checks.filter(c => c.status === 'fail');
+    res.json({
+      date: new Date().toISOString().split('T')[0],
+      total: checks.length,
+      failed: failed.length,
+      checks,
+      summary: failed.map(c => ({ id: c.id, name: c.name, details: c.details }))
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/audit/:date', authenticateToken, requireAdmin, async (req: any, res: any) => {
   try {
     const reportPath = path.resolve(process.cwd(), 'audit_reports', `${req.params.date}.json`);
@@ -2675,11 +2897,14 @@ app.get('/api/admin/audit/:date', authenticateToken, requireAdmin, async (req: a
 });
 
 // ── n8n Integration ──
-const N8N_API_KEY = process.env.N8N_API_KEY || 'mb_linkedin_2026_secret_key';
+// Security: no hardcoded fallback — key MUST come from env (N8N_API_KEY).
+// The old fallback 'mb_linkedin_2026_secret_key' was committed to a public repo and is revoked.
+const N8N_API_KEY = process.env.N8N_API_KEY;
+if (!N8N_API_KEY) console.warn('[N8N] N8N_API_KEY not set — /api/n8n/* endpoints will return 403 (fail closed).');
 
 function verifyN8n(req: any, res: any) {
   const apiKey = req.headers['x-api-key'] || req.query.api_key;
-  if (apiKey !== N8N_API_KEY) { res.status(403).json({ error: 'Invalid API key' }); return false; }
+  if (!N8N_API_KEY || apiKey !== N8N_API_KEY) { res.status(403).json({ error: 'Invalid API key' }); return false; }
   return true;
 }
 
@@ -2884,7 +3109,7 @@ app.post('/api/telegram/webhook', async (req, res) => {
       const smartMoney = (r.smartMoney || 0).toFixed(1);
       const upside = r.upside || 0;
       const isPass = r.isPass ? '🟢 PASSED AUDIT' : '🔴 AUDIT FAILED';
-      const price = Math.round(r.quotes?.[r.quotes.length - 1]?.close || 0);
+      const price = Math.round(r.price || 0);
       let level = 'HOLD';
       if (score >= 85) level = 'Strong Buy / Max Confidence';
       else if (score >= 70) level = 'Safe Accumulation';
@@ -3362,6 +3587,33 @@ const startServer = async () => {
   try {
     const db = await initDB();
     initScreenerCron();
+
+    // ── Subscription Expiry Cron (runs every 15 minutes) ────────────────
+    cron.schedule('*/15 * * * *', async () => {
+      try {
+        const expiredUsers = await db.all(
+          "SELECT id, email, tier FROM users WHERE tier != 'free' AND subscription_expiry IS NOT NULL AND subscription_expiry < datetime('now')"
+        );
+        if (expiredUsers.length > 0) {
+          console.log(`⏰ [SUB-EXPIRY] Downgrading ${expiredUsers.length} expired subscriptions`);
+          for (const u of expiredUsers) {
+            await db.run("UPDATE users SET tier = 'free' WHERE id = ?", [u.id]);
+            console.log(`  ⏰ Downgraded ${u.email} (${u.tier} → free) — expired ${u.subscription_expiry}`);
+          }
+          // Notify admins
+          try {
+            await notifyAdmins(
+              'Subscription Expired',
+              `${expiredUsers.length} subscription(s) expired and auto-downgraded to free tier. Check admin panel for details.`,
+              'system'
+            );
+          } catch {}
+        }
+      } catch (e: any) {
+        console.error('⚠️ [SUB-EXPIRY] Cron error:', e.message);
+      }
+    });
+    console.log('⏰ Subscription expiry cron scheduled (every 15 minutes)');
 
     // ── START LISTENING IMMEDIATELY ───────────────────────────────────────
     // Start accepting connections before loading the 364MB snapshot file,

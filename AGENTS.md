@@ -24,7 +24,7 @@ bash deploy.sh           # builds both, tars, SCPs to VPS, triggers webhook
 
 - **Frontend** (`src/`): React 19 + Vite 8 + Tailwind CSS 4 + TypeScript 6. Path alias `@/` → `./src/*`.
 - **Backend** (`backend/`): Express 5 + TypeScript. Dev via `tsx`, prod via `tsc` + `node dist/index.js`.
-- **Databases**: Turso (libsql) for market data, Supabase for auth/users.
+- **Databases**: Local SQLite file `backend/marketbeacon.db` via libsql client (file: mode — used when `TURSO_DATABASE_URL` is empty). Turso/Supabase only if env credentials are provided.
 - **Auth**: Google OAuth (hardcoded client ID in `src/main.tsx` + `.env.example`) + JWT.
 - **Deploy**: VPS behind nginx. Docker Compose runs backend, n8n, litellm, open-webui, algo API. Vercel handles domain redirects only.
 
@@ -63,7 +63,7 @@ bash deploy.sh           # builds both, tars, SCPs to VPS, triggers webhook
 - **Build before push**: always run `npm run build` (frontend) and `cd backend && npm run build` before deploying.
 - **No test framework**: backend `npm test` is a placeholder. Manual testing via `backend/src/tests/` scripts.
 - **SEO routes**: prerendered via `prerender.mjs`. Add new routes to the `routes` array there.
-- **Data sync**: `src/data/stocks.ts` (frontend stock universe) must mirror backend's `backend/src/universe.ts`.
+- **Data sync**: `src/data/stocks.ts` (frontend stock universe: STRATEGIES + BASKETS) must mirror backend's `backend/src/index.ts` (STRATEGIES + BASKETS defined around lines 266-317). `backend/src/universe.ts` only holds the NIFTY_500 symbol list — not the strategies/baskets.
 - **Dark theme locked**: `document.documentElement.setAttribute('data-theme', 'dark')` in `src/main.tsx`.
 - **Google OAuth client ID**: hardcoded in `src/main.tsx` and `.env.example`. Both must stay in sync.
 - **Deploy key**: `x-deploy-key: mb-deploy-2026` for the VPS deploy webhook (port 3099).

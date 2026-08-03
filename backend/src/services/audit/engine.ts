@@ -1,6 +1,7 @@
 import { AuditReport, AuditCheck, AuditSummary, AuditChange } from './types.js';
 import { runStructuralChecks } from './structural.js';
 import { runDataQualityChecks } from './dataQuality.js';
+import { runSnapshotDataQualityChecks } from './snapshotDataQuality.js';
 import { runStrategyChecks } from './strategyAudit.js';
 import { runBasketChecks, saveTodaySnapshot } from './basketAudit.js';
 import { detectChanges, computeStrategyDeltas } from './changeDetector.js';
@@ -32,6 +33,8 @@ export async function runAuditEngine(baskets?: Record<string, string[]>): Promis
   console.log(`[AUDIT] Step 2/6: Data quality checks...`);
   const quality = await runDataQualityChecks();
   allChecks.push(...quality);
+  const snapshotQuality = await runSnapshotDataQualityChecks(BASKETS);
+  allChecks.push(...snapshotQuality);
 
   // Step 3: Strategy checks
   console.log(`[AUDIT] Step 3/6: Strategy logic checks...`);
@@ -116,6 +119,16 @@ export async function runAuditEngine(baskets?: Record<string, string[]>): Promis
   console.log(`[AUDIT] Report saved: ${reportPath}`);
 
   // Send Telegram notification
+  const failedChecks = allChecks.filter(c => c.status === 'fail');
+  const dqFails = failedChecks.filter(c => c.category === 'data_quality');
+  let dqBlock = '';
+  if (dqFails.length > 0) {
+    const lines = dqFails.slice(0, 8).map(c => {
+      const detail = c.details.length > 90 ? c.details.slice(0, 87) + '…' : c.details;
+      return `• ${c.id} ${c.name}: ${detail}`;
+    }).join('\n');
+    dqBlock = `\n📦 *Data quality (${dqFails.length} fail):*\n${lines}`;
+  }
   const shortSummary = [
     `🛡️ *Audit Complete* — ${date}`,
     `━━━━━━━━━━━━━━━━━━━`,
@@ -125,10 +138,29 @@ export async function runAuditEngine(baskets?: Record<string, string[]>): Promis
     `🟢 *Entries (${entries.length}):* ${entries.map(e => e.symbol).join(', ') || 'none'}`,
     `🔴 *Exits (${exits.length}):* ${exits.map(e => e.symbol).join(', ') || 'none'}`,
     `⚠️ *Manual review:* ${manual}`,
+    dqBlock,
     ``,
     `📎 Report: https://marketbeaconpro.com/admin/audit/${date}`
-  ].join('\n');
-  await sendTelegramMessage(shortSummary, 'dm').catch(() => {});
+  ].filter(line => line !== '').join('\n');
+  const tgOk = await sendTelegramMessage(shortSummary, 'dm').catch(() => false);
+  if (!tgOk) {
+    // Notification-pipeline failure is itself an audit finding: surface it in the
+    // report (TG-1) so the admin sees the alert channel is broken instead of the
+    // failure living only in the server logs.
+    allChecks.push({
+      id: 'TG-1', category: 'notification', name: 'Telegram admin alert delivered', severity: 'high',
+      status: 'fail',
+      details: 'Telegram send failed — check TELEGRAM_CHAT_ID / TELEGRAM_CHANNEL in .env',
+      autoFixable: false, autoFixed: false
+    });
+    summary.totalChecks += 1;
+    summary.failedChecks += 1;
+    summary.manualRequired += 1;
+    if (!hasHigh && !hasCritical) summary.status = 'WARNING';
+    report.checks = allChecks;
+    await saveReport(report);
+    console.log('❌ [AUDIT] TG-1: Telegram alert delivery failed — flagged in report.');
+  }
 
   console.log(`✅ [AUDIT ENGINE] Complete. Status: ${summary.status}`);
   return report;

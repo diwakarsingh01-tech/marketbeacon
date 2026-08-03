@@ -4,7 +4,7 @@ export type ChangeType = 'ENTRY' | 'EXIT';
 
 export interface AuditCheck {
   id: string;
-  category: 'structural' | 'data_quality' | 'strategy' | 'basket';
+  category: 'structural' | 'data_quality' | 'strategy' | 'basket' | 'notification';
   name: string;
   severity: Severity;
   status: CheckStatus;

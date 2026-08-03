@@ -451,7 +451,7 @@ export function calculateSRStrategy(quotes: Quote[], screenerData?: any) {
       }
     }
   }
-  return { isBuyZone: false, status: "REJECT" };
+  return { isBuyZone: false, status: "REJECTED" };
 }
 
 /**
@@ -554,7 +554,10 @@ export function calculateSixtySevenFunda(quotes: Quote[], data: any) {
   const peMedians = data?.peMedians || {};
   const pe3Y = peMedians.pe3Y || 0;
   const pe5Y = peMedians.pe5Y || 0;
-  const netProfit = parseFloat(data?.netProfit) || 0;
+  // FIX (2026-08-02): screener stores TTM profit as `currentNetProfit`, not `netProfit`.
+  // Reading `data?.netProfit` always yielded 0, so the profit checks ran against 0 and
+  // rejected/passed stocks for the wrong reason (e.g. "Net profit ₹0Cr < 95% of ATH").
+  const netProfit = parseFloat(data?.currentNetProfit) || parseFloat(data?.netProfit) || 0;
   const de = parseFloat(data?.netDebtToEquity) || 0;
   const sector = (data?.industry || '').trim();
   const isFinance = ['Banking', 'Finance', 'NBFC', 'Financial Services', 'Asset Management'].includes(sector) || sector.toLowerCase().includes('finance');
@@ -587,6 +590,11 @@ export function calculateSixtySevenFunda(quotes: Quote[], data: any) {
     else { checklist.push(`Sales ₹${currentSales}Cr ≥ 95% of ATH`); }
     if (!profitNearATH) { failed.push(`Net profit ₹${netProfit}Cr < 95% of ATH ₹${athNetProfit}Cr`); }
     else { checklist.push(`Net profit ₹${netProfit}Cr ≥ 95% of ATH`); }
+  } else if (currentSales <= 0 && athSales <= 0 && netProfit <= 0 && athNetProfit <= 0) {
+    // FAIL-CLOSED (2026-08-02): previously this branch silently passed with
+    // "manual check required" when the screener scrape was incomplete (e.g. RELAXO —
+    // athSales=0, athNetProfit=0, epsHistory=[]). Missing fundamentals now REJECT.
+    failed.push('Fundamental data missing (screener scrape incomplete)');
   } else {
     checklist.push("Quarterly improvement — manual check required");
   }
@@ -839,6 +847,99 @@ export function calculateABCDLevels(anchorPrice: number, marketCap: number = 0) 
 }
 
 /**
+ * STRATEGY 11: Short Term Investing (ABCD)
+ * Swing high A = signal anchor. Buy ladder B → C → D (10% gap per leg).
+ * Targets = D → C → B → A (each target is the previous level up, ~10% gain per leg).
+ */
+export function calculateShortTermABCD(quotes: Quote[]) {
+  const MIN_BARS = 150;
+  const LOOKBACK = 60;   // bars to detect swing high A
+  const TOLERANCE = 0.022; // buy-zone tolerance (existing convention)
+  if (!quotes || quotes.length < MIN_BARS) return { isBuyZone: false };
+
+  const currentPrice = quotes[quotes.length - 1].close;
+  let state = 'SEEKING_A', a_entry = 0, a_date = '', b_entry = 0, b_date = '', c_entry = 0, c_date = '', d_entry = 0, d_date = '';
+
+  for (let i = LOOKBACK; i < quotes.length; i++) {
+    // Full recovery above anchor A invalidates the current ABCD ladder.
+    if (state !== 'SEEKING_A' && quotes[i].high >= a_entry) {
+      state = 'SEEKING_A';
+      b_date = ''; c_date = ''; d_date = '';
+    }
+
+    if (state === 'SEEKING_A') {
+      // Detect swing high A: max high in trailing LOOKBACK bars, followed by a confirmed decline.
+      const window = quotes.slice(i - LOOKBACK, i);
+      let swingHigh = -Infinity, swingIdx = -1;
+      for (let j = 0; j < window.length; j++) {
+        if (window[j].high > swingHigh) { swingHigh = window[j].high; swingIdx = j; }
+      }
+      const barsSinceHigh = window.length - swingIdx;
+      if (swingHigh > 0 && barsSinceHigh >= 3 && quotes[i].close < swingHigh * 0.99) {
+        const dV = window[swingIdx].date;
+        a_date = (typeof dV === 'string' ? dV : (dV as Date).toISOString()).split('T')[0];
+        a_entry = Math.round(swingHigh);
+        b_entry = Math.round(a_entry * 0.90);
+        c_entry = Math.round(b_entry * 0.90);
+        d_entry = Math.round(c_entry * 0.90);
+        state = 'A_ACTIVE';
+        b_date = ''; c_date = ''; d_date = '';
+      }
+    } else if (state === 'A_ACTIVE' && quotes[i].low <= b_entry * 1.01) {
+      state = 'B_ACTIVE';
+      const dV = quotes[i].date;
+      b_date = (typeof dV === 'string' ? dV : (dV as Date).toISOString()).split('T')[0];
+    } else if (state === 'B_ACTIVE' && quotes[i].low <= c_entry * 1.01) {
+      state = 'C_ACTIVE';
+      const dV = quotes[i].date;
+      c_date = (typeof dV === 'string' ? dV : (dV as Date).toISOString()).split('T')[0];
+    } else if (state === 'C_ACTIVE' && quotes[i].low <= d_entry * 1.01) {
+      state = 'D_ACTIVE';
+      const dV = quotes[i].date;
+      d_date = (typeof dV === 'string' ? dV : (dV as Date).toISOString()).split('T')[0];
+    }
+  }
+
+  // A = signal only (no buy at A). Buy ladder: B → C → D. Targets: levels above (D→C→B→A).
+  let activeE = 0, activeTr = 'NONE', activeD = '';
+  if (state === 'B_ACTIVE') { activeE = b_entry; activeTr = 'B'; activeD = b_date; }
+  else if (state === 'C_ACTIVE') { activeE = c_entry; activeTr = 'C'; activeD = c_date; }
+  else if (state === 'D_ACTIVE') { activeE = d_entry; activeTr = 'D'; activeD = d_date; }
+
+  const isBuyZone = activeTr !== 'NONE' && Math.abs(currentPrice - activeE) / activeE <= TOLERANCE;
+
+  // Targets ladder from active tranche upward — exact % gain from entry price.
+  const targets: any[] = [];
+  if (activeTr === 'D') {
+    targets.push(
+      { level: 'C', price: c_entry, gainPct: Math.round(((c_entry - d_entry) / d_entry) * 100) },
+      { level: 'B', price: b_entry, gainPct: Math.round(((b_entry - d_entry) / d_entry) * 100) },
+      { level: 'A', price: a_entry, gainPct: Math.round(((a_entry - d_entry) / d_entry) * 100) }
+    );
+  } else if (activeTr === 'C') {
+    targets.push(
+      { level: 'B', price: b_entry, gainPct: Math.round(((b_entry - c_entry) / c_entry) * 100) },
+      { level: 'A', price: a_entry, gainPct: Math.round(((a_entry - c_entry) / c_entry) * 100) }
+    );
+  } else if (activeTr === 'B') {
+    targets.push({ level: 'A', price: a_entry, gainPct: Math.round(((a_entry - b_entry) / b_entry) * 100) });
+  }
+
+  return {
+    isBuyZone,
+    entryPrice: activeE,
+    target: targets[0]?.price || 0,
+    targets,
+    currentPrice: Math.round(currentPrice),
+    triggerDate: a_date,
+    tranche: activeTr,
+    abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date }, gap: 10 },
+    timeframe: 'SHORT_TERM',
+    isLocked: true
+  };
+}
+
+/**
  * Calculates Relative Strength Index (RSI)
  */
 export function calculateRSI(prices: number[], length: number): number[] {
@@ -877,12 +978,8 @@ export function calculateMomentum(prices: number[], length: number): number[] {
 }
 
 /**
- * GLOBAL MANDATE: Hard Reject Audit</think>
-
-<｜DSML｜tool_calls>
-<｜DSML｜invoke name="edit">
-<｜DSML｜parameter name="filePath" string="true">/Users/diwakarsingh/marketbeacon/backend/src/strategies/index.ts
- * Enforces D/E limits and Smart Money >= 70%
+ * Institutional Mandates — enforces D/E limits, Smart Money threshold and
+ * sector concentration caps before a stock may qualify as a signal.
  */
 export function checkInstitutionalMandates(screenerData: any, symbol: string = '') {
   if (!screenerData) return { passed: true };

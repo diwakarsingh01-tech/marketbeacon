@@ -11,7 +11,7 @@ interface SEOProps {
 
 const SITE_NAME = 'MarketBeacon Pro';
 const DEFAULT_DESC = 'India\'s institutional stock research tool. Institutional Audit Scores, ABCD Tranche Logic & real-time screening. For educational purposes only.';
-const DEFAULT_IMAGE = 'https://marketbeaconpro.com/og-preview.svg';
+const DEFAULT_IMAGE = 'https://marketbeaconpro.com/og-preview.png';
 const BASE_URL = 'https://marketbeaconpro.com';
 
 export default function SEO({ title, description, image, url, type, noindex }: SEOProps) {

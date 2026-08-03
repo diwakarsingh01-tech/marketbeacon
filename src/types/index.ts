@@ -78,6 +78,8 @@ export interface StrategyResult {
   tranche?: string;
   abcd?: Record<string, ABCDNode>;
   triggerDate?: string;
+  timeframe?: string;
+  targets?: Array<{ level: string; price: number; gainPct: number }>;
 }
 
 export interface FundamentalData {
@@ -146,6 +148,15 @@ export interface AllStockItem {
 
 export interface AuditData {
   allStocks: AllStockItem[];
+  totalUniverse?: number;
+  statusCounts?: {
+    total: number;
+    qualified: number;
+    rejected: number;
+    observation: number;
+    noSignal: number;
+    noData: number;
+  };
 }
 
 export interface WatchlistItem {
@@ -188,6 +199,14 @@ export interface AlphaHubStock {
 
 export interface AlphaHubData {
   stocks: AlphaHubStock[];
+  summary?: {
+    total?: number;
+    large?: number;
+    mid?: number;
+    small?: number;
+    sectorStats?: Record<string, number>;
+  };
+  updatedAt?: string;
 }
 
 export interface BacktestData {
