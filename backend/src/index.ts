@@ -1687,8 +1687,24 @@ app.post('/api/auth/login', async (req, res) => {
     }
     
     const isAdmin = ADMIN_EMAILS.includes(normalizedEmail);
-    const isValid = user.password === 'GOOGLE' ? isAdmin : await bcrypt.compare(password, user.password);
-    console.log(`ℹ️ [LOGIN-CHECK] Found user. ID: ${user.id}, Role: ${user.role}, IsAdmin: ${isAdmin}, passwordTypeGoogle: ${user.password === 'GOOGLE'}, isValid: ${isValid}`);
+    
+    // Handle non-bcrypt password types (Google OAuth, restored, free, dev, mobile)
+    const nonPasswordTypes = ['GOOGLE', 'GOOGLE_AUTH', 'RESTORED_USER', 'FREE_MEMBER', 'DEV_BYPASS', 'MOBILE_AUTH'];
+    if (nonPasswordTypes.includes(user.password)) {
+      if (isAdmin) {
+        // Admin accounts with GOOGLE password can still login via email/password
+        console.log(`✅ [LOGIN-ADMIN] Admin bypass for email: "${normalizedEmail}"`);
+      } else {
+        console.log(`⚠️ [LOGIN-GOOGLE-ONLY] Non-admin user ${user.id} (${normalizedEmail}) requires Google OAuth. Password type: ${user.password}`);
+        return res.status(401).json({ 
+          error: 'This account uses Google sign-in. Please use Google OAuth to login.',
+          requiresGoogle: true
+        });
+      }
+    }
+    
+    const isValid = isAdmin && user.password === 'GOOGLE' ? true : await bcrypt.compare(password, user.password);
+    console.log(`ℹ️ [LOGIN-CHECK] Found user. ID: ${user.id}, Role: ${user.role}, IsAdmin: ${isAdmin}, passwordType: ${user.password.substring(0,10)}..., isValid: ${isValid}`);
     
     if (!isValid) {
       console.log(`❌ [LOGIN-FAILED] Invalid credentials for email: "${normalizedEmail}"`);
