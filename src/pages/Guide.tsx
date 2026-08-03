@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight, BarChart3, BookOpen, Brain, Compass,
-  GraduationCap, Home, Play, Settings, TrendingUp, Target,
+  GraduationCap, Home, Play, Settings, Target,
   Wallet, Zap, Menu, X, ArrowUp,
   CheckCircle2, Layers, Search, LineChart, ListOrdered,
-  ChevronRight, Flag, MapPin, Route, Star
+  Flag, Route, Star, TrendingUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
@@ -32,10 +32,10 @@ interface PhaseMeta {
 }
 
 const PHASES: PhaseMeta[] = [
-  { key: 'discover', label: 'Discovery', icon: Search, color: 'emerald', subtitle: 'Find opportunities' },
-  { key: 'analyze', label: 'Analysis', icon: LineChart, color: 'blue', subtitle: 'Validate signals' },
-  { key: 'execute', label: 'Execution', icon: Layers, color: 'purple', subtitle: 'Build & trade' },
-  { key: 'learn', label: 'Learning', icon: GraduationCap, color: 'amber', subtitle: 'Master the craft' },
+  { key: 'discover', label: 'Discover', icon: Search, color: 'emerald', subtitle: 'Find opportunities' },
+  { key: 'analyze', label: 'Analyze', icon: LineChart, color: 'blue', subtitle: 'Validate signals' },
+  { key: 'execute', label: 'Execute', icon: Layers, color: 'purple', subtitle: 'Build & trade' },
+  { key: 'learn', label: 'Learn', icon: GraduationCap, color: 'amber', subtitle: 'Master the craft' },
 ];
 
 const PHASE_COLORS: Record<string, { border: string; bg: string; text: string; badge: string; gradient: string; glow: string }> = {
@@ -271,14 +271,14 @@ const GuidePage: React.FC = () => {
                 transition={{ duration: 0.2 }}
                 className="lg:hidden border-t border-[var(--border-primary)] bg-[#0a0f1e]/95 backdrop-blur-md overflow-hidden"
               >
-                <div className="px-4 py-4 space-y-3 max-h-[60vh] overflow-y-auto">
+                <div className="px-4 py-3 space-y-2 max-h-[50vh] overflow-y-auto">
                   {grouped.map((group) => {
                     const colors = PHASE_COLORS[group.phase.color];
                     return (
                       <div key={group.phase.key}>
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${colors.bg} mb-1`}>
-                          <group.phase.icon className={`h-3 w-3 ${colors.text}`} />
-                          <span className={`text-[10px] font-bold uppercase tracking-wider ${colors.text}`}>
+                        <div className="flex items-center gap-1.5 px-3 py-1 mb-0.5">
+                          <group.phase.icon className={`h-2.5 w-2.5 ${colors.text}`} />
+                          <span className={`text-[9px] font-bold uppercase tracking-wider ${colors.text}`}>
                             {group.phase.label}
                           </span>
                         </div>
@@ -286,13 +286,13 @@ const GuidePage: React.FC = () => {
                           <button
                             key={step.id}
                             onClick={() => scrollToSection(step.id)}
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs font-semibold transition-all ${
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs font-medium transition-all ${
                               activeId === step.id
                                 ? 'bg-[var(--bg-tertiary)] text-[var(--accent-amber)]'
                                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]/50'
                             }`}
                           >
-                            <span className="w-5 h-5 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[9px] font-bold shrink-0">
+                            <span className="w-4 h-4 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[8px] font-bold shrink-0">
                               {GUIDE_STEPS.indexOf(step) + 1}
                             </span>
                             {step.title}
@@ -313,85 +313,66 @@ const GuidePage: React.FC = () => {
             {/* ═══ DESKTOP SIDEBAR TOC ═══ */}
             <aside
               ref={tocRef}
-              className="hidden lg:block w-64 xl:w-72 shrink-0"
+              className="hidden lg:block w-56 xl:w-60 shrink-0"
             >
-              <nav className="sticky top-36 space-y-4">
-                <div className="flex items-center gap-3 px-3 py-2">
-                  <div className="relative w-10 h-10">
-                    <svg className="w-10 h-10 -rotate-90" viewBox="0 0 40 40">
-                      <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
-                      <circle
-                        cx="20" cy="20" r="17" fill="none"
-                        stroke="url(#progressGradient)"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeDasharray={`${(readingProgress / 100) * 107} 107`}
-                        className="transition-all duration-300"
-                      />
-                    </svg>
-                    <defs>
-                      <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#10b981" />
-                        <stop offset="50%" stopColor="#3b82f6" />
-                        <stop offset="100%" stopColor="#f59e0b" />
-                      </linearGradient>
-                    </defs>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-[9px] font-bold text-[var(--text-muted)]">{Math.round(readingProgress)}%</span>
-                    </div>
+              <nav className="sticky top-36 space-y-1">
+                <div className="px-3 py-2 mb-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Route className="h-4 w-4 text-[var(--accent-amber)]" />
+                    <span className="text-xs font-black text-[var(--text-primary)] uppercase tracking-wider">On This Page</span>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-[var(--text-primary)]">Guide</p>
-                    <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">{GUIDE_STEPS.length} steps</p>
+                  <div className="w-full h-1 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-emerald-500 via-blue-500 to-amber-500 transition-all duration-300 rounded-full"
+                      style={{ width: `${readingProgress}%` }}
+                    />
                   </div>
                 </div>
 
-                <div className="border-t border-[var(--border-primary)] pt-3 space-y-4">
-                  {grouped.map((group) => {
-                    const colors = PHASE_COLORS[group.phase.color];
-                    return (
-                      <div key={group.phase.key}>
-                        <div className="flex items-center gap-2 px-3 py-1.5 mb-0.5">
-                          <group.phase.icon className={`h-3 w-3 ${colors.text}`} />
-                          <span className={`text-[9px] font-bold uppercase tracking-[0.15em] ${colors.text}`}>
-                            {group.phase.label}
-                          </span>
-                        </div>
-                        {group.steps.map((step) => {
-                          const idx = GUIDE_STEPS.indexOf(step);
-                          return (
-                            <button
-                              key={step.id}
-                              onClick={() => scrollToSection(step.id)}
-                              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all ${
-                                activeId === step.id
-                                  ? 'bg-[var(--accent-amber)]/10 text-[var(--accent-amber)] border-l-2 border-[var(--accent-amber)]'
-                                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]/50 border-l-2 border-transparent'
-                              }`}
-                            >
-                              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${
-                                activeId === step.id
-                                  ? 'bg-[var(--accent-amber)]/20 text-[var(--accent-amber)]'
-                                  : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)]'
-                              }`}>
-                                {idx + 1}
-                              </span>
-                              <span className="text-xs font-semibold leading-tight">{step.title}</span>
-                            </button>
-                          );
-                        })}
+                {grouped.map((group) => {
+                  const colors = PHASE_COLORS[group.phase.color];
+                  return (
+                    <div key={group.phase.key} className="mb-3">
+                      <div className="flex items-center gap-1.5 px-3 py-1">
+                        <group.phase.icon className={`h-2.5 w-2.5 ${colors.text}`} />
+                        <span className={`text-[9px] font-bold uppercase tracking-[0.15em] ${colors.text}`}>
+                          {group.phase.label}
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
+                      {group.steps.map((step) => {
+                        const idx = GUIDE_STEPS.indexOf(step);
+                        return (
+                          <button
+                            key={step.id}
+                            onClick={() => scrollToSection(step.id)}
+                            className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-all ${
+                              activeId === step.id
+                                ? 'bg-[var(--accent-amber)]/10 text-[var(--accent-amber)]'
+                                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]/50'
+                            }`}
+                          >
+                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0 ${
+                              activeId === step.id
+                                ? 'bg-[var(--accent-amber)]/20 text-[var(--accent-amber)]'
+                                : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)]'
+                            }`}>
+                              {idx + 1}
+                            </span>
+                            <span className="text-[11px] font-medium leading-tight truncate">{step.title}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
 
-                <div className="border-t border-[var(--border-primary)] pt-4">
+                <div className="pt-3 px-3">
                   <button
                     onClick={() => startTour(0)}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 bg-gradient-to-r from-[var(--accent-amber)]/10 to-emerald-500/10 border border-[var(--accent-amber)]/20 rounded-xl text-xs font-bold text-[var(--accent-amber)] hover:from-[var(--accent-amber)]/20 hover:to-emerald-500/20 transition-all"
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--accent-amber)]/10 border border-[var(--accent-amber)]/20 rounded-lg text-[10px] font-bold text-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/20 transition-all"
                   >
-                    <Play className="h-3.5 w-3.5" />
-                    Take Interactive Tour
+                    <Play className="h-3 w-3" />
+                    Start Tour
                   </button>
                 </div>
               </nav>
@@ -401,20 +382,19 @@ const GuidePage: React.FC = () => {
             <main className="flex-1 min-w-0">
 
               {/* ── Hero ── */}
-              <section className="relative overflow-hidden rounded-2xl mb-8 lg:mb-12">
+              <section className="relative overflow-hidden rounded-2xl mb-8 lg:mb-10">
                 {/* Background gradient */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent-amber)]/5 via-[var(--bg-primary)] to-emerald-500/5" />
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl" />
                 
-                <div className="relative px-6 py-10 lg:py-16 lg:px-10 text-center space-y-6">
+                <div className="relative px-6 py-8 lg:py-12 text-center space-y-4">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
-                    className="w-16 h-16 mx-auto bg-gradient-to-br from-[var(--accent-amber)]/20 to-emerald-500/20 border border-[var(--accent-amber)]/30 rounded-2xl flex items-center justify-center shadow-xl shadow-[var(--accent-amber)]/5"
+                    className="w-14 h-14 mx-auto bg-gradient-to-br from-[var(--accent-amber)]/20 to-emerald-500/20 border border-[var(--accent-amber)]/30 rounded-2xl flex items-center justify-center shadow-xl shadow-[var(--accent-amber)]/5"
                   >
-                    <Route className="h-8 w-8 text-[var(--accent-amber)]" />
+                    <Route className="h-7 w-7 text-[var(--accent-amber)]" />
                   </motion.div>
                   
                   <motion.div
@@ -422,15 +402,14 @@ const GuidePage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.1 }}
                   >
-                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]">
+                    <h1 className="text-2xl md:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1]">
                       How to Use{' '}
                       <span className="bg-gradient-to-r from-[var(--accent-amber)] to-emerald-400 bg-clip-text text-transparent">
                         MarketBeacon Pro
                       </span>
                     </h1>
-                    <p className="text-sm md:text-base text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed mt-4">
-                      A complete step-by-step guide for going from stock idea to managed portfolio. 
-                      Free for all users — no subscription required.
+                    <p className="text-sm text-[var(--text-secondary)] max-w-xl mx-auto leading-relaxed mt-3">
+                      From stock idea to managed portfolio — a clear 8-step path for every user.
                     </p>
                   </motion.div>
 
@@ -439,37 +418,23 @@ const GuidePage: React.FC = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
-                    className="flex flex-wrap items-center justify-center gap-3 pt-2"
+                    className="flex flex-wrap items-center justify-center gap-2 pt-1"
                   >
-                    {PHASES.map((p, i) => {
+                    {PHASES.map((p) => {
                       const colors = PHASE_COLORS[p.color];
                       return (
                         <button
                           key={p.key}
                           onClick={() => scrollToSection(GUIDE_STEPS.find(s => s.phase === p.key)?.id || '')}
-                          className={`group flex items-center gap-2 px-4 py-2 rounded-xl ${colors.bg} border ${colors.border} hover:scale-105 transition-all cursor-pointer`}
+                          className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${colors.bg} border ${colors.border} hover:scale-105 transition-all cursor-pointer`}
                         >
-                          <p.icon className={`h-3.5 w-3.5 ${colors.text} group-hover:rotate-6 transition-transform`} />
+                          <p.icon className={`h-3 w-3 ${colors.text}`} />
                           <span className={`text-[10px] font-bold uppercase tracking-wider ${colors.text}`}>
                             {p.label}
                           </span>
-                          {i < PHASES.length - 1 && (
-                            <ChevronRight className="h-3 w-3 text-[var(--text-muted)] hidden sm:block" />
-                          )}
                         </button>
                       );
                     })}
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                    className="flex items-center justify-center gap-2 flex-wrap"
-                  >
-                    <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full uppercase tracking-wider">Free for All</span>
-                    <span className="text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full uppercase tracking-wider">No Auth Required</span>
-                    <span className="text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-full uppercase tracking-wider">Interactive Tour</span>
                   </motion.div>
                 </div>
               </section>
@@ -498,33 +463,6 @@ const GuidePage: React.FC = () => {
                     Start Investment Tour
                   </button>
                 </motion.div>
-              </section>
-
-              {/* ── Journey Overview ── */}
-              <section className="mb-10 lg:mb-14">
-                <h2 className="text-base lg:text-lg font-black uppercase tracking-wider flex items-center gap-2 mb-6">
-                  <MapPin className="h-4 w-4 text-[var(--accent-amber)]" />
-                  Your 8-Step Journey
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {GUIDE_STEPS.map((step, i) => {
-                    const phaseColor = PHASE_COLORS[PHASES.find(p => p.key === step.phase)?.color || 'emerald'];
-                    return (
-                      <button
-                        key={step.id}
-                        onClick={() => scrollToSection(step.id)}
-                        className={`group flex flex-col items-center text-center p-4 rounded-xl ${phaseColor.bg} border ${phaseColor.border} hover:scale-[1.03] transition-all cursor-pointer ${activeId === step.id ? 'ring-2 ring-[var(--accent-amber)]' : ''}`}
-                      >
-                        <div className={`w-8 h-8 rounded-lg ${phaseColor.bg} border ${phaseColor.border} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
-                          <step.icon className={`h-4 w-4 ${phaseColor.text}`} />
-                        </div>
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)]">{step.phase}</span>
-                        <span className="text-[10px] font-bold text-[var(--text-primary)] leading-tight mt-0.5">{step.title}</span>
-                        <span className="text-[8px] font-bold text-[var(--text-muted)] mt-0.5">Step {i + 1}</span>
-                      </button>
-                    );
-                  })}
-                </div>
               </section>
 
               {/* ── Phase & Step Content ── */}

@@ -13,7 +13,10 @@ import {
   Settings,
   Bot,
   TrendingUp,
-  Zap
+  Zap,
+  LayoutGrid,
+  BarChart3,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { APP_VERSION_DISPLAY } from '../../lib/version';
@@ -41,30 +44,44 @@ const SideNav: React.FC<SideNavProps> = ({ isOpen, onClose, isCollapsed = false,
     }[];
   }[] = [
     {
-      title: 'Trading Segments',
+      title: 'Main',
+      items: [
+        { icon: LayoutGrid, label: 'Dashboard', path: '/app', desc: 'Overview & active setups' },
+        { icon: Zap, label: 'Alpha Hub', path: '/alpha-hub', desc: 'Institutional strategy signals' },
+      ]
+    },
+    {
+      title: 'Segments',
       items: [
         { icon: TrendingUp, label: 'Short Term Investing', path: '/short-term', desc: 'ABCD · Buy B→C→D · Targets D→C→B→A' },
-        { icon: Zap, label: 'Alpha Hub', path: '/alpha-hub', desc: 'Active institutional setups' },
+        { icon: FlaskConical, label: 'Stock Screener', path: '/screener', desc: 'Filter by fundamentals & sector' },
+        { icon: BarChart3, label: 'Chart Terminal', path: '/charts', desc: 'Technical charts & indicators' },
       ]
     },
     {
-      title: 'Support & Help',
+      title: 'Journal',
       items: [
-        { icon: HelpCircle, label: 'Help Guide', path: '/guide', desc: 'Documentation' },
-        { icon: ShieldCheck, label: 'Video Course', path: '/education', desc: 'Institutional Course' }
+        { icon: BookOpen, label: 'Trade Journal', path: '/trades', desc: 'Track trades & decisions' },
       ]
     },
     {
-      title: 'Preferences',
+      title: 'Learn & Support',
       items: [
-        { icon: User, label: 'Profile Desk', path: '/profile', desc: 'Account Settings' },
-        { icon: Store, label: 'License Desk', path: '/license-desk', desc: 'Subscription' },
+        { icon: HelpCircle, label: 'Help Guide', path: '/guide', desc: 'Step-by-step platform guide' },
+        { icon: ShieldCheck, label: 'Video Course', path: '/education', desc: 'Institutional strategy course' },
+      ]
+    },
+    {
+      title: 'Account',
+      items: [
+        { icon: User, label: 'Profile Desk', path: '/profile', desc: 'Account settings' },
+        { icon: Store, label: 'License Desk', path: '/license-desk', desc: 'Subscription & plans' },
       ]
     },
     {
       title: 'Experimental',
       items: [
-        { icon: Bot, label: 'Beacon AI', path: '/ai-assistant', desc: 'Under Development', tag: 'Beta' },
+        { icon: Bot, label: 'Beacon AI', path: '/ai-assistant', desc: 'Strategy AI assistant', tag: 'Beta' },
       ]
     }
   ];

@@ -11,14 +11,16 @@ import {
   Briefcase, 
   BookOpen, 
   Search,
-  LineChart,
   X,
   HelpCircle,
   Store,
   User,
   Bot,
   Menu,
-  TrendingUp
+  TrendingUp,
+  FlaskConical,
+  BarChart3,
+  ShieldCheck
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -197,13 +199,31 @@ const AppLayout: React.FC = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-3">
+                <Link
+                  to="/app"
+                  onClick={() => setIsMobileMoreOpen(false)}
+                  className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-emerald-500/30 transition-all text-center"
+                >
+                  <LayoutGrid className="h-6 w-6 text-emerald-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-200">Dashboard</span>
+                </Link>
+
+                <Link
+                  to="/screener"
+                  onClick={() => setIsMobileMoreOpen(false)}
+                  className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-blue-500/30 transition-all text-center"
+                >
+                  <FlaskConical className="h-6 w-6 text-blue-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-200">Screener</span>
+                </Link>
+
                 <Link
                   to="/charts"
                   onClick={() => setIsMobileMoreOpen(false)}
                   className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-emerald-500/30 transition-all text-center"
                 >
-                  <LineChart className="h-6 w-6 text-emerald-400 mb-2" />
+                  <BarChart3 className="h-6 w-6 text-emerald-400 mb-2" />
                   <span className="text-xs font-bold text-slate-200">Charts</span>
                 </Link>
 
@@ -231,7 +251,16 @@ const AppLayout: React.FC = () => {
                   className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-purple-500/30 transition-all text-center"
                 >
                   <HelpCircle className="h-6 w-6 text-purple-400 mb-2" />
-                  <span className="text-xs font-bold text-slate-200">Help Guide</span>
+                  <span className="text-xs font-bold text-slate-200">Guide</span>
+                </Link>
+
+                <Link
+                  to="/education"
+                  onClick={() => setIsMobileMoreOpen(false)}
+                  className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-2xl hover:border-indigo-500/30 transition-all text-center"
+                >
+                  <ShieldCheck className="h-6 w-6 text-indigo-400 mb-2" />
+                  <span className="text-xs font-bold text-slate-200">Course</span>
                 </Link>
 
                 <Link
