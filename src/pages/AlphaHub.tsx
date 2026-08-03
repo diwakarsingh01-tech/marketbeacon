@@ -429,6 +429,68 @@ const AlphaHubPage: React.FC = () => {
     }, 100);
   };
 
+  const [creatingPortfolio, setCreatingPortfolio] = useState(false);
+
+  const handleCreatePortfolio = async () => {
+    if (!qualifiedStocks?.length || !user) return;
+    
+    setCreatingPortfolio(true);
+    try {
+      // Build the portfolio stock data
+      const portfolioStocks = qualifiedStocks.map((s: AlphaHubStock) => {
+        const qty = calculateQuantity(s, totalCapital);
+        const investAmt = Math.round(qty * (s.entryPrice || s.currentPrice || 1));
+        const weightPct = totalPortfolioAmount > 0 ? ((investAmt / totalPortfolioAmount) * 100).toFixed(1) : '0';
+        return {
+          symbol: s.symbol,
+          name: s.stockName || s.symbol,
+          sector: s.sector,
+          capType: s.capType,
+          basketSource: s.basketSource,
+          strategy: s.strategy,
+          tranche: s.tranche,
+          score: s.score,
+          smartMoney: s.smartMoney,
+          currentPrice: s.currentPrice,
+          entryPrice: s.entryPrice,
+          target: s.target,
+          roi: s.roi,
+          qty,
+          investAmt,
+          weightPct
+        };
+      });
+
+      const stocksJson = JSON.stringify(portfolioStocks);
+      const portfolioName = `Alpha Portfolio ${new Date().toLocaleDateString('en-IN')}`;
+
+      const res = await authFetch('/api/portfolios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: portfolioName,
+          total_capital: totalCapital,
+          stocks_json: stocksJson
+        })
+      });
+
+      if (res.ok) {
+        setShowConfetti(true);
+        setTimeout(() => {
+          setShowConfetti(false);
+          // Could redirect to a portfolio page or show success message
+        }, 3000);
+      } else {
+        const err = await res.json();
+        alert('Failed to create portfolio: ' + (err.error || 'Unknown error'));
+      }
+    } catch (e) {
+      alert('Network error creating portfolio');
+    } finally {
+      setCreatingPortfolio(false);
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -695,15 +757,34 @@ const AlphaHubPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Action Button */}
+              {/* Action Buttons */}
               {totalCapital >= 50000 && baskets.length > 0 && (
-                <button
-                  onClick={scrollToPortfolio}
-                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-caption transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  Build My Portfolio →
-                </button>
+                <div className="space-y-3">
+                  <button
+                    onClick={scrollToPortfolio}
+                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-caption transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Build My Portfolio →
+                  </button>
+                  <button
+                    onClick={handleCreatePortfolio}
+                    disabled={creatingPortfolio}
+                    className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-caption font-bold transition-all active:scale-[0.98] shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                  >
+                    {creatingPortfolio ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Database className="h-4 w-4" />
+                        Create Portfolio
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
               {totalCapital < 50000 && (
                 <p className="text-xs font-bold text-[var(--text-muted)] text-center uppercase tracking-wider bg-[var(--bg-primary)]/30 py-2.5 rounded-xl border border-[var(--border-primary)]/50">

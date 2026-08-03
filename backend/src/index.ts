@@ -2225,6 +2225,59 @@ app.post('/api/trades/batch-delete', authenticateToken, async (req: any, res) =>
   }
 });
 
+// ── Portfolio endpoints ───────────────────────────────────────────────────────
+app.get('/api/portfolios', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const portfolios = await db.all('SELECT * FROM portfolios WHERE user_id = ? ORDER BY created_at DESC', [req.user.id]);
+    res.json(portfolios);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/portfolios', authenticateToken, async (req: any, res) => {
+  try {
+    const { name, total_capital, stocks_json } = req.body;
+    if (!name || !total_capital || !stocks_json) {
+      return res.status(400).json({ error: 'name, total_capital, and stocks_json required' });
+    }
+    const db = getDB();
+    await db.run(
+      'INSERT INTO portfolios (user_id, name, total_capital, stocks_json) VALUES (?, ?, ?, ?)',
+      [req.user.id, name, total_capital, stocks_json]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/portfolios/:id', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    const portfolio = await db.get('SELECT * FROM portfolios WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    if (!portfolio) return res.status(404).json({ error: 'Portfolio not found' });
+    res.json(portfolio);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/portfolios/:id', authenticateToken, async (req: any, res) => {
+  try {
+    const db = getDB();
+    await db.run('DELETE FROM portfolios WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/portfolios/:id', authenticateToken, async (req: any, res) => {
+  try {
+    const { name, total_capital, stocks_json } = req.body;
+    const db = getDB();
+    await db.run(
+      'UPDATE portfolios SET name = COALESCE(?, name), total_capital = COALESCE(?, total_capital), stocks_json = COALESCE(?, stocks_json), updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+      [name, total_capital, stocks_json, req.params.id, req.user.id]
+    );
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 // ── Reopen a closed trade ─────────────────────────────────────────────────────
 app.patch('/api/trades/:id/reopen', authenticateToken, async (req: any, res) => {
   try {

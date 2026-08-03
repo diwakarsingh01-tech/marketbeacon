@@ -187,11 +187,13 @@ export interface TradeRecord {
 
 export interface AlphaHubStock {
   symbol: string;
+  stockName?: string;
   sector?: string;
   capType: 'LARGE' | 'MID' | 'SMALL';
   basketSource?: string;
   strategy?: string;
   score?: number;
+  smartMoney?: number;
   entryPrice?: number;
   currentPrice?: number;
   target?: number;
