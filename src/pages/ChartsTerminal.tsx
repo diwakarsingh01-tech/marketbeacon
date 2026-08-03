@@ -406,7 +406,7 @@ const ChartsTerminalContent: React.FC = () => {
           Object.entries(strat.abcd).forEach(([key, val]: [string, ABCDNode]) => {
             if (val && val.price) {
               const p = Number(val.price);
-              if (p !== Number(strat.entryPrice)) {
+              if (p !== Number(strat.entryPrice) && p !== Number(strat.target)) {
                 mainSeries.createPriceLine({
                   price: p,
                   color: isDark ? '#475569' : '#94a3b8', // slate/gray
@@ -1961,6 +1961,19 @@ const ChartsTerminalContent: React.FC = () => {
                         +{(((Number(activeStrategy.target || 0) - Number(activeStrategy.entryPrice || 0)) / Math.max(1, Number(activeStrategy.entryPrice || 1))) * 100).toFixed(1)}%
                       </span>
                     </div>
+                    {activeStrategy.triggerDate && (
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[var(--text-tertiary)] font-bold">Last Trigger:</span>
+                        <span className={`font-extrabold ${activeStrategy.isStale ? 'text-amber-400' : 'text-[var(--text-secondary)]'}`}>
+                          {activeStrategy.triggerDate}
+                          {activeStrategy.signalAgeBars != null && activeStrategy.signalAgeBars > 0 && (
+                            <span className="text-[10px] text-[var(--text-muted)] font-medium ml-1">
+                              ({activeStrategy.signalAgeBars} bars ago)
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
                     {activeStrategy.targets && activeStrategy.targets.length > 0 && (
                       <div className="border-t border-[var(--border-primary)]/40 pt-2 space-y-1.5">
                         <span className="text-[var(--text-tertiary)] font-bold text-xs">Short-Term Targets Ladder (D→C→B→A):</span>
@@ -1990,7 +2003,11 @@ const ChartsTerminalContent: React.FC = () => {
                         ABCD Tranche Timeline
                       </span>
                     </div>
-                    {activeStrategy.isBuyZone && (
+                    {activeStrategy.isStale ? (
+                      <div className="flex items-center gap-1 text-caption text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        <AlertTriangle className="h-3 w-3" /> Stale Setup — Retest Pending
+                      </div>
+                    ) : activeStrategy.isBuyZone && (
                       <div className="flex items-center gap-1 text-caption text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
                         <CheckCircle2 className="h-3 w-3" /> Safe Entry Active
                       </div>
@@ -2000,25 +2017,33 @@ const ChartsTerminalContent: React.FC = () => {
                   {/* Ladder visual pipeline */}
                   {activeStrategy.abcd ? (
                     <div className="grid grid-cols-2 gap-3 mt-2">
-                      {Object.entries(activeStrategy.abcd).map(([key, val]: [string, any]) => {
-                        const isPassed = activeStrategy.tranche 
-                          ? key.toUpperCase().charCodeAt(0) <= activeStrategy.tranche.toUpperCase().charCodeAt(0)
+                      {Object.entries(activeStrategy.abcd)
+                        .filter(([key]) => ['a', 'b', 'c', 'd'].includes(key.toLowerCase()))
+                        .map(([key, val]: [string, any]) => {
+                        const upper = key.toUpperCase();
+                        const isShortTerm = activeStrategy.timeframe === 'SHORT_TERM';
+                        // A is the signal anchor (never a buy) — show neutral anchor state.
+                        const isAnchor = isShortTerm && upper === 'A';
+                        const isPassed = !isAnchor && activeStrategy.tranche
+                          ? upper.charCodeAt(0) <= activeStrategy.tranche.toUpperCase().charCodeAt(0)
                           : false;
-                        const isActive = activeStrategy.tranche === key.toUpperCase();
-                        
+                        const isActive = activeStrategy.tranche === upper;
+
                         return (
-                          <div 
-                            key={key} 
+                          <div
+                            key={key}
                             className={`p-3.5 rounded-2xl border transition-all relative ${
-                              isActive 
+                              isActive
                                 ? 'bg-blue-600/10 border-blue-500/40 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.06)]'
-                                : (isPassed 
+                                : (isPassed
                                   ? 'bg-[var(--bg-secondary)]/60 border-[var(--border-primary)]/80 text-[var(--text-secondary)]'
-                                  : 'bg-[var(--bg-primary)]/20 border-slate-955/80 text-slate-600 opacity-60')
+                                  : 'bg-[var(--bg-primary)]/20 border-[var(--border-primary)]/80 text-slate-600 opacity-60')
                             }`}
                           >
                             <div className="flex justify-between items-center mb-1.5">
-                              <span className="text-xs font-extrabold uppercase tracking-wider">Tranche {key.toUpperCase()}</span>
+                              <span className="text-xs font-extrabold uppercase tracking-wider">
+                                {isAnchor ? 'Anchor A' : `Tranche ${upper}`}
+                              </span>
                               {isActive && (
                                 <span className="h-2.5 w-2.5 rounded-full bg-blue-500 animate-ping absolute top-3 right-3" />
                               )}

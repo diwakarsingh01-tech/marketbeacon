@@ -79,6 +79,8 @@ export interface StrategyResult {
   abcd?: Record<string, ABCDNode>;
   triggerDate?: string;
   timeframe?: string;
+  signalAgeBars?: number;
+  isStale?: boolean;
   targets?: Array<{ level: string; price: number; gainPct: number }>;
 }
 

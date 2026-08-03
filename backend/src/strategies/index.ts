@@ -855,16 +855,27 @@ export function calculateShortTermABCD(quotes: Quote[]) {
   const MIN_BARS = 150;
   const LOOKBACK = 60;   // bars to detect swing high A
   const TOLERANCE = 0.022; // buy-zone tolerance (existing convention)
+  const STALE_BARS = 10;  // a tranche touch older than this (≈2 weeks) is NOT a fresh short-term trigger
   if (!quotes || quotes.length < MIN_BARS) return { isBuyZone: false };
 
   const currentPrice = quotes[quotes.length - 1].close;
-  let state = 'SEEKING_A', a_entry = 0, a_date = '', b_entry = 0, b_date = '', c_entry = 0, c_date = '', d_entry = 0, d_date = '';
+  let state = 'SEEKING_A', a_entry = 0, a_date = '';
+  let b_entry = 0, b_date = '', b_bar = -1;
+  let c_entry = 0, c_date = '', c_bar = -1;
+  let d_entry = 0, d_date = '', d_bar = -1;
+
+  const fmtDate = (q: any): string => {
+    if (!q || !q.date) return '';
+    const dV = q.date;
+    return (typeof dV === 'string' ? dV : (dV instanceof Date ? dV.toISOString() : String(dV))).split('T')[0];
+  };
 
   for (let i = LOOKBACK; i < quotes.length; i++) {
     // Full recovery above anchor A invalidates the current ABCD ladder.
     if (state !== 'SEEKING_A' && quotes[i].high >= a_entry) {
       state = 'SEEKING_A';
       b_date = ''; c_date = ''; d_date = '';
+      b_bar = -1; c_bar = -1; d_bar = -1;
     }
 
     if (state === 'SEEKING_A') {
@@ -876,37 +887,55 @@ export function calculateShortTermABCD(quotes: Quote[]) {
       }
       const barsSinceHigh = window.length - swingIdx;
       if (swingHigh > 0 && barsSinceHigh >= 3 && quotes[i].close < swingHigh * 0.99) {
-        const dV = window[swingIdx].date;
-        a_date = (typeof dV === 'string' ? dV : (dV as Date).toISOString()).split('T')[0];
+        a_date = fmtDate(window[swingIdx]);
         a_entry = Math.round(swingHigh);
         b_entry = Math.round(a_entry * 0.90);
         c_entry = Math.round(b_entry * 0.90);
         d_entry = Math.round(c_entry * 0.90);
         state = 'A_ACTIVE';
-        b_date = ''; c_date = ''; d_date = '';
       }
-    } else if (state === 'A_ACTIVE' && quotes[i].low <= b_entry * 1.01) {
-      state = 'B_ACTIVE';
-      const dV = quotes[i].date;
-      b_date = (typeof dV === 'string' ? dV : (dV as Date).toISOString()).split('T')[0];
-    } else if (state === 'B_ACTIVE' && quotes[i].low <= c_entry * 1.01) {
-      state = 'C_ACTIVE';
-      const dV = quotes[i].date;
-      c_date = (typeof dV === 'string' ? dV : (dV as Date).toISOString()).split('T')[0];
-    } else if (state === 'C_ACTIVE' && quotes[i].low <= d_entry * 1.01) {
-      state = 'D_ACTIVE';
-      const dV = quotes[i].date;
-      d_date = (typeof dV === 'string' ? dV : (dV as Date).toISOString()).split('T')[0];
+    } else if (state === 'A_ACTIVE') {
+      // B triggers when price first enters B buy zone.
+      if (quotes[i].low <= b_entry * 1.01) {
+        state = 'B_ACTIVE';
+        b_date = fmtDate(quotes[i]); b_bar = i;
+      }
+    } else if (state === 'B_ACTIVE') {
+      if (quotes[i].low <= c_entry * 1.01) {
+        state = 'C_ACTIVE';
+        c_date = fmtDate(quotes[i]); c_bar = i;
+      } else if (quotes[i].low <= b_entry * 1.01) {
+        // Retest of B level — refresh trigger date so signal age stays accurate.
+        b_date = fmtDate(quotes[i]); b_bar = i;
+      }
+    } else if (state === 'C_ACTIVE') {
+      if (quotes[i].low <= d_entry * 1.01) {
+        state = 'D_ACTIVE';
+        d_date = fmtDate(quotes[i]); d_bar = i;
+      } else if (quotes[i].low <= c_entry * 1.01) {
+        // Retest of C level.
+        c_date = fmtDate(quotes[i]); c_bar = i;
+      }
+    } else if (state === 'D_ACTIVE') {
+      if (quotes[i].low <= d_entry * 1.01) {
+        // Retest of D level.
+        d_date = fmtDate(quotes[i]); d_bar = i;
+      }
+      // Note: D tranche is never abandoned by rising price — it merely stops being a buy
+      // zone until a NEW ladder forms (full recovery above A resets the state machine).
     }
   }
 
   // A = signal only (no buy at A). Buy ladder: B → C → D. Targets: levels above (D→C→B→A).
-  let activeE = 0, activeTr = 'NONE', activeD = '';
-  if (state === 'B_ACTIVE') { activeE = b_entry; activeTr = 'B'; activeD = b_date; }
-  else if (state === 'C_ACTIVE') { activeE = c_entry; activeTr = 'C'; activeD = c_date; }
-  else if (state === 'D_ACTIVE') { activeE = d_entry; activeTr = 'D'; activeD = d_date; }
+  let activeE = 0, activeTr = 'NONE', activeD = '', activeBar = -1;
+  if (state === 'B_ACTIVE') { activeE = b_entry; activeTr = 'B'; activeD = b_date; activeBar = b_bar; }
+  else if (state === 'C_ACTIVE') { activeE = c_entry; activeTr = 'C'; activeD = c_date; activeBar = c_bar; }
+  else if (state === 'D_ACTIVE') { activeE = d_entry; activeTr = 'D'; activeD = d_date; activeBar = d_bar; }
 
-  const isBuyZone = activeTr !== 'NONE' && Math.abs(currentPrice - activeE) / activeE <= TOLERANCE;
+  const signalAgeBars = activeBar >= 0 ? quotes.length - 1 - activeBar : -1;
+  const isStale = signalAgeBars > STALE_BARS;
+  const atLevel = Math.abs(currentPrice - activeE) / activeE <= TOLERANCE;
+  const isBuyZone = activeTr !== 'NONE' && !isStale && atLevel;
 
   // Targets ladder from active tranche upward — exact % gain from entry price.
   const targets: any[] = [];
@@ -931,7 +960,9 @@ export function calculateShortTermABCD(quotes: Quote[]) {
     target: targets[0]?.price || 0,
     targets,
     currentPrice: Math.round(currentPrice),
-    triggerDate: a_date,
+    triggerDate: activeD || a_date, // freshest signal: active tranche touch (fallback: anchor A)
+    signalAgeBars,
+    isStale,
     tranche: activeTr,
     abcd: { a: { price: a_entry, date: a_date }, b: { price: b_entry, date: b_date }, c: { price: c_entry, date: c_date }, d: { price: d_entry, date: d_date }, gap: 10 },
     timeframe: 'SHORT_TERM',

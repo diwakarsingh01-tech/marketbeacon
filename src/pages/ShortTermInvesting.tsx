@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { TrendingUp, Target, RefreshCw, CheckCircle2, XCircle, ArrowRight, Crown } from 'lucide-react';
+import { TrendingUp, Target, RefreshCw, CheckCircle2, XCircle, ArrowRight, Crown, AlertTriangle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { safeJsonParse } from '../lib/api-utils';
@@ -16,6 +16,9 @@ interface ShortTermSetup {
   isBuyZone: boolean;
   isPass?: boolean;
   isObservation?: boolean;
+  isStale?: boolean;
+  signalAgeBars?: number;
+  triggerDate?: string;
   reason?: string;
   entryPrice?: number;
   target?: number;
@@ -224,6 +227,8 @@ const ShortTermInvestingContent: React.FC = () => {
                       </span>
                       {s.isBuyZone ? (
                         <span className="inline-flex items-center gap-1 text-emerald-400 font-bold text-[10px]"><CheckCircle2 className="h-3 w-3" /> BUY</span>
+                      ) : s.isStale ? (
+                        <span className="inline-flex items-center gap-1 text-amber-400 font-bold text-[10px]"><AlertTriangle className="h-3 w-3" /> STALE</span>
                       ) : s.isPass ? (
                         <span className="inline-flex items-center gap-1 text-amber-400 font-bold text-[10px]"><Target className="h-3 w-3" /> QUAL</span>
                       ) : (
@@ -262,6 +267,18 @@ const ShortTermInvestingContent: React.FC = () => {
                     </Link>
                   </div>
 
+                  {/* Trigger info */}
+                  {s.triggerDate && (
+                    <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
+                      <span className="inline-flex items-center gap-1"><Target className="h-3 w-3 text-cyan-400" />
+                        Triggered <span className="font-bold text-[var(--text-secondary)]">{s.triggerDate}</span>
+                        {s.signalAgeBars != null && s.signalAgeBars > 0 && (
+                          <span>({s.signalAgeBars} bars ago)</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Row 4: Targets ladder (compact) */}
                   {targets.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
@@ -289,6 +306,7 @@ const ShortTermInvestingContent: React.FC = () => {
                     <th className="px-3 py-3.5 font-extrabold">Entry (B/C/D)</th>
                     <th className="px-3 py-3.5 font-extrabold">CMP</th>
                     <th className="px-3 py-3.5 font-extrabold">Gap%</th>
+                    <th className="px-3 py-3.5 font-extrabold">Triggered</th>
                     <th className="px-3 py-3.5 font-extrabold">Targets Ladder (D→C→B→A)</th>
                     <th className="px-3 py-3.5 font-extrabold">Score</th>
                     <th className="px-3 py-3.5 font-extrabold">Status</th>
@@ -325,6 +343,18 @@ const ShortTermInvestingContent: React.FC = () => {
                         <td className="px-3 py-3.5 font-mono font-bold text-[var(--text-primary)]">₹ {current.toLocaleString('en-IN')}</td>
                         <td className={`px-3 py-3.5 font-mono font-bold ${Number(gap) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{gap}%</td>
                         <td className="px-3 py-3.5">
+                          {s.triggerDate ? (
+                            <span className="inline-flex items-center gap-1 text-[var(--text-secondary)] font-mono text-[11px]">
+                              <Target className="h-3 w-3 text-cyan-400" /> {s.triggerDate}
+                              {s.signalAgeBars != null && s.signalAgeBars > 0 && (
+                                <span className="text-[var(--text-muted)]">({s.signalAgeBars}b)</span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-[var(--text-muted)]">—</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3.5">
                           {targets.length > 0 ? (
                             <div className="flex flex-wrap gap-1.5">
                               {targets.map((t, i) => (
@@ -341,6 +371,8 @@ const ShortTermInvestingContent: React.FC = () => {
                         <td className="px-3 py-3.5">
                           {s.isBuyZone ? (
                             <span className="inline-flex items-center gap-1 text-emerald-400 font-bold"><CheckCircle2 className="h-3.5 w-3.5" /> BUY ZONE</span>
+                          ) : s.isStale ? (
+                            <span className="inline-flex items-center gap-1 text-amber-400 font-bold"><AlertTriangle className="h-3.5 w-3.5" /> STALE</span>
                           ) : s.isPass ? (
                             <span className="inline-flex items-center gap-1 text-amber-400 font-bold"><Target className="h-3.5 w-3.5" /> QUALIFIED</span>
                           ) : (
