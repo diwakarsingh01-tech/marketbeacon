@@ -1,8 +1,11 @@
 import { runStrategyAnalysis } from './strategyService.js';
 import { validateBatch9 } from './fundamentalAudit.js';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const MODEL = 'gemini-2.0-flash';
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
+// deepseek-chat (V3): fast & cheap — default. Switch to 'deepseek-reasoner' (R1)
+// for deeper reasoning (slower, ~3x cost). Override via DEEPSEEK_MODEL env var.
+const MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
 
 const HJ_SYSTEM_PROMPT = `You are "BeaconAI," the official MarketBeacon Pro swing trading assistant. Analyze stocks strictly based on the MarketBeacon Pro Multi-List Swing Trading methodology. You are highly logical, heavily contrarian, and rely entirely on data rather than market news.
 
@@ -68,6 +71,43 @@ function getDropThresholds(mcapCategory: string): { minDrop: number; maxDrop: nu
 function isBankOrNBFC(symbol: string, sector: string): boolean {
   const bankNbfcSectors = ['Banking', 'NBFC', 'Asset Management', 'Financial Infrastructure', 'Financial Services'];
   return bankNbfcSectors.includes(sector);
+}
+
+/**
+ * Call DeepSeek's OpenAI-compatible chat/completions API.
+ * Throws on transport/HTTP errors so callers can fall back gracefully.
+ */
+async function callDeepSeek(
+  systemPrompt: string,
+  messages: { role: string; content: string }[],
+  temperature = 0,
+  maxTokens = 2048,
+  jsonMode = false
+): Promise<string> {
+  const body: any = {
+    model: MODEL,
+    messages: [{ role: 'system', content: systemPrompt }, ...messages],
+    temperature,
+    max_tokens: maxTokens,
+  };
+  if (jsonMode) body.response_format = { type: 'json_object' };
+
+  const response = await fetch(DEEPSEEK_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    throw new Error(`DeepSeek API ${response.status}: ${errText.slice(0, 300)}`);
+  }
+
+  const result: any = await response.json();
+  return result?.choices?.[0]?.message?.content || '';
 }
 
 export async function analyzeStock(
@@ -142,31 +182,20 @@ export async function analyzeStock(
   const fallback = buildFallbackResponse(dataPayload);
 
   // Always start with deterministic fundamental scorecard (accurate, not random)
-  // Use Gemini AI only for the textual description enhancement if available
-  if (GEMINI_API_KEY) {
+  // Use DeepSeek AI only for the textual description enhancement if available
+  if (DEEPSEEK_API_KEY) {
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: HJ_SYSTEM_PROMPT }] },
-            contents: [{
-              parts: [{
-                text: `Analyze the following stock for Hemant Jain Swing Trading strategy alignment:\n\n${JSON.stringify(dataPayload, null, 2)}\n\nRespond with the JSON output format specified in your instructions.`
-              }]
-            }],
-            generationConfig: {
-              temperature: 0,
-              maxOutputTokens: 2048,
-            }
-          })
-        }
+      const text = await callDeepSeek(
+        HJ_SYSTEM_PROMPT,
+        [{
+          role: 'user',
+          content: `Analyze the following stock for Hemant Jain Swing Trading strategy alignment:\n\n${JSON.stringify(dataPayload, null, 2)}\n\nRespond with the JSON output format specified in your instructions.`
+        }],
+        0,
+        2048,
+        true // jsonMode — DeepSeek JSON mode; HJ_SYSTEM_PROMPT already contains the required "json" word
       );
 
-      const result: any = await response.json();
-      const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const aiResult = JSON.parse(jsonMatch[0]);
@@ -180,7 +209,7 @@ export async function analyzeStock(
         };
       }
     } catch (err: any) {
-      console.error('Gemini API error (non-blocking):', err.message);
+      console.error('DeepSeek API error (non-blocking):', err.message);
     }
   }
 
@@ -251,45 +280,30 @@ function buildFallbackResponse(data: any): any {
 }
 
 export async function chatWithAI(userMessage: string, history: { role: string; content: string }[] = []): Promise<string> {
-  if (!GEMINI_API_KEY) {
-    return 'AI Assistant is not configured. Please add GEMINI_API_KEY to the server environment.';
+  if (!DEEPSEEK_API_KEY) {
+    return 'AI Assistant is not configured. Please add DEEPSEEK_API_KEY to the server environment.';
   }
 
-  const contents = history.map(msg => ({
-    role: msg.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: msg.content }]
+  const messages = history.map(msg => ({
+    role: msg.role === 'assistant' ? 'assistant' : 'user',
+    content: msg.content
   }));
 
-  contents.push({
+  messages.push({
     role: 'user',
-    parts: [{ text: userMessage }]
+    content: userMessage
   });
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{
-              text: HJ_SYSTEM_PROMPT + '\n\nIMPORTANT: Respond in natural language (not JSON) for free-form chat. Always include the SEBI disclaimer. Never give buy/sell advice.'
-            }]
-          },
-          contents,
-          generationConfig: {
-            temperature: 0,
-            maxOutputTokens: 2048,
-          }
-        })
-      }
+    const text = await callDeepSeek(
+      HJ_SYSTEM_PROMPT + '\n\nIMPORTANT: Respond in natural language (not JSON) for free-form chat. Always include the SEBI disclaimer. Never give buy/sell advice.',
+      messages,
+      0,
+      2048
     );
-
-    const result: any = await response.json();
-    return result?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+    return text || 'Sorry, I could not generate a response.';
   } catch (err: any) {
-    console.error('Gemini chat error:', err.message);
+    console.error('DeepSeek chat error:', err.message);
     return 'Sorry, the AI service is currently unavailable. Please try again later.';
   }
 }

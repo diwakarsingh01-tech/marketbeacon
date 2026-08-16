@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { createChart, ColorType, CandlestickSeries, LineSeries, HistogramSeries } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
@@ -21,21 +21,10 @@ import { ConfidenceGauge } from '../components/ui/ConfidenceGauge';
 import { InfoTooltip } from '../components/ui/InfoTooltip';
 import DataFreshnessBadge from '../components/ui/DataFreshnessBadge';
 import { FUNDA_INFO_MAP } from '../data/fundaInfo';
+import { STRATEGIES } from '../data/stocks';
 import type { HistoryQuote, FundamentalData, AllStockItem } from '../types';
 
 const API_URL = getApiUrl();
-
-const STRATEGY_NAMES: Record<string, string> = {
-  'ENVELOPE_LONG': 'Envelope Long',
-  'ENVELOPE_SHORT': 'Envelope Short',
-  'BOLLINGER': 'Bollinger Band',
-  '52W_HIGH_LOW': '52-Week High/Low',
-  'CUP_HANDLE_ABCD': 'Cup & Handle + ABCD',
-  'SMA_BCD': 'SMA + BCD',
-  'SR_STRATEGY': 'Support & Resistance (S&R)',
-  'SIXTY_SEVEN_FUNDA': 'Institutional Reset (67%)',
-  'TWENTY_RALLY_RETEST': 'Velocity Retest (20%)'
-};
 
 const STRATEGY_RULES: Record<string, string[]> = {
   'ENVELOPE_LONG': [
@@ -96,6 +85,18 @@ interface StockSearchResult {
 
 const ScreenerVerify: React.FC = () => {
   const [strategyId, setStrategyId] = useState<string>('ENVELOPE_LONG');
+  const [selectedBasket, setSelectedBasket] = useState<string>('Elite Basket');
+
+  const availableStrategies = useMemo(() => {
+    return STRATEGIES.filter(s => s.isLive && s.baskets.includes(selectedBasket));
+  }, [selectedBasket]);
+
+  useEffect(() => {
+    if (availableStrategies.length > 0 && !availableStrategies.some(s => s.id === strategyId)) {
+      setStrategyId(availableStrategies[0].id);
+    }
+  }, [selectedBasket, availableStrategies, strategyId]);
+
   const [symbol, setSymbol] = useState<string>('INFY');
   const [chartType, setChartType] = useState<'candles' | 'line'>('candles');
   const [timeframe, setTimeframe] = useState<string>('1H');
@@ -113,11 +114,11 @@ const ScreenerVerify: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
 
-  // Fetch qualifying stock list for selected strategy
-  const fetchScreenerList = async (stratId: string) => {
+  // Fetch qualifying stock list for selected strategy and basket
+  const fetchScreenerList = async (stratId: string, bName: string) => {
     setLoadingList(true);
     try {
-      const response = await authFetch(`/api/backtest/audit?strategy=${stratId}`);
+      const response = await authFetch(`/api/backtest/audit?strategy=${stratId}&basket=${encodeURIComponent(bName)}`);
       const d = await safeJsonParse(response);
       if (response.ok && d.allStocks && d.allStocks.length > 0) {
         setAllStocks(d.allStocks);
@@ -125,33 +126,19 @@ const ScreenerVerify: React.FC = () => {
         const setupStock = d.allStocks.find((s: AllStockItem) => s.isBuyZone && s.isPass);
         setSymbol(setupStock ? setupStock.symbol : d.allStocks[0].symbol);
       } else {
-        // Fallback mock data if token unavailable or empty results
-        const fallbacks: StockSearchResult[] = [
-          { symbol: 'INFY', isBuyZone: true, isPass: true, reason: 'Envelope Breach Rebound' },
-          { symbol: 'RELIANCE', isBuyZone: true, isPass: true, reason: 'Bollinger Deviation Bounce' },
-          { symbol: 'TCS', isBuyZone: false, isPass: true, reason: 'Inside Target Range' },
-          { symbol: 'HDFCBANK', isBuyZone: true, isPass: true, reason: 'Double Bottom Support' },
-          { symbol: 'SBIN', isBuyZone: false, isPass: false, reason: 'Audit Failure: Debt High' }
-        ];
-        setAllStocks(fallbacks);
-        setSymbol('INFY');
+        setAllStocks([]);
       }
     } catch (e) {
       console.error('Failed to fetch screener list', e);
-      // Fallback
-      setAllStocks([
-        { symbol: 'INFY', isBuyZone: true, isPass: true, reason: 'Envelope Breach Rebound' },
-        { symbol: 'RELIANCE', isBuyZone: true, isPass: true, reason: 'Bollinger Deviation Bounce' }
-      ]);
-      setSymbol('INFY');
+      setAllStocks([]);
     } finally {
       setLoadingList(false);
     }
   };
 
   useEffect(() => {
-    fetchScreenerList(strategyId);
-  }, [strategyId]);
+    fetchScreenerList(strategyId, selectedBasket);
+  }, [strategyId, selectedBasket]);
 
   // Load detailed stock payload
   const loadStockDetail = async (targetSymbol: string) => {
@@ -561,16 +548,27 @@ const ScreenerVerify: React.FC = () => {
           </Link>
         </div>
 
-        {/* Global Strategy Picker */}
+        {/* Global Strategy & Basket Picker */}
         <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider hidden sm:inline">Scanner Model:</span>
+          <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider hidden sm:inline">Basket:</span>
+          <select
+            value={selectedBasket}
+            onChange={(e) => setSelectedBasket(e.target.value)}
+            className="px-3 py-2 rounded-xl text-caption border outline-none bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-secondary)]"
+          >
+            <option value="Elite Basket">Elite Basket (Top 40)</option>
+            <option value="Quality Basket">Quality Basket (Quality Mid)</option>
+            <option value="Growth Basket">Growth Basket (Allied Growth)</option>
+            <option value="Fallen Value Basket">Fallen Value Basket (67 Funda)</option>
+          </select>
+          <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider hidden sm:inline">Model:</span>
           <select
             value={strategyId}
             onChange={(e) => setStrategyId(e.target.value)}
             className="px-3 py-2 rounded-xl text-caption border outline-none bg-[var(--bg-primary)] border-[var(--border-primary)] text-[var(--text-secondary)]"
           >
-            {Object.entries(STRATEGY_NAMES).map(([key, name]) => (
-              <option key={key} value={key}>{name}</option>
+            {availableStrategies.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
         </div>

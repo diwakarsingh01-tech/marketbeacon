@@ -353,7 +353,7 @@ const ChartsTerminalContent: React.FC = () => {
       if (strat && typeof strat === 'object') {
         const isDark = true;
         
-        // Auto-scale price scale so Target and Entry lines are 100% visible on chart
+        // Auto-scale price scale so Target and Entry lines are visible without squishing candles
         const targetVal = strat.target ? Number(strat.target) : null;
         const entryVal = strat.entryPrice ? Number(strat.entryPrice) : null;
         if (targetVal || entryVal) {
@@ -364,7 +364,11 @@ const ChartsTerminalContent: React.FC = () => {
                 let min = res.priceRange.minValue;
                 let max = res.priceRange.maxValue;
                 if (entryVal && entryVal > 0) min = Math.min(min, entryVal * 0.96);
-                if (targetVal && targetVal > 0) max = Math.max(max, targetVal * 1.04);
+                // Cap max expansion to 35% above visible max price so candles maintain natural height
+                if (targetVal && targetVal > 0) {
+                  const cappedTarget = Math.min(res.priceRange.maxValue * 1.35, targetVal * 1.04);
+                  max = Math.max(max, cappedTarget);
+                }
                 return {
                   priceRange: {
                     minValue: min,

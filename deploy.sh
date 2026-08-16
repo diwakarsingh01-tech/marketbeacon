@@ -74,6 +74,7 @@ ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
   sudo rm -rf /var/www/marketbeacon/frontend/dist
   sudo cp -a /var/www/marketbeacon/frontend/current /var/www/marketbeacon/frontend/dist
   sudo chown -R www-data:www-data /var/www/marketbeacon/frontend/dist
+  sudo chown -R diwakar:diwakar /opt/marketbeacon-backend/current 2>/dev/null || true
 
   # Sync backend current -> dist (Docker container mounts from dist)
   echo '=== Syncing backend current -> dist ==='
@@ -95,6 +96,12 @@ ssh -i "$KEY" -o StrictHostKeyChecking=no "$HOST" "
     sudo mv /tmp/mb-alpha40-backup.json /opt/marketbeacon-backend/alpha_40_results.json
     echo 'Alpha-40 results file preserved'
   fi
+
+  echo '=== Fixing file permissions ==='
+  sudo chown -R diwakar:diwakar /opt/marketbeacon-backend/dist
+  sudo chown -R diwakar:diwakar /opt/marketbeacon-backend/current
+  sudo chown -R diwakar:diwakar /opt/marketbeacon-backend/market_snapshot.json 2>/dev/null || true
+  sudo chown -R diwakar:diwakar /opt/marketbeacon-backend/alpha_40_results.json 2>/dev/null || true
 
   echo '=== Restarting backend service ==='
   pm2 restart marketbeacon-backend

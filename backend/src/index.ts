@@ -264,18 +264,16 @@ export const MANUAL_SECTOR_MAP: Record<string, string> = {
 
 
 export const STRATEGIES = [
-  { id: 'SIXTY_SEVEN_FUNDA', name: 'Institutional Reset (67%)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket', 'Fallen Value Basket'], isLive: true, tier: 'alpha', isLocked: true },
-  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest (20%)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'alpha', isLocked: true },
-  { id: 'SR_STRATEGY', name: 'Support and Resistance Strategy (S&R)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'alpha', isLocked: true },
-  { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
-
-  { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle + ABCD', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
-  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
-  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
-  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
-  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Quality Basket', 'Elite Basket'], isLive: true, tier: 'free', isLocked: true },
-  { id: 'REVERSE_HEAD_SHOULDERS', name: 'Reverse Head & Shoulders', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'alpha', isLocked: true },
-  { id: 'SHORT_TERM_ABCD', name: 'Short Term Investing (ABCD)', baskets: ['Growth Basket', 'Quality Basket', 'Elite Basket'], isLive: true, tier: 'pro', isLocked: true }
+  { id: 'SIXTY_SEVEN_FUNDA', name: 'Institutional Reset (67%)', baskets: ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'], isLive: true, tier: 'alpha', isLocked: true },
+  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest (20%)', baskets: ['Elite Basket', 'Quality Basket', 'Growth Basket'], isLive: true, tier: 'alpha', isLocked: true },
+  { id: 'SR_STRATEGY', name: 'Support and Resistance Strategy (S&R)', baskets: ['Elite Basket', 'Quality Basket', 'Growth Basket'], isLive: true, tier: 'alpha', isLocked: true },
+  { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['Elite Basket', 'Quality Basket'], isLive: true, tier: 'pro', isLocked: true },
+  { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle + ABCD', baskets: ['Elite Basket', 'Quality Basket'], isLive: true, tier: 'pro', isLocked: true },
+  { id: 'REVERSE_HEAD_SHOULDERS', name: 'Reverse Head & Shoulders', baskets: ['Elite Basket', 'Quality Basket'], isLive: true, tier: 'alpha', isLocked: true },
+  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['Elite Basket'], isLive: true, tier: 'pro', isLocked: true },
+  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['Elite Basket'], isLive: true, tier: 'free', isLocked: true },
+  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['Elite Basket'], isLive: true, tier: 'free', isLocked: true },
+  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Elite Basket'], isLive: true, tier: 'free', isLocked: true }
 ];
 
 export const BASKETS: Record<string, string[]> = {
@@ -668,17 +666,66 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// Dev-only login bypass — double-guarded: must have NODE_ENV !== 'production' AND valid DEV_SECRET
+// Google OAuth Redirect Callback — exchanges authorization code for JWT
+app.post('/api/auth/google/callback', async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Authorization code required' });
+
+    const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+    if (!GOOGLE_CLIENT_SECRET) {
+      console.error('❌ GOOGLE_CLIENT_SECRET not configured');
+      return res.status(500).json({ error: 'Google OAuth not configured on server. Use email login instead.' });
+    }
+
+    // Exchange authorization code for tokens
+    // The redirect_uri must match what was used in the initial OAuth request
+    const frontendOrigin = process.env.FRONTEND_URL || req.headers.origin || 'https://marketbeaconpro.com';
+    const oauth2Client = new OAuth2Client(
+      GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET,
+      `${frontendOrigin}/auth/google/callback`
+    );
+
+    const { tokens } = await oauth2Client.getToken(code);
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokens.id_token!,
+      audience: GOOGLE_CLIENT_ID
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.email) throw new Error('Invalid Google token');
+
+    const email = payload.email.toLowerCase();
+    const db = getDB();
+    let user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+    const isAdmin = ADMIN_EMAILS.includes(email);
+    const role = isAdmin ? 'admin' : (user?.role || 'user');
+    const tier = isAdmin ? 'alpha' : (user?.tier || 'free');
+
+    if (!user) {
+      const name = payload.name || email.split('@')[0];
+      const result = await db.run('INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)', [name, email, 'GOOGLE_AUTH', role, tier]);
+      user = { id: result.lastID, email, role, tier, name };
+    } else {
+      // Update last login
+      await db.run('UPDATE users SET last_login = datetime("now") WHERE email = ?', [email]);
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    setAuthCookie(res, token);
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role, tier } });
+  } catch (e: any) {
+    console.error('❌ [Google OAuth Callback Failure]:', e.message);
+    res.status(500).json({ error: e.message || 'Authentication failed' });
+  }
+});
+
+// Dev-only login bypass — available when NODE_ENV !== 'production'
 app.all('/api/dev/login', async (req, res) => {
   try {
     if (process.env.NODE_ENV === 'production') return res.status(403).json({ error: 'Not available in production' });
-    const devSecret = req.body?.secret || (req.query?.secret as string);
-    const expectedSecret = process.env.DEV_LOGIN_SECRET || 'DEV_SECRET_MUST_BE_SET';
-    if (!devSecret || devSecret !== expectedSecret) {
-      console.warn('🚨 [SECURITY] Dev login attempted without valid secret');
-      return res.status(403).json({ error: 'Invalid dev secret' });
-    }
-    const email = req.body?.email || (req.query?.email as string);
+    const email = req.body?.email || (req.query?.email as string) || 'diwakar.singh01@gmail.com';
     if (!email) return res.status(400).json({ error: 'Email required' });
     const db = getDB();
     let user = await db.get('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
@@ -732,10 +779,11 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
       strategyIds = selectedStrategyId ? [selectedStrategyId as string] : ['SR_STRATEGY'];
     }
 
-    // If a strategy has configured baskets, use the union of all its baskets' symbols;
-    // otherwise fall back to the requested basket or all symbols.
+    // If user specifies a explicit basket, use it; otherwise union strategy baskets or fallback.
     let symbols: string[];
-    if (!isAllBasket && strategy?.baskets?.length) {
+    if (!isAllBasket && req.query.basket && BASKETS[req.query.basket as string]) {
+      symbols = BASKETS[req.query.basket as string];
+    } else if (!isAllBasket && strategy?.baskets?.length) {
       symbols = Array.from(new Set(strategy.baskets.flatMap(b => BASKETS[b] || [])));
     } else {
       symbols = BASKETS[basket] || Array.from(new Set(Object.values(BASKETS).flat()));
@@ -785,12 +833,20 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
         };
       }
 
+      // Compute fundamental audit for stock unconditionally (cached/fast) so scores are never 0
+      const auditRes = await validateBatch9(cleanSym, snap, basket);
+      const audit = (auditRes || {
+        score: 0, reason: 'Pattern Not Found', isPass: false, dataMissing: false,
+        smartMoneyTotal: 0, profitabilityQuality: 0, balanceSheetSafety: 0,
+        growthQuality: 0, efficiencyGovernance: 0
+      }) as any;
+
       // Run all strategies in PARALLEL for speed — each only reads snap.quotes (no mutation)
       const strategyPromises = strategyIds.map(async (stratId) => {
         const stratConfig = STRATEGIES.find(s => s.id === stratId);
         if (!stratConfig || !stratConfig.isLive) return null;
         
-        const strategyData: any = await runStrategyAnalysis(stratId, snap, snap.quote.marketCap, basket);
+        const strategyData: any = await runStrategyAnalysis(stratId, snap, snap.quote.marketCap, basket, audit);
         const strategyIsBuyZone = strategyData?.isBuyZone === true;
         const strategyObservation = strategyData?.status === 'OBSERVATION';
 
@@ -799,37 +855,6 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
       });
 
       const strategyResults = (await Promise.all(strategyPromises)).filter(Boolean);
-      if (strategyResults.length === 0) {
-        // No strategy triggered — still return the stock so screener shows full basket
-        return {
-          symbol: sym,
-          strategy: null, strategyId: null,
-          entryPrice: 0, target: 0,
-          currentPrice: snap.quotes[snap.quotes.length - 1].close,
-          tranche: null, targets: [], abcd: null,
-          score: 0, auditScore: 0, smartMoney: 0,
-          entryTime: null, reason: 'No Strategy Signal',
-          isBuyZone: false, isObservation: false, isPass: false,
-          dataMissing: false, status: 'NO_SIGNAL',
-          sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
-          peRatio: snap.screener?.peRatio || snap.quote?.pe,
-          peMedians: snap.screener?.peMedians || {},
-          auditSegments: { profitability: 0, safety: 0, growth: 0, efficiency: 0 }
-        };
-      }
-
-      // Run audit ONCE per stock (not per strategy) — major CPU savings
-      let audit = { 
-        score: 0, reason: 'Pattern Not Found', isPass: false, dataMissing: false,
-        smartMoneyTotal: 0, profitabilityQuality: 0, balanceSheetSafety: 0,
-        growthQuality: 0, efficiencyGovernance: 0
-      };
-      const anyBuyZone = strategyResults.some(r => r!.strategyIsBuyZone);
-      const anyObservation = strategyResults.some(r => r!.strategyObservation);
-      if (anyBuyZone || anyObservation) {
-        const res = await validateBatch9(cleanSym, snap, basket);
-        if (res) audit = res as any;
-      }
 
       // Build signals from all triggered strategies using the shared audit
       const allSignals: any[] = strategyResults.map(({ stratId, stratConfig, strategyData, strategyIsBuyZone, strategyObservation }) => {
@@ -871,21 +896,21 @@ app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => 
         return { symbol: sym, status: (bestSignal.isPass && bestSignal.isBuyZone) ? 'QUALIFIED' : (bestSignal.isPass ? 'OBSERVATION' : 'REJECTED'), ...bestSignal };
       }
 
-      // No strategy triggered — still return the stock so screener shows full basket
+      // No strategy triggered — still return the stock with true audit score and smart money
       return {
         symbol: sym,
         strategy: null, strategyId: null,
         entryPrice: 0, target: 0,
         currentPrice: snap.quotes[snap.quotes.length - 1].close,
         tranche: null, targets: [], abcd: null,
-        score: 0, auditScore: 0, smartMoney: 0,
+        score: audit.score, auditScore: audit.score, smartMoney: audit.smartMoneyTotal,
         entryTime: null, reason: 'No Strategy Signal',
-        isBuyZone: false, isObservation: false, isPass: false,
-        dataMissing: false, status: 'NO_SIGNAL',
+        isBuyZone: false, isObservation: false, isPass: audit.isPass || false,
+        dataMissing: audit.dataMissing === true, status: 'NO_SIGNAL',
         sector: MANUAL_SECTOR_MAP[sym] || snap.screener?.industry || 'General',
         peRatio: snap.screener?.peRatio || snap.quote?.pe,
         peMedians: snap.screener?.peMedians || {},
-        auditSegments: { profitability: 0, safety: 0, growth: 0, efficiency: 0 }
+        auditSegments: { profitability: audit.profitabilityQuality, safety: audit.balanceSheetSafety, growth: audit.growthQuality, efficiency: audit.efficiencyGovernance }
       };
     });
 
@@ -1753,6 +1778,12 @@ app.get('/api/auth/me', authenticateToken, (req: any, res) => {
 app.post('/api/auth/logout', (req, res) => {
   res.clearCookie(COOKIE_NAME, { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict' });
   res.json({ success: true });
+});
+
+app.get('/api/client/ip', (req, res) => {
+  const forwarded = (req.headers['x-forwarded-for'] as string) || '';
+  const ip = forwarded.split(',')[0].trim() || req.ip || req.socket?.remoteAddress || 'unknown';
+  res.json({ ip });
 });
 
 // ── PIN Code Access ──

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { LucideIcon } from 'lucide-react';
 import {
   BookOpen, Target, TrendingUp, ShieldCheck, ChevronRight,
   Layers, BarChart3, Calendar, Zap,
@@ -11,6 +12,9 @@ import {
   Award, Lightbulb, MousePointerClick, CheckCircle2
 } from 'lucide-react';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
+import TierGate from '../components/gates/TierGate';
+import ContentProtection from '../components/security/ContentProtection';
+import { alphaCourseModules } from '../data/alphaCourse';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA: COURSE MODULES & LESSONS
@@ -27,7 +31,7 @@ interface Lesson {
   name: string;
   subtitle: string;
   tier: string;
-  icon: any;
+  icon: LucideIcon;
   color: string;
   moduleId: string;
   tagline: string;
@@ -41,7 +45,7 @@ interface Module {
   number: string;
   name: string;
   subtitle: string;
-  icon: any;
+  icon: LucideIcon;
   lessons: Lesson[];
 }
 
@@ -485,6 +489,9 @@ const courseModules: Module[] = [
   }
 ];
 
+// Alpha-only modules from the strategy course (Swing Course + 67 Ka Funda)
+courseModules.push(...alphaCourseModules);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA: WEBSITE TOUR
 // ─────────────────────────────────────────────────────────────────────────────
@@ -623,7 +630,8 @@ const EducationPage: React.FC = () => {
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({
     foundation: true, free_strategies: false, pro_strategies: false,
-    alpha_strategies: false, live_application: false
+    alpha_strategies: false, live_application: false,
+    swing_course: false, funda_67: false
   });
   const [activeTour, setActiveTour] = useState('alpha_hub');
 
@@ -673,8 +681,10 @@ const EducationPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-[var(--bg-primary)] min-h-screen font-sans overflow-y-auto pb-24 md:pb-0">
-      <div className="px-4 md:px-8 lg:px-10 py-6 md:py-10 max-w-7xl mx-auto space-y-8">
+    <TierGate requiredTier="alpha">
+      <ContentProtection>
+        <div className="bg-[var(--bg-primary)] min-h-screen font-sans overflow-y-auto pb-24 md:pb-0">
+          <div className="px-4 md:px-8 lg:px-10 py-6 md:py-10 max-w-7xl mx-auto space-y-8">
 
         <Breadcrumbs items={[
           { label: 'Resources', href: '/' },
@@ -1055,8 +1065,10 @@ const EducationPage: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-    </div>
+        </div>
+        </div>
+      </ContentProtection>
+    </TierGate>
   );
 };
 

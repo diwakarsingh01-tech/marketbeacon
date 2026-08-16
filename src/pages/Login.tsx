@@ -257,7 +257,7 @@ const DevLoginForm: React.FC<{ onLogin: (token: string) => void; setError: (err:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email: 'diwakar.singh01@gmail.com' }),
+        body: JSON.stringify({ email: 'diwakar.singh01@gmail.com', secret: 'marketbeacon_dev_secret_2026' }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Login failed'); return; }
@@ -317,25 +317,75 @@ const LoginPage: React.FC = () => {
     setError(null);
     setShowWakingMessage(false);
     const wakeTimer = setTimeout(() => setShowWakingMessage(true), 6000);
+
+    // Timeout after 15 seconds - if One Tap hasn't worked, show fallback
+    const timeoutTimer = setTimeout(() => {
+      setLoading(false);
+      setShowWakingMessage(false);
+      setError('Google One Tap is taking too long. Try the direct sign-in button below.');
+    }, 15000);
+
     try {
-     if (window.google?.accounts?.id) {
-        window.google.accounts.id.prompt?.();
-       } else {
+      if (window.google?.accounts?.id) {
+        // Reset any previous prompt
+        window.google.accounts.id.prompt?.((notification: any) => {
+          clearTimeout(wakeTimer);
+          clearTimeout(timeoutTimer);
+
+          if (notification.isNotDisplayed?.()) {
+            // One Tap was blocked - show fallback option
+            setLoading(false);
+            setError('Google pop-up was blocked by your browser. Use the direct sign-in button below.');
+          } else if (notification.isDismissedMoment?.()) {
+            // User dismissed - don't show error, just stop loading
+            setLoading(false);
+          }
+          // If prompt is displayed, we wait for the callback
+        });
+      } else {
+        clearTimeout(wakeTimer);
+        clearTimeout(timeoutTimer);
+        setLoading(false);
         throw new Error('Google sign-in is not available yet.');
       }
     } catch (e) {
       clearTimeout(wakeTimer);
+      clearTimeout(timeoutTimer);
       setLoading(false);
       setShowWakingMessage(false);
-      setError('Google sign-in failed. Please try again.');
+      setError('Google sign-in failed. Please try again or use direct sign-in.');
     }
   };
 
+  // Fallback: Full Google OAuth redirect (bypasses One Tap issues)
+  const handleGoogleRedirect = () => {
+    const clientId = '500460562927-5b1mt1r0vcke4u3mm5hhj1a4cmilsgao.apps.googleusercontent.com';
+    const redirectUri = `${window.location.origin}/auth/google/callback`;
+    const scope = 'openid email profile';
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+    window.location.href = url;
+  };
+
   useEffect(() => {
-    if (localStorage.getItem('mb_has_pin') === 'true') {
+    // Only auto-redirect to PIN login if user has a valid session
+    // Don't redirect if session is expired or user is null
+    const hasPinFlag = localStorage.getItem('mb_has_pin') === 'true';
+    const hasToken = !!localStorage.getItem('mb_token');
+
+    // If user has PIN flag but no token, clear the flag (session expired)
+    if (hasPinFlag && !hasToken) {
+      localStorage.removeItem('mb_has_pin');
+      localStorage.removeItem('mb_pin_email');
+      // Don't redirect, let them login normally
+      return;
+    }
+
+    // If user has both PIN flag and token, redirect to PIN login
+    if (hasPinFlag && hasToken) {
       navigate('/pin-login', { replace: true });
       return;
     }
+
     if (user) {
       if (user?.needsOnboarding) setOnboarding(true);
       else {
@@ -551,6 +601,17 @@ const LoginPage: React.FC = () => {
                     Continue with Google
                   </button>
                 </div>
+              </div>
+
+              {/* Fallback: Direct Google sign-in link (when One Tap fails) */}
+              <div className="text-center">
+                <button
+                  onClick={handleGoogleRedirect}
+                  className="text-[10px] font-bold text-slate-400 hover:text-[#00d09c] uppercase tracking-wider transition-colors"
+                >
+                  <Globe className="h-3 w-3 inline mr-1" />
+                  Or sign in with Google directly
+                </button>
               </div>
 
               {/* Toggle email login */}

@@ -44,6 +44,7 @@ const TermsOfServicePage = lazy(() => import('./pages/TermsOfService'));
 const DisclaimerPage = lazy(() => import('./pages/Disclaimer'));
 const AboutPage = lazy(() => import('./pages/About'));
 const ContactPage = lazy(() => import('./pages/Contact'));
+const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallback'));
 
 // Docs pages (lazy loaded)
 const DocLayout = lazy(() => import('./components/docs/DocLayout').then(m => ({ default: m.DocLayout })));
@@ -79,6 +80,7 @@ function AnimatedRoutes() {
         {/* Standalone Landing & Login (no PublicLayout wrapper) */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
 
         {/* Public Marketing Routes with Public Layout */}
         <Route element={<PublicLayout />}>

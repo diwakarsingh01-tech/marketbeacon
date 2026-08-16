@@ -8,11 +8,30 @@ import TierGate from '../components/gates/TierGate';
 import SEO from '../components/SEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 
-const BASKETS_TO_SCAN = ['Growth Basket', 'Elite Basket', 'Quality Basket'];
+interface StrategyConfig {
+  id: string;
+  name: string;
+  baskets: string[];
+}
+
+const STRATEGIES_TO_SCAN: StrategyConfig[] = [
+  { id: 'SIXTY_SEVEN_FUNDA', name: 'Institutional Reset (67%)', baskets: ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'] },
+  { id: 'TWENTY_RALLY_RETEST', name: 'Velocity Retest (20%)', baskets: ['Elite Basket', 'Quality Basket', 'Growth Basket'] },
+  { id: 'SR_STRATEGY', name: 'Support & Resistance (S&R)', baskets: ['Elite Basket', 'Quality Basket', 'Growth Basket'] },
+  { id: 'SMA_BCD', name: 'SMA + BCD', baskets: ['Elite Basket', 'Quality Basket'] },
+  { id: 'CUP_HANDLE_ABCD', name: 'Cup with Handle + ABCD', baskets: ['Elite Basket', 'Quality Basket'] },
+  { id: 'REVERSE_HEAD_SHOULDERS', name: 'Reverse Head & Shoulders (RHS)', baskets: ['Elite Basket', 'Quality Basket'] },
+  { id: '52W_HIGH_LOW', name: '52 week High Low', baskets: ['Elite Basket'] },
+  { id: 'BOLLINGER', name: 'Bollinger Band', baskets: ['Elite Basket'] },
+  { id: 'ENVELOPE_SHORT', name: 'Envelope Short', baskets: ['Elite Basket'] },
+  { id: 'ENVELOPE_LONG', name: 'Envelope Long', baskets: ['Elite Basket'] }
+];
 
 interface ShortTermSetup {
   symbol: string;
   basketSource?: string;
+  strategyId?: string;
+  strategyName?: string;
   isBuyZone: boolean;
   isPass?: boolean;
   isObservation?: boolean;
@@ -81,28 +100,36 @@ const ShortTermInvestingContent: React.FC = () => {
     if (showSpinner) setRefreshing(true);
     setError('');
     try {
-      // Scan all three institutional baskets with the SHORT_TERM_ABCD strategy.
+      const scanRequests: Array<{ strat: StrategyConfig; basket: string }> = [];
+      for (const strat of STRATEGIES_TO_SCAN) {
+        for (const basket of strat.baskets) {
+          scanRequests.push({ strat, basket });
+        }
+      }
+
       const responses = await Promise.all(
-        BASKETS_TO_SCAN.map((basket) =>
-          authFetch(`/api/backtest/audit?strategy=SHORT_TERM_ABCD&basket=${encodeURIComponent(basket)}`)
+        scanRequests.map(({ strat, basket }) =>
+          authFetch(`/api/backtest/audit?strategy=${strat.id}&basket=${encodeURIComponent(basket)}`)
             .then(async (res) => {
               const data = await safeJsonParse(res);
-              return { basket, ok: res.ok, data };
+              return { strat, basket, ok: res.ok, data };
             })
         )
       );
 
       const merged = new Map<string, ShortTermSetup>();
-      for (const { basket, ok, data } of responses) {
+      for (const { strat, basket, ok, data } of responses) {
         if (!ok || !data?.allStocks) continue;
         for (const stock of data.allStocks) {
           if (!stock?.symbol) continue;
-          const prev = merged.get(stock.symbol);
-          if (!prev) {
-            merged.set(stock.symbol, { ...stock, basketSource: basket });
-          } else {
-            // Append basket info if stock appears in multiple baskets
-            prev.basketSource = `${prev.basketSource}, ${basket}`;
+          const key = `${stock.symbol}_${strat.id}`;
+          if (!merged.has(key)) {
+            merged.set(key, {
+              ...stock,
+              strategyId: strat.id,
+              strategyName: strat.name,
+              basketSource: basket
+            });
           }
         }
       }
@@ -120,9 +147,9 @@ const ShortTermInvestingContent: React.FC = () => {
     loadSetups(false);
   }, [loadSetups]);
 
-  // Active setups = buy-zone or qualified (fundamental gate passed)
+  // Active qualified setups = in buying zone AND good fundamentals AND tranche is B, C, or D (Level A excluded)
   const activeSetups = useMemo(
-    () => setups.filter((s) => s.isBuyZone || s.isPass || s.isObservation).sort((a, b) => (b.score || 0) - (a.score || 0)),
+    () => setups.filter((s) => s.isBuyZone && s.isPass !== false && (s.score || 0) >= 60 && (s.tranche === 'B' || s.tranche === 'C' || s.tranche === 'D')).sort((a, b) => (b.score || 0) - (a.score || 0)),
     [setups]
   );
   const buyZoneCount = useMemo(() => activeSetups.filter((s) => s.isBuyZone).length, [activeSetups]);
@@ -144,7 +171,7 @@ const ShortTermInvestingContent: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col py-4 md:py-6 px-4 md:px-8 lg:px-10 space-y-5 md:space-y-6 bg-[var(--bg-primary)] overflow-y-auto no-scrollbar">
-      <SEO title="Short Term Investing — MarketBeacon" description="Short-term ABCD setups: buy ladder B → C → D, targets D → C → B → A (~10% gain per leg)." />
+      <SEO title="Short Term Investing — MarketBeacon" description="Short-term BCD setups: buy ladder B → C → D, targets D → C → B → A (~10% gain per leg)." />
 
       <Breadcrumbs items={[{ label: 'Short Term Investing', href: '#' }]} />
 
@@ -160,8 +187,7 @@ const ShortTermInvestingContent: React.FC = () => {
             </h1>
           </div>
           <p className="text-sm text-[var(--text-muted)] max-w-2xl">
-            ABCD short-term setups — <span className="text-cyan-400 font-semibold">buy ladder B → C → D</span> (10% gap har level),
-            targets <span className="text-emerald-400 font-semibold">D → C → B → A</span> (~10% gain per leg). Universe: Growth + Elite + Quality.
+            Short-Term BCD Execution — Level A entry is handled on main strategies. This view focuses exclusively on <span className="text-amber-400 font-semibold">Pullback Tranches B (-10%), C (-19%), D (-27%)</span> with targets <span className="text-emerald-400 font-semibold">D → C → B → A</span> (~10% gain per leg) leading up to Level A target.
           </p>
           <div className="flex items-center gap-4 text-xs text-[var(--text-tertiary)]">
             <span className="inline-flex items-center gap-1.5">
@@ -204,14 +230,24 @@ const ShortTermInvestingContent: React.FC = () => {
               const entry = Number(s.entryPrice) || 0;
               const current = Number(s.currentPrice) || 0;
               const gap = entry > 0 ? (((current - entry) / entry) * 100).toFixed(1) : '—';
-              const targets = s.targets || [];
+              const targetPrice = Number(s.target) || Number((s as any).targetPrice) || (entry > 0 ? Math.round(entry * 1.15) : 0);
+              const targetRoi = entry > 0 && targetPrice > 0 ? (((targetPrice - entry) / entry) * 100).toFixed(1) : '—';
+
+              const computedTargets = s.targets && s.targets.length > 0 ? s.targets : (
+                entry > 0 ? [
+                  { level: s.tranche === 'D' ? 'Level C' : s.tranche === 'C' ? 'Level B' : 'Level A', price: Math.round(entry * 1.10), gainPct: 10 },
+                  { level: s.tranche === 'D' ? 'Level B' : 'Level A', price: Math.round(entry * 1.21), gainPct: 21 },
+                  { level: 'Main Target A', price: Math.round(targetPrice), gainPct: Number(targetRoi) > 0 ? Number(targetRoi) : 33 }
+                ] : []
+              );
               return (
                 <div key={s.symbol} className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-2xl p-4 space-y-3">
-                  {/* Row 1: Symbol + Tranche + Status */}
+                  {/* Row 1: Symbol + Strategy + Status */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <span className="font-extrabold text-sm text-[var(--text-primary)] truncate block">{s.symbol}</span>
-                      {s.sector && <span className="text-[10px] text-[var(--text-muted)] block">{s.sector}</span>}
+                      <span className="text-[10px] text-blue-400 font-bold truncate block mt-0.5">{s.strategyName || 'Short Term (ABCD)'}</span>
+                      {s.sector && <span className="text-[9px] text-[var(--text-muted)] block">{s.sector}</span>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className={`inline-flex px-2 py-0.5 rounded-full font-extrabold text-[10px] uppercase tracking-wider ${
@@ -237,18 +273,22 @@ const ShortTermInvestingContent: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Row 2: Entry / CMP / Gap */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-[var(--bg-primary)]/40 rounded-xl px-3 py-2 text-center">
-                      <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">Entry</div>
+                  {/* Row 2: Entry / CMP / Target / Gap */}
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="bg-[var(--bg-primary)]/40 rounded-xl px-2 py-2 text-center">
+                      <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">Entry</div>
                       <div className="font-mono font-bold text-cyan-400 text-xs">₹{entry.toLocaleString('en-IN')}</div>
                     </div>
-                    <div className="bg-[var(--bg-primary)]/40 rounded-xl px-3 py-2 text-center">
-                      <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">CMP</div>
+                    <div className="bg-[var(--bg-primary)]/40 rounded-xl px-2 py-2 text-center">
+                      <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">CMP</div>
                       <div className="font-mono font-bold text-[var(--text-primary)] text-xs">₹{current.toLocaleString('en-IN')}</div>
                     </div>
-                    <div className="bg-[var(--bg-primary)]/40 rounded-xl px-3 py-2 text-center">
-                      <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">Gap</div>
+                    <div className="bg-[var(--bg-primary)]/40 rounded-xl px-2 py-2 text-center">
+                      <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">Target A</div>
+                      <div className="font-mono font-bold text-emerald-400 text-xs">₹{targetPrice > 0 ? targetPrice.toLocaleString('en-IN') : '—'}</div>
+                    </div>
+                    <div className="bg-[var(--bg-primary)]/40 rounded-xl px-2 py-2 text-center">
+                      <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">Gap</div>
                       <div className={`font-mono font-bold text-xs ${Number(gap) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{gap}%</div>
                     </div>
                   </div>
@@ -280,11 +320,11 @@ const ShortTermInvestingContent: React.FC = () => {
                   )}
 
                   {/* Row 4: Targets ladder (compact) */}
-                  {targets.length > 0 && (
+                  {computedTargets.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
-                      {targets.map((t, i) => (
+                      {computedTargets.map((t, i) => (
                         <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[10px]">
-                          T{i + 1}·{t.level} ₹{Number(t.price || 0).toLocaleString('en-IN')} <span className="text-emerald-500/70 font-mono">+{t.gainPct}%</span>
+                          {t.level}: ₹{Number(t.price || 0).toLocaleString('en-IN')} <span className="text-emerald-500/70 font-mono">+{t.gainPct}%</span>
                         </span>
                       ))}
                     </div>
@@ -301,12 +341,14 @@ const ShortTermInvestingContent: React.FC = () => {
                 <thead>
                   <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-primary)]/40 text-[var(--text-muted)] uppercase tracking-wider">
                     <th className="px-5 py-3.5 font-extrabold">Symbol</th>
+                    <th className="px-3 py-3.5 font-extrabold">Strategy Model</th>
                     <th className="px-3 py-3.5 font-extrabold">Basket</th>
                     <th className="px-3 py-3.5 font-extrabold">Tranche</th>
                     <th className="px-3 py-3.5 font-extrabold">Entry (B/C/D)</th>
                     <th className="px-3 py-3.5 font-extrabold">CMP</th>
                     <th className="px-3 py-3.5 font-extrabold">Gap%</th>
-                    <th className="px-3 py-3.5 font-extrabold">Triggered</th>
+                    <th className="px-3 py-3.5 font-extrabold">Target Price</th>
+                    <th className="px-3 py-3.5 font-extrabold">Target ROI%</th>
                     <th className="px-3 py-3.5 font-extrabold">Targets Ladder (D→C→B→A)</th>
                     <th className="px-3 py-3.5 font-extrabold">Score</th>
                     <th className="px-3 py-3.5 font-extrabold">Status</th>
@@ -314,18 +356,33 @@ const ShortTermInvestingContent: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {activeSetups.map((s) => {
+                  {activeSetups.map((s, idx) => {
                     const entry = Number(s.entryPrice) || 0;
                     const current = Number(s.currentPrice) || 0;
                     const gap = entry > 0 ? (((current - entry) / entry) * 100).toFixed(1) : '—';
-                    const targets = s.targets || [];
+                    const targetPrice = Number(s.target) || Number((s as any).targetPrice) || (entry > 0 ? Math.round(entry * 1.15) : 0);
+                    const targetRoi = entry > 0 && targetPrice > 0 ? (((targetPrice - entry) / entry) * 100).toFixed(1) : '—';
+
+                    const computedTargets = s.targets && s.targets.length > 0 ? s.targets : (
+                      entry > 0 ? [
+                        { level: s.tranche === 'D' ? 'Level C' : s.tranche === 'C' ? 'Level B' : 'Level A', price: Math.round(entry * 1.10), gainPct: 10 },
+                        { level: s.tranche === 'D' ? 'Level B' : 'Level A', price: Math.round(entry * 1.21), gainPct: 21 },
+                        { level: 'Main Target A', price: Math.round(targetPrice), gainPct: Number(targetRoi) > 0 ? Number(targetRoi) : 33 }
+                      ] : []
+                    );
+
                     return (
-                      <tr key={s.symbol} className="border-b border-[var(--border-primary)]/40 hover:bg-[var(--bg-primary)]/30 transition-all">
+                      <tr key={`${s.symbol}_${s.strategyId}_${idx}`} className="border-b border-[var(--border-primary)]/40 hover:bg-[var(--bg-primary)]/30 transition-all">
                         <td className="px-5 py-3.5">
                           <span className="font-extrabold text-[var(--text-primary)]">{s.symbol}</span>
                           {s.sector && <span className="block text-[10px] text-[var(--text-muted)]">{s.sector}</span>}
                         </td>
-                        <td className="px-3 py-3.5 text-[var(--text-secondary)]">{s.basketSource || '—'}</td>
+                        <td className="px-3 py-3.5">
+                          <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-500/10 border border-blue-500/20 text-blue-400 truncate block max-w-[170px]">
+                            {s.strategyName || 'Short Term (ABCD)'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3.5 text-[var(--text-secondary)] font-semibold">{s.basketSource || '—'}</td>
                         <td className="px-3 py-3.5">
                           <span className={`inline-flex px-2 py-0.5 rounded-full font-extrabold text-[10px] uppercase tracking-wider ${
                             s.tranche === 'D'
@@ -342,24 +399,18 @@ const ShortTermInvestingContent: React.FC = () => {
                         <td className="px-3 py-3.5 font-mono font-bold text-cyan-400">₹ {entry.toLocaleString('en-IN')}</td>
                         <td className="px-3 py-3.5 font-mono font-bold text-[var(--text-primary)]">₹ {current.toLocaleString('en-IN')}</td>
                         <td className={`px-3 py-3.5 font-mono font-bold ${Number(gap) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{gap}%</td>
-                        <td className="px-3 py-3.5">
-                          {s.triggerDate ? (
-                            <span className="inline-flex items-center gap-1 text-[var(--text-secondary)] font-mono text-[11px]">
-                              <Target className="h-3 w-3 text-cyan-400" /> {s.triggerDate}
-                              {s.signalAgeBars != null && s.signalAgeBars > 0 && (
-                                <span className="text-[var(--text-muted)]">({s.signalAgeBars}b)</span>
-                              )}
-                            </span>
-                          ) : (
-                            <span className="text-[var(--text-muted)]">—</span>
-                          )}
+                        <td className="px-3 py-3.5 font-mono font-bold text-emerald-400">
+                          {targetPrice > 0 ? `₹ ${targetPrice.toLocaleString('en-IN')}` : '—'}
+                        </td>
+                        <td className="px-3 py-3.5 font-mono font-bold text-emerald-400 font-bold">
+                          {targetRoi !== '—' ? `+${targetRoi}%` : '—'}
                         </td>
                         <td className="px-3 py-3.5">
-                          {targets.length > 0 ? (
+                          {computedTargets.length > 0 ? (
                             <div className="flex flex-wrap gap-1.5">
-                              {targets.map((t, i) => (
+                              {computedTargets.map((t, i) => (
                                 <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold">
-                                  T{i + 1}·{t.level} ₹{Number(t.price || 0).toLocaleString('en-IN')} <span className="text-emerald-500/70 font-mono">+{t.gainPct}%</span>
+                                  {t.level}: ₹{Number(t.price || 0).toLocaleString('en-IN')} <span className="text-emerald-500/70 font-mono">+{t.gainPct}%</span>
                                 </span>
                               ))}
                             </div>

@@ -36,6 +36,9 @@ interface EnrichedTrade {
   entryPrice?: number;
   isPass?: boolean;
   score?: number;
+  smartMoney?: number;
+  tranche?: string;
+  roi?: number;
   reason?: string;
   abcd?: Record<string, { price: number; label?: string; date?: string } | number>;
   peRatio?: number;
@@ -312,22 +315,49 @@ const TradeTable: React.FC<TradeTableProps> = ({
 
   const handleExportCSV = () => {
     if (!filteredAndSortedTrades.length) return;
-    const headers = ['Symbol', 'Observation', 'Strategy', 'Sector', 'Market Cap', 'Level A (Base)', 'CMP', 'ATH', 'Model Objective', 'ROI%', 'Gap%', 'Audit Score', 'Audit Remark'];
-    const rows = filteredAndSortedTrades.map(t => [
-      t.symbol,
-      t.entryTime || '-',
-      t.strategy || 'Institutional Matrix',
-      t.sector,
-      t.marketCap,
-      t.entryPrice?.toFixed(2),
-      t.livePrice?.toFixed(2) || t.currentPrice?.toFixed(2),
-      (athData?.[t.symbol] || t.ath || 0).toFixed(2),
-      t.target?.toFixed(2),
-      t.targetGap?.toFixed(2) + '%',
-      (((t.entryPrice || 0) > 0 ? ((((t.livePrice || t.currentPrice || 0) - (t.entryPrice || 0)) / (t.entryPrice || 1)) * 100) : 0).toFixed(2) + '%'),
-      t.score + '/100',
-      t.reason || 'Institutional Audit Active'
-    ]);
+    const headers = [
+      'Symbol',
+      'Observation Date',
+      'Strategy',
+      'Sector',
+      'Market Cap (Cr)',
+      'Level A Base Entry Price (INR)',
+      'Current Price CMP (INR)',
+      'All Time High ATH (INR)',
+      'Model Target Objective (INR)',
+      'Target ROI (%)',
+      'Current Move (%)',
+      'Audit Score',
+      'Smart Money %',
+      'Grade Tranche',
+      'Audit Pass Status',
+      'Audit Remark'
+    ];
+    const rows = filteredAndSortedTrades.map(t => {
+      const cmp = t.livePrice || t.currentPrice || 0;
+      const entry = t.entryPrice || 0;
+      const currentReturnPct = entry > 0 ? (((cmp - entry) / entry) * 100).toFixed(2) : '0.00';
+      const targetRoiPct = entry > 0 && t.target ? (((t.target - entry) / entry) * 100).toFixed(2) : (t.roi ? Number(t.roi).toFixed(2) : '0.00');
+
+      return [
+        `"${t.symbol}"`,
+        `"${t.entryTime || '-'}"`,
+        `"${t.strategy || 'Institutional Strategy'}"`,
+        `"${t.sector || 'General'}"`,
+        `"${t.marketCap || '—'}"`,
+        entry ? entry.toFixed(2) : '0.00',
+        cmp ? cmp.toFixed(2) : '0.00',
+        (athData?.[t.symbol] || t.ath || 0).toFixed(2),
+        t.target ? t.target.toFixed(2) : '0.00',
+        `"${targetRoiPct}%"`,
+        `"${currentReturnPct}%"`,
+        t.score || 0,
+        `"${t.smartMoney || 0}%"`,
+        `"${t.tranche || 'A'}"`,
+        `"${t.isPass ? 'QUALIFIED' : 'REJECTED'}"`,
+        `"${t.reason || 'Institutional Audit Active'}"`
+      ];
+    });
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -892,13 +922,16 @@ const TradeTable: React.FC<TradeTableProps> = ({
                                       </span>
                                     </div>
                                   )}
-                                  <div className="flex flex-col items-end min-w-[32px]">
+                                  <div className="flex flex-col items-end min-w-[44px]">
                                     <span className={`text-xs font-bold leading-none ${
                                       (trade.score || 0) >= 70 ? 'text-emerald-400' :
+                                      (trade.score || 0) >= 60 ? 'text-blue-400' :
                                       (trade.score || 0) >= 50 ? 'text-amber-400' :
                                       'text-rose-400'
-                                    }`}>{trade.score || 0}</span>
-                                    <span className="text-xs text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider mt-0.5">Audit</span>
+                                    }`}>{trade.score || 0}/100</span>
+                                    <span className="text-[9px] text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider mt-0.5">
+                                      {trade.smartMoney ? `${trade.smartMoney}% Smart` : 'Audit'}
+                                    </span>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">

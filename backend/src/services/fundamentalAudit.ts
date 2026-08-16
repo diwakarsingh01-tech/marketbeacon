@@ -195,7 +195,7 @@ export async function validateBatch9(symbol: string, snap: any, basketName: stri
 
   const fiiTrend = getTrend(sh.trends?.fii);
   const diiTrend = getTrend(sh.trends?.dii);
-  const promTrend = getTrend(sh.trends?.fii); // Placeholder logic as in file
+  const promTrend = getTrend(sh.trends?.promoter);
 
   // HDFCBANK: Special banking sector adjustments
   // Apply HDFCBANK-specific adjustments before determining thresholds

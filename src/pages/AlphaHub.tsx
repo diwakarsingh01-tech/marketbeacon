@@ -71,6 +71,7 @@ const WatchlistButton: React.FC<{ symbol: string }> = ({ symbol }) => {
       } else {
         const res = await authFetch('/api/watchlist', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ symbol })
         });
         if (res.ok) setIsInWatchlist(true);
@@ -190,50 +191,68 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 const buildBaskets = (stocks: AlphaHubStock[], totalCapital: number): BasketConfig[] => {
   if (!stocks?.length) return [];
 
-  const large = stocks.filter(s => s.capType === 'LARGE');
-  const mid = stocks.filter(s => s.capType === 'MID');
-  const small = stocks.filter(s => s.capType === 'SMALL');
+  const elite = stocks.filter(s => s.basketSource === 'Elite Basket' || (s.capType === 'LARGE' && !s.basketSource));
+  const quality = stocks.filter(s => s.basketSource === 'Quality Basket' || (s.capType === 'MID' && !s.basketSource));
+  const growth = stocks.filter(s => s.basketSource === 'Growth Basket' || (s.capType === 'SMALL' && !s.basketSource));
+  const fallen = stocks.filter(s => s.basketSource === 'Fallen Value Basket');
 
   const totalStocks = stocks.length || 1;
 
-  return [
+  const list: BasketConfig[] = [
     {
-      id: 'stability',
-      name: 'Stability Shield',
-      tag: 'Conservative',
+      id: 'elite',
+      name: 'Elite Basket',
+      tag: 'Blue Chip',
       objective: 'Focus on quality large-cap companies for stable, consistent growth.',
       risk: 'Low',
       riskColor: 'emerald',
-      stocks: large,
-      count: large.length,
+      stocks: elite,
+      count: elite.length,
       minAmount: 100000,
-      suggestedPct: Math.round((large.length / totalStocks) * 100),
+      suggestedPct: Math.round((elite.length / totalStocks) * 100),
+    },
+    {
+      id: 'quality',
+      name: 'Quality Basket',
+      tag: 'High ROE/ROCE',
+      objective: 'Captures quality companies with strong earnings and price momentum.',
+      risk: 'Moderate',
+      riskColor: 'amber',
+      stocks: quality,
+      count: quality.length,
+      minAmount: 75000,
+      suggestedPct: Math.round((quality.length / totalStocks) * 100),
     },
     {
       id: 'growth',
-      name: 'Growth Engine',
-      tag: 'Moderate',
-      objective: 'Captures mid-cap companies with strong earnings and price momentum.',
+      name: 'Allied Growth Basket',
+      tag: 'High Growth',
+      objective: 'High-conviction growth plays screened from Nifty 500 universe.',
       risk: 'Moderate',
-      riskColor: 'amber',
-      stocks: mid,
-      count: mid.length,
-      minAmount: 75000,
-      suggestedPct: Math.round((mid.length / totalStocks) * 100),
-    },
-    {
-      id: 'alpha',
-      name: 'Alpha Accelerator',
-      tag: 'Aggressive',
-      objective: 'High-conviction reversal plays identified by the Alpha-40 signal engine.',
-      risk: 'High',
       riskColor: 'blue',
-      stocks: small,
-      count: small.length,
+      stocks: growth,
+      count: growth.length,
       minAmount: 50000,
-      suggestedPct: Math.round((small.length / totalStocks) * 100),
+      suggestedPct: Math.round((growth.length / totalStocks) * 100),
     }
-  ].filter(b => b.count > 0 && totalCapital >= b.minAmount);
+  ];
+
+  if (fallen.length > 0) {
+    list.push({
+      id: 'fallen',
+      name: 'Fallen Value Basket',
+      tag: 'Deep Recovery',
+      objective: 'Contrarian value recovery setups meeting 67% reset rules.',
+      risk: 'High',
+      riskColor: 'amber',
+      stocks: fallen,
+      count: fallen.length,
+      minAmount: 50000,
+      suggestedPct: Math.round((fallen.length / totalStocks) * 100),
+    });
+  }
+
+  return list.filter(b => b.count > 0 && totalCapital >= b.minAmount);
 };
 
 // --- Main Page ---
@@ -283,9 +302,13 @@ const AlphaHubPage: React.FC = () => {
 
   const totalCapital = lumpSumAmount;
 
-  // Filter stocks: only include grades A/B/C/D — exclude NONE-grade stocks
+  // Filter stocks: only include grades A/B/C/D AND Audit Score >= 60 — exclude low score stocks
   const validGrades = ['A', 'B', 'C', 'D'];
-  const qualifiedStocks = (data?.stocks || []).filter(s => s.tranche && validGrades.includes(s.tranche.toUpperCase()));
+  const qualifiedStocks = (data?.stocks || []).filter(s => 
+    s.tranche && 
+    validGrades.includes(s.tranche.toUpperCase()) && 
+    (s.score || 0) >= 60
+  );
 
   // Build baskets from qualified stocks only
   const baskets = buildBaskets(qualifiedStocks, totalCapital);
@@ -394,21 +417,56 @@ const AlphaHubPage: React.FC = () => {
 
   const handleExportAlpha = () => {
     if (!qualifiedStocks?.length) return;
-    const headers = ['Symbol', 'Sector', 'Cap', 'Basket', 'Strategy', 'Audit Score', 'Base Price', 'ROI%', 'Qty', 'Invest Amt'];
+    const headers = [
+      'Symbol',
+      'Stock Name',
+      'Sector',
+      'Cap Type',
+      'Basket',
+      'Strategy',
+      'Audit Score',
+      'Grade / Tranche',
+      'Smart Money %',
+      'Base Entry Price (INR)',
+      'Target Price (INR)',
+      'Target ROI (%)',
+      'Current Price (INR)',
+      'Suggested Qty',
+      'Investment Amount (INR)',
+      'Portfolio Weight (%)'
+    ];
     const rows = qualifiedStocks.map((s: AlphaHubStock) => {
       const qty = calculateQuantity(s, totalCapital);
-      const investAmt = Math.round(qty * (s.entryPrice || s.currentPrice || 1));
+      const price = s.currentPrice || s.entryPrice || 1;
+      const investAmt = Math.round(qty * price);
+      const weightPct = totalPortfolioAmount > 0 ? ((investAmt / totalPortfolioAmount) * 100).toFixed(2) : '0.00';
+      const roiPct = s.target && s.entryPrice ? (((s.target - s.entryPrice) / s.entryPrice) * 100).toFixed(2) : (s.roi ? Number(s.roi).toFixed(2) : '0.00');
+
       return [
-        s.symbol, s.sector, s.capType, s.basketSource, s.strategy, s.score,
-        s.entryPrice, Number(s.roi)?.toFixed(2),
-        qty, investAmt
+        `"${s.symbol}"`,
+        `"${s.stockName || s.symbol}"`,
+        `"${s.sector || 'General'}"`,
+        `"${s.capType}"`,
+        `"${s.basketSource || s.capType}"`,
+        `"${s.strategy || 'Multi-Strategy Setup'}"`,
+        s.score || 0,
+        `"${s.tranche || 'A'}"`,
+        `"${s.smartMoney || 0}%"`,
+        s.entryPrice || 0,
+        s.target || 0,
+        `"${roiPct}%"`,
+        s.currentPrice || 0,
+        qty,
+        investAmt,
+        `"${weightPct}%"`
       ];
     });
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.body.appendChild(document.createElement('a'));
+    const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `MarketBeacon_AlphaTerminal_Report.csv`;
+    link.download = `MarketBeacon_AlphaHub_FullReport_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
@@ -882,6 +940,9 @@ const AlphaHubPage: React.FC = () => {
                                 <div className="flex flex-col font-sans">
                                   <span className="text-xs font-bold text-[var(--text-primary)] uppercase group-hover:text-blue-400 transition-colors">{stock.symbol}</span>
                                   <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{stock.basketSource || stock.capType}</span>
+                                  {stock.strategy && (
+                                    <span className="text-[10px] font-semibold text-blue-400/90 truncate mt-0.5">{stock.strategy}</span>
+                                  )}
                                 </div>
                               </td>
                               <td className="px-3 py-3 text-xs font-bold text-[var(--text-tertiary)]">{stock.sector}</td>
@@ -891,20 +952,25 @@ const AlphaHubPage: React.FC = () => {
                                 <span className="text-xs text-emerald-500 ml-1">({targetPct}%)</span>
                               </td>
                               <td className="px-3 py-3 text-center">
-                                {validGrade !== 'NONE' ? (
-                                  <span className={`px-2 py-0.5 rounded text-xs font-bold font-mono border ${
-                                    grade === 'A' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                                    grade === 'B' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                    grade === 'C' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                                    'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                                  }`}>
-                                    {grade}
+                                <div className="flex flex-col items-center gap-1">
+                                  {validGrade !== 'NONE' ? (
+                                    <span className={`px-2 py-0.5 rounded text-xs font-bold font-mono border ${
+                                      grade === 'A' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                      grade === 'B' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                      grade === 'C' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                      'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                    }`}>
+                                      {grade}
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded text-xs font-bold font-mono bg-[var(--bg-tertiary)] text-[var(--text-muted)] border border-[var(--border-secondary)]">
+                                      —
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] font-extrabold text-emerald-400 font-mono">
+                                    Score: {stock.score || 0}/100
                                   </span>
-                                ) : (
-                                  <span className="px-2 py-0.5 rounded text-xs font-bold font-mono bg-[var(--bg-tertiary)] text-[var(--text-muted)] border border-[var(--border-secondary)]">
-                                    —
-                                  </span>
-                                )}
+                                </div>
                               </td>
                               <td className="px-3 py-3 text-right">
                                 <span className={`font-bold ${isDown ? 'text-amber-500' : 'text-[var(--text-primary)]'}`}>

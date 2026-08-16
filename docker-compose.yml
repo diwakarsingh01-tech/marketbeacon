@@ -18,6 +18,7 @@ services:
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
       - TELEGRAM_CHANNEL=${TELEGRAM_CHANNEL}
       - N8N_API_KEY=${N8N_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - NODE_ENV=production
     networks:
       - mb-net
@@ -33,6 +34,7 @@ services:
       - /opt/marketbeacon-backend/dist/db.js:/app/dist/db.js:rw
       - /opt/marketbeacon-backend/dist/screener.js:/app/dist/screener.js:rw
       - /opt/marketbeacon-backend/dist/services/growthFilter.js:/app/dist/services/growthFilter.js:rw
+      - /opt/marketbeacon-backend/dist/services/aiService.js:/app/dist/services/aiService.js:rw
 
   n8n:
     container_name: mb-n8n
@@ -82,7 +84,7 @@ services:
     restart: unless-stopped
 
   open-webui:
-    image: ghcr.io/open-webui/open-webui:v0.10.2
+    image: ghcr.io/open-webui/open-webui:v0.11.0
     container_name: open-webui
     ports:
       - "3000:8080"

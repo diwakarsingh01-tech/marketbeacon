@@ -96,7 +96,8 @@ const StockFundamentalsPage: React.FC = () => {
   const formatCr = (val: unknown) => {
     const n = Number(val);
     if (isNaN(n) || n === 0) return '—';
-    return `₹ ${(n / 10000000).toLocaleString(undefined, { maximumFractionDigits: 0 })} Cr.`;
+    const crVal = n >= 10000000 ? n / 10000000 : n;
+    return `₹ ${crVal.toLocaleString(undefined, { maximumFractionDigits: 1 })} Cr.`;
   };
 
   const dataAge = data?.dataAge || {};
@@ -120,16 +121,22 @@ const StockFundamentalsPage: React.FC = () => {
   const pe3Y = Number(data?.peMedians?.pe3Y || 0);
   const pe5Y = Number(data?.peMedians?.pe5Y || 0);
   const pe10Y = Number(data?.peMedians?.pe10Y || 0);
-  // Rule: Current PE must be ≤ 3Y median AND ≤ 5Y median.
-  // If either median is available, it must not be exceeded.
   const hasPe3Y = pe3Y > 0;
   const hasPe5Y = pe5Y > 0;
   const hasMedian = hasPe3Y || hasPe5Y;
+  // Overvalued if PE exceeds both medians (matching audit gate)
   const isPEOvervalued = hasMedian && (
-    (hasPe3Y && peRatio > pe3Y) || (hasPe5Y && peRatio > pe5Y)
+    (hasPe3Y && peRatio > pe3Y) && (hasPe5Y && peRatio > pe5Y)
   );
   // For display: pick the most conservative (lowest) available median
   const referenceMedian = hasPe3Y && hasPe5Y ? Math.min(pe3Y, pe5Y) : (hasPe3Y ? pe3Y : (hasPe5Y ? pe5Y : 0));
+
+  // Sector-aware D/E limit for visual highlight
+  const sectorNameLower = (data?.industry || '').toLowerCase();
+  const isFinanceSec = sectorNameLower.includes('bank') || sectorNameLower.includes('nbfc') || sectorNameLower.includes('finance') || sectorNameLower.includes('financial');
+  const isCapSec = sectorNameLower.includes('infra') || sectorNameLower.includes('power') || sectorNameLower.includes('steel') || sectorNameLower.includes('auto') || sectorNameLower.includes('oil') || sectorNameLower.includes('pharma');
+  const deLimit = isFinanceSec ? 7.0 : (isCapSec ? 1.5 : 0.5);
+  const isDEHigh = data?.netDebtToEquity != null && Number(data.netDebtToEquity) > deLimit;
 
   // Find all baskets that contain this stock
   const containingBaskets = Object.entries(BASKETS)
@@ -227,7 +234,7 @@ const StockFundamentalsPage: React.FC = () => {
              <div className="bg-[var(--bg-secondary)]/60 border border-[var(--border-primary)] rounded-xl p-5 flex flex-col justify-between h-28 transition-all duration-200 hover:border-[#00d09c]/30">
                 <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider flex items-center gap-1">Debt-To-Equity <InfoTooltip entry={FUNDA_INFO_MAP.debtToEquity} /></span>
                 <div>
-                  <p className={`text-lg font-bold leading-tight font-mono ${data?.netDebtToEquity != null && Number(data.netDebtToEquity) > 0.2 ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{data?.netDebtToEquity != null ? Number(data.netDebtToEquity).toFixed(2) : '-'}</p>
+                  <p className={`text-lg font-bold leading-tight font-mono ${isDEHigh ? 'text-red-500' : 'text-[var(--text-primary)]'}`}>{data?.netDebtToEquity != null ? Number(data.netDebtToEquity).toFixed(2) : '-'}</p>
                   <DataFreshnessBadge lastUpdated={globalLastUpdated} size="xs" showLabel={false} className="mt-1" />
                 </div>
              </div>

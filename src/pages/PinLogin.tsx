@@ -126,10 +126,20 @@ const PinLogin: React.FC = () => {
           {loading ? 'Verifying...' : 'Access Account'}
         </button>
 
-        <div className="text-center">
+        <div className="text-center space-y-2">
           <Link to="/login" className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1">
-            <ArrowLeft className="h-3 w-3" /> Back to login
+            <ArrowLeft className="h-3 w-3" /> Back to email/Google login
           </Link>
+          <button
+            onClick={() => {
+              localStorage.removeItem('mb_has_pin');
+              localStorage.removeItem('mb_pin_email');
+              navigate('/login');
+            }}
+            className="text-[10px] font-bold text-slate-400 hover:text-red-400 uppercase tracking-wider transition-colors"
+          >
+            Clear PIN &amp; use email login instead
+          </button>
         </div>
 
         <p className="text-[10px] text-[var(--text-tertiary)] text-center font-medium">

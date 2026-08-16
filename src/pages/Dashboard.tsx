@@ -80,16 +80,22 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
   const [lastUpdated, setLastUpdated] = useState<string | null>(() => localStorage.getItem('mb_screener_last_updated'));
   const [activeBasket, setActiveBasket] = useState<string>(() => {
     const paramBasket = searchParams.get('basket');
-    if (paramBasket && STRATEGIES.some(s => s.baskets.includes(paramBasket))) {
+    if (paramBasket && ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'].includes(paramBasket)) {
       return paramBasket;
     }
-    return currentStrategy.baskets[0];
+    return 'Elite Basket';
   });
   
-  // Show every live strategy in the dropdown regardless of active basket.
-  // Tier access is gated on select (canAccess + upgrade modal); basket compatibility
-  // is auto-resolved by the effect below (resets basket to the strategy's first basket).
-  const lockedStrategies = STRATEGIES.filter(s => s.isLive);
+  // Dynamically filter strategies based on activeBasket — hide strategies not supported by the basket
+  const availableStrategies = useMemo(() => {
+    return STRATEGIES.filter(s => s.isLive && s.baskets.includes(activeBasket));
+  }, [activeBasket]);
+
+  useEffect(() => {
+    if (availableStrategies.length > 0 && !availableStrategies.some(s => s.id === strategyId)) {
+      navigate(`?strategy=${availableStrategies[0].id}&basket=${encodeURIComponent(activeBasket)}`, { replace: true });
+    }
+  }, [activeBasket, availableStrategies, strategyId, navigate]);
 
   const [activeTab, setActiveTab] = useState<'open' | 'hold' | 'watchlist' | 'portfolio' | 'rejected' | 'neutral'>(() => {
     const paramTab = searchParams.get('tab') as any;
@@ -141,14 +147,10 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
 
   useEffect(() => {
     const paramBasket = new URLSearchParams(location.search).get('basket');
-    if (paramBasket && currentStrategy.baskets.includes(paramBasket)) {
+    if (paramBasket) {
       setActiveBasket(paramBasket);
-      return;
     }
-    if (currentStrategy && !currentStrategy.baskets.includes(activeBasket)) {
-      setActiveBasket(currentStrategy.baskets[0]);
-    }
-  }, [strategyId, currentStrategy, location.search]);
+  }, [location.search]);
 
   const fetchTrades = useCallback(async () => {
     try {
@@ -680,15 +682,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                     onChange={(e) => {
                       const newBasket = e.target.value;
                       setActiveBasket(newBasket);
-                      const supportsNewBasket = STRATEGIES.find(s => s.id === strategyId)?.baskets.includes(newBasket);
-                      if (!supportsNewBasket) {
-                        const firstAvailable = STRATEGIES.find(s => s.isLocked && s.baskets.includes(newBasket));
-                        if (firstAvailable) navigate(`?strategy=${firstAvailable.id}`);
+                      let targetStrat = strategyId;
+                      if (newBasket === 'Fallen Value Basket') {
+                        targetStrat = 'SIXTY_SEVEN_FUNDA';
                       }
+                      navigate(`?strategy=${targetStrat}&basket=${encodeURIComponent(newBasket)}`);
                     }} 
                     className="appearance-none bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl pl-3.5 pr-9 py-2.5 text-[11px] font-bold uppercase outline-none focus-visible:ring-2 focus-visible:ring-[#00d09c]/50 focus-visible:border-[#00d09c]/50 shadow-sm cursor-pointer hover:border-[#00d09c]/40 hover:text-[var(--text-primary)] transition-all w-full sm:min-w-[160px]"
                   >
-                    {['Elite Basket', 'Quality Basket', 'Growth Basket'].map(b => {
+                    {['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'].map(b => {
                       const count = (BASKETS[b] || []).length;
                       return <option key={b} value={b}>{b} · {count} stocks</option>;
                     })}
@@ -705,17 +707,17 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ defaultTab = 'open' }) =>
                   <select 
                     value={strategyId} 
                     onChange={(e) => {
-                      const selected = STRATEGIES.find(s => s.id === e.target.value);
+                      const selected = availableStrategies.find(s => s.id === e.target.value);
                       if (selected && !canAccess(selected.tier)) {
                         setRequiredTier(selected.tier as 'pro' | 'alpha');
                         setShowUpgradeModal(true);
                         return;
                       }
-                      navigate(`?strategy=${e.target.value}`);
+                      navigate(`?strategy=${e.target.value}&basket=${encodeURIComponent(activeBasket)}`);
                     }} 
                     className="appearance-none bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-xl pl-3.5 pr-9 py-2.5 text-[11px] font-bold uppercase outline-none focus-visible:ring-2 focus-visible:ring-[#00d09c]/50 focus-visible:border-[#00d09c]/50 shadow-sm cursor-pointer hover:border-[#00d09c]/40 hover:text-[var(--text-primary)] transition-all w-full sm:min-w-[190px]"
                   >
-                    {lockedStrategies.map(s => (
+                    {availableStrategies.map(s => (
                       <option key={s.id} value={s.id}>
                         {s.name} {!canAccess(s.tier) ? '🔒' : ''}
                       </option>

@@ -127,6 +127,9 @@ export async function precalculateAlpha40(isBootWarmup = false) {
             }
           }
 
+          snap.symbol = sym;
+          snap.sym = sym;
+
           // 2. Active Signals Analysis (Multi-Strategy Selection)
           const validSignals: any[] = [];
           for (const stratId of Object.keys(STRATEGY_BASKET_MAP)) {
@@ -137,7 +140,7 @@ export async function precalculateAlpha40(isBootWarmup = false) {
             // Technical Scan runs every strategy on every stock: bypass runStrategyAnalysis's
             // per-basket authorization gate (otherwise 'Technical Scan' rejects everything).
             const effBasket = basketName === 'Technical Scan' ? 'ALL' : basketName;
-            const sd: any = await runStrategyAnalysis(stratId, snap, mcapCr * 10000000, effBasket);
+            const sd: any = await runStrategyAnalysis(stratId, snap, mcapCr * 10000000, effBasket, audit);
             if (!sd || !sd?.isBuyZone) continue;
 
             const entry = sd?.entryPrice || last?.close;
@@ -237,7 +240,8 @@ export async function precalculateAlpha40(isBootWarmup = false) {
              }
            }
 
-          if (validSignals.length > 0) {
+          // Active setups must pass fundamental audit (isPass === true AND score >= 60)
+          if (validSignals.length > 0 && audit?.isPass === true && (audit?.score || 0) >= 60) {
             // Logic: Highest ROI strategy wins for this stock
             const bestSignal = validSignals.sort((a, b) => b.roi - a.roi)[0];
             active.push({

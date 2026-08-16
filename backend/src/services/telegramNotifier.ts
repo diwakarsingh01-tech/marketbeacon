@@ -166,18 +166,18 @@ export async function sendSignalNotification(
   }
 
   lines.push(``);
-  lines.push(`🔗 https://trade.marketbeaconpro.com`);
+  lines.push(`🔗 https://marketbeaconpro.com`);
 
   const message = lines.join('\n');
 
   const replyMarkup = {
     inline_keyboard: [
       [
-        { text: '📊 View live Chart', url: `https://trade.marketbeaconpro.com/alpha-hub` },
-        { text: '🛡️ Audit details', url: `https://trade.marketbeaconpro.com/alpha-hub` }
+        { text: '📊 View live Chart', url: `https://marketbeaconpro.com/alpha-hub` },
+        { text: '🛡️ Audit details', url: `https://marketbeaconpro.com/alpha-hub` }
       ],
       [
-        { text: '🎟️ Claim 7-Day Free Trial', url: 'https://trade.marketbeaconpro.com/' }
+        { text: '🎟️ Claim 7-Day Free Trial', url: 'https://marketbeaconpro.com/' }
       ]
     ]
   };

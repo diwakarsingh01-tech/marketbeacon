@@ -8,18 +8,16 @@ export const runStrategyAnalysis = async (stratId: string, snap: any, marketCap:
 
     // 🛡️ INSTITUTIONAL BASKET AUTHORIZATION
     const authorizedBaskets: Record<string, string[]> = {
-        'ENVELOPE_LONG': ['Elite Basket', 'Quality Basket'],
-        'ENVELOPE_SHORT': ['Elite Basket', 'Quality Basket'],
-        'BOLLINGER': ['Elite Basket', 'Quality Basket'],
-        '52W_HIGH_LOW': ['Elite Basket', 'Quality Basket'],
+        'ENVELOPE_LONG': ['Elite Basket'],
+        'ENVELOPE_SHORT': ['Elite Basket'],
+        'BOLLINGER': ['Elite Basket'],
+        '52W_HIGH_LOW': ['Elite Basket'],
         'SMA_BCD': ['Elite Basket', 'Quality Basket'],
-
-        'CUP_HANDLE_ABCD': ['Quality Basket', 'Elite Basket'],
-        'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-        'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-        'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-        'REVERSE_HEAD_SHOULDERS': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket'],
-        'SHORT_TERM_ABCD': ['Growth Basket', 'Elite Basket', 'Quality Basket']
+        'CUP_HANDLE_ABCD': ['Elite Basket', 'Quality Basket'],
+        'REVERSE_HEAD_SHOULDERS': ['Elite Basket', 'Quality Basket'],
+        'SR_STRATEGY': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
+        'TWENTY_RALLY_RETEST': ['Elite Basket', 'Quality Basket', 'Growth Basket'],
+        'SIXTY_SEVEN_FUNDA': ['Elite Basket', 'Quality Basket', 'Growth Basket', 'Fallen Value Basket']
     };
 
     const allowed = authorizedBaskets[stratId] || [];
@@ -45,7 +43,7 @@ export const runStrategyAnalysis = async (stratId: string, snap: any, marketCap:
     }
 
     if (result && result.isBuyZone) {
-      const sym = snap.sym || snap.symbol || '';
+      const sym = snap.sym || snap.symbol || snap.quote?.symbol || (snap.quotes && snap.quotes[0]?.symbol) || '';
       if (sym) {
         try {
           // Reuse a precomputed audit when the caller already ran one (avoids double CPU cost)
