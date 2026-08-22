@@ -106,6 +106,41 @@ const FALLBACK_ARTICLES: Record<string, any> = {
     relatedSlug: 'what-is-sebi-compliant-stock-screener',
     relatedTitle: 'What Is a SEBI Compliant Stock Screener?',
   },
+
+  // ── Added by Growth Agent (2026-08-22) ──
+  'swing-vs-intraday-india': {
+    title: 'Swing vs Intraday Trading in India: Tax and Temperament',
+    metaDescription: 'Swing and intraday suit different temperaments and tax slabs. Understand holding-period impact, STT, and which style fits a working professional.',
+    tag: 'Education',
+    tagColor: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+    readTime: '7 min read',
+    date: '22 Aug 2026',
+    sections: [
+      { heading: 'Holding Period and Tax', body: 'Intraday (speculative business income) is taxed at your slab rate with no 15 percent benefit. Swing held 1+ year qualifies for LTCG at 10 percent above the exemption. The tax drag alone can flip a winning system negative.' },
+      { heading: 'Temperament Fit', body: 'Intraday demands screen time and fast nerves. Swing (few days to weeks) suits a working professional who cannot watch ticks. Pick the style your life allows, not the one that looks exciting.' },
+      { heading: 'Capital Efficiency', body: 'Swing frees margin between trades and needs fewer, higher-conviction setups. MarketBeacon scan filters surface swing candidates with clean audit scores.' },
+    ],
+    keyTakeaways: ['Intraday = slab tax, no LTCG benefit', 'Swing fits working professionals', 'Style must match temperament, not hype'],
+    relatedSlug: 'how-to-trade-like-fii-dii-india',
+    relatedTitle: 'How to Trade Like FII/DII in India',
+  },
+
+  'long-term-compounding-india': {
+    title: 'The Quiet Power of Long-Term Compounding for Indian Investors',
+    metaDescription: 'Compounding is boring until it is not. How Indian investors can combine low-drawdown compounding with an audit-score safety net.',
+    tag: 'Deep Dive',
+    tagColor: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
+    readTime: '6 min read',
+    date: '22 Aug 2026',
+    sections: [
+      { heading: 'Why Compounding Wins', body: 'A 15 percent CAGR doubles capital roughly every 5 years. The enemy is interruption — large drawdowns reset the clock. Protecting the downside is more valuable than chasing the upside.' },
+      { heading: 'The Audit Score as a Safety Net', body: 'Before committing to a long-term hold, check the Institutional Audit Score. A stock with weak governance or deteriorating fundamentals quietly destroys compounding. The score flags this early.' },
+      { heading: 'Practical Habit', body: 'Automate a fixed monthly allocation into audited, fundamentally sound names. Let time do the work; let the score keep you honest.' },
+    ],
+    keyTakeaways: ['15 percent CAGR doubles ~every 5 years', 'Drawdowns reset the compounding clock', 'Audit Score is the early-warning system'],
+    relatedSlug: 'institutional-audit-score-explained',
+    relatedTitle: 'The 100-Point Institutional Audit Score Explained',
+  },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
