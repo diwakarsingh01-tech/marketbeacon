@@ -105,6 +105,82 @@ const FALLBACK_ARTICLES: Record<string, any> = {
     relatedSlug: 'what-is-sebi-compliant-stock-screener',
     relatedTitle: 'What Is a SEBI Compliant Stock Screener?',
   },
+
+  // ── Added by Growth Agent (2026-08-22) ──
+  'abcd-tranche-laddering-guide': {
+    title: "ABCD Tranche Laddering: The Complete Guide to Institutional Entry Zones",
+    metaDescription: "Learn how institutional desks build positions in tranches (A, B, C, D) instead of one lump entry. A practical guide to the ABCD model used inside MarketBeacon Pro for risk-managed accumulation.",
+    tag: 'Strategy',
+    tagColor: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+    readTime: '9 min read',
+    date: 'Aug 22, 2026',
+    sections: [
+      { heading: "Why Lump-Sum Entry Is the Retail Trap", body: "Most retail traders enter a stock in one shot — they see a signal, hit 'buy', and deploy 100% of their planned capital at a single price. The problem: the market rarely rewards timing a single point. If you enter at the wrong moment, you sit in drawdown with no capital left to average intelligently.\n\nInstitutional desks never do this. They build positions in stages — called tranches — so that no single price point decides their fate. MarketBeacon Pro formalizes this as the ABCD model: four staged entry zones, each with a defined role." },
+      { heading: "What Each Stage Means", body: "Stage A — Base Price Floor: The algorithm registers initial institutional activity at a key support floor. A 25% initial tranche is cleared for audit. This is the 'toe in the water' — enough to participate, little enough to survive if the floor breaks.\n\nStage B — Confirmation Retest: Price retests the floor or a higher structure and holds. Another 25% is added. Risk is now partially validated by price action.\n\nStage C — Conviction Build: The stock shows fundamental safety + smart-money interest (FII/DII rising). The third 25% is deployed. This is the zone where institutional accumulation historically peaks.\n\nStage D — Momentum Continuation: Trend and strategy triggers confirm. Final 25% deploys. Full position is now built, but only after three prior validations." },
+      { heading: "Why 25% Tranches, Not 50/50", body: "A 4-stage ladder gives you three chances to be wrong before you are fully committed. If Stage A fails, you lost only 25% of planned capital at the worst possible price. Compare that to a lump entry where 100% is exposed immediately.\n\nThe math favours patience: even if two of four stages underperform, the averaged entry is still better than most emotional single-point buys. This is how institutions control drawdown without sacrificing upside." },
+      { heading: "How to Apply ABCD As a Retail Trader", body: "Step 1: Only consider stocks that are 'Qualified' (audit score 80+). The ABCD ladder is meaningless on a fundamentally rejected stock.\n\nStep 2: Pre-define your 4 zones using the stock's support structure, not random percentages. MarketBeacon Pro plots A/B/C/D on the chart for you.\n\nStep 3: Allocate fixed tranches (e.g. 25% each) and never 'go all in' at Stage A out of FOMO.\n\nStep 4: Journal the reason for each tranche. If Stage C doesn't confirm, you simply don't deploy the last 50%. That restraint is the edge." },
+      { heading: "Common Mistakes", body: "1. Skipping stages during a rally — FOMO makes traders jump to Stage D pricing at Stage A. 2. Increasing tranche size after a loss (revenge sizing). 3. Using ABCD on speculative, low-audit-score stocks. 4. No journal — if you can't explain why each tranche was added, you're guessing.\n\nABCD is a discipline system, not a prediction system. It manages risk; it does not guarantee direction." }
+    ],
+    keyTakeaways: [
+      "Institutional desks build positions in tranches, not lump-sum entries",
+      "ABCD = four staged zones (A floor, B confirm, C conviction, D momentum), 25% each",
+      "A 4-stage ladder gives three chances to be wrong before full commitment",
+      "Only apply ABCD on Qualified stocks (audit score 80+)",
+      "ABCD manages risk and drawdown — it is not a directional prediction"
+    ],
+    relatedSlug: 'how-to-trade-like-fii-dii-india',
+    relatedTitle: 'How to Trade Like FII/DII in India',
+  },
+
+  'swing-vs-intraday-trading-india': {
+    title: "Swing vs Intraday Trading in India: Which Suits Your Temperament?",
+    metaDescription: "Compare swing trading and intraday trading for Indian equity markets. Understand time commitment, capital needs, tax impact, and which style pairs best with MarketBeacon Pro's strategy matrix.",
+    tag: 'Education',
+    tagColor: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+    readTime: '7 min read',
+    date: 'Aug 22, 2026',
+    sections: [
+      { heading: "The Core Difference", body: "Intraday trading means opening and closing positions within the same session. You never carry overnight risk, but you fight milliseconds, brokerage, and STT on every exit. Swing trading means holding for days to weeks to capture a larger move — you accept overnight risk in exchange for fewer trades and cleaner setups.\n\nNeither is 'better'. The right choice depends on your capital, time, and temperament." },
+      { heading: "Time Commitment", body: "Intraday demands screen time — you must be available during market hours (9:15 to 15:30 IST) to manage entries, targets, and stops. Swing trading needs only a daily review: 15-20 minutes after close to scan, plan, and adjust. For a working professional, swing trading is far more realistic." },
+      { heading: "Capital & Leverage", body: "Intraday brokers offer high leverage (up to 5x on some segments), which amplifies both profit and loss. Swing traders typically use 1x-2x and size positions with a hard stop. With ₹1,00,000 capital, intraday leverage can be tempting but the kill-rate needed to stay profitable is brutal. Swing trading on the same capital with disciplined ABCD tranches is more survivable." },
+      { heading: "Tax Impact (India)", body: "Both are 'speculative business income' if done frequently — taxed at slab rate, no ₹1.25L LTCG exemption. But intraday racks up far more turnover, meaning more STT, more brokerage, and heavier compliance (possible tax audit above turnover thresholds). Swing trading generates fewer, larger taxable events — simpler books." },
+      { heading: "Which Pairs With MarketBeacon Pro", body: "MarketBeacon Pro's 10-strategy matrix is built for swing-to-positional horizons. Strategies like Institutional Floor, 52W Support Matrix, and Velocity Retest signal over days-to-weeks, not minutes. The ABCD ladder is a swing-positioning tool. If you are an intraday purist, the audit score and smart-money filter still help stock selection — but the strategy triggers are not tuned for 5-minute charts." }
+    ],
+    keyTakeaways: [
+      "Intraday = same-day close, high screen time, high leverage, heavy STT/tax turnover",
+      "Swing = days-to-weeks hold, 15-min daily review, more survivable on small capital",
+      "Both are speculative income in India — taxed at slab, no LTCG benefit",
+      "MarketBeacon Pro strategies are tuned for swing/positional, not 5-min charts",
+      "Working professionals usually fit swing trading better than intraday"
+    ],
+    relatedSlug: 'abcd-tranche-laddering-guide',
+    relatedTitle: 'ABCD Tranche Laddering: The Complete Guide',
+  },
+
+  'long-term-compounding-india': {
+    title: "The Quiet Power of Long-Term Compounding for Indian Investors",
+    metaDescription: "Why compounding beats trading for most Indian retail investors. A data-grounded case for positional wealth-building, and how MarketBeacon Pro's audit score helps you pick fundamentally safe stocks to hold.",
+    tag: 'Deep Dive',
+    tagColor: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
+    readTime: '8 min read',
+    date: 'Aug 22, 2026',
+    sections: [
+      { heading: "The Math Nobody Argues With", body: "₹10,000 growing at 15% annually becomes ₹40,455 in 10 years and ₹1,63,665 in 20 years — without adding a single rupee. That is the power of compounding, and it requires only two things: a decent return and time. Trading tries to manufacture both daily; investing lets time do the heavy lifting." },
+      { heading: "Why Most Traders Underperform", body: "Study after study shows the majority of frequent retail traders earn less than passive index investing after costs. Causes: overtrading (brokerage + STT bleed), revenge sizing, emotional exits, and tax drag. The market does not pay you for activity — it pays you for correct, low-cost exposure held long enough." },
+      { heading: "Compounding Needs Fundamentals, Not Tips", body: "Compounding only works if the underlying business survives and grows. A 15% return assumption is destroyed if the company craters on debt or promotes exit. This is exactly where MarketBeacon Pro's 100-point audit helps: it hard-rejects stocks with D/E > 1.0, pledging > 5%, or smart-money < 70%. Those are the companies most likely to break your compounding chain." },
+      { heading: "A Hybrid That Actually Works", body: "You do not have to choose purely. Use the audit score to build a core holding of fundamentally 'Qualified' stocks (80+) for compounding, and use a small swing book (ABCD tranches) for active returns. The audit keeps your core safe; the swing book adds alpha. Most retail portfolios fail because they have no core at all." },
+      { heading: "Start With the Score, Not the Chart", body: "Before you hold any stock for 10 years, ask: would an institution hold it? If the audit score is Rejected, no chart pattern justifies a decade-long bet. Filter first, then compound. That single discipline separates wealth-builders from spectators." }
+    ],
+    keyTakeaways: [
+      "₹10k at 15% = ₹1.63L in 20 years with zero added capital (compounding)",
+      "Most frequent retail traders underperform passive indexing after costs + tax",
+      "Compounding breaks if the underlying business fails — fundamentals matter most",
+      "Use the 100-point audit to reject dangerous stocks before holding long-term",
+      "Hybrid: audit-qualified core for compounding + small ABCD swing book for alpha"
+    ],
+    relatedSlug: 'institutional-audit-score-explained',
+    relatedTitle: 'The 100-Point Institutional Audit Score Explained',
+  },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
