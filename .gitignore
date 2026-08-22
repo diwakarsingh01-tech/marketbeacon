@@ -33,3 +33,6 @@ backend/nohup.out
 backend/marketbeacon.db-shm
 backend/marketbeacon.db-wal
 .env
+
+# Generated market snapshot — exceeds GitHub 100MB limit, keep local-only
+market_snapshot.json
