@@ -7,6 +7,7 @@ import SEO from '../components/SEO';
 import { OrganizationSchema, ArticleSchema, BreadcrumbSchema } from '../components/StructuredData';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { getApiUrl } from '../lib/api-utils';
+import { NewsletterCapture } from '../components/ui/NewsletterCapture';
 
 // ── Fallback Articles (used when API is unavailable, e.g. prerendering) ──
 
@@ -15,7 +16,7 @@ const FALLBACK_ARTICLES: Record<string, any> = {
     title: "What is ABCD Tranche Laddering? A Beginner's Guide for Indian Traders",
     metaDescription: "Learn ABCD Tranche Laddering — the institutional method to split stock purchases into 4 systematic tranches. Used by FII/DII desks in India. Free guide for retail traders.",
     tag: 'Strategy',
-    tagColor: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+    tagColor: 'text-[#00d09c] bg-[#00d09c]/10 border-[#00d09c]/20',
     readTime: '6 min read',
     date: 'Jun 06, 2026',
     sections: [
@@ -39,7 +40,7 @@ const FALLBACK_ARTICLES: Record<string, any> = {
     title: "What Should a Responsible Stock Research Tool Look Like? A SEBI Framework Guide",
     metaDescription: "Learn what SEBI regulations say about stock screeners and research tools in India. Understand the difference between investment advisers, research analysts, and educational research tools like MarketBeacon Pro.",
     tag: 'Education',
-    tagColor: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+    tagColor: 'text-[#00d09c] bg-[#00d09c]/10 border-[#00d09c]/20',
     readTime: '5 min read',
     date: 'Jun 06, 2026',
     sections: [
@@ -62,7 +63,7 @@ const FALLBACK_ARTICLES: Record<string, any> = {
     title: "How to Trade Like FII/DII in India: The Institutional Strategy Explained",
     metaDescription: "Learn how FIIs and DIIs build positions in Indian stocks — systematic value-floor accumulation, smart money tracking, and tranche deployment. A guide for retail traders to replicate institutional logic.",
     tag: 'Institutional',
-    tagColor: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
+    tagColor: 'text-[#00d09c] bg-[#00d09c]/10 border-[#00d09c]/20',
     readTime: '8 min read',
     date: 'Jun 06, 2026',
     sections: [
@@ -86,11 +87,11 @@ const FALLBACK_ARTICLES: Record<string, any> = {
     title: "The 100-Point Institutional Audit Score: How Stocks Are Graded",
     metaDescription: "MarketBeacon Pro grades every stock on a 100-point institutional audit score across 12 parameters. Learn how each parameter works and what a Qualified, Neutral, or Rejected rating means.",
     tag: 'Deep Dive',
-    tagColor: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
+    tagColor: 'text-[#00d09c] bg-[#00d09c]/10 border-[#00d09c]/20',
     readTime: '7 min read',
     date: 'Jun 06, 2026',
     sections: [
-      { heading: "Why We Built a 100-Point Score", body: "Most stock screeners show you raw data — PE ratios, revenue numbers, debt figures. But they leave you to figure out what's 'good' or 'bad'. For a retail trader without institutional training, this is overwhelming.\n\nThe 100-point Institutional Audit Score converts complex multi-parameter analysis into a single conviction score. It's designed to answer one question: 'Is this stock fundamentally safe and positioned for institutional-grade accumulation?'" },
+      { heading: "Why We Built a 100-Point Score", body: "Most stock screeners show you raw data — PE ratios, revenue numbers, debt figures. But they leave you to figure out what's 'good' or 'bad'. For a retail trader without institutional training, this is overwhelming.\n\nThe 100-point Institutional Audit Score converts complex multi-parameter analysis into a single audit score. It's designed to answer one question: 'Is this stock fundamentally safe and positioned for institutional-grade accumulation?'" },
       { heading: "The Three Rating Categories", body: "Every stock receives one of three ratings based on its audit score:\n\nQUALIFIED (Score 80-100): The stock meets institutional-grade fundamental and technical criteria. It has cleared all hard reject rules and shows signals of smart money interest.\n\nNEUTRAL (Score 50-79): The stock has some positives but also some concerns. It may be in a transitional phase — worth watching but not ready for aggressive entry.\n\nREJECTED (Score 0-49): The stock fails on one or more critical parameters. Institutional desks would typically exclude these from active consideration." },
       { heading: "The 12 Audit Parameters", body: "Parameter 1 — Debt-to-Equity: Hard reject if D/E > 1.0 (except banks/NBFCs). High debt = high bankruptcy risk in downturns.\n\nParameter 2 — Smart Money (FII+DII Holding): Minimum 70% threshold. Below this, the 'smart money is absent' hard reject triggers.\n\nParameter 3 — Revenue Trajectory: 3-year revenue growth trend. Declining revenue is a major red flag.\n\nParameter 4 — PE Percentile: Where does the current PE stand vs the stock's own 5-year PE history? Cheap PE = higher score.\n\nParameter 5 — ROCE (Return on Capital Employed): Minimum 12% required. Measures how efficiently the company uses its capital.\n\nParameter 6 — Promoter Holding Stability: Declining promoter stake is a significant confidence signal.\n\nParameter 7 — 52-Week Range Position: Stocks trading near their 52-week low (but fundamentally sound) score higher.\n\nParameter 8 — Price-to-Book Value: For capital-intensive businesses, P/B below 3x scores positively.\n\nParameter 9 — Operating Margin Trend: Expanding margins = improving business quality.\n\nParameter 10 — Interest Coverage Ratio: Earnings should cover interest payments at least 3x.\n\nParameter 11 — Free Cash Flow: Companies that generate real cash (not just accounting profit) score higher.\n\nParameter 12 — Institutional Momentum (Strategy Triggers): How many of the 12 ABCD strategies currently show active entry signals?" },
       { heading: "How the Score Is Calculated", body: "Each of the 12 parameters is weighted based on its importance:\n- Hard reject parameters (D/E, Smart Money, ROCE): If these fail, the stock is automatically Rejected regardless of other scores.\n- Weighted scoring parameters: Each remaining parameter contributes a weighted score based on how far the metric is from the ideal institutional threshold.\n\nThe final score is a composite weighted average, updated daily as new market data flows in. When quarterly results are published, the relevant parameters are recalculated automatically." }
@@ -107,76 +108,63 @@ const FALLBACK_ARTICLES: Record<string, any> = {
   },
 
   // ── Added by Growth Agent (2026-08-22) ──
-  'abcd-tranche-laddering-guide': {
-    title: "ABCD Tranche Laddering: The Complete Guide to Institutional Entry Zones",
-    metaDescription: "Learn how institutional desks build positions in tranches (A, B, C, D) instead of one lump entry. A practical guide to the ABCD model used inside MarketBeacon Pro for risk-managed accumulation.",
-    tag: 'Strategy',
+  'swing-vs-intraday-india': {
+    title: 'Swing vs Intraday Trading in India: Tax and Temperament',
+    metaDescription:
+      'Swing and intraday suit different temperaments and tax slabs. Understand holding-period impact, STT, and which style fits a working professional.',
+    tag: 'Education',
     tagColor: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-    readTime: '9 min read',
-    date: 'Aug 22, 2026',
+    readTime: '7 min read',
+    date: '22 Aug 2026',
     sections: [
-      { heading: "Why Lump-Sum Entry Is the Retail Trap", body: "Most retail traders enter a stock in one shot — they see a signal, hit 'buy', and deploy 100% of their planned capital at a single price. The problem: the market rarely rewards timing a single point. If you enter at the wrong moment, you sit in drawdown with no capital left to average intelligently.\n\nInstitutional desks never do this. They build positions in stages — called tranches — so that no single price point decides their fate. MarketBeacon Pro formalizes this as the ABCD model: four staged entry zones, each with a defined role." },
-      { heading: "What Each Stage Means", body: "Stage A — Base Price Floor: The algorithm registers initial institutional activity at a key support floor. A 25% initial tranche is cleared for audit. This is the 'toe in the water' — enough to participate, little enough to survive if the floor breaks.\n\nStage B — Confirmation Retest: Price retests the floor or a higher structure and holds. Another 25% is added. Risk is now partially validated by price action.\n\nStage C — Conviction Build: The stock shows fundamental safety + smart-money interest (FII/DII rising). The third 25% is deployed. This is the zone where institutional accumulation historically peaks.\n\nStage D — Momentum Continuation: Trend and strategy triggers confirm. Final 25% deploys. Full position is now built, but only after three prior validations." },
-      { heading: "Why 25% Tranches, Not 50/50", body: "A 4-stage ladder gives you three chances to be wrong before you are fully committed. If Stage A fails, you lost only 25% of planned capital at the worst possible price. Compare that to a lump entry where 100% is exposed immediately.\n\nThe math favours patience: even if two of four stages underperform, the averaged entry is still better than most emotional single-point buys. This is how institutions control drawdown without sacrificing upside." },
-      { heading: "How to Apply ABCD As a Retail Trader", body: "Step 1: Only consider stocks that are 'Qualified' (audit score 80+). The ABCD ladder is meaningless on a fundamentally rejected stock.\n\nStep 2: Pre-define your 4 zones using the stock's support structure, not random percentages. MarketBeacon Pro plots A/B/C/D on the chart for you.\n\nStep 3: Allocate fixed tranches (e.g. 25% each) and never 'go all in' at Stage A out of FOMO.\n\nStep 4: Journal the reason for each tranche. If Stage C doesn't confirm, you simply don't deploy the last 50%. That restraint is the edge." },
-      { heading: "Common Mistakes", body: "1. Skipping stages during a rally — FOMO makes traders jump to Stage D pricing at Stage A. 2. Increasing tranche size after a loss (revenge sizing). 3. Using ABCD on speculative, low-audit-score stocks. 4. No journal — if you can't explain why each tranche was added, you're guessing.\n\nABCD is a discipline system, not a prediction system. It manages risk; it does not guarantee direction." }
+      {
+        heading: 'Holding Period and Tax',
+        body: 'Intraday (speculative business income) is taxed at your slab rate with no 15% benefit. Swing held 1+ year qualifies for LTCG at 10% above the exemption. The tax drag alone can flip a winning system negative.',
+      },
+      {
+        heading: 'Temperament Fit',
+        body: 'Intraday demands screen time and fast nerves. Swing (few days to weeks) suits a working professional who cannot watch ticks. Pick the style your life allows, not the one that looks exciting.',
+      },
+      {
+        heading: 'Capital Efficiency',
+        body: 'Swing frees margin between trades and needs fewer, higher-conviction setups. MarketBeacon scan filters surface swing candidates with clean audit scores.',
+      },
     ],
     keyTakeaways: [
-      "Institutional desks build positions in tranches, not lump-sum entries",
-      "ABCD = four staged zones (A floor, B confirm, C conviction, D momentum), 25% each",
-      "A 4-stage ladder gives three chances to be wrong before full commitment",
-      "Only apply ABCD on Qualified stocks (audit score 80+)",
-      "ABCD manages risk and drawdown — it is not a directional prediction"
+      'Intraday = slab tax, no LTCG benefit',
+      'Swing fits working professionals',
+      'Style must match temperament, not hype',
     ],
     relatedSlug: 'how-to-trade-like-fii-dii-india',
     relatedTitle: 'How to Trade Like FII/DII in India',
   },
 
-  'swing-vs-intraday-trading-india': {
-    title: "Swing vs Intraday Trading in India: Which Suits Your Temperament?",
-    metaDescription: "Compare swing trading and intraday trading for Indian equity markets. Understand time commitment, capital needs, tax impact, and which style pairs best with MarketBeacon Pro's strategy matrix.",
-    tag: 'Education',
-    tagColor: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-    readTime: '7 min read',
-    date: 'Aug 22, 2026',
-    sections: [
-      { heading: "The Core Difference", body: "Intraday trading means opening and closing positions within the same session. You never carry overnight risk, but you fight milliseconds, brokerage, and STT on every exit. Swing trading means holding for days to weeks to capture a larger move — you accept overnight risk in exchange for fewer trades and cleaner setups.\n\nNeither is 'better'. The right choice depends on your capital, time, and temperament." },
-      { heading: "Time Commitment", body: "Intraday demands screen time — you must be available during market hours (9:15 to 15:30 IST) to manage entries, targets, and stops. Swing trading needs only a daily review: 15-20 minutes after close to scan, plan, and adjust. For a working professional, swing trading is far more realistic." },
-      { heading: "Capital & Leverage", body: "Intraday brokers offer high leverage (up to 5x on some segments), which amplifies both profit and loss. Swing traders typically use 1x-2x and size positions with a hard stop. With ₹1,00,000 capital, intraday leverage can be tempting but the kill-rate needed to stay profitable is brutal. Swing trading on the same capital with disciplined ABCD tranches is more survivable." },
-      { heading: "Tax Impact (India)", body: "Both are 'speculative business income' if done frequently — taxed at slab rate, no ₹1.25L LTCG exemption. But intraday racks up far more turnover, meaning more STT, more brokerage, and heavier compliance (possible tax audit above turnover thresholds). Swing trading generates fewer, larger taxable events — simpler books." },
-      { heading: "Which Pairs With MarketBeacon Pro", body: "MarketBeacon Pro's 10-strategy matrix is built for swing-to-positional horizons. Strategies like Institutional Floor, 52W Support Matrix, and Velocity Retest signal over days-to-weeks, not minutes. The ABCD ladder is a swing-positioning tool. If you are an intraday purist, the audit score and smart-money filter still help stock selection — but the strategy triggers are not tuned for 5-minute charts." }
-    ],
-    keyTakeaways: [
-      "Intraday = same-day close, high screen time, high leverage, heavy STT/tax turnover",
-      "Swing = days-to-weeks hold, 15-min daily review, more survivable on small capital",
-      "Both are speculative income in India — taxed at slab, no LTCG benefit",
-      "MarketBeacon Pro strategies are tuned for swing/positional, not 5-min charts",
-      "Working professionals usually fit swing trading better than intraday"
-    ],
-    relatedSlug: 'abcd-tranche-laddering-guide',
-    relatedTitle: 'ABCD Tranche Laddering: The Complete Guide',
-  },
-
   'long-term-compounding-india': {
-    title: "The Quiet Power of Long-Term Compounding for Indian Investors",
-    metaDescription: "Why compounding beats trading for most Indian retail investors. A data-grounded case for positional wealth-building, and how MarketBeacon Pro's audit score helps you pick fundamentally safe stocks to hold.",
+    title: 'The Quiet Power of Long-Term Compounding for Indian Investors',
+    metaDescription:
+      'Compounding is boring until it is not. How Indian investors can combine low-drawdown compounding with an audit-score safety net.',
     tag: 'Deep Dive',
     tagColor: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
-    readTime: '8 min read',
-    date: 'Aug 22, 2026',
+    readTime: '6 min read',
+    date: '22 Aug 2026',
     sections: [
-      { heading: "The Math Nobody Argues With", body: "₹10,000 growing at 15% annually becomes ₹40,455 in 10 years and ₹1,63,665 in 20 years — without adding a single rupee. That is the power of compounding, and it requires only two things: a decent return and time. Trading tries to manufacture both daily; investing lets time do the heavy lifting." },
-      { heading: "Why Most Traders Underperform", body: "Study after study shows the majority of frequent retail traders earn less than passive index investing after costs. Causes: overtrading (brokerage + STT bleed), revenge sizing, emotional exits, and tax drag. The market does not pay you for activity — it pays you for correct, low-cost exposure held long enough." },
-      { heading: "Compounding Needs Fundamentals, Not Tips", body: "Compounding only works if the underlying business survives and grows. A 15% return assumption is destroyed if the company craters on debt or promotes exit. This is exactly where MarketBeacon Pro's 100-point audit helps: it hard-rejects stocks with D/E > 1.0, pledging > 5%, or smart-money < 70%. Those are the companies most likely to break your compounding chain." },
-      { heading: "A Hybrid That Actually Works", body: "You do not have to choose purely. Use the audit score to build a core holding of fundamentally 'Qualified' stocks (80+) for compounding, and use a small swing book (ABCD tranches) for active returns. The audit keeps your core safe; the swing book adds alpha. Most retail portfolios fail because they have no core at all." },
-      { heading: "Start With the Score, Not the Chart", body: "Before you hold any stock for 10 years, ask: would an institution hold it? If the audit score is Rejected, no chart pattern justifies a decade-long bet. Filter first, then compound. That single discipline separates wealth-builders from spectators." }
+      {
+        heading: 'Why Compounding Wins',
+        body: 'A 15% CAGR doubles capital roughly every 5 years. The enemy is interruption — large drawdowns reset the clock. Protecting the downside is more valuable than chasing the upside.',
+      },
+      {
+        heading: 'The Audit Score as a Safety Net',
+        body: 'Before committing to a long-term hold, check the Institutional Audit Score. A stock with weak governance or deteriorating fundamentals quietly destroys compounding. The score flags this early.',
+      },
+      {
+        heading: 'Practical Habit',
+        body: 'Automate a fixed monthly allocation into audited, fundamentally sound names. Let time do the work; let the score keep you honest.',
+      },
     ],
     keyTakeaways: [
-      "₹10k at 15% = ₹1.63L in 20 years with zero added capital (compounding)",
-      "Most frequent retail traders underperform passive indexing after costs + tax",
-      "Compounding breaks if the underlying business fails — fundamentals matter most",
-      "Use the 100-point audit to reject dangerous stocks before holding long-term",
-      "Hybrid: audit-qualified core for compounding + small ABCD swing book for alpha"
+      '15% CAGR doubles ~every 5 years',
+      'Drawdowns reset the compounding clock',
+      'Audit Score is the early-warning system',
     ],
     relatedSlug: 'institutional-audit-score-explained',
     relatedTitle: 'The 100-Point Institutional Audit Score Explained',
@@ -214,11 +202,16 @@ const BlogArticlePage: React.FC = () => {
 
   useEffect(() => { window.scrollTo(0, 0); }, [article]);
 
-  if (loading) return <div className="min-h-screen bg-slate-950" />;
+  if (loading) return (
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-6">
+      <div className="w-14 h-14 border-4 border-slate-100 border-t-[#00d09c] rounded-full animate-spin" />
+      <p className="text-xs font-bold text-[#00d09c] uppercase tracking-[0.4em]">Loading Article</p>
+    </div>
+  );
   if (!article) return <Navigate to="/blog" replace />;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
+    <div className="min-h-screen bg-white text-slate-800 font-sans flex flex-col">
       <SEO title={article.title} description={article.metaDescription} image={`https://marketbeaconpro.com/api/og/blog/${slug}`} url={`/blog/${slug}`} type="article" />
       <OrganizationSchema />
       <ArticleSchema
@@ -232,20 +225,21 @@ const BlogArticlePage: React.FC = () => {
         { label: 'Blog', href: '/blog' },
         { label: article.title, href: `/blog/${slug}` }
       ]} />
+      
       {/* Navigation */}
-      <nav className="border-b border-slate-800/60 px-6 md:px-10 py-5 flex items-center justify-between backdrop-blur-md bg-slate-950/80 sticky top-0 z-50">
+      <nav className="border-b border-slate-100 px-6 md:px-10 py-5 flex items-center justify-between backdrop-blur-md bg-white/95 sticky top-0 z-50 shadow-sm">
         <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <BrandLogo variant="dark" size={28} />
+          <BrandLogo variant="light" size={28} />
         </Link>
         <div className="flex items-center gap-4">
-          <Link to="/blog" className="text-xs font-bold text-slate-500 hover:text-white uppercase tracking-wider transition-colors hidden md:flex items-center gap-1.5">
+          <Link to="/blog" className="text-xs font-bold text-slate-400 hover:text-slate-900 uppercase tracking-wider transition-colors hidden md:flex items-center gap-1.5">
             <ArrowLeft className="w-3 h-3" /> All Articles
           </Link>
           <Link
             to="/login"
-            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-caption transition-colors shadow-lg shadow-blue-500/20"
+            className="px-5 py-2.5 bg-[#00d09c] hover:bg-[#00bda0] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#00d09c]/15"
           >
-            Launch Terminal
+            Sign In
           </Link>
         </div>
       </nav>
@@ -258,39 +252,39 @@ const BlogArticlePage: React.FC = () => {
       </div>
 
       {/* Article Header */}
-      <header className="py-16 px-6 md:px-10 max-w-[780px] mx-auto">
-        <Link to="/blog" className="inline-flex items-center gap-2 text-caption text-slate-500 hover:text-blue-400 uppercase tracking-wider transition-colors mb-8">
+      <header className="py-12 px-6 md:px-10 max-w-[780px] mx-auto w-full">
+        <Link to="/blog" className="inline-flex items-center gap-2 text-caption text-slate-400 hover:text-[#00d09c] uppercase tracking-wider transition-colors mb-6">
           <ArrowLeft className="w-3 h-3" /> Back to Blog
         </Link>
         <div className="flex items-center gap-3 mb-6">
-          <span className={`px-3 py-1 rounded-full border text-caption ${article.tagColor}`}>
+          <span className="px-3 py-1 rounded-full border border-[#00d09c]/20 bg-[#00d09c]/10 text-xs font-bold text-[#00d09c]">
             {article.tag}
           </span>
-          <span className="flex items-center gap-1.5 text-caption text-slate-500 uppercase tracking-wider">
-            <Clock className="w-3 h-3" />{article.readTime}
+          <span className="flex items-center gap-1.5 text-xs text-slate-400 uppercase tracking-wider font-semibold">
+            <Clock className="w-3.5 h-3.5 text-slate-300" />{article.readTime}
           </span>
-          <span className="text-caption text-slate-600 uppercase tracking-wider">{article.date}</span>
+          <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">{article.date}</span>
         </div>
-        <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight mb-6">
+        <h1 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 leading-tight mb-6">
           {article.title}
         </h1>
-        <p className="text-slate-500 text-sm leading-relaxed border-t border-slate-800 pt-6">
-          MarketBeacon Pro Research Team · Published for educational and informational purposes. Not investment advice.
+        <p className="text-slate-400 text-xs font-semibold leading-relaxed border-t border-slate-100 pt-6 uppercase tracking-wider">
+          MarketBeacon Pro Research Team · Published for educational purposes. Not investment advice.
         </p>
       </header>
 
       {/* Article Body */}
-      <main className="px-6 md:px-10 max-w-[780px] mx-auto pb-16">
+      <main className="px-6 md:px-10 max-w-[780px] mx-auto pb-16 w-full flex-1">
         <div className="space-y-10">
           {(article.sections || []).map((section: any, i: number) => (
             <div key={i} className="space-y-4">
               {section.heading && (
-                <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">
+                <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
                   {section.heading}
                 </h2>
               )}
               {(section.body || '').split('\n\n').map((para: string, j: number) => (
-                <p key={j} className="text-slate-300 text-base leading-[1.8] whitespace-pre-line">
+                <p key={j} className="text-slate-600 text-base leading-[1.8] whitespace-pre-line font-medium">
                   {para}
                 </p>
               ))}
@@ -299,15 +293,15 @@ const BlogArticlePage: React.FC = () => {
         </div>
 
         {/* Key Takeaways */}
-        <div className="mt-12 bg-blue-500/5 border border-blue-500/20 rounded-[2rem] p-8">
-          <h3 className="text-xs font-bold text-blue-400 uppercase tracking-[0.3em] mb-5">Key Takeaways</h3>
+        <div className="mt-12 bg-[#00d09c]/5 border border-[#00d09c]/20 rounded-[2rem] p-8">
+          <h3 className="text-xs font-bold text-[#00d09c] uppercase tracking-[0.3em] mb-5">Key Takeaways</h3>
           <ul className="space-y-3">
             {(article.keyTakeaways || []).map((point: string, i: number) => (
               <li key={i} className="flex items-start gap-3">
-                <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <ShieldCheck className="w-3 h-3 text-blue-400" />
+                <div className="w-5 h-5 rounded-full bg-[#00d09c]/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#00d09c]" />
                 </div>
-                <span className="text-sm text-slate-300 leading-relaxed">{point}</span>
+                <span className="text-sm text-slate-600 leading-relaxed font-semibold">{point}</span>
               </li>
             ))}
           </ul>
@@ -315,31 +309,37 @@ const BlogArticlePage: React.FC = () => {
 
         {/* Related Article */}
         <div className="mt-10">
-          <p className="text-caption text-slate-500 uppercase tracking-[0.3em] mb-4">Read Next</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mb-4">Read Next</p>
           <Link
             to={`/blog/${article.relatedSlug}`}
-            className="group flex items-center justify-between bg-slate-900/50 border border-slate-800 rounded-[1.5rem] p-6 hover:border-slate-600 transition-all"
+            className="group flex items-center justify-between bg-slate-50 border border-slate-100 rounded-[1.5rem] p-6 hover:border-[#00d09c]/30 hover:shadow-sm transition-all"
           >
-            <span className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">{article.relatedTitle}</span>
-            <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+            <span className="text-sm font-bold text-slate-800 group-hover:text-[#00d09c] transition-colors">{article.relatedTitle}</span>
+            <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-[#00d09c] group-hover:translate-x-1 transition-all" />
           </Link>
         </div>
+
+        {/* Newsletter Capture */}
+        <section className="px-6 md:px-10 max-w-[780px] mx-auto my-8">
+          <NewsletterCapture segment="blog_article" />
+        </section>
+
       </main>
 
       {/* CTA */}
-      <section className="border-t border-slate-800 py-16 px-6 text-center bg-slate-900/30">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.4em] mb-4">Apply This Knowledge</p>
-        <h3 className="text-2xl md:text-4xl font-black text-white tracking-tighter mb-3">
-          Start Using the System. <span className="text-blue-400">Free.</span>
+      <section className="border-t border-slate-100 py-16 px-6 text-center bg-slate-50">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.4em] mb-4">Apply This Knowledge</p>
+        <h3 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tighter mb-3">
+          Start Using the System. <span className="text-[#00d09c]">Free.</span>
         </h3>
-        <p className="text-slate-500 text-sm mb-8 max-w-md mx-auto">
+        <p className="text-slate-500 text-sm mb-8 max-w-md mx-auto font-medium">
           Live ABCD zones, 100-point audit scores, and smart money tracking &mdash; all in one terminal.
         </p>
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-bold uppercase tracking-wider text-sm hover:scale-105 transition-all shadow-xl shadow-blue-900/30 shadow-lg shadow-blue-500/20"
+          className="inline-flex items-center gap-2 px-10 py-4 bg-[#00d09c] hover:bg-[#00bda0] text-white rounded-2xl font-bold uppercase tracking-wider text-xs hover:scale-105 transition-all shadow-md shadow-[#00d09c]/20"
         >
-          Launch Terminal Free <ArrowRight className="w-4 h-4" />
+          Sign In <ArrowRight className="w-4 h-4" />
         </Link>
       </section>
       <SiteFooter />
