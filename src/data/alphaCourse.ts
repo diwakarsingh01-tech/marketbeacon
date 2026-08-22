@@ -116,7 +116,7 @@ export const alphaCourseModules: Module[] = [
           { step: 'Advanced SMA', heading: '20/50/200 — "Dead Cross Pe Buy"', body: 'Duniya ka theory (galat): golden cross = buy, dead cross = sell. Hemant ka ulta (sahi): Dead cross pe buy karo, golden cross pe sell karo — "jo 99% kar rahe hain usse paisa nahi banega; uske bilkul opposite se banega." BUY condition: order Price > Black(20) > Green(50) > Red(200). Indicator: "Simple Moving Averages" by AYIEJ (free). Envelope signals superior hain (27%/26%/25% vs SMA 18%/14%/8%). Price black se thoda upar par green/red ke kaafi neeche → still buy (V-type recovery).' },
           { step: 'Module 4 Golden Rules', heading: 'The Discipline Rules', body: 'Width ≥ 35% valid. Orange ke neeche bechna paap hai. 25% se kam return pe booking nahi. Dead cross pe buy, golden cross pe sell. 20% gain tak daily chart mat dekho — alert lagao. Always daily timeframe (1 candle = 1 din). Fundamentals hamesha check karo. Trailing stop loss: position 5-10% margin pe gir jaye to exit. Strong resistance ho to 70-80% sell wahan. Mean of your decisions hamesha positive.' }
         ],
-        coachNote: 'Advanced strategies reward patience and contrarian discipline. News ignore karo — tabhi paisa banega (1000% guaranteed). Market top pe golden cross ki news aati hai, neeche dead cross ki. Tumhe apna khud ka signal follow karna hai.',
+        coachNote: 'Advanced strategies reward patience and contrarian discipline. News ignore karo — apna analysis khud karo. Market top pe golden cross ki news aati hai, neeche dead cross ki. Tumhe apna khud ka signal follow karna hai.',
         tryIt: null
       },
       {

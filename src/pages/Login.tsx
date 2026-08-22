@@ -249,7 +249,11 @@ const MarketCanvas: React.FC = () => {
 };
 
 // ─── Dev Login ─────────────────────────────────────────────────────────────
+// Local-only convenience. Requires DEV_LOGIN_SECRET (set in backend/.env) on the server.
+// No credentials are hardcoded in the client bundle.
 const DevLoginForm: React.FC<{ onLogin: (token: string) => void; setError: (err: string | null) => void }> = ({ onLogin, setError }) => {
+  const [devEmail, setDevEmail] = useState('');
+  const [devSecret, setDevSecret] = useState('');
   const handleDevLogin = async () => {
     try {
       setError(null);
@@ -257,7 +261,7 @@ const DevLoginForm: React.FC<{ onLogin: (token: string) => void; setError: (err:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email: 'diwakar.singh01@gmail.com', secret: 'marketbeacon_dev_secret_2026' }),
+        body: JSON.stringify({ email: devEmail, secret: devSecret }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Login failed'); return; }
@@ -269,9 +273,23 @@ const DevLoginForm: React.FC<{ onLogin: (token: string) => void; setError: (err:
   return (
     <div className="space-y-2">
       <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider text-center">Dev Login (Local Only)</p>
+      <input
+        type="email"
+        value={devEmail}
+        onChange={(e) => setDevEmail(e.target.value)}
+        placeholder="Dev email"
+        className="w-full px-3 py-2 bg-white/60 border border-amber-200 rounded-xl text-xs text-amber-800 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+      />
+      <input
+        type="password"
+        value={devSecret}
+        onChange={(e) => setDevSecret(e.target.value)}
+        placeholder="DEV_LOGIN_SECRET"
+        className="w-full px-3 py-2 bg-white/60 border border-amber-200 rounded-xl text-xs text-amber-800 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+      />
       <button onClick={handleDevLogin}
         className="w-full px-4 py-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2">
-        <Bug className="h-3.5 w-3.5" /> Login as diwakar.singh01@gmail.com
+        <Bug className="h-3.5 w-3.5" /> Dev Login
       </button>
     </div>
   );

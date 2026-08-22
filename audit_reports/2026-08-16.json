@@ -1,0 +1,197 @@
+{
+  "date": "2026-08-16",
+  "startedAt": "2026-08-16T20:00:00.086Z",
+  "completedAt": "2026-08-16T20:00:11.479Z",
+  "status": "CRITICAL",
+  "summary": {
+    "totalChecks": 17,
+    "passedChecks": 8,
+    "failedChecks": 7,
+    "autoFixed": 2,
+    "manualRequired": 7,
+    "entries": [],
+    "exits": [],
+    "strategyCounts": [],
+    "status": "CRITICAL"
+  },
+  "checks": [
+    {
+      "id": "ST-1",
+      "category": "structural",
+      "name": "Alpha-40 cache file exists",
+      "severity": "critical",
+      "status": "fixed",
+      "details": "Missing at /Users/diwakarsingh/marketbeacon/alpha_40_results.json",
+      "autoFixable": true,
+      "autoFixed": true,
+      "fixDetails": "Auto-fix applied successfully"
+    },
+    {
+      "id": "ST-3",
+      "category": "structural",
+      "name": "Market snapshot file exists",
+      "severity": "critical",
+      "status": "pass",
+      "details": "Found market_snapshot.json",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "ST-5",
+      "category": "structural",
+      "name": "Audit reports directory writable",
+      "severity": "high",
+      "status": "pass",
+      "details": "/Users/diwakarsingh/marketbeacon/audit_reports",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "ST-6",
+      "category": "structural",
+      "name": "Snapshots directory writable",
+      "severity": "high",
+      "status": "pass",
+      "details": "/Users/diwakarsingh/marketbeacon/audit_reports/snapshots",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "DQ-SKIP",
+      "category": "data_quality",
+      "name": "No active signals to check",
+      "severity": "low",
+      "status": "skipped",
+      "details": "Alpha-40 cache has 0 active signals",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SDQ-1",
+      "category": "data_quality",
+      "name": "No stale snapshots (>7 days)",
+      "severity": "high",
+      "status": "fail",
+      "details": "349 stale: 3MINDIA, ABB, ABBOTINDIA, ACC, ADANIENT, ADANIPORTS, ADVENZYMES, AIAENG, AJANTPHARM, ALKEM, AMBUJACEM, ANGELONE …(+337 more)",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SDQ-2",
+      "category": "data_quality",
+      "name": "No missing fundamental data",
+      "severity": "critical",
+      "status": "fail",
+      "details": "25 stocks missing sales/profit (fail-open risk): ABBOTINDIA, ASTRAZEN, BANDHANBNK, BDL, CASTROLIND, CUB, DCBBANK, GILLETTE, GRSE, HEIDELBERG, HONAUT, ICICIGI …(+13 more)",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SDQ-3",
+      "category": "data_quality",
+      "name": "No partial screener scrapes",
+      "severity": "high",
+      "status": "fail",
+      "details": "57 partial scrapes (quarterly/epsHistory empty): ABBOTINDIA, ANGELONE, ASTRAZEN, AUBANK, BAJAJ-AUTO, BALRAMCHIN, BANDHANBNK, BATAINDIA, BDL, CAMS, CASTROLIND, CENTURYPLY …(+45 more)",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SDQ-4",
+      "category": "data_quality",
+      "name": "No insufficient price history",
+      "severity": "high",
+      "status": "fail",
+      "details": "2 symbols < 200 bars (patterns blocked): GSPL, TMCV",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SDQ-5",
+      "category": "data_quality",
+      "name": "All basket members present in snapshot",
+      "severity": "critical",
+      "status": "fail",
+      "details": "2 basket symbols missing from snapshot: JCHAC, TATAMOTORS",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "SDQ-6",
+      "category": "data_quality",
+      "name": "No SIXTY_SEVEN signals without fundamentals",
+      "severity": "critical",
+      "status": "pass",
+      "details": "No SIXTY_SEVEN_FUNDA buyZone signals stored without fundamental data",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "SL-SKIP",
+      "category": "strategy",
+      "name": "No signals to audit",
+      "severity": "low",
+      "status": "skipped",
+      "details": "0 active signals",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "BM-1",
+      "category": "basket",
+      "name": "Elite Basket symbols in snapshot",
+      "severity": "critical",
+      "status": "pass",
+      "details": "All Elite symbols present",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "BM-2",
+      "category": "basket",
+      "name": "Quality Basket symbols in snapshot",
+      "severity": "critical",
+      "status": "fixed",
+      "details": "1 missing: JCHAC",
+      "autoFixable": true,
+      "autoFixed": true,
+      "fixDetails": "Auto-fix applied successfully"
+    },
+    {
+      "id": "BM-3",
+      "category": "basket",
+      "name": "Snapshot size sanity",
+      "severity": "medium",
+      "status": "pass",
+      "details": "349 symbols in snapshot (expected ≥200)",
+      "autoFixable": true,
+      "autoFixed": false
+    },
+    {
+      "id": "BM-5",
+      "category": "basket",
+      "name": "Previous day snapshot",
+      "severity": "high",
+      "status": "fail",
+      "details": "Missing 2026-08-15.json (first run?)",
+      "autoFixable": false,
+      "autoFixed": false
+    },
+    {
+      "id": "TG-1",
+      "category": "notification",
+      "name": "Telegram admin alert delivered",
+      "severity": "high",
+      "status": "fail",
+      "details": "Telegram send failed — check TELEGRAM_CHAT_ID / TELEGRAM_CHANNEL in .env",
+      "autoFixable": false,
+      "autoFixed": false
+    }
+  ],
+  "changes": [],
+  "snapshotsCompared": {
+    "today": "2026-08-16",
+    "yesterday": "2026-08-15"
+  },
+  "raw": {}
+}

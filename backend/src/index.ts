@@ -721,18 +721,23 @@ app.post('/api/auth/google/callback', async (req, res) => {
   }
 });
 
-// Dev-only login bypass — available when NODE_ENV !== 'production'
+// Dev-only login bypass — requires DEV_LOGIN_SECRET; only active when NODE_ENV !== 'production'.
 app.all('/api/dev/login', async (req, res) => {
   try {
     if (process.env.NODE_ENV === 'production') return res.status(403).json({ error: 'Not available in production' });
-    const email = req.body?.email || (req.query?.email as string) || 'diwakar.singh01@gmail.com';
+    const expectedSecret = process.env.DEV_LOGIN_SECRET;
+    const secret = (req.body && (req.body as any).secret) || (req.query && (req.query as any).secret as string);
+    if (!expectedSecret || secret !== expectedSecret) {
+      return res.status(403).json({ error: 'Dev login requires DEV_LOGIN_SECRET' });
+    }
+    const email = (req.body && (req.body as any).email) || (req.query && (req.query as any).email as string);
     if (!email) return res.status(400).json({ error: 'Email required' });
     const db = getDB();
     let user = await db.get('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
     if (!user) {
-      const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
-      const result = await db.run('INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)', [email.split('@')[0], email.toLowerCase(), 'DEV_BYPASS', isAdmin ? 'admin' : 'user', isAdmin ? 'alpha' : 'pro']);
-      user = { id: result.lastID, email: email.toLowerCase(), role: isAdmin ? 'admin' : 'user', tier: isAdmin ? 'alpha' : 'pro' };
+      // Provisioned behind the dev secret as admin — local-dev convenience only, never in production.
+      const result = await db.run('INSERT INTO users (name, email, password, role, tier) VALUES (?, ?, ?, ?, ?)', [email.split('@')[0], email.toLowerCase(), 'DEV_BYPASS', 'admin', 'alpha']);
+      user = { id: result.lastID, email: email.toLowerCase(), role: 'admin', tier: 'alpha' };
     }
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     setAuthCookie(res, token);
@@ -743,6 +748,25 @@ app.all('/api/dev/login', async (req, res) => {
       res.json({ token, user });
     }
   } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// Public contact-form intake (no auth). Persists leads to the contacts table.
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body || {};
+    if (!name || !email || !message) return res.status(400).json({ error: 'Name, email and message are required' });
+    const db = getDB();
+    await db.run(
+      "CREATE TABLE IF NOT EXISTS contacts (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT, subject TEXT, message TEXT, created_at TEXT DEFAULT (datetime('now')))"
+    );
+    await db.run(
+      'INSERT INTO contacts (name, email, subject, message) VALUES (?, ?, ?, ?)',
+      [String(name), String(email), subject ? String(subject) : '', String(message)]
+    );
+    res.json({ ok: true, message: 'Message received' });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Failed to submit contact form' });
+  }
 });
 
 app.get('/api/backtest/audit', authenticateToken, async (req: any, res: any) => {
@@ -1681,9 +1705,10 @@ app.post('/api/auth/register', async (req, res) => {
     if (existing) return res.status(400).json({ error: 'Email already registered' });
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
-    const role = isAdmin ? 'admin' : 'user';
-    const tier = isAdmin ? 'alpha' : 'free';
+    // Self-registration always provisions a standard user. Admin/alpha access must be
+    // granted by an authenticated admin (or via a signed invite), never derived from the email.
+    const role = 'user';
+    const tier = 'free';
 
     const result = await db.run(
       'INSERT INTO users (name, email, password, role, tier, is_active) VALUES (?, ?, ?, ?, ?, ?)',
@@ -1729,7 +1754,12 @@ app.post('/api/auth/login', async (req, res) => {
       }
     }
     
-    const isValid = isAdmin && user.password === 'GOOGLE' ? true : await bcrypt.compare(password, user.password);
+    // Verify credentials via bcrypt only for accounts with a real bcrypt password.
+    // Non-bcrypt accounts (GOOGLE OAuth, DEV_BYPASS, etc.) must use their proper
+    // sign-in method and can no longer bypass password verification.
+    const isValid = typeof user.password === 'string' && user.password.startsWith('$2')
+      ? await bcrypt.compare(password, user.password)
+      : false;
     console.log(`ℹ️ [LOGIN-CHECK] Found user. ID: ${user.id}, Role: ${user.role}, IsAdmin: ${isAdmin}, passwordType: ${user.password.substring(0,10)}..., isValid: ${isValid}`);
     
     if (!isValid) {
