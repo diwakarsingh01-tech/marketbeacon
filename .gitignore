@@ -36,3 +36,8 @@ backend/marketbeacon.db-wal
 
 # Generated market snapshot — exceeds GitHub 100MB limit, keep local-only
 market_snapshot.json
+linkedin_workflow_export.json
+linkedin_workflow_modified.json
+blog_workflow_export.json
+blog_workflow_modified.json
+n8n-workflow-auto-blog.json
