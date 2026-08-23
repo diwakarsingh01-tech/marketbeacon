@@ -44,6 +44,8 @@ const TermsOfServicePage = lazy(() => import('./pages/TermsOfService'));
 const DisclaimerPage = lazy(() => import('./pages/Disclaimer'));
 const AboutPage = lazy(() => import('./pages/About'));
 const ContactPage = lazy(() => import('./pages/Contact'));
+const SwingCoursePage = lazy(() => import('./pages/SwingCoursePage'));
+const SwingCourseWelcome = lazy(() => import('./pages/SwingCourseWelcome'));
 const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallback'));
 
 // Docs pages (lazy loaded)
@@ -97,6 +99,8 @@ function AnimatedRoutes() {
           <Route path="/disclaimer" element={<DisclaimerPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/course/swing" element={<SwingCoursePage />} />
+          <Route path="/course/swing/welcome" element={<SwingCourseWelcome />} />
           <Route path="/guide" element={<GuidePage />} />
           <Route path="/marketplace" element={<Navigate to="/license-desk" replace />} />
         </Route>

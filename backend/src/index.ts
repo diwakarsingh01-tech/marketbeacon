@@ -27,6 +27,7 @@ import { NIFTY_500 } from './universe.js';
 import { validateBatch9 } from './services/fundamentalAudit.js';
 import { runStrategyAnalysis } from './services/strategyService.js';
 import { precalculateAlpha40, getAlpha40Cache } from './services/worker.js';
+import paymentRouter from './routes/payment.js';
 import { calculateABCDLevels } from './strategies/index.js';
 import { initDB, getDB } from './db.js';
 import { notifyAdmins } from './services/notificationService.js';
@@ -103,6 +104,9 @@ const generalLimiter = rateLimit({
 });
 app.use('/api/auth/', authLimiter);
 app.use('/api/', generalLimiter);
+
+// ── Razorpay payment (subscriptions + one-time course) ──
+app.use('/api/payment', paymentRouter);
 
 // --- CONSTANTS ---
 export const MANUAL_SECTOR_MAP: Record<string, string> = {

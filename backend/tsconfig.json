@@ -16,5 +16,5 @@
     "exactOptionalPropertyTypes": false
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "src/tests/**/*"]
+  "exclude": ["node_modules", "dist", "src/tests/**/*", "src/test_*.ts", "src/update_wealth.ts", "src/verify_api.ts"]
 }

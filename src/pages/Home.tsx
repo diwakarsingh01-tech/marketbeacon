@@ -22,6 +22,7 @@ import FAQSection from '../components/landing/FAQSection';
 import CTABanner from '../components/landing/CTABanner';
 import BlogTeaser from '../components/landing/BlogTeaser';
 import CourseFramework from '../components/landing/CourseFramework';
+import SwingCourseRegister from '../components/landing/SwingCourseRegister';
 import { useVoucherRedeem } from '../hooks/useVoucherRedeem';
 
 const API_URL = getApiUrl();
@@ -917,6 +918,8 @@ const HomePage: React.FC = () => {
       </section>
 
       <FAQSection openFaq={openFaq} setOpenFaq={setOpenFaq} />
+
+      <SwingCourseRegister />
 
       <CTABanner />
 

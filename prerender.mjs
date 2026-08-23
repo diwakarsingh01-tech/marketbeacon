@@ -29,6 +29,9 @@ const staticRoutes = [
   { path: "/privacy-policy", title: "Privacy Policy — MarketBeacon Pro",                      desc: "MarketBeacon Pro privacy policy. Learn how we collect, use, and protect your data." },
   { path: "/terms",       title: "Terms of Service — MarketBeacon Pro",                       desc: "MarketBeacon Pro terms of service governing use of our stock research platform." },
   { path: "/disclaimer",  title: "Disclaimer — SEBI & Risk Disclosure — MarketBeacon Pro",    desc: "Important regulatory and risk disclosures. MarketBeacon Pro is not SEBI-registered investment advice." },
+  { path: "/course/swing",   title: "Swing Trading Course — MarketBeacon Swing System",  desc: "Learn the repeatable swing-trading system: Envelope 200 EMA, ABCD ladder, Cup & Handle, 67-point fundamental audit. Educational, not advice." },
+  { path: "/course/swing/welcome", title: "Welcome — MarketBeacon Swing System",          desc: "Your Swing Trading Course is unlocked. Lifetime access." },
+
   { path: "/",           title: "Institutional Stock Audit Score",                          desc: "India #1 Institutional Audit Score for Nifty 500 stocks. ABCD Tranche Logic, FII DII trends and real-time screening." },
   { path: "/login",      title: "Login - MarketBeacon Pro",                                 desc: "Sign in to access your institutional stock audit dashboard and ABCD Tranche analysis tools." },
   { path: "/pricing",    title: "Pricing - MarketBeacon Pro",                               desc: "Choose your plan. Free trial available for retail traders. Pro access for sub-brokers and HNIs." },
