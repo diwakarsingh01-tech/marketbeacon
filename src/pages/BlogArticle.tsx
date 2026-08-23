@@ -11,30 +11,6 @@ import { getApiUrl } from '../lib/api-utils';
 // ── Fallback Articles (used when API is unavailable, e.g. prerendering) ──
 
 const FALLBACK_ARTICLES: Record<string, any> = {
-  'abcd-tranche-laddering-guide': {
-    title: "What is ABCD Tranche Laddering? A Beginner's Guide for Indian Traders",
-    metaDescription: "Learn ABCD Tranche Laddering — the institutional method to split stock purchases into 4 systematic tranches. Used by FII/DII desks in India. Free guide for retail traders.",
-    tag: 'Strategy',
-    tagColor: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-    readTime: '6 min read',
-    date: 'Jun 06, 2026',
-    sections: [
-      { heading: "The Problem With How Most Retail Traders Buy Stocks", body: "Most retail traders do the same thing: they see a stock they like, check the price, and buy 100% of their intended position in one go. It feels decisive. It feels efficient. But it's one of the biggest reasons retail traders underperform institutions consistently.\n\nWhen you allocate 100% of your capital at a single price point, you have zero buffer. If the market drops 8-10% after your purchase (which it often does — even in good stocks), you're sitting on a drawdown with no buying power left. You either panic-sell at a loss, or you hold and hope — neither of which is a strategy." },
-      { heading: "What Is ABCD Tranche Laddering?", body: "ABCD Tranche Laddering is a capital deployment method where instead of buying 100% of your intended position at one price, you divide it into four tranches — A, B, C, and D — each triggered at a different price level.\n\nThis is not a new idea. It's how Foreign Institutional Investors (FIIs) and Domestic Institutional Investors (DIIs) have been building positions in Indian equities for decades. The difference is that they do it systematically, with pre-defined triggers. Retail traders do it randomly, emotionally, or not at all." },
-      { heading: "How Each Tranche Works", body: "Stage A (25% Allocation): You establish your initial position at the current price when the stock clears the audit criteria. You're not going all-in — you're testing the thesis.\n\nStage B (25% Allocation): The market pulls back 8-12% from your Stage A entry. This is where most retail traders panic-sell. You buy more, lowering your average cost. Your total allocation is now 50%.\n\nStage C (35% Allocation): A deeper pullback — the stock has now corrected 15-20% from Stage A. This is the \"value floor\" — the historical level where institutional buyers tend to step in aggressively. Your heaviest allocation goes here.\n\nStage D (Exit): The stock recovers and moves toward its target price. You've built a position at an average cost well below Stage D — making the upside significantly larger than if you'd bought everything at Stage A." },
-      { heading: "Why Does This Work? The Math Behind It", body: "Let's say a stock is at \u20B91000. You want to invest \u20B91,00,000.\n\nRetail approach: Buy \u20B91,00,000 worth at \u20B91000. Stock drops to \u20B9800. You're down 20%.\n\nABCD Tranche approach:\n- Stage A: \u20B925,000 at \u20B91000 (25 shares)\n- Stage B: \u20B925,000 at \u20B9900 (27.7 shares)\n- Stage C: \u20B950,000 at \u20B9820 (60.9 shares)\n- Average cost: ~\u20B9870 per share (113.6 shares total)\n\nWhen the stock recovers to \u20B91000, the retail buyer is at breakeven. The tranche buyer is already up 15%. At a 20% target (\u20B91200), the retail buyer makes 20%. The tranche buyer makes 38% — on the same stock, with the same \u20B91,00,000." },
-      { heading: "How MarketBeacon Pro Implements This", body: "MarketBeacon Pro's ABCD Ladder strategy automatically calculates the A, B, C, and D price zones for every qualified stock based on its historical volatility, support levels, and institutional demand floors. You don't need to manually calculate anything.\n\nThe screener shows you stocks that are currently in Stage A (fresh entry), Stage B (pullback opportunity), or Stage C (deep value floor) — so you always know where you are in the tranche cycle." }
-    ],
-    keyTakeaways: [
-      "Never allocate 100% at one price — split into 4 tranches (A, B, C, D)",
-      "Stage C (the deepest pullback) should get your heaviest allocation (35%)",
-      "Tranche buyers consistently achieve 15-20% better average costs than single-entry buyers",
-      "MarketBeacon Pro automatically calculates ABCD zones for 500+ stocks",
-      "This is the same method FII/DII desks use to build institutional positions"
-    ],
-    relatedSlug: 'how-to-trade-like-fii-dii-india',
-    relatedTitle: 'How to Trade Like FII/DII in India',
-  },
   'what-is-sebi-compliant-stock-screener': {
     title: "What Should a Responsible Stock Research Tool Look Like? A SEBI Framework Guide",
     metaDescription: "Learn what SEBI regulations say about stock screeners and research tools in India. Understand the difference between investment advisers, research analysts, and educational research tools like MarketBeacon Pro.",
