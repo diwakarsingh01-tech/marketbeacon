@@ -134,6 +134,33 @@ const FAQS = [
   { q: 'What is the refund policy?', a: 'Course access is digital. Review the free preview content first. Reach out within 7 days for any concern.' },
 ];
 
+// ---------- Animated candlestick chart background (market-themed) ----------
+const CHART_CANDLES = (() => {
+  const data: any[] = [];
+  let price = 210;
+  for (let i = 0; i < 44; i++) {
+    const up = Math.random() > 0.42;
+    const move = (Math.random() * 16 + 4) * (up ? 1 : -1);
+    const open = price;
+    const close = price + move;
+    const high = Math.max(open, close) + Math.random() * 6;
+    const low = Math.min(open, close) - Math.random() * 6;
+    data.push({ x: i * 33 + 16, up, open, close, high, low });
+    price = close;
+  }
+  const min = Math.min(...data.map(d => d.low));
+  const max = Math.max(...data.map(d => d.high));
+  const range = (max - min) || 1;
+  const y = (v: number) => 392 - ((v - min) / range) * 360;
+  return data.map(d => ({
+    x: d.x, w: 11, up: d.up,
+    bodyTop: y(Math.max(d.open, d.close)),
+    bodyH: Math.max(2, Math.abs(y(d.open) - y(d.close))),
+    wickTop: y(d.high), wickBottom: y(d.low),
+    closeY: y(d.close),
+  }));
+})();
+
 const SwingCoursePage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -164,6 +191,43 @@ const SwingCoursePage: React.FC = () => {
       .then(r => r.ok ? r.json() : null)
       .then(d => setIndices(d?.results || []))
       .catch(() => {});
+  }, []);
+
+  // Scroll-reveal: sections animate in page-by-page as user scrolls
+  useEffect(() => {
+    const els = document.querySelectorAll<HTMLElement>('.course-light > section, .course-light > header');
+    if (!els.length) return;
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('reveal-in');
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+    els.forEach(el => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+
+  // 3D mouse tilt on interactive cards (real perspective per cursor position)
+  useEffect(() => {
+    const cards = document.querySelectorAll<HTMLElement>('.course-light .tilt-card');
+    if (!cards.length) return;
+    const onMove = (e: MouseEvent) => {
+      const card = e.currentTarget as HTMLElement;
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      card.style.transform = `perspective(1100px) rotateY(${px * 14}deg) rotateX(${py * -12}deg) translateY(-6px)`;
+    };
+    const onLeave = (e: MouseEvent) => {
+      const card = e.currentTarget as HTMLElement;
+      card.style.transform = '';
+    };
+    cards.forEach(c => { c.addEventListener('mousemove', onMove); c.addEventListener('mouseleave', onLeave); });
+    return () => {
+      cards.forEach(c => { c.removeEventListener('mousemove', onMove); c.removeEventListener('mouseleave', onLeave); });
+    };
   }, []);
 
   const handleBuy = async () => {
@@ -216,7 +280,7 @@ const SwingCoursePage: React.FC = () => {
         url="/course/swing"
       />
 
-      {/* Animated light background: moving gradient + floating candles + soft orbs */}
+      {/* Animated light background: moving gradient + candlestick chart + floating candles + soft orbs */}
       <div className="fixed inset-0 pointer-events-none z-0" aria-hidden>
         <div className="absolute inset-0 animated-bg" />
         <div className="absolute inset-0 bg-grid-light opacity-50" />
@@ -224,6 +288,22 @@ const SwingCoursePage: React.FC = () => {
         <div className="absolute bottom-[-20%] right-[-10%] w-[45rem] h-[45rem] rounded-full bg-indigo-300/30 blur-[140px] animate-orb-2" />
         <div className="absolute top-1/3 right-1/4 w-64 h-64 rounded-full bg-emerald-300/20 blur-[100px] animate-orb-3" />
         <div className="absolute top-2/3 left-1/5 w-72 h-72 rounded-full bg-amber-200/30 blur-[110px] animate-orb-1" />
+        {/* animated candlestick chart (market-themed) */}
+        <svg className="absolute bottom-0 left-0 w-full h-[46vh] opacity-25 chart-svg" viewBox="0 0 1460 400" preserveAspectRatio="none" aria-hidden>
+          <g className="chart-candles-group">
+            {CHART_CANDLES.map((c, i) => (
+              <g key={i} className="chart-candle" style={{ animationDelay: `${i * 0.09}s` }}>
+                <line x1={c.x} y1={c.wickTop} x2={c.x} y2={c.wickBottom}
+                  stroke={c.up ? '#059669' : '#e11d48'} strokeWidth="2" opacity="0.8" />
+                <rect x={c.x - c.w / 2} y={c.bodyTop} width={c.w} height={c.bodyH} rx="1.5"
+                  fill={c.up ? '#10b981' : '#f43f5e'} opacity="0.85" />
+              </g>
+            ))}
+          </g>
+          <polyline className="chart-line" fill="none" stroke="#3b82f6" strokeWidth="2.5"
+            strokeLinecap="round" strokeLinejoin="round"
+            points={CHART_CANDLES.map(c => `${c.x},${c.closeY}`).join(' ')} />
+        </svg>
         {/* floating candlesticks */}
         <div className="candles">
           {[...Array(16)].map((_, i) => (
@@ -748,12 +828,63 @@ const SwingCoursePage: React.FC = () => {
         }
 
         .perspective-1000 { perspective: 1200px; }
-        .tilt-card { transform-style: preserve-3d; will-change: transform; }
-        .tilt-card:hover { transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(-4px) scale(1.02); }
+        .tilt-card { transform-style: preserve-3d; will-change: transform; transition: transform 0.18s ease-out, box-shadow 0.3s ease, border-color 0.3s ease; }
+        .tilt-card:hover { box-shadow: 0 24px 48px rgba(148,163,184,0.4), 0 0 30px rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.35); }
+        .tilt-card .tilt-inner { transform: translateZ(24px); }
+
+        /* Scroll-reveal: page-by-page section entrance */
+        .course-light > section, .course-light > header {
+          opacity: 0;
+          transform: translateY(48px) scale(0.98);
+          transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1);
+        }
+        .course-light > section.reveal-in, .course-light > header.reveal-in {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        .course-light > section > * , .course-light > header > * {
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .course-light > section.reveal-in > *, .course-light > header.reveal-in > * {
+          opacity: 1;
+          transform: none;
+        }
+        /* staggered children pop */
+        .course-light > section.reveal-in .card-light,
+        .course-light > header.reveal-in .card-light {
+          animation: cardPop 0.7s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        .course-light > section.reveal-in .card-light:nth-child(1) { animation-delay: 0.08s; }
+        .course-light > section.reveal-in .card-light:nth-child(2) { animation-delay: 0.16s; }
+        .course-light > section.reveal-in .card-light:nth-child(3) { animation-delay: 0.24s; }
+        .course-light > section.reveal-in .card-light:nth-child(4) { animation-delay: 0.32s; }
+        .course-light > section.reveal-in .card-light:nth-child(5) { animation-delay: 0.4s; }
+        .course-light > section.reveal-in .card-light:nth-child(6) { animation-delay: 0.48s; }
+        @keyframes cardPop {
+          0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Candlestick chart background */
+        .chart-svg { overflow: visible; }
+        .chart-candle { transform-origin: center bottom; animation: candleDraw 0.7s ease-out both; }
+        @keyframes candleDraw {
+          0% { transform: scaleY(0); opacity: 0; }
+          60% { transform: scaleY(1.05); opacity: 1; }
+          100% { transform: scaleY(1); opacity: 1; }
+        }
+        .chart-line {
+          stroke-dasharray: 2400;
+          stroke-dashoffset: 2400;
+          animation: lineDraw 4.5s ease-in-out forwards;
+          filter: drop-shadow(0 2px 6px rgba(59,130,246,0.5));
+        }
+        @keyframes lineDraw { 0% { stroke-dashoffset: 2400; } 100% { stroke-dashoffset: 0; } }
 
         @media (prefers-reduced-motion: reduce) {
           .ticker-track, .candle, .animate-float, .animate-orb-1, .animate-orb-2, .animate-orb-3,
-          .animate-gradient-x, .animated-bg { animation: none !important; }
+          .animate-gradient-x, .animated-bg, .chart-candle, .chart-line,
+          .course-light > section, .course-light > header { animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }
           .tilt-card:hover { transform: none; }
         }
       `}</style>
