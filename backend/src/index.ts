@@ -28,6 +28,7 @@ import { notifyAdmins } from './services/notificationService.js';
 import { runHealthCheck, runAndNotifyHealthCheck } from './services/healthCheck.js';
 import { scheduleAuditCron } from './cron/auditScheduler.js';
 import { backtestAllStrategies, backtestStrategy } from './services/backtestEngine.js';
+import paymentRouter from './routes/payment.js';
 
 dotenv.config();
 
@@ -164,6 +165,9 @@ const getSnapshotFromCloud = async (symbols: string[]) => {
   });
   return result;
 };
+
+// ── Razorpay payment (subscriptions + one-time course) ──
+app.use('/api/payment', paymentRouter);
 
 app.get('/api/health', (req, res) => res.json({ 
   status: 'active', 

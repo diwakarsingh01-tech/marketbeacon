@@ -35,6 +35,9 @@ const routes = [
   { path: "/charts",     title: "Live Charts Terminal — Institutional Grade Charts & Analytics", desc: "Professional candlestick charts with FII/DII overlays, ABCD tranche levels, and 50+ technical indicators." },
 
 
+  { path: "/course/swing",   title: "Swing Trading Course — MarketBeacon Swing System",  desc: "Learn the repeatable swing-trading system: Envelope 200 EMA, ABCD ladder, Cup & Handle, 67-point fundamental audit. Educational, not advice." },
+  { path: "/course/swing/welcome", title: "Welcome — MarketBeacon Swing System",          desc: "Your Swing Trading Course is unlocked. Lifetime access." },
+
   { path: "/",           title: "Institutional Stock Audit Score",                          desc: "India #1 Institutional Audit Score for Nifty 500 stocks. ABCD Tranche Logic, FII DII trends and real-time screening." },
   { path: "/login",      title: "Login - MarketBeacon Pro",                                 desc: "Sign in to access your institutional stock audit dashboard and ABCD Tranche analysis tools." },
   { path: "/pricing",    title: "Pricing - MarketBeacon Pro",                               desc: "Choose your plan. Free trial available for retail traders. Pro access for sub-brokers and HNIs." },

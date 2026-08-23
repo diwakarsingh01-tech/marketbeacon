@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MarketBeacon Swing System — Complete Course</title>
+<style>
+  :root{
+    --bg:#0f172a; --bg2:#1e293b; --card:#1e293b; --border:#334155;
+    --txt:#e2e8f0; --mut:#94a3b8; --blue:#3b82f6; --blue2:#60a5fa;
+    --green:#10b981; --amber:#f59e0b; --rose:#f43f5e; --purple:#a855f7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,Segoe UI,Roboto,system-ui,sans-serif;background:var(--bg);color:var(--txt);line-height:1.7}
+  .wrap{max-width:920px;margin:0 auto;padding:24px}
+  header{text-align:center;padding:48px 24px;background:linear-gradient(135deg,#1e3a8a22,#7c3aed22);border-bottom:1px solid var(--border)}
+  h1{font-size:2.4rem;font-weight:900;letter-spacing:-.02em;background:linear-gradient(90deg,var(--blue2),#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent}
+  h2{font-size:1.7rem;font-weight:800;margin:40px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--blue)}
+  h3{font-size:1.25rem;font-weight:700;margin:24px 0 10px;color:var(--blue2)}
+  h4{font-size:1.05rem;font-weight:700;margin:16px 0 8px;color:var(--amber)}
+  p,li{margin:8px 0;color:var(--mut)}
+  .sub{color:var(--mut);font-size:1.05rem;margin-top:8px}
+  .badge{display:inline-block;background:#1e40af33;color:var(--blue2);padding:4px 12px;border-radius:999px;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .module{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin:20px 0}
+  .mod-num{display:inline-flex;width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--blue),var(--purple));align-items:center;justify-content:center;font-weight:900;margin-right:12px;vertical-align:middle}
+  .rule{background:#0c4a3522;border-left:4px solid var(--green);padding:12px 16px;border-radius:8px;margin:12px 0;color:#a7f3d0}
+  .note{background:#1e3a8a22;border-left:4px solid var(--blue);padding:12px 16px;border-radius:8px;margin:12px 0}
+  .calc{background:#42200622;border-left:4px solid var(--amber);padding:12px 16px;border-radius:8px;margin:12px 0;font-family:ui-monospace,Menlo,monospace;font-size:.92rem;color:#fde68a}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.9rem}
+  th,td{border:1px solid var(--border);padding:8px 10px;text-align:left;color:var(--mut)}
+  th{background:var(--bg2);color:var(--txt);font-weight:700}
+  .toc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
+  .toc a{color:var(--blue2);text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  .quiz{background:#312e8122;border:1px solid #4f46e5;border-radius:12px;padding:18px;margin:16px 0}
+  .quiz h4{color:#c4b5fd;margin-top:0}
+  .q{margin:12px 0;padding:10px;border:1px solid var(--border);border-radius:8px}
+  .ws{background:#064e3b22;border:1px solid #059669;border-radius:12px;padding:18px;margin:16px 0}
+  .ws h4{color:#6ee7b7;margin-top:0}
+  .pay{background:#7c3aed22;border:1px solid var(--purple);border-radius:12px;padding:14px;margin:14px 0;font-size:.85rem;color:#ddd6fe}
+  .foot{text-align:center;padding:32px;color:var(--mut);font-size:.8rem;border-top:1px solid var(--border);margin-top:40px}
+  .gold{background:linear-gradient(135deg,#f59e0b15,#f43f5e15);border:1px solid var(--amber);border-radius:12px;padding:16px;margin:16px 0}
+  .gold h3{color:var(--amber);margin-top:0}
+  code{background:#0b1220;padding:2px 6px;border-radius:4px;color:#93c5fd;font-size:.88rem}
+  .pill{display:inline-block;background:#334155;padding:2px 8px;border-radius:6px;font-size:.75rem;margin:2px}
+  ul{padding-left:22px}
+  @media(max-width:600px){h1{font-size:1.7rem}.wrap{padding:14px}}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="badge">MarketBeacon Swing System</span>
+  <h1 style="margin-top:16px">The Complete Swing Trading Course</h1>
+  <p class="sub">A repeatable, institutional-grade swing system — Envelope, ABCD ladder, 67-Point Fundamentals, S&amp;R, 20% Rally &amp; more. Educational only, not investment advice.</p>
+</header>
+
+<div class="wrap">
+
+<div class="toc">
+  <h3 style="margin-top:0">📚 Course Index (9 Modules)</h3>
+  <p><a href="#m1">M1 — Mindset, Market Reality &amp; Scam Protection</a><br/>
+  <a href="#m2">M2 — Stock Universe: Super 45 / Good 45 / Good 200</a><br/>
+  <a href="#m3">M3 — Envelope Strategies (Long / Short / 52-Week)</a><br/>
+  <a href="#m4">M4 — Advanced (Bollinger / Noxwell / SMA)</a><br/>
+  <a href="#m5">M5 — Good 200: S&amp;R + 20% Rally</a><br/>
+  <a href="#m6">M6 — Good 45: ABCD + Patterns + BCD</a><br/>
+  <a href="#m7">M7 — Fundamental Analysis (10-Point + 67-Funda)</a><br/>
+  <a href="#m8">M8 — Tools &amp; Execution (Tracker/Log/Screener/TV/GTT)</a><br/>
+  <a href="#m9">M9 — Option Selling Crash Course (Capital Efficiency)</a></p>
+  <p style="margin-top:12px"><a href="#rules">👑 Master Golden Rules</a> · <a href="#cheat">⚡ Cheat Sheet + Formula Bank</a> · <a href="#quiz">📝 Final Assessment</a></p>
+</div>
+
+<div class="gold">
+  <h3>⚠️ Educational Disclaimer</h3>
+  <p>MarketBeacon is an <strong>educational research platform</strong>. This course teaches a repeatable system — you make your own decisions. <strong>Not SEBI-registered investment advice.</strong> Past performance does not guarantee future results. Trade only with risk capital you can afford to lose.</p>
+</div>
+
+<!-- ================= M1 ================= -->
+<div class="module" id="m1">
+  <h2><span class="mod-num">1</span>Mindset, Market Reality &amp; Scam Protection</h2>
+
+  <h3>1.1 The 99% vs 1% Reality</h3>
+  <p>In the stock market, <strong>99% of people lose their hard-earned money</strong>; only ~1% consistently win. Three parties exist:</p>
+  <ul>
+    <li><strong>Retailers/Losers (99%)</strong> — give away earned savings</li>
+    <li><strong>Winners:</strong> Operators (move price with power) + Smart Money (businessman mindset — buy cheap, sell dear)</li>
+    <li><strong>Third Party:</strong> News channels, YouTube/Telegram "tip" scammers, panic retailers — they help operators profit</li>
+  </ul>
+
+  <h3>1.2 Realistic Expectations (MOST IMPORTANT)</h3>
+  <table>
+    <tr><th>Thing</th><th>Realistic Return</th><th>Verdict</th></tr>
+    <tr><td>Bank FD</td><td>5–6% / yr</td><td>Safe</td></tr>
+    <tr><td>Nifty 50 (long-term)</td><td>12–15% / yr</td><td>Normal</td></tr>
+    <tr><td>This Swing System</td><td><strong>25–30% CAGR TARGET</strong></td><td>Realistic goal</td></tr>
+    <tr><td>"Daily 5%" / "Monthly 20%"</td><td>Impossible (1.05¹²≈80%/yr)</td><td>SCAM</td></tr>
+  </table>
+  <div class="calc">Compounding math: 30% yearly → ~2.2x in 3 yrs → 4x in 6 → 8x in 9 → 16x in 12 → ~100x in 20 → ~500x in 30.</div>
+  <div class="rule">💡 GOLDEN: "If 80%/yr were possible, why would banks pay 5–6%? Are bankers fools? Unrealistic expectation = scam-bait."</div>
+
+  <h3>1.3 Value vs Momentum</h3>
+  <p>Trade <strong>value, not momentum</strong>. Buffett principle: "Buy when everyone is selling; sell when everyone is buying." "Buy high, sell higher / trend is your friend / ride the rising train" — all lies. The train only stops at the right station = the right price level.</p>
+
+  <h3>1.4 Operator vs Promoter</h3>
+  <ul>
+    <li><strong>Promoter</strong> = company owner (e.g. Ambani) — grows company profit</li>
+    <li><strong>Operator</strong> = manipulates share price (Harshad Mehta era) — can take ₹20 stock to ₹1000</li>
+    <li>Goldman Sachs = "official operator" — says "buy" at tops, "sell" at bottoms</li>
+  </ul>
+
+  <h3>1.5 News = Fraud (for trading)</h3>
+  <p>News channels are not your friends. 4 categories:</p>
+  <table>
+    <tr><th>Type</th><th>Action</th><th>Example</th></tr>
+    <tr><td>Fact (already happened)</td><td>Follow</td><td>"Reliance profit came"</td></tr>
+    <tr><td>Opinion (might happen)</td><td>NEVER</td><td>"Reliance may fall" (broker note)</td></tr>
+    <tr><td>Analysis</td><td>NEVER</td><td>—</td></tr>
+    <tr><td>Research reports</td><td>NEVER</td><td>Sharekhan/Motilal "BUY"</td></tr>
+  </table>
+  <div class="rule">When a broker says "BUY", the stock is 99% already at all-time high.</div>
+
+  <h3>1.6 The 5 Scams (Protect Yourself)</h3>
+  <p><span class="pill">A. MLM/Pyramid</span> "Sell to 3 people, get 30% cashback" — 99% never recover. Answer: <strong>"NAHI HAI."</strong></p>
+  <p><span class="pill">B. 5% Monthly / Guaranteed</span> Math 1.05¹²≈1.79 = ~80%/yr impossible. Torres, Infinite Beacon = real examples.</p>
+  <p><span class="pill">C. Option Buying</span> Retail option-buying 3-yr mean is NEGATIVE (theta decay). Open challenge: "Find one profitable option buyer over 3 yrs — I'll pay ₹1 crore."</p>
+  <p><span class="pill">D. Crypto</span> No safe Indian platform. CoinDCX ₹380cr loss, WazirX zeroed. "Hard-earned money's only safety = not doing crypto."</p>
+  <p><span class="pill">E. Fake Trading Apps</span> APK links on WhatsApp, fake "account value", withdraw extortion (4% tax + 3% cut). Rule: in a 40-person group, 39 are their team, you're the lone goat.</p>
+
+  <div class="quiz">
+    <h4>✅ Knowledge Check — M1</h4>
+    <div class="q">Q1. Your swing system target CAGR is:<br/>A) 80%/yr &nbsp; B) 25–30%/yr &nbsp; C) 5%/yr<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q2. "Buy high, sell higher / trend is your friend" is:<br/>A) Core strategy &nbsp; B) A lie &nbsp; C) For intraday<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q3. When a brokerage says "BUY", the stock is usually:<br/>A) At bottom &nbsp; B) At all-time high &nbsp; C) Sideways<br/><strong>Ans:</strong> B</div>
+  </div>
+  <div class="ws">
+    <h4>📋 Worksheet — M1</h4>
+    <p>1. Write your capital and your honest 3-yr return target. Is it realistic (≤30%/yr)?<br/>
+    2. List 3 "news" headlines you saw this week → classify Fact / Opinion.<br/>
+    3. Write the 4 pillars of scams (Fear, Greed, Lust, Emotion) and one personal weakness you must guard.</p>
+  </div>
+</div>
+
+<!-- ================= M2 ================= -->
+<div class="module" id="m2">
+  <h2><span class="mod-num">2</span>Stock Universe: Super 45 / Good 45 / Good 200</h2>
+
+  <h3>2.1 Three Lists — Priority Order</h3>
+  <table>
+    <tr><th>#</th><th>List</th><th>Size</th><th>Nature</th></tr>
+    <tr><td>1</td><td>Super 45</td><td>40–45 (now 43)</td><td>Large+mid caps, 15–20yr leaders → Band strategies</td></tr>
+    <tr><td>2</td><td>Good 45</td><td>~45</td><td>Mid+small caps → ABCD, RHS, Cup-Handle, BCD</td></tr>
+    <tr><td>3</td><td>Good 200</td><td>~200</td><td>Net Profit &gt;200cr + ROCE&gt;12% + NDE&lt;0.2 → S&amp;R + 20% Rally</td></tr>
+  </table>
+  <div class="rule">Priority always: <strong>Super 45 → Good 45 → Good 200</strong>. Upper list's strategy NEVER goes on lower list; lower list's strategy CAN go on upper.</div>
+
+  <h3>2.2 Super 45 — 6 Bare-Minimum Criteria</h3>
+  <ul>
+    <li><strong>Net Profit &gt; ₹200 cr</strong> — "Trading a loss-making company is stupidity." (Ola Electric −83% warning)</li>
+    <li><strong>NDE &lt; 0.2</strong> — NDE = (Debt − Cash) ÷ (Equity + Reserves). Negative = GREAT (cash &gt; debt)</li>
+    <li><strong>ROCE &gt; 12%</strong> (20%+ legendary, 12–20% good). Banks: ROE &gt; 12% instead</li>
+    <li><strong>Clear Future Growth</strong> — "If I can imagine the product's future, it'll survive."</li>
+    <li><strong>≥15 yrs in business</strong> — seen BJP/Congress/wars, still leader</li>
+    <li><strong>Market Leader</strong> — by size or profit</li>
+  </ul>
+
+  <h3>2.3 Market Cap vs Fall (Buying Zones)</h3>
+  <table>
+    <tr><th>Category</th><th>Cap</th><th>Typical Fall from ATH</th><th>Buy when</th></tr>
+    <tr><td>Large</td><td>&gt;₹1L cr</td><td>20–25%</td><td>20–30% discount</td></tr>
+    <tr><td>Mid</td><td>₹33k–1L cr</td><td>30–50%</td><td>40–45% sweet spot</td></tr>
+    <tr><td>Small</td><td>₹15k–33k cr</td><td>40–55%</td><td>40–55% fall</td></tr>
+    <tr><td>Micro</td><td>&lt;₹15k cr</td><td>50%+</td><td>50%+ fall</td></tr>
+  </table>
+
+  <h3>2.4 Good 200 — Screener.in Build</h3>
+  <div class="calc">Screen: Net Profit &gt; 200cr AND ROCE &gt; 12 AND NDE &lt; 0.2<br/>
+  → base ~329 cos → trim Net Profit 300 + ROCE 18 → ~205 cos.<br/>
+  Banks: Net Profit &gt; 200cr AND ROE &gt; 12%.</div>
+  <div class="rule">Debt = double-edged sword: Suzlon −95%, JP Assoc −98%, Vodafone −97%, Yes Bank. Market falls 50%: your ₹2cr → ₹1cr; your ₹5cr+₹5cr loan → ZERO.</div>
+
+  <h3>2.5 Asset Allocation</h3>
+  <table>
+    <tr><th>Category</th><th>Per stock (max)</th><th>₹1L example</th></tr>
+    <tr><td>Large Cap</td><td>5%</td><td>₹5,000</td></tr>
+    <tr><td>Mid Cap</td><td>2.5–3%</td><td>₹2,500–3,000</td></tr>
+    <tr><td>Small Cap</td><td>1.5–2%</td><td>₹1,500</td></tr>
+    <tr><td>Micro Cap</td><td>1–1.5%</td><td>₹1,000</td></tr>
+  </table>
+  <p>Sector max 20%. Total 40–55 different stocks (max 60–65; 70–80 = diluted Nifty-like return).</p>
+
+  <div class="quiz">
+    <h4>✅ Knowledge Check — M2</h4>
+    <div class="q">Q1. First list to scan is:<br/>A) Good 200 &nbsp; B) Super 45 &nbsp; C) Good 45<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q2. NDE formula is:<br/>A) (Debt−Cash)÷(Equity+Reserves) &nbsp; B) Profit÷Sales &nbsp; C) Price÷EPS<br/><strong>Ans:</strong> A</div>
+    <div class="q">Q3. Max allocation to one Large Cap stock:<br/>A) 5% &nbsp; B) 20% &nbsp; C) 50%<br/><strong>Ans:</strong> A</div>
+  </div>
+  <div class="ws">
+    <h4>📋 Worksheet — M2</h4>
+    <p>1. In screener.in, build the Good 200 screen. How many companies result?<br/>
+    2. Take 5 stocks you own/follow. Check NDE &lt; 0.2 and ROCE &gt; 12%. Which pass?<br/>
+    3. For ₹2L capital, write your allocation: how many Large / Mid / Small names, max per stock.</p>
+  </div>
+</div>
+
+<!-- ================= M3 ================= -->
+<div class="module" id="m3">
+  <h2><span class="mod-num">3</span>Envelope Strategies (Long / Short / 52-Week)</h2>
+
+  <h3>3.1 Envelope Setup</h3>
+  <p>TradingView → Envelope → Length <strong>200</strong>, Percentage <strong>14</strong>. Show middle + upper + lower (all bold).</p>
+  <div class="calc">Orange = 200 EMA (middle)<br/>
+  Upper Blue = 200 EMA × 1.14<br/>
+  Lower Blue = 200 EMA × 0.86</div>
+  <div class="rule">Band touch is MANDATORY — "Until the band is touched, no trade initiates." Indian stocks = 14% (±). US stocks = 25%.</div>
+
+  <h3>3.2 Long Envelope (Super 45 only)</h3>
+  <table>
+    <tr><th>Entry</th><th>Exit</th></tr>
+    <tr><td>Price falling, touches lower blue (touch mandatory)</td><td>30% flat target (or upper blue if 25%+ there)</td></tr>
+  </table>
+  <div class="calc">Envelope Target = Entry × 1.30. Infosys entry ~₹1,491 → target 1491×1.3 = ₹1,938.</div>
+  <div class="rule">Don't sell on a 5–10% blip in 2–4 days. "If you want the strategy to make you immense wealth, you must respect the strategy." Fix 30% exit, no exception (28–29% also fine).</div>
+
+  <h3>3.3 Short Envelope (Super 45) — "place trade &amp; sleep"</h3>
+  <p>When stock never touches lower blue (multi-year rally), it repeatedly hits orange &amp; goes up. Do 2 independent trades:</p>
+  <table>
+    <tr><th>Trade</th><th>Buy</th><th>Target</th></tr>
+    <tr><td>B1</td><td>Falling, hits orange</td><td>12% (or upper blue)</td></tr>
+    <tr><td>B2</td><td>Falling to lower blue</td><td>12% (or orange)</td></tr>
+  </table>
+  <p>Position: orange max 1–1.5%, lower blue 3–5%.</p>
+
+  <h3>3.4 52-Week High-Low (Super 45, beginner-friendly)</h3>
+  <p>Indicator "52 Week High Low" → Period <strong>251</strong>. Red = 52w low, Blue = 52w high.</p>
+  <table><tr><th>Entry</th><th>Exit</th></tr><tr><td>52w low (red) touch</td><td>52w high (blue) touch</td></tr></table>
+  <div class="rule">Never sell at a loss: if 52w high drops below 52w low (stock stayed low long), wait for return to buy point, sell there.</div>
+
+  <h3>3.5 Example — NSE 2016–2022 (Short Envelope)</h3>
+  <p>Stock didn't touch lower blue for 6 yrs. Two trades B1+B2, 12 signals → 12× 12% booked while stock doubled/tripled. 49–176 days per 12% gain.</p>
+
+  <div class="quiz">
+    <h4>✅ Knowledge Check — M3</h4>
+    <div class="q">Q1. Envelope Length &amp; Percentage:<br/>A) 50 / 5 &nbsp; B) 200 / 14 &nbsp; C) 20 / 2<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q2. Long Envelope exit:<br/>A) 12% &nbsp; B) 30% &nbsp; C) 50%<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q3. Lower blue line is:<br/>A) 200 EMA × 1.14 &nbsp; B) 200 EMA × 0.86 &nbsp; C) 52w low<br/><strong>Ans:</strong> B</div>
+  </div>
+  <div class="ws">
+    <h4>📋 Worksheet — M3</h4>
+    <p>1. On TradingView, load Envelope(200,14) on a Super 45 stock (e.g. INFY). Mark lower blue. At what price would you buy?<br/>
+    2. Calculate: entry ₹500 → Long Envelope target = ?<br/>
+    3. Short Envelope: a stock at ₹1000 hits orange (₹950). B1 target = ?</p>
+  </div>
+</div>
+
+<!-- ================= M4 ================= -->
+<div class="module" id="m4">
+  <h2><span class="mod-num">4</span>Advanced Strategies (Bollinger / Noxwell / SMA)</h2>
+
+  <h3>4.1 Price vs Time Correction</h3>
+  <table>
+    <tr><th>Level</th><th>Fall</th><th>Frequency</th></tr>
+    <tr><td>Crash</td><td>30%+</td><td>~every 10 yrs</td></tr>
+    <tr><td>Major</td><td>15–20%</td><td>2–3× between crashes</td></tr>
+    <tr><td>Minor</td><td>5–10%</td><td>often</td></tr>
+  </table>
+  <p><strong>Time correction:</strong> no loss but no return, 15–20% range for 1.5–5 yrs → then blasts up (Cup&amp;Handle / RHS form).</p>
+
+  <h3>4.2 Bollinger (200, 2.5)</h3>
+  <table><tr><th>Entry</th><th>Exit</th></tr><tr><td>Lower band, ONLY if upper–lower width ≥ 35%</td><td>Upper band</td></tr></table>
+  <div class="note">Envelope = fixed 14% lines. Bollinger = volatility-based (widen when volatile). Envelope is superior; Bollinger used less.</div>
+
+  <h3>4.3 Envelope + Noxwell Divergence</h3>
+  <p>Indicator "Rab Booker Noxwell Divergence" (free). 3 zones:</p>
+  <table>
+    <tr><th>Zone</th><th>Action</th></tr>
+    <tr><td>Selling (above orange)</td><td>Never buy; plan to sell</td></tr>
+    <tr><td>P2 (orange↔lower blue)</td><td>2nd priority buy</td></tr>
+    <tr><td>P1 (below lower blue)</td><td>1st priority buy — "finger on lips, buy quietly"</td></tr>
+  </table>
+  <div class="rule">"Selling below orange is a sin." Sell always above orange. Set 20% alert; don't watch daily chart before that.</div>
+
+  <h3>4.4 Advanced SMA (20/50/200) — "Buy on Dead Cross"</h3>
+  <p>World says golden cross = buy. Wrong. <strong>Dead cross = buy, golden cross = sell.</strong></p>
+  <table>
+    <tr><th>BUY (dead cross)</th><th>SELL (golden cross)</th></tr>
+    <tr><td>Price &gt; Black(20) &gt; Green(50) &gt; Red(200)</td><td>Exact opposite</td></tr>
+  </table>
+
+  <div class="quiz">
+    <h4>✅ Knowledge Check — M4</h4>
+    <div class="q">Q1. Bollinger buy valid only if width ≥:<br/>A) 10% &nbsp; B) 35% &nbsp; C) 50%<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q2. Noxwell P1 zone is:<br/>A) Above orange &nbsp; B) Below lower blue &nbsp; C) Between<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q3. SMA: you buy on:<br/>A) Golden cross &nbsp; B) Dead cross &nbsp; C) Flat line<br/><strong>Ans:</strong> B</div>
+  </div>
+  <div class="ws">
+    <h4>📋 Worksheet — M4</h4>
+    <p>1. On a stock, load Bollinger(200,2.5). Is current width ≥35%? Buy or wait?<br/>
+    2. Load SMA(20/50/200). Is price above all three (dead-cross buy zone)?<br/>
+    3. Mark on paper: where is orange, lower blue, P1 and P2 zones.</p>
+  </div>
+</div>
+
+<!-- ================= M5 ================= -->
+<div class="module" id="m5">
+  <h2><span class="mod-num">5</span>Good 200: Support &amp; Resistance + 20% Rally</h2>
+
+  <h3>5.1 Support &amp; Resistance (ZONE, not point)</h3>
+  <table>
+    <tr><th>Entry</th><th>Exit</th></tr>
+    <tr><td>Stock returns to support zone (2+ bounces)</td><td>Resistance zone / target</td></tr>
+  </table>
+  <p>Validity: 2 bounces · range ≥ 30% (small/mid min 62%) · profits improving · buy at support, sell at resistance.</p>
+
+  <h3>5.2 Super Strategy / 20% Rally</h3>
+  <p>Rally: consecutive ALL-GREEN candles, min 20% move, zero red candles.</p>
+  <table>
+    <tr><th>Point</th><th>Meaning</th></tr>
+    <tr><td>1. Rally Start</td><td>Where green candles begin</td></tr>
+    <tr><td>2. Rally End</td><td>First red candle</td></tr>
+    <tr><td>3. Buy Point</td><td>Stock returns to rally-start price</td></tr>
+    <tr><td>4. Sell (Target)</td><td>High of last green before first red</td></tr>
+  </table>
+  <div class="calc">Target = HIGH of last green candle before first red. Buy = rally-start price on return.</div>
+  <div class="rule">Invalid if: 1-yr+ from rally start to buy point · target already achieved · (Good45/200) rally start above 200 DMA.</div>
+
+  <h3>5.3 SNR Deep-Dive</h3>
+  <ul>
+    <li>Support = RANGE, not point. 2 touches → 3rd touch BUY.</li>
+    <li>P2 ≥ P1 rule (IRCTC): 2nd pullback ≥ 1st, else weak.</li>
+    <li>Chase limit: 2–4% from entry OK, 12% no, 20%+ never.</li>
+    <li>Min 20-company diversification.</li>
+  </ul>
+
+  <div class="quiz">
+    <h4>✅ Knowledge Check — M5</h4>
+    <div class="q">Q1. S&amp;R is a:<br/>A) Point &nbsp; B) Zone &nbsp; C) Line<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q2. 20% Rally needs:<br/>A) Mixed candles &nbsp; B) All-green min 20% &nbsp; C) Red candles<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q3. Rally invalid if buy point takes:<br/>A) 1 month &nbsp; B) 1+ year &nbsp; C) 1 week<br/><strong>Ans:</strong> B</div>
+  </div>
+  <div class="ws">
+    <h4>📋 Worksheet — M5</h4>
+    <p>1. On a 3–5 yr chart, find a support zone with 2+ bounces, range &gt;30%. Note buy/sell levels.<br/>
+    2. Find a 20% rally (all-green). Mark the 4 points. What's your target?<br/>
+    3. Is the rally start above or below 200 DMA (orange)? Valid for Good 45?</p>
+  </div>
+</div>
+
+<!-- ================= M6 ================= -->
+<div class="module" id="m6">
+  <h2><span class="mod-num">6</span>Good 45: ABCD Averaging + Patterns + BCD</h2>
+
+  <h3>6.1 ABCD Averaging (the "jigar ka tukda" strategy)</h3>
+  <p>Systematic buying at falls; sell each level at the one above. Stock can go nowhere yet still profit 10–10%.</p>
+  <div class="calc">Levels (from A = any strategy buy signal):<br/>
+  B = A − 10% (Large) / −12–15% (Mid) / −15–20% (Small)<br/>
+  C = A − 20% &nbsp; D = A − 30%<br/>
+  Buy/Sell: B→A, C→B, D→C; A-quantity → A~ (Envelope target)</div>
+  <table>
+    <tr><th>Level</th><th>Buy</th><th>Sell at</th></tr>
+    <tr><td>A</td><td>2–3%</td><td>A~ (Envelope target)</td></tr>
+    <tr><td>B</td><td>0.5–1%</td><td>A</td></tr>
+    <tr><td>C</td><td>0.5–1%</td><td>B</td></tr>
+    <tr><td>D</td><td>0.5–1%</td><td>C</td></tr>
+  </table>
+  <div class="rule">Never 5% in first trade (margin of safety). Greed warning: "ABCD is the greediest strategy — booked profit IS discipline."</div>
+  <div class="calc">Sun TV: B→A, C→B repeated 7 trades × 10% = ~70% gain while stock moved ZERO. Compounding: 10% per 2 months ≈ 1.1⁶ ≈ 77% CAGR.</div>
+
+  <h3>6.2 RHS / Cup-with-Handle</h3>
+  <ul>
+    <li>Horizontal line mandatory (cup on straight line; tilted = invalid)</li>
+    <li>Breakout with green candle above line</li>
+    <li><strong>Don't take breakout trade (99% of time)</strong> — only if pattern formed 20–30% below highs</li>
+    <li>Target = same RUPEES up (linear scale, not log)</li>
+  </ul>
+
+  <h3>6.3 SMA with BCD / 52wk with BCD</h3>
+  <p>On SMA signal (price below 20/50/200), mark 10–10% lower levels, sleep. BCD buy targets = prior level. 52wk-BCD valid until 52w-high touched.</p>
+
+  <h3>6.4 Trading Log — FIFO vs LIFO</h3>
+  <div class="rule">Broker uses FIFO (wrong for us). We use LIFO — last buy sells first. Keep Excel log; sell from log, NEVER broker average. ABCD trades get separate entries.</div>
+
+  <div class="quiz">
+    <h4>✅ Knowledge Check — M6</h4>
+    <div class="q">Q1. ABCD: bought at B, you sell at:<br/>A) C &nbsp; B) A &nbsp; C) D<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q2. First trade max allocation:<br/>A) 5% &nbsp; B) 2–3% &nbsp; C) 10%<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q3. Cup-with-Handle breakout trade:<br/>A) Always take &nbsp; B) 99% avoid &nbsp; C) Only at ATH<br/><strong>Ans:</strong> B</div>
+  </div>
+  <div class="ws">
+    <h4>📋 Worksheet — M6</h4>
+    <p>1. A signal at ₹1000 (Large cap). Mark B(−10%), C(−20%), D(−30%) = ?, ?, ?. If bought B, sell at ₹1000 (A).<br/>
+    2. In Excel, create an ABCD log for one stock with 4 columns (Level/Buy/Sell/Profit%).<br/>
+    3. Find a Cup-with-Handle on a chart. Is it 20–30% below highs? Valid?</p>
+  </div>
+</div>
+
+<!-- ================= M7 ================= -->
+<div class="module" id="m7">
+  <h2><span class="mod-num">7</span>Fundamental Analysis + 67-Funda</h2>
+
+  <h3>7.1 Core Ratios</h3>
+  <table>
+    <tr><th>Ratio</th><th>Formula</th><th>Good</th></tr>
+    <tr><td>Market Cap</td><td>Price × Total Shares</td><td>—</td></tr>
+    <tr><td>PE</td><td>Price ÷ EPS</td><td>15–20; &gt;60 avoid</td></tr>
+    <tr><td>ROCE</td><td>EBIT ÷ Capital Employed ×100</td><td>20%+ legendary, 12%+ ok</td></tr>
+    <tr><td>ROE (banks)</td><td>Net Profit ÷ Equity ×100</td><td>12%+ ok, 15%+ great</td></tr>
+    <tr><td>Dividend Yield</td><td>Div ÷ Price</td><td>3–4% comfortable</td></tr>
+  </table>
+
+  <h3>7.2 Financial Statements</h3>
+  <ul>
+    <li><strong>P&amp;L:</strong> Sales → OPM (OP÷Sales×100) → Net Profit. Ignore one-time "other income".</li>
+    <li><strong>Balance Sheet:</strong> Assets = Liabilities always. Reserves rising = profit. Expanding fixed assets + profit dip = OK (expansion).</li>
+    <li><strong>Cash Flow:</strong> Operating cash must be strong.</li>
+    <li><strong>Shareholding:</strong> Promoter 50%+, powerful players 25%+ = good. Public &lt;15% = control.</li>
+    <li><strong>Debt &amp; Pledge:</strong> NDE &lt;0.2. POC = Pledge% × Promoter% ÷ 100. <strong>POC &lt;5% OK, 5–15% caution, 15%+ avoid.</strong></li>
+    <li><strong>Debtor Days:</strong> Receivables ÷ Sales × 365. Smaller = better.</li>
+    <li><strong>PB:</strong> &lt;0.4 = reversion trade (0.8 target = 40–50% potential).</li>
+  </ul>
+
+  <h3>7.3 67-Funda (10-Point Screen)</h3>
+  <div class="gold">
+    <h3 style="color:var(--amber)">🔟 The 67-Funda 10-Point Checklist</h3>
+    <ol>
+      <li>Company down ≥67% from its TOP (2/3 value wipeout; 35% not enough)</li>
+      <li>Fall reason is clear (sentiment/business/fundamental)</li>
+      <li>That reason no longer exists</li>
+      <li>Proven track record</li>
+      <li>NOT a loss-making / disgraced company</li>
+      <li>Quarterly sales + profit improvement</li>
+      <li>≥100% profit potential (current → ATH/2nd-high)</li>
+      <li>100% in 1 yr → book</li>
+      <li>Not in 1 yr → wait for ATH or 3x</li>
+      <li>Blessings/luck</li>
+    </ol>
+  </div>
+  <div class="calc">Entry: screener (Net Profit ₹50cr+, PE vs median, D/E, ROCE sort) → after quarterly improvement → target = improvement-price to 100%. Exit: book at 100% (partial OK), exit at 33% dip = "loser".</div>
+
+  <div class="quiz">
+    <h4>✅ Knowledge Check — M7</h4>
+    <div class="q">Q1. ROCE &gt; what is "good enough"?<br/>A) 5% &nbsp; B) 12% &nbsp; C) 50%<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q2. POC &lt; what is OK?<br/>A) 5% &nbsp; B) 15% &nbsp; C) 25%<br/><strong>Ans:</strong> A</div>
+    <div class="q">Q3. 67-Funda means stock down from top by:<br/>A) 35% &nbsp; B) 67% &nbsp; C) 10%<br/><strong>Ans:</strong> B</div>
+  </div>
+  <div class="ws">
+    <h4>📋 Worksheet — M7</h4>
+    <p>1. Take a stock. Compute ROCE, PE (vs median), POC. Pass or fail?<br/>
+    2. Find a stock down 67% from top with clear reason resolved. Run the 10-point checklist — how many pass?<br/>
+    3. Read its balance sheet: are reserves rising? Fixed assets expanding with profit dip?</p>
+  </div>
+</div>
+
+<!-- ================= M8 ================= -->
+<div class="module" id="m8">
+  <h2><span class="mod-num">8</span>Tools &amp; Execution</h2>
+
+  <h3>8.1 Super Tracker App</h3>
+  <p>Dashboard: invested, stock count, P/L by strategy, open signals, trade tracker, backtest, watchlist. Signals page lists "Envelope Open", "SAR" — click to note entry + target. Backtest shows 5-yr performance.</p>
+
+  <h3>8.2 Trading Log (Excel) — Discipline Core</h3>
+  <p>Broker average (FIFO) is wrong. Excel log is source of truth. ABCD trades = separate entries. Sell from log, never broker average.</p>
+
+  <h3>8.3 Screener.in Custom Ratios</h3>
+  <div class="calc">1. NDE = (Net Debt) ÷ (Equity Capital + Reserves) — unit None<br/>
+  2. POC = Pledge% × Promoter Holding ÷ 100 — unit Percentage</div>
+
+  <h3>8.4 TradingView</h3>
+  <ul>
+    <li>Indicators: Envelope(200,14), 52wk HL(251), Bollinger(200,2.5), Noxwell, SMA(AYIEJ)</li>
+    <li><strong>Daily timeframe only</strong> (1 candle = 1 day)</li>
+    <li>Mark patterns on LINEAR scale (log overestimates target)</li>
+    <li>Alert at 20% gain; don't watch chart before</li>
+  </ul>
+
+  <h3>8.5 GTT Orders</h3>
+  <div class="rule">Place GTT the moment you trade — "that's the best." Auto-sells at target without screen-watching. (Teacher missed a trade for not placing GTT.)</div>
+
+  <h3>8.6 MTF Warning</h3>
+  <div class="rule">Margin Trading Facility (4x leverage) = AVOID. Market wrong-time fall → entire portfolio gone. Use only your own money.</div>
+
+  <div class="quiz">
+    <h4>✅ Knowledge Check — M8</h4>
+    <div class="q">Q1. Timeframe to use:<br/>A) 5-min &nbsp; B) Daily &nbsp; C) Weekly<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q2. GTT should be placed:<br/>A) At expiry &nbsp; B) The moment you trade &nbsp; C) Never<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q3. MTF (leverage):<br/>A) Use 4x &nbsp; B) Avoid &nbsp; C) Only for small caps<br/><strong>Ans:</strong> B</div>
+  </div>
+  <div class="ws">
+    <h4>📋 Worksheet — M8</h4>
+    <p>1. In screener.in, create the 2 custom ratios (NDE, POC). Screenshot.<br/>
+    2. Set a GTT order on a paper trade at your target. Confirm it's armed.<br/>
+    3. Build a Trading Log Excel with columns: Stock / Strategy / Level / Entry / Target / Status.</p>
+  </div>
+</div>
+
+<!-- ================= M9 ================= -->
+<div class="module" id="m9">
+  <h2><span class="mod-num">9</span>Option Selling Crash Course (Bonus)</h2>
+
+  <h3>9.1 Core Philosophy</h3>
+  <p>"I sell puts to buy stock." Quality stocks cheaper + get paid to wait. "Risk comes from not knowing what you're doing" (Buffett). Postpone losses indefinitely via good structure.</p>
+
+  <h3>9.2 Theta Decay (Seller's Friend)</h3>
+  <div class="calc">Option Price = Intrinsic Value + Time Value.<br/>
+  Time value: positive month-start → ZERO month-end (even if ITM). Never negative = Theta Decay.</div>
+
+  <h3>9.3 Capital Math (₹12 Lakh minimum)</h3>
+  <table>
+    <tr><th>Allocation</th><th>Amount</th><th>Why</th></tr>
+    <tr><td>Stocks (swing)</td><td>₹9.5L</td><td>Core portfolio</td></tr>
+    <tr><td>Pledge for F&amp;O margin</td><td>₹3–4L</td><td>0% direct interest</td></tr>
+    <tr><td>Liquid (Zerodha)</td><td>₹2L</td><td>~6%/yr guaranteed growth</td></tr>
+    <tr><td>Cash buffer</td><td>₹0.5–1L</td><td>Short-term MTM losses</td></tr>
+  </table>
+
+  <h3>9.4 Put Selling — Seller Math (DAB example)</h3>
+  <div class="calc">DAB ₹510, want ₹500. Sell 500 put @ ₹2.<br/>
+  Stays ₹510 → expire worthless → +₹2<br/>
+  Falls to ₹500 → ATM → +₹2 (no delivery)<br/>
+  Falls to ₹450 → buy @500, intrinsic 50 − 50 + 2 = −₹48 ×1250 = −₹60,000<br/>
+  EFFECTIVE BUY = 500 − 2 = ₹498 ("chit bhi meri, pat bhi meri")</div>
+
+  <h3>9.5 Roll Over (postpone losses)</h3>
+  <p>Month-end: buy back + sell next month SAME strike. Keep rolling while liquidity exists. Square off 2 days before expiry.</p>
+
+  <h3>9.6 Risk Rules</h3>
+  <ul>
+    <li>Quality, liquid, F&amp;O-active only (Asian Paints, DABUR, HUL, Reliance, Kotak, HDFC Bank)</li>
+    <li>No chunnu-munnu stocks (SEBI can delist from F&amp;O)</li>
+    <li>Diversify: 39 positions simultaneously</li>
+    <li>Minimum capital ₹12L — below, it's loss-making</li>
+  </ul>
+
+  <div class="quiz">
+    <h4>✅ Knowledge Check — M9</h4>
+    <div class="q">Q1. Option selling needs min capital:<br/>A) ₹1L &nbsp; B) ₹12L &nbsp; C) ₹50L<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q2. Theta decay means time value goes to:<br/>A) Infinity &nbsp; B) Zero at expiry &nbsp; C) Doubles<br/><strong>Ans:</strong> B</div>
+    <div class="q">Q3. Roll over means:<br/>A) Change strike &nbsp; B) Same strike next month &nbsp; C) Exit<br/><strong>Ans:</strong> B</div>
+  </div>
+  <div class="ws">
+    <h4>📋 Worksheet — M9</h4>
+    <p>1. Pick a quality stock at ₹X, want ₹Y. Sell Y-put @ premium P. Effective buy = ?<br/>
+    2. Compute 4-month roll-over P&amp;L like the DAB example with your own numbers.<br/>
+    3. List 5 quality F&amp;O-active stocks you'd sell puts on.</p>
+  </div>
+</div>
+
+<!-- ================= MASTER RULES ================= -->
+<div class="module" id="rules">
+  <h2>👑 Master Golden Rules — Whole Course in One List</h2>
+  <div class="gold">
+  <ul>
+    <li>Trade value, not momentum. Buy when all sell; sell when all buy.</li>
+    <li>List priority: Super 45 → Good 45 → Good 200.</li>
+    <li>Envelope: lower blue touch = buy (mandatory), 30% sell (fix).</li>
+    <li>52-week: red(low) buy, blue(high) sell; never sell at loss.</li>
+    <li>Bollinger: buy lower band only if width ≥35%; sell upper.</li>
+    <li>Noxwell: P1 below lower blue = 1st buy, P2 middle, never sell below orange.</li>
+    <li>SMA: dead cross buy, golden cross sell (opposite crowd).</li>
+    <li>S&amp;R: zone not point, 2 bounces, range large 30%+/small 62%+.</li>
+    <li>20% Rally: all-green min 20%; buy rally-start return; sell last-green high.</li>
+    <li>ABCD: B→A, C→B, D→C; A→A~. A=2–3%, rest 0.5–1%. Never 5% first trade.</li>
+    <li>RHS/Cup: no breakout trade (99%); only 20–30% below highs. Linear scale.</li>
+    <li>Place GTT the moment you trade.</li>
+    <li>Sell from Excel log, not broker average (we use LIFO).</li>
+    <li>Position: Large 5%, Mid 2.5–3%, Small 1.5–2%, Micro 1–1.5%; sector max 20%; 40–55 stocks.</li>
+    <li>Fundamentals mandatory with technical (PE median, ROCE&gt;12, NDE&lt;0.2, POC&lt;5, profits ATH).</li>
+    <li>Daily timeframe only. 20% alert; don't watch before.</li>
+    <li>Loss-booking = stupidity. Keep mean of decisions positive.</li>
+    <li>Realistic: 25–30% CAGR. Daily 5% = scam.</li>
+    <li>No option buying (theta enemy); option selling only ₹12L+, quality stocks.</li>
+    <li>Away from MTF, IPO, crypto, tips.</li>
+    <li>Stay in market — "don't lose your money, do a little work, wealth builds for life. 20–25 yrs = 100x minimum."</li>
+  </ul>
+  </div>
+</div>
+
+<!-- ================= CHEAT SHEET ================= -->
+<div class="module" id="cheat">
+  <h2>⚡ Entry/Exit Cheat Sheet + Formula Bank</h2>
+  <h3>Entry/Exit At-a-Glance</h3>
+  <table>
+    <tr><th>Strategy</th><th>List</th><th>ENTRY</th><th>EXIT</th></tr>
+    <tr><td>Long Envelope</td><td>Super 45</td><td>Lower blue touch</td><td>30% (or upper blue 25%+)</td></tr>
+    <tr><td>Short Envelope</td><td>Super 45</td><td>Orange(1–1.5%)/lower blue(3–5%)</td><td>12% (2 trades)</td></tr>
+    <tr><td>52wk H-L</td><td>Super 45</td><td>52w low touch</td><td>52w high touch</td></tr>
+    <tr><td>Bollinger</td><td>Super 45</td><td>Lower band, width≥35%</td><td>Upper band</td></tr>
+    <tr><td>Envelope+Noxwell</td><td>Super 45</td><td>P1/P2</td><td>Orange up, red tops</td></tr>
+    <tr><td>Advanced SMA</td><td>Super 45</td><td>Dead cross (price&gt;black&gt;green&gt;red)</td><td>Golden cross</td></tr>
+    <tr><td>S&amp;R</td><td>Good 200</td><td>Support zone (2 bounce, ≥30/62%)</td><td>Resistance zone</td></tr>
+    <tr><td>20% Rally</td><td>Good 200</td><td>Rally-start return</td><td>Last-green high</td></tr>
+    <tr><td>ABCD</td><td>Good 45</td><td>A(2–3%)/B/C/D</td><td>B→A,C→B,D→C;A→A~</td></tr>
+    <tr><td>RHS/Cup</td><td>Good 45</td><td>Breakout 20–30% below</td><td>Technical (rupees)</td></tr>
+  </table>
+
+  <h3>Formula Bank</h3>
+  <div class="calc">
+    ROCE = EBIT ÷ Capital Employed × 100<br/>
+    ROE = Net Profit ÷ Equity × 100<br/>
+    PE = Price ÷ EPS &nbsp;|&nbsp; Market Cap = Price × Shares<br/>
+    OPM = Operating Profit ÷ Sales × 100<br/>
+    NDE = (Debt − Cash) ÷ (Equity + Reserves) — &lt;0.2<br/>
+    POC = Pledge% × Promoter% ÷ 100 — &lt;5%<br/>
+    Debtor Days = Receivables ÷ Sales × 365<br/>
+    PB = Price ÷ Book — &lt;0.4 reversion<br/>
+    Envelope Upper = 200 EMA × 1.14 &nbsp;|&nbsp; Lower = × 0.86<br/>
+    Envelope Target = Entry × 1.30 &nbsp;|&nbsp; Short = × 1.12<br/>
+    ABCD: B=A−10%, C=A−20%, D=A−30% (L10/M12–15/S15–20)<br/>
+    Option = Intrinsic + Time; Effective Buy = Strike − Premium<br/>
+    Rally Target = Last green HIGH (before first red)
+  </div>
+
+  <h3>Daily Swing Checklist</h3>
+  <ul>
+    <li>Fundamental screen (screener): NDE&lt;0.2, ROCE&gt;12, NP&gt;200cr, POC&lt;5% → candidates</li>
+    <li>TradingView daily: find strategy signal (Envelope lower blue / 52w low / S&amp;R / rally start / ABCD)</li>
+    <li>Write entry + target (30%/12%/technical)</li>
+    <li>Excel log entry — never broker average</li>
+    <li>Place GTT immediately</li>
+    <li>Alert at 20% — don't watch daily</li>
+    <li>Exit on rule hit — no greed</li>
+    <li>Track profit % per strategy</li>
+  </ul>
+</div>
+
+<!-- ================= FINAL QUIZ ================= -->
+<div class="module" id="quiz">
+  <h2>📝 Final Assessment (Pass = 70%)</h2>
+  <div class="quiz">
+    <div class="q">1. Your system's realistic annual target:<br/>A) 80% &nbsp; B) 25–30% CAGR &nbsp; C) 5%<br/><strong>Ans:</strong> B</div>
+    <div class="q">2. First list to scan:<br/>A) Good 200 &nbsp; B) Super 45 &nbsp; C) Good 45<br/><strong>Ans:</strong> B</div>
+    <div class="q">3. Envelope Length/Percentage:<br/>A) 50/5 &nbsp; B) 200/14 &nbsp; C) 20/2<br/><strong>Ans:</strong> B</div>
+    <div class="q">4. Long Envelope exit:<br/>A) 12% &nbsp; B) 30% &nbsp; C) 50%<br/><strong>Ans:</strong> B</div>
+    <div class="q">5. Bollinger buy needs width ≥:<br/>A) 10% &nbsp; B) 35% &nbsp; C) 50%<br/><strong>Ans:</strong> B</div>
+    <div class="q">6. Noxwell P1 zone:<br/>A) Above orange &nbsp; B) Below lower blue &nbsp; C) Between<br/><strong>Ans:</strong> B</div>
+    <div class="q">7. SMA: buy on:<br/>A) Golden cross &nbsp; B) Dead cross &nbsp; C) Flat<br/><strong>Ans:</strong> B</div>
+    <div class="q">8. S&amp;R is a:<br/>A) Point &nbsp; B) Zone &nbsp; C) Line<br/><strong>Ans:</strong> B</div>
+    <div class="q">9. 20% Rally invalid if buy point takes:<br/>A) 1 month &nbsp; B) 1+ year &nbsp; C) 1 week<br/><strong>Ans:</strong> B</div>
+    <div class="q">10. ABCD bought at B sells at:<br/>A) C &nbsp; B) A &nbsp; C) D<br/><strong>Ans:</strong> B</div>
+    <div class="q">11. First trade max allocation:<br/>A) 5% &nbsp; B) 2–3% &nbsp; C) 10%<br/><strong>Ans:</strong> B</div>
+    <div class="q">12. ROCE good enough &gt;:<br/>A) 5% &nbsp; B) 12% &nbsp; C) 50%<br/><strong>Ans:</strong> B</div>
+    <div class="q">13. POC OK &lt;:<br/>A) 5% &nbsp; B) 15% &nbsp; C) 25%<br/><strong>Ans:</strong> A</div>
+    <div class="q">14. 67-Funda = down from top by:<br/>A) 35% &nbsp; B) 67% &nbsp; C) 10%<br/><strong>Ans:</strong> B</div>
+    <div class="q">15. Timeframe to use:<br/>A) 5-min &nbsp; B) Daily &nbsp; C) Weekly<br/><strong>Ans:</strong> B</div>
+    <div class="q">16. GTT placed:<br/>A) At expiry &nbsp; B) Moment you trade &nbsp; C) Never<br/><strong>Ans:</strong> B</div>
+    <div class="q">17. MTF leverage:<br/>A) Use 4x &nbsp; B) Avoid &nbsp; C) Small caps only<br/><strong>Ans:</strong> B</div>
+    <div class="q">18. Option selling min capital:<br/>A) ₹1L &nbsp; B) ₹12L &nbsp; C) ₹50L<br/><strong>Ans:</strong> B</div>
+    <div class="q">19. Effective buy (put selling):<br/>A) Strike + Premium &nbsp; B) Strike − Premium &nbsp; C) Strike<br/><strong>Ans:</strong> B</div>
+    <div class="q">20. Roll over means:<br/>A) Change strike &nbsp; B) Same strike next month &nbsp; C) Exit<br/><strong>Ans:</strong> B</div>
+  </div>
+  <p class="note">Score 14+/20 = Pass. Review weak modules. This system demands patience — "2 weeks profit wale ko ye paisa nahi degi."</p>
+</div>
+
+<div class="pay">
+  💡 <strong>Reserved for Marketing:</strong> The ₹999 course revenue funds our content + distribution engine (Insta/FB/WA/YouTube). Free tier stays free — reserve is never spent on free users. All figures educational; verify with your own analysis before any trade.
+</div>
+
+<div class="foot">
+  MarketBeacon Swing System · Educational platform · NOT a SEBI-registered Investment Adviser or Research Analyst<br/>
+  Built by Vega (Hermes Agent) · Source: swing-trading master course (deduplicated 10 classes + playlists + doubt sessions)<br/>
+  © 2026 MarketBeacon. All rights reserved.
+</div>
+
+</div>
+</body>
+</html>
