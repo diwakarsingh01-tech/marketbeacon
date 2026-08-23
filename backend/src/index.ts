@@ -68,6 +68,10 @@ export const formatRatio = (val: any): number => {
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'ajaythomasjohn@gmail.com,diwakarsingh01.tech@gmail.com,diwakar.singh01@gmail.com').split(',').map(e => e.trim());
 
 const app = express();
+// Raw body for Razorpay webhook — signature is computed over the EXACT raw bytes.
+// Must be registered BEFORE the global express.json() so req.body stays a Buffer
+// for this path (JSON.stringify(req.body) would reorder keys → signature mismatch).
+app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '1mb' }));
 const allowedOrigins = [
   'https://marketbeaconpro.com',

@@ -142,8 +142,13 @@ router.post('/create-subscription', async (req: Request, res: Response) => {
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET || KEY_SECRET;
+    // Razorpay signs the EXACT raw body bytes. With express.raw() mounted for
+    // this path, req.body is a Buffer — verify against it directly.
+    const rawBody: Buffer = Buffer.isBuffer(req.body)
+      ? req.body
+      : Buffer.from(JSON.stringify(req.body));
     const shasum = crypto.createHmac('sha256', secret);
-    shasum.update(JSON.stringify(req.body));
+    shasum.update(rawBody);
     const digest = shasum.digest('hex');
     const signature = (req.headers['x-razorpay-signature'] as string) || '';
 
@@ -152,10 +157,11 @@ router.post('/webhook', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid signature' });
     }
 
-    const event = req.body?.event;
-    const payment = req.body?.payload?.payment?.entity;
-    const subscription = req.body?.payload?.subscription?.entity;
-    const order = req.body?.payload?.order?.entity;
+    const body = Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString('utf8')) : req.body;
+    const event = body?.event;
+    const payment = body?.payload?.payment?.entity;
+    const subscription = body?.payload?.subscription?.entity;
+    const order = body?.payload?.order?.entity;
 
     if (event === 'payment.captured' || event === 'order.paid') {
       const email = payment?.notes?.email || order?.notes?.email;
