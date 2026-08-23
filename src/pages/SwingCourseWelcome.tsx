@@ -1,21 +1,47 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, BookOpen, PlayCircle, Trophy, MessageCircle, Lock } from 'lucide-react';
 import SEO from '../components/SEO';
 import { waLink } from '../lib/constants';
+import { getApiUrl } from '../lib/api-utils';
+
+const API_URL = getApiUrl();
 
 /**
  * Post-purchase Welcome / Unlock page for the Swing Course.
  * Reached after Razorpay payment success (/course/swing/welcome).
  * Shows module access + links to the complete course material.
- * WhatsApp batch group link unlocks ONLY after payment (localStorage flag).
+ * WhatsApp batch group link unlocks ONLY after payment is verified
+ * SERVER-SIDE (check-access against DB) — local flag is a fast-path only.
  */
 const SwingCourseWelcome: React.FC = () => {
   const navigate = useNavigate();
+  const [verified, setVerified] = useState<boolean | null>(null);
 
-  // Payment gate: true only if user completed Razorpay checkout on this browser
-  const paid = typeof window !== 'undefined' && localStorage.getItem('mb_swing_paid') === '1';
+  // Local fast-path flag (set by payment handler)
+  const localPaid = typeof window !== 'undefined' && localStorage.getItem('mb_swing_paid') === '1';
   const email = typeof window !== 'undefined' ? (localStorage.getItem('mb_swing_email') || '') : '';
+
+  useEffect(() => {
+    // Server-side check: real unlock state from DB
+    if (!email) {
+      setVerified(localPaid);
+      return;
+    }
+    fetch(`${API_URL}/api/payment/check-access`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d) setVerified(!!d.unlocked);
+        else setVerified(localPaid);
+      })
+      .catch(() => setVerified(localPaid));
+  }, [email]);
+
+  const paid = verified === null ? localPaid : verified;
 
   const WA_JOIN_MSG = waLink(
     `Hi! I just enrolled in the MarketBeacon Swing System${email ? ` (${email})` : ''}. Please add me to the batch WhatsApp group.`

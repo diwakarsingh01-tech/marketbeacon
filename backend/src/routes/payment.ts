@@ -162,7 +162,10 @@ router.post('/webhook', async (req: Request, res: Response) => {
       const product = payment?.notes?.product || order?.notes?.product || 'swing_course';
       const amount = payment?.amount || order?.amount || 0;
       console.log(`[payment] CAPTURED: ${email} ₹${amount / 100} (${product})`);
-      await notify(email, product, amount);
+      if (email) {
+        await unlockCourseAccess(email, product, amount);
+      }
+      await notify(email || 'unknown', product, amount);
     }
 
     if (event === 'subscription.activated' || event === 'subscription.charged') {
@@ -170,7 +173,10 @@ router.post('/webhook', async (req: Request, res: Response) => {
       const product = subscription?.notes?.product || 'sub';
       const amount = subscription?.plan_id ? (await getPlanAmount(subscription.plan_id)) : 0;
       console.log(`[payment] SUB ACTIVATED: ${email} (${product})`);
-      await notify(email, product, amount);
+      if (email && product.includes('swing')) {
+        await unlockCourseAccess(email, product, amount);
+      }
+      await notify(email || 'unknown', product, amount);
     }
 
     res.json({ status: 'ok' });
@@ -179,6 +185,85 @@ router.post('/webhook', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'webhook failed' });
   }
 });
+
+// ---------------------------------------------------------------------------
+// POST /api/payment/verify  (frontend calls after Razorpay modal success —
+// verifies the payment server-side via Razorpay API and unlocks course access)
+// Body: { orderId, paymentId, email }
+// ---------------------------------------------------------------------------
+router.post('/verify', async (req: Request, res: Response) => {
+  try {
+    const { orderId, paymentId, email } = req.body || {};
+    if (!orderId || !paymentId || !email) {
+      return res.status(400).json({ error: 'orderId, paymentId, email required' });
+    }
+
+    // Fetch the payment from Razorpay to confirm it is real and captured
+    const payment: any = await getRazorpay().payments.fetch(paymentId);
+    const paid = payment?.status === 'captured' || payment?.status === 'authorized';
+    if (!paid) {
+      return res.status(402).json({ error: `Payment not captured (status: ${payment?.status})` });
+    }
+    if (payment?.order_id && payment.order_id !== orderId) {
+      return res.status(400).json({ error: 'Payment/order mismatch' });
+    }
+
+    const amount = payment?.amount || 0;
+    const product = payment?.notes?.product || 'swing_course';
+    console.log(`[payment] VERIFY OK: ${email} ₹${amount / 100} (${product}) order=${orderId} pay=${paymentId}`);
+
+    await unlockCourseAccess(email, product, amount);
+    await notify(email, product, amount);
+
+    res.json({ status: 'ok', unlocked: true, amount, product });
+  } catch (e: any) {
+    console.error('[payment] verify error:', e?.message);
+    res.status(500).json({ error: 'Verification failed', detail: e?.message });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/payment/check-access  (returns whether course is unlocked for email)
+// Body: { email }  — used by welcome page to gate WhatsApp group link
+// ---------------------------------------------------------------------------
+router.post('/check-access', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) return res.status(400).json({ error: 'email required' });
+    const db = (await import('../db.js')).getDB();
+    const row: any = await db.get('SELECT course_access, course_unlocked_at FROM users WHERE email = ?', [email]);
+    const unlocked = row?.course_access === 1;
+    res.json({ unlocked, unlockedAt: row?.course_unlocked_at || null, registered: !!row });
+  } catch (e: any) {
+    console.error('[payment] check-access error:', e?.message);
+    res.status(500).json({ error: 'check failed' });
+  }
+});
+
+/** Grant course access to the user with the given email (create row if absent). */
+async function unlockCourseAccess(email: string, product: string, amount: number) {
+  try {
+    const db = (await import('../db.js')).getDB();
+    const row: any = await db.get('SELECT id, course_access FROM users WHERE email = ?', [email]);
+    if (row) {
+      await db.run(
+        'UPDATE users SET course_access = 1, course_unlocked_at = COALESCE(course_unlocked_at, CURRENT_TIMESTAMP) WHERE email = ?',
+        [email]
+      );
+      console.log(`[payment] UNLOCKED existing user: ${email} (${product} ₹${amount / 100})`);
+    } else {
+      // No account yet — create a lightweight one so access is persisted
+      await db.run(
+        `INSERT OR IGNORE INTO users (name, email, password, role, tier, course_access, course_unlocked_at)
+         VALUES (?, ?, 'GOOGLE', 'user', 'free', 1, CURRENT_TIMESTAMP)`,
+        ['Course Student', email]
+      );
+      console.log(`[payment] UNLOCKED new user: ${email} (${product} ₹${amount / 100})`);
+    }
+  } catch (e: any) {
+    console.error('[payment] unlockCourseAccess error:', e?.message);
+  }
+}
 
 async function getPlanAmount(planId: string): Promise<number> {
   try {

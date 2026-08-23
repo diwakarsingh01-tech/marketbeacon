@@ -255,10 +255,20 @@ const SwingCoursePage: React.FC = () => {
         name: 'MarketBeacon Swing System',
         description: 'Lifetime access to the Swing Trading Course',
         image: '/favicon.svg',
-        handler: function () {
-          // Mark payment done → welcome page unlocks WhatsApp group
+        handler: function (resp: any) {
+          // Mark payment done locally, then verify server-side (auto-unlock)
           localStorage.setItem('mb_swing_paid', '1');
           localStorage.setItem('mb_swing_email', userEmail);
+          // Server-side verify: confirms payment via Razorpay API + unlocks DB access
+          const paymentId = resp?.razorpay_payment_id;
+          const orderId = resp?.razorpay_order_id;
+          if (paymentId && orderId) {
+            fetch(`${API_URL}/api/payment/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderId, paymentId, email: userEmail }),
+            }).catch(() => {});
+          }
           navigate('/course/swing/welcome');
         },
         prefill: { email: userEmail, name: user?.name || '' },

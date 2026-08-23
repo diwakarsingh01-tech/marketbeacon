@@ -82,6 +82,12 @@ export async function initDB() {
     ALTER TABLE users ADD COLUMN pin_hash TEXT
   `).catch(() => {});
   await tursoClient.execute(`
+    ALTER TABLE users ADD COLUMN course_access INTEGER DEFAULT 0
+  `).catch(() => {});
+  await tursoClient.execute(`
+    ALTER TABLE users ADD COLUMN course_unlocked_at DATETIME
+  `).catch(() => {});
+  await tursoClient.execute(`
     CREATE TABLE IF NOT EXISTS upgrade_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
