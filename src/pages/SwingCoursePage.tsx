@@ -756,6 +756,35 @@ const SwingCoursePage: React.FC = () => {
         MarketBeacon Pro · Educational platform · Not a SEBI-registered Investment Adviser or Research Analyst
       </footer>
 
+      {/* ============ MOBILE STICKY ENROLL BAR (most traffic is mobile) ============ */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200 px-4 py-3 shadow-[0_-8px_30px_rgba(148,163,184,0.25)]">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">Swing System · Lifetime</p>
+            <p className="text-lg font-black text-slate-900 leading-tight">₹999 <span className="text-xs font-semibold text-slate-400">one-time</span></p>
+          </div>
+          <button
+            onClick={handleBuy}
+            disabled={loading}
+            className="flex-1 px-5 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-bold text-white shadow-lg shadow-blue-200 active:scale-[0.97] transition-transform flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            {loading ? 'Starting…' : <>Enroll Now <ArrowRight className="w-4 h-4" /></>}
+          </button>
+          <a
+            href={WA_GROUP_MSG}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Join WhatsApp group"
+            className="w-11 h-11 flex items-center justify-center rounded-xl bg-emerald-600/15 border border-emerald-500/40 text-emerald-700 active:scale-[0.95] transition-transform"
+          >
+            <MessageCircle className="w-5 h-5" />
+          </a>
+        </div>
+        {err && <p className="text-rose-600 text-[11px] font-bold mt-2 text-center">{err}</p>}
+      </div>
+      {/* spacer so sticky bar doesn't cover footer on mobile */}
+      <div className="lg:hidden h-20" />
+
       {/* Global page animations + light theme overrides */}
       <style>{`
         /* Light theme scope */
