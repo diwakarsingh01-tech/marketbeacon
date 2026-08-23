@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, ShieldCheck, Target, BookOpen, CheckCircle2, Star,
   Zap, Layers, ArrowRight, Award, Users, Clock, BarChart3,
   ChevronRight, PlayCircle, Lock, Sparkles, Trophy, GraduationCap,
   MessageCircle, CalendarDays, Flame, Wallet, LineChart, AlertTriangle,
-  Gauge, IndianRupee, Gift, ShieldAlert, RefreshCcw, Activity,
-  CircleDollarSign, Landmark, Gem, Sprout, Mountain
+  Gauge, IndianRupee, Gift, ShieldAlert, Activity,
+  Gem, Sprout, Mountain
 } from 'lucide-react';
 import SEO from '../components/SEO';
 import { getApiUrl } from '../lib/api-utils';
@@ -23,7 +23,7 @@ const CURRICULUM = [
   {
     module: 'Module 1', title: 'Mindset, Market Reality & Scam Protection',
     desc: 'Why 99% lose and 1% win. Realistic expectations (25–30% CAGR is real; "daily 5%" is a scam). 6 scams decoded — MLM, guaranteed returns, option-buying traps, crypto, fake institutional apps, fake teacher groups.',
-    icon: ShieldAlert, lessons: 8, duration: '60 min', color: 'from-rose-500 to-pink-500'
+    icon: ShieldAlert, lessons: 8, duration: '60 min', color: 'from-rose-400 to-pink-500'
   },
   {
     module: 'Module 2', title: 'Stock Universe — Elite / Quality / Growth / Fallen Value',
@@ -38,10 +38,10 @@ const CURRICULUM = [
   {
     module: 'Module 4', title: 'Advanced — Bollinger / Knoxville / SMA',
     desc: 'Price & time corrections (crash, major, minor — har level ka apna play). Bollinger 200/2.5 (lower band + width ≥35%). Envelope+Knoxville divergence. Advanced SMA — dead cross pe buy (99% ka ulta).',
-    icon: Gauge, lessons: 5, duration: '40 min', color: 'from-amber-500 to-orange-500'
+    icon: Gauge, lessons: 5, duration: '40 min', color: 'from-amber-400 to-orange-500'
   },
   {
-    module: 'Module 5', title: 'Good-200 Strategies (S&R / 20% Rally)',
+    module: 'Module 5', title: 'Growth Basket — S&R / 20% Rally',
     desc: 'Support & Resistance — zone, point nahi; 2 baar bounce. 20% Rally — sirf green candles, rally start pe entry. Growth basket pe stability + consistent growth play.',
     icon: Target, lessons: 5, duration: '38 min', color: 'from-cyan-500 to-sky-500'
   },
@@ -63,7 +63,7 @@ const CURRICULUM = [
   {
     module: 'Module 9', title: 'Option Selling Crash Course (Bonus)',
     desc: '"I sell puts to buy stock." Theta decay — seller ka best friend. ₹12L capital math, rollover (losses postpone, DAB example — ₹13,125 profit), expiry square-off rules. Bonus module, included free.',
-    icon: Wallet, lessons: 6, duration: '48 min', color: 'from-emerald-600 to-green-500'
+    icon: Wallet, lessons: 6, duration: '48 min', color: 'from-emerald-500 to-green-500'
   },
 ];
 
@@ -209,27 +209,29 @@ const SwingCoursePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] relative overflow-x-hidden">
+    <div className="course-light min-h-screen bg-[#f8fafc] text-[#0f172a] relative overflow-x-hidden">
       <SEO
         title="MarketBeacon Swing System — Learn Institutional Swing Trading"
         description="A repeatable swing-trading system: Envelope 200 EMA, ABCD ladder, Cup & Handle, 67-point fundamental audit. 12+ strategies, monthly batches, WhatsApp community. Educational, not advice."
         url="/course/swing"
       />
 
-      {/* Animated background: grid + glow + floating candles */}
+      {/* Animated light background: moving gradient + floating candles + soft orbs */}
       <div className="fixed inset-0 pointer-events-none z-0" aria-hidden>
-        <div className="absolute inset-0 bg-grid opacity-40" />
-        <div className="absolute top-[-10%] left-[-10%] w-[50rem] h-[50rem] rounded-full bg-blue-600/10 blur-[140px] animate-pulse-slow" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[45rem] h-[45rem] rounded-full bg-indigo-600/10 blur-[140px] animate-pulse-slower" />
-        <div className="absolute top-1/3 right-1/4 w-64 h-64 rounded-full bg-emerald-500/5 blur-[100px] animate-pulse-slow" />
+        <div className="absolute inset-0 animated-bg" />
+        <div className="absolute inset-0 bg-grid-light opacity-50" />
+        <div className="absolute top-[-15%] left-[-10%] w-[50rem] h-[50rem] rounded-full bg-blue-300/30 blur-[140px] animate-orb-1" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[45rem] h-[45rem] rounded-full bg-indigo-300/30 blur-[140px] animate-orb-2" />
+        <div className="absolute top-1/3 right-1/4 w-64 h-64 rounded-full bg-emerald-300/20 blur-[100px] animate-orb-3" />
+        <div className="absolute top-2/3 left-1/5 w-72 h-72 rounded-full bg-amber-200/30 blur-[110px] animate-orb-1" />
         {/* floating candlesticks */}
         <div className="candles">
-          {[...Array(14)].map((_, i) => (
+          {[...Array(16)].map((_, i) => (
             <span key={i} className="candle" style={{
-              left: `${(i * 7.3 + 4) % 100}%`,
-              animationDelay: `${i * 1.7}s`,
-              animationDuration: `${9 + (i % 5) * 2.5}s`,
-              height: `${18 + (i % 6) * 10}px`
+              left: `${(i * 6.3 + 3) % 100}%`,
+              animationDelay: `${i * 1.4}s`,
+              animationDuration: `${10 + (i % 5) * 2.5}s`,
+              height: `${20 + (i % 6) * 12}px`
             }}>
               <i className="candle-wick" />
             </span>
@@ -238,13 +240,13 @@ const SwingCoursePage: React.FC = () => {
       </div>
 
       {/* Live market ticker */}
-      <div className="relative z-10 bg-slate-950/80 border-b border-[var(--border-primary)] overflow-hidden">
+      <div className="relative z-10 bg-white/85 backdrop-blur border-b border-slate-200 overflow-hidden">
         <div className="ticker-track flex gap-8 py-2 text-xs font-mono whitespace-nowrap">
           {[...indices, ...indices].map((idx, i) => (
             <span key={i} className="flex items-center gap-2 px-4">
-              <span className="text-[var(--text-muted)]">{idx.name}</span>
-              <span className="font-bold text-[var(--text-primary)]">{idx.price?.toLocaleString('en-IN')}</span>
-              <span className={idx.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+              <span className="text-slate-500">{idx.name}</span>
+              <span className="font-bold text-slate-800">{idx.price?.toLocaleString('en-IN')}</span>
+              <span className={idx.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
                 {idx.change >= 0 ? '▲' : '▼'} {Math.abs(idx.change).toFixed(2)}%
               </span>
             </span>
@@ -256,28 +258,28 @@ const SwingCoursePage: React.FC = () => {
       <header className="relative z-10 overflow-hidden pt-16 pb-16 px-6 max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-10 items-center">
           <div className="text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-950/50 border border-blue-900 rounded-full mb-6 animate-float">
-              <Flame className="w-4 h-4 text-amber-400" />
-              <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">New Batch Every Month · WhatsApp Community Live</span>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-100 border border-blue-200 rounded-full mb-6 animate-float">
+              <Flame className="w-4 h-4 text-amber-500" />
+              <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">New Batch Every Month · WhatsApp Community Live</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-[0.9] mb-5">
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-[0.9] mb-5 text-slate-900">
               SWING TRADING,<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-300 animate-gradient-x">DECODED.</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 animate-gradient-x">DECODED.</span>
             </h1>
-            <p className="text-base md:text-lg text-[var(--text-muted)] max-w-xl mx-auto lg:mx-0 leading-relaxed mb-4">
+            <p className="text-base md:text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-4">
               The repeatable swing-trading system behind institutional desks — 12+ strategies with
-              exact entry/exit rules. <span className="text-blue-400 font-semibold">Not tips. Not signals. A system you own.</span>
+              exact entry/exit rules. <span className="text-blue-600 font-semibold">Not tips. Not signals. A system you own.</span>
             </p>
-            <p className="text-sm text-[var(--text-tertiary)] max-w-xl mx-auto lg:mx-0 mb-8">
-              Realistic target: <span className="text-emerald-400 font-bold">25–30% CAGR</span> — the same math that takes
-              ₹1L to <span className="text-emerald-400 font-bold">~₹4.8L in 6 years</span> and <span className="text-emerald-400 font-bold">~₹1.9Cr in 20 years</span>.
+            <p className="text-sm text-slate-500 max-w-xl mx-auto lg:mx-0 mb-8">
+              Realistic target: <span className="text-emerald-600 font-bold">25–30% CAGR</span> — the same math that takes
+              ₹1L to <span className="text-emerald-600 font-bold">~₹4.8L in 6 years</span> and <span className="text-emerald-600 font-bold">~₹1.9Cr in 20 years</span>.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center mb-6">
               <button
                 onClick={handleBuy}
                 disabled={loading}
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-bold text-lg shadow-xl shadow-blue-900/30 transform hover:scale-105 hover:rotate-[-1deg] transition-all flex items-center gap-2 disabled:opacity-60"
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-bold text-lg text-white shadow-xl shadow-blue-200 transform hover:scale-105 hover:rotate-[-1deg] transition-all flex items-center gap-2 disabled:opacity-60"
               >
                 {loading ? 'Starting…' : <>Enroll for ₹999 <ArrowRight className="w-5 h-5" /></>}
               </button>
@@ -285,70 +287,70 @@ const SwingCoursePage: React.FC = () => {
                 href={WA_GROUP_MSG}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-8 py-4 bg-emerald-600/15 border border-emerald-500/40 hover:bg-emerald-600/25 rounded-2xl font-bold text-lg text-emerald-300 transition-all flex items-center gap-2"
+                className="px-8 py-4 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 rounded-2xl font-bold text-lg text-emerald-700 transition-all flex items-center gap-2"
               >
                 <MessageCircle className="w-5 h-5" /> Join WhatsApp Group
               </a>
             </div>
 
-            {err && <p className="text-rose-400 text-sm font-bold mb-4">{err}</p>}
+            {err && <p className="text-rose-600 text-sm font-bold mb-4">{err}</p>}
             {!user && (
               <div className="flex items-center gap-2 justify-center lg:justify-start max-w-md">
                 <input
                   type="email" value={email} onChange={e => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500"
+                  className="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 text-slate-800"
                 />
               </div>
             )}
 
-            <p className="text-xs text-[var(--text-tertiary)] mt-4 uppercase tracking-wider">
+            <p className="text-xs text-slate-500 mt-4 uppercase tracking-wider">
               One-time ₹999 · Lifetime access · Monthly batch + WhatsApp group · Educational only, not SEBI advice
             </p>
           </div>
 
           {/* 3D hero card */}
           <div className="hidden lg:block perspective-1000">
-            <div className="tilt-card card p-8 bg-gradient-to-br from-slate-900/90 to-blue-950/60 border-blue-500/20">
+            <div className="tilt-card card-light p-8 bg-white/90 backdrop-blur border border-slate-200 shadow-xl shadow-slate-200/60 rounded-2xl">
               <div className="flex items-center justify-between mb-6">
-                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-2">
+                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-2">
                   <Activity className="w-4 h-4" /> Live Market Pulse
                 </span>
-                <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-mono">
                   {indices.length ? '● LIVE' : '—'}
                 </span>
               </div>
               <div className="space-y-4 mb-8">
                 {indices.length ? indices.map((idx, i) => (
-                  <div key={i} className="flex items-center justify-between border-b border-[var(--border-primary)] pb-3">
+                  <div key={i} className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div>
-                      <p className="text-sm font-bold">{idx.name}</p>
-                      <p className="text-xs text-[var(--text-muted)]">ATH {idx.ath?.toLocaleString('en-IN')}</p>
+                      <p className="text-sm font-bold text-slate-800">{idx.name}</p>
+                      <p className="text-xs text-slate-500">ATH {idx.ath?.toLocaleString('en-IN')}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-black font-mono">{idx.price?.toLocaleString('en-IN')}</p>
-                      <p className={`text-xs font-bold ${idx.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      <p className="text-lg font-black font-mono text-slate-900">{idx.price?.toLocaleString('en-IN')}</p>
+                      <p className={`text-xs font-bold ${idx.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {idx.change >= 0 ? '▲' : '▼'} {Math.abs(idx.change).toFixed(2)}%
                       </p>
                     </div>
                   </div>
                 )) : (
                   <div className="space-y-3">
-                    {[0,1,2].map(i => <div key={i} className="h-10 bg-[var(--bg-secondary)] rounded-lg animate-pulse" />)}
+                    {[0,1,2].map(i => <div key={i} className="h-10 bg-slate-100 rounded-lg animate-pulse" />)}
                   </div>
                 )}
               </div>
               {/* mini sparkline candles */}
               <div className="flex items-end justify-between gap-1 h-16 mb-6">
                 {[35, 48, 42, 60, 55, 70, 64, 82, 75, 92, 88, 100].map((h, i) => (
-                  <div key={i} className="flex-1 bg-gradient-to-t from-blue-600 to-indigo-400 rounded-t-sm animate-candle-grow"
+                  <div key={i} className="flex-1 bg-gradient-to-t from-blue-500 to-indigo-400 rounded-t-sm animate-candle-grow"
                     style={{ height: `${h}%`, animationDelay: `${i * 0.15}s` }} />
                 ))}
               </div>
               <div className="text-center">
-                <p className="text-xs text-[var(--text-tertiary)] mb-3">Strategy accuracy — verified backtests</p>
-                <p className="text-4xl font-black text-emerald-400 mb-1">~97%</p>
-                <p className="text-xs text-[var(--text-muted)]">avg win rate · 8 stocks · TradingView strategy tester</p>
+                <p className="text-xs text-slate-500 mb-3">Strategy accuracy — verified backtests</p>
+                <p className="text-4xl font-black text-emerald-600 mb-1">~97%</p>
+                <p className="text-xs text-slate-500">avg win rate · 8 stocks · TradingView strategy tester</p>
               </div>
             </div>
           </div>
@@ -362,10 +364,10 @@ const SwingCoursePage: React.FC = () => {
             { stat: '₹999', label: 'One-time · lifetime access', icon: IndianRupee },
             { stat: 'Monthly', label: 'New batch every month', icon: CalendarDays },
           ].map((p, i) => (
-            <div key={i} className="card p-6 text-center hover:scale-105 hover:-translate-y-1 transition-transform tilt-card">
-              <p.icon className="w-8 h-8 mx-auto mb-3 text-blue-400" />
-              <p className="text-3xl font-black text-[var(--text-primary)]">{p.stat}</p>
-              <p className="text-xs text-[var(--text-muted)] mt-1 uppercase tracking-wider">{p.label}</p>
+            <div key={i} className="card-light p-6 text-center bg-white/90 backdrop-blur border border-slate-200 rounded-2xl hover:scale-105 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200 transition-all tilt-card">
+              <p.icon className="w-8 h-8 mx-auto mb-3 text-blue-600" />
+              <p className="text-3xl font-black text-slate-900">{p.stat}</p>
+              <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">{p.label}</p>
             </div>
           ))}
         </div>
@@ -374,21 +376,21 @@ const SwingCoursePage: React.FC = () => {
       {/* ============ ACCURACY ============ */}
       <section className="relative z-10 px-6 py-16 max-w-6xl mx-auto">
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-black tracking-tighter">Verified Backtest Accuracy</h2>
-          <p className="text-[var(--text-muted)] mt-3 max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900">Verified Backtest Accuracy</h2>
+          <p className="text-slate-500 mt-3 max-w-2xl mx-auto">
             Strategy-tester results on live market data (TradingView, daily bars). Historical — never a future guarantee.
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {ACCURACY.map((a, i) => (
-            <div key={i} className="card p-5 text-center hover:scale-105 transition-transform tilt-card">
-              <p className="text-sm font-bold text-blue-400">{a.stock}</p>
-              <p className={`text-2xl font-black mt-1 ${a.win === '100%' ? 'text-emerald-400' : 'text-amber-300'}`}>{a.win}</p>
-              <p className="text-xs text-[var(--text-muted)] mt-1">{a.trades} trades backtested</p>
+            <div key={i} className="card-light p-5 text-center bg-white/90 backdrop-blur border border-slate-200 rounded-2xl hover:scale-105 transition-all tilt-card">
+              <p className="text-sm font-bold text-blue-600">{a.stock}</p>
+              <p className={`text-2xl font-black mt-1 ${a.win === '100%' ? 'text-emerald-600' : 'text-amber-600'}`}>{a.win}</p>
+              <p className="text-xs text-slate-500 mt-1">{a.trades} trades backtested</p>
             </div>
           ))}
         </div>
-        <p className="text-xs text-[var(--text-tertiary)] text-center mt-6">
+        <p className="text-xs text-slate-400 text-center mt-6">
           Past performance / backtest results are not indicative of future results. Markets carry risk — educational context only.
         </p>
       </section>
@@ -396,9 +398,9 @@ const SwingCoursePage: React.FC = () => {
       {/* ============ PAIN → SOLUTION ============ */}
       <section className="relative z-10 px-6 py-16 max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="card p-8 border-rose-500/20 tilt-card">
-            <h3 className="text-xl font-bold mb-4 text-rose-400 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Why 99% of Traders Lose</h3>
-            <ul className="space-y-3 text-sm text-[var(--text-muted)]">
+          <div className="card-light p-8 bg-white/90 backdrop-blur border border-rose-200 rounded-2xl tilt-card">
+            <h3 className="text-xl font-bold mb-4 text-rose-600 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Why 99% of Traders Lose</h3>
+            <ul className="space-y-3 text-sm text-slate-600">
               <li>• Chasing "tips" and FOMO entries with no system</li>
               <li>• Buying at the top, panic-selling at the bottom</li>
               <li>• Unrealistic targets — "daily 5%" is mathematically a scam (1.05¹² = 80%/yr)</li>
@@ -406,10 +408,10 @@ const SwingCoursePage: React.FC = () => {
               <li>• Falling for 6 proven scam patterns (MLM, guaranteed returns, crypto, fake apps)</li>
             </ul>
           </div>
-          <div className="card p-8 border-emerald-500/20 tilt-card">
-            <h3 className="text-xl font-bold mb-4 text-emerald-400 flex items-center gap-2"><Trophy className="w-5 h-5" /> The MarketBeacon Swing System</h3>
-            <ul className="space-y-3 text-sm text-[var(--text-muted)]">
-              <li>• Buy in the <span className="text-blue-400 font-semibold">lower envelope band</span> — where institutions accumulate</li>
+          <div className="card-light p-8 bg-white/90 backdrop-blur border border-emerald-200 rounded-2xl tilt-card">
+            <h3 className="text-xl font-bold mb-4 text-emerald-700 flex items-center gap-2"><Trophy className="w-5 h-5" /> The MarketBeacon Swing System</h3>
+            <ul className="space-y-3 text-sm text-slate-600">
+              <li>• Buy in the <span className="text-blue-600 font-semibold">lower envelope band</span> — where institutions accumulate</li>
               <li>• Laddered ABCD entries → average down with protection</li>
               <li>• 67-point audit filters noise → only qualified stocks</li>
               <li>• Scam-protection training — know exactly what to say NO to</li>
@@ -422,36 +424,36 @@ const SwingCoursePage: React.FC = () => {
       {/* ============ WEALTH MATH ============ */}
       <section className="relative z-10 px-6 py-16 max-w-6xl mx-auto">
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-black tracking-tighter">What ₹1 Lakh Becomes</h2>
-          <p className="text-[var(--text-muted)] mt-3 max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900">What ₹1 Lakh Becomes</h2>
+          <p className="text-slate-500 mt-3 max-w-2xl mx-auto">
             Compounding at the system's realistic 25–30% CAGR. No "double in a week" fantasy — this is the
             math of patient wealth creation. (Illustrative projections, not guarantees.)
           </p>
         </div>
-        <div className="card overflow-hidden tilt-card">
+        <div className="card-light overflow-hidden bg-white/90 backdrop-blur border border-slate-200 rounded-2xl tilt-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[var(--bg-secondary)] text-left">
-                  <th className="p-4 font-bold">Horizon</th>
-                  <th className="p-4 font-bold text-blue-400">@ 25% CAGR</th>
-                  <th className="p-4 font-bold text-emerald-400">@ 30% CAGR</th>
-                  <th className="p-4 font-bold hidden md:table-cell text-[var(--text-muted)]">Milestone</th>
+                <tr className="bg-slate-50 text-left">
+                  <th className="p-4 font-bold text-slate-800">Horizon</th>
+                  <th className="p-4 font-bold text-blue-700">@ 25% CAGR</th>
+                  <th className="p-4 font-bold text-emerald-700">@ 30% CAGR</th>
+                  <th className="p-4 font-bold hidden md:table-cell text-slate-500">Milestone</th>
                 </tr>
               </thead>
               <tbody>
                 {WEALTH.map((w, i) => (
-                  <tr key={i} className="border-t border-[var(--border-primary)] hover:bg-[var(--bg-secondary)]/50 transition-colors">
-                    <td className="p-4 font-bold">{w.years}</td>
-                    <td className="p-4 text-blue-300">{w.x25}</td>
-                    <td className="p-4 text-emerald-300">{w.x30}</td>
-                    <td className="p-4 hidden md:table-cell text-[var(--text-muted)] text-xs">{w.note}</td>
+                  <tr key={i} className="border-t border-slate-100 hover:bg-slate-50/70 transition-colors">
+                    <td className="p-4 font-bold text-slate-800">{w.years}</td>
+                    <td className="p-4 text-blue-700">{w.x25}</td>
+                    <td className="p-4 text-emerald-700">{w.x30}</td>
+                    <td className="p-4 hidden md:table-cell text-slate-500 text-xs">{w.note}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="p-4 text-xs text-[var(--text-tertiary)] border-t border-[var(--border-primary)]">
+          <p className="p-4 text-xs text-slate-500 border-t border-slate-100">
             Base: ₹1L starting capital. 30% yearly → 3 saal ~2.2x · 6 saal ~4.8x · 9 saal ~10x · 12 saal ~23x · 20 saal ~190x.
             Projections are educational illustrations — markets carry risk.
           </p>
@@ -461,26 +463,26 @@ const SwingCoursePage: React.FC = () => {
       {/* ============ SUCCESS STORIES ============ */}
       <section className="relative z-10 px-6 py-16 max-w-6xl mx-auto">
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-black tracking-tighter">Proof The System Works</h2>
-          <p className="text-[var(--text-muted)] mt-3">Real cases from the training records — same rules you will learn.</p>
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900">Proof The System Works</h2>
+          <p className="text-slate-500 mt-3">Real cases from the training records — same rules you will learn.</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {STORIES.map((s, i) => (
-            <div key={i} className="card p-6 flex flex-col hover:scale-[1.02] hover:-translate-y-1 transition-transform tilt-card">
+            <div key={i} className="card-light p-6 flex flex-col bg-white/90 backdrop-blur border border-slate-200 rounded-2xl hover:scale-[1.02] hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200 transition-all tilt-card">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex gap-1">
                   {[1,2,3,4,5].map(x => <Star key={x} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
                 </div>
-                <span className="text-xs text-[var(--text-tertiary)]">{s.period}</span>
+                <span className="text-xs text-slate-500">{s.period}</span>
               </div>
-              <p className="text-3xl font-black text-emerald-400 mb-1">{s.stat}</p>
-              <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-3">{s.label}</p>
-              <p className="text-sm text-[var(--text-muted)] leading-relaxed flex-1">"{s.quote}"</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-4">{s.name} · {s.verified}</p>
+              <p className="text-3xl font-black text-emerald-600 mb-1">{s.stat}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">{s.label}</p>
+              <p className="text-sm text-slate-600 leading-relaxed flex-1">"{s.quote}"</p>
+              <p className="text-xs text-slate-400 mt-4">{s.name} · {s.verified}</p>
             </div>
           ))}
         </div>
-        <p className="text-xs text-[var(--text-tertiary)] text-center mt-6">
+        <p className="text-xs text-slate-400 text-center mt-6">
           Results are from reported course records / worked examples. Individual results vary — educational context only.
         </p>
       </section>
@@ -488,27 +490,27 @@ const SwingCoursePage: React.FC = () => {
       {/* ============ THE STRATEGY ENGINE ============ */}
       <section className="relative z-10 px-6 py-16 max-w-6xl mx-auto">
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-black tracking-tighter">12+ Strategies. Exact Entry. Exact Exit.</h2>
-          <p className="text-[var(--text-muted)] mt-3 max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900">12+ Strategies. Exact Entry. Exact Exit.</h2>
+          <p className="text-slate-500 mt-3 max-w-2xl mx-auto">
             No ambiguity, no "feel". Every strategy has a rulebook: which basket it applies to, when to enter, when to exit.
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {STRATEGIES.map((s, i) => (
-            <div key={i} className="card p-5 hover:scale-[1.02] hover:-translate-y-1 transition-transform tilt-card">
+            <div key={i} className="card-light p-5 bg-white/90 backdrop-blur border border-slate-200 rounded-2xl hover:scale-[1.02] hover:-translate-y-1 transition-all tilt-card">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold">{s.name}</h3>
-                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-600/15 text-blue-300 uppercase tracking-wider">{s.list}</span>
+                <h3 className="font-bold text-slate-800">{s.name}</h3>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">{s.list}</span>
               </div>
-              <p className="text-xs text-[var(--text-muted)] mb-1"><span className="text-emerald-400 font-semibold">ENTRY:</span> {s.entry}</p>
-              <p className="text-xs text-[var(--text-muted)]"><span className="text-rose-400 font-semibold">EXIT:</span> {s.exit}</p>
+              <p className="text-xs text-slate-500 mb-1"><span className="text-emerald-700 font-semibold">ENTRY:</span> {s.entry}</p>
+              <p className="text-xs text-slate-500"><span className="text-rose-600 font-semibold">EXIT:</span> {s.exit}</p>
             </div>
           ))}
         </div>
-        <div className="card p-6 mt-6 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 border-blue-500/20">
-          <p className="text-sm text-[var(--text-muted)] flex items-start gap-2">
-            <Gift className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-            <span><span className="font-bold text-[var(--text-primary)]">Bonus included:</span> Option Selling Crash Course (theta decay, rollover math, ₹12L capital efficiency), Entry/Exit Cheat Sheet, Formula Bank (ROCE, NDE, POC, PB, debtor days), and the 20-point Master Golden Rules.</span>
+        <div className="card-light p-6 mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl">
+          <p className="text-sm text-slate-600 flex items-start gap-2">
+            <Gift className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            <span><span className="font-bold text-slate-800">Bonus included:</span> Option Selling Crash Course (theta decay, rollover math, ₹12L capital efficiency), Entry/Exit Cheat Sheet, Formula Bank (ROCE, NDE, POC, PB, debtor days), and the 20-point Master Golden Rules.</span>
           </p>
         </div>
       </section>
@@ -516,20 +518,20 @@ const SwingCoursePage: React.FC = () => {
       {/* ============ BASKETS ============ */}
       <section className="relative z-10 px-6 py-16 max-w-6xl mx-auto">
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-black tracking-tighter">The 4 Institutional Baskets</h2>
-          <p className="text-[var(--text-muted)] mt-3">Same universe names as the MarketBeacon platform — strategy meets basket.</p>
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900">The 4 Institutional Baskets</h2>
+          <p className="text-slate-500 mt-3">Same universe names as the MarketBeacon platform — strategy meets basket.</p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { name: 'Elite Basket', icon: Gem, color: 'text-blue-400', bg: 'from-blue-600/10 to-blue-900/5 border-blue-500/20', desc: 'Market leaders — TCS, Reliance, HDFC Bank. Band strategies: Envelope, 52-week, Bollinger, SMA.' },
-            { name: 'Quality Basket', icon: Award, color: 'text-cyan-300', bg: 'from-cyan-600/10 to-cyan-900/5 border-cyan-500/20', desc: 'Steady compounders with strong fundamentals. Envelope, 52-week, Knoxville divergence plays.' },
-            { name: 'Growth Basket', icon: Sprout, color: 'text-emerald-300', bg: 'from-emerald-600/10 to-emerald-900/5 border-emerald-500/20', desc: '~200 growth names. S&R, 20% Rally, ABCD, RHS, Cup-Handle, BCD strategies.' },
-            { name: 'Fallen Value Basket', icon: Mountain, color: 'text-amber-300', bg: 'from-amber-600/10 to-amber-900/5 border-amber-500/20', desc: 'Deep-discount quality — the 67% Institutional Reset plays. Buy the fear, sell the greed.' },
+            { name: 'Elite Basket', icon: Gem, color: 'text-blue-600', bg: 'bg-gradient-to-br from-blue-50 to-blue-100/60 border-blue-200', desc: 'Market leaders — TCS, Reliance, HDFC Bank. Band strategies: Envelope, 52-week, Bollinger, SMA.' },
+            { name: 'Quality Basket', icon: Award, color: 'text-cyan-700', bg: 'bg-gradient-to-br from-cyan-50 to-cyan-100/60 border-cyan-200', desc: 'Steady compounders with strong fundamentals. Envelope, 52-week, Knoxville divergence plays.' },
+            { name: 'Growth Basket', icon: Sprout, color: 'text-emerald-700', bg: 'bg-gradient-to-br from-emerald-50 to-emerald-100/60 border-emerald-200', desc: '~200 growth names. S&R, 20% Rally, ABCD, RHS, Cup-Handle, BCD strategies.' },
+            { name: 'Fallen Value Basket', icon: Mountain, color: 'text-amber-600', bg: 'bg-gradient-to-br from-amber-50 to-amber-100/60 border-amber-200', desc: 'Deep-discount quality — the 67% Institutional Reset plays. Buy the fear, sell the greed.' },
           ].map((b, i) => (
-            <div key={i} className={`card p-6 bg-gradient-to-br ${b.bg} hover:scale-105 hover:-translate-y-1 transition-transform tilt-card`}>
+            <div key={i} className={`card-light p-6 ${b.bg} border rounded-2xl hover:scale-105 hover:-translate-y-1 transition-all tilt-card`}>
               <b.icon className={`w-8 h-8 mb-3 ${b.color}`} />
-              <h3 className="font-bold mb-2">{b.name}</h3>
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed">{b.desc}</p>
+              <h3 className="font-bold mb-2 text-slate-800">{b.name}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">{b.desc}</p>
             </div>
           ))}
         </div>
@@ -538,19 +540,19 @@ const SwingCoursePage: React.FC = () => {
       {/* ============ CURRICULUM ============ */}
       <section id="curriculum" className="relative z-10 px-6 py-16 max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-black tracking-tighter">The Real Course — Module by Module</h2>
-          <p className="text-[var(--text-muted)] mt-3">9 modules · 55+ lessons · ~6 hours · lifetime access · new batch every month</p>
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900">The Real Course — Module by Module</h2>
+          <p className="text-slate-500 mt-3">9 modules · 55+ lessons · ~6 hours · lifetime access · new batch every month</p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {CURRICULUM.map((c, i) => (
-            <div key={i} className="card p-6 hover:scale-[1.02] hover:-translate-y-1 transition-transform group tilt-card">
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${c.color} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform`}>
+            <div key={i} className="card-light p-6 bg-white/90 backdrop-blur border border-slate-200 rounded-2xl hover:scale-[1.02] hover:-translate-y-1 transition-all group tilt-card">
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${c.color} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-md shadow-slate-200`}>
                 <c.icon className="w-6 h-6 text-white" />
               </div>
-              <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">{c.module}</p>
-              <h3 className="text-lg font-bold mt-1 mb-2">{c.title}</h3>
-              <p className="text-sm text-[var(--text-muted)] leading-relaxed mb-4">{c.desc}</p>
-              <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
+              <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">{c.module}</p>
+              <h3 className="text-lg font-bold mt-1 mb-2 text-slate-800">{c.title}</h3>
+              <p className="text-sm text-slate-600 leading-relaxed mb-4">{c.desc}</p>
+              <div className="flex items-center gap-3 text-xs text-slate-500">
                 <span className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5" /> {c.lessons} lessons</span>
                 <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {c.duration}</span>
               </div>
@@ -561,20 +563,20 @@ const SwingCoursePage: React.FC = () => {
 
       {/* ============ BATCHES + WHATSAPP ============ */}
       <section className="relative z-10 px-6 py-16 max-w-6xl mx-auto">
-        <div className="card p-10 bg-gradient-to-br from-emerald-600/10 to-teal-600/10 border-emerald-500/20 overflow-hidden relative tilt-card">
-          <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-500/10 blur-[100px] pointer-events-none" />
+        <div className="card-light p-10 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-3xl overflow-hidden relative tilt-card">
+          <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-200/40 blur-[100px] pointer-events-none" />
           <div className="grid md:grid-cols-2 gap-10 items-center relative">
             <div>
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-950/50 border border-emerald-800 rounded-full mb-4">
-                <Users className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs font-bold text-emerald-300 uppercase tracking-wider">Monthly Batches · WhatsApp Community</span>
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-100 border border-emerald-300 rounded-full mb-4">
+                <Users className="w-4 h-4 text-emerald-700" />
+                <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Monthly Batches · WhatsApp Community</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-black tracking-tighter mb-4">One Batch Every Month. Learn With A Group.</h2>
-              <ul className="space-y-3 text-sm text-[var(--text-muted)]">
-                <li className="flex items-start gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" /> <span><span className="font-bold text-[var(--text-primary)]">New batch monthly</span> — structured, course-by-course, with doubt sessions</span></li>
-                <li className="flex items-start gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" /> <span><span className="font-bold text-[var(--text-primary)]">Dedicated WhatsApp group</span> for every batch — universe lists, education, community</span></li>
-                <li className="flex items-start gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" /> <span><span className="font-bold text-[var(--text-primary)]">Group unlocked on payment</span> — enroll, and your batch group link appears on the welcome page</span></li>
-                <li className="flex items-start gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" /> <span><span className="font-bold text-[var(--text-primary)]">Weekend live sessions</span> + lifetime access, revisit any module</span></li>
+              <h2 className="text-3xl md:text-4xl font-black tracking-tighter mb-4 text-slate-900">One Batch Every Month. Learn With A Group.</h2>
+              <ul className="space-y-3 text-sm text-slate-600">
+                <li className="flex items-start gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> <span><span className="font-bold text-slate-800">New batch monthly</span> — structured, course-by-course, with doubt sessions</span></li>
+                <li className="flex items-start gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> <span><span className="font-bold text-slate-800">Dedicated WhatsApp group</span> for every batch — universe lists, education, community</span></li>
+                <li className="flex items-start gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> <span><span className="font-bold text-slate-800">Group unlocked on payment</span> — enroll, and your batch group link appears on the welcome page</span></li>
+                <li className="flex items-start gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> <span><span className="font-bold text-slate-800">Weekend live sessions</span> + lifetime access, revisit any module</span></li>
               </ul>
             </div>
             <div className="space-y-4">
@@ -582,7 +584,7 @@ const SwingCoursePage: React.FC = () => {
                 href={WA_GROUP_MSG}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-3 px-6 py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-bold text-lg shadow-xl shadow-emerald-900/30 transform hover:scale-105 transition-all"
+                className="w-full flex items-center justify-center gap-3 px-6 py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-bold text-lg text-white shadow-xl shadow-emerald-200 transform hover:scale-105 transition-all"
               >
                 <MessageCircle className="w-6 h-6" /> Join the WhatsApp Group
               </a>
@@ -590,11 +592,11 @@ const SwingCoursePage: React.FC = () => {
                 href={WA_BATCH_MSG}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-3 px-6 py-5 bg-[var(--bg-secondary)] border border-emerald-500/40 hover:bg-emerald-600/15 rounded-2xl font-bold text-emerald-300 transition-all"
+                className="w-full flex items-center justify-center gap-3 px-6 py-5 bg-white border border-emerald-300 hover:bg-emerald-50 rounded-2xl font-bold text-emerald-700 transition-all"
               >
                 <CalendarDays className="w-5 h-5" /> Reserve Next Batch Seat
               </a>
-              <p className="text-xs text-[var(--text-tertiary)] text-center">
+              <p className="text-xs text-slate-500 text-center">
                 WhatsApp pe message bhejenge — batch dates, universe lists aur group link direct milega.
               </p>
             </div>
@@ -604,16 +606,16 @@ const SwingCoursePage: React.FC = () => {
 
       {/* ============ SEBI COMPLIANCE ============ */}
       <section className="relative z-10 px-6 py-8 max-w-6xl mx-auto">
-        <div className="card p-6 border-amber-500/20 bg-amber-500/5">
+        <div className="card-light p-6 border border-amber-300 bg-amber-50/80 rounded-2xl">
           <div className="flex items-start gap-3">
-            <ShieldCheck className="w-6 h-6 text-amber-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-[var(--text-muted)] leading-relaxed">
-              <p className="font-bold text-[var(--text-primary)] mb-1">Educational Research Platform — Compliance Note</p>
+            <ShieldCheck className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-slate-600 leading-relaxed">
+              <p className="font-bold text-slate-800 mb-1">Educational Research Platform — Compliance Note</p>
               <p>
-                MarketBeacon is <span className="text-amber-300 font-semibold">NOT a SEBI-registered Investment Adviser or Research Analyst</span>.
+                MarketBeacon is <span className="text-amber-700 font-semibold">NOT a SEBI-registered Investment Adviser or Research Analyst</span>.
                 All content is educational research — we teach a system and show historical data, we do not give personalized
                 buy/sell recommendations or guarantee returns. Backtest results, success stories and projections are
-                illustrative; <span className="text-amber-300 font-semibold">past performance is not indicative of future results</span>.
+                illustrative; <span className="text-amber-700 font-semibold">past performance is not indicative of future results</span>.
                 Markets carry risk — invest only what you can afford to lose, and consult a SEBI-registered adviser for
                 personalized advice.
               </p>
@@ -624,19 +626,19 @@ const SwingCoursePage: React.FC = () => {
 
       {/* ============ FAQ ============ */}
       <section className="relative z-10 px-6 py-16 max-w-3xl mx-auto">
-        <h2 className="text-3xl font-black tracking-tighter text-center mb-10">Questions, Answered</h2>
+        <h2 className="text-3xl font-black tracking-tighter text-center mb-10 text-slate-900">Questions, Answered</h2>
         <div className="space-y-3">
           {FAQS.map((f, i) => (
-            <div key={i} className="card overflow-hidden">
+            <div key={i} className="card-light overflow-hidden bg-white/90 backdrop-blur border border-slate-200 rounded-2xl">
               <button
                 onClick={() => setShowFAQ(showFAQ === i ? null : i)}
-                className="w-full flex items-center justify-between p-5 text-left hover:bg-[var(--bg-secondary)] transition-colors"
+                className="w-full flex items-center justify-between p-5 text-left hover:bg-slate-50 transition-colors"
               >
-                <span className="font-bold">{f.q}</span>
-                <ChevronRight className={`w-5 h-5 text-[var(--text-muted)] transition-transform ${showFAQ === i ? 'rotate-90' : ''}`} />
+                <span className="font-bold text-slate-800">{f.q}</span>
+                <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${showFAQ === i ? 'rotate-90' : ''}`} />
               </button>
               {showFAQ === i && (
-                <div className="px-5 pb-5 text-sm text-[var(--text-muted)] leading-relaxed">{f.a}</div>
+                <div className="px-5 pb-5 text-sm text-slate-600 leading-relaxed">{f.a}</div>
               )}
             </div>
           ))}
@@ -645,7 +647,7 @@ const SwingCoursePage: React.FC = () => {
 
       {/* ============ FINAL CTA ============ */}
       <section className="relative z-10 px-6 py-20 max-w-4xl mx-auto text-center">
-        <div className="card p-10 bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-3xl tilt-card">
+        <div className="card-light p-10 bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-3xl shadow-2xl shadow-blue-200 tilt-card">
           <GraduationCap className="w-12 h-12 mx-auto mb-4 animate-float" />
           <h2 className="text-3xl md:text-4xl font-black mb-3">Own The System. Trade With Conviction.</h2>
           <p className="mb-8 opacity-90 max-w-xl mx-auto">One-time ₹999. Lifetime access. Monthly batch + WhatsApp group. Stop following — start trading with a system.</p>
@@ -661,7 +663,7 @@ const SwingCoursePage: React.FC = () => {
               href={WA_GROUP_MSG}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-10 py-4 bg-emerald-500/20 border border-emerald-300/40 rounded-2xl font-bold hover:bg-emerald-500/30 transition-all flex items-center gap-2"
+              className="px-10 py-4 bg-white/15 border border-white/30 rounded-2xl font-bold hover:bg-white/25 transition-all flex items-center gap-2"
             >
               <MessageCircle className="w-5 h-5" /> WhatsApp Group
             </a>
@@ -670,49 +672,88 @@ const SwingCoursePage: React.FC = () => {
         </div>
       </section>
 
-      <footer className="relative z-10 text-center py-8 text-xs text-[var(--text-tertiary)] border-t border-[var(--border-primary)]">
+      <footer className="relative z-10 text-center py-8 text-xs text-slate-500 border-t border-slate-200">
         MarketBeacon Pro · Educational platform · Not a SEBI-registered Investment Adviser or Research Analyst
       </footer>
 
-      {/* Global page animations */}
+      {/* Global page animations + light theme overrides */}
       <style>{`
-        @keyframes gradient-x { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-        .animate-gradient-x { background-size: 200% 200%; animation: gradient-x 6s ease infinite; }
-        @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-        .animate-float { animation: floaty 3.5s ease-in-out infinite; }
-        @keyframes pulseSlow { 0%,100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
-        .animate-pulse-slow { animation: pulseSlow 7s ease-in-out infinite; }
-        @keyframes pulseSlower { 0%,100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } }
-        .animate-pulse-slower { animation: pulseSlower 11s ease-in-out infinite; }
-        @keyframes candleGrow { 0% { transform: scaleY(0.3); opacity: 0.4; } 100% { transform: scaleY(1); opacity: 1; } }
-        .animate-candle-grow { transform-origin: bottom; animation: candleGrow 1.2s ease-out both; }
-        @keyframes tickerMove { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .ticker-track { animation: tickerMove 30s linear infinite; }
-        .ticker-track:hover { animation-play-state: paused; }
-        .bg-grid {
+        /* Light theme scope */
+        .course-light .card {
+          background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(248,250,252,0.95)) !important;
+          border-color: rgba(226,232,240,0.9) !important;
+          color: #0f172a;
+        }
+        .course-light .card::before {
+          background: linear-gradient(135deg, transparent 40%, rgba(59,130,246,0.2), transparent 60%) !important;
+        }
+        .course-light .card::after {
+          background: linear-gradient(to right, transparent, rgba(59,130,246,0.25), transparent) !important;
+        }
+        .course-light .card:hover {
+          border-color: rgba(59,130,246,0.35) !important;
+          box-shadow: 0 20px 40px rgba(148,163,184,0.35), 0 0 30px rgba(59,130,246,0.08) !important;
+        }
+        .card-light { position: relative; overflow: hidden; }
+
+        /* Animated light background */
+        .animated-bg {
+          background: linear-gradient(120deg,
+            #eff6ff 0%, #f0fdf4 20%, #eef2ff 40%,
+            #fdf2f8 60%, #fefce8 80%, #eff6ff 100%);
+          background-size: 400% 400%;
+          animation: bgShift 18s ease infinite;
+        }
+        @keyframes bgShift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+        .bg-grid-light {
           background-image:
-            linear-gradient(rgba(59,130,246,0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(59,130,246,0.05) 1px, transparent 1px);
+            linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,0.06) 1px, transparent 1px);
           background-size: 56px 56px;
           mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 75%);
           -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 75%);
         }
+
+        @keyframes orb1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px, 30px) scale(1.1); } }
+        @keyframes orb2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-50px, -20px) scale(1.12); } }
+        @keyframes orb3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px, -40px) scale(1.08); } }
+        .animate-orb-1 { animation: orb1 14s ease-in-out infinite; }
+        .animate-orb-2 { animation: orb2 17s ease-in-out infinite; }
+        .animate-orb-3 { animation: orb3 12s ease-in-out infinite; }
+
+        @keyframes gradient-x { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .animate-gradient-x { background-size: 200% 200%; animation: gradient-x 6s ease infinite; }
+
+        @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .animate-float { animation: floaty 3.5s ease-in-out infinite; }
+
+        @keyframes candleGrow { 0% { transform: scaleY(0.3); opacity: 0.4; } 100% { transform: scaleY(1); opacity: 1; } }
+        .animate-candle-grow { transform-origin: bottom; animation: candleGrow 1.2s ease-out both; }
+
+        @keyframes tickerMove { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .ticker-track { animation: tickerMove 30s linear infinite; }
+        .ticker-track:hover { animation-play-state: paused; }
+
         .candles { position: absolute; inset: 0; overflow: hidden; }
         .candle { position: absolute; bottom: -20px; width: 3px; border-radius: 2px;
-          background: linear-gradient(to top, rgba(59,130,246,0.5), rgba(99,102,241,0.15));
-          opacity: 0.35; animation: candleRise linear infinite; }
-        .candle-wick { position: absolute; top: -8px; left: 1px; width: 1px; height: 10px; background: rgba(148,163,184,0.5); }
+          background: linear-gradient(to top, rgba(59,130,246,0.5), rgba(99,102,241,0.2));
+          opacity: 0.4; animation: candleRise linear infinite; }
+        .candle-wick { position: absolute; top: -8px; left: 1px; width: 1px; height: 10px; background: rgba(100,116,139,0.5); }
         @keyframes candleRise {
           0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-          10% { opacity: 0.35; }
-          90% { opacity: 0.25; }
+          10% { opacity: 0.45; }
+          90% { opacity: 0.3; }
           100% { transform: translateY(-110vh) rotate(20deg); opacity: 0; }
         }
+
         .perspective-1000 { perspective: 1200px; }
         .tilt-card { transform-style: preserve-3d; will-change: transform; }
         .tilt-card:hover { transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(-4px) scale(1.02); }
+
         @media (prefers-reduced-motion: reduce) {
-          .ticker-track, .candle, .animate-float, .animate-pulse-slow, .animate-pulse-slower, .animate-gradient-x { animation: none !important; }
+          .ticker-track, .candle, .animate-float, .animate-orb-1, .animate-orb-2, .animate-orb-3,
+          .animate-gradient-x, .animated-bg { animation: none !important; }
           .tilt-card:hover { transform: none; }
         }
       `}</style>
