@@ -18,7 +18,20 @@ const router = Router();
 const KEY_ID = process.env.RAZORPAY_KEY_ID || '';
 const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
 
-const razorpay = new Razorpay({ key_id: KEY_ID, key_secret: KEY_SECRET });
+// Lazy Razorpay client — keys may be absent on first deploy. Do NOT construct
+// at module load: `new Razorpay({key_id:''})` throws and takes the whole
+// backend down. Construct on first use; payment endpoints return a clear
+// error until RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET are set in .env.
+let _razorpay: any = null;
+function getRazorpay(): any {
+  if (!_razorpay) {
+    if (!KEY_ID || !KEY_SECRET) {
+      throw new Error('Razorpay keys not configured (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET missing in .env)');
+    }
+    _razorpay = new Razorpay({ key_id: KEY_ID, key_secret: KEY_SECRET });
+  }
+  return _razorpay;
+}
 
 // ---- Price config (paise) ----
 const SWING_COURSE_PAISE = parseInt(process.env.COURSE_SWING_PRICE_PAISE || '99900', 10);
@@ -47,7 +60,7 @@ router.post('/create-order', async (req: Request, res: Response) => {
     const { email, name } = req.body || {};
     if (!email) return res.status(400).json({ error: 'Email required' });
 
-    const order = await razorpay.orders.create({
+    const order = await getRazorpay().orders.create({
       amount: SWING_COURSE_PAISE,
       currency: 'INR',
       receipt: `swing_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -75,7 +88,7 @@ async function getOrCreatePlan(planKey: string, amount: number, name: string) {
 
   if (envPlanId) return envPlanId;
 
-  const plan = await razorpay.plans.create({
+  const plan = await getRazorpay().plans.create({
     period: 'monthly',
     interval: 1,
     item: {
@@ -100,7 +113,7 @@ router.post('/create-subscription', async (req: Request, res: Response) => {
 
     const planId = await getOrCreatePlan(tier, amount, planName);
 
-    const subscription = await razorpay.subscriptions.create({
+    const subscription = await getRazorpay().subscriptions.create({
       plan_id: planId,
       customer_notify: 1,
       quantity: 1,
@@ -169,7 +182,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
 async function getPlanAmount(planId: string): Promise<number> {
   try {
-    const p: any = await (razorpay as any).plans.fetch(planId);
+    const p: any = await getRazorpay().plans.fetch(planId);
     return p?.item?.amount || 0;
   } catch { return 0; }
 }
